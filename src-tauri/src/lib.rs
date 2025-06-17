@@ -8,6 +8,40 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+
+#[cfg(target_os = "windows")]
+fn restart_as_admin() {
+  use std::{ffi::OsStr, os::windows::ffi::OsStrExt, ptr, process::exit};
+  use windows_sys::Win32::UI::Shell::{ShellExecuteW, SEE_MASK_NOASYNC};
+  use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+  let exe = std::env::current_exe().unwrap();
+  let args: Vec<String> = std::env::args().skip(1).collect();
+  let params = args.join(" ");
+
+  let to_wide = |s: &OsStr| {
+    let mut v: Vec<u16> = s.encode_wide().collect();
+    v.push(0);
+    v
+  };
+
+unsafe {
+    ShellExecuteW(
+        0, // HWND = null
+        to_wide(OsStr::new("runas")).as_ptr(),         // lpOperation
+        to_wide(exe.as_os_str()).as_ptr(),            // lpFile
+        if params.is_empty() {
+            std::ptr::null()
+        } else {
+            to_wide(OsStr::new(&params)).as_ptr()
+        },                                             // lpParameters
+        std::ptr::null(),                              // lpDirectory
+        SW_SHOWNORMAL,                                 // nShowCmd
+    );
+}
+  exit(0);
+}
+
 fn spawn_global_key_listener<R: Runtime + 'static>(app_handle: tauri::AppHandle<R>) {
     use std::sync::{Arc, Mutex};
 

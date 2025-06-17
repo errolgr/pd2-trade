@@ -87,10 +87,9 @@ jobs:
       - uses: tauri-apps/tauri-action@v0.5.20
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          owner: errolgr
-          repo: pd2-trade
           args: ${{ matrix.args }}
 
   ########################################################################
