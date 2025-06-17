@@ -1,0 +1,187 @@
+name: "publish"
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  ########################################################################
+  # 1. Build Backend
+  ########################################################################
+  build-backend:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Backend Server
+        uses: actions/checkout@v4
+        with:
+          # This checks out the *other* repo in a subfolder called pantheon-dmg-parser
+          repository: errolgr/pantheon-dmg-parser
+          # Use a token that can read private repos if needed
+          token: ${{ secrets.PANTH_SERVER_TOKEN }}
+          ref: main
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.6.1'
+
+      - name: Configure Git to use HTTPS with PAT
+        run: |
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "git@github.com:"
+
+      - name: Install dependencies
+        run: |
+          npm install 
+
+      - name: Install types
+        run: |
+          npm install @dmg-meter/types
+
+      - name: Build server
+        run: |
+          npm run build
+
+      - name: Build artifacts
+        run: |
+          npm run pkg
+
+      - name: Upload server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pantheon_server_exe
+          path: dist/pantheon_server-x86_64-pc-windows-msvc.exe
+
+  ########################################################################
+  # 2. Create Release in errolgr/panth-meter
+  ########################################################################
+  create-release:
+    needs: build-backend
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Get version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create release in panth-meter
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TARGET_REPO_TOKEN }}
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: "errolgr",            // target owner
+              repo: "panth-meter",         // target release repo
+              tag_name: `app-v${process.env.PACKAGE_VERSION}`,
+              name: `Panth Meter v${process.env.PACKAGE_VERSION}`,
+              body: 'Take a look at the assets to download and install this app.',
+              draft: true,
+              prerelease: false
+            });
+            return data.id;
+
+  ########################################################################
+  # 3. Build Tauri (unchanged)
+  ########################################################################
+  build-tauri:
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: ""
+          # Add more platforms as needed...
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download parser exe
+        uses: actions/download-artifact@v4
+        with:
+          name: pantheon_server_exe
+
+      - name: Move exe into src-tauri/binaries/app
+        run: |
+          mkdir -p src-tauri/binaries/app
+          mv pantheon_server-x86_64-pc-windows-msvc.exe src-tauri/binaries/app/
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Configure Git to use HTTPS with PAT
+        run: |
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global --add url."https://${{ secrets.TYPES_REPO_TOKEN }}@github.com/".insteadOf "git@github.com:"
+
+      - name: Install frontend dependencies
+        run: yarn install
+
+      - uses: tauri-apps/tauri-action@v0.5.20
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.TARGET_REPO_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          owner: errolgr
+          repo: panth-meter
+          args: ${{ matrix.args }}
+
+  ########################################################################
+  # 4. Publish Release in panth-meter
+  ########################################################################
+  publish-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [create-release, build-tauri]
+    steps:
+      - name: Publish release in panth-meter
+        id: publish-release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          github-token: ${{ secrets.TARGET_REPO_TOKEN }}
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: "errolgr",            // target owner
+              repo: "panth-meter",         // target release repo
+              release_id: process.env.release_id,
+              draft: false,
+              prerelease: false
+            });

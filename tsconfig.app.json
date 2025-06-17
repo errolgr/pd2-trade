@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2020", "ES2017", "DOM", "DOM.Iterable"],
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "jsx": "react",
+    "module": "ES2017",
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+  "exclude": [ "node_modules"]
+}

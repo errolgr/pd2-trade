@@ -1,0 +1,32 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "*"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-ignore-cursor-events",
+    "core:webview:allow-create-webview-window",
+    "core:webview:allow-create-webview",
+    "core:window:allow-close",
+    "core:webview:allow-webview-close",
+    "core:resources:allow-close",
+    "shell:default",
+    "shell:allow-open",
+    "shell:default",
+    "dialog:default",
+    "global-shortcut:allow-is-registered",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "core:window:allow-destroy",
+    "updater:default",
+    "process:default",
+    "process:allow-exit",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-read-text"
+  ]
+}

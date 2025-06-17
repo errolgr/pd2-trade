@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Panth Meter",
+  "version": "0.3.0",
+  "identifier": "com.panth-meter.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "mainBinaryName": "panth-meter-installer",
+  "plugins": {
+    "shell": {},
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      },
+      "endpoints": [
+        "https://github.com/errolgr/panth-meter/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI2QjU2MzkwQjQ5RTlBMDgKUldRSW1wNjBrR08xSnV6QndCMUhVaWVlWkNJRUtENWZGVzhMSGZGanhKaDQrT2ZONWoxYVZ0RVQK"
+
+    }
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/favicon.ico",
+        "sidebarImage": "icons/banner.bmp"
+      }
+    },
+
+    "createUpdaterArtifacts": true,
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/favicon.ico",
+      "icons/favicon-96x96.png"
+    ]
+  }
+}
