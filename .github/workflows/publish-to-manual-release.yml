@@ -90,6 +90,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
+          owner: errolgr
+          repo: pd2-trade
           args: ${{ matrix.args }}
 
   ########################################################################
