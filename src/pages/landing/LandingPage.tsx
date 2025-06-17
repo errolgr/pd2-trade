@@ -26,11 +26,11 @@ const LandingPage: React.FC = () => {
 
   useEffect(() => {
     if (isTauri()) {
-      checkForUpdates().then((update) => {
+     /* checkForUpdates().then((update) => {
         if (update?.available) {
           downloadUpdate(update);
         }
-      })
+      })*/
     }
   }, [])
 
@@ -122,7 +122,6 @@ const LandingPage: React.FC = () => {
     console.log("[LandingPage] Running in Tauri, registering shortcut");
 
     listen<string>('key-pressed', (event) => {
-      console.log('Rust emitted key:', event.payload)
       if (event.payload === 'ControlLeft+C') {
         fireSearch();
       }

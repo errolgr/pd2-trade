@@ -128,7 +128,7 @@ pub fn run() {
                 .transparent(false)
                 .visible(true)
                 .shadow(false)
-                .skip_taskbar(false);
+                .skip_taskbar(true);
 
             spawn_global_key_listener(handle.clone());
             let main_window = win_builder.build().unwrap();

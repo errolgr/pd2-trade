@@ -90,7 +90,7 @@ jobs:
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           owner: errolgr
-          repo: panth-meter
+          repo: pd2-trade
           args: ${{ matrix.args }}
 
   ########################################################################
