@@ -31,8 +31,6 @@
   },
   "bundle": {
     "windows": {
-      "requestedExecutionLevel": "requireAdministrator",
-
       "nsis": {
         "installerIcon": "icons/favicon.ico",
         "sidebarImage": "icons/banner.bmp"
