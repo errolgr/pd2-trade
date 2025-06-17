@@ -8,7 +8,7 @@ on:
 
 jobs:
   ########################################################################
-  # 1. Create Release in errolgr/pd2-trader
+  # 1. Create Release in errolgr/pd2-trade
   ########################################################################
   create-release:
     permissions:
@@ -29,14 +29,14 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Create release in pd2-trader
+      - name: Create release in pd2-trade
         id: create-release
         uses: actions/github-script@v7
         with:
           script: |
             const { data } = await github.rest.repos.createRelease({
               owner: "errolgr",            // target owner
-              repo: "pd2-trader",         // target release repo
+              repo: "pd2-trade",         // target release repo
               tag_name: `app-v${process.env.PACKAGE_VERSION}`,
               name: `PD2 Trader v${process.env.PACKAGE_VERSION}`,
               body: 'Take a look at the assets to download and install this app.',
@@ -94,7 +94,7 @@ jobs:
           args: ${{ matrix.args }}
 
   ########################################################################
-  # 3. Publish Release in pd2-trader
+  # 3. Publish Release in pd2-trade
   ########################################################################
   publish-release:
     permissions:
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create-release, build-tauri]
     steps:
-      - name: Publish release in pd2-trader
+      - name: Publish release in pd2-trade
         id: publish-release
         uses: actions/github-script@v6
         env:
@@ -111,7 +111,7 @@ jobs:
           script: |
             await github.rest.repos.updateRelease({
               owner: "errolgr",            // target owner
-              repo: "pd2-trader",         // target release repo
+              repo: "pd2-trade",         // target release repo
               release_id: process.env.release_id,
               draft: false,
               prerelease: false
