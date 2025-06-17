@@ -3,8 +3,13 @@ import { Dialog } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { ClientEvent, ISettings } from '@dmg-meter/types';
+import { appConfigDir } from '@tauri-apps/api/path';
+import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists} from '@tauri-apps/plugin-fs';
+
+interface ISettings {
+  ladder: 'ladder' | 'non-ladder';
+  mode: 'hardcore' | 'softcore';
+}
 
 interface OptionsContextProps {
   isOpen: boolean;
@@ -14,66 +19,68 @@ interface OptionsContextProps {
   updateSettings: (newSettings: Partial<ISettings>) => void;
 }
 
+const DEFAULT_SETTINGS: ISettings = {
+  mode: 'softcore',
+  ladder: 'ladder',
+};
+
+const SETTINGS_FILENAME = 'settings.json';
+const SETTINGS_DIR = BaseDirectory.AppConfig;
+
 // Create the context for options
 const OptionsContext = React.createContext<OptionsContextProps | undefined>(undefined);
 
 // Provider component that wraps your app (or a part of it)
 export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { socket } = useWebSocket();
   const [isLoading, setIsLoading] = React.useState(true);
-  const [settings, setSettings] = React.useState<ISettings>({
-    id: null,
-    theme: 'light',
-    font: null,
-  });
+  const [settings, setSettings] = React.useState<ISettings>(DEFAULT_SETTINGS);
 
-  useEffect(() => {
-    if (!socket) return;
 
-    socket.on(ClientEvent.SettingsUpdated, (settings: ISettings) => {
-      setSettings(settings);
-    });
-
-    return () => {
-      socket.off(ClientEvent.SettingsUpdated);
-      socket.off('connect');
-    };
-  }, [socket]);
-
-  const updateSettings = useCallback(
-    async (newSettings: Partial<ISettings>) => {
+  const updateSettings = useCallback(async (newSettings: Partial<ISettings>) => {
+    try {
+      let currentSettings: ISettings;
       try {
-        const response = await fetch(`http://localhost:3001/api/settings/${settings.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newSettings),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to update settings');
-        }
-        const result = await response.json();
-        setSettings((prevSettings) => ({ ...prevSettings, ...result }));
-        toast.success('Settings have been updated...');
-      } catch (error) {
-        console.error('Error updating settings:', error);
+        const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+        currentSettings = JSON.parse(file);
+      } catch {
+        console.warn('Settings file missing during update, using defaults.');
+        currentSettings = DEFAULT_SETTINGS;
       }
-    },
-    [settings],
-  );
+
+      const updated = { ...currentSettings, ...newSettings };
+
+      await writeTextFile(SETTINGS_FILENAME, JSON.stringify(updated, null, 2), {
+        baseDir: SETTINGS_DIR,
+      });
+
+      setSettings(updated);
+      toast.success('Settings have been updated...');
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  }, []);
 
   async function fetchSettings() {
     try {
-      const res = await fetch(`http://localhost:3001/api/settings`);
-      if (!res.ok) {
-        throw new Error('Failed to fetch settings');
+      const dirExists = await exists('.', { baseDir: SETTINGS_DIR });
+      if (!dirExists) {
+        await mkdir('.', { baseDir: SETTINGS_DIR, recursive: true });
       }
-      const data = await res.json();
-      setSettings(data);
+
+      const fileExists = await exists(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+      if (!fileExists) {
+        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(DEFAULT_SETTINGS, null, 2), {
+          baseDir: SETTINGS_DIR,
+        });
+      }
+
+      const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+      const parsed = JSON.parse(file);
+      setSettings(parsed);
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.warn('Error fetching settings' + error);
+      setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
     }

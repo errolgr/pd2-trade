@@ -7,6 +7,9 @@ import { currentMonitor, cursorPosition } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useClipboard } from "@/hooks/useClipboard";
 import {listen} from "@tauri-apps/api/event";
+import {TrayProvider} from "@/hooks/useTray";
+import {OptionsDialog, OptionsProvider} from "@/hooks/useOptions";
+import {useUpdater} from "@/hooks/useUpdater";
 
 const SHORTCUT = "Control+G";
 
@@ -16,7 +19,20 @@ const LandingPage: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const winRef = useRef<WebviewWindow | null>(null);
   const { read, copy } = useClipboard();
+  const {checkForUpdates, downloadUpdate} = useUpdater();
+
   const lastClipboard = useRef<string | null>(null); // <--- Added ref
+
+
+  useEffect(() => {
+    if (isTauri()) {
+      checkForUpdates().then((update) => {
+        if (update?.available) {
+          downloadUpdate(update);
+        }
+      })
+    }
+  }, [])
 
   /* ---------------------------------
    * Fire when the shortcut is pressed
@@ -86,13 +102,14 @@ const LandingPage: React.FC = () => {
     });
 
     w.onFocusChanged((event) => {
-   /*   if (!event.payload) {
+      if (!event.payload) {
         winRef.current.close();
         winRef.current = null;
         setIsOpen(false);
-      }*/
+      }
     });
   };
+
 
   /* ---------------------------------
    * One-time setup
@@ -116,7 +133,10 @@ const LandingPage: React.FC = () => {
     };
   }, []);
 
-  return null; // this launcher has no visible UI
+  return <OptionsProvider>
+    <OptionsDialog/>
+    <TrayProvider/>
+  </OptionsProvider>; // this launcher has no visible UI
 };
 
 function clipboardContainsValidItem(jsonString: string): boolean {

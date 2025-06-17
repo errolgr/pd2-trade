@@ -1,6 +1,5 @@
 import {Stat} from "@/pages/price-check/utils/interfaces";
 
-
 export enum StatId {
   Corrupted = 360,
   Socket = 1000,
@@ -10,15 +9,6 @@ export enum StatId {
 export const PRIORITY_STATS = [StatId.Corrupted, StatId.Socket, StatId.Ethereal];
 
 export const STRIP_STATS = [361, 56];
-
-
-
-
-/** ----------------------------------
- *  Config: map D2 stat_id → PD2 property key
- *  Fill in as many as you know; fallback will be `stat_{id}`
- *  --------------------------------*/
-
 
 
 export const statRemapByName: Record<string, Stat> = {

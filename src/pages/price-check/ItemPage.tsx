@@ -3,11 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import ItemOverlayWidget from "@/pages/price-check/components/ItemOverlayWidget";
+import {OptionsProvider} from "@/hooks/useOptions";
 
 const ItemWindow: React.FC = () => {
   const [item, setItem] = useState<any>(null);
   const [searchParams] = useSearchParams();
-
   /* ---------------------------------
    * Parse the ?text param on first load
    * --------------------------------- */
@@ -55,8 +55,11 @@ const ItemWindow: React.FC = () => {
   }
 
   return (
-    <ItemOverlayWidget item={item}
-      onClose={() => getCurrentWebviewWindow().close()} />
+    <OptionsProvider>
+      <ItemOverlayWidget item={item}
+        onClose={() => getCurrentWebviewWindow().close()} />
+    </OptionsProvider>
+   
   );
 };
 

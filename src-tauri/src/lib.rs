@@ -1,7 +1,7 @@
-use std::{thread};
+use rdev::{listen, Event, EventType, Key as RdevKey};
+use std::thread;
 use tauri::{Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_shell;
-use rdev::{listen, Event, EventType, Key as RdevKey};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -28,7 +28,8 @@ fn spawn_global_key_listener<R: Runtime + 'static>(app_handle: tauri::AppHandle<
 
                     // Compose and emit only when a main key is pressed
                     if let Some(main_key) = key_to_string(key) {
-                        let combo = mods.iter()
+                        let combo = mods
+                            .iter()
                             .filter_map(|k| key_to_string(*k))
                             .chain(std::iter::once(main_key))
                             .collect::<Vec<_>>()
@@ -109,20 +110,20 @@ fn key_to_string(key: RdevKey) -> Option<&'static str> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_app_exit::init())
         .setup(|app| {
             let handle = app.app_handle();
 
-
-
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("Pantheon DPS - Instance Monitor")
-                .inner_size(580.0, 140.0)
+                .title("PD2 Trader")
+                .inner_size(1200.0, 750.0)
                 .decorations(true)
                 .transparent(false)
                 .visible(true)

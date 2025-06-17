@@ -16,7 +16,6 @@ export function useUpdater() {
   const { openDialog, closeDialog } = useDialog();
   const [progress, setProgress] = useState(0);
   const [isUpdating, setIsUpdating] = useState(true);
-  const [updateInfo, setUpdateInfo] = useState<Update | null>(null);
 
   const openDownloadDialog = (currentProgress: number) => {
     openDialog(
@@ -36,17 +35,13 @@ export function useUpdater() {
 
   const checkForUpdates = async (): Promise<Update> => {
     const update = await check();
-    if (update) {
-      setUpdateInfo(update);
-    } else {
-      setIsUpdating(false);
-    }
+    console.log('Update check result:', update);
     return update;
   };
 
   // Function to download and install the update.
   // It uses the update object stored in state.
-  const downloadUpdate = async () => {
+  const downloadUpdate = async (updateInfo) => {
     if (!updateInfo) {
       console.warn('No update available to download.');
       return;
@@ -88,5 +83,5 @@ export function useUpdater() {
     await relaunch();
   };
 
-  return { checkForUpdates, downloadUpdate, progress, updateInfo, isUpdating };
+  return { checkForUpdates, downloadUpdate, progress, isUpdating };
 }

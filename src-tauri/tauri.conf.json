@@ -1,15 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Panth Meter",
-  "version": "0.3.0",
-  "identifier": "com.panth-meter.app",
+  "productName": "PD2 Trader",
+  "version": "0.1.0",
+  "identifier": "com.pd2-trader.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
-  "mainBinaryName": "panth-meter-installer",
+  "mainBinaryName": "pd2-trader-installer",
   "plugins": {
     "shell": {},
     "updater": {
@@ -17,7 +17,7 @@
         "installMode": "passive"
       },
       "endpoints": [
-        "https://github.com/errolgr/panth-meter/releases/latest/download/latest.json"
+        "https://github.com/errolgr/pd2-trader/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI2QjU2MzkwQjQ5RTlBMDgKUldRSW1wNjBrR08xSnV6QndCMUhVaWVlWkNJRUtENWZGVzhMSGZGanhKaDQrT2ZONWoxYVZ0RVQK"
 

@@ -18,6 +18,7 @@ import { StatRow } from "./StatRow";
 import {skillNameToIdMap} from "@/assets/character-skills";
 import {ItemCharmMap, ItemQuality} from "@/common/types/Item";
 import {itemTypes} from "@/common/item-types";
+import {useOptions} from "@/hooks/useOptions";
 
 interface Props {
   item: Item;
@@ -30,7 +31,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // selected – IDs of stats the user wants to filter on.
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<Record<string, { value?: string; min?: string; max?: string }>>({});
-
+  const { settings } = useOptions();
 
   /** Resolve stat_id → property key understood by trade site */
   const getPropertyKey = (id: number, stat: Stat): string =>
@@ -94,14 +95,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   }, [item.stats, item.sockets]);
 
-
-  /** Helper to grab Stat object by ID (searches socketed too) */
-  const findStatById = useCallback((id: number): Stat | undefined => {
-    for (const s of sortedStats) if (s.stat_id === id) return s;
-    return undefined;
-  }, [sortedStats])
-
-
+  
   /** Toggle selection and initialise filter defaults */
   const toggle = (stat: Stat) => {
     const key = getStatKey(stat);
@@ -211,8 +205,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
 
     // Example flags — tweak as needed or make dynamic later
-    searchParams.set("is_hardcore", "false");
-    searchParams.set("is_ladder", "true");
+    searchParams.set("is_hardcore", `${(settings.mode === 'softcore')}`);
+    searchParams.set("is_ladder", `${(settings.ladder === 'ladder')}`);
 
     return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;
   }, [selected, filters, item, statMapper]);
@@ -240,7 +234,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {item.defense && <div className={'text-sm'}>Defense: {item.defense} </div>}
           </div>
 
-          <Button variant="ghost" size="icon" onClick={onClose} className="self-start">
+          <Button variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="self-start">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>

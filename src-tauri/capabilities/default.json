@@ -27,6 +27,46 @@
     "process:default",
     "process:allow-exit",
     "clipboard-manager:default",
-    "clipboard-manager:allow-read-text"
-  ]
+    "clipboard-manager:allow-read-text",
+    "core:app:allow-default-window-icon",
+    "app-exit:default",
+    "fs:default",
+    "fs:scope-resource-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$APPDATA/*" }]
+    },
+    "fs:allow-write-text-file",
+    "fs:allow-read-text-file",
+    "fs:allow-exists",
+    "fs:read-dirs",
+    "fs:create-app-specific-dirs",
+    "fs:allow-mkdir",
+    "fs:allow-read-text-file",
+    "fs:allow-appconfig-write",
+    "fs:allow-app-write-recursive",
+    "fs:write-all",
+    "fs:scope-resource-recursive",
+    "fs:allow-appconfig-read-recursive",
+    "fs:allow-appconfig-write-recursive",
+    "fs:allow-appdata-read-recursive",
+    "fs:allow-appdata-write-recursive",
+    "shell:allow-open",
+    {
+      "identifier": "fs:scope-appdata-recursive",
+      "allow": [
+        {
+          "path": "$APPDATA"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:scope-appconfig-recursive",
+      "allow": [
+        {
+          "path": "$APPCONFIG"
+        }
+      ]
+    }
+    ]
 }

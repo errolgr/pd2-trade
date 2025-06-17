@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { DialogContent } from '@/components/ui/dialog';
-import SettingsAppearancePage from '@/components/dialogs/optionsv2/appearance/layout';
+import SettingGenereal from '@/components/dialogs/optionsv2/appearance/layout';
 import { useOptions } from '@/hooks/useOptions';
+import SettingsAbout from "@/components/dialogs/optionsv2/about/layout";
 
 export const metadata = {
   title: 'Forms',
@@ -16,8 +17,12 @@ interface INavItem {
 }
 const sidebarNavItems: INavItem[] = [
   {
-    title: 'Appearance',
-    content: <SettingsAppearancePage />,
+    title: 'General',
+    content: <SettingGenereal />,
+  },
+  {
+    title: 'About',
+    content: <SettingsAbout />,
   },
 ];
 
@@ -29,7 +34,7 @@ export default function SettingsLayout() {
       <div className="hidden space-y-6 p-10 pb-16 md:block">
         <div className="space-y-0.5">
           <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-          <p className="text-muted-foreground">Manage your meter settings and set preferences</p>
+          <p className="text-muted-foreground">Manage your settings and set preferences</p>
         </div>
         <Separator className="my-6" />
         <div className="flex flex-col space-y-8 lg:flex-row lg:gap-x-12 lg:gap-y-0">
