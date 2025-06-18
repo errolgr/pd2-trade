@@ -1,11 +1,54 @@
 use rdev::{listen, Event, EventType, Key as RdevKey};
 use std::thread;
-use tauri::{Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder, Window};
 use tauri_plugin_shell;
+use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
+use serde::Serialize;
 
+use windows_sys::Win32::{
+    Foundation::{HWND, RECT},
+    UI::WindowsAndMessaging::{FindWindowW, GetWindowRect},
+};
 #[tauri::command]
+
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+fn to_wide(s: &str) -> Vec<u16> {
+    OsStr::new(s).encode_wide().chain(iter::once(0)).collect()
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WindowRect {
+  x:      i32,
+  y:      i32,
+  width:  i32,
+  height: i32,
+}
+
+#[tauri::command]
+fn get_diablo_rect() -> Option<WindowRect> {
+    let title_w = to_wide("Diablo II");
+    // NULL class (we don't care), title pointer
+    let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
+    if hwnd == 0 {
+        return None;
+    }
+
+    let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+    let ok = unsafe { GetWindowRect(hwnd, &mut r as *mut RECT) };
+    if ok == 0 {
+      return None;
+    }
+
+  Some(WindowRect {
+    x:      r.left,
+    y:      r.top,
+    width:  r.right  - r.left,
+    height: r.bottom - r.top,
+  })
 }
 
 #[cfg(target_os = "windows")]
@@ -177,6 +220,7 @@ pub fn run() {
     if !is_elevated() {
         restart_as_admin();
     }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -192,8 +236,8 @@ pub fn run() {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("PD2 Trader")
                 .inner_size(1200.0, 750.0)
-                .decorations(true)
-                .transparent(false)
+                .decorations(false)
+                .transparent(true)
                 .visible(true)
                 .shadow(false)
                 .skip_taskbar(true);
@@ -203,7 +247,7 @@ pub fn run() {
             main_window.center().unwrap();
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![get_diablo_rect])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

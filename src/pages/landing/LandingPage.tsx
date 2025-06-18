@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { isTauri } from "@tauri-apps/api/core";
+import {invoke, isTauri} from "@tauri-apps/api/core";
 import {
   unregister,
 } from "@tauri-apps/plugin-global-shortcut";
@@ -63,7 +63,7 @@ const LandingPage: React.FC = () => {
 
     if (!winRef.current) {
       console.log("[Shortcut] No item window yet → opening");
-      openWindow(encoded);
+      openWindowOverDiablo(encoded);
     } else {
       console.log("[Shortcut] Item window exists → emitting new-search");
       winRef.current.emit("new-search", encoded);
@@ -107,6 +107,60 @@ const LandingPage: React.FC = () => {
         winRef.current = null;
         setIsOpen(false);
       }
+    });
+  };
+
+  const openWindowOverDiablo = async (encoded: string) => {
+    const { x } = await cursorPosition();
+    const rect = await invoke<{
+      x: number; y: number; width: number; height: number;
+    }>("get_diablo_rect");
+
+    console.log('RECT:' + JSON.stringify(rect));
+
+    if (!rect) {
+      return openWindow(encoded);
+    }
+
+    const W = 500;
+    // 2) compute center of that rect
+    const y = rect.y;
+
+    // 3) spawn your Webview there
+    const w = new WebviewWindow("Item", {
+      url: `/item?text=${encoded}`,
+      x: x - W,
+      y,
+      width: W,
+      minHeight: 1080,
+      height: rect.height,
+      shadow: false,
+      decorations: false,
+      transparent: true,
+      alwaysOnTop: true,
+      focus: true,
+    });
+
+    console.log('RECT height' + rect.height + ' y: ' + y);
+
+
+    winRef.current = w;
+    setIsOpen(true);
+    console.log("[Window] Item window created, label = 'Item'");
+
+    w.onCloseRequested(() => {
+      console.log("[Window] Item window closing");
+      winRef.current = null;
+      setIsOpen(false);
+      lastClipboard.current = null;
+    });
+
+    w.onFocusChanged((event) => {
+       if (!event.payload) {
+         winRef.current.close();
+         winRef.current = null;
+         setIsOpen(false);
+       }
     });
   };
 

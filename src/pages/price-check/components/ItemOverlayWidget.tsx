@@ -218,7 +218,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
    *  Render
    *  -----------------*/
   return (
-    <Card className="w-[34rem] max-h-[92vh] shadow-2xl bg-neutral-900/95 border-neutral-700">
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700">
       {/* Header */}
       <div className={'flex flex-col gap-1'}>
         <CardHeader className="flex flex-row items-start gap-4 justify-between">

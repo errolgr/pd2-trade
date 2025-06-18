@@ -2965,6 +2965,8 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-shell",
  "tauri-plugin-updater",
+ "winapi",
+ "windows",
  "windows-sys 0.48.0",
  "winreg 0.10.1",
 ]
