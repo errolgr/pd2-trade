@@ -247,7 +247,7 @@ pub fn run() {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("PD2 Trader")
                 .inner_size(1200.0, 750.0)
-                .decorations(false)
+                .decorations(true)
                 .transparent(true)
                 .visible(true)
                 .shadow(false)
