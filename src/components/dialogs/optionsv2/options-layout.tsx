@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { DialogContent } from '@/components/ui/dialog';
 import SettingGenereal from '@/components/dialogs/optionsv2/appearance/layout';
-import { useOptions } from '@/hooks/useOptions';
 import SettingsAbout from "@/components/dialogs/optionsv2/about/layout";
+import {Card} from "@/components/ui/card";
 
 export const metadata = {
   title: 'Forms',
@@ -30,7 +29,7 @@ export default function SettingsLayout() {
   const [selectedItem, setSelectedItem] = useState<INavItem>(sidebarNavItems[0]);
 
   return (
-    <DialogContent className="overflow-hidden p-0 md:max-h-[825px] md:max-w-[1000px] lg:max-w-[1200px]">
+    <Card className="overflow-hidden p-0 bg-background">
       <div className="hidden space-y-6 p-10 pb-16 md:block">
         <div className="space-y-0.5">
           <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
@@ -55,6 +54,6 @@ export default function SettingsLayout() {
           <div className="flex-1 lg:max-w-2x">{selectedItem.content}</div>
         </div>
       </div>
-    </DialogContent>
+    </Card>
   );
 }

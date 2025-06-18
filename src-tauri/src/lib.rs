@@ -1,9 +1,9 @@
 use rdev::{listen, Event, EventType, Key as RdevKey};
+use serde::Serialize;
 use std::thread;
+use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::{Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder, Window};
 use tauri_plugin_shell;
-use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use serde::Serialize;
 
 use windows_sys::Win32::{
     Foundation::{HWND, RECT},
@@ -22,10 +22,10 @@ fn to_wide(s: &str) -> Vec<u16> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct WindowRect {
-  x:      i32,
-  y:      i32,
-  width:  i32,
-  height: i32,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
 }
 
 #[tauri::command]
@@ -37,18 +37,23 @@ fn get_diablo_rect() -> Option<WindowRect> {
         return None;
     }
 
-    let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+    let mut r = RECT {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
     let ok = unsafe { GetWindowRect(hwnd, &mut r as *mut RECT) };
     if ok == 0 {
-      return None;
+        return None;
     }
 
-  Some(WindowRect {
-    x:      r.left,
-    y:      r.top,
-    width:  r.right  - r.left,
-    height: r.bottom - r.top,
-  })
+    Some(WindowRect {
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+    })
 }
 
 #[cfg(target_os = "windows")]
@@ -84,35 +89,35 @@ fn is_elevated() -> bool {
 
 #[cfg(target_os = "windows")]
 fn restart_as_admin() {
-  use std::{ffi::OsStr, os::windows::ffi::OsStrExt, ptr, process::exit};
-  use windows_sys::Win32::UI::Shell::{ShellExecuteW, SEE_MASK_NOASYNC};
-  use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+    use std::{ffi::OsStr, os::windows::ffi::OsStrExt, process::exit, ptr};
+    use windows_sys::Win32::UI::Shell::{ShellExecuteW, SEE_MASK_NOASYNC};
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
-  let exe = std::env::current_exe().unwrap();
-  let args: Vec<String> = std::env::args().skip(1).collect();
-  let params = args.join(" ");
+    let exe = std::env::current_exe().unwrap();
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let params = args.join(" ");
 
-  let to_wide = |s: &OsStr| {
-    let mut v: Vec<u16> = s.encode_wide().collect();
-    v.push(0);
-    v
-  };
+    let to_wide = |s: &OsStr| {
+        let mut v: Vec<u16> = s.encode_wide().collect();
+        v.push(0);
+        v
+    };
 
-unsafe {
-    ShellExecuteW(
-        0, // HWND = null
-        to_wide(OsStr::new("runas")).as_ptr(),         // lpOperation
-        to_wide(exe.as_os_str()).as_ptr(),            // lpFile
-        if params.is_empty() {
-            std::ptr::null()
-        } else {
-            to_wide(OsStr::new(&params)).as_ptr()
-        },                                             // lpParameters
-        std::ptr::null(),                              // lpDirectory
-        SW_SHOWNORMAL,                                 // nShowCmd
-    );
-}
-  exit(0);
+    unsafe {
+        ShellExecuteW(
+            0,                                     // HWND = null
+            to_wide(OsStr::new("runas")).as_ptr(), // lpOperation
+            to_wide(exe.as_os_str()).as_ptr(),     // lpFile
+            if params.is_empty() {
+                std::ptr::null()
+            } else {
+                to_wide(OsStr::new(&params)).as_ptr()
+            }, // lpParameters
+            std::ptr::null(),                      // lpDirectory
+            SW_SHOWNORMAL,                         // nShowCmd
+        );
+    }
+    exit(0);
 }
 
 fn spawn_global_key_listener<R: Runtime + 'static>(app_handle: tauri::AppHandle<R>) {
@@ -216,7 +221,7 @@ fn key_to_string(key: RdevKey) -> Option<&'static str> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-   #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     if !is_elevated() {
         restart_as_admin();
     }
@@ -230,6 +235,12 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_app_exit::init())
+         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+                     let _ = app.get_webview_window("main")
+                                .expect("no main window")
+                                .set_focus();
+             })
+         )
         .setup(|app| {
             let handle = app.app_handle();
 

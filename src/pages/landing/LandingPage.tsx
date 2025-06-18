@@ -187,7 +187,6 @@ const LandingPage: React.FC = () => {
   }, []);
 
   return <OptionsProvider>
-    <OptionsDialog/>
     <TrayProvider/>
   </OptionsProvider>; // this launcher has no visible UI
 };
