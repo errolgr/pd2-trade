@@ -11,7 +11,10 @@
     "tauri:debug": "tauri --debug",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" && eslint \"src/**/*.{ts,tsx}\" --fix",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix",
-    "debug:build": "tauri build -- --debug"
+    "debug:build": "tauri build -- --debug",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
