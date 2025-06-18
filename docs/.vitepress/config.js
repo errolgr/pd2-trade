@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
 
-const BASE = '/pd2-trader/'
+const BASE = '/pd2-trade/'
 
 export default defineConfig({
   title: 'PD2 Trader',
