@@ -14,8 +14,8 @@ to the developer, downloading from them may be unsafe.
 
 | Download link                                                                                                                                                | Automatic updates | Startup time |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|--------------|
-| <a :href="`${theme.github.releasesUrl}/download/v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64-setup.exe`">Windows 10+ (installer)</a>              | ✔ | Fast |
-| <a :href="`${theme.github.releasesUrl}/download/v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64_en-US.msi`">Windows 10+ (MSI Installer)</a> | ✔ | Slower |
+| <a :href="`${theme.github.releasesUrl}/download/app-v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64-setup.exe`">Windows 10+ (installer)</a>              | ✔ | Fast |
+| <a :href="`${theme.github.releasesUrl}/download/app-v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64_en-US.msi`">Windows 10+ (MSI Installer)</a> | ✔ | Slower |
 
 Latest version is <span class="bg-gray-100 border rounded px-1">{{ theme.appVersion }}</span>
 
