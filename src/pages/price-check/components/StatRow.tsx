@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import {statIdToProperty, StatId} from "@/pages/price-check/utils/stat-mappings";
 import {HoverPopover} from "@/components/custom/hover-popover";
 import {Badge} from "@/components/ui/badge";
+import {skillNameToIdMap} from "@/assets/character-skills";
 
 interface StatRowProps {
   stat: Stat;
@@ -34,7 +35,9 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSocket = stat.stat_id === StatId.Socket;
   const isCorrupted = stat.stat_id === StatId.Corrupted;
   const isEthereal = stat.stat_id === StatId.Ethereal;
-  const isUnknown = statIdToProperty[stat.stat_id] === undefined;
+  const isSkill = "skill" in stat;
+  const isUnknownSkill = isSkill && !skillNameToIdMap[stat.skill.toLowerCase()];
+  const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill) || isUnknownSkill;
 
   return (
     <div className="border-b border-neutral-800 pb-2">
