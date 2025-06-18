@@ -247,15 +247,18 @@ pub fn run() {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("PD2 Trader")
                 .inner_size(1200.0, 750.0)
-                .decorations(true)
+                .decorations(false)
                 .transparent(true)
                 .visible(true)
                 .shadow(false)
+                .always_on_top(true)
                 .skip_taskbar(true);
 
             spawn_global_key_listener(handle.clone());
             let main_window = win_builder.build().unwrap();
             main_window.center().unwrap();
+            main_window.set_ignore_cursor_events(true);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![get_diablo_rect])
