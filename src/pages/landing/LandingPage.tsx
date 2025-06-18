@@ -26,11 +26,11 @@ const LandingPage: React.FC = () => {
 
   useEffect(() => {
     if (isTauri()) {
-     /* checkForUpdates().then((update) => {
+      checkForUpdates().then((update) => {
         if (update?.available) {
           downloadUpdate(update);
         }
-      })*/
+      })
     }
   }, [])
 
