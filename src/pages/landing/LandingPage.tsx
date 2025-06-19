@@ -10,18 +10,26 @@ import {listen} from "@tauri-apps/api/event";
 import {TrayProvider} from "@/hooks/useTray";
 import {OptionsDialog, OptionsProvider} from "@/hooks/useOptions";
 import {useUpdater} from "@/hooks/useUpdater";
-
+import iconPath from '@/assets/img_1.png';
 const SHORTCUT = "Control+G";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const LandingPage: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showTitle, setShowTitle] = useState(true);
   const winRef = useRef<WebviewWindow | null>(null);
   const { read, copy } = useClipboard();
   const {checkForUpdates, downloadUpdate} = useUpdater();
 
   const lastClipboard = useRef<string | null>(null); // <--- Added ref
+
+
+  // Hide the launch title after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTitle(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
 
   useEffect(() => {
@@ -170,6 +178,11 @@ const LandingPage: React.FC = () => {
 
   return <OptionsProvider>
     <TrayProvider/>
+    {showTitle && (
+      <div className="fixed inset-0 flex items-center justify-center z-50">
+        <img src={iconPath} style={{width: 400}}/>
+      </div>
+    )}
   </OptionsProvider>; // this launcher has no visible UI
 };
 
