@@ -46,7 +46,6 @@ const LandingPage: React.FC = () => {
 
     // If the clipboard content is unchanged → close the window
     if (lastClipboard.current === raw) {
-      console.log("[Shortcut] Clipboard is same as last → toggling window off");
       if (winRef.current) {
         winRef.current.close();
         winRef.current = null;
@@ -56,16 +55,12 @@ const LandingPage: React.FC = () => {
     }
 
     lastClipboard.current = raw; // <-- update last clipboard value
-    console.log("[Shortcut] Clipboard raw text:", raw);
 
     const encoded = encodeURIComponent(btoa(raw));
-    console.log("[Shortcut] Base64-encoded payload:", encoded);
 
     if (!winRef.current) {
-      console.log("[Shortcut] No item window yet → opening");
       openWindowOverDiablo(encoded);
     } else {
-      console.log("[Shortcut] Item window exists → emitting new-search");
       winRef.current.emit("new-search", encoded);
     }
   };
@@ -75,7 +70,6 @@ const LandingPage: React.FC = () => {
    * --------------------------------- */
   const openWindow = async (encoded: string) => {
     const monitor = await currentMonitor();
-    console.log("[Window] Active monitor size:", monitor.size);
     const { x, y } = await cursorPosition();
     const w = new WebviewWindow("Item", {
       url: `/item?text=${encoded}`,
@@ -92,10 +86,7 @@ const LandingPage: React.FC = () => {
 
     winRef.current = w;
     setIsOpen(true);
-    console.log("[Window] Item window created, label = 'Item'");
-
     w.onCloseRequested(() => {
-      console.log("[Window] Item window closing");
       winRef.current = null;
       setIsOpen(false);
       lastClipboard.current = null;
@@ -115,8 +106,6 @@ const LandingPage: React.FC = () => {
     const rect = await invoke<{
       x: number; y: number; width: number; height: number;
     }>("get_diablo_rect");
-
-    console.log('RECT:' + JSON.stringify(rect));
 
     if (!rect) {
       return openWindow(encoded);
@@ -141,15 +130,10 @@ const LandingPage: React.FC = () => {
       focus: true,
     });
 
-    console.log('RECT height' + rect.height + ' y: ' + y);
-
 
     winRef.current = w;
     setIsOpen(true);
-    console.log("[Window] Item window created, label = 'Item'");
-
     w.onCloseRequested(() => {
-      console.log("[Window] Item window closing");
       winRef.current = null;
       setIsOpen(false);
       lastClipboard.current = null;
@@ -173,7 +157,6 @@ const LandingPage: React.FC = () => {
       console.warn("[LandingPage] Not in a Tauri environment – shortcut skipped");
       return;
     }
-    console.log("[LandingPage] Running in Tauri, registering shortcut");
 
     listen<string>('key-pressed', (event) => {
       if (event.payload === 'ControlLeft+C') {
@@ -182,7 +165,6 @@ const LandingPage: React.FC = () => {
     })
     return () => {
       unregister(SHORTCUT).catch(() => void 0);
-      console.log("[LandingPage] Shortcut unregistered on cleanup");
     };
   }, []);
 

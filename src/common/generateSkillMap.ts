@@ -13,5 +13,3 @@ const entries = characterSkills.map(skill =>
 const footer = `\n};\n`;
 
 writeFileSync('characterSkillMap.js', header + entries + footer);
-
-console.log('✅ characterSkillMap.ts generated.');

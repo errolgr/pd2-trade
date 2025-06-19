@@ -40,7 +40,6 @@ export function Updater() {
         switch (event.event) {
           case 'Started':
             contentLength = event.data.contentLength;
-            console.log(`Started downloading ${contentLength} bytes`);
             break;
           case 'Progress':
             downloaded += event.data.chunkLength;
@@ -52,17 +51,14 @@ export function Updater() {
             setProgress(newProgress);
             // Update the dialog content with the new progress.
             openDownloadDialog(newProgress);
-            console.log(`Downloaded ${downloaded} of ${contentLength} bytes (${newProgress}%)`);
             break;
           case 'Finished':
             setProgress(100);
-            console.log('Download finished');
             closeDialog();
             break;
         }
       });
 
-      console.log('Update installed, relaunching...');
       await relaunch();
     }
   };

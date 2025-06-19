@@ -24,8 +24,6 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   const openWindow = async () => {
     const monitor = await currentMonitor();
-    console.log("[Window] Active monitor size:", monitor.size);
-
     const width = 800.0;
     const height = 650;
 
@@ -44,10 +42,8 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     winRef.current = w;
     setIsOpen(true);
-    console.log("[Window] Item window created, label = 'Item'");
 
     w.onCloseRequested(() => {
-      console.log("[Window] Item window closing");
       winRef.current = null;
       setIsOpen(false);
     });
@@ -92,27 +88,14 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
           action: (event: TrayIconEvent) => {
             switch (event.type) {
               case 'Click':
-                console.log(
-                  `mouse ${event.button} button pressed, state: ${event.buttonState}`
-                );
                 break;
               case 'DoubleClick':
-                console.log(`mouse ${event.button} button pressed`);
                 break;
               case 'Enter':
-                console.log(
-                  `mouse hovered tray at ${event.rect.position.x}, ${event.rect.position.y}`
-                );
                 break;
               case 'Move':
-                console.log(
-                  `mouse moved on tray at ${event.rect.position.x}, ${event.rect.position.y}`
-                );
                 break;
               case 'Leave':
-                console.log(
-                  `mouse left tray at ${event.rect.position.x}, ${event.rect.position.y}`
-                );
                 break;
             }
           },

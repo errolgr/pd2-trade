@@ -13,7 +13,6 @@ export function useKeySender() {
   return useCallback(async (sequence: string) => {
     try {
       await invoke("press_key", { sequence });
-      console.log("[KeySender] pressed:", sequence);
     } catch (err) {
       console.error("[KeySender] failed:", err);
     }

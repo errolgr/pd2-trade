@@ -35,7 +35,6 @@ export function useUpdater() {
 
   const checkForUpdates = async (): Promise<Update> => {
     const update = await check();
-    console.log('Update check result:', update);
     return update;
   };
 
@@ -56,7 +55,6 @@ export function useUpdater() {
       switch (event.event) {
         case 'Started':
           contentLength = event.data.contentLength;
-          console.log(`Started downloading ${contentLength} bytes`);
           break;
         case 'Progress':
           downloaded += event.data.chunkLength;
@@ -66,20 +64,15 @@ export function useUpdater() {
           );
           setProgress(newProgress);
           openDownloadDialog(newProgress);
-          console.log(
-            `Downloaded ${downloaded} of ${contentLength} bytes (${newProgress}%)`
-          );
           break;
         case 'Finished':
           setProgress(100);
-          console.log('Download finished');
           closeDialog();
           setIsUpdating(false);
           break;
       }
     });
 
-    console.log('Update installed, relaunching...');
     await relaunch();
   };
 
