@@ -19,6 +19,7 @@ import {skillNameToIdMap} from "@/assets/character-skills";
 import {ItemCharmMap, ItemQuality} from "@/common/types/Item";
 import {itemTypes} from "@/common/item-types";
 import {useOptions} from "@/hooks/useOptions";
+import {classSkillNameToIdMap, classSubSkillNameToIdMap} from "@/assets/class-skills";
 
 interface Props {
   item: Item;
@@ -157,6 +158,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         if (skillEntry) {
           propKey = `item_singleskill{${skillEntry.id}}`;
         }
+        const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
+        if (classEntry) {
+          propKey = `item_addclassskills{${classEntry.id}}`;
+        }
+        const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
+        if (subClassEntry) {
+          propKey = `item_addskill_tab{${subClassEntry.id}}`;
+        }
+
       } else if (stat.stat_id !== undefined) {
         propKey = getPropertyKey(stat.stat_id, stat);
       }
@@ -245,7 +255,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
       {/* Body */}
       <CardContent className="space-y-4">
-        <ScrollArea className="h-72 pr-2">
+        <ScrollArea className="pr-2">
           <div className="space-y-2">
             {sortedStats.map((s) => (
               <StatRow

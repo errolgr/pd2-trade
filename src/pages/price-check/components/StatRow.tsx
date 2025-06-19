@@ -7,6 +7,7 @@ import {statIdToProperty, StatId} from "@/pages/price-check/utils/stat-mappings"
 import {HoverPopover} from "@/components/custom/hover-popover";
 import {Badge} from "@/components/ui/badge";
 import {skillNameToIdMap} from "@/assets/character-skills";
+import {classSkillNameToIdMap, classSubSkillNameToIdMap} from "@/assets/class-skills";
 
 interface StatRowProps {
   stat: Stat;
@@ -36,7 +37,10 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isCorrupted = stat.stat_id === StatId.Corrupted;
   const isEthereal = stat.stat_id === StatId.Ethereal;
   const isSkill = "skill" in stat;
-  const isUnknownSkill = isSkill && !skillNameToIdMap[stat.skill.toLowerCase()];
+  const isUnknownSkill = isSkill && (
+    !skillNameToIdMap[stat.skill.toLowerCase()] &&
+    !classSkillNameToIdMap[stat.skill.toLowerCase()] &&
+    !classSubSkillNameToIdMap[stat.skill.toLowerCase()]);
   const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill) || isUnknownSkill;
 
   return (

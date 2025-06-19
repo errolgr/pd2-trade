@@ -140,11 +140,11 @@ const LandingPage: React.FC = () => {
     });
 
     w.onFocusChanged((event) => {
-       if (!event.payload) {
+ /*      if (!event.payload) {
          winRef.current.close();
          winRef.current = null;
          setIsOpen(false);
-       }
+       }*/
     });
   };
 
