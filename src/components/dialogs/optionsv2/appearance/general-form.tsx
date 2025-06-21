@@ -117,12 +117,12 @@ export function GeneralForm() {
                     {...field}
                   >
                     <option key={"ladder"}
-                      value="non-ladder">
-                      Non-Ladder
-                    </option>
-                    <option key={"non-ladder"}
                       value="ladder">
                       Ladder
+                    </option>
+                    <option key={"non-ladder"}
+                      value="non-ladder">
+                      Non-Ladder
                     </option>
                   </select>
                 </FormControl>
