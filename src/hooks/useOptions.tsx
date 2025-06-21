@@ -3,12 +3,17 @@ import { Dialog } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { appConfigDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists} from '@tauri-apps/plugin-fs';
+import merge from 'lodash.merge'
+import {emit, listen} from '@tauri-apps/api/event';
+
 
 interface ISettings {
   ladder: 'ladder' | 'non-ladder';
   mode: 'hardcore' | 'softcore';
+  hotkeyModifier: 'ctrl' | 'alt';
+  hotkeyKey: string;
+  lastSeenVersion?: string;
 }
 
 interface OptionsContextProps {
@@ -22,6 +27,9 @@ interface OptionsContextProps {
 const DEFAULT_SETTINGS: ISettings = {
   mode: 'softcore',
   ladder: 'ladder',
+  hotkeyModifier: 'ctrl',
+  hotkeyKey: 'd',
+  lastSeenVersion: '0.0.0', // fallback version
 };
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -55,6 +63,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       setSettings(updated);
+      emit('settings-updated', updated); // Notify other parts of the app
       toast.success('Settings have been updated...');
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -77,17 +86,36 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
       const parsed = JSON.parse(file);
-      setSettings(parsed);
+
+      // Deep merge parsed into a copy of the defaults
+      const merged = merge({}, DEFAULT_SETTINGS, parsed);
+
+      // Write merged settings back to disk if anything was missing
+      if (JSON.stringify(parsed) !== JSON.stringify(merged)) {
+        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(merged, null, 2), {
+          baseDir: SETTINGS_DIR,
+        });
+      }
+
+      setSettings(merged);
     } catch (error) {
-      console.warn('Error fetching settings' + error);
+      console.warn('Error fetching settings', error);
       setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
     }
   }
-
   useEffect(() => {
     fetchSettings();
+
+    const unlisten = listen<ISettings>('settings-updated', () => {
+      console.log('[OptionsProvider] Settings update detected, reloading...');
+      fetchSettings();
+    });
+
+    return () => {
+      unlisten.then((off) => off());
+    };
   }, []);
 
   return (

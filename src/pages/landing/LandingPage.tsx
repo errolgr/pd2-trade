@@ -3,15 +3,20 @@ import {invoke, isTauri} from "@tauri-apps/api/core";
 import {
   unregister,
 } from "@tauri-apps/plugin-global-shortcut";
-import { currentMonitor, cursorPosition } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useClipboard } from "@/hooks/useClipboard";
 import {listen} from "@tauri-apps/api/event";
 import {TrayProvider} from "@/hooks/useTray";
-import {OptionsDialog, OptionsProvider} from "@/hooks/useOptions";
+import {OptionsProvider, useOptions} from "@/hooks/useOptions";
 import {useUpdater} from "@/hooks/useUpdater";
 import iconPath from '@/assets/img_1.png';
+import {useKeySender} from "@/hooks/useKeySender";
+import {DialogProvider} from "@/hooks/useDialog";
+import {getVersion} from "@tauri-apps/api/app";
+import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow} from "@/lib/window";
+import {changeLog} from "@/assets/changeLog";
 const SHORTCUT = "Control+G";
+
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -21,7 +26,8 @@ const LandingPage: React.FC = () => {
   const winRef = useRef<WebviewWindow | null>(null);
   const { read, copy } = useClipboard();
   const {checkForUpdates, downloadUpdate} = useUpdater();
-
+  const keyPress = useKeySender();
+  const { settings, isLoading } = useOptions();
   const lastClipboard = useRef<string | null>(null); // <--- Added ref
 
 
@@ -46,6 +52,7 @@ const LandingPage: React.FC = () => {
    * Fire when the shortcut is pressed
    * --------------------------------- */
   const fireSearch = async () => {
+    await keyPress('ctrl+c')
     await sleep(200);
 
     const raw = await read();
@@ -73,89 +80,46 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  /* ---------------------------------
-   * Open the centered window once
-   * --------------------------------- */
-  const openWindow = async (encoded: string) => {
-    const monitor = await currentMonitor();
-    const { x, y } = await cursorPosition();
-    const w = new WebviewWindow("Item", {
-      url: `/item?text=${encoded}`,
-      x,
-      y,
-      width: 600  ,
-      height: 600,
-      shadow: false,
-      focus: true,
-      decorations: false,
-      transparent: true,
-      alwaysOnTop: true,
-    });
-
-    winRef.current = w;
-    setIsOpen(true);
-    w.onCloseRequested(() => {
-      winRef.current = null;
-      setIsOpen(false);
-      lastClipboard.current = null;
-    });
-
-    w.onFocusChanged((event) => {
-      if (!event.payload) {
-        winRef.current.close();
-        winRef.current = null;
-        setIsOpen(false);
-      }
-    });
-  };
-
   const openWindowOverDiablo = async (encoded: string) => {
-    const { x } = await cursorPosition();
-    const rect = await invoke<{
-      x: number; y: number; width: number; height: number;
-    }>("get_diablo_rect");
-
-    if (!rect) {
-      return openWindow(encoded);
-    }
-
-    const W = 500;
-    // 2) compute center of that rect
-    const y = rect.y;
-
-    // 3) spawn your Webview there
-    const w = new WebviewWindow("Settings", {
-      url: `/item?text=${encoded}`,
-      x: x - W,
-      y,
-      width: W,
-      minHeight: 1080,
-      height: rect.height,
-      shadow: false,
+    const w = await openOverDiabloWindow('Settings', `/item?text=${encoded}`, {
       decorations: false,
       transparent: true,
       alwaysOnTop: true,
-      focus: true,
+      shadow: false,
     });
 
+    if (!w) return;
 
     winRef.current = w;
     setIsOpen(true);
-    w.onCloseRequested(() => {
+
+    attachWindowLifecycle(w, () => {
       winRef.current = null;
       setIsOpen(false);
       lastClipboard.current = null;
     });
-
-    w.onFocusChanged((event) => {
-     if (!event.payload) {
-         winRef.current.close();
-         winRef.current = null;
-         setIsOpen(false);
-       }
-    });
   };
 
+
+
+  useEffect(() => {
+    if (!isLoading) {
+      getVersion().then((version) => {
+        console.log("[LandingPage] Current version:", version);
+        console.log("[LandingPage] settings.lastSeenVersion", settings);
+        if (version && settings.lastSeenVersion != version && changeLog[version]) {
+          openCenteredWindow('ChangeLog', '/change-log', {
+            decorations: false,
+            transparent: true,
+            focus: true,
+            shadow: false,
+            skipTaskbar: true,
+            }
+          );
+        }
+      });
+    }
+  }, [settings]);
 
   /* ---------------------------------
    * One-time setup
@@ -167,24 +131,36 @@ const LandingPage: React.FC = () => {
     }
 
     listen<string>('key-pressed', (event) => {
-      if (event.payload === 'ControlLeft+C') {
+      if (event.payload === `${settings.hotkeyModifier}+${settings.hotkeyKey}`) {
         fireSearch();
       }
     })
     return () => {
       unregister(SHORTCUT).catch(() => void 0);
     };
-  }, []);
+  }, [settings]);
 
-  return <OptionsProvider>
-    <TrayProvider/>
+  return <>
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
-        <img src={iconPath} style={{width: 400}}/>
+        <img src={iconPath}
+          style={{width: 400}}/>
       </div>
     )}
-  </OptionsProvider>; // this launcher has no visible UI
+  </>
 };
+
+export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <DialogProvider>
+      <OptionsProvider>
+        <TrayProvider>
+          {children}
+        </TrayProvider>
+      </OptionsProvider>
+    </DialogProvider>
+  );
+}
 
 function clipboardContainsValidItem(jsonString: string): boolean {
   try {

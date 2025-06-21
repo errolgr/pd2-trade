@@ -4,9 +4,10 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
 import {DialogProvider} from "@/hooks/useDialog";
-import LandingPage from './pages/landing/LandingPage';
+import LandingPage, {Providers} from './pages/landing/LandingPage';
 import ItemPage from "@/pages/price-check/ItemPage";
 import {SettingsPage} from "@/pages/settings/SettingsPage";
+import ChangelogPage from "@/pages/change-log/ChangeLogPage";
 
 Sentry.init({
   dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
@@ -29,9 +30,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <Routes>
       <Route path="/"
         element={
-        <DialogProvider>
+          <Providers>
           <LandingPage />
-        </DialogProvider>
+          </Providers>
       } />
 
       <Route path="/item"
@@ -40,6 +41,14 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <Route
         path={"/settings"}
         element={<SettingsPage/>}
+      />
+
+      <Route
+        path={"/change-log"}
+        element={<Providers>
+          <ChangelogPage/>
+        </Providers>
+        }
       />
     </Routes>
   </BrowserRouter>,
