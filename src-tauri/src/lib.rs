@@ -215,51 +215,6 @@ fn restart_as_admin() {
     exit(0);
 }
 
-fn spawn_global_key_listener<R: Runtime + 'static>(app_handle: tauri::AppHandle<R>) {
-    use std::sync::{Arc, Mutex};
-
-    let modifiers = Arc::new(Mutex::new(Vec::new()));
-    let app_handle_clone = app_handle.clone();
-    let modifiers_clone = Arc::clone(&modifiers);
-
-    thread::spawn(move || {
-        let listener = move |event: Event| {
-            match event.event_type {
-                EventType::KeyPress(key) => {
-                    // Update modifier state
-                    let mut mods = modifiers_clone.lock().unwrap();
-                    if is_modifier(key) && !mods.contains(&key) {
-                        mods.push(key);
-                        return; // Don't emit on modifier press
-                    }
-
-                    // Compose and emit only when a main key is pressed
-                    if let Some(main_key) = key_to_string(key) {
-                        let combo = mods
-                            .iter()
-                            .filter_map(|k| key_to_string(*k))
-                            .chain(std::iter::once(main_key))
-                            .collect::<Vec<_>>()
-                            .join("+");
-
-                        if let Some(window) = app_handle_clone.get_webview_window("main") {
-                            let _ = window.emit("key-pressed", combo);
-                        }
-                    }
-                }
-                KeyRelease(key) => {
-                    let mut mods = modifiers_clone.lock().unwrap();
-                    mods.retain(|&k| k != key);
-                }
-                _ => {}
-            }
-        };
-
-        if let Err(e) = listen(listener) {
-            eprintln!("Failed to listen to global events: {:?}", e);
-        }
-    });
-}
 
 fn is_modifier(key: RdevKey) -> bool {
     matches!(
@@ -359,7 +314,6 @@ pub fn run() {
                 .always_on_top(true)
                 .skip_taskbar(true);
 
-            spawn_global_key_listener(handle.clone());
             let main_window = win_builder.build().unwrap();
             main_window.center().unwrap();
             main_window.set_ignore_cursor_events(true);

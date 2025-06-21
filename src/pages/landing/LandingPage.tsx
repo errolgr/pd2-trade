@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {invoke, isTauri} from "@tauri-apps/api/core";
 import {
+  register,
   unregister,
 } from "@tauri-apps/plugin-global-shortcut";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useClipboard } from "@/hooks/useClipboard";
-import {listen} from "@tauri-apps/api/event";
 import {TrayProvider} from "@/hooks/useTray";
 import {OptionsProvider, useOptions} from "@/hooks/useOptions";
 import {useUpdater} from "@/hooks/useUpdater";
@@ -15,7 +15,6 @@ import {DialogProvider} from "@/hooks/useDialog";
 import {getVersion} from "@tauri-apps/api/app";
 import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow} from "@/lib/window";
 import {changeLog} from "@/assets/changeLog";
-const SHORTCUT = "Control+G";
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -29,6 +28,7 @@ const LandingPage: React.FC = () => {
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
   const lastClipboard = useRef<string | null>(null); // <--- Added ref
+  const lastRegisteredShortcut = useRef<string | null>(null);
 
 
   // Hide the launch title after 2 seconds
@@ -51,15 +51,12 @@ const LandingPage: React.FC = () => {
   /* ---------------------------------
    * Fire when the shortcut is pressed
    * --------------------------------- */
-  const fireSearch = async () => {
-    await keyPress('ctrl+c')
+  const fireSearch = useCallback(async () => {
+    await keyPress('ctrl+c');
     await sleep(200);
-
     const raw = await read();
-
     if (!clipboardContainsValidItem(raw)) return;
 
-    // If the clipboard content is unchanged → close the window
     if (lastClipboard.current === raw) {
       if (winRef.current) {
         winRef.current.close();
@@ -69,8 +66,7 @@ const LandingPage: React.FC = () => {
       return;
     }
 
-    lastClipboard.current = raw; // <-- update last clipboard value
-
+    lastClipboard.current = raw;
     const encoded = encodeURIComponent(btoa(raw));
 
     if (!winRef.current) {
@@ -78,7 +74,7 @@ const LandingPage: React.FC = () => {
     } else {
       winRef.current.emit("new-search", encoded);
     }
-  };
+  }, []);
 
   const openWindowOverDiablo = async (encoded: string) => {
     const w = await openOverDiabloWindow('Settings', `/item?text=${encoded}`, {
@@ -125,21 +121,41 @@ const LandingPage: React.FC = () => {
    * One-time setup
    * --------------------------------- */
   useEffect(() => {
-    if (!isTauri()) {
-      console.warn("[LandingPage] Not in a Tauri environment – shortcut skipped");
-      return;
-    }
+    if (!isTauri() || isLoading || !settings.hotkeyKey) return;
 
-    listen<string>('key-pressed', (event) => {
-      if (event.payload === `${settings.hotkeyModifier}+${settings.hotkeyKey}`) {
-        fireSearch();
+    const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
+
+    const cleanup = async () => {
+      if (lastRegisteredShortcut.current) {
+        console.log('[LandingPage] Unregistering previous shortcut:', lastRegisteredShortcut.current);
+        try {
+          await unregister(lastRegisteredShortcut.current);
+        } catch {
+          // ignore
+        }
       }
-    })
-    return () => {
-      unregister(SHORTCUT).catch(() => void 0);
-    };
-  }, [settings]);
 
+      console.log('[LandingPage] Registering shortcut:', newShortcut);
+      await register(newShortcut, (e) => {
+        if (e.state === 'Pressed') {
+          fireSearch();
+          console.log('[LandingPage] Shortcut pressed:', newShortcut);
+        }
+      });
+
+      lastRegisteredShortcut.current = newShortcut;
+    };
+
+    cleanup();
+
+    return () => {
+      if (lastRegisteredShortcut.current) {
+        unregister(lastRegisteredShortcut.current).catch(() => void 0);
+        console.log('[LandingPage] Cleanup: unregistered shortcut:', lastRegisteredShortcut.current);
+        lastRegisteredShortcut.current = null;
+      }
+    };
+  }, [isLoading, settings.hotkeyModifier, settings.hotkeyKey]);
   return <>
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
