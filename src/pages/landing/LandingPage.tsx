@@ -52,7 +52,16 @@ const LandingPage: React.FC = () => {
    * Fire when the shortcut is pressed
    * --------------------------------- */
   const fireSearch = useCallback(async () => {
-    await keyPress('ctrl+c');
+    const focused = await invoke<boolean>('is_diablo_focused');
+
+    if (!focused) {
+      console.warn("[LandingPage] Diablo is not focused, skipping search.");
+      return;
+    }
+
+    if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
+      await keyPress('ctrl+c');
+    }
     await sleep(200);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) return;

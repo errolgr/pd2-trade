@@ -202,7 +202,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       searchParams.set("type", `{"$in": ["scha", "mcha", "lcha", "torc"]}`);
       searchParams.set("base", ItemCharmMap[item.type]);
     } else {
-      if (item.quality === ItemQuality.Rare) {
+      if (
+        item.quality === ItemQuality.Rare ||
+        item.quality === ItemQuality.Magic ||
+        item.quality === ItemQuality.Crafted) {
         const result = getTypeFromBaseType(item.type);
         if (result && result?.type && result?.type) {
           searchParams.set("type", result.type);
@@ -216,7 +219,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
 
     // Example flags — tweak as needed or make dynamic later
-    searchParams.set("is_hardcore", `${(settings.mode === 'softcore')}`);
+    searchParams.set("is_hardcore", `${(settings.mode === 'hardcore')}`);
     searchParams.set("is_ladder", `${(settings.ladder === 'ladder')}`);
 
     return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;

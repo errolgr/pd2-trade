@@ -1,12 +1,11 @@
-use rdev::{listen, Event, EventType, Key as RdevKey};
+use rdev::{EventType, Key as RdevKey};
 use serde::Serialize;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use tauri::{Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_shell;
-use std::{thread};
-use EventType::KeyRelease;
 use windows_sys::Win32::{Foundation::{HWND, RECT}, UI::WindowsAndMessaging::{FindWindowW, GetWindowRect}};
 use enigo::{Enigo, Key, Settings, Direction, Keyboard};
+use windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
 
 #[tauri::command]
 
@@ -124,6 +123,17 @@ fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
     Ok((mods, main))
 }
 
+#[tauri::command]
+fn is_diablo_focused() -> bool {
+    let title_w = to_wide("Diablo II");
+    let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
+    if hwnd == 0 {
+        return false;
+    }
+
+    let foreground = unsafe { GetForegroundWindow() };
+    hwnd == foreground
+}
 
 #[tauri::command]
 fn press_key(sequence: String) -> Result<(), String> {
@@ -320,7 +330,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_diablo_rect, press_key])
+        .invoke_handler(tauri::generate_handler![get_diablo_rect, press_key, is_diablo_focused])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
