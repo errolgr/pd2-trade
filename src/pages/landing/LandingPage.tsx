@@ -124,7 +124,7 @@ const LandingPage: React.FC = () => {
     const y = rect.y;
 
     // 3) spawn your Webview there
-    const w = new WebviewWindow("Item", {
+    const w = new WebviewWindow("Settings", {
       url: `/item?text=${encoded}`,
       x: x - W,
       y,
@@ -148,7 +148,7 @@ const LandingPage: React.FC = () => {
     });
 
     w.onFocusChanged((event) => {
-      if (!event.payload) {
+     if (!event.payload) {
          winRef.current.close();
          winRef.current = null;
          setIsOpen(false);

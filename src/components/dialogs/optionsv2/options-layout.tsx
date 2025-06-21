@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import SettingGenereal from '@/components/dialogs/optionsv2/appearance/layout';
 import SettingsAbout from "@/components/dialogs/optionsv2/about/layout";
 import {Card} from "@/components/ui/card";
+import {X} from "lucide-react";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export const metadata = {
   title: 'Forms',
@@ -31,10 +33,21 @@ export default function SettingsLayout() {
   return (
     <Card className="overflow-hidden p-0 bg-background">
       <div className="hidden space-y-6 p-10 pb-16 md:block">
-        <div className="space-y-0.5">
+
+        <div className={'flex flex-row justify-between'}>
+          <div className="space-y-0.5">
           <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">Manage your settings and set preferences</p>
         </div>
+
+        <Button variant="ghost"
+          size="icon"
+          onClick={() => getCurrentWebviewWindow().close()}
+          className="self-start">
+          <X className="h-4 w-4" />
+        </Button>
+        </div>
+
         <Separator className="my-6" />
         <div className="flex flex-col space-y-8 lg:flex-row lg:gap-x-12 lg:gap-y-0">
           <aside className="-mx-1 lg:w-1/5">

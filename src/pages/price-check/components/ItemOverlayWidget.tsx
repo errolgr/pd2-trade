@@ -20,6 +20,7 @@ import {ItemCharmMap, ItemQuality} from "@/common/types/Item";
 import {itemTypes} from "@/common/item-types";
 import {useOptions} from "@/hooks/useOptions";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap} from "@/assets/class-skills";
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 interface Props {
   item: Item;
@@ -274,7 +275,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         <Button
           className="w-full mt-2"
           onClick={() => {
-            if (tradeUrl) window.open(tradeUrl, '_blank');
+            if (tradeUrl) openUrl(tradeUrl);
           }}
         >
           Search ({selected.size})
