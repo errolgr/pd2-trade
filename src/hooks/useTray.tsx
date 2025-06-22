@@ -6,6 +6,7 @@ import { exit } from '@tauri-apps/plugin-process';
 import {useOptions} from "@/hooks/useOptions";
 import {currentMonitor, cursorPosition} from "@tauri-apps/api/window";
 import {WebviewWindow} from "@tauri-apps/api/webviewWindow";
+import {attachWindowLifecycle, openCenteredWindow} from "@/lib/window";
 
 type TrayContextValue = {
   tray: TrayIcon | null;
@@ -19,42 +20,18 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const [tray, setTray] = useState<TrayIcon | null>(null);
   const { setIsOpen } = useOptions();
   const trayRef = useRef<TrayIcon | null>(null);
-  const winRef = useRef<WebviewWindow | null>(null);
-
 
   const openWindow = async () => {
-    const monitor = await currentMonitor();
-    const width = 800.0;
-    const height = 650;
-
-    const w = new WebviewWindow("Item", {
-      url: `/settings`,
-      x: monitor.position.x + (monitor.size.width - width) / 2,
-      y: monitor.position.y + (monitor.size.height - height) / 2,
-      width,
-      height,
-      shadow: false,
-      focus: true,
+    const win = await openCenteredWindow("Settings", "/settings", {
       decorations: false,
       transparent: true,
       alwaysOnTop: true,
-    });
+      focus: true,
+      shadow: false,
+      width: 1025,
+      height: 650,
+    })
 
-    winRef.current = w;
-    setIsOpen(true);
-
-    w.onCloseRequested(() => {
-      winRef.current = null;
-      setIsOpen(false);
-    });
-
-    w.onFocusChanged((event) => {
-      if (!event.payload) {
-        winRef.current.close();
-        winRef.current = null;
-        setIsOpen(false);
-      }
-    });
   };
 
 

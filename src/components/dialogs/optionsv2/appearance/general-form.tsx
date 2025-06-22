@@ -9,6 +9,12 @@ import { cn } from '@/lib/utils';
 import { useOptions } from '@/hooks/useOptions';
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {Input} from "@/components/ui/input";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -59,21 +65,15 @@ export function GeneralForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Price check</FormLabel>
                 <FormControl>
-                  <ToggleGroup
-                    type="single"
-                    value={field.value}
-                    onValueChange={(val) => val && field.onChange(val)}
-                    className="flex gap-2"
-                  >
-                    <ToggleGroupItem value="ctrl"
-                      className="px-4">
-                      Ctrl
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="alt"
-                      className="px-4">
-                      Alt
-                    </ToggleGroupItem>
-                  </ToggleGroup>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
+                    <TabsList>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -165,7 +165,7 @@ export function GeneralForm() {
         />
 
         <Button type="submit"
-          className={'self-start cursor-pointer'}>
+          className={'self-start cursor-pointer mt-2'}>
           Update preferences
         </Button>
       </form>

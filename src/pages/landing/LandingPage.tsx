@@ -62,7 +62,7 @@ const LandingPage: React.FC = () => {
     if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
       await keyPress('ctrl+c');
     }
-    await sleep(200);
+    await sleep(100);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) return;
 
@@ -86,7 +86,7 @@ const LandingPage: React.FC = () => {
   }, []);
 
   const openWindowOverDiablo = async (encoded: string) => {
-    const w = await openOverDiabloWindow('Settings', `/item?text=${encoded}`, {
+    const w = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
       decorations: false,
       transparent: true,
       alwaysOnTop: true,

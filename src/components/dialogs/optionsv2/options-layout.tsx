@@ -32,7 +32,7 @@ export default function SettingsLayout() {
 
   return (
     <Card className="overflow-hidden p-0 bg-background">
-      <div className="hidden space-y-6 p-10 pb-16 md:block">
+      <div className="hidden space-y-6 p-10 md:block">
 
         <div className={'flex flex-row justify-between'}>
           <div className="space-y-0.5">
