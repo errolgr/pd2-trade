@@ -1,4 +1,10 @@
 export const changeLog = {
+  "0.1.6": [
+    "🆕 Added rune pricing information from pd2.tools API",
+    "📊 Shows current rune prices with listing counts and calculated values",
+    "🆕 Added rune breakdown calculator - click any rune to see combinations",
+    "🆕 Added top bar with rune information popover in item overlay"
+  ],
   "0.1.5": [
     "Hardcore was enabled by default in the settings, changed to softcore.",
     "Fixed display of non-ladder mode in settings.",
