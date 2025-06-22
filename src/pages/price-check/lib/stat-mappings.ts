@@ -1,4 +1,4 @@
-import {Stat} from "@/pages/price-check/utils/interfaces";
+import {Stat} from "@/pages/price-check/lib/interfaces";
 
 export enum StatId {
   Corrupted = 360,

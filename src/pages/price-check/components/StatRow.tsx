@@ -1,9 +1,9 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Stat } from "@/pages/price-check/utils/interfaces";
+import { Stat } from "@/pages/price-check/lib/interfaces";
 import { Input } from "@/components/ui/input";
-import {statIdToProperty, StatId} from "@/pages/price-check/utils/stat-mappings";
+import {statIdToProperty, StatId} from "@/pages/price-check/lib/stat-mappings";
 import {HoverPopover} from "@/components/custom/hover-popover";
 import {Badge} from "@/components/ui/badge";
 import {skillNameToIdMap} from "@/assets/character-skills";
