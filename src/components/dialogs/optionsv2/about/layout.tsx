@@ -1,7 +1,6 @@
 import { Separator } from '@/components/ui/separator';
 import React from 'react';
-import { GeneralForm } from '@/components/dialogs/optionsv2/appearance/general-form';
-import {AboutForm} from "@/components/dialogs/optionsv2/about/about-form";
+import { AboutForm } from './about-form';
 
 export default function SettingsAbout() {
   return (

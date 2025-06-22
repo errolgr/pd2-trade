@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { Dialog } from '@/components/ui/dialog';
-import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists} from '@tauri-apps/plugin-fs';
 import merge from 'lodash.merge'
 import {emit, listen} from '@tauri-apps/api/event';
+import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 
 
 interface ISettings {

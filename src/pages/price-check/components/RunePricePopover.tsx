@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RuneValue, RuneCombination } from "../lib/types";
 
@@ -20,6 +20,19 @@ export function RunePricePopover({
   selectedRuneCombinations,
   onRuneBreakdownSelect
 }: RunePricePopoverProps) {
+  const [showMore, setShowMore] = useState(false);
+
+  // Separate high and low runes
+  const highRunes = calculatedRuneValues.filter(rune => 
+    !["Gul Rune", "Ist Rune", "Mal Rune", "Um Rune", "Pul Rune", "Lem Rune"].includes(rune.name)
+  );
+  const lowRunes = calculatedRuneValues.filter(rune => 
+    ["Gul Rune", "Ist Rune", "Mal Rune", "Um Rune", "Pul Rune", "Lem Rune"].includes(rune.name)
+  );
+
+  // Determine which runes to display
+  const displayedRunes = showMore ? calculatedRuneValues : highRunes;
+
   return (
     <Popover>
       <PopoverTrigger>
@@ -34,7 +47,7 @@ export function RunePricePopover({
             <div className="text-sm text-gray-500">Loading rune data...</div>
           ) : (
             <div className="space-y-1">
-              {calculatedRuneValues.map((rune) => (
+              {displayedRunes.map((rune) => (
                 <div key={rune.name} className="flex justify-between items-center text-sm">
                   <button
                     onClick={() => onRuneBreakdownSelect(selectedRuneBreakdown === rune.name ? null : rune.name)}
@@ -48,17 +61,37 @@ export function RunePricePopover({
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "font-medium",
-                      rune.isCalculated ? "text-yellow-500" : "text-green-500"
+                      rune.isFixed ? "text-gray-400" : rune.isCalculated ? "text-yellow-500" : "text-green-500"
                     )}>
                       {rune.price} HR
-                      {rune.isCalculated && <span className="text-xs ml-1">*</span>}
+                      {(rune.isCalculated || rune.isFixed) && <span className="text-xs ml-1">*</span>}
                     </span>
                     <span className="text-gray-500 text-xs">
-                      ({rune.numListings} listings)
+                      ({rune.isFixed ? "fixed" : `${rune.numListings} listings`})
                     </span>
                   </div>
                 </div>
               ))}
+              
+              {/* Show More/Less Button */}
+              {lowRunes.length > 0 && (
+                <button
+                  onClick={() => setShowMore(!showMore)}
+                  className="w-full text-xs text-gray-400 hover:text-gray-300 flex items-center justify-center gap-1 py-1 mt-2"
+                >
+                  {showMore ? (
+                    <>
+                      <ChevronUp className="h-3 w-3" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3" />
+                      Show More ({lowRunes.length} lower runes)
+                    </>
+                  )}
+                </button>
+              )}
               
               {/* Breakdown combinations */}
               {selectedRuneBreakdown && selectedRuneCombinations.length > 0 && (
@@ -67,30 +100,41 @@ export function RunePricePopover({
                     {selectedRuneBreakdown} Breakdown:
                   </h5>
                   <div className="space-y-2">
-                    {selectedRuneCombinations.map((combo, index) => (
-                      <div key={index} className="text-xs bg-gray-800 p-2 rounded">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-gray-300">
-                            {combo.runes.map(r => `${r.count}x ${r.name}`).join(" + ")}
-                          </span>
-                          <span className="text-green-400">
-                            = {combo.totalValue.toFixed(1)} HR
-                          </span>
-                        </div>
-                        {combo.difference > 0.1 && (
-                          <div className="text-gray-500">
-                            Diff: {combo.difference.toFixed(1)} HR
+                    {selectedRuneCombinations.map((combo, index) => {
+                      const targetValue = calculatedRuneValues.find(r => r.name === selectedRuneBreakdown)?.price || 0;
+                      return (
+                        <div key={index} className="text-xs bg-gray-800 p-2 rounded">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-300">
+                              {combo.runes.map(r => `${r.count}x ${r.name.replace(' Rune', '')}`).join(" + ")}
+                            </span>
+                            <span className={cn(
+                              "text-green-400",
+                              combo.difference > targetValue * 0.2 && "text-yellow-400",
+                              combo.difference > targetValue * 0.4 && "text-gray-400"
+                            )}>
+                              = {combo.totalValue.toFixed(2)} HR
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          {combo.difference > 0.1 && (
+                            <div className={cn(
+                              "text-gray-500",
+                              combo.difference > targetValue * 0.2 && "text-yellow-500",
+                              combo.difference > targetValue * 0.4 && "text-gray-600"
+                            )}>
+                              Diff: {combo.difference.toFixed(2)} HR
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
               
-              {calculatedRuneValues.some(r => r.isCalculated) && (
+              {(calculatedRuneValues.some(r => r.isCalculated) || calculatedRuneValues.some(r => r.isFixed)) && (
                 <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                  * Calculated as 0.5x the value of the rune above (when &lt;10 listings)
+                  * Calculated as 0.5x the value of the rune above (when &lt;10 listings) or fixed pricing for lower runes
                 </div>
               )}
               

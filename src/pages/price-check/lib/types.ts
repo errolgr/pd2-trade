@@ -60,6 +60,7 @@ export interface RuneValue {
   numListings: number;
   isCalculated: boolean;
   originalPrice?: number;
+  isFixed?: boolean;
 }
 
 export interface RuneCombination {
