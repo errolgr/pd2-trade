@@ -9,29 +9,6 @@ import { MarketListingResponse, MarketListingResult } from '@/common/types/pd2-w
 import { FindMArketListingResponse, FindMatchingItemsResult, ListSpecificItemResult } from '@/common/types/Events';
 import { Pd2EventType } from '@/common/types/pd2-website/Events';
 
-function mapPriceCheckItemToMarketListingQuery(item: PriceCheckItem): MarketListingQuery {
-  const now = new Date();
-  const oneWeekAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  return {
-    $resolve: { user: { in_game_account: true } },
-    type: 'item',
-    $limit: 1,
-    $skip: 0,
-    accepted_offer_id: null,
-    updated_at: { $gte: oneWeekAgo.toISOString() },
-    $sort: { bumped_at: -1 },
-    is_hardcore: false, // You may want to pass this in or infer from context
-    is_ladder: true,   // You may want to pass this in or infer from context
-    'item.quality.name': item.quality,
-    'item.name': {
-      $regex: item.name ? `${item.name}` : '',
-      $options: 'i',
-    },
-    'item.is_ethereal': !!item.isEthereal,
-    'item.corrupted': false, // You may want to pass this in or infer from context
-    'item.is_identified': true, // You may want to pass this in or infer from context
-  };
-}
 
 export const usePD2WebsiteClient = () => {
   // findMatchingItems via Tauri event
