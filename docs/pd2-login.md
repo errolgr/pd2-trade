@@ -20,8 +20,8 @@ This document details how the PD2 Trader app obtains session tokens from the Pro
   - Only the session token (JWT) is extracted after successful login, and only from the webview's localStorage.
 
 #### Code Reference
-- `src-tauri/src/modules/webview.rs`: Webview creation and JS injection.
-- `src/hooks/pd2website/usePd2EventListeners.ts`: Event handling for token acquisition.
+- [`src-tauri/src/modules/webview.rs`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src-tauri/src/modules/webview.rs): Webview creation and JS injection.
+- [`src/hooks/pd2website/usePd2EventListeners.ts`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/pd2website/usePd2EventListeners.ts): Event handling for token acquisition.
 
 ---
 
@@ -33,11 +33,9 @@ This document details how the PD2 Trader app obtains session tokens from the Pro
 - **No Token Sharing:**  
   - The token is only used for authenticating websocket connections to the official PD2 API.
   - The app does not expose the token to plugins, extensions, or external services.
-- **User Control:**  
-  - Users can clear or refresh their session at any time by logging out and back in.
-
+  
 #### Code Reference
-- `src/hooks/useOptions.tsx`: Settings management and token storage.
+- [`src/hooks/useOptions.tsx`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/useOptions.tsx): Settings management and token storage.
 
 ---
 
@@ -56,52 +54,11 @@ This document details how the PD2 Trader app obtains session tokens from the Pro
     - The app can fetch the user's stash with `["get","game/stash", account, {...}]`.
   - **Stash Caching (Load Reduction):**  
     - To reduce load on the PD2 API, game stashes are cached locally in memory for a short period (5 minutes). Repeated requests for the stash within this window are served from the cache rather than making additional websocket requests. This helps minimize unnecessary traffic to the PD2 backend.
-    - See: `src/hooks/pd2website/useStashCache.ts` for implementation details.
+    - See: [`src/hooks/pd2website/useStashCache.ts`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/pd2website/useStashCache.ts) for implementation details.
   - **Event-Driven:**  
     - All requests and responses are handled via event listeners, ensuring that only authenticated users can perform actions.
 
 #### Code Reference
-- `src/hooks/pd2website/usePd2Socket.ts`: Websocket connection and authentication.
-- `src/hooks/pd2website/useMarketActions.ts`: Market actions.
-- `src/hooks/pd2website/useStashCache.ts`: Stash fetching and caching.
-
----
-
-## 4. Security & Privacy Considerations
-
-- **No Credential Storage:**  
-  - The app never stores or transmits user credentials (username/password).
-- **Token Scope:**  
-  - The session token is only used for websocket authentication and is never sent to third-party services.
-- **Webview Isolation:**  
-  - The login webview is isolated from the main app context and is only used for the login flow.
-- **Permissions:**  
-  - The app requests only the minimum permissions required for webview and websocket functionality (see `src-tauri/capabilities/default.json`).
-
----
-
-## 5. Integration Notes for PD2 Website Maintainers
-
-- **Token Key:**  
-  - The app expects the JWT to be available in `localStorage` under the key `pd2-token` after login.
-  - If the website changes its storage strategy, please notify the app maintainers to update the extraction logic.
-- **WebSocket API:**  
-  - The app uses only documented, authenticated websocket endpoints.
-  - All actions are performed as the logged-in user, and the app does not attempt to escalate privileges or bypass security checks.
-- **Event-Driven Architecture:**  
-  - The app's frontend and local Tauri process communicate via Tauri events, ensuring a clear separation of concerns and easy debugging.
-
----
-
-## 6. Troubleshooting
-
-- **Login Issues:**  
-  - If the app cannot find the session token, ensure the website is storing it in `localStorage.pd2-token`.
-- **WebSocket Errors:**  
-  - Ensure the token is valid and not expired; the app will prompt the user to re-login if authentication fails.
-- **Permission Errors:**  
-  - Check that the app has the required webview and websocket permissions in its Tauri config.
-
----
-
-For further questions or to coordinate API changes, please contact the PD2 Trader app maintainers.
+- [`src/hooks/pd2website/usePd2Socket.ts`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/pd2website/usePd2Socket.ts): Websocket connection and authentication.
+- [`src/hooks/pd2website/useMarketActions.ts`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/pd2website/useMarketActions.ts): Market actions.
+- [`src/hooks/pd2website/useStashCache.ts`](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src/hooks/pd2website/useStashCache.ts): Stash fetching and caching.
