@@ -27,3 +27,4 @@ app.db
 src-tauri/binaries/app/pantheon_server-x86_64-pc-windows-msvc.exe
 docs/.vitepress/cache
 docs/.vitepress/dist
+2

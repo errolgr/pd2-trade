@@ -7,6 +7,7 @@ import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListings
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 import { MarketListingResponse, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { FindMArketListingResponse, FindMatchingItemsResult, ListSpecificItemResult } from '@/common/types/Events';
+import { Pd2EventType } from '@/common/types/pd2-website/Events';
 
 function mapPriceCheckItemToMarketListingQuery(item: PriceCheckItem): MarketListingQuery {
   const now = new Date();
@@ -37,7 +38,7 @@ export const usePD2WebsiteClient = () => {
   const findMatchingItems = (item: PriceCheckItem): Promise<GameStashItem[]> => {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<FindMatchingItemsResult>('pd2-find-matching-items-result', (event) => {
+      const unlistenPromise = listen<FindMatchingItemsResult>(Pd2EventType.FIND_MATCHING_ITEMS_RESULT, (event) => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
@@ -45,7 +46,7 @@ export const usePD2WebsiteClient = () => {
           else resolve(payload.result);
         }
       });
-      emit('pd2-find-matching-items', { item, requestId });
+      emit(Pd2EventType.FIND_MATCHING_ITEMS, { item, requestId });
     });
   };
 
@@ -57,7 +58,7 @@ export const usePD2WebsiteClient = () => {
   ): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<ListSpecificItemResult>('pd2-list-specific-item-result', (event) => {
+      const unlistenPromise = listen<ListSpecificItemResult>(Pd2EventType.LIST_SPECIFIC_ITEM_RESULT, (event) => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
@@ -65,7 +66,7 @@ export const usePD2WebsiteClient = () => {
           else resolve(!!payload.success);
         }
       });
-      emit('pd2-list-specific-item', { stashItem, price, requestId, note, type });
+      emit(Pd2EventType.LIST_SPECIFIC_ITEM, { stashItem, price, requestId, note, type });
     });
   };
 
@@ -74,7 +75,7 @@ export const usePD2WebsiteClient = () => {
     console.debug('[usePD2WebsiteClient] getMarketListings: emitting pd2-get-market-listings', { query });
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<FindMArketListingResponse>('pd2-get-market-listings-result', (event) => {
+      const unlistenPromise = listen<FindMArketListingResponse>(Pd2EventType.GET_MARKET_LISTINGS_RESULT, (event) => {
         const payload = event.payload;
         console.debug('[usePD2WebsiteClient] getMarketListings: received pd2-get-market-listings-result', { payload, requestId });
         if (payload && payload.requestId === requestId) {
@@ -89,7 +90,7 @@ export const usePD2WebsiteClient = () => {
           }
         }
       });
-      emit('pd2-get-market-listings', { query, requestId });
+      emit(Pd2EventType.GET_MARKET_LISTINGS, { query, requestId });
       console.debug('[usePD2WebsiteClient] getMarketListings: emitted pd2-get-market-listings', { query, requestId });
     });
   };
@@ -98,7 +99,7 @@ export const usePD2WebsiteClient = () => {
   const getAuthData = (): Promise<AuthData | null> => {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<{ authData: AuthData | null; error?: string; requestId: string }>('pd2-get-auth-data-result', (event) => {
+      const unlistenPromise = listen<{ authData: AuthData | null; error?: string; requestId: string }>(Pd2EventType.GET_AUTH_DATA_RESULT, (event) => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
@@ -106,7 +107,7 @@ export const usePD2WebsiteClient = () => {
           else resolve(payload.authData);
         }
       });
-      emit('pd2-get-auth-data', { requestId });
+      emit(Pd2EventType.GET_AUTH_DATA, { requestId });
     });
   };
 
