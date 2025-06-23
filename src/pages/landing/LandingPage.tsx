@@ -13,7 +13,7 @@ import iconPath from '@/assets/img_1.png';
 import {useKeySender} from "@/hooks/useKeySender";
 import {DialogProvider} from "@/hooks/useDialog";
 import {getVersion} from "@tauri-apps/api/app";
-import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow} from "@/lib/window";
+import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow, openWindowAtCursor} from "@/lib/window";
 import {changeLog} from "@/assets/changeLog";
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 
@@ -128,7 +128,7 @@ const LandingPage: React.FC = () => {
     console.log('[LandingPage] Encoded item for URL parameter');
     
     console.log('[LandingPage] Opening centered window with dimensions 600x485');
-    await openCenteredWindow('QuickList', `/quick-list?item=${encodedItem}`, {
+    await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
       decorations: false,
       transparent: true,
       focus: true,

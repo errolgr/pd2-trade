@@ -6,6 +6,7 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 import { MarketListingResponse, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { FindMArketListingResponse, FindMatchingItemsResult, ListSpecificItemResult } from '@/common/types/Events';
 
 function mapPriceCheckItemToMarketListingQuery(item: PriceCheckItem): MarketListingQuery {
   const now = new Date();
@@ -36,7 +37,7 @@ export const usePD2WebsiteClient = () => {
   const findMatchingItems = (item: PriceCheckItem): Promise<GameStashItem[]> => {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<{ result?: GameStashItem[]; error?: string; requestId: string }>('pd2-find-matching-items-result', (event) => {
+      const unlistenPromise = listen<FindMatchingItemsResult>('pd2-find-matching-items-result', (event) => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
@@ -49,10 +50,14 @@ export const usePD2WebsiteClient = () => {
   };
 
   // listSpecificItem via Tauri event
-  const listSpecificItem = (stashItem: GameStashItem, price: number): Promise<boolean> => {
+  const listSpecificItem = (
+    stashItem: GameStashItem,
+     price: number,
+    note: string, type: 'note' | 'negotiable' | 'exact'
+  ): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<{ success?: boolean; error?: string; requestId: string }>('pd2-list-specific-item-result', (event) => {
+      const unlistenPromise = listen<ListSpecificItemResult>('pd2-list-specific-item-result', (event) => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
@@ -60,16 +65,16 @@ export const usePD2WebsiteClient = () => {
           else resolve(!!payload.success);
         }
       });
-      emit('pd2-list-specific-item', { stashItem, price, requestId });
+      emit('pd2-list-specific-item', { stashItem, price, requestId, note, type });
     });
   };
 
   // getMarketListings via Tauri event
-  const getMarketListings = (query: string): Promise<MarketListingResult> => {
+  const getMarketListings = (query: MarketListingQuery): Promise<MarketListingResult> => {
     console.debug('[usePD2WebsiteClient] getMarketListings: emitting pd2-get-market-listings', { query });
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
-      const unlistenPromise = listen<{ result?: any; error?: string; requestId: string }>('pd2-get-market-listings-result', (event) => {
+      const unlistenPromise = listen<FindMArketListingResponse>('pd2-get-market-listings-result', (event) => {
         const payload = event.payload;
         console.debug('[usePD2WebsiteClient] getMarketListings: received pd2-get-market-listings-result', { payload, requestId });
         if (payload && payload.requestId === requestId) {

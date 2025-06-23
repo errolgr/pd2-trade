@@ -8,7 +8,7 @@ import {emit, listen} from '@tauri-apps/api/event';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 
 
-interface ISettings {
+export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
   mode: 'hardcore' | 'softcore';
   hotkeyModifier: 'ctrl' | 'alt';

@@ -32,7 +32,7 @@ const priceTypeOptions = [
 const shortcutFormSchema = z.object({
   type: z.enum(['note', 'negotiable', 'exact']),
   note: z.string().optional(),
-  price: z.coerce.number().min(1, 'Enter a price').optional(),
+  price: z.coerce.number().min(0, 'Enter a price').optional(),
   currency: z.string().optional(),
 }).refine(
   (data) => {
@@ -112,8 +112,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
 
     try {
-      const price = values.type !== 'note' ? Number(values.price) : 0;
-      await listSpecificItem(selectedItem, price);
+      await listSpecificItem(selectedItem, values.price, values.note, values?.type);
       form.reset({ type: 'note', note: '', price: undefined, currency: 'HR' });
       getCurrentWebviewWindow().close();
     } catch (err) {
@@ -360,7 +359,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 <FormItem className="flex-1 p-0 min-w-0 w-30">
                   <FormLabel className="sr-only">HR</FormLabel>
                   <FormControl>
-                    <Input type="number" min={1} placeholder="HR" {...field} />
+                    <Input type="number" min={0} step={0.01} placeholder="HR" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -5,6 +5,7 @@ import { classSkillNameToIdMap, classSubSkillNameToIdMap } from "@/assets/class-
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
 import { RANGE_MARGIN } from "./types";
+import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
 
 export function buildTradeUrl(
   item: any,
@@ -102,27 +103,20 @@ export function buildMarketListingQuery(
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
   statMapper?: (statId: number, stat: Stat) => string | undefined
-): string {
+): MarketListingQuery {
   const now = new Date();
-  const oneWeekAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  const query: any = {
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
     $limit: 10,
     $skip: 0,
     accepted_offer_id: null,
-    updated_at: { $gte: oneWeekAgo.toISOString() },
+    updated_at: { $gte: threeDaysAgo.toISOString() },
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',
     'item.quality.name': item.quality,
-    'item.name': {
-      $regex: item.name ? `${item.name}` : '',
-      $options: 'i',
-    },
-    'item.is_ethereal': !!item.isEthereal,
-    'item.corrupted': false,
-    'item.is_identified': true,
   };
 
   const sortedStats = getSortedStats(item);
@@ -143,7 +137,7 @@ export function buildMarketListingQuery(
       query['item.corrupted'] = true;
       return;
     }
-    if (stat.stat_id === StatId.Ethereal) {
+    if (stat.stat_id === StatId.Ethereal || item.isEthereal) {
       query['item.is_ethereal'] = true;
       return;
     }
@@ -203,11 +197,37 @@ export function buildMarketListingQuery(
     }
   });
 
+  if (item.type === "Jewel") {
+    query['item.base.type_code'] = "jewl";
+    query['item.base_code'] = "jew";
+  } else if (item.type.includes("Charm")) {
+    query['item.base.type_code'] = {"$in": ["scha", "mcha", "lcha", "torc"]}
+    query['item.base_code'] = ItemCharmMap[item.type]
+  } else {
+    if (
+      item.quality === ItemQuality.Rare ||
+      item.quality === ItemQuality.Magic ||
+      item.quality === ItemQuality.Crafted) {
+      const result = getTypeFromBaseType(item.type);
+      if (result && result?.type && result?.type) {
+        query['item.base.type_code'] = result.type;
+        query['item.base_code'] = result.base;
+      } else {
+        console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+      }
+    } else {
+      query['item.name'] = {
+        $regex: item.name ? `${item.name}` : '',
+        $options: 'i',
+      }
+    }
+  } 
+
   if (modifiers.length > 0) {
     query['item.modifiers'] = { $all: modifiers };
   }
 
-  return query;
+  return query as MarketListingQuery;
 }
 
 function getPropertyKey(id: number, stat: Stat, statMapper?: (statId: number, stat: Stat) => string | undefined): string {

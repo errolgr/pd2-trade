@@ -51,7 +51,7 @@ export const statIdToProperty: Record<number,string> = {
   19: "tohit",
   20: "toblock",
   21: "mindamage",
-  22: "maxdamage",
+  // 22: "maxdamage", TODO this is currently bugged out on the trade site
   23: "secondary_mindamage",
   24: "secondary_maxdamage",
   25: "damagepercent",

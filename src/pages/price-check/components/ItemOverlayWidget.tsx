@@ -16,6 +16,7 @@ import { RunePricePopover } from "./RunePricePopover";
 import { getStatKey } from "../lib/utils";
 import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import moment from 'moment';
+import { HoverPopover } from '@/components/custom/hover-popover';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -162,7 +163,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 )}
                 {marketListingsResult.data.map((listing: any, idx: number) => (
                   <tr key={listing._id || idx} className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
-                    <td className="px-2 py-1">{listing.hr_price ? `${listing.hr_price} HR` : listing.price || '-'}</td>
+                    <td className="px-2 py-1">
+                      {listing.hr_price ? (
+                        `${listing.hr_price} HR`
+                      ) : listing.price && listing.price.length > 40 ? (
+                        <HoverPopover content={<div className="max-w-xs break-words p-2">{listing.price}</div>}>
+                          <span className="cursor-pointer underline decoration-dotted">
+                            {listing.price.slice(0, 40)}...
+                          </span>
+                        </HoverPopover>
+                      ) : (
+                        listing.price || '-'
+                      )}
+                    </td>
                     <td className="px-2 py-1">
                       {listing.bumped_at ? moment(listing.bumped_at).fromNow() : '-'}
                     </td>

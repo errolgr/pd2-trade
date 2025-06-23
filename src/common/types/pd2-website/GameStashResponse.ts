@@ -187,6 +187,7 @@ export interface Item {
   class_specifics: boolean;
   unique?:         UniqueInfo;
   durability:      Durability;
+  corruptions:     string[];
   socket_count:    number;
   modifiers:       Modifier[];
   name:            string;

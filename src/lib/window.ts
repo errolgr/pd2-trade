@@ -62,6 +62,33 @@ export async function openOverDiabloWindow(
   }
 }
 
+export async function openWindowAtCursor(
+  label: string,
+  url: string,
+  options: Partial<WebviewOptions & WindowOptions> = {}
+): Promise<WebviewWindow | null> {
+  try {
+    const { x, y } = await cursorPosition();
+    const width = options.width ?? 600;
+    const height = options.height ?? 600;
+
+    const w = new WebviewWindow(label, {
+      url,
+      x,
+      y,
+      width,
+      height,
+      focus: true,
+      ...options,
+    });
+
+    return w;
+  } catch (e) {
+    console.warn('[openWindowAtCursor] fallback to center:', e);
+    return openCenteredWindow(label, url, options);
+  }
+}
+
 export function attachWindowLifecycle(
   w: WebviewWindow,
   onClose: () => void

@@ -1,6 +1,6 @@
 import { Separator } from '@/components/ui/separator';
 import React from 'react';
-import { GeneralForm } from '@/components/dialogs/optionsv2/appearance/general-form';
+import { GeneralForm } from './general-form';
 
 export default function SettingGenereal() {
   return (
