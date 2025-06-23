@@ -96,6 +96,120 @@ export function buildTradeUrl(
   return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;
 }
 
+export function buildMarketListingQuery(
+  item: any,
+  selected: Set<string>,
+  filters: Record<string, { value?: string; min?: string; max?: string }>,
+  settings: any,
+  statMapper?: (statId: number, stat: Stat) => string | undefined
+): string {
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const query: any = {
+    $resolve: { user: { in_game_account: true } },
+    type: 'item',
+    $limit: 10,
+    $skip: 0,
+    accepted_offer_id: null,
+    updated_at: { $gte: oneWeekAgo.toISOString() },
+    $sort: { bumped_at: -1 },
+    is_hardcore: settings.mode === 'hardcore',
+    is_ladder: settings.ladder === 'ladder',
+    'item.quality.name': item.quality,
+    'item.name': {
+      $regex: item.name ? `${item.name}` : '',
+      $options: 'i',
+    },
+    'item.is_ethereal': !!item.isEthereal,
+    'item.corrupted': false,
+    'item.is_identified': true,
+  };
+
+  const sortedStats = getSortedStats(item);
+  const modifiers: any[] = [];
+
+  [...selected].forEach((key) => {
+    const stat = sortedStats.find(s => getStatKey(s) === key);
+    if (!stat) return;
+    const f = filters[key] ?? {};
+
+    // Sockets, Corrupted, Ethereal handled as top-level query fields
+    if (stat.stat_id === StatId.Socket) {
+      if (f.min !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $gte: Number(f.min) };
+      if (f.max !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $lte: Number(f.max) };
+      return;
+    }
+    if (stat.stat_id === StatId.Corrupted) {
+      query['item.corrupted'] = true;
+      return;
+    }
+    if (stat.stat_id === StatId.Ethereal) {
+      query['item.is_ethereal'] = true;
+      return;
+    }
+
+    // Skill stats
+    if ('skill' in stat && stat.skill) {
+      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
+      if (skillEntry) {
+        // Single skill
+        const mod: any = { name: 'item_singleskill', 'values.0': skillEntry.id };
+        if (f.min !== undefined || f.max !== undefined) {
+          mod['values.1'] = {};
+          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+        }
+        modifiers.push({ $elemMatch: mod });
+        return;
+      }
+      const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
+      if (classEntry) {
+        // Class skill
+        const mod: any = { name: 'item_addclassskills', 'values.0': classEntry.id };
+        if (f.min !== undefined || f.max !== undefined) {
+          mod['values.1'] = {};
+          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+        }
+        modifiers.push({ $elemMatch: mod });
+        return;
+      }
+      const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
+      if (subClassEntry) {
+        // Subclass skill
+        const mod: any = { name: 'item_addskill_tab', 'values.0': subClassEntry.id };
+        if (f.min !== undefined || f.max !== undefined) {
+          mod['values.1'] = {};
+          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+        }
+        modifiers.push({ $elemMatch: mod });
+        return;
+      }
+    }
+
+    // Normal stat
+    if (stat.stat_id !== undefined) {
+      const prop = statIdToProperty[stat.stat_id];
+      if (prop) {
+        const mod: any = { name: prop };
+        if (f.min !== undefined || f.max !== undefined) {
+          mod['values.0'] = {};
+          if (f.min !== undefined) mod['values.0'].$gte = Number(f.min);
+          if (f.max !== undefined) mod['values.0'].$lte = Number(f.max);
+        }
+        modifiers.push({ $elemMatch: mod });
+      }
+    }
+  });
+
+  if (modifiers.length > 0) {
+    query['item.modifiers'] = { $all: modifiers };
+  }
+
+  return query;
+}
+
 function getPropertyKey(id: number, stat: Stat, statMapper?: (statId: number, stat: Stat) => string | undefined): string {
   return statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
 }

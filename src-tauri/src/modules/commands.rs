@@ -1,4 +1,4 @@
-use crate::{window, keyboard};
+use crate::{window, keyboard, webview};
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -18,4 +18,13 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_diablo_focused()
+} 
+
+#[tauri::command]
+pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), String> {
+    // Spawn a new thread to avoid deadlocks on Windows
+    std::thread::spawn(move || {
+        let _ = crate::webview::open_project_diablo2_webview(app_handle);
+    });
+    Ok(())
 } 

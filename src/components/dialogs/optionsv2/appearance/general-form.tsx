@@ -15,27 +15,22 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from '@/components/ui/select';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
     required_error: 'Please select a mode.',
   }),
-  hotkeyModifier: z.enum(['ctrl', 'alt']),
-  hotkeyKey: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
   ladder: z.enum(['non-ladder', 'ladder'], {
     required_error: 'Please select a ladder.',
   }),
-}).refine(
-  (data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'),
-  {
-    message: 'Ctrl + C is not allowed (reserved system shortcut).',
-    path: ['hotkeyKey'],
-  }
-);
+});
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
@@ -52,82 +47,31 @@ export function GeneralForm() {
     defaultValues: settings,
   });
 
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(updateSettings)}
         className="flex flex-col gap-y-4">
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="hotkeyModifier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Price check</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKey"
-            render={({ field }) => (
-              <FormItem className={'flex flex-row gap-4 items-center'}>
-                <div>
-                  +
-                </div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
         <FormField
           control={form.control}
           name="ladder"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Ladder</FormLabel>
-              <div className="relative w-max">
-                <FormControl>
-                  <select
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'w-[200px] appearance-none font-normal cursor-pointer',
-                    )}
-                    {...field}
-                  >
-                    <option key={"ladder"}
-                      value="ladder">
-                      Ladder
-                    </option>
-                    <option key={"non-ladder"}
-                      value="non-ladder">
-                      Non-Ladder
-                    </option>
-                  </select>
-                </FormControl>
-                <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />
-              </div>
+              <FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Ladder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ladder">Ladder</SelectItem>
+                    <SelectItem value="non-ladder">Non-Ladder</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -138,32 +82,25 @@ export function GeneralForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Mode</FormLabel>
-              <div className="relative w-max">
-                <FormControl>
-                  <select
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'w-[200px] appearance-none font-normal cursor-pointer',
-                    )}
-                    {...field}
-                  >
-                    <option key={"softcore"}
-                      value="softcore">
-                      Softcore
-                    </option>
-                    <option key={"hardcore"}
-                      value="hardcore">
-                      Hardcore
-                    </option>
-                  </select>
-                </FormControl>
-                <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />
-              </div>
+              <FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="softcore">Softcore</SelectItem>
+                    <SelectItem value="hardcore">Hardcore</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <Button type="submit"
           className={'self-start cursor-pointer mt-2'}>
           Update preferences

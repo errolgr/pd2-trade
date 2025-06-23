@@ -4,7 +4,7 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{window, keyboard, system, commands};
+pub use modules::{window, keyboard, system, commands, webview};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,12 +23,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_app_exit::init())
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = app
-                .get_webview_window("main")
-                .expect("no main window")
-                .set_focus();
-        }))
+    
         .setup(|app| {
             let _handle = app.app_handle();
 
@@ -45,13 +40,14 @@ pub fn run() {
             let main_window = win_builder.build().unwrap();
             main_window.center().unwrap();
             main_window.set_ignore_cursor_events(true);
-
+            main_window.open_devtools();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_diablo_rect, 
             commands::press_key, 
-            commands::is_diablo_focused
+            commands::is_diablo_focused,
+            commands::open_project_diablo2_webview
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

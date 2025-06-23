@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { SquareArrowOutUpRight, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { qualityColor } from "../lib/qualityColor";
 import { StatRow } from "./StatRow";
@@ -11,12 +11,15 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { Props } from "../lib/types";
 import { useRuneData } from "../hooks/useRuneData";
 import { useStatSelection } from "../hooks/useStatSelection";
-import { buildTradeUrl } from "../lib/tradeUrlBuilder";
+import { buildMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
 import { getStatKey } from "../lib/utils";
+import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
+import moment from 'moment';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
+  const { getMarketListings } = usePD2WebsiteClient();
   
   // Use custom hooks for state management
   const {
@@ -39,6 +42,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const tradeUrl = useMemo(() => {
     return buildTradeUrl(item, selected, filters, settings, statMapper);
   }, [selected, filters, item, statMapper, settings]);
+
+  const pd2MarketQuery = useMemo(() => {
+    return buildMarketListingQuery(item, selected, filters, settings, statMapper);
+  }, [selected, filters, item, statMapper, settings]);
+
+
+
+  // Market listings state
+  const [marketListingsResult, setMarketListingsResult] = useState<any | null>(null);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketError, setMarketError] = useState<string | null>(null);
 
   /** -------------------
    *  Render
@@ -99,14 +113,65 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           </div>
         </ScrollArea>
         {/* Search button */}
+        <div className="flex flex-row gap-2">
         <Button
           className="w-full mt-2"
-          onClick={() => {
-            if (tradeUrl) openUrl(tradeUrl);
+          onClick={async () => {
+            setMarketError(null);
+            setMarketLoading(true);
+            setMarketListingsResult(null);
+            try {
+              const result = await getMarketListings(pd2MarketQuery);
+              setMarketListingsResult(result);
+            } catch (e: any) {
+              setMarketError(e.message || 'Failed to fetch market listings');
+            } finally {
+              setMarketLoading(false);
+            }
           }}
         >
           Search ({selected.size})
         </Button>
+        <Button
+          className="w-40 mt-2 flex flex-row justify-center gap-2"
+          onClick={() => {
+            if (tradeUrl) openUrl(tradeUrl);
+          }}
+        >
+          Trade
+          <SquareArrowOutUpRight className="w-4 h-4"/>
+        </Button>
+        </div>
+
+        {/* Market listings table */}
+        {marketLoading && <div className="text-center text-sm text-gray-400">Loading market listings...</div>}
+        {marketError && <div className="text-center text-sm text-red-400">{marketError}</div>}
+        {marketListingsResult && (
+          <div className="overflow-x-auto mt-2">
+            <div className="mb-2 text-xs text-gray-400">Matches: {marketListingsResult.total}</div>
+            <table className="min-w-full text-sm text-left">
+              <thead>
+                <tr>
+                  <th className="px-2 py-1 border-b border-neutral-700">Price</th>
+                  <th className="px-2 py-1 border-b border-neutral-700">Listed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {marketListingsResult.data.length === 0 && (
+                  <tr><td colSpan={2} className="px-2 py-2 text-center text-gray-400">No listings found</td></tr>
+                )}
+                {marketListingsResult.data.map((listing: any, idx: number) => (
+                  <tr key={listing._id || idx} className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
+                    <td className="px-2 py-1">{listing.hr_price ? `${listing.hr_price} HR` : listing.price || '-'}</td>
+                    <td className="px-2 py-1">
+                      {listing.bumped_at ? moment(listing.bumped_at).fromNow() : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

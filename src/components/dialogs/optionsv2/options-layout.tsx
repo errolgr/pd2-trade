@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import SettingGenereal from '@/components/dialogs/optionsv2/appearance/layout';
-import SettingsAbout from "@/components/dialogs/optionsv2/about/layout";
 import {Card} from "@/components/ui/card";
 import {X} from "lucide-react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import SettingGenereal from './appearance/layout';
+import SettingsHotkeys from './hotkeys/layout';
+import SettingsAbout from './about/layout';
+import SettingsAccount from './account/layout';
 
 export const metadata = {
   title: 'Forms',
@@ -22,9 +24,17 @@ const sidebarNavItems: INavItem[] = [
     content: <SettingGenereal />,
   },
   {
+    title: 'Account',
+    content: <SettingsAccount />,
+  },
+  {
+    title: 'Hotkeys',
+    content: <SettingsHotkeys />,
+  },
+  {
     title: 'About',
     content: <SettingsAbout />,
-  },
+  }
 ];
 
 export default function SettingsLayout() {

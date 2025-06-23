@@ -13,7 +13,11 @@ interface ISettings {
   mode: 'hardcore' | 'softcore';
   hotkeyModifier: 'ctrl' | 'alt';
   hotkeyKey: string;
+  hotkeyModifierListItem: 'ctrl' | 'alt';
+  hotkeyKeyListItem: string;
   lastSeenVersion?: string;
+  pd2Token?: string;
+  account?: string;
 }
 
 interface OptionsContextProps {
@@ -30,6 +34,8 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifier: 'ctrl',
   hotkeyKey: 'd',
   lastSeenVersion: '0.0.0', // fallback version
+  hotkeyModifierListItem: 'ctrl',
+  hotkeyKeyListItem: 'l',
 };
 
 const SETTINGS_FILENAME = 'settings.json';
