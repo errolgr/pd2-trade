@@ -11,7 +11,7 @@ This document details how the PD2 Trader app obtains session tokens from the Pro
 - **User Authentication:**  
   The user logs in manually via the official website UI in the webview.
 - **Token Extraction (Local Only):**  
-  - The app injects a small JavaScript snippet into the webview that polls `localStorage` for a key named `pd2-token` (this is the only key checked for token extraction).
+  - The app injects a [small JavaScript snippet](https://github.com/errolgr/pd2-trade/blob/feat_list_item_and_get_listings/src-tauri/src/modules/webview.rs#L36-L44) into the webview that polls `localStorage` for a key named `pd2-token` (this is the only key checked for token extraction).
   - Once found, the token is sent to the **local Tauri process** (which runs on the user's own computer, not a remote server) via a custom URL scheme (`tauri://pd2-token-found?token=...`).
   - The Tauri process emits a local event to the app's frontend, which updates the app's settings and triggers websocket authentication.
   - **All of this happens locally on the user's device.** No session tokens or credentials are ever sent to any third-party or remote backend controlled by the app developers.
