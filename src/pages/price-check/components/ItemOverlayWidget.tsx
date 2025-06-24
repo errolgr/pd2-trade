@@ -11,17 +11,19 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { Props } from "../lib/types";
 import { useRuneData } from "../hooks/useRuneData";
 import { useStatSelection } from "../hooks/useStatSelection";
-import { buildMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
+import { buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
 import { getStatKey } from "../lib/utils";
 import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
+import { useItems } from "@/hooks/useItems";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
   const { getMarketListings } = usePD2WebsiteClient();
-  
+  const { findOneByName } = useItems();
+
   // Use custom hooks for state management
   const {
     loadingRunes,
@@ -39,13 +41,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle
   } = useStatSelection(item);
 
+  const pd2Item = useMemo(() => findOneByName(item.name), [item])
+
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
-    return buildTradeUrl(item, selected, filters, settings, statMapper);
-  }, [selected, filters, item, statMapper, settings]);
+    return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper);
+  }, [selected, filters, item, statMapper, settings, pd2Item]);
 
   const pd2MarketQuery = useMemo(() => {
-    return buildMarketListingQuery(item, selected, filters, settings, statMapper);
+    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper);
   }, [selected, filters, item, statMapper, settings]);
 
 
@@ -83,8 +87,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               {item.isRuneword ? item.runeword : item.name}
               {item.isRuneword && <Badge>Runeword</Badge>}
             </CardTitle>
-            {item.type && <div className={'text-gray-500'}>{item.type}</div>}
-            {item.defense && <div className={'text-sm'}>Defense: {item.defense} </div>}
+            {item.type && <div
+                className={'text-lg text-gray-300'}               
+                style={{ fontFamily: 'DiabloFont', marginTop: '-5px'}}>
+                  {item.type}
+              </div>
+              }
+
+            
+            {item.defense && <Badge variant='outline' className={'text-sm border-gray-300 text-gray-300 rounded-lg mt-1'}>Defense: {item.defense} </Badge>}
           </div>
 
           <Button variant="ghost"

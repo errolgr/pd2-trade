@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import ItemOverlayWidget from "@/pages/price-check/components/ItemOverlayWidget";
 import {OptionsProvider} from "@/hooks/useOptions";
+import { ItemsProvider } from "@/hooks/useItems";
 
 const ItemWindow: React.FC = () => {
   const [item, setItem] = useState<any>(null);
@@ -50,8 +51,11 @@ const ItemWindow: React.FC = () => {
 
   return (
     <OptionsProvider>
-      <ItemOverlayWidget item={item}
-        onClose={() => getCurrentWebviewWindow().close()} />
+      <ItemsProvider>
+      
+        <ItemOverlayWidget item={item}
+          onClose={() => getCurrentWebviewWindow().close()} />
+      </ItemsProvider>
     </OptionsProvider>
    
   );

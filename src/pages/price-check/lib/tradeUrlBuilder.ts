@@ -1,4 +1,4 @@
-import { Stat } from "./interfaces";
+import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
 import { skillNameToIdMap } from "@/assets/character-skills";
 import { classSkillNameToIdMap, classSubSkillNameToIdMap } from "@/assets/class-skills";
@@ -6,9 +6,11 @@ import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
 import { RANGE_MARGIN } from "./types";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
+import { ItemType as PD2Item } from "@/assets/itemFuzzySearch";
 
 export function buildTradeUrl(
-  item: any,
+  item: Item,
+  mappedItem: PD2Item,
   selected: Set<string>,
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
@@ -86,7 +88,7 @@ export function buildTradeUrl(
         console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
       }
     } else {
-      searchParams.set("name", item.isRuneword ? item.runeword : item.name);
+      searchParams.set("name", item.isRuneword ? item.runeword : mappedItem?.name || item.name);
     }
   }
 
@@ -97,8 +99,9 @@ export function buildTradeUrl(
   return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;
 }
 
-export function buildMarketListingQuery(
-  item: any,
+export function buildGetMarketListingQuery(
+  item: Item,
+  mappedItem: PD2Item, 
   selected: Set<string>,
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
@@ -217,7 +220,7 @@ export function buildMarketListingQuery(
       }
     } else {
       query['item.name'] = {
-        $regex: item.name ? `${item.name}` : '',
+        $regex: item.name ? `${mappedItem?.name || item.name}` : '',
         $options: 'i',
       }
     }
