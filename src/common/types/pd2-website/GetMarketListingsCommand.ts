@@ -12,6 +12,9 @@ export type MarketListingCommand = [
         in_game_account: boolean;
       };
     };
+    "item.hash"?: any;
+    _id?: any;
+    user_id?: string;
     type: "item";
     $limit: number;
     $skip: number;

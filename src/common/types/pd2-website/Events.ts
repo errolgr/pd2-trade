@@ -20,6 +20,14 @@ export enum Pd2EventType {
   // Item listing events
   LIST_SPECIFIC_ITEM = 'pd2-list-specific-item',
   LIST_SPECIFIC_ITEM_RESULT = 'pd2-list-specific-item-result',
+
+// Update market listing events (generic patch)
+UPDATE_MARKET_LISTING = 'pd2-update-market-listing',
+UPDATE_MARKET_LISTING_RESULT = 'pd2-update-market-listing-result',
+
+// Update stash item by hash events
+UPDATE_STASH_ITEM_BY_HASH = 'pd2-update-stash-item-by-hash',
+UPDATE_STASH_ITEM_BY_HASH_RESULT = 'pd2-update-stash-item-by-hash-result',
 }
 
 export enum Pd2RequestType {

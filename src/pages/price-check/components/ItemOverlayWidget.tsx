@@ -11,7 +11,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { Props } from "../lib/types";
 import { useRuneData } from "../hooks/useRuneData";
 import { useStatSelection } from "../hooks/useStatSelection";
-import { buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
+import { buildGetMarketListingByStashItemQuery, buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
 import { getStatKey } from "../lib/utils";
 import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
@@ -51,7 +51,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const pd2MarketQuery = useMemo(() => {
     return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper);
   }, [selected, filters, item, statMapper, settings]);
-
+  
+  const pd2MarketQuery2 = useMemo(() => {
+    return buildGetMarketListingByStashItemQuery([], "", selected, filters, settings, statMapper);
+  }, [selected, filters, item, statMapper, settings]);
 
 
   // Market listings state
@@ -133,7 +136,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             setMarketLoading(true);
             setMarketListingsResult(null);
             try {
-              const result = await getMarketListings(pd2MarketQuery);
+              const result = await getMarketListings(pd2MarketQuery2);
               setMarketListingsResult(result);
             } catch (e: any) {
               setMarketError(e.message || 'Failed to fetch market listings');
@@ -178,7 +181,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       {listing.hr_price ? (
                         `${listing.hr_price} HR`
                       ) : listing.price && listing.price.length > 40 ? (
-                        <HoverPopover content={<div className="max-w-xs break-words p-2">{listing.price}</div>}>
+                        <HoverPopover content={<Card><div className="text-sm max-w-xs break-words p-2">{listing.price}</div></Card>}>
                           <span className="cursor-pointer underline decoration-dotted">
                             {listing.price.slice(0, 40)}...
                           </span>

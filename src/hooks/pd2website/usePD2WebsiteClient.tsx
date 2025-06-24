@@ -4,9 +4,8 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { Item as PriceCheckItem, Stat } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
-import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { MarketListingResponse, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { FindMArketListingResponse, FindMatchingItemsResult, ListSpecificItemResult } from '@/common/types/Events';
+import { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { UpdateMarketListingPayload, UpdateMarketListingResultPayload, FindMArketListingResponse, FindMatchingItemsResult, ListSpecificItemResult, UpdateStashItemByHashPayload, UpdateStashItemByHashResultPayload } from '@/common/types/Events';
 import { Pd2EventType } from '@/common/types/pd2-website/Events';
 
 
@@ -88,5 +87,39 @@ export const usePD2WebsiteClient = () => {
     });
   };
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, getAuthData };
+  // updateMarketListing via Tauri event
+  const updateMarketListing = (hash: string, update: Record<string, any>): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      const requestId = uuidv4();
+      const unlistenPromise = listen<UpdateMarketListingResultPayload>(Pd2EventType.UPDATE_MARKET_LISTING_RESULT, (event) => {
+        const payload = event.payload;
+        if (payload && payload.requestId === requestId) {
+          unlistenPromise.then((off) => off());
+          if (payload.error) reject(new Error(payload.error));
+          else resolve(!!payload.success);
+        }
+      });
+      const payload: UpdateMarketListingPayload = { hash, ...update, requestId };
+      emit(Pd2EventType.UPDATE_MARKET_LISTING, payload);
+    });
+  };
+
+  // updateStashItemByHash via Tauri event
+  const updateStashItemByHash = (hash: string, update: Record<string, any>): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      const requestId = uuidv4();
+      const unlistenPromise = listen<UpdateStashItemByHashResultPayload>(Pd2EventType.UPDATE_STASH_ITEM_BY_HASH_RESULT, (event) => {
+        const payload = event.payload;
+        if (payload && payload.requestId === requestId) {
+          unlistenPromise.then((off) => off());
+          if (payload.error) reject(new Error(payload.error));
+          else resolve(!!payload.success);
+        }
+      });
+      const payload: UpdateStashItemByHashPayload = { hash, update, requestId };
+      emit(Pd2EventType.UPDATE_STASH_ITEM_BY_HASH, payload);
+    });
+  };
+
+  return { findMatchingItems, listSpecificItem, getMarketListings, getAuthData, updateMarketListing, updateStashItemByHash };
 }; 

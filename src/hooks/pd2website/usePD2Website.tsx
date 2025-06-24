@@ -26,10 +26,11 @@ export const Pd2WebsiteProvider = ({ children }) => {
     findItemsByName,
     stashCache,
     CACHE_TTL,
+    updateItemByHash,
   } = useStashCache(rawSocketRef, authData, settings, pendingStashRequest);
 
   // Market actions (real, using shared ref)
-  const { findMatchingItems, listSpecificItem, getMarketListings } = useMarketActions({
+  const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing } = useMarketActions({
     settings,
     authData,
     rawSocketRef,
@@ -41,7 +42,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   });
 
   // Event listeners
-  usePd2EventListeners({ updateSettings, findMatchingItems, listSpecificItem, getMarketListings, authData });
+  usePd2EventListeners({ updateSettings, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash });
 
   // Open webview
   const open = async () => {
@@ -54,7 +55,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   };
 
   return (
-    <Pd2WebsiteContext.Provider value={{ socket, open, findMatchingItems, listSpecificItem, getMarketListings, authData }}>
+    <Pd2WebsiteContext.Provider value={{ socket, open, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );

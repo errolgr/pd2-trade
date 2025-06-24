@@ -30,7 +30,6 @@ export interface MarketListingEntry {
   desecrated: boolean;
   properties: string[];
   damage: Damage;
-  hash: string;
   account_id: string;
 
   user_id: string;
@@ -59,6 +58,7 @@ export interface ItemDetail {
   is_personalized: boolean;
   is_runeword: boolean;
   base: BaseItem;
+  hash: string;
   socketed_count?: number; // sometimes tracked at root instead
   // other flags live at root entry
 }

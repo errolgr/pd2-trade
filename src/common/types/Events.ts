@@ -45,3 +45,28 @@ export interface GetMarketPlaceListingsRequest extends EventProps {
 export interface ListSpecificItemResult extends EventProps {
     success: boolean;
 }
+
+// Payload for updating a market listing (generic patch)
+export interface UpdateMarketListingPayload extends EventProps {
+  hash: string;
+  bumped_at?: string;
+  // other patchable fields can be added here
+}
+
+// Result payload for updating a market listing
+export interface UpdateMarketListingResultPayload extends EventProps {
+  success?: boolean;
+  error?: string;
+}
+
+// Payload for updating a stash item by hash
+export interface UpdateStashItemByHashPayload extends EventProps {
+  hash: string;
+  update: Record<string, any>;
+}
+
+// Result payload for updating a stash item by hash
+export interface UpdateStashItemByHashResultPayload extends EventProps {
+  success?: boolean;
+  error?: string;
+}

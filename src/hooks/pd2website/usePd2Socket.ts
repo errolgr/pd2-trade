@@ -40,6 +40,19 @@ export function usePd2Socket(settings, updateSettings, setAuthData, pendingMarke
                 pendingMarketListingsRequest.current(parsedPayload);
                 pendingMarketListingsRequest.current = null;
               }
+              // Handle update market listing (patch/market/listing) response
+              if (
+                pendingMarketListingsRequest &&
+                pendingMarketListingsRequest.current &&
+                Array.isArray(parsedPayload) &&
+                parsedPayload.length === 2 &&
+                parsedPayload[1] && typeof parsedPayload[1] === 'object' &&
+                '_id' in parsedPayload[1] &&
+                'item' in parsedPayload[1]
+              ) {
+                pendingMarketListingsRequest.current(parsedPayload);
+                pendingMarketListingsRequest.current = null;
+              }
               // Handle stash response
               if (
                 pendingStashRequest &&

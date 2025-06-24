@@ -138,14 +138,8 @@ export function useStashCache(rawSocketRef, authData, settings, pendingStashRequ
           threshold: 0.1, // Adjust for strictness (lower = stricter)
         });
         
-        // Search for items matching both type and base
-        const typeMatches = fuse.search(typeBaseInfo.type).map(result => result.item);
-        const baseMatches = fuse.search(typeBaseInfo.base).map(result => result.item);
-        
-        // Return items that match both type and base
-        matchingItems = typeMatches.filter(stashItem => 
-          baseMatches.some(baseItem => baseItem.id === stashItem.id)
-        );
+        // Search for items matching only the base
+        matchingItems = fuse.search(typeBaseInfo.base).map(result => result.item);
       }
     } else {
       // For other item qualities, search by name as before
@@ -171,5 +165,16 @@ export function useStashCache(rawSocketRef, authData, settings, pendingStashRequ
       .map(result => result.item);
   }
 
-  return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL };
+  // Update an item in the stash cache by its hash
+  const updateItemByHash = useCallback((hash, update) => {
+    if (!stashCache.current || !stashCache.current.data) return false;
+    const items = stashCache.current.data[1]?.items;
+    if (!Array.isArray(items)) return false;
+    const idx = items.findIndex(item => item.hash === hash);
+    if (idx === -1) return false;
+    items[idx] = { ...items[idx], ...update };
+    return true;
+  }, [stashCache]);
+
+  return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash };
 } 

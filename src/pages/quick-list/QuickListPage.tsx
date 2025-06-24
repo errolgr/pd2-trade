@@ -3,6 +3,7 @@ import ListItemShortcutForm from "./components/ListItemShortcut"
 import { useSearchParams } from "react-router-dom";
 import { Item as PriceCheckItem } from "../price-check/lib/interfaces";
 import { OptionsProvider } from "@/hooks/useOptions";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 
 export const QuickListPage: React.FC<any> = () => {
@@ -23,8 +24,10 @@ export const QuickListPage: React.FC<any> = () => {
       }, [searchParams]);
 
     return (
+      <TooltipProvider>
         <OptionsProvider>
             {item && <ListItemShortcutForm item={item}></ListItemShortcutForm>}
         </OptionsProvider>
+      </TooltipProvider>
     )
 }

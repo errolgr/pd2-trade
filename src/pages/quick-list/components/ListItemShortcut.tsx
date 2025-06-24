@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,11 @@ import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from "@/components/ui/badge"
 import { cn } from '@/lib/utils';
+import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { AuthData } from '@/common/types/pd2-website/AuthResponse';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import moment from 'moment';
+import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem;
@@ -24,15 +29,15 @@ interface ListItemShortcutFormProps {
 const runeOptions = Object.keys(RUNE_API_MAP);
 
 const priceTypeOptions = [
-  { value: 'note', label: 'Note' },
   { value: 'exact', label: 'Exact Price' },
+  { value: 'note', label: 'Note' },
   { value: 'negotiable', label: 'Negotiable Price' },
 ];
 
 const shortcutFormSchema = z.object({
   type: z.enum(['note', 'negotiable', 'exact']),
   note: z.string().optional(),
-  price: z.coerce.number().min(0, 'Enter a price').optional(),
+  price: z.union([z.string(), z.number()]).optional(),
   currency: z.string().optional(),
 }).refine(
   (data) => {
@@ -45,7 +50,6 @@ const shortcutFormSchema = z.object({
     path: ['note', 'price', 'currency'],
   }
 );
-type ShortcutFormValues = z.infer<typeof shortcutFormSchema>;
 
 // Helper to get rune image path
 const getRuneImg = (rune: string) => `runes/Rune${rune.split(" ")[0]}.png`;
@@ -65,23 +69,31 @@ const sortedRuneOptions = [...runeOptions].sort((a, b) => {
 
 const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => {
   
-  const { findMatchingItems, listSpecificItem } = usePD2WebsiteClient();
+  const { findMatchingItems, listSpecificItem, getAuthData, getMarketListings, updateMarketListing, updateStashItemByHash } = usePD2WebsiteClient();
   const [matchingItems, setMatchingItems] = useState<GameStashItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<GameStashItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authData, setAuthData] = useState<AuthData | null>(null);
+  const [currentListings, setCurrentListings] = useState<MarketListingEntry[]>([]);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  const form = useForm<ShortcutFormValues>({
+  const [bumping, setBumping] = useState<string | null>(null);
+  const [hoveredHash, setHoveredHash] = useState<string | null>(null);
+  const [justBumped, setJustBumped] = useState<string | null>(null);
+  const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
+  const form = useForm<z.infer<typeof shortcutFormSchema>>({
     resolver: zodResolver(shortcutFormSchema),
-    defaultValues: { type: 'note', note: '', price: undefined, currency: 'HR' },
+    defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
   const type = form.watch('type');
 
   useEffect(() => {
-    console.log('findMatchingItems ' + item);
-  }, [item])
+    if (!authData) {
+      getAuthData().then(setAuthData);
+    }
+  }, [getAuthData])
+  
   // Find matching items when component mounts
   React.useEffect(() => {
     if (item) {
@@ -105,18 +117,48 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   };
 
-  const handleSubmit = async (values: ShortcutFormValues) => {
+  const pd2MarketQuery = useMemo(() => {
+    if (!authData) return null;
+    return buildGetMarketListingByStashItemQuery(matchingItems, authData.user._id);
+  }, [matchingItems, authData]);
+
+  const getMarketListingsForStashItems = useCallback(async () => {
+    setIsMarketListingsLoading(true);
+    const result = await getMarketListings(pd2MarketQuery);
+    if (result.data.length > 0) {
+      setCurrentListings(result.data.map((item) => item));
+    }
+    setIsMarketListingsLoading(false);
+    console.log(result.data.map((data) => data.item.hash));
+  }, [pd2MarketQuery]);
+
+  const handleSubmit = async (values: z.infer<typeof shortcutFormSchema>) => {
     if (!selectedItem) {
       setError('Please select an item to list');
       return;
     }
 
+    const isAlreadyListed = !!currentListingForSelected;
     try {
-      await listSpecificItem(selectedItem, values.price, values.note, values?.type);
-      form.reset({ type: 'note', note: '', price: undefined, currency: 'HR' });
-      getCurrentWebviewWindow().close();
+      if (isAlreadyListed) {
+        // Prepare update fields
+        let updateFields: Record<string, any> = {};
+        if (values.type === 'note') {
+          updateFields.price = values.note;
+        } else if (values.type === 'exact' || values.type === 'negotiable') {
+          updateFields.hr_price = Number(values.price);
+          updateFields.price = values.type === 'negotiable' ? 'obo' : values.note;
+        }
+        await updateMarketListing(currentListingForSelected._id, updateFields);
+        await updateStashItemByHash(selectedItem.hash, updateFields);
+        getCurrentWebviewWindow().close();
+      } else {
+        await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
+        form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
+        getCurrentWebviewWindow().close();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to list item');
+      setError(err instanceof Error ? err.message : 'Failed to list/update item');
     }
   };
 
@@ -218,6 +260,53 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     );
   };
 
+  // Fetch current listings when matchingItems or authData changes
+  useEffect(() => {
+    if (matchingItems.length > 0 && authData) {
+      getMarketListingsForStashItems();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchingItems, authData]);
+
+  const canBump = (stashItem: GameStashItem) => {
+    const itemData = currentListings.find((c) => c.item.hash === stashItem.hash);
+    if (!itemData || !itemData.bumped_at) return true;
+    const lastBump = moment(itemData.bumped_at);
+    const now = moment();
+    return now.diff(lastBump, 'hours') >= 12;
+  };
+
+  const timeUntilBump = (stashItem: GameStashItem) => {
+    const itemData = currentListings.find((c) => c.item.hash === stashItem.hash);
+    if (!itemData || !itemData.bumped_at) return '';
+    const lastBump = moment(itemData.bumped_at);
+    const nextBump = lastBump.clone().add(12, 'hours');
+    return nextBump.fromNow();
+  };
+
+  // Find the current market listing for the selected item
+  const currentListingForSelected = selectedItem ? currentListings.find((c) => c.item.hash === selectedItem.hash) : undefined;
+
+  // Prepopulate form fields when selecting a listed item
+  useEffect(() => {
+    if (!selectedItem) return;
+
+    let resetValues: z.infer<typeof shortcutFormSchema> = { type: 'exact', note: '', price: '', currency: 'HR' };
+
+    if (currentListingForSelected) {
+      // If the item is listed, prepopulate the fields
+      if (currentListingForSelected.price && typeof currentListingForSelected.price === 'string') {
+        resetValues = { ...resetValues, type: 'note', note: currentListingForSelected.price };
+      }
+      if (currentListingForSelected.hr_price) {
+        resetValues = { ...resetValues, type: 'exact', price: currentListingForSelected.hr_price, currency: 'HR' };
+      }
+      // If you want to handle 'negotiable', add logic here
+    }
+    
+    form.reset(resetValues);
+  }, [selectedItem, currentListingForSelected]);
+
   if (isLoading) {
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
@@ -282,7 +371,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         {/* Item Selection */}
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
-            <div className="text-xs font-medium">Select Item ({matchingItems.length} found):</div>
+            <div className="text-xs font-medium flex items-center gap-2">
+              Select Item ({matchingItems.length} found)
+              {isMarketListingsLoading && (
+                <span className="flex items-center gap-1 text-xs text-gray-400 ml-2">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Loading market listings...
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={expandedItems.size > 0 ? collapseAllStats : expandAllStats}
@@ -302,7 +398,61 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 }`}
                 onClick={() => setSelectedItem(stashItem)}
               >
-                <div className={qualityColor(stashItem.quality.name)} style={{fontFamily: 'DiabloFont'}}>{stashItem.name}</div>
+                <div className="flex justify-between items-center gap-2">
+                  <div className={qualityColor(stashItem.quality.name)} style={{fontFamily: 'DiabloFont'}}>{stashItem.name}</div>
+                  {currentListings.find((c) => c.item.hash == stashItem.hash) && (
+                    <>
+                      <span
+                        onMouseEnter={() => setHoveredHash(stashItem.hash)}
+                        onMouseLeave={() => {
+                          setHoveredHash(null);
+                          setJustBumped(null);
+                        }}
+                        style={{ display: 'inline-block', position: 'relative' }}
+                      >
+                        {justBumped === stashItem.hash ? (
+                          <Badge variant="secondary" className="text-xs rounded-lg flex items-center gap-1 justify-center w-13 h-5" style={{ background: 'white', color: 'black' }}>
+                            <Check className="w-3 h-3" />
+                          </Badge>
+                        ) : hoveredHash === stashItem.hash ? (
+                          canBump(stashItem) ? (
+                            <Badge
+                              asChild
+                              className="text-xs rounded-lg cursor-pointer flex items-center gap-1 justify-center w-13 h-5"
+                              style={{ background: 'white', color: 'black' }}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setBumping(stashItem.hash);
+                                const marketId = currentListings.find((c) => c.item.hash == stashItem.hash)._id;
+                                await updateMarketListing(marketId, { bumped_at: new Date().toISOString() });
+                                await getMarketListingsForStashItems();
+                                await updateStashItemByHash(stashItem.hash, { bumped_at: new Date().toISOString() });
+                                await findMatchingItemsInStash();
+                                setBumping(null);
+                                setJustBumped(stashItem.hash);
+                              }}
+                            >
+                              <span>Bump</span>
+                            </Badge>
+                          ) : (
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <Badge variant="secondary" className="text-xs rounded-lg bg-green-600 text-white cursor-not-allowed justify-center w-13 h-5">Listed</Badge>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {`You can bump this item ${timeUntilBump(stashItem)}`}
+                              </TooltipContent>
+                            </Tooltip>
+                          )
+                        ) : (
+                          <Badge variant="secondary" className="text-xs rounded-lg bg-green-600 text-white justify-center w-13 h-5">Listed</Badge>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
                 {renderItemStats(stashItem)}
               </div>
             ))}
@@ -366,9 +516,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               )}
             />
           )}
-           <Button type="submit" disabled={!selectedItem} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
-            POST
-          </Button>
+           {selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash) ? (
+            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+                     Update
+            </Button>
+           ) : (
+             <Button type="submit" disabled={!selectedItem} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+               Post
+             </Button>
+           )}
         </div>
       </form>
     </Form>

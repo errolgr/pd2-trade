@@ -95,5 +95,21 @@ export function useMarketActions({
     });
   }, [rawSocketRef, pendingMarketListingsRequest]);
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, pendingMarketListingsRequest };
+  // Generic update market listing
+  const updateMarketListing = useCallback(async (hash: string, update: Record<string, any>): Promise<void> => {
+    if (!rawSocketRef.current) throw new Error('Socket not connected');
+    const command = [
+      "patch",
+      "market/listing",
+      hash,
+      update,
+      {}
+    ];
+    rawSocketRef.current.send('426' + JSON.stringify(command));
+    // You may want to listen for a confirmation event if your backend emits one
+    // For now, resolve immediately
+    return Promise.resolve();
+  }, [rawSocketRef]);
+
+  return { findMatchingItems, listSpecificItem, getMarketListings, pendingMarketListingsRequest, updateMarketListing };
 } 

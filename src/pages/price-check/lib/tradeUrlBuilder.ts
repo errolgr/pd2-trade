@@ -7,7 +7,7 @@ import { getTypeFromBaseType, getStatKey } from "./utils";
 import { RANGE_MARGIN } from "./types";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
 import { ItemType as PD2Item } from "@/assets/itemFuzzySearch";
-
+import { Item as GameStashItem } from "@/common/types/pd2-website/GameStashResponse";
 export function buildTradeUrl(
   item: Item,
   mappedItem: PD2Item,
@@ -229,6 +229,28 @@ export function buildGetMarketListingQuery(
   if (modifiers.length > 0) {
     query['item.modifiers'] = { $all: modifiers };
   }
+
+  return query as MarketListingQuery;
+}
+
+
+export function buildGetMarketListingByStashItemQuery(
+  items: GameStashItem[],
+  userId: string,
+): MarketListingQuery {
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const query: Partial<MarketListingQuery> = {
+    $resolve: { user: { in_game_account: true } },
+    type: 'item',
+    $limit: 10,
+    $skip: 0,
+    accepted_offer_id: null,
+    updated_at: { $gte: threeDaysAgo.toISOString() },
+    $sort: { bumped_at: -1 },
+    user_id: userId,
+    "item.hash": { $in: items.map(item => item.hash) }
+  };
 
   return query as MarketListingQuery;
 }
