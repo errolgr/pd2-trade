@@ -48,8 +48,12 @@ const { theme } = useData()
 PD2 Trader is a desktop app designed for Project Diablo 2 players. It helps you quickly check item prices and list items for trade.
 
 <div style="display: flex; justify-content: center; margin: 2rem 0;">
-  <a :href="`${theme.github.releasesUrl}/download/app-v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64-setup.exe`" class="vp-button" style="font-size: 1.25rem; padding: 0.75em 2em; background: #3b82f6; color: white; border-radius: 0.5em; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-    ⬇️ Install for Windows 10+
+  <a :href="`${theme.github.releasesUrl}/download/app-v${theme.appVersion}/PD2.Trader_${theme.appVersion}_x64-setup.exe`"
+     class="vp-button"
+     style="font-size: 1.25rem; padding: 0.5em 2em; background: #18181b; color: #f4f4f5; border-radius: 0.2em; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: background 0.2s; border: 1px solid #333;"
+     onmouseover="this.style.background='#27272a'"
+     onmouseout="this.style.background='#18181b'">
+    Installer
   </a>
 </div>
 
@@ -57,16 +61,16 @@ PD2 Trader is a desktop app designed for Project Diablo 2 players. It helps you 
 ### 🚀 Main Features
 
 #### Item Price Check
-<img src="https://i.imgur.com/F8qoHCw.png" alt="Item Price Check" style="max-width: 100%; margin-bottom: 0.5rem;" />
 Instantly check the value of your items in-game with a single hotkey.
+<img src="https://i.imgur.com/F8qoHCw.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 
 #### Quick List
-<img src="https://i.imgur.com/4eHHz6a.jpeg" alt="Quick List" style="max-width: 100%; margin-bottom: 0.5rem;" />
 List your items for trade quickly and efficiently.
+<img src="https://i.imgur.com/4eHHz6a.jpeg" alt="Quick List" style="max-width: 100%; margin-top: 0.5rem;" />
 
 #### Rune Exchange
-<img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-bottom: 0.5rem;" />
 Easily compare and trade runes with up-to-date exchange rates.
+<img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
 
 For more information, use the links above or explore the sidebar.
 
