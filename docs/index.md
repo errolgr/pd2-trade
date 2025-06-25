@@ -42,11 +42,11 @@ import { useData } from 'vitepress'
 const { theme } = useData()
 </script>
 
-<div style="display: flex; justify-content: center; margin-top: 2rem;">
+<div style="display: flex; justify-content: center;">
   <img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="200" />
 </div>
 
-<div style="text-align: center; font-size: 1.15rem; margin: 1.5rem 0 2.5rem 0;">
+<div style="text-align: center; font-size: 1.15rem; margin-top: -1rem; margin: 1.5rem;">
   PD2 Trader is a desktop app designed for Project Diablo 2 players. It helps you quickly check item prices and list items for trade.
 </div>
 
