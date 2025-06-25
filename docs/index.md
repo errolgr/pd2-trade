@@ -43,10 +43,10 @@ const { theme } = useData()
 </script>
 
 <div style="display: flex; justify-content: center;">
-  <img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="200" />
+  <img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="250" />
 </div>
 
-<div style="text-align: center; font-size: 1.15rem; margin-top: -1rem; margin: 1.5rem;">
+<div style="text-align: center; font-size: 1.0rem; margin-top: -1.5rem; margin-bottom: 1.5rem;">
   PD2 Trader is a desktop app designed for Project Diablo 2 players. It helps you quickly check item prices and list items for trade.
 </div>
 
@@ -65,15 +65,21 @@ const { theme } = useData()
 
 #### Item Price Check
 Instantly check the value of your items in-game with a single hotkey.
-<img src="https://i.imgur.com/F8qoHCw.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
+<a href="https://i.imgur.com/F8qoHCw.png" target="_blank" rel="noopener noreferrer">
+  <img src="https://i.imgur.com/F8qoHCw.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
+</a>
 
 #### Quick List
 List your items for trade quickly and efficiently.
-<img src="https://i.imgur.com/4eHHz6a.jpeg" alt="Quick List" style="max-width: 100%; margin-top: 0.5rem;" />
+<a href="https://i.imgur.com/4eHHz6a.jpeg" target="_blank" rel="noopener noreferrer">
+  <img src="https://i.imgur.com/4eHHz6a.jpeg" alt="Quick List" style="max-width: 100%; margin-top: 0.5rem;" />
+</a>
 
 #### Rune Exchange
 Easily compare and trade runes with up-to-date exchange rates.
-<img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
+<a href="https://i.imgur.com/YvGC9Du.png" target="_blank" rel="noopener noreferrer">
+  <img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
+</a>
 
 For more information, use the links above or explore the sidebar.
 
