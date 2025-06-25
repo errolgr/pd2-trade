@@ -36,6 +36,13 @@ features:
 
 ---
 
+<script setup>
+import { useData } from 'vitepress'
+
+const { theme } = useData()
+</script>
+
+
 ## Welcome to PD2 Trader
 
 PD2 Trader is a desktop app designed for Project Diablo 2 players. It helps you quickly check item prices and list items for trade.
