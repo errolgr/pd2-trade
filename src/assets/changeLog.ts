@@ -1,4 +1,10 @@
 export const changeLog = {
+  "0.2.0": [
+    "✨ List items directly from your stash (Ctrl + L)",
+    "✨ Get prices directly within the price check widget.",
+    "💎 Added rune price exchange, top left corner of pricing widget (CTRL + D)",
+    "🐛 Various bug fixes and UI improvements."
+  ],
   "0.1.6": [
     "🆕 Added rune pricing information from pd2.tools API",
     "📊 Shows current rune prices with listing counts and calculated values",

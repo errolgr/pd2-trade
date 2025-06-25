@@ -8,12 +8,18 @@ import {emit, listen} from '@tauri-apps/api/event';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 
 
-interface ISettings {
+export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
   mode: 'hardcore' | 'softcore';
   hotkeyModifier: 'ctrl' | 'alt';
   hotkeyKey: string;
+  hotkeyModifierListItem: 'ctrl' | 'alt';
+  hotkeyKeyListItem: string;
   lastSeenVersion?: string;
+  pd2Token?: string;
+  account?: string;
+  hotkeyModifierSettings?: 'ctrl' | 'alt';
+  hotkeyKeySettings?: string;
 }
 
 interface OptionsContextProps {
@@ -30,6 +36,10 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifier: 'ctrl',
   hotkeyKey: 'd',
   lastSeenVersion: '0.0.0', // fallback version
+  hotkeyModifierListItem: 'ctrl',
+  hotkeyKeyListItem: 'l',
+  hotkeyModifierSettings: 'ctrl',
+  hotkeyKeySettings: 'o',
 };
 
 const SETTINGS_FILENAME = 'settings.json';

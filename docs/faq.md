@@ -9,3 +9,7 @@ title: FAQ
 - **Is this app approved by PD2? Can I get banned for using it?**
 
   The app has been approved by the PD2 team, and it is safe to use. It does not modify the game in any way, it only reads the text from the game window.
+
+- **Is this app affiliated with Official Project Diablo 2 (PD2)?**
+
+  No, this app is not affiliated with the Official Project Diablo 2 team. It is an independent project.

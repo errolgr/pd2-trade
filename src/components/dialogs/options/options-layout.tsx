@@ -10,7 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { OptionsSidebar } from '@/components/dialogs/options/options-sidebar';
+import { OptionsSidebar } from './options-sidebar';
 
 interface OptionsLayoutProps {
   children: React.ReactNode;

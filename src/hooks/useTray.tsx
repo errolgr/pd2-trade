@@ -4,9 +4,10 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { Menu } from "@tauri-apps/api/menu";
 import { exit } from '@tauri-apps/plugin-process';
 import {useOptions} from "@/hooks/useOptions";
-import {currentMonitor, cursorPosition} from "@tauri-apps/api/window";
-import {WebviewWindow} from "@tauri-apps/api/webviewWindow";
-import {attachWindowLifecycle, openCenteredWindow} from "@/lib/window";
+import {openCenteredWindow} from "@/lib/window";
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import { open } from '@tauri-apps/plugin-shell';
+import { appConfigDir } from '@tauri-apps/api/path';
 
 type TrayContextValue = {
   tray: TrayIcon | null;
@@ -18,8 +19,9 @@ export const useTray = () => useContext(TrayContext);
 
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [tray, setTray] = useState<TrayIcon | null>(null);
-  const { setIsOpen } = useOptions();
+  const { setIsOpen, settings } = useOptions();
   const trayRef = useRef<TrayIcon | null>(null);
+  const lastShortcutRef = useRef<string | null>(null);
 
   const openWindow = async () => {
     const win = await openCenteredWindow("Settings", "/settings", {
@@ -34,6 +36,35 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   };
 
+  // Register global shortcut for opening settings
+  useEffect(() => {
+    if (!settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+
+    const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
+
+    async function registerShortcut() {
+      try {
+        if (lastShortcutRef.current) {
+          await unregister(lastShortcutRef.current);
+        }
+        await register(shortcut, () => {
+          openWindow();
+        });
+        lastShortcutRef.current = shortcut;
+      } catch (err) {
+        console.error('Failed to register settings shortcut:', err);
+      }
+    }
+
+    registerShortcut();
+
+    return () => {
+      if (lastShortcutRef.current) {
+        unregister(lastShortcutRef.current);
+        lastShortcutRef.current = null;
+      }
+    };
+  }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,6 +78,18 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               text: 'Settings',
               action: () => {
                 openWindow();
+              }
+            },
+            {
+              id: 'open-config',
+              text: 'Open config location',
+              action: async () => {
+                try {
+                  const configPath = await appConfigDir();
+                  await open(configPath);
+                } catch (err) {
+                  console.error('Failed to open config location:', err);
+                }
               }
             },
             {

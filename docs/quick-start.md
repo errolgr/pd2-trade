@@ -12,6 +12,8 @@ All that remains is to parse text in PD2 Trader and show to you in a fancy way.
 - Default hotkeys
   {:.no-list}
     - Press `Ctrl + D` to check the price of the item
+    - Press `Ctrl + L` to list an item for trade
+    - Press `Ctrl + O` to open settings
 - Settings
    - Ladder/Hardcore toggle can be found in the settings by visting the system tray icon and clicking "Settings"
 - Other

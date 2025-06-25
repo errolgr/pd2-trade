@@ -12,7 +12,7 @@ const FIXED_RUNE_PRICES: Record<string, number> = {
 };
 
 // Rune hierarchy order (highest to lowest)
-const RUNE_HIERARCHY = [
+export const RUNE_HIERARCHY = [
   "Zod Rune", "Cham Rune", "Jah Rune", "Ber Rune", "Sur Rune", "Lo Rune", "Ohm Rune", "Vex Rune",
   "Gul Rune", "Ist Rune", "Mal Rune", "Um Rune", "Pul Rune", "Lem Rune", "Fal Rune", "Ko Rune",
   "Lum Rune", "Io Rune", "Hel Rune", "Dol Rune", "Shael Rune", "Sol Rune", "Amn Rune", "Thul Rune",

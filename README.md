@@ -1,10 +1,11 @@
-# ![PD2 Trader](src-tauri/icons/favicon-32x32.png) PD2 Trader
-
-
+<img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="200"/>
 
 ➡ [Download for Windows](https://errolgr.github.io/pd2-trade/download) ⬅
 
 ## Tool showcase
 
-![](src/assets/showcase1.png)
+| Item Price Check | Quick List | Rune Exchange |
+|-----|------|--------|
+| ![](https://i.imgur.com/F8qoHCw.png) | ![](https://i.imgur.com/4eHHz6a.jpeg) | ![](https://i.imgur.com/YvGC9Du.png) |
+
 

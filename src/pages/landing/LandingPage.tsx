@@ -13,8 +13,9 @@ import iconPath from '@/assets/img_1.png';
 import {useKeySender} from "@/hooks/useKeySender";
 import {DialogProvider} from "@/hooks/useDialog";
 import {getVersion} from "@tauri-apps/api/app";
-import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow} from "@/lib/window";
+import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow, openWindowAtCursor} from "@/lib/window";
 import {changeLog} from "@/assets/changeLog";
+import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -91,6 +92,7 @@ const LandingPage: React.FC = () => {
       transparent: true,
       alwaysOnTop: true,
       shadow: false,
+
     });
 
     if (!w) return;
@@ -105,13 +107,44 @@ const LandingPage: React.FC = () => {
     });
   };
 
+  // Add handler to open the quick list item shortcut page in a webview
+  const openQuickListWindow = async () => {
+    console.log('[LandingPage] Opening quick list window...');
 
+    await keyPress('ctrl+c');
+    console.log('[LandingPage] Sent ctrl+c to copy item');
+
+    await sleep(100);
+    const raw = await read();
+    console.log('[LandingPage] Read clipboard content:', raw ? 'valid content' : 'empty');
+    
+    if (!clipboardContainsValidItem(raw)) {
+      console.log('[LandingPage] Clipboard does not contain valid item, returning');
+      return;
+    }
+    console.log('[LandingPage] Raw Item' + raw);;
+
+    const encodedItem = btoa(raw);
+    console.log('[LandingPage] Encoded item for URL parameter');
+    
+    console.log('[LandingPage] Opening centered window with dimensions 600x485');
+    await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
+      decorations: false,
+      transparent: true,
+      focus: true,
+      shadow: false,
+      skipTaskbar: true,
+      width: 600,
+      height: 485,
+      alwaysOnTop: true,
+    });
+    console.log('[LandingPage] Quick list window opened successfully');
+  };
 
   useEffect(() => {
     if (!isLoading) {
       getVersion().then((version) => {
         console.log("[LandingPage] Current version:", version);
-        console.log("[LandingPage] settings.lastSeenVersion", settings);
         if (version && settings.lastSeenVersion != version && changeLog[version]) {
           openCenteredWindow('ChangeLog', '/change-log', {
             decorations: false,
@@ -133,6 +166,7 @@ const LandingPage: React.FC = () => {
     if (!isTauri() || isLoading || !settings.hotkeyKey) return;
 
     const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
+    const quickListShortcut =  `${settings.hotkeyModifierListItem === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyListItem.toUpperCase()}`;
 
     const cleanup = async () => {
       if (lastRegisteredShortcut.current) {
@@ -153,6 +187,14 @@ const LandingPage: React.FC = () => {
       });
 
       lastRegisteredShortcut.current = newShortcut;
+
+      // Register the quick-list shortcut
+      await register(quickListShortcut, (e) => {
+        if (e.state === 'Pressed') {
+          openQuickListWindow();
+          console.log('[LandingPage] Quick List shortcut pressed:', quickListShortcut);
+        }
+      });
     };
 
     cleanup();
@@ -163,16 +205,19 @@ const LandingPage: React.FC = () => {
         console.log('[LandingPage] Cleanup: unregistered shortcut:', lastRegisteredShortcut.current);
         lastRegisteredShortcut.current = null;
       }
+      // Unregister the quick-list shortcut
+      unregister(quickListShortcut).catch(() => void 0);
+      console.log('[LandingPage] Cleanup: unregistered quick-list shortcut:', quickListShortcut);
     };
   }, [isLoading, settings.hotkeyModifier, settings.hotkeyKey]);
-  return <>
+  return <Pd2WebsiteProvider>
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <img src={iconPath}
           style={{width: 400}}/>
       </div>
     )}
-  </>
+  </Pd2WebsiteProvider>
 };
 
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
