@@ -140,7 +140,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             setMarketLoading(true);
             setMarketListingsResult(null);
             try {
-              console.log(pd2MarketQuery);
               const result = await getMarketListings(pd2MarketQuery);
               setMarketListingsResult(result);
             } catch (e: any) {

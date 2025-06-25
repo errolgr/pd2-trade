@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.2.1": [
+    "🔧 Fixed an issue that was causing boot up to fail",
+    "🆕 Added a toast popup into the side menu"
+  ],
   "0.2.0": [
     "✨ List items directly from your stash (Ctrl + L)",
     "✨ Get prices directly within the price check widget.",

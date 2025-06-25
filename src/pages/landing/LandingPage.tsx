@@ -16,6 +16,9 @@ import {getVersion} from "@tauri-apps/api/app";
 import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow, openWindowAtCursor} from "@/lib/window";
 import {changeLog} from "@/assets/changeLog";
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { emit, listen } from '@tauri-apps/api/event';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -34,7 +37,10 @@ const LandingPage: React.FC = () => {
 
   // Hide the launch title after 2 seconds
   useEffect(() => {
-    const timer = setTimeout(() => setShowTitle(false), 2000);
+    const timer = setTimeout(() => {
+      setShowTitle(false)
+      emit('toast-event', "is now running in the background...")
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -138,7 +144,7 @@ const LandingPage: React.FC = () => {
       height: 485,
       alwaysOnTop: true,
     });
-    console.log('[LandingPage] Quick list window opened successfully');
+    console.log('[LandingPage] Quick list window opened succcessfully');
   };
 
   useEffect(() => {
@@ -210,7 +216,31 @@ const LandingPage: React.FC = () => {
       console.log('[LandingPage] Cleanup: unregistered quick-list shortcut:', quickListShortcut);
     };
   }, [isLoading, settings.hotkeyModifier, settings.hotkeyKey]);
+
+  // Listen for Tauri 'toast-event' and show a toast
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    if (isTauri()) {
+      listen('toast-event', (event) => {
+        // event.payload can be string or object
+        let message = '';
+        if (typeof event.payload === 'string') {
+          message = event.payload;
+        } else if (event.payload && typeof event.payload === 'object') {
+          message = JSON.stringify(event.payload);
+        }
+        toast("PD2 Trader", { description: message, position: 'bottom-right' });
+      }).then((off) => {
+        unlisten = off;
+      });
+    }
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
+
   return <Pd2WebsiteProvider>
+    <Toaster position="bottom-right" />
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <img src={iconPath}

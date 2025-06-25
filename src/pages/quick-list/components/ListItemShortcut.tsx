@@ -21,6 +21,7 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import moment from 'moment';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { emit } from '@tauri-apps/api/event';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem;
@@ -81,6 +82,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const form = useForm<z.infer<typeof shortcutFormSchema>>({
     resolver: zodResolver(shortcutFormSchema),
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
@@ -137,9 +139,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setError('Please select an item to list');
       return;
     }
-
-    const isAlreadyListed = !!currentListingForSelected;
+    setSubmitLoading(true);
     try {
+      const isAlreadyListed = !!currentListingForSelected;
       if (isAlreadyListed) {
         // Prepare update fields
         let updateFields: Record<string, any> = {};
@@ -151,14 +153,20 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateStashItemByHash(selectedItem.hash, updateFields);
+        await emit('toast-event', 'Listing updated!');
+        await new Promise((resolve) => setTimeout(resolve, 200));
         getCurrentWebviewWindow().close();
       } else {
         await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
         form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
+        await emit('toast-event', 'Item listed!');
+        await new Promise((resolve) => setTimeout(resolve, 200));
         getCurrentWebviewWindow().close();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to list/update item');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -530,11 +538,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
           )}
            {selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash) ? (
-            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
-                     Update
+            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading}>
+              {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
+              Update
             </Button>
            ) : (
-             <Button type="submit" disabled={!selectedItem} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+             <Button type="submit" disabled={!selectedItem || submitLoading} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+               {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
                Post
              </Button>
            )}

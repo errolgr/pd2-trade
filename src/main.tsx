@@ -9,11 +9,11 @@ import ItemPage from "@/pages/price-check/ItemPage";
 import {SettingsPage} from "@/pages/settings/SettingsPage";
 import ChangelogPage from "@/pages/change-log/ChangeLogPage";
 import { QuickListPage } from './pages/quick-list/QuickListPage';
+import { OptionsProvider } from './hooks/useOptions';
 
 Sentry.init({
   dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
   integrations: [
-    Sentry.captureConsoleIntegration(),
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration()
   ],
@@ -51,9 +51,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route
         path={"/change-log"}
-        element={<Providers>
-          <ChangelogPage/>
-        </Providers>
+        element={<OptionsProvider>
+            <ChangelogPage/>
+        </OptionsProvider>
         }
       />
     </Routes>

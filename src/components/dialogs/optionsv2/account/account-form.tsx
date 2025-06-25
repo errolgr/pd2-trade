@@ -14,6 +14,7 @@ import {
   SelectContent,
   SelectItem
 } from '@/components/ui/select';
+import { emit } from '@tauri-apps/api/event';
 
 const accountFormSchema = z.object({
   account: z.string().min(1, 'Please select an account'),
@@ -25,6 +26,7 @@ export function AccountForm() {
   const { settings, updateSettings } = useOptions();
   const { getAuthData } = usePD2WebsiteClient();
   const [accounts, setAccounts] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getAuthData().then((authData: AuthData | null) => {
@@ -39,9 +41,17 @@ export function AccountForm() {
     defaultValues: { account: settings?.account || '' },
   });
 
+  const onSubmit = async (values: AccountFormValues) => {
+    setSaving(true);
+    await updateSettings({ account: values.account });
+    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
+    setSaving(false);
+    emit('toast-event', 'Account updated!');
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((values) => updateSettings({ account: values.account }))} className="flex flex-col gap-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
         <FormField
           control={form.control}
           name="account"
@@ -68,8 +78,9 @@ export function AccountForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="self-start cursor-pointer mt-2">
-          Update account
+        <Button type="submit" className="self-start cursor-pointer mt-2" disabled={saving}>
+          {saving ? <span className="animate-spin mr-2">⏳</span> : null}
+          {saving ? 'Saving...' : 'Update account'}
         </Button>
       </form>
     </Form>

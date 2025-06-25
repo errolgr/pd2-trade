@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
+import { emit } from '@tauri-apps/api/event';
+import { Loader2 } from 'lucide-react';
 
 const hotkeyFormSchema = z.object({
   hotkeyModifier: z.enum(['ctrl', 'alt']),
@@ -39,19 +41,41 @@ type HotkeyFormValues = z.infer<typeof hotkeyFormSchema>;
 
 export function HotkeyForm() {
   const { settings, isLoading, updateSettings } = useOptions();
+  const [saving, setSaving] = React.useState(false);
+
+  const form = useForm<HotkeyFormValues>({
+    resolver: zodResolver(hotkeyFormSchema),
+    defaultValues: (settings as HotkeyFormValues) || {
+      hotkeyModifier: 'ctrl',
+      hotkeyKey: '',
+      hotkeyModifierListItem: 'ctrl',
+      hotkeyKeyListItem: '',
+      hotkeyModifierSettings: 'ctrl',
+      hotkeyKeySettings: '',
+    },
+  });
+
+  React.useEffect(() => {
+    if (settings) {
+      form.reset(settings);
+    }
+  }, [settings]);
 
   if (isLoading || !settings) {
     return null;
   }
 
-  const form = useForm<HotkeyFormValues>({
-    resolver: zodResolver(hotkeyFormSchema),
-    defaultValues: settings,
-  });
+  const onSubmit = async (values: HotkeyFormValues) => {
+    setSaving(true);
+    await updateSettings(values);
+    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
+    setSaving(false);
+    emit('toast-event', 'Hotkey preferences saved!');
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(updateSettings)} className="flex flex-col gap-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
         <div className="flex items-end gap-2">
           <FormField
             control={form.control}
@@ -169,8 +193,9 @@ export function HotkeyForm() {
             )}
           />
         </div>
-        <Button type="submit" className={'self-start cursor-pointer mt-2'}>
-          Update hotkey preferences
+        <Button type="submit" className={'self-start cursor-pointer mt-2'} disabled={saving}>
+          {saving ? <Loader2 className="animate-spin mr-2" /> : null}
+          {saving ? 'Saving...' : 'Update hotkey preferences'}
         </Button>
       </form>
     </Form>
