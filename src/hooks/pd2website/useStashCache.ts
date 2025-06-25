@@ -147,7 +147,7 @@ export function useStashCache(rawSocketRef, authData, settings, pendingStashRequ
         keys: ['name'],
         threshold: 0.1, // Adjust for strictness (lower = stricter)
       });
-      matchingItems = fuse.search(item.name).map(result => result.item);
+      matchingItems = fuse.search(item.isRuneword ? item.runeword : item.name).map(result => result.item);
     }
 
     // Filter by quality - only return items with matching quality

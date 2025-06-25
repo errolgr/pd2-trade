@@ -18,6 +18,7 @@ export const usePD2WebsiteClient = () => {
         const payload = event.payload;
         if (payload && payload.requestId === requestId) {
           unlistenPromise.then((off) => off());
+          console.log(payload);
           if (payload.error) reject(new Error(payload.error));
           else resolve(payload.result);
         }

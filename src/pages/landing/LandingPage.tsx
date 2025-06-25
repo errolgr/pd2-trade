@@ -145,7 +145,6 @@ const LandingPage: React.FC = () => {
     if (!isLoading) {
       getVersion().then((version) => {
         console.log("[LandingPage] Current version:", version);
-        console.log("[LandingPage] settings.lastSeenVersion", settings);
         if (version && settings.lastSeenVersion != version && changeLog[version]) {
           openCenteredWindow('ChangeLog', '/change-log', {
             decorations: false,

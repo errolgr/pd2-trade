@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { RUNE_API_MAP } from '../../price-check/lib/types';
-import { Check, Cross, X, Search, Loader2 } from "lucide-react";
+import { Check, Cross, X, Search, Loader2, AlertCircle } from "lucide-react";
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -111,6 +111,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         setSelectedItem(items[0]);
       }
     } catch (err) {
+      console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to find items');
     } finally {
       setIsLoading(false);
@@ -351,8 +352,21 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             <X className='h-4 w-4'/>
           </Button>
         </div>
-        <div className="text-center py-8 text-gray-500">
-          No items found matching "{item.name}"
+        <div className="flex flex-col items-center justify-center py-8 text-gray-500 gap-2">
+          <div className="flex items-center gap-2">
+    
+            <span>No items found matching "{item.name}"</span>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <span>
+                  <AlertCircle className="text-yellow-500 w-4 h-4 cursor-pointer" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs text-center">
+                An item won't be found unless it is placed in your stash and you have made a new game.<br />
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
     );

@@ -13,7 +13,7 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     .transparent(false)
     .visible(true)
     .shadow(true)
-    .always_on_top(false)
+    .focused(true)
     .skip_taskbar(false)
     .devtools(true)
     .on_navigation(move |url| {
@@ -21,6 +21,10 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
         if let Some(stripped) = url_str.strip_prefix("tauri://pd2-token-found?token=") {
             let token: &str = stripped;
             let _ = app_handle_clone.emit("pd2-token-found", token);
+            // Close the webview window after emitting the token
+            if let Some(window) = app_handle_clone.get_webview_window("project-diablo2") {
+                let _ = window.close();
+            }
             false
         } else {
             // Allow normal navigation
@@ -38,6 +42,7 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
             const token = localStorage.getItem('pd2-token');
             if (token) {
                 window.location = 'tauri://pd2-token-found?token=' + encodeURIComponent(token);
+                localStorage.removeItem('pd2-token');
                 clearInterval(interval);
             }
         }, 500);

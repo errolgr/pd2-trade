@@ -21,6 +21,12 @@ const hotkeyFormSchema = z.object({
     .min(1, 'Enter a key')
     .max(1, 'Only one character allowed')
     .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+  hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
+  hotkeyKeySettings: z
+    .string()
+    .min(1, 'Enter a key')
+    .max(1, 'Only one character allowed')
+    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
 }).refine(
   (data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'),
   {
@@ -107,6 +113,45 @@ export function HotkeyForm() {
           <FormField
             control={form.control}
             name="hotkeyKeyListItem"
+            render={({ field }) => (
+              <FormItem className={'flex flex-row gap-4 items-center'}>
+                <div>+</div>
+                <FormControl>
+                  <Input
+                    type="text"
+                    maxLength={1}
+                    value={field.value?.toUpperCase()}
+                    className="w-12 text-center"
+                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex items-end gap-2 mt-4">
+          <FormField
+            control={form.control}
+            name="hotkeyModifierSettings"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="mb-1 block">Open Settings</FormLabel>
+                <FormControl>
+                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                    <TabsList>
+                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="hotkeyKeySettings"
             render={({ field }) => (
               <FormItem className={'flex flex-row gap-4 items-center'}>
                 <div>+</div>

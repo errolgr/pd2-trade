@@ -18,6 +18,8 @@ export interface ISettings {
   lastSeenVersion?: string;
   pd2Token?: string;
   account?: string;
+  hotkeyModifierSettings?: 'ctrl' | 'alt';
+  hotkeyKeySettings?: string;
 }
 
 interface OptionsContextProps {
@@ -36,6 +38,8 @@ const DEFAULT_SETTINGS: ISettings = {
   lastSeenVersion: '0.0.0', // fallback version
   hotkeyModifierListItem: 'ctrl',
   hotkeyKeyListItem: 'l',
+  hotkeyModifierSettings: 'ctrl',
+  hotkeyKeySettings: 'o',
 };
 
 const SETTINGS_FILENAME = 'settings.json';

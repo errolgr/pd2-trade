@@ -44,6 +44,7 @@ export function usePd2EventListeners({
         const result = await findMatchingItems(payload.item);
         emit(Pd2EventType.FIND_MATCHING_ITEMS_RESULT, { result, requestId: payload.requestId });
       } catch (error: any) {
+        console.error(error);
         emit(Pd2EventType.FIND_MATCHING_ITEMS_RESULT, { error: error.message, requestId: payload.requestId });
       }
     });

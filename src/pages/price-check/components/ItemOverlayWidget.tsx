@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,13 @@ import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from "@/hooks/useItems";
+import { AuthData } from "@/common/types/pd2-website/AuthResponse";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
-  const { getMarketListings } = usePD2WebsiteClient();
+  const { getMarketListings, getAuthData } = usePD2WebsiteClient();
   const { findOneByName } = useItems();
+  const [authData, setAuthData] = useState<AuthData | null>(null);
 
   // Use custom hooks for state management
   const {
@@ -41,6 +43,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle
   } = useStatSelection(item);
 
+  useEffect(() => {
+    if (!authData) {
+      getAuthData().then(setAuthData);
+    }
+  }, [getAuthData]);
+
   const pd2Item = useMemo(() => findOneByName(item.name), [item])
 
   /** Build ProjectDiablo2 trade URL */
@@ -52,10 +60,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper);
   }, [selected, filters, item, statMapper, settings]);
   
-  const pd2MarketQuery2 = useMemo(() => {
-    return buildGetMarketListingByStashItemQuery([], "", selected, filters, settings, statMapper);
-  }, [selected, filters, item, statMapper, settings]);
-
 
   // Market listings state
   const [marketListingsResult, setMarketListingsResult] = useState<any | null>(null);
@@ -136,7 +140,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             setMarketLoading(true);
             setMarketListingsResult(null);
             try {
-              const result = await getMarketListings(pd2MarketQuery2);
+              console.log(pd2MarketQuery);
+              const result = await getMarketListings(pd2MarketQuery);
               setMarketListingsResult(result);
             } catch (e: any) {
               setMarketError(e.message || 'Failed to fetch market listings');

@@ -18,7 +18,7 @@ export default defineConfig({
     }
   },
   themeConfig: {
-    appVersion: '0.1.5',
+    appVersion: '0.2.0',
     github: {
       releasesUrl: 'https://github.com/errolgr/pd2-trade/releases'
     },
@@ -27,6 +27,11 @@ export default defineConfig({
         text: 'Discord',
         color: '#7289DA',
         link: 'https://discord.gg/Yj7p3rMyRk'
+      },
+      {
+        text: 'Buy me a coffee',
+        color: '#6F4E37',
+        link: 'https://buymeacoffee.com/errolgreen'
       },
       {
         text: 'GitHub',
