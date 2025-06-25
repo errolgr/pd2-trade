@@ -130,7 +130,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setCurrentListings(result.data.map((item) => item));
     }
     setIsMarketListingsLoading(false);
-    console.log(result.data.map((data) => data.item.hash));
   }, [pd2MarketQuery]);
 
   const handleSubmit = async (values: z.infer<typeof shortcutFormSchema>) => {
