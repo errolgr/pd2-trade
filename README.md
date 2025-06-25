@@ -1,6 +1,4 @@
-# ![PD2 Trader](src-tauri/icons/favicon-32x32.png) PD2 Trader
-
-
+<img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="120"/>
 
 ➡ [Download for Windows](https://errolgr.github.io/pd2-trade/download) ⬅
 
