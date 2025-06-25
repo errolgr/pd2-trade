@@ -1,4 +1,4 @@
-<img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="120"/>
+<img src="https://i.imgur.com/tGkknQX.png" alt="Logo" width="200"/>
 
 ➡ [Download for Windows](https://errolgr.github.io/pd2-trade/download) ⬅
 
