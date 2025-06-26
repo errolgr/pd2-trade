@@ -39,6 +39,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     filters,
     sortedStats,
     updateFilter,
+    setSelected,
+    setFilters,
     toggle
   } = useStatSelection(item);
 
@@ -64,6 +66,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     if (item) {
       // clear market listing result if new item is loaded
       setMarketListingsResult(null);
+      setSelected(new Set());
+      setFilters({})
+      
     }
   }, [item])
   /** -------------------
