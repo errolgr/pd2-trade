@@ -89,7 +89,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   const type = form.watch('type');
 
-  
+
   // Find matching items when component mounts
   React.useEffect(() => {
     if (item && authData) {
@@ -148,13 +148,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
         await emit('toast-event', 'Listing updated!');
-        await new Promise((resolve) => setTimeout(resolve, 200));
         getCurrentWebviewWindow().hide();
       } else {
         await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
         form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
         await emit('toast-event', 'Item listed!');
-        await new Promise((resolve) => setTimeout(resolve, 200));
         getCurrentWebviewWindow().hide();
       }
     } catch (err) {
@@ -375,10 +373,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   return (
     <Form {...form}>
-      <form className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
+      <form className="inline-block p-4 border rounded-lg bg-background shadow w-screen" onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="flex justify-between mb-2 items-center">
           <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
+          <Button type="button" className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -533,12 +531,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
           )}
            {selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash) ? (
-            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading} onSubmit={form.handleSubmit(handleSubmit)}>
+            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading}>
               {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
               Update
             </Button>
            ) : (
-             <Button type="submit" disabled={!selectedItem || submitLoading} style={{fontFamily: 'DiabloFont', fontWeight: 600}} onSubmit={form.handleSubmit(handleSubmit)}>
+             <Button type="submit" disabled={!selectedItem || submitLoading} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
                {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
                Post
              </Button>
