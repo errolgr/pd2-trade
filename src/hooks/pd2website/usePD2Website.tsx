@@ -40,7 +40,9 @@ export const Pd2WebsiteProvider = ({ children }) => {
   // Authenticate when pd2Token changes
   useEffect(() => {
     if (settings?.pd2Token) {
-      authenticate().then(setAuthData);
+      authenticate().then((data) => {
+        setAuthData(data);
+      });
     }
   }, [settings?.pd2Token]);
 

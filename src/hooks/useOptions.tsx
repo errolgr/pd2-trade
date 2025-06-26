@@ -76,7 +76,6 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setSettings(updated);
       emit('settings-updated', updated); // Notify other parts of the app
-      toast.success('Settings have been updated...');
     } catch (error) {
       console.error('Error updating settings:', error);
     }

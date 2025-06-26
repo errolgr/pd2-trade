@@ -20,6 +20,7 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { jwtDecode } from 'jwt-decode';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -30,7 +31,7 @@ const LandingPage: React.FC = () => {
   const { read, copy } = useClipboard();
   const {checkForUpdates, downloadUpdate} = useUpdater();
   const keyPress = useKeySender();
-  const { settings, isLoading } = useOptions();
+  const { settings, isLoading, updateSettings } = useOptions();
   const lastRegisteredShortcut = useRef<string | null>(null);
   const quickListWinRef = useRef<WebviewWindow | null>(null);
 
@@ -87,8 +88,9 @@ const LandingPage: React.FC = () => {
         winRef.current = null;
       });
     } else {
-      await winRef.current.show();
       winRef.current.emit("new-search", encoded);
+      await sleep(100);
+      await winRef.current.show();
     }
   }, []);
 
@@ -127,8 +129,9 @@ const LandingPage: React.FC = () => {
         quickListWinRef.current = null;
       });
     } else {
-      await quickListWinRef.current.show();
       quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      await sleep(100);
+      await quickListWinRef.current.show();
     }
   };
 
@@ -208,13 +211,11 @@ const LandingPage: React.FC = () => {
     if (isTauri()) {
       listen('toast-event', (event) => {
         // event.payload can be string or object
-        let message = '';
         if (typeof event.payload === 'string') {
-          message = event.payload;
+          toast("PD2 Trader", { description: event.payload, position: 'bottom-right' });
         } else if (event.payload && typeof event.payload === 'object') {
-          message = JSON.stringify(event.payload);
+          toast("PD2 Trader", { position: 'bottom-right', ...event.payload });
         }
-        toast("PD2 Trader", { description: message, position: 'bottom-right' });
       }).then((off) => {
         unlisten = off;
       });
@@ -224,6 +225,24 @@ const LandingPage: React.FC = () => {
     };
   }, []);
 
+
+    // Listen for Tauri 'pd2-token-found' and save the token
+    useEffect(() => {
+      let unlisten: (() => void) | undefined;
+      if (isTauri()) {
+        listen<string>('pd2-token-found', (event) => {
+          updateSettings({ pd2Token: event.payload });
+          toast.success("PD2 Trader", { description: "Authentication successful!", position: 'bottom-right' });
+        }).then((off) => {
+          unlisten = off;
+        });
+      }
+      return () => {
+        if (unlisten) unlisten();
+      };
+    }, []);
+  
+  
 
    // Open webview
    const open = async () => {
@@ -240,6 +259,7 @@ const LandingPage: React.FC = () => {
     if (isLoading) return; 
 
     if (!settings?.pd2Token) {
+      toast.error("PD2 Trader", { description: "PD2 website authentication required!", position: 'bottom-right' });
       open();
       return;
     }
@@ -260,8 +280,32 @@ const LandingPage: React.FC = () => {
     }
   }, [settings?.pd2Token, isLoading]);
 
+  // Periodically check for updates every 5 minutes
+  useEffect(() => {
+    if (!isTauri()) return;
+    let interval: NodeJS.Timeout;
+    let updateNotified = false;
+
+    const checkAndNotify = async () => {
+      const update = await checkForUpdates();
+      if (update?.available && !updateNotified) {
+        updateNotified = true;
+        toast("PD2 Trader - Update Available", {
+          description: "A new update is ready. Please restart to apply it.",
+          position: 'bottom-right',
+        });
+      }
+    };
+
+    // Initial check
+    checkAndNotify();
+    // Set interval for subsequent checks
+    interval = setInterval(checkAndNotify, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [checkForUpdates]);
+
   return <Pd2WebsiteProvider>
-    <Toaster position="bottom-right" />
+    <Toaster expand position="bottom-right" />
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <img src={iconPath}

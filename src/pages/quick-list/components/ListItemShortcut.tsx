@@ -89,16 +89,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   const type = form.watch('type');
 
-  // Show loading spinner while waiting for item or authData
-  if (!item || !authData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[200px] p-4">
-        <Loader2 className="animate-spin h-8 w-8 text-gray-400 mb-2" />
-        <span className="text-gray-400">Loading...</span>
-      </div>
-    );
-  }
-
+  
   // Find matching items when component mounts
   React.useEffect(() => {
     if (item && authData) {
@@ -450,7 +441,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                                 const marketId = currentListings.find((c) => c.item.hash == stashItem.hash)._id;
                                 await updateMarketListing(marketId, { bumped_at: new Date().toISOString() });
                                 await getMarketListingsForStashItems();
-                                await updateStashItemByHash(stashItem.hash, { bumped_at: new Date().toISOString() });
+                                await updateItemByHash(stashItem.hash, { bumped_at: new Date().toISOString() });
                                 await findMatchingItemsInStash();
                                 setBumping(null);
                                 setJustBumped(stashItem.hash);

@@ -59,6 +59,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
 
+
+  useEffect(() => {
+    if (item) {
+      // clear market listing result if new item is loaded
+      setMarketListingsResult(null);
+    }
+  }, [item])
   /** -------------------
    *  Render
    *  -----------------*/
