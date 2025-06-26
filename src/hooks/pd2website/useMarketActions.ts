@@ -4,8 +4,10 @@ import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
-import { MarketListingEntry, MarketListingResponse, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
+import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import qs from 'qs';
+import buildURL from 'axios/lib/helpers/buildURL'
 
 interface UseMarketActionsProps {
   settings: ISettings;
@@ -16,6 +18,29 @@ interface UseMarketActionsProps {
   CACHE_TTL: number;
 }
 
+function buildUrlWithQuery(base: string, query?: Record<string, any>) {
+  if (!query) return base;
+  const queryString = axiosStyleSerializer(query);
+  return queryString ? `${base}?${queryString}` : base;
+}
+
+
+function axiosStyleSerializer(obj) {
+  return qs
+    .stringify(obj, 
+      { 
+        arrayFormat:      'brackets',  // foo[]=1&foo[]=2
+        encodeValuesOnly: true         // keys like [$in] stay literal}
+      }
+    )
+    // mimic Axios’s re-decoding of [] → literal
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    //—and if you care about spaces-as-plus…
+    .replace(/%20/g, '+');
+}
+
+
 export function useMarketActions({ 
   settings, 
   authData, 
@@ -24,9 +49,6 @@ export function useMarketActions({
   stashCache, 
   CACHE_TTL
 }: UseMarketActionsProps) {
-  // Set the auth token for axios
-  setAxiosAuthToken(settings.pd2Token);
-
   // Find matching items
   const findMatchingItems = useCallback(async (item: PriceCheckItem): Promise<GameStashItem[]> => {
     let items: GameStashItem[] = [];
@@ -66,20 +88,41 @@ export function useMarketActions({
       price: type === 'negotiable' ? 'obo' : note,
       bumped_at,
     };
-    await axiosInstance.post('/market/listing', body);
+    await tauriFetch('https://api.projectdiablo2.com/market/listing', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    });
   }, [settings, authData]);
 
   // Get market listings (GET /market/listing)
   const getMarketListings = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
-    const response = await axiosInstance.get('/market/listing', { params: query });
-    return response.data;
-  }, []);
+    const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query);
+    console.log(query);
+    const response = await tauriFetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+      }
+    });
+    return await response.json();
+  }, [settings]);
 
   // Generic update market listing (PATCH /market/listing/:hash)
   const updateMarketListing = useCallback(async (hash: string, update: Record<string, any>): Promise<MarketListingEntry> => {
-    const response = await axiosInstance.patch(`/market/listing/${hash}`, update);
-    return response.data;
-  }, []);
+    const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${hash}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(update)
+    });
+    return await response.json();
+  }, [settings]);
 
   return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing };
 } 

@@ -1,5 +1,4 @@
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
-use tauri_plugin_log::{Target, TargetKind};
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::Foundation::RECT;
@@ -20,6 +19,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -85,8 +85,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::get_diablo_rect,
-            commands::press_key,
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,

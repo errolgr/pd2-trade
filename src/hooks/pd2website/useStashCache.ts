@@ -1,14 +1,22 @@
 import { useCallback, useRef } from 'react';
 import Fuse from 'fuse.js';
-import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 
+function buildUrlWithQuery(base: string, query?: Record<string, any>) {
+  if (!query) return base;
+  const url = new URL(base);
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) url.searchParams.append(key, String(value));
+  });
+  return url.toString();
+}
+
 export function useStashCache(authData, settings) {
-  setAxiosAuthToken(settings.pd2Token);
   const stashCache = useRef(null);
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -23,8 +31,14 @@ export function useStashCache(authData, settings) {
       softcore: !is_hardcore,
       ladder: is_ladder
     };
-    const response = await axiosInstance.get<GameData>(`/game/stash/${account}`, { params });
-    const stashData = response.data;
+    const url = buildUrlWithQuery(`https://api.projectdiablo2.com/game/stash/${account}`, params);
+    const response = await tauriFetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+      },
+    });
+    const stashData = await response.json();
     stashCache.current = { data: stashData, timestamp: Date.now() };
     return stashData;
   }, [settings, authData]);

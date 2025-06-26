@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
-import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 
 export const Pd2WebsiteContext = React.createContext(undefined);
@@ -10,8 +10,6 @@ export const Pd2WebsiteContext = React.createContext(undefined);
 export const Pd2WebsiteProvider = ({ children }) => {
   const { updateSettings, settings, isLoading } = useOptions();
   const [authData, setAuthData] = useState<AuthData>(null);
-
-  setAxiosAuthToken(settings?.pd2Token);
 
   // Stash cache and fetch (RESTful)
   const {
@@ -33,8 +31,15 @@ export const Pd2WebsiteProvider = ({ children }) => {
   });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
-    const response = await axiosInstance.post<AuthData>('/security/session', { strategy: 'jwt', accessToken: settings.pd2Token });
-    return response.data;
+    const response = await tauriFetch('https://api.projectdiablo2.com/security/session', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token })
+    });
+    return await response.json();
   }, [settings]);
 
   // Authenticate when pd2Token changes

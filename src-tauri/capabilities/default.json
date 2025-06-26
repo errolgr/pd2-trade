@@ -77,6 +77,6 @@
       ]
     },
     "opener:default",
-    "log:default"
+    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }] }
   ]
 }

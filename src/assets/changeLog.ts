@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.2.5": [
+    "🔧 Fixed another critical launch issue that was causing app to stall during launch",
+    "🔧 Requests are now proxied to PD2",
+  ],
   "0.2.4": [
     "🔧 Fixed critical launch issue that was causing the app to stall during launch",
   ],
