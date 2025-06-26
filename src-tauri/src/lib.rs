@@ -81,7 +81,6 @@ pub fn run() {
 
             let main_window = win_builder.build().unwrap();
             main_window.set_ignore_cursor_events(true);
-            main_window.open_devtools();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
