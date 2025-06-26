@@ -5,7 +5,7 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     let webview_window = WebviewWindowBuilder::new(
         &app_handle,
         "project-diablo2",
-        WebviewUrl::External("https://projectdiablo2.com/login".parse().unwrap())
+        WebviewUrl::External("https://projectdiablo2.com/login".parse().unwrap()),
     )
     .title("Project Diablo 2 Website")
     .inner_size(1200.0, 800.0)
@@ -34,7 +34,9 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     .build()
     .map_err(|e| format!("Failed to create webview: {}", e))?;
 
-    webview_window.center().map_err(|e| format!("Failed to center window: {}", e))?;
+    webview_window
+        .center()
+        .map_err(|e| format!("Failed to center window: {}", e))?;
 
     // Inject JS to poll for pd2-token in localStorage and send via custom URL
     let js = r#"
@@ -50,4 +52,4 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     let _ = webview_window.eval(js);
 
     Ok(())
-} 
+}

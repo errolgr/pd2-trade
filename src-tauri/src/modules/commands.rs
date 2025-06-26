@@ -1,4 +1,4 @@
-use crate::{window, keyboard, webview};
+use crate::{keyboard, webview, window};
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -18,7 +18,7 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_diablo_focused()
-} 
+}
 
 #[tauri::command]
 pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), String> {
@@ -27,4 +27,4 @@ pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Resul
         let _ = crate::webview::open_project_diablo2_webview(app_handle);
     });
     Ok(())
-} 
+}

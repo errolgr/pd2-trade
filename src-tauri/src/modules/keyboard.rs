@@ -1,4 +1,4 @@
-use enigo::{Enigo, Key, Settings, Direction, Keyboard};
+use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use rdev::Key as RdevKey;
 
 pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
@@ -12,24 +12,24 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
             "ctrl" | "control" => {
                 println!("  -> Found modifier: Ctrl");
                 mods.push(Key::Control);
-            },
+            }
             "alt" => {
                 println!("  -> Found modifier: Alt");
                 mods.push(Key::Alt);
-            },
+            }
             "shift" => {
                 println!("  -> Found modifier: Shift");
                 mods.push(Key::Shift);
-            },
+            }
             "cmd" | "command" => {
                 println!("  -> Found modifier: Meta");
                 mods.push(Key::Meta);
-            },
+            }
             k if k.len() == 1 => {
                 let ch = k.chars().next().unwrap();
                 println!("  -> Found layout key: {}", ch);
                 main = Some(Key::Unicode(ch));
-            },
+            }
             k if k.starts_with('f') && k.len() <= 3 => {
                 if let Ok(n) = k[1..].parse::<u8>() {
                     main = Some(match n {
@@ -52,7 +52,7 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
                         }
                     });
                 }
-            },
+            }
             _ => {
                 let err = format!("Unsupported fragment: {part}");
                 println!("[str_to_keys] Error: {}", err);
@@ -74,7 +74,8 @@ pub fn press_key(sequence: String) -> Result<(), String> {
     println!("[press_key] Received sequence: {}", sequence);
 
     let (mods, main) = str_to_keys(&sequence)?;
-    let mut enigo = Enigo::new(&Settings::default()).map_err(|e| format!("Failed to init Enigo: {:?}", e))?;
+    let mut enigo =
+        Enigo::new(&Settings::default()).map_err(|e| format!("Failed to init Enigo: {:?}", e))?;
 
     println!("[press_key] Pressing modifiers...");
     for m in &mods {
@@ -83,12 +84,16 @@ pub fn press_key(sequence: String) -> Result<(), String> {
     }
 
     println!("[press_key] Pressing main key: {:?}", main);
-    enigo.key(main, Direction::Click).map_err(|e| e.to_string())?;
+    enigo
+        .key(main, Direction::Click)
+        .map_err(|e| e.to_string())?;
 
     println!("[press_key] Releasing modifiers...");
     for m in mods.iter().rev() {
         println!("  -> Up: {:?}", m);
-        enigo.key(*m, Direction::Release).map_err(|e| e.to_string())?;
+        enigo
+            .key(*m, Direction::Release)
+            .map_err(|e| e.to_string())?;
     }
 
     println!("[press_key] Done.");
@@ -155,4 +160,4 @@ pub fn key_to_string(key: RdevKey) -> Option<&'static str> {
 
         _ => None,
     }
-} 
+}

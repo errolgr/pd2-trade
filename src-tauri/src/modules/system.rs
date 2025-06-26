@@ -59,4 +59,4 @@ pub fn restart_as_admin() {
         );
     }
     exit(0);
-} 
+}

@@ -1,14 +1,16 @@
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_log::{Target, TargetKind};
+
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::Foundation::RECT;
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GETWORKAREA};
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::Foundation::RECT;
 
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{window, keyboard, system, commands, webview};
+pub use modules::{commands, keyboard, system, webview, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,13 +29,17 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_app_exit::init())
-    
         .setup(|app| {
             let _handle = app.app_handle();
 
             #[cfg(target_os = "windows")]
             let (x, y, width, height) = {
-                let mut work_area = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+                let mut work_area = RECT {
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                };
                 unsafe {
                     SystemParametersInfoW(
                         SPI_GETWORKAREA,
@@ -54,7 +60,12 @@ pub fn run() {
                 let monitor = app.primary_monitor().unwrap().unwrap();
                 let size = monitor.size();
                 let position = monitor.position();
-                (position.x as f64, position.y as f64, size.width as f64, size.height as f64)
+                (
+                    position.x as f64,
+                    position.y as f64,
+                    size.width as f64,
+                    size.height as f64,
+                )
             };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -70,11 +81,14 @@ pub fn run() {
 
             let main_window = win_builder.build().unwrap();
             main_window.set_ignore_cursor_events(true);
+            main_window.open_devtools();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::get_diablo_rect, 
-            commands::press_key, 
+            commands::get_diablo_rect,
+            commands::press_key,
+            commands::get_diablo_rect,
+            commands::press_key,
             commands::is_diablo_focused,
             commands::open_project_diablo2_webview
         ])

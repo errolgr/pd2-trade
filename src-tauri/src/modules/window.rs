@@ -1,6 +1,9 @@
 use serde::Serialize;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use windows_sys::Win32::{Foundation::{HWND, RECT}, UI::WindowsAndMessaging::{FindWindowW, GetWindowRect, GetForegroundWindow}};
+use windows_sys::Win32::{
+    Foundation::{HWND, RECT},
+    UI::WindowsAndMessaging::{FindWindowW, GetForegroundWindow, GetWindowRect},
+};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,4 +54,4 @@ pub fn is_diablo_focused() -> bool {
 
     let foreground = unsafe { GetForegroundWindow() };
     hwnd == foreground
-} 
+}

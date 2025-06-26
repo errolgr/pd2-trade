@@ -85,9 +85,9 @@ const LandingPage: React.FC = () => {
         focus: true,
       });
 
-      attachWindowCloseHandler(winRef.current, () => {
-        winRef.current = null;
-      });
+      // attachWindowCloseHandler(winRef.current, () => {
+      //   winRef.current = null;
+      // });
     } else {
       winRef.current.emit("new-search", encoded);
       await sleep(100);

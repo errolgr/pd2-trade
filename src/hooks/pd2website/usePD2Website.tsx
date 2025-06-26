@@ -40,6 +40,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   // Authenticate when pd2Token changes
   useEffect(() => {
     if (settings?.pd2Token) {
+      console.log('fetching new pd2 token and calling authentication');
       authenticate().then((data) => {
         setAuthData(data);
       });
@@ -65,3 +66,4 @@ export const usePd2Website = () => {
   if (!ctx) throw new Error('usePd2Website must be used within a Pd2WebsiteProvider');
   return ctx;
 };
+
