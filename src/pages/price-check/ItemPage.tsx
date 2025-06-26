@@ -5,6 +5,7 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import ItemOverlayWidget from "@/pages/price-check/components/ItemOverlayWidget";
 import {OptionsProvider} from "@/hooks/useOptions";
 import { ItemsProvider } from "@/hooks/useItems";
+import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
 
 const ItemWindow: React.FC = () => {
   const [item, setItem] = useState<any>(null);
@@ -52,9 +53,10 @@ const ItemWindow: React.FC = () => {
   return (
     <OptionsProvider>
       <ItemsProvider>
-      
-        <ItemOverlayWidget item={item}
-          onClose={() => getCurrentWebviewWindow().close()} />
+        <Pd2WebsiteProvider>
+          <ItemOverlayWidget item={item}
+            onClose={() => getCurrentWebviewWindow().hide()} />
+        </Pd2WebsiteProvider>
       </ItemsProvider>
     </OptionsProvider>
    

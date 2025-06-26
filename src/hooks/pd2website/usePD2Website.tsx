@@ -1,87 +1,58 @@
-import React, { ReactNode, useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useOptions } from '../useOptions';
-import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { usePd2Socket } from './usePd2Socket';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
-import { usePd2EventListeners } from './usePd2EventListeners';
-import { invoke } from '@tauri-apps/api/core';
-import { jwtDecode } from 'jwt-decode';
+import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
+import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 
 export const Pd2WebsiteContext = React.createContext(undefined);
 
 export const Pd2WebsiteProvider = ({ children }) => {
   const { updateSettings, settings, isLoading } = useOptions();
-  const [authData, setAuthData] = useState(null);
+  const [authData, setAuthData] = useState<AuthData>(null);
 
-  // Create the shared refs for pending requests
-  const pendingMarketListingsRequest = useRef(null);
-  const pendingStashRequest = useRef(null);
+  setAxiosAuthToken(settings?.pd2Token);
 
-  // Socket connection and auth
-  const { socket, rawSocketRef } = usePd2Socket(settings, updateSettings, setAuthData, pendingMarketListingsRequest, pendingStashRequest);
-
-  // Stash cache and fetch
+  // Stash cache and fetch (RESTful)
   const {
     fetchAndCacheStash,
     findItemsByName,
     stashCache,
     CACHE_TTL,
     updateItemByHash,
-  } = useStashCache(rawSocketRef, authData, settings, pendingStashRequest);
+  } = useStashCache(authData, settings);
 
-  // Market actions (real, using shared ref)
+  // Market actions (RESTful)
   const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing } = useMarketActions({
     settings,
     authData,
-    rawSocketRef,
     fetchAndCacheStash,
     findItemsByName,
     stashCache,
     CACHE_TTL,
-    pendingMarketListingsRequest,
   });
 
-  // Event listeners
-  usePd2EventListeners({ updateSettings, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash });
+  const authenticate = useCallback(async (): Promise<AuthData> => {
+    const response = await axiosInstance.post<AuthData>('/security/session', { strategy: 'jwt', accessToken: settings.pd2Token });
+    return response.data;
+  }, [settings]);
 
-  // Open webview
-  const open = async () => {
-    try {
-      await invoke('open_project_diablo2_webview');
-    } catch (error) {
-      console.error('Failed to open Project Diablo 2 webview:', error);
-      throw error;
-    }
-  };
-
-  // Effect to check pd2Token validity and open webview if needed
+  // Authenticate when pd2Token changes
   useEffect(() => {
-    if (isLoading) return; 
+    if (settings?.pd2Token) {
+      authenticate().then(setAuthData);
+    }
+  }, [settings?.pd2Token]);
 
-    if (!settings?.pd2Token) {
-      open();
-      return;
+  // Update settings when authData changes and account is missing
+  useEffect(() => {
+    if (!settings.account && authData) {
+      updateSettings({ account: authData.user.game.accounts[0] });
     }
-    try {
-      const payload: { exp?: number } = jwtDecode(settings.pd2Token);
-      const exp = payload.exp;
-      if (!exp) {
-        open();
-        return;
-      }
-      const now = Math.floor(Date.now() / 1000);
-      const fiveHours = 5 * 60 * 60;
-      if (exp < now + fiveHours) {
-        open();
-      }
-    } catch (e) {
-      open();
-    }
-  }, [settings?.pd2Token, isLoading]);
+  }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ socket, open, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );

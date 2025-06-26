@@ -4,6 +4,8 @@ import { useSearchParams } from "react-router-dom";
 import { Item as PriceCheckItem } from "../price-check/lib/interfaces";
 import { OptionsProvider } from "@/hooks/useOptions";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
+import { listen } from '@tauri-apps/api/event';
 
 
 export const QuickListPage: React.FC<any> = () => {
@@ -12,21 +14,35 @@ export const QuickListPage: React.FC<any> = () => {
     
     useEffect(() => {
         const param = searchParams.get("item");
-        if (!param) return;
-    
-        try {
-          const json = JSON.parse(atob(decodeURIComponent(param)));
-          setItem(json);
-          console.log('QuickListPage json' + json);
-        } catch (err) {
-          console.error("[QuickListPage] Failed to parse initial payload:", err);
+        if (param) {
+          try {
+            const json = JSON.parse(atob(decodeURIComponent(param)));
+            setItem(json);
+            console.log('QuickListPage json' + json);
+          } catch (err) {
+            console.error("[QuickListPage] Failed to parse initial payload:", err);
+          }
         }
+        // Listen for quick-list-new-item events
+        const unlistenPromise = listen<string>('quick-list-new-item', ({ payload }) => {
+          try {
+            const json = JSON.parse(atob(decodeURIComponent(payload)));
+            setItem(json);
+          } catch (err) {
+            console.error('[QuickListPage] Failed to parse event payload:', err);
+          }
+        });
+        return () => {
+          unlistenPromise.then((unlisten) => unlisten());
+        };
       }, [searchParams]);
 
     return (
       <TooltipProvider>
         <OptionsProvider>
+          <Pd2WebsiteProvider>
             {item && <ListItemShortcutForm item={item}></ListItemShortcutForm>}
+          </Pd2WebsiteProvider>
         </OptionsProvider>
       </TooltipProvider>
     )

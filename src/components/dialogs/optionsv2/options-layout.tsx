@@ -52,7 +52,7 @@ export default function SettingsLayout() {
 
         <Button variant="ghost"
           size="icon"
-          onClick={() => getCurrentWebviewWindow().close()}
+          onClick={() => getCurrentWebviewWindow().hide()}
           className="self-start">
           <X className="h-4 w-4" />
         </Button>

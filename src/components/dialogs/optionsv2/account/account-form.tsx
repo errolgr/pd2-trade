@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
-import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import {
   Select,
@@ -15,6 +14,7 @@ import {
   SelectItem
 } from '@/components/ui/select';
 import { emit } from '@tauri-apps/api/event';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 
 const accountFormSchema = z.object({
   account: z.string().min(1, 'Please select an account'),
@@ -24,17 +24,15 @@ type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 export function AccountForm() {
   const { settings, updateSettings } = useOptions();
-  const { getAuthData } = usePD2WebsiteClient();
+  const { authData } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getAuthData().then((authData: AuthData | null) => {
       if (authData?.user?.game?.accounts) {
         setAccounts(authData.user.game.accounts);
       }
-    });
-  }, [getAuthData]);
+  }, [authData]);
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),

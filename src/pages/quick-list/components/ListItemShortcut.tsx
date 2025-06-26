@@ -11,7 +11,6 @@ import { Check, Cross, X, Search, Loader2, AlertCircle } from "lucide-react";
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +21,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import moment from 'moment';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@tauri-apps/api/event';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem;
@@ -70,12 +70,11 @@ const sortedRuneOptions = [...runeOptions].sort((a, b) => {
 
 const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => {
   
-  const { findMatchingItems, listSpecificItem, getAuthData, getMarketListings, updateMarketListing, updateStashItemByHash } = usePD2WebsiteClient();
+  const { findMatchingItems, listSpecificItem, authData, getMarketListings, updateMarketListing, updateItemByHash } = usePd2Website();
   const [matchingItems, setMatchingItems] = useState<GameStashItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<GameStashItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authData, setAuthData] = useState<AuthData | null>(null);
   const [currentListings, setCurrentListings] = useState<MarketListingEntry[]>([]);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [bumping, setBumping] = useState<string | null>(null);
@@ -90,18 +89,22 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   const type = form.watch('type');
 
-  useEffect(() => {
-    if (!authData) {
-      getAuthData().then(setAuthData);
-    }
-  }, [getAuthData])
-  
+  // Show loading spinner while waiting for item or authData
+  if (!item || !authData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[200px] p-4">
+        <Loader2 className="animate-spin h-8 w-8 text-gray-400 mb-2" />
+        <span className="text-gray-400">Loading...</span>
+      </div>
+    );
+  }
+
   // Find matching items when component mounts
   React.useEffect(() => {
-    if (item) {
+    if (item && authData) {
       findMatchingItemsInStash();
     }
-  }, [item]);
+  }, [item, authData]);
 
   const findMatchingItemsInStash = async () => {
     setIsLoading(true);
@@ -152,16 +155,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           updateFields.price = values.type === 'negotiable' ? 'obo' : values.note;
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
-        await updateStashItemByHash(selectedItem.hash, updateFields);
+        await updateItemByHash(selectedItem.hash, updateFields);
         await emit('toast-event', 'Listing updated!');
         await new Promise((resolve) => setTimeout(resolve, 200));
-        getCurrentWebviewWindow().close();
+        getCurrentWebviewWindow().hide();
       } else {
         await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
         form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
         await emit('toast-event', 'Item listed!');
         await new Promise((resolve) => setTimeout(resolve, 200));
-        getCurrentWebviewWindow().close();
+        getCurrentWebviewWindow().hide();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to list/update item');
@@ -320,7 +323,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().close()}>
+          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -337,7 +340,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().close()}>
+          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -355,7 +358,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().close()}>
+          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -381,10 +384,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
+      <form className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().close()}>
+          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -451,6 +454,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                                 await findMatchingItemsInStash();
                                 setBumping(null);
                                 setJustBumped(stashItem.hash);
+                                emit('toast-event', 'Item bumped successfully!');
                               }}
                             >
                               <span>Bump</span>
@@ -538,12 +542,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
           )}
            {selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash) ? (
-            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading}>
+            <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading} onSubmit={form.handleSubmit(handleSubmit)}>
               {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
               Update
             </Button>
            ) : (
-             <Button type="submit" disabled={!selectedItem || submitLoading} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+             <Button type="submit" disabled={!selectedItem || submitLoading} style={{fontFamily: 'DiabloFont', fontWeight: 600}} onSubmit={form.handleSubmit(handleSubmit)}>
                {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
                Post
              </Button>

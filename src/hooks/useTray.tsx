@@ -4,10 +4,11 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { Menu } from "@tauri-apps/api/menu";
 import { exit } from '@tauri-apps/plugin-process';
 import {useOptions} from "@/hooks/useOptions";
-import {openCenteredWindow} from "@/lib/window";
+import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { open } from '@tauri-apps/plugin-shell';
 import { appConfigDir } from '@tauri-apps/api/path';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 type TrayContextValue = {
   tray: TrayIcon | null;
@@ -22,18 +23,35 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const { setIsOpen, settings } = useOptions();
   const trayRef = useRef<TrayIcon | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
+  const settingsWinRef = useRef<WebviewWindow | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const openWindow = async () => {
-    const win = await openCenteredWindow("Settings", "/settings", {
-      decorations: false,
-      transparent: true,
-      alwaysOnTop: true,
-      focus: true,
-      shadow: false,
-      width: 1025,
-      height: 650,
-    })
+    if (settingsWinRef.current && isSettingsOpen) {
+      await settingsWinRef.current.hide();
+      setIsSettingsOpen(false);
+      return;
+    }
 
+    if (!settingsWinRef.current) {
+      settingsWinRef.current = await openCenteredWindow("Settings", "/settings", {
+        decorations: false,
+        transparent: true,
+        alwaysOnTop: true,
+        focus: true,
+        shadow: false,
+        width: 1025,
+        height: 650,
+      });
+      setIsSettingsOpen(true);
+      attachWindowCloseHandler(settingsWinRef.current, () => {
+        settingsWinRef.current = null;
+        setIsSettingsOpen(false);
+      });
+    } else {
+      await settingsWinRef.current.show();
+      setIsSettingsOpen(true);
+    }
   };
 
   // Register global shortcut for opening settings

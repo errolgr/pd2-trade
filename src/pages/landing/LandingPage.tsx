@@ -13,26 +13,27 @@ import iconPath from '@/assets/img_1.png';
 import {useKeySender} from "@/hooks/useKeySender";
 import {DialogProvider} from "@/hooks/useDialog";
 import {getVersion} from "@tauri-apps/api/app";
-import {attachWindowLifecycle, openCenteredWindow, openOverDiabloWindow, openWindowAtCursor} from "@/lib/window";
+import {openCenteredWindow, openOverDiabloWindow, openWindowAtCursor, attachWindowCloseHandler} from "@/lib/window";
 import {changeLog} from "@/assets/changeLog";
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { emit, listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
+import { jwtDecode } from 'jwt-decode';
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const LandingPage: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
   const winRef = useRef<WebviewWindow | null>(null);
   const { read, copy } = useClipboard();
   const {checkForUpdates, downloadUpdate} = useUpdater();
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
-  const lastClipboard = useRef<string | null>(null); // <--- Added ref
   const lastRegisteredShortcut = useRef<string | null>(null);
+  const quickListWinRef = useRef<WebviewWindow | null>(null);
+
 
 
   // Hide the launch title after 2 seconds
@@ -60,7 +61,6 @@ const LandingPage: React.FC = () => {
    * --------------------------------- */
   const fireSearch = useCallback(async () => {
     const focused = await invoke<boolean>('is_diablo_focused');
-
     if (!focused) {
       console.warn("[LandingPage] Diablo is not focused, skipping search.");
       return;
@@ -72,46 +72,26 @@ const LandingPage: React.FC = () => {
     await sleep(100);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) return;
-
-    if (lastClipboard.current === raw) {
-      if (winRef.current) {
-        winRef.current.close();
-        winRef.current = null;
-        setIsOpen(false);
-      }
-      return;
-    }
-
-    lastClipboard.current = raw;
     const encoded = encodeURIComponent(btoa(raw));
 
     if (!winRef.current) {
-      openWindowOverDiablo(encoded);
+      winRef.current = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
+        decorations: false,
+        transparent: true,
+        alwaysOnTop: true,
+        shadow: false,
+        focus: true,
+      });
+
+      attachWindowCloseHandler(winRef.current, () => {
+        winRef.current = null;
+      });
     } else {
+      await winRef.current.show();
       winRef.current.emit("new-search", encoded);
     }
   }, []);
 
-  const openWindowOverDiablo = async (encoded: string) => {
-    const w = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
-      decorations: false,
-      transparent: true,
-      alwaysOnTop: true,
-      shadow: false,
-
-    });
-
-    if (!w) return;
-
-    winRef.current = w;
-    setIsOpen(true);
-
-    attachWindowLifecycle(w, () => {
-      winRef.current = null;
-      setIsOpen(false);
-      lastClipboard.current = null;
-    });
-  };
 
   // Add handler to open the quick list item shortcut page in a webview
   const openQuickListWindow = async () => {
@@ -123,28 +103,33 @@ const LandingPage: React.FC = () => {
     await sleep(100);
     const raw = await read();
     console.log('[LandingPage] Read clipboard content:', raw ? 'valid content' : 'empty');
-    
     if (!clipboardContainsValidItem(raw)) {
       console.log('[LandingPage] Clipboard does not contain valid item, returning');
       return;
     }
-    console.log('[LandingPage] Raw Item' + raw);;
+    console.log('[LandingPage] Raw Item' + raw);
 
     const encodedItem = btoa(raw);
     console.log('[LandingPage] Encoded item for URL parameter');
-    
-    console.log('[LandingPage] Opening centered window with dimensions 600x485');
-    await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
-      decorations: false,
-      transparent: true,
-      focus: true,
-      shadow: false,
-      skipTaskbar: true,
-      width: 600,
-      height: 485,
-      alwaysOnTop: true,
-    });
-    console.log('[LandingPage] Quick list window opened succcessfully');
+
+    if (!quickListWinRef.current) {
+      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
+        decorations: false,
+        transparent: true,
+        focus: true,
+        shadow: false,
+        skipTaskbar: true,
+        width: 600,
+        height: 485,
+        alwaysOnTop: true,
+      });
+      attachWindowCloseHandler(quickListWinRef.current, () => {
+        quickListWinRef.current = null;
+      });
+    } else {
+      await quickListWinRef.current.show();
+      quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+    }
   };
 
   useEffect(() => {
@@ -238,6 +223,42 @@ const LandingPage: React.FC = () => {
       if (unlisten) unlisten();
     };
   }, []);
+
+
+   // Open webview
+   const open = async () => {
+    try {
+      await invoke('open_project_diablo2_webview');
+    } catch (error) {
+      console.error('Failed to open Project Diablo 2 webview:', error);
+      throw error;
+    }
+  };
+
+  // Effect to check pd2Token validity and open webview if needed
+  useEffect(() => {
+    if (isLoading) return; 
+
+    if (!settings?.pd2Token) {
+      open();
+      return;
+    }
+    try {
+      const payload: { exp?: number } = jwtDecode(settings.pd2Token);
+      const exp = payload.exp;
+      if (!exp) {
+        open();
+        return;
+      }
+      const now = Math.floor(Date.now() / 1000);
+      const fiveHours = 5 * 60 * 60;
+      if (exp < now + fiveHours) {
+        open();
+      }
+    } catch (e) {
+      open();
+    }
+  }, [settings?.pd2Token, isLoading]);
 
   return <Pd2WebsiteProvider>
     <Toaster position="bottom-right" />

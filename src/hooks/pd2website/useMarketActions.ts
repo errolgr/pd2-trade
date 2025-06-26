@@ -1,115 +1,85 @@
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { useCallback, useRef } from 'react';
+import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { useCallback } from 'react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { MarketListingCommand, MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
-import { MarketListingResponse } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { MarketListingEntry, MarketListingResponse, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
 
 interface UseMarketActionsProps {
   settings: ISettings;
   authData: AuthData;
-  rawSocketRef: React.MutableRefObject<WebSocket | null>;
-  fetchAndCacheStash: () => Promise<any>;
+  fetchAndCacheStash: () => Promise<GameData>;
   findItemsByName: (stashItems: GameStashItem[], item: PriceCheckItem) => GameStashItem[];
-  stashCache: React.MutableRefObject<{ data: any; timestamp: number } | null>;
+  stashCache: React.MutableRefObject<{ data: GameData; timestamp: number } | null>;
   CACHE_TTL: number;
-  pendingMarketListingsRequest?: React.MutableRefObject<((data: any) => void) | null>;
 }
 
 export function useMarketActions({ 
   settings, 
   authData, 
-  rawSocketRef, 
   fetchAndCacheStash, 
   findItemsByName, 
   stashCache, 
-  CACHE_TTL, 
-  pendingMarketListingsRequest: externalPendingMarketListingsRequest 
+  CACHE_TTL
 }: UseMarketActionsProps) {
+  // Set the auth token for axios
+  setAxiosAuthToken(settings.pd2Token);
+
   // Find matching items
   const findMatchingItems = useCallback(async (item: PriceCheckItem): Promise<GameStashItem[]> => {
     let items: GameStashItem[] = [];
     const now = Date.now();
     if (stashCache.current && (now - stashCache.current.timestamp < CACHE_TTL)) {
-      items = stashCache.current.data?.[1]?.items || [];
+      items = stashCache.current.data?.items || [];
       const matching = findItemsByName(items, item);
       if (matching.length > 0) {
         return matching;
       }
     }
     const stashData = await fetchAndCacheStash();
-    items = stashData?.[1]?.items || [];
+    items = stashData.items|| [];
     const matching = findItemsByName(items, item);
     return matching;
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
 
-  // List specific item
+  // List specific item (POST /market/listing)
   const listSpecificItem = useCallback(async (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable'): Promise<void> => {
-    if (!rawSocketRef.current) throw new Error('Socket not connected');
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const bumped_at = new Date().toISOString();
     const user_id = authData.user._id;
     const account_id = settings.account.toLowerCase();
-    const command = [
-      "create",
-      "market/listing",
-      {
-        user_id,
-        type: "item",
+    const body = {
+      user_id,
+      type: "item",
+      is_hardcore,
+      is_ladder,
+      item: {
+        ...stashItem,
+        account_id,
         is_hardcore,
         is_ladder,
-        item: {
-          ...stashItem,
-          account_id,
-          is_hardcore,
-          is_ladder,
-        },
-        hr_price: hrPrice,
-        price: type === 'negotiable' ? 'obo' : note,
-        bumped_at,
       },
-      {},
-    ];
-    rawSocketRef.current.send('420' + JSON.stringify(command));
-  }, [settings, authData, rawSocketRef]);
+      hr_price: hrPrice,
+      price: type === 'negotiable' ? 'obo' : note,
+      bumped_at,
+    };
+    await axiosInstance.post('/market/listing', body);
+  }, [settings, authData]);
 
-  // Get market listings
-  const internalPendingMarketListingsRequest = useRef<((data: any) => void) | null>(null);
-  const pendingMarketListingsRequest = externalPendingMarketListingsRequest || internalPendingMarketListingsRequest;
-  const getMarketListings = useCallback(async (query: MarketListingQuery): Promise<MarketListingResponse> => {
-    if (!rawSocketRef.current) throw new Error('Socket not connected');
-    const command: MarketListingCommand = [
-      "find",
-      "market/listing",
-      query
-    ];
-    rawSocketRef.current.send('424' + JSON.stringify(command));
-    return await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Timeout waiting for market listings')), 10000);
-      pendingMarketListingsRequest.current = (data) => {
-        clearTimeout(timeout);
-        resolve(data);
-      };
-    });
-  }, [rawSocketRef, pendingMarketListingsRequest]);
+  // Get market listings (GET /market/listing)
+  const getMarketListings = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
+    const response = await axiosInstance.get('/market/listing', { params: query });
+    return response.data;
+  }, []);
 
-  // Generic update market listing
-  const updateMarketListing = useCallback(async (hash: string, update: Record<string, any>): Promise<void> => {
-    if (!rawSocketRef.current) throw new Error('Socket not connected');
-    const command = [
-      "patch",
-      "market/listing",
-      hash,
-      update,
-      {}
-    ];
-    rawSocketRef.current.send('426' + JSON.stringify(command));
-    // You may want to listen for a confirmation event if your backend emits one
-    // For now, resolve immediately
-    return Promise.resolve();
-  }, [rawSocketRef]);
+  // Generic update market listing (PATCH /market/listing/:hash)
+  const updateMarketListing = useCallback(async (hash: string, update: Record<string, any>): Promise<MarketListingEntry> => {
+    const response = await axiosInstance.patch(`/market/listing/${hash}`, update);
+    return response.data;
+  }, []);
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, pendingMarketListingsRequest, updateMarketListing };
+  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing };
 } 

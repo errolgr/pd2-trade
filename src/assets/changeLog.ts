@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.2.2": [
+    "🔧 Fixed an issue that was causing timeouts and socket connection failures",
+    "💎 Should see a noticable performance increase with listings, and item listings",
+  ],
   "0.2.1": [
     "🔧 Fixed an issue that was causing boot up to fail",
     "🆕 Added a toast popup into the side menu"

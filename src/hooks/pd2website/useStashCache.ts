@@ -1,32 +1,33 @@
 import { useCallback, useRef } from 'react';
 import Fuse from 'fuse.js';
+import axiosInstance, { setAxiosAuthToken } from '@/lib/axios';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 
-export function useStashCache(rawSocketRef, authData, settings, pendingStashRequest) {
+export function useStashCache(authData, settings) {
+  setAxiosAuthToken(settings.pd2Token);
   const stashCache = useRef(null);
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  // Helper: fetch stash from server and update cache
+  // Helper: fetch stash from server and update cache (RESTful)
   const fetchAndCacheStash = useCallback(async () => {
-    if (!rawSocketRef.current || !authData) throw new Error('Socket not connected or not authenticated');
+    if (!authData) throw new Error('Not authenticated');
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
-    const stashRequest = ["get","game/stash",authData.user.game.accounts[0], { softcore: !is_hardcore, ladder: is_ladder }];
-    rawSocketRef.current.send('4215' + JSON.stringify(stashRequest));
-    const stashData = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Timeout waiting for stash')), 10000);
-      pendingStashRequest.current = (data) => {
-        clearTimeout(timeout);
-        resolve(data);
-      };
-    });
+    const account = authData.user.game.accounts[0];
+    const params = {
+      account,
+      softcore: !is_hardcore,
+      ladder: is_ladder
+    };
+    const response = await axiosInstance.get<GameData>(`/game/stash/${account}`, { params });
+    const stashData = response.data;
     stashCache.current = { data: stashData, timestamp: Date.now() };
     return stashData;
-  }, [settings, authData, rawSocketRef]);
+  }, [settings, authData]);
 
   // Helper: calculate modifier similarity score between PriceCheckItem and stash item
   function calculateModifierSimilarity(priceCheckItem: PriceCheckItem, stashItem: GameStashItem): number {
@@ -166,9 +167,9 @@ export function useStashCache(rawSocketRef, authData, settings, pendingStashRequ
   }
 
   // Update an item in the stash cache by its hash
-  const updateItemByHash = useCallback((hash, update) => {
+  const updateItemByHash = useCallback((hash: string, update) => {
     if (!stashCache.current || !stashCache.current.data) return false;
-    const items = stashCache.current.data[1]?.items;
+    const items = stashCache.current.data.items;
     if (!Array.isArray(items)) return false;
     const idx = items.findIndex(item => item.hash === hash);
     if (idx === -1) return false;

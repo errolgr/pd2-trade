@@ -14,17 +14,16 @@ import { useStatSelection } from "../hooks/useStatSelection";
 import { buildGetMarketListingByStashItemQuery, buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
 import { getStatKey } from "../lib/utils";
-import { usePD2WebsiteClient } from '@/hooks/pd2website/usePD2WebsiteClient';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from "@/hooks/useItems";
-import { AuthData } from "@/common/types/pd2-website/AuthResponse";
+import { MarketListingEntry, MarketListingResult } from "@/common/types/pd2-website/GetMarketListingsResponse";
+import { usePd2Website } from "@/hooks/pd2website/usePD2Website";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
-  const { getMarketListings, getAuthData } = usePD2WebsiteClient();
+  const { getMarketListings, authData } = usePd2Website();
   const { findOneByName } = useItems();
-  const [authData, setAuthData] = useState<AuthData | null>(null);
 
   // Use custom hooks for state management
   const {
@@ -43,12 +42,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle
   } = useStatSelection(item);
 
-  useEffect(() => {
-    if (!authData) {
-      getAuthData().then(setAuthData);
-    }
-  }, [getAuthData]);
-
   const pd2Item = useMemo(() => findOneByName(item.name), [item])
 
   /** Build ProjectDiablo2 trade URL */
@@ -62,7 +55,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   
 
   // Market listings state
-  const [marketListingsResult, setMarketListingsResult] = useState<any | null>(null);
+  const [marketListingsResult, setMarketListingsResult] = useState<MarketListingResult | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
 
@@ -179,7 +172,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 {marketListingsResult.data.length === 0 && (
                   <tr><td colSpan={2} className="px-2 py-2 text-center text-gray-400">No listings found</td></tr>
                 )}
-                {marketListingsResult.data.map((listing: any, idx: number) => (
+                {marketListingsResult.data.map((listing: MarketListingEntry, idx: number) => (
                   <tr key={listing._id || idx} className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
                     <td className="px-2 py-1">
                       {listing.hr_price ? (

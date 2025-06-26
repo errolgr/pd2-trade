@@ -1,7 +1,3 @@
-export const ResponseCode = 4312;
-
-export type AuthResponse = [null, AuthData];
-
 export interface AuthData {
   accessToken: string;
   user:        User;

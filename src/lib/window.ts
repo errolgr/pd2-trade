@@ -104,3 +104,23 @@ export function attachWindowLifecycle(
     }
   });
 }
+
+export function attachWindowCloseHandler(
+  w: WebviewWindow,
+  onClose: () => void,
+  onFocusLost?: () => void,
+) {
+  w.onCloseRequested(() => {
+    onClose();
+  });
+
+  w.onFocusChanged((event) => {
+    if (!event.payload) {
+      w.hide();
+
+      if (onFocusLost) {
+        onFocusLost();
+      }
+    }
+  });
+}

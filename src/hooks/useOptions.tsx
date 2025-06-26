@@ -6,6 +6,8 @@ import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists} from '@tauri
 import merge from 'lodash.merge'
 import {emit, listen} from '@tauri-apps/api/event';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
+import { invoke } from '@tauri-apps/api/core';
+import { jwtDecode } from 'jwt-decode';
 
 
 export interface ISettings {
@@ -115,6 +117,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(false);
     }
   }
+    
   useEffect(() => {
     fetchSettings();
 
