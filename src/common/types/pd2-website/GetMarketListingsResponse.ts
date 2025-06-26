@@ -9,41 +9,18 @@ export interface MarketListingResult {
 
 export interface MarketListingEntry {
   _id: string;
-  item: ItemDetail;
-  socketed_count: number;
-  id: number;
-  item_level: number;
-  quality: Quality;
-  graphic_id: boolean;
-  class_specifics: boolean;
-  unique: Unique;
-  durability: Durability;
-  socket_count: number;
-  modifiers: Modifier[];
-  name: string;
-  location: Location;
-  position: Position;
-  category: string;
-  base_code: string;
-  requirements: Requirements;
-  corrupted: boolean;
-  desecrated: boolean;
-  properties: string[];
-  damage: Damage;
-  account_id: string;
-
   user_id: string;
   type: "item";
   is_hardcore: boolean;
   is_ladder: boolean;
+  item: ItemDetail;
   price: string;
-  hr_price?: number;
-  bumped_at: string;    // ISO timestamp
-  created_at: string;   // ISO timestamp
-  updated_at: string;   // ISO timestamp
+  hr_price: number;
+  bumped_at: string;
+  created_at: string;
+  updated_at: string;
   created_by_id: string;
-  updated_by_id?: string;
-
+  updated_by_id: string;
   user: UserSummary;
 }
 
@@ -58,9 +35,29 @@ export interface ItemDetail {
   is_personalized: boolean;
   is_runeword: boolean;
   base: BaseItem;
+  socketed_count: number;
+  id: number;
+  item_level: number;
+  quality: Quality;
+  graphic_id: number;
+  class_specifics: boolean;
+  rare?: RareInfo;
+  socket_count: number;
+  modifiers: Modifier[];
+  location: Location;
+  position: Position;
+  category: string;
+  base_code: string;
+  name: string;
+  requirements: Requirements;
+  corrupted: boolean;
+  corruptions?: string[];
+  desecrated: boolean;
+  properties: string[];
   hash: string;
-  socketed_count?: number; // sometimes tracked at root instead
-  // other flags live at root entry
+  account_id: string;
+  is_hardcore: boolean;
+  is_ladder: boolean;
 }
 
 export interface BaseItem {
@@ -137,8 +134,7 @@ export interface Modifier {
   values: number[];
   label: string;
   priority: number;
-  min?: number;
-  max?: number;
+  corrupted?: boolean;
 }
 
 export interface Location {
@@ -175,4 +171,12 @@ export interface Preferences {
   is_ladder: boolean;
   notifications_chat: boolean;
   notifications_market: boolean;
+}
+
+export interface RareInfo {
+  name: {
+    prefix_id: number;
+    suffix_id: number;
+  };
+  affixes: number[];
 }

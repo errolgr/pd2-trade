@@ -181,7 +181,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 )}
                 {marketListingsResult.data.map((listing: MarketListingEntry, idx: number) => (
                   <tr key={listing._id || idx} className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
-                    <td className="px-2 py-1">
+                    <td className="px-2 py-1 flex flex-row items-center">
                       {listing.hr_price ? (
                         `${listing.hr_price} HR`
                       ) : listing.price && listing.price.length > 40 ? (
@@ -192,6 +192,35 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         </HoverPopover>
                       ) : (
                         listing.price || '-'
+                      )}
+                      {/* Red dot for corruption with hover popover */}
+                      {listing.item?.corruptions?.length > 0 && (
+                        <HoverPopover
+                          content={
+                            <Card>
+                              <div className="text-xs p-2">
+                                <div className="font-bold mb-1 text-red-500">Corruptions:</div>
+                                <ul className="list-disc pl-4">
+                                  {listing.item.modifiers?.filter((mod: any) => mod.corrupted).length > 0
+                                    ? listing.item.modifiers.filter((mod: any) => mod.corrupted).map((mod: any, i: number) => (
+                                        mod.name === 'item_numsockets'
+                                          ? <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
+                                          : <li key={i}>{mod.label}</li>
+                                      ))
+                                    : listing.item.corruptions.map((c: string, i: number) => (
+                                        c === 'item_numsockets'
+                                          ? <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
+                                          : <li key={i}>{c}</li>
+                                      ))}
+                                </ul>
+                              </div>
+                            </Card>
+                          }
+                        >
+                          <span
+                            className="inline-block align-middle ml-2 w-2 h-2 rounded-full bg-red-500 cursor-pointer"
+                          />
+                        </HoverPopover>
                       )}
                     </td>
                     <td className="px-2 py-1">
