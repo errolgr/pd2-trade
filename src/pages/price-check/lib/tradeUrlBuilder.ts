@@ -80,9 +80,9 @@ export function buildTradeUrl(
       item.quality === ItemQuality.Rare ||
       item.quality === ItemQuality.Magic ||
       item.quality === ItemQuality.Crafted) {
-      const result = getTypeFromBaseType(item.type);
+      const result = getTypeFromBaseType(item.type, false);
       if (result && result?.type && result?.type) {
-        searchParams.set("type", result.type);
+        searchParams.set("type", result.type as any);
         searchParams.set("base", result.base);
       } else {
         console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
@@ -211,9 +211,10 @@ export function buildGetMarketListingQuery(
       item.quality === ItemQuality.Rare ||
       item.quality === ItemQuality.Magic ||
       item.quality === ItemQuality.Crafted) {
-      const result = getTypeFromBaseType(item.type);
+      const result = getTypeFromBaseType(item.type, true);
       if (result && result?.type && result?.type) {
-        query['item.base.type_code'] = result.type;
+        let typeValue = result.type;
+        query['item.base.type_code'] = typeValue as any;
         query['item.base_code'] = result.base;
       } else {
         console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);

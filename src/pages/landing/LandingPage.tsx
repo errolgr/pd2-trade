@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { jwtDecode } from 'jwt-decode';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { ItemLocation } from '@/common/types/Location';
 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -105,10 +106,18 @@ const LandingPage: React.FC = () => {
     await sleep(100);
     const raw = await read();
     console.log('[LandingPage] Read clipboard content:', raw ? 'valid content' : 'empty');
+
     if (!clipboardContainsValidItem(raw)) {
       console.log('[LandingPage] Clipboard does not contain valid item, returning');
       return;
     }
+
+    if (!isStashItem(raw)){
+      console.log('[LandingPage] Clipboard does not contain stash item, returning');
+      toast("PD2 Trader", { description: "Item must be located in stash in order to list", position: 'bottom-right'})
+      return;
+    }
+
     console.log('[LandingPage] Raw Item' + raw);
 
     const encodedItem = btoa(raw);
@@ -343,5 +352,11 @@ function clipboardContainsValidItem(jsonString: string): boolean {
   } catch {
     return false
   }
+}
+
+function isStashItem(jsonString: string): boolean {
+  const item = JSON.parse(jsonString);
+
+  return item.location === ItemLocation.STASH;
 }
 export default LandingPage;

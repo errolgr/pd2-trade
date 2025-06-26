@@ -1,4 +1,9 @@
 export const changeLog = {
+  "0.2.3": [
+    "🔧 Fixed an issue that was causing timeouts and socket connection failures",
+    "💎 Should see a noticable performance increase with listings, and item listings",
+    "🔧 Fixed an issue which caused rings to not appear in the market listings",
+  ],
   "0.2.2": [
     "🔧 Fixed an issue that was causing timeouts and socket connection failures",
     "💎 Should see a noticable performance increase with listings, and item listings",
