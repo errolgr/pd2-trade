@@ -148,6 +148,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               const result = await getMarketListings(pd2MarketQuery);
               setMarketListingsResult(result);
             } catch (e: any) {
+              console.log(e.message || 'Failed to fetch market listings')
               setMarketError(e.message || 'Failed to fetch market listings');
             } finally {
               setMarketLoading(false);

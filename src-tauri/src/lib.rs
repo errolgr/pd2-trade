@@ -34,25 +34,36 @@ pub fn run() {
 
             #[cfg(target_os = "windows")]
             let (x, y, width, height) = {
-                let mut work_area = RECT {
-                    left: 0,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                };
-                unsafe {
-                    SystemParametersInfoW(
-                        SPI_GETWORKAREA,
-                        0,
-                        &mut work_area as *mut _ as *mut _,
-                        0,
-                    );
+                // Try to get Diablo II window bounds
+                if let Some(rect) = window::get_diablo_rect() {
+                    (
+                        rect.x as f64,
+                        rect.y as f64,
+                        rect.width as f64,
+                        rect.height as f64,
+                    )
+                } else {
+                    // Fallback to work area
+                    let mut work_area = RECT {
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                    };
+                    unsafe {
+                        SystemParametersInfoW(
+                            SPI_GETWORKAREA,
+                            0,
+                            &mut work_area as *mut _ as *mut _,
+                            0,
+                        );
+                    }
+                    let width = (work_area.right - work_area.left) as f64;
+                    let height = (work_area.bottom - work_area.top) as f64;
+                    let x = work_area.left as f64;
+                    let y = work_area.top as f64;
+                    (x, y, width, height)
                 }
-                let width = (work_area.right - work_area.left) as f64;
-                let height = (work_area.bottom - work_area.top) as f64;
-                let x = work_area.left as f64;
-                let y = work_area.top as f64;
-                (x, y, width, height)
             };
 
             #[cfg(not(target_os = "windows"))]
@@ -81,6 +92,8 @@ pub fn run() {
 
             let main_window = win_builder.build().unwrap();
             main_window.set_ignore_cursor_events(true);
+            #[cfg(debug_assertions)]
+            main_window.open_devtools();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

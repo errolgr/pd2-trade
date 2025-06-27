@@ -1,4 +1,10 @@
 export const changeLog = {
+  "0.2.6": [
+    "✨ Hidden screen will now be open within the bounds of the Diablo II window if available.",
+    "🔧 Fixed an issue that caused the list item hot key not to update automatically",
+    "🆕 Failed requests to PD2 will no longer crash the client. Instead will display an error to the user",
+    "🔧 Fixed an issue which caused runewords to fail in the live search",
+  ],
   "0.2.5": [
     "🔧 Fixed another critical launch issue that was causing app to stall during launch",
     "🔧 Requests are now proxied to PD2",

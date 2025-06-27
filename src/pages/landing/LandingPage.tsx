@@ -85,9 +85,9 @@ const LandingPage: React.FC = () => {
         focus: true,
       });
 
-      // attachWindowCloseHandler(winRef.current, () => {
-      //   winRef.current = null;
-      // });
+      attachWindowCloseHandler(winRef.current, () => {
+        winRef.current = null;
+      });
     } else {
       winRef.current.emit("new-search", encoded);
       await sleep(100);
@@ -212,7 +212,13 @@ const LandingPage: React.FC = () => {
       unregister(quickListShortcut).catch(() => void 0);
       console.log('[LandingPage] Cleanup: unregistered quick-list shortcut:', quickListShortcut);
     };
-  }, [isLoading, settings.hotkeyModifier, settings.hotkeyKey]);
+  }, [
+    isLoading, 
+    settings.hotkeyModifier,
+    settings.hotkeyKey,
+    settings.hotkeyKeyListItem,
+    settings.hotkeyModifierListItem
+    ]);
 
   // Listen for Tauri 'toast-event' and show a toast
   useEffect(() => {

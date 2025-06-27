@@ -221,7 +221,7 @@ export function buildGetMarketListingQuery(
       }
     } else {
       query['item.name'] = {
-        $regex: item.name ? `${mappedItem?.name || item.name}` : '',
+        $regex: item.isRuneword ? item.runeword : item.name ? `${mappedItem?.name || item.name}` : '',
         $options: 'i',
       }
     }

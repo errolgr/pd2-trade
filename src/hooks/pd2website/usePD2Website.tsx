@@ -4,6 +4,7 @@ import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
+import * as Sentry from '@sentry/react';
 
 export const Pd2WebsiteContext = React.createContext(undefined);
 
@@ -39,7 +40,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
       },
       body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token })
     });
-    return await response.json();
+    return await handleApiResponse(response)
   }, [settings]);
 
   // Authenticate when pd2Token changes
@@ -51,6 +52,21 @@ export const Pd2WebsiteProvider = ({ children }) => {
       });
     }
   }, [settings?.pd2Token]);
+
+  // Set Sentry user context when authData changes
+  useEffect(() => {
+    if (authData?.user && settings?.lastSeenVersion) {
+      Sentry.setUser({
+        id: authData.user._id,
+        username: authData.user.username,
+      });
+      Sentry.setContext("app", {
+        lastSeenVersion: settings?.lastSeenVersion,
+      })
+    } else {
+      Sentry.setUser(null);
+    }
+  }, [authData, settings]);
 
   // Update settings when authData changes and account is missing
   useEffect(() => {
@@ -72,3 +88,13 @@ export const usePd2Website = () => {
   return ctx;
 };
 
+
+export async function handleApiResponse(response: Response) {
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `API Error: ${response.status} ${response.statusText}\n${errorBody}`
+    );
+  }
+  return response.json();
+}

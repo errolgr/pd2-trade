@@ -40,6 +40,9 @@
       "allow": [
         {
           "path": "$APPDATA/*"
+        },
+        {
+          "path": "$APPCONFIG/*"
         }
       ]
     },
@@ -77,6 +80,20 @@
       ]
     },
     "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCONFIG/**"
+        }
+      ]
+    },
     { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }] }
   ]
 }

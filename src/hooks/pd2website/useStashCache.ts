@@ -6,6 +6,7 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
+import { handleApiResponse } from './usePD2Website';
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   if (!query) return base;
@@ -38,7 +39,7 @@ export function useStashCache(authData, settings) {
         'Authorization': `Bearer ${settings.pd2Token}`,
       },
     });
-    const stashData = await response.json();
+    const stashData = await handleApiResponse(response)
     stashCache.current = { data: stashData, timestamp: Date.now() };
     return stashData;
   }, [settings, authData]);

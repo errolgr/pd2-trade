@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PD2 Trader",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "identifier": "com.pd2-trader.app",
   "build": {
     "beforeDevCommand": "npm run dev",

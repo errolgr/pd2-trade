@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import * as path from "path";
 // @ts-ignore
 import tailwindcss from '@tailwindcss/vite'
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -10,10 +11,16 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [
       tailwindcss(),
-
-      react()
+      react(),
+      sentryVitePlugin({
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: "pulsewave",
+        project: "dmg-meter-frontend",
+      }),
   ],
-
+  build: {
+    sourcemap: true, // Source map generation must be turned on
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
@@ -40,13 +47,6 @@ export default defineConfig(async () => ({
       usePolling: true,
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
-    },
-    proxy: {
-      '/api': {
-        target: 'https://api.projectdiablo2.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
     },
   },
 }));

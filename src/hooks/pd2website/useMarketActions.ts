@@ -7,7 +7,9 @@ import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListings
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import qs from 'qs';
-import buildURL from 'axios/lib/helpers/buildURL'
+import { handleApiResponse } from './usePD2Website';
+
+
 
 interface UseMarketActionsProps {
   settings: ISettings;
@@ -33,7 +35,7 @@ function axiosStyleSerializer(obj) {
         encodeValuesOnly: true         // keys like [$in] stay literal}
       }
     )
-    // mimic Axios’s re-decoding of [] → literal
+    // mimic Axios's re-decoding of [] → literal
     .replace(/%5B/gi, '[')
     .replace(/%5D/gi, ']')
     //—and if you care about spaces-as-plus…
@@ -88,7 +90,7 @@ export function useMarketActions({
       price: type === 'negotiable' ? 'obo' : note,
       bumped_at,
     };
-    await tauriFetch('https://api.projectdiablo2.com/market/listing', {
+    const response = await tauriFetch('https://api.projectdiablo2.com/market/listing', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${settings.pd2Token}`,
@@ -96,6 +98,7 @@ export function useMarketActions({
       },
       body: JSON.stringify(body)
     });
+    return await handleApiResponse(response);
   }, [settings, authData]);
 
   // Get market listings (GET /market/listing)
@@ -108,7 +111,7 @@ export function useMarketActions({
         'Authorization': `Bearer ${settings.pd2Token}`,
       }
     });
-    return await response.json();
+    return await handleApiResponse(response);
   }, [settings]);
 
   // Generic update market listing (PATCH /market/listing/:hash)
@@ -121,7 +124,7 @@ export function useMarketActions({
       },
       body: JSON.stringify(update)
     });
-    return await response.json();
+    return await handleApiResponse(response);
   }, [settings]);
 
   return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing };

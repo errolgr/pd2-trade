@@ -105,9 +105,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
+      } else {
+        setSelectedItem(null);
       }
     } catch (err) {
-      console.error(err);
+      console.error(err instanceof Error ? err.message : 'Failed to find items');
       setError(err instanceof Error ? err.message : 'Failed to find items');
     } finally {
       setIsLoading(false);
@@ -156,6 +158,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         getCurrentWebviewWindow().hide();
       }
     } catch (err) {
+      console.error(err instanceof Error ? err.message : 'Failed to list/update item');
       setError(err instanceof Error ? err.message : 'Failed to list/update item');
     } finally {
       setSubmitLoading(false);

@@ -6,7 +6,7 @@ import { exit } from '@tauri-apps/plugin-process';
 import {useOptions} from "@/hooks/useOptions";
 import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
-import { open } from '@tauri-apps/plugin-shell';
+import { openPath } from '@tauri-apps/plugin-opener';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
@@ -104,7 +104,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               action: async () => {
                 try {
                   const configPath = await appConfigDir();
-                  await open(configPath);
+                  await openPath(configPath);
                 } catch (err) {
                   console.error('Failed to open config location:', err);
                 }
