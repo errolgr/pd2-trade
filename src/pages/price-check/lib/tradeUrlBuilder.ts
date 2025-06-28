@@ -82,7 +82,9 @@ export function buildTradeUrl(
     if (
       item.quality === ItemQuality.Rare ||
       item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted) {
+      item.quality === ItemQuality.Crafted ||
+      item.quality === ItemQuality.Normal ||
+      item.quality === ItemQuality.Superior) {
       const result = getTypeFromBaseType(item.type, false);
       if (result && result?.type && result?.type) {
         searchParams.set("type", result.type as any);
@@ -213,7 +215,9 @@ export function buildGetMarketListingQuery(
     if (
       item.quality === ItemQuality.Rare ||
       item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted) {
+      item.quality === ItemQuality.Crafted ||
+      item.quality === ItemQuality.Normal ||
+      item.quality === ItemQuality.Superior) {
       const result = getTypeFromBaseType(item.type, true);
       if (result && result?.type && result?.type) {
         let typeValue = result.type;
