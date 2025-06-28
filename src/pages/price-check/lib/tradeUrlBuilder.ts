@@ -1,13 +1,16 @@
 import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
 import { skillNameToIdMap } from "@/assets/character-skills";
-import { classSkillNameToIdMap, classSubSkillNameToIdMap } from "@/assets/class-skills";
+import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
 import { RANGE_MARGIN } from "./types";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
 import { ItemType as PD2Item } from "@/assets/itemFuzzySearch";
 import { Item as GameStashItem } from "@/common/types/pd2-website/GameStashResponse";
+
+
+
 export function buildTradeUrl(
   item: Item,
   mappedItem: PD2Item,
@@ -33,13 +36,13 @@ export function buildTradeUrl(
       if (skillEntry) {
         propKey = `item_singleskill{${skillEntry.id}}`;
       }
-      const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
+      const classEntry = fuzzyClassSkillByName(stat.skill.toLowerCase());
       if (classEntry) {
         propKey = `item_addclassskills{${classEntry.id}}`;
       }
-      const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
+      const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase())
       if (subClassEntry) {
-        propKey = `item_addskill_tab{${subClassEntry.id}}`;
+        propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
       }
 
     } else if (stat.stat_id !== undefined) {
@@ -174,7 +177,7 @@ export function buildGetMarketListingQuery(
       const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
       if (subClassEntry) {
         // Subclass skill
-        const mod: any = { name: 'item_addskill_tab', 'values.0': subClassEntry.id };
+        const mod: any = { name: 'item_addskill_tab', 'values.0': getSkillTabIndex(subClassEntry.id) };
         if (f.min !== undefined || f.max !== undefined) {
           mod['values.1'] = {};
           if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);

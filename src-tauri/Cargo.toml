@@ -1,6 +1,6 @@
 [package]
 name = "pd2-trader"
-version = "0.2.6"
+version = "0.2.7"
 description = "PD2 Trader"
 authors = ["you"]
 edition = "2021"
@@ -48,5 +48,5 @@ tauri-plugin-http = "2.5.0"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
+tauri-plugin-updater = "2.8.1"
 

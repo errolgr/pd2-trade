@@ -1,4 +1,5 @@
 import _ from "lodash";
+import Fuse from 'fuse.js';
 
 export interface ClassSkill {
   id: number;
@@ -11,6 +12,20 @@ export interface ClassSubSkill {
   id: number;
   name: string;
   class: string;
+}
+
+export function getSkillTabIndex(rawSkillId) {
+  const SKILLS_PER_CLASS = 3;
+  const FILLER_SLOTS_BETWEEN_CLASSES = 5;
+
+  // Which class block (0 for first 3 IDs, 1 for next 3, etc.)
+  const classBlock = Math.floor(rawSkillId / SKILLS_PER_CLASS);
+
+  // Total filler slots to skip before this class
+  const totalFillerBefore = classBlock * FILLER_SLOTS_BETWEEN_CLASSES;
+
+  // The final tab index
+  return rawSkillId + totalFillerBefore;
 }
 
 export const classSkillsMap: Record<number, ClassSkill> = {
@@ -56,3 +71,49 @@ export const classSubSkillNameToIdMap: Record<string, ClassSubSkill> = _.keyBy(
   Object.values(classSubSkillMap),
   (skill) => skill.name.toLowerCase()
 );
+
+// Fuzzy search functionality for class sub-skills
+export function createClassSubSkillFuse(subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap)) {
+  return new Fuse(subSkillList, {
+    keys: ['name'],
+    threshold: 0.3,
+  });
+}
+
+export function fuzzyMatchClassSubSkills(
+  searchTerm: string, 
+  subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap),
+  threshold: number = 0.3
+): ClassSubSkill | null {
+  const fuse = createClassSubSkillFuse(subSkillList);
+  const results = fuse.search(searchTerm);
+  return results.length > 0 ? results[0].item : null;
+}
+
+// Simple convenience function for fuzzy searching by name
+export function fuzzyClassSubSkillByName(name: string): ClassSubSkill | null {
+  return fuzzyMatchClassSubSkills(name);
+}
+
+// Fuzzy search functionality for main class skills
+export function createClassSkillFuse(skillList: ClassSkill[] = Object.values(classSkillsMap)) {
+  return new Fuse(skillList, {
+    keys: ['name'],
+    threshold: 0.3,
+  });
+}
+
+export function fuzzyMatchClassSkills(
+  searchTerm: string, 
+  skillList: ClassSkill[] = Object.values(classSkillsMap),
+  threshold: number = 0.3
+): ClassSkill | null {
+  const fuse = createClassSkillFuse(skillList);
+  const results = fuse.search(searchTerm);
+  return results.length > 0 ? results[0].item : null;
+}
+
+// Simple convenience function for fuzzy searching main class skills by name
+export function fuzzyClassSkillByName(name: string): ClassSkill | null {
+  return fuzzyMatchClassSkills(name);
+}

@@ -1,4 +1,9 @@
 export const changeLog = {
+  "0.2.7": [
+    "🔧 Fixed an issue which caused charm skillers to never map to the correct skills",
+    "🔧 Fixed an issue which caused the auto updated not to function correctly.",
+    "✨ Added check for latest version in the about settings.",
+  ],
   "0.2.6": [
     "✨ Hidden screen will now be open within the bounds of the Diablo II window if available.",
     "🔧 Fixed an issue that caused the list item hot key not to update automatically",

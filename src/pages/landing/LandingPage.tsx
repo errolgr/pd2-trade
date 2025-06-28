@@ -58,6 +58,30 @@ const LandingPage: React.FC = () => {
     }
   }, [])
 
+  // Periodically check for updates every 5 minutes
+  useEffect(() => {
+    if (!isTauri()) return;
+    let updateNotified = false;
+
+    const checkAndNotify = async () => {
+      const update = await checkForUpdates();
+      if (update?.available && !updateNotified) {
+        updateNotified = true;
+        toast("PD2 Trader - Update Available", {
+          description: "A new update is ready. Please restart to apply it.",
+          position: 'bottom-right',
+        });
+      }
+    };
+
+    // Initial check
+    checkAndNotify();
+    // Set interval for subsequent checks
+    const interval = setInterval(checkAndNotify, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [checkForUpdates]);
+
+
   /* ---------------------------------
    * Fire when the shortcut is pressed
    * --------------------------------- */
@@ -294,30 +318,6 @@ const LandingPage: React.FC = () => {
       open();
     }
   }, [settings?.pd2Token, isLoading]);
-
-  // Periodically check for updates every 5 minutes
-  useEffect(() => {
-    if (!isTauri()) return;
-    let interval: NodeJS.Timeout;
-    let updateNotified = false;
-
-    const checkAndNotify = async () => {
-      const update = await checkForUpdates();
-      if (update?.available && !updateNotified) {
-        updateNotified = true;
-        toast("PD2 Trader - Update Available", {
-          description: "A new update is ready. Please restart to apply it.",
-          position: 'bottom-right',
-        });
-      }
-    };
-
-    // Initial check
-    checkAndNotify();
-    // Set interval for subsequent checks
-    interval = setInterval(checkAndNotify, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [checkForUpdates]);
 
   return <Pd2WebsiteProvider>
     <Toaster expand position="bottom-right" />
