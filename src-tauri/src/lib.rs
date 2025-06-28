@@ -40,8 +40,8 @@ pub fn run() {
 
             #[cfg(target_os = "windows")]
             let (x, y, width, height) = {
-                // Try to get Diablo II window bounds
-                if let Some(rect) = window::get_diablo_rect() {
+                // Get appropriate bounds based on Diablo focus state
+                if let Some(rect) = window::get_appropriate_window_bounds() {
                     (
                         rect.x as f64,
                         rect.y as f64,
@@ -97,7 +97,14 @@ pub fn run() {
                 .skip_taskbar(true);
 
             let main_window = win_builder.build().unwrap();
-            main_window.set_ignore_cursor_events(true);
+            let _ = main_window.set_ignore_cursor_events(true);
+            
+            // Initialize event-driven foreground monitoring
+            let app_handle = app.app_handle().clone();
+            window::initialize_foreground_monitoring(move || {
+                let _ = commands::update_window_bounds(app_handle.clone());
+            });
+            
             #[cfg(debug_assertions)]
             main_window.open_devtools();
             Ok(())
@@ -106,7 +113,8 @@ pub fn run() {
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,
-            commands::open_project_diablo2_webview
+            commands::open_project_diablo2_webview,
+            commands::update_window_bounds
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

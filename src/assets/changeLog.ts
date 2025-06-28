@@ -1,4 +1,10 @@
 export const changeLog = {
+  "0.2.8": [
+    "💎 PD2 popover will now toggle between fullscreen and the diablo screen if its focused.",
+    "🔧 Fixed a bug where searching more than 1 modifier would not return results when using the live search.",
+    "🔧 Fixed a bug where borderless windows would not allow the taskbar to be in the foreground.",
+    "🔧 Fixed a bug where some GC skillers would not map to the correct skills.",
+  ],
   "0.2.7": [
     "🔧 Fixed an issue which caused charm skillers to never map to the correct skills",
     "🔧 Fixed an issue which caused the auto updated not to function correctly.",

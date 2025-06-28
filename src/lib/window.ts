@@ -124,3 +124,11 @@ export function attachWindowCloseHandler(
     }
   });
 }
+
+export async function updateMainWindowBounds(): Promise<void> {
+  try {
+    await invoke('update_window_bounds');
+  } catch (e) {
+    console.warn('[updateMainWindowBounds] failed:', e);
+  }
+}

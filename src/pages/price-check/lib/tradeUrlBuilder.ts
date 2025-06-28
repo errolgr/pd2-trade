@@ -234,6 +234,7 @@ export function buildGetMarketListingQuery(
     query['item.modifiers'] = { $all: modifiers };
   }
 
+  console.log(query);
   return query as MarketListingQuery;
 }
 

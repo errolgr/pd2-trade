@@ -31,15 +31,10 @@ function axiosStyleSerializer(obj) {
   return qs
     .stringify(obj, 
       { 
-        arrayFormat:      'brackets',  // foo[]=1&foo[]=2
+        arrayFormat:      'indices',  // foo[]=1&foo[]=2
         encodeValuesOnly: true         // keys like [$in] stay literal}
       }
     )
-    // mimic Axios's re-decoding of [] → literal
-    .replace(/%5B/gi, '[')
-    .replace(/%5D/gi, ']')
-    //—and if you care about spaces-as-plus…
-    .replace(/%20/g, '+');
 }
 
 

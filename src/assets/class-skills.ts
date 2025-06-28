@@ -76,14 +76,13 @@ export const classSubSkillNameToIdMap: Record<string, ClassSubSkill> = _.keyBy(
 export function createClassSubSkillFuse(subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap)) {
   return new Fuse(subSkillList, {
     keys: ['name'],
-    threshold: 0.3,
+    threshold: 0.5,
   });
 }
 
 export function fuzzyMatchClassSubSkills(
   searchTerm: string, 
   subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap),
-  threshold: number = 0.3
 ): ClassSubSkill | null {
   const fuse = createClassSubSkillFuse(subSkillList);
   const results = fuse.search(searchTerm);
@@ -99,14 +98,13 @@ export function fuzzyClassSubSkillByName(name: string): ClassSubSkill | null {
 export function createClassSkillFuse(skillList: ClassSkill[] = Object.values(classSkillsMap)) {
   return new Fuse(skillList, {
     keys: ['name'],
-    threshold: 0.3,
+    threshold: 0.5,
   });
 }
 
 export function fuzzyMatchClassSkills(
   searchTerm: string, 
   skillList: ClassSkill[] = Object.values(classSkillsMap),
-  threshold: number = 0.3
 ): ClassSkill | null {
   const fuse = createClassSkillFuse(skillList);
   const results = fuse.search(searchTerm);
