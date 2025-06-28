@@ -1,5 +1,6 @@
 export enum ItemQuality {
   Normal = "Normal",
+  Superior = "Superior",
   Magic = "Magic",
   Rare = "Rare",
   Set = "Set",

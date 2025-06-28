@@ -145,7 +145,9 @@ export function useStashCache(authData, settings) {
        !item.type.includes("Charm")) &&
        (item.quality === ItemQuality.Rare || 
         item.quality === ItemQuality.Magic || 
-        item.quality === ItemQuality.Crafted)) {
+        item.quality === ItemQuality.Crafted ||
+        item.quality === ItemQuality.Normal ||
+        item.quality === ItemQuality.Superior)) {
       
       const typeBaseInfo = getTypeFromBaseType(item.type);
       if (typeBaseInfo) {
