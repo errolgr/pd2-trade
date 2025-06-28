@@ -320,7 +320,8 @@ const LandingPage: React.FC = () => {
   }, [settings?.pd2Token, isLoading]);
 
   return <Pd2WebsiteProvider>
-    <Toaster expand position="bottom-right" />
+    <Toaster expand
+      position="bottom-right" />
     {showTitle && (
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <img src={iconPath}
