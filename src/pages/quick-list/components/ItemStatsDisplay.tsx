@@ -21,8 +21,8 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
     });
 
     // Separate corrupted and non-corrupted modifiers
-    const corruptedModifiers = filteredModifiers.filter((mod) => stashItem.corruptions.includes(mod.name));
-    const nonCorruptedModifiers = filteredModifiers.filter((mod) => !stashItem.corruptions.includes(mod.name));
+    const corruptedModifiers = filteredModifiers.filter((mod) => stashItem.corruptions?.includes(mod.name) ?? false);
+    const nonCorruptedModifiers = filteredModifiers.filter((mod) => !(stashItem.corruptions?.includes(mod.name) ?? false));
 
     // Combine with corrupted modifiers at the top
     const sortedModifiers = [...corruptedModifiers, ...nonCorruptedModifiers];
