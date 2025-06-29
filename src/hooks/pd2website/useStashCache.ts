@@ -163,7 +163,7 @@ export function useStashCache(authData, settings) {
       // For other item qualities, search by name as before
       const fuse = new Fuse(stashItems, {
         keys: ['name'],
-        threshold: 0.1, // Adjust for strictness (lower = stricter)
+        threshold: 0.3, // Adjust for strictness (lower = stricter)
       });
       matchingItems = fuse.search(item.isRuneword ? item.runeword : item.name).map(result => result.item);
     }

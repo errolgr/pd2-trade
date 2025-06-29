@@ -16,7 +16,7 @@ const ItemsContext = createContext<ItemsContextValue | undefined>(undefined);
 export function ItemsProvider({ items = allItems, children }: { items?: ItemType[]; children: ReactNode }) {
   const fuse = useMemo(() => new Fuse(items, {
     keys: ['name'],
-    threshold: 0.3,
+    threshold: 0.5,
   }), [items]);
 
   const findByName = (name: string, limit = 1) => {
