@@ -70,7 +70,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
 
   // Update settings when authData changes and account is missing
   useEffect(() => {
-    if (!settings.account && authData?.user?.game?.accounts) {
+    if (!isLoading && !settings.account && authData?.user?.game?.accounts) {
       updateSettings({ account: authData.user.game.accounts[0] });
     }
   }, [authData, settings.account]);

@@ -24,9 +24,12 @@ export function useStashCache(authData, settings) {
   // Helper: fetch stash from server and update cache (RESTful)
   const fetchAndCacheStash = useCallback(async () => {
     if (!authData) throw new Error('Not authenticated');
+    if (!settings) throw new Error('Settings not found!');
+
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
-    const account = authData.user.game.accounts[0];
+    const account = settings.account;
+  
     const params = {
       account,
       softcore: !is_hardcore,
