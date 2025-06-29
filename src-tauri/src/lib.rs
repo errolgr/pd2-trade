@@ -92,6 +92,7 @@ pub fn run() {
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
+                .focus()
                 .shadow(false)
                 .always_on_top(true)
                 .skip_taskbar(true);
@@ -99,10 +100,27 @@ pub fn run() {
             let main_window = win_builder.build().unwrap();
             let _ = main_window.set_ignore_cursor_events(true);
             
+            // Create toast window
+            let toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
+                .title("PD2 Trader - Toast")
+                .inner_size(400.0, 200.0)
+                .decorations(false)
+                .transparent(true)
+                .visible(false)
+                .shadow(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .build()
+                .unwrap();
+            
+            // Position the toast window initially
+            
             // Initialize event-driven foreground monitoring
             let app_handle = app.app_handle().clone();
+            let _ = commands::reposition_toast_window(app_handle.clone());
             window::initialize_foreground_monitoring(move || {
                 let _ = commands::update_window_bounds(app_handle.clone());
+                let _ = commands::reposition_toast_window(app_handle.clone());
             });
             
             #[cfg(debug_assertions)]
@@ -114,7 +132,10 @@ pub fn run() {
             commands::press_key,
             commands::is_diablo_focused,
             commands::open_project_diablo2_webview,
-            commands::update_window_bounds
+            commands::update_window_bounds,
+            commands::set_window_click_through,
+            commands::force_window_focus,
+            commands::reposition_toast_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

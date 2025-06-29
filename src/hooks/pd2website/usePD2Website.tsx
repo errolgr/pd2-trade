@@ -5,8 +5,22 @@ import { useMarketActions } from './useMarketActions';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
+import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
+import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 
-export const Pd2WebsiteContext = React.createContext(undefined);
+interface Pd2WebsiteContextType {
+  open?: () => void; // This seems to be missing from the provider but referenced in context
+  findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
+  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
+  getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  authData: AuthData;
+  updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
+  updateItemByHash: (hash: string, update: any) => boolean;
+}
+
+export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
 
 export const Pd2WebsiteProvider = ({ children }) => {
   const { updateSettings, settings, isLoading } = useOptions();

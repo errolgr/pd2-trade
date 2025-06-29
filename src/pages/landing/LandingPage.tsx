@@ -17,12 +17,9 @@ import {openCenteredWindow, openOverDiabloWindow, openWindowAtCursor, attachWind
 import {changeLog} from "@/assets/changeLog";
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { emit, listen } from '@tauri-apps/api/event';
-import { toast } from 'sonner';
-import { Toaster } from '@/components/ui/sonner';
 import { jwtDecode } from 'jwt-decode';
-import { relaunch } from '@tauri-apps/plugin-process';
 import { ItemLocation } from '@/common/types/Location';
-
+import { GenericToastPayload, CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -40,8 +37,6 @@ const LandingPage: React.FC = () => {
   const { settings, isLoading, updateSettings } = useOptions();
   const lastRegisteredShortcut = useRef<string | null>(null);
   const quickListWinRef = useRef<WebviewWindow | null>(null);
-
-
 
   // Hide the launch title after 2 seconds
   useEffect(() => {
@@ -72,10 +67,16 @@ const LandingPage: React.FC = () => {
       const update = await checkForUpdates();
       if (update?.available && !updateNotified) {
         updateNotified = true;
-        toast("PD2 Trader - Update Available", {
-          description: "A new update is ready. Please restart to apply it.",
-          position: 'bottom-right',
-        });
+        const updateToastPayload: CustomToastPayload = {
+          title: 'PD2 Trader - Update Available',
+          description: 'A new update is ready. Click to restart and apply it.',
+          action: {
+            label: 'Restart Now',
+            type: ToastActionType.UPDATE_AVAILABLE,
+            data: {}
+          }
+        };
+        emit('toast-event', updateToastPayload);
       }
     };
 
@@ -143,7 +144,11 @@ const LandingPage: React.FC = () => {
 
     if (!isStashItem(raw)){
       console.log('[LandingPage] Clipboard does not contain stash item, returning');
-      toast("PD2 Trader", { description: "Item must be located in stash in order to list", position: 'bottom-right'})
+      const errorToastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'Item must be located in stash in order to list'
+      };
+      emit('toast-event', errorToastPayload);
       return;
     }
 
@@ -221,12 +226,12 @@ const LandingPage: React.FC = () => {
       lastRegisteredShortcut.current = newShortcut;
 
       // Register the quick-list shortcut
-      await register(quickListShortcut, (e) => {
+      await register(quickListShortcut, (e => {
         if (e.state === 'Pressed') {
           openQuickListWindow();
           console.log('[LandingPage] Quick List shortcut pressed:', quickListShortcut);
         }
-      });
+      }));
     };
 
     cleanup();
@@ -249,17 +254,17 @@ const LandingPage: React.FC = () => {
     settings.hotkeyModifierListItem
     ]);
 
-  // Listen for Tauri 'toast-event' and show a toast
+  // Listen for Tauri 'pd2-token-found' and save the token
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     if (isTauri()) {
-      listen('toast-event', (event) => {
-        // event.payload can be string or object
-        if (typeof event.payload === 'string') {
-          toast("PD2 Trader", { description: event.payload, position: 'bottom-right' });
-        } else if (event.payload && typeof event.payload === 'object') {
-          toast("PD2 Trader", { position: 'bottom-right', ...event.payload });
-        }
+      listen<string>('pd2-token-found', (event) => {
+        updateSettings({ pd2Token: event.payload });
+        const successToastPayload: GenericToastPayload = {
+          title: 'PD2 Trader',
+          description: 'Authentication successful!'
+        };
+        emit('toast-event', successToastPayload);
       }).then((off) => {
         unlisten = off;
       });
@@ -269,27 +274,8 @@ const LandingPage: React.FC = () => {
     };
   }, []);
 
-
-    // Listen for Tauri 'pd2-token-found' and save the token
-    useEffect(() => {
-      let unlisten: (() => void) | undefined;
-      if (isTauri()) {
-        listen<string>('pd2-token-found', (event) => {
-          updateSettings({ pd2Token: event.payload });
-          toast.success("PD2 Trader", { description: "Authentication successful!", position: 'bottom-right' });
-        }).then((off) => {
-          unlisten = off;
-        });
-      }
-      return () => {
-        if (unlisten) unlisten();
-      };
-    }, []);
-  
-  
-
-   // Open webview
-   const open = async () => {
+  // Open webview
+  const open = async () => {
     try {
       await invoke('open_project_diablo2_webview');
     } catch (error) {
@@ -303,7 +289,11 @@ const LandingPage: React.FC = () => {
     if (isLoading) return; 
 
     if (!settings?.pd2Token) {
-      toast.error("PD2 Trader", { description: "PD2 website authentication required!", position: 'bottom-right' });
+      const authRequiredToastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'PD2 website authentication required!'
+      };
+      emit('toast-event', authRequiredToastPayload);
       open();
       return;
     }
@@ -325,14 +315,15 @@ const LandingPage: React.FC = () => {
   }, [settings?.pd2Token, isLoading]);
 
   return <Pd2WebsiteProvider>
-    <Toaster expand
-      position="bottom-right" />
-    {showTitle && (
-      <div className="fixed inset-0 flex items-center justify-center z-50">
-        <img src={iconPath}
-          style={{width: 400}}/>
-      </div>
-    )}
+    <div>
+      {showTitle && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50">
+          <img src={iconPath}
+            style={{width: 400}}/>
+        </div>
+      )}
+    </div>
   </Pd2WebsiteProvider>
 };
 

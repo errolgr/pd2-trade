@@ -22,6 +22,7 @@ import moment from 'moment';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@tauri-apps/api/event';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem;
@@ -152,9 +153,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await emit('toast-event', 'Listing updated!');
         getCurrentWebviewWindow().hide();
       } else {
-        await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
+        const listing = await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
         form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
-        await emit('toast-event', 'Item listed!');
+        
+        // Emit custom toast with listing data
+        const toastPayload: CustomToastPayload = {
+          title: 'Item listed!',
+          description: `Added to the PD2 marketplace.`,
+          action: {
+            label: selectedItem?.name || 'Go to listing',
+            type: ToastActionType.OPEN_MARKET_LISTING,
+            data: {
+              listingId: listing._id
+            }
+          }
+        };
+        
+        await emit('toast-event', toastPayload);
+        
         getCurrentWebviewWindow().hide();
       }
     } catch (err) {
@@ -512,7 +528,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 <FormItem className="flex-1 m-0 p-0 min-w-0 w-14">
                   <FormLabel className="sr-only">Note</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter a note..." {...field} />
+                    <Input placeholder="Enter a note..." {...field} autoComplete={'off'}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

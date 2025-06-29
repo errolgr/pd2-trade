@@ -64,7 +64,7 @@ export function useMarketActions({
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
 
   // List specific item (POST /market/listing)
-  const listSpecificItem = useCallback(async (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable'): Promise<void> => {
+  const listSpecificItem = useCallback(async (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable'): Promise<MarketListingEntry> => {
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const bumped_at = new Date().toISOString();

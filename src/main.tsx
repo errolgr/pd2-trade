@@ -10,6 +10,7 @@ import {SettingsPage} from "@/pages/settings/SettingsPage";
 import ChangelogPage from "@/pages/change-log/ChangeLogPage";
 import { QuickListPage } from './pages/quick-list/QuickListPage';
 import { OptionsProvider } from './hooks/useOptions';
+import ToastPage from './pages/toast/ToastPage';
 
 Sentry.init({
   dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
@@ -25,6 +26,15 @@ Sentry.init({
   // Session Replay
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
   replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+  // Breadcrumb filtering to ignore cursor position API calls
+  beforeBreadcrumb(breadcrumb) {
+    // Ignore tauri API calls to reduce noise in Sentry
+    if (breadcrumb.category === 'http' && 
+        breadcrumb.data?.url?.includes('ipc.localhost')) {
+      return null;
+    }
+    return breadcrumb;
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
@@ -55,6 +65,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         element={<OptionsProvider>
             <ChangelogPage/>
         </OptionsProvider>
+        }
+      />
+        <Route
+        path={"/toast"}
+        element={<ToastPage/>
         }
       />
     </Routes>

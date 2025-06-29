@@ -19,6 +19,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from "@/hooks/useItems";
 import { MarketListingEntry, MarketListingResult } from "@/common/types/pd2-website/GetMarketListingsResponse";
 import { usePd2Website } from "@/hooks/pd2website/usePD2Website";
+import { emit } from "@tauri-apps/api/event";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();

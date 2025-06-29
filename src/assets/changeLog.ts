@@ -4,6 +4,7 @@ export const changeLog = {
     "🔧 Items that are incorrectly named in game should more accurately be found in price checking and in stash.",
     "🆕 Searching for a normal/superior item will now search by its base instead of its name.",
     "🔧 Fixed Unicode encoding issue that caused 'btoa' errors when item data contained special characters.",
+    "✨ When listing an item, a toast will pop up, allowing you to navigate to the listing on the trade site.",
   ],
   "0.2.8": [
     "💎 PD2 popover will now toggle between fullscreen and the diablo screen if its focused.",
