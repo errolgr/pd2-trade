@@ -26,6 +26,11 @@ import { ItemLocation } from '@/common/types/Location';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Safe encoding function that handles Unicode characters
+const safeEncode = (str: string): string => {
+  return btoa(encodeURIComponent(str));
+};
+
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
   const winRef = useRef<WebviewWindow | null>(null);
@@ -98,7 +103,7 @@ const LandingPage: React.FC = () => {
     await sleep(100);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) return;
-    const encoded = encodeURIComponent(btoa(raw));
+    const encoded = encodeURIComponent(safeEncode(raw));
 
     if (!winRef.current) {
       winRef.current = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
@@ -144,7 +149,7 @@ const LandingPage: React.FC = () => {
 
     console.log('[LandingPage] Raw Item' + raw);
 
-    const encodedItem = btoa(raw);
+    const encodedItem = safeEncode(raw);
     console.log('[LandingPage] Encoded item for URL parameter');
 
     if (!quickListWinRef.current) {
