@@ -7,9 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
 import { listen } from '@tauri-apps/api/event';
 
-// Safe decoding function that handles Unicode characters
-const safeDecode = (encoded: string): string => {
-  return decodeURIComponent(atob(encoded));
+// Simple unescape function to handle Unicode characters
+const unescapeUnicode = (str: string): string => {
+  return decodeURIComponent(escape(str));
 };
 
 export const QuickListPage: React.FC<any> = () => {
@@ -20,7 +20,7 @@ export const QuickListPage: React.FC<any> = () => {
         const param = searchParams.get("item");
         if (param) {
           try {
-            const json = JSON.parse(safeDecode(param));
+            const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
             setItem(json);
             console.log('QuickListPage json' + json);
           } catch (err) {
@@ -30,7 +30,7 @@ export const QuickListPage: React.FC<any> = () => {
         // Listen for quick-list-new-item events
         const unlistenPromise = listen<string>('quick-list-new-item', ({ payload }) => {
           try {
-            const json = JSON.parse(safeDecode(payload));
+            const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
             setItem(json);
           } catch (err) {
             console.error('[QuickListPage] Failed to parse event payload:', err);

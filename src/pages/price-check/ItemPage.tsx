@@ -7,9 +7,9 @@ import {OptionsProvider} from "@/hooks/useOptions";
 import { ItemsProvider } from "@/hooks/useItems";
 import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
 
-// Safe decoding function that handles Unicode characters
-const safeDecode = (encoded: string): string => {
-  return decodeURIComponent(atob(encoded));
+// Simple unescape function to handle Unicode characters
+const unescapeUnicode = (str: string): string => {
+  return decodeURIComponent(escape(str));
 };
 
 const ItemWindow: React.FC = () => {
@@ -23,7 +23,7 @@ const ItemWindow: React.FC = () => {
     if (!param) return;
 
     try {
-      const json = JSON.parse(safeDecode(param));
+      const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
       setItem(json);
     } catch (err) {
       console.error("[ItemWindow] Failed to parse initial payload:", err);
@@ -36,7 +36,7 @@ const ItemWindow: React.FC = () => {
   useEffect(() => {
     const unlistenPromise = listen<string>("new-search", ({ payload }) => {
       try {
-        const json = JSON.parse(safeDecode(payload));
+        const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
         setItem(json);
       } catch (err) {
       }
