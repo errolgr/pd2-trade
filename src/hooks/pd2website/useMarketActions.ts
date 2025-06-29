@@ -9,7 +9,13 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import qs from 'qs';
 import { handleApiResponse } from './usePD2Website';
 
-
+interface UseMarketActionsReturn {
+  findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
+  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
+  getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
+  deleteMarketListing: (hash: string) => Promise<void>;
+}
 
 interface UseMarketActionsProps {
   settings: ISettings;
@@ -45,7 +51,7 @@ export function useMarketActions({
   findItemsByName, 
   stashCache, 
   CACHE_TTL
-}: UseMarketActionsProps) {
+}: UseMarketActionsProps): UseMarketActionsReturn {
   // Find matching items
   const findMatchingItems = useCallback(async (item: PriceCheckItem): Promise<GameStashItem[]> => {
     let items: GameStashItem[] = [];
@@ -99,7 +105,6 @@ export function useMarketActions({
   // Get market listings (GET /market/listing)
   const getMarketListings = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
     const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query);
-    console.log(query);
     const response = await tauriFetch(url, {
       method: 'GET',
       headers: {
@@ -109,9 +114,9 @@ export function useMarketActions({
     return await handleApiResponse(response);
   }, [settings]);
 
-  // Generic update market listing (PATCH /market/listing/:hash)
-  const updateMarketListing = useCallback(async (hash: string, update: Record<string, any>): Promise<MarketListingEntry> => {
-    const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${hash}`, {
+  // Generic update market listing (PATCH /market/listing/:listingId)
+  const updateMarketListing = useCallback(async (listingId: string, update: Record<string, any>): Promise<MarketListingEntry> => {
+    const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${settings.pd2Token}`,
@@ -122,5 +127,16 @@ export function useMarketActions({
     return await handleApiResponse(response);
   }, [settings]);
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing };
+  // Delete market listing (DELETE /market/listing/:listingId)
+  const deleteMarketListing = useCallback(async (listingId: string): Promise<void> => {
+    const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+      }
+    });
+    await handleApiResponse(response);
+  }, [settings]);
+
+  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing };
 } 

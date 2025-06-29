@@ -152,7 +152,7 @@ const LandingPage: React.FC = () => {
       return;
     }
 
-    console.log('[LandingPage] Raw Item' + raw);
+    console.log('[LandingPage] Raw Item:' + raw);
 
     const encodedItem = btoa(escapeUnicode(raw));
     console.log('[LandingPage] Encoded item for URL parameter');

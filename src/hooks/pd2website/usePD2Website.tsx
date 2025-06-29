@@ -15,6 +15,7 @@ interface Pd2WebsiteContextType {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  deleteMarketListing: (listingId: string) => Promise<void>;
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
@@ -36,7 +37,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   } = useStashCache(authData, settings);
 
   // Market actions (RESTful)
-  const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing } = useMarketActions({
+  const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing } = useMarketActions({
     settings,
     authData,
     fetchAndCacheStash,
@@ -90,7 +91,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );
