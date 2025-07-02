@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
@@ -48,52 +47,56 @@ export function CurrencyValuation() {
       </div>
 
       <Separator className="my-6" />
-      <div className="flex space-y-8 lg:flex-row lg:gap-x-12 lg:gap-y-0">
-        <div>
-          {currency && !loadingRunes && (() => {
-                const runeKeys = Object.keys(currency.runes).slice(19, 33).reverse();
+      <div className="flex flex-col flex-grow min-h-[400px]">
+        {currency && !loadingRunes ? (
+          (() => {
+            const runeKeys = Object.keys(currency.runes).slice(19, 33).reverse();
 
-                const totalHR =
-                  Math.round(
-                    runeKeys.reduce((acc, rune, i) => {
-                      const amount = currency.runes[rune];
-                      const price = calculatedRuneValues[i]?.price || 0;
-                      return acc + amount * price;
-                    }, 0) * 100,
-                  ) / 100;
+            const totalHR =
+              Math.round(
+                runeKeys.reduce((acc, rune, i) => {
+                  const amount = currency.runes[rune];
+                  const price = calculatedRuneValues[i]?.price || 0;
+                  return acc + amount * price;
+                }, 0) * 100,
+              ) / 100;
 
-                return (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-6">
-                      {runeKeys.map((rune, i) => (
-                        <div
-                          key={rune}
-                          className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl transition-shadow duration-300 hover:shadow-xl hover:shadow-slate-500/25"
-                        >
-                          <div className="font-bold text-gray-100 text-lg mb-1">
-                            {RUNE_HIERARCHY[i].replace('Rune', '').trim()}
+            return (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-6">
+                  {runeKeys.map((rune, i) => (
+                    <div
+                      key={rune}
+                      className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl transition-shadow duration-300 hover:shadow-xl hover:shadow-slate-500/25"
+                    >
+                      <div className="font-bold text-gray-100 text-lg mb-1">
+                        {RUNE_HIERARCHY[i].replace('Rune', '').trim()}
+                      </div>
+                      {calculatedRuneValues[i] && (
+                        <div className="text-sm text-gray-400 space-y-1">
+                          <div>
+                            <span className="font-medium text-slate-400">Amount:</span> {currency.runes[rune]}
                           </div>
-                          {calculatedRuneValues[i] && (
-                            <div className="text-sm text-gray-400 space-y-1">
-                              <div>
-                                <span className="font-medium text-slate-400">Amount:</span> {currency.runes[rune]}
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-400">Value:</span>{' '}
-                                {Math.round(currency.runes[rune] * calculatedRuneValues[i].price * 100) / 100} HR
-                              </div>
-                            </div>
-                          )}
+                          <div>
+                            <span className="font-medium text-slate-400">Value:</span>{' '}
+                            {Math.round(currency.runes[rune] * calculatedRuneValues[i].price * 100) / 100} HR
+                          </div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                    <p className="text-xl font-bold text-gray-100 pt-2">
-                      Total Value: <span className="text-slate-400">{totalHR} HR</span>
-                    </p>
-                  </>
-                );
-              })()}
-        </div>
+                  ))}
+                </div>
+                <p className="text-xl font-bold text-gray-100 pt-2">
+                  Total Value: <span className="text-slate-400">{totalHR} HR</span>
+                </p>
+              </>
+            );
+          })()
+        ) : (
+          <div className="flex flex-grow items-center justify-center min-h-[300px]">
+            <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
+          </div>
+        )}
       </div>
     </div>
   );

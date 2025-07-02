@@ -132,10 +132,8 @@ const LandingPage: React.FC = () => {
       decorations: false,
       focus: true,
       shadow: false,
-      minWidth: 1025,
-      maxWidth: 1025,
-      minHeight: 650,
-      maxHeight: 650,
+      width: 1025,
+      height: 650,
       alwaysOnTop: true,
     });
   }
@@ -218,7 +216,7 @@ const LandingPage: React.FC = () => {
 
     const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
     const quickListShortcut =  `${settings.hotkeyModifierListItem === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyListItem.toUpperCase()}`;
-    const currencyValuationShortcut = 'Control+X'
+    const currencyValuationShortcut = `${settings.hotkeyModifierCurrencyValuation === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyCurrencyValuation.toUpperCase()}`;
 
     const cleanup = async () => {
       if (lastRegisteredShortcut.current) {
@@ -267,13 +265,17 @@ const LandingPage: React.FC = () => {
       // Unregister the quick-list shortcut
       unregister(quickListShortcut).catch(() => void 0);
       console.log('[LandingPage] Cleanup: unregistered quick-list shortcut:', quickListShortcut);
+      unregister(currencyValuationShortcut).catch(() => void 0);
+      console.log('[LandingPage] Cleanup: unregistered currency valuation shortcut:', currencyValuationShortcut);
     };
   }, [
     isLoading, 
     settings.hotkeyModifier,
     settings.hotkeyKey,
     settings.hotkeyKeyListItem,
-    settings.hotkeyModifierListItem
+    settings.hotkeyModifierListItem,
+    settings.hotkeyKeyCurrencyValuation,
+    settings.hotkeyModifierCurrencyValuation,
     ]);
 
   // Listen for Tauri 'pd2-token-found' and save the token
