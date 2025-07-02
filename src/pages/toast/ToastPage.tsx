@@ -9,7 +9,9 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { relaunch } from '@tauri-apps/plugin-process';
 
 const ToastPage: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
+  const closeToastWebview = () => {
+    if (isTauri()) getCurrentWebviewWindow().hide().catch(console.error);
+  };
 
   // Listen for Tauri 'toast-event' and show a toast
   useEffect(() => {
@@ -19,47 +21,36 @@ const ToastPage: React.FC = () => {
         // Show the window when we receive a toast event
         try {
           await getCurrentWebviewWindow().show();
-          setIsVisible(true);
         } catch (error) {
           console.error('Failed to show toast window:', error);
         }
-        
+
         // event.payload can be string or object
         if (typeof event.payload === 'string') {
-          toast("PD2 Trader", { 
-            description: event.payload, 
-            position: 'bottom-right', 
+          toast('PD2 Trader', {
+            description: event.payload,
+            position: 'bottom-right',
             closeButton: true,
-            onDismiss: () => {
-              // Hide window when toast is dismissed
-              setIsVisible(false);
-              if (isTauri()) {
-                getCurrentWebviewWindow().hide().catch(console.error);
-              }
-            }
+            onDismiss: () => closeToastWebview(),
+            onAutoClose: () => closeToastWebview(),
           });
         } else if (event.payload && typeof event.payload === 'object') {
           const payload = event.payload as CustomToastPayload | GenericToastPayload;
-          
+
           // Check if it's a generic toast payload (no action)
           if (!('action' in payload)) {
             const genericPayload = payload as GenericToastPayload;
-            toast(genericPayload.title || "PD2 Trader", { 
-              position: 'bottom-right', 
+            toast(genericPayload.title || 'PD2 Trader', {
+              position: 'bottom-right',
               description: genericPayload.description,
               duration: genericPayload.duration,
               closeButton: true,
-              onDismiss: () => {
-                // Hide window when toast is dismissed
-                setIsVisible(false);
-                if (isTauri()) {
-                  getCurrentWebviewWindow().hide().catch(console.error);
-                }
-              }
+              onDismiss: () => closeToastWebview(),
+              onAutoClose: () => closeToastWebview(),
             });
             return;
           }
-          
+
           // Handle custom toast payload with action
           const customPayload = payload as CustomToastPayload;
           if (customPayload.action) {
@@ -67,13 +58,14 @@ const ToastPage: React.FC = () => {
             const handleActionClick = async () => {
               try {
                 switch (customPayload.action.type) {
-                  case ToastActionType.OPEN_MARKET_LISTING:
+                  case ToastActionType.OPEN_MARKET_LISTING: {
                     const listingId = customPayload.action.data?.listingId;
                     if (listingId) {
                       const marketUrl = `https://www.projectdiablo2.com/market/listing/${listingId}`;
                       await openUrl(marketUrl);
                     }
                     break;
+                  }
                   case ToastActionType.UPDATE_AVAILABLE:
                     await relaunch();
                     break;
@@ -93,35 +85,25 @@ const ToastPage: React.FC = () => {
             };
 
             // Custom toast with action button
-            toast(customPayload.title || "PD2 Trader", { 
-              position: 'bottom-right', 
+            toast(customPayload.title || 'PD2 Trader', {
+              position: 'bottom-right',
               description: customPayload.description,
               closeButton: true,
               action: {
                 label: customPayload.action.label,
-                onClick: handleActionClick
+                onClick: handleActionClick,
               },
-              onDismiss: () => {
-                // Hide window when toast is dismissed
-                setIsVisible(false);
-                if (isTauri()) {
-                  getCurrentWebviewWindow().hide().catch(console.error);
-                }
-              }
+              onDismiss: () => closeToastWebview(),
+              onAutoClose: () => closeToastWebview(),
             });
           } else {
             // Regular object toast
-            toast("PD2 Trader", { 
-              position: 'bottom-right', 
+            toast('PD2 Trader', {
+              position: 'bottom-right',
               description: customPayload.description,
               closeButton: true,
-              onDismiss: () => {
-                // Hide window when toast is dismissed
-                setIsVisible(false);
-                if (isTauri()) {
-                  getCurrentWebviewWindow().hide().catch(console.error);
-                }
-              }
+              onDismiss: () => closeToastWebview(),
+              onAutoClose: () => closeToastWebview(),
             });
           }
         }
@@ -135,14 +117,10 @@ const ToastPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-screen h-screen bg-transparent">
       <Toaster 
-        position="bottom-right"
         richColors
         closeButton
-        duration={5000}
       />
-    </div>
   );
 };
 
