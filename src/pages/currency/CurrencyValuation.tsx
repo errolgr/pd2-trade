@@ -7,6 +7,8 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useRuneData } from '../price-check/hooks/useRuneData';
 import { RUNE_HIERARCHY } from '../price-check/lib/runeService';
+import { RuneValue } from '../price-check/components';
+import RuneCard from './RuneCard';
 
 export function CurrencyValuation() {
   const [currency, setCurrency] = React.useState<Currency>();
@@ -22,6 +24,30 @@ export function CurrencyValuation() {
   }, [fetchCurrency]);
 
   const { calculatedRuneValues, loadingRunes } = useRuneData();
+
+  function getHighRunesData(currency: Currency, calculatedRuneValues: RuneValue[], runeHierarchy: string[]) {
+    const runeKeys = Object.keys(currency.runes).slice(19, 33).reverse();
+
+    const runeData = runeKeys.map((runeKey, i) => {
+      const amount = currency.runes[runeKey];
+      const runeName = runeHierarchy[i];
+      const matchedRune = calculatedRuneValues.find((val) => val.name === runeName);
+
+      const value = matchedRune ? Math.round(amount * matchedRune.price * 100) / 100 : 0;
+
+      return {
+        key: runeKey,
+        displayName: matchedRune?.name.replace('Rune', '').trim() ?? runeName,
+        amount,
+        price: matchedRune?.price ?? 0,
+        value,
+      };
+    });
+
+    const totalValue = Math.round(runeData.reduce((acc, rune) => acc + rune.value, 0) * 100) / 100;
+
+    return { runeData, totalValue };
+  }
 
   return (
     <div className="min-h-screen w-full space-y-6 p-10 md:block bg-background">
@@ -41,7 +67,10 @@ export function CurrencyValuation() {
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={() => getCurrentWebviewWindow().close()} className="self-start">
+        <Button variant="ghost"
+          size="icon"
+          onClick={() => getCurrentWebviewWindow().close()}
+          className="self-start">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -50,44 +79,21 @@ export function CurrencyValuation() {
       <div className="flex flex-col flex-grow min-h-[400px]">
         {currency && !loadingRunes ? (
           (() => {
-            const runeKeys = Object.keys(currency.runes).slice(19, 33).reverse();
-
-            const totalHR =
-              Math.round(
-                runeKeys.reduce((acc, rune, i) => {
-                  const amount = currency.runes[rune];
-                  const price = calculatedRuneValues[i]?.price || 0;
-                  return acc + amount * price;
-                }, 0) * 100,
-              ) / 100;
-
+            const { runeData, totalValue } = getHighRunesData(currency, calculatedRuneValues, RUNE_HIERARCHY);
             return (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-6">
-                  {runeKeys.map((rune, i) => (
-                    <div
-                      key={rune}
-                      className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl transition-shadow duration-300 hover:shadow-xl hover:shadow-slate-500/25"
-                    >
-                      <div className="font-bold text-gray-100 text-lg mb-1">
-                        {RUNE_HIERARCHY[i].replace('Rune', '').trim()}
-                      </div>
-                      {calculatedRuneValues[i] && (
-                        <div className="text-sm text-gray-400 space-y-1">
-                          <div>
-                            <span className="font-medium text-slate-400">Amount:</span> {currency.runes[rune]}
-                          </div>
-                          <div>
-                            <span className="font-medium text-slate-400">Value:</span>{' '}
-                            {Math.round(currency.runes[rune] * calculatedRuneValues[i].price * 100) / 100} HR
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  {runeData.map((rune) => (
+                    <RuneCard
+                      key={rune.key}
+                      name={rune.displayName}
+                      amount={rune.amount}
+                      value={rune.value}
+                    />
                   ))}
                 </div>
                 <p className="text-xl font-bold text-gray-100 pt-2">
-                  Total Value: <span className="text-slate-400">{totalHR} HR</span>
+                  Total Value: <span className="text-slate-400">{totalValue} HR</span>
                 </p>
               </>
             );
