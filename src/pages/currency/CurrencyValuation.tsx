@@ -82,11 +82,12 @@ export function CurrencyValuation() {
             const { runeData, totalValue } = getHighRunesData(currency, calculatedRuneValues, RUNE_HIERARCHY);
             return (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-3">
                   {runeData.map((rune) => (
                     <RuneCard
                       key={rune.key}
                       name={rune.displayName}
+                      price={rune.price}
                       amount={rune.amount}
                       value={rune.value}
                     />
