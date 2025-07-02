@@ -125,6 +125,20 @@ const LandingPage: React.FC = () => {
     }
   }, []);
 
+  const openCurrencyCalculator = async () => {
+    console.log('currency calc opened')
+
+    await openCenteredWindow('Currency', '/currency', {
+      decorations: false,
+      focus: true,
+      shadow: false,
+      minWidth: 1025,
+      maxWidth: 1025,
+      minHeight: 650,
+      maxHeight: 650,
+      alwaysOnTop: true,
+    });
+  }
 
   // Add handler to open the quick list item shortcut page in a webview
   const openQuickListWindow = async () => {
@@ -204,6 +218,7 @@ const LandingPage: React.FC = () => {
 
     const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
     const quickListShortcut =  `${settings.hotkeyModifierListItem === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyListItem.toUpperCase()}`;
+    const currencyCalcShortcut = 'Control+X'
 
     const cleanup = async () => {
       if (lastRegisteredShortcut.current) {
@@ -230,6 +245,13 @@ const LandingPage: React.FC = () => {
         if (e.state === 'Pressed') {
           openQuickListWindow();
           console.log('[LandingPage] Quick List shortcut pressed:', quickListShortcut);
+        }
+      }));
+
+      await register(currencyCalcShortcut, (e => {
+        if (e.state === 'Pressed') {
+          openCurrencyCalculator();
+          console.log('[LandingPage] Currency Calc shortcut pressed:', currencyCalcShortcut);
         }
       }));
     };

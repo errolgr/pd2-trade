@@ -5,7 +5,7 @@ import { useMarketActions } from './useMarketActions';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -19,6 +19,7 @@ interface Pd2WebsiteContextType {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
+  getCurrencyTab: () => Promise<Currency>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -37,7 +38,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   } = useStashCache(authData, settings);
 
   // Market actions (RESTful)
-  const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing } = useMarketActions({
+  const { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing, getCurrencyTab } = useMarketActions({
     settings,
     authData,
     fetchAndCacheStash,
@@ -91,7 +92,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, authData, updateMarketListing, updateItemByHash }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, authData, updateMarketListing, updateItemByHash, getCurrencyTab }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );

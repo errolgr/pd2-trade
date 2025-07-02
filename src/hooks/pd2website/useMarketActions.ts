@@ -1,4 +1,4 @@
-import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { useCallback } from 'react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
@@ -15,6 +15,7 @@ interface UseMarketActionsReturn {
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   deleteMarketListing: (hash: string) => Promise<void>;
+  getCurrencyTab: () => Promise<Currency>;
 }
 
 interface UseMarketActionsProps {
@@ -67,6 +68,18 @@ export function useMarketActions({
     items = stashData.items|| [];
     const matching = findItemsByName(items, item);
     return matching;
+  }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
+
+    const getCurrencyTab = useCallback(async (): Promise<Currency> => {
+    let curr: Currency;
+    const now = Date.now();
+    if (stashCache.current && (now - stashCache.current.timestamp < CACHE_TTL)) {
+      curr = stashCache.current.data?.currency;
+      return curr
+    }
+    const stashData = await fetchAndCacheStash();
+    curr = stashData.currency;
+    return curr;
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
 
   // List specific item (POST /market/listing)
@@ -138,5 +151,5 @@ export function useMarketActions({
     await handleApiResponse(response);
   }, [settings]);
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing };
+  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing, getCurrencyTab };
 } 
