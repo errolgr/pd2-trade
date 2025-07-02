@@ -125,7 +125,7 @@ const LandingPage: React.FC = () => {
     }
   }, []);
 
-  const openCurrencyCalculator = async () => {
+  const openCurrencyValuation = async () => {
     console.log('currency calc opened')
 
     await openCenteredWindow('Currency', '/currency', {
@@ -218,7 +218,7 @@ const LandingPage: React.FC = () => {
 
     const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
     const quickListShortcut =  `${settings.hotkeyModifierListItem === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyListItem.toUpperCase()}`;
-    const currencyCalcShortcut = 'Control+X'
+    const currencyValuationShortcut = 'Control+X'
 
     const cleanup = async () => {
       if (lastRegisteredShortcut.current) {
@@ -248,10 +248,10 @@ const LandingPage: React.FC = () => {
         }
       }));
 
-      await register(currencyCalcShortcut, (e => {
+      await register(currencyValuationShortcut, (e => {
         if (e.state === 'Pressed') {
-          openCurrencyCalculator();
-          console.log('[LandingPage] Currency Calc shortcut pressed:', currencyCalcShortcut);
+          openCurrencyValuation();
+          console.log('[LandingPage] Currency Calc shortcut pressed:', currencyValuationShortcut);
         }
       }));
     };
