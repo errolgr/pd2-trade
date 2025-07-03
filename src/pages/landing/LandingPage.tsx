@@ -132,8 +132,8 @@ const LandingPage: React.FC = () => {
       decorations: false,
       focus: true,
       shadow: false,
-      width: 1025,
-      height: 650,
+       width: 520,
+        height: 800,
       alwaysOnTop: true,
     });
   }

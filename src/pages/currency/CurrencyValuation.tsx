@@ -8,7 +8,8 @@ import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useRuneData } from '../price-check/hooks/useRuneData';
 import { RUNE_HIERARCHY } from '../price-check/lib/runeService';
 import { RuneValue } from '../price-check/components';
-import RuneCard from './RuneCard';
+import { DataTable } from './components/DataTable';
+import { columns } from './Columns';
 
 export function CurrencyValuation() {
   const [currency, setCurrency] = React.useState<Currency>();
@@ -37,7 +38,7 @@ export function CurrencyValuation() {
 
       return {
         key: runeKey,
-        displayName: matchedRune?.name.replace('Rune', '').trim() ?? runeName,
+        item: matchedRune?.name ?? runeName,
         amount,
         price: matchedRune?.price ?? 0,
         value,
@@ -45,7 +46,6 @@ export function CurrencyValuation() {
     });
 
     const totalValue = Math.round(runeData.reduce((acc, rune) => acc + rune.value, 0) * 100) / 100;
-
     return { runeData, totalValue };
   }
 
@@ -53,8 +53,8 @@ export function CurrencyValuation() {
     <div className="min-h-screen w-full space-y-6 p-10 md:block bg-background">
       <div className="flex flex-row justify-between">
         <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold tracking-tight">Currency Tab Valuation</h2>
-          <div className="text-xs text-gray-500 mt-3 pt-2 border-gray-600">
+          <h2 className="text-2xl font-bold">Currency Valuation</h2>
+          <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
             Powered by{' '}
             <a
               href="https://pd2.tools"
@@ -75,32 +75,24 @@ export function CurrencyValuation() {
         </Button>
       </div>
 
-      <Separator className="my-6" />
+      <Separator className="my-3" />
       <div className="flex flex-col flex-grow min-h-[400px]">
         {currency && !loadingRunes ? (
           (() => {
             const { runeData, totalValue } = getHighRunesData(currency, calculatedRuneValues, RUNE_HIERARCHY);
             return (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 mb-3">
-                  {runeData.map((rune) => (
-                    <RuneCard
-                      key={rune.key}
-                      name={rune.displayName}
-                      price={rune.price}
-                      amount={rune.amount}
-                      value={rune.value}
-                    />
-                  ))}
-                </div>
-                <p className="text-xl font-bold text-gray-100 pt-2">
-                  Total Value: <span className="text-slate-400">{totalValue} HR</span>
+                {' '}
+                <DataTable columns={columns}
+                  data={runeData} />
+                <p className="text-md text-gray-100 pt-4">
+                  Total Value: <span className="text-gray-400">{totalValue} HR</span>
                 </p>
               </>
             );
           })()
         ) : (
-          <div className="flex flex-grow items-center justify-center min-h-[300px]">
+          <div className="flex flex-grow items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
           </div>
         )}
