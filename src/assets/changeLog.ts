@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.3.0": [
+    "✨ Added feature to check the total value of your rune stash (default: ctrl + x)",
+    "🔧 Fixed an issue which was causing the popup window to block the users input",
+  ],
   "0.2.10": [
     "✨ List item now has a quick button to navigate to the trade website",
   ],
