@@ -125,6 +125,18 @@ const LandingPage: React.FC = () => {
     }
   }, []);
 
+  const openCurrencyValuation = async () => {
+    console.log('currency calc opened')
+
+    await openCenteredWindow('Currency', '/currency', {
+      decorations: false,
+      focus: true,
+      shadow: false,
+       width: 520,
+        height: 800,
+      alwaysOnTop: true,
+    });
+  }
 
   // Add handler to open the quick list item shortcut page in a webview
   const openQuickListWindow = async () => {
@@ -204,6 +216,7 @@ const LandingPage: React.FC = () => {
 
     const newShortcut = `${settings.hotkeyModifier === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKey.toUpperCase()}`;
     const quickListShortcut =  `${settings.hotkeyModifierListItem === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyListItem.toUpperCase()}`;
+    const currencyValuationShortcut = `${settings.hotkeyModifierCurrencyValuation === 'ctrl' ? 'Control' : 'Alt'}+${settings.hotkeyKeyCurrencyValuation.toUpperCase()}`;
 
     const cleanup = async () => {
       if (lastRegisteredShortcut.current) {
@@ -232,6 +245,13 @@ const LandingPage: React.FC = () => {
           console.log('[LandingPage] Quick List shortcut pressed:', quickListShortcut);
         }
       }));
+
+      await register(currencyValuationShortcut, (e => {
+        if (e.state === 'Pressed') {
+          openCurrencyValuation();
+          console.log('[LandingPage] Currency Calc shortcut pressed:', currencyValuationShortcut);
+        }
+      }));
     };
 
     cleanup();
@@ -245,13 +265,17 @@ const LandingPage: React.FC = () => {
       // Unregister the quick-list shortcut
       unregister(quickListShortcut).catch(() => void 0);
       console.log('[LandingPage] Cleanup: unregistered quick-list shortcut:', quickListShortcut);
+      unregister(currencyValuationShortcut).catch(() => void 0);
+      console.log('[LandingPage] Cleanup: unregistered currency valuation shortcut:', currencyValuationShortcut);
     };
   }, [
     isLoading, 
     settings.hotkeyModifier,
     settings.hotkeyKey,
     settings.hotkeyKeyListItem,
-    settings.hotkeyModifierListItem
+    settings.hotkeyModifierListItem,
+    settings.hotkeyKeyCurrencyValuation,
+    settings.hotkeyModifierCurrencyValuation,
     ]);
 
   // Listen for Tauri 'pd2-token-found' and save the token
