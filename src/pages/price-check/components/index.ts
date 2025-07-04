@@ -12,7 +12,7 @@ export { useStatSelection } from '../hooks/useStatSelection';
 // Services
 export { 
   fetchEconomyData, 
-  sortRunesByPrice, 
+  sortItemsByPrice, 
   calculateRuneValues, 
   getRuneBreakdown 
 } from '../lib/economyService';
@@ -24,8 +24,8 @@ export { getTypeFromBaseType, getStatKey } from '../lib/utils';
 // Types
 export type { 
   Props, 
-  RuneData, 
-  RuneValue, 
+  ItemData, 
+  ItemValue, 
   RuneCombination 
 } from '../lib/types';
 export { ECONOMY_API_MAP, RANGE_MARGIN } from '../lib/types'; 

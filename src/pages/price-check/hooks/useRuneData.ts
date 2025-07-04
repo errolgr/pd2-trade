@@ -1,16 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from 'react';
 import {
   fetchEconomyData,
-  sortRunesByPrice,
+  sortItemsByPrice,
   calculateRuneValues,
-  getRuneBreakdown
-} from "../lib/economyService";
-import { RuneData, RuneValue, RuneCombination } from "../lib/types";
+  getRuneBreakdown,
+  calculateEconomyValues,
+} from '../lib/economyService';
+import { ItemData } from '../lib/types';
 
-type EconomyData = {
-  Runes: Record<string, RuneData>;
-  Currency: Record<string, RuneData>;
-  Ubers: Record<string, RuneData>;
+export type EconomyData = {
+  Runes: Record<string, ItemData>;
+  Currency: Record<string, ItemData>;
+  Ubers: Record<string, ItemData>;
 };
 
 export function useRuneData() {
@@ -25,18 +26,18 @@ export function useRuneData() {
         const data = await fetchEconomyData();
         setEconomyData(data);
       } catch (error) {
-        console.error("Failed to fetch economy data:", error);
+        console.error('Failed to fetch economy data:', error);
       } finally {
         setLoadingRunes(false);
       }
     };
 
     loadData();
-    console.log('using rune data', economyData)
+    console.log('Setting Economy Data as...', economyData);
   }, []);
 
   const sortedRunes = useMemo(() => {
-    return sortRunesByPrice(economyData.Runes);
+    return sortItemsByPrice(economyData.Runes);
   }, [economyData.Runes]);
 
   const calculatedRuneValues = useMemo(() => {
@@ -48,12 +49,17 @@ export function useRuneData() {
     return getRuneBreakdown(selectedRuneBreakdown, calculatedRuneValues);
   }, [selectedRuneBreakdown, calculatedRuneValues]);
 
+  const calculatedEconomyValues = useMemo(() => {
+    return calculateEconomyValues(economyData);
+  }, [economyData]);
+
   return {
     economyData,
     loadingRunes,
     calculatedRuneValues,
+    calculatedEconomyValues,
     selectedRuneBreakdown,
     selectedRuneCombinations,
-    setSelectedRuneBreakdown
+    setSelectedRuneBreakdown,
   };
 }

@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RuneValue, RuneCombination } from "../lib/types";
+import { ItemValue, RuneCombination } from "../lib/types";
 
 interface RunePricePopoverProps {
   loadingRunes: boolean;
-  calculatedRuneValues: RuneValue[];
+  calculatedRuneValues: ItemValue[];
   selectedRuneBreakdown: string | null;
   selectedRuneCombinations: RuneCombination[];
   onRuneBreakdownSelect: (runeName: string | null) => void;
