@@ -1,51 +1,59 @@
 import { useState, useEffect, useMemo } from "react";
-import { fetchRuneData, sortRunesByPrice, calculateRuneValues, getRuneBreakdown } from "../lib/runeService";
+import {
+  fetchEconomyData,
+  sortRunesByPrice,
+  calculateRuneValues,
+  getRuneBreakdown
+} from "../lib/economyService";
 import { RuneData, RuneValue, RuneCombination } from "../lib/types";
 
+type EconomyData = {
+  Runes: Record<string, RuneData>;
+  Currency: Record<string, RuneData>;
+  Ubers: Record<string, RuneData>;
+};
+
 export function useRuneData() {
-  const [runeData, setRuneData] = useState<Record<string, RuneData>>({});
+  const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {}, Currency: {}, Ubers: {} });
   const [loadingRunes, setLoadingRunes] = useState(false);
   const [selectedRuneBreakdown, setSelectedRuneBreakdown] = useState<string | null>(null);
 
-  // Fetch rune data when component mounts
   useEffect(() => {
-    const loadRuneData = async () => {
+    const loadData = async () => {
       setLoadingRunes(true);
       try {
-        const data = await fetchRuneData();
-        setRuneData(data);
+        const data = await fetchEconomyData();
+        setEconomyData(data);
       } catch (error) {
-        console.error("Failed to fetch rune data:", error);
+        console.error("Failed to fetch economy data:", error);
       } finally {
         setLoadingRunes(false);
       }
     };
 
-    loadRuneData();
+    loadData();
+    console.log('using rune data', economyData)
   }, []);
 
-  // Sort runes by price for display
   const sortedRunes = useMemo(() => {
-    return sortRunesByPrice(runeData);
-  }, [runeData]);
+    return sortRunesByPrice(economyData.Runes);
+  }, [economyData.Runes]);
 
-  // Calculate rune values with cascading pricing for low listings
   const calculatedRuneValues = useMemo(() => {
     return calculateRuneValues(sortedRunes);
   }, [sortedRunes]);
 
-  // Calculate breakdown combinations for a selected rune
   const selectedRuneCombinations = useMemo(() => {
     if (!selectedRuneBreakdown) return [];
     return getRuneBreakdown(selectedRuneBreakdown, calculatedRuneValues);
   }, [selectedRuneBreakdown, calculatedRuneValues]);
 
   return {
-    runeData,
+    economyData,
     loadingRunes,
     calculatedRuneValues,
     selectedRuneBreakdown,
     selectedRuneCombinations,
     setSelectedRuneBreakdown
   };
-} 
+}

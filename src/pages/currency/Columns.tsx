@@ -10,12 +10,8 @@ export type Currency = {
   value: number;
 };
 
-function flipAndJoinRuneName(str) {
-  const parts = str.trim().split(/\s+/); // Split by any whitespace
-  if (parts.length !== 2) {
-    throw new Error('Input must contain exactly two words.');
-  }
-  return parts[1] + parts[0];
+function formatWithUnderscore(str) {
+  return str.trim().replace(/\s+/g, '_');
 }
 
 export const columns: ColumnDef<Currency>[] = [
@@ -24,7 +20,7 @@ export const columns: ColumnDef<Currency>[] = [
     header: 'Item',
     cell: ({ row }) => (
       <div className="flex flex-row">
-        <img src={`/runes/${flipAndJoinRuneName(row.getValue('item'))}.png`}
+        <img src={`/runes/${formatWithUnderscore(row.getValue('item'))}.png`}
           style={{ width: 20 }} />
         <p className="pl-2 text-sm text-gray-300">{row.getValue('item')}</p>
       </div>

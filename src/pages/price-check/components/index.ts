@@ -11,11 +11,11 @@ export { useStatSelection } from '../hooks/useStatSelection';
 
 // Services
 export { 
-  fetchRuneData, 
+  fetchEconomyData, 
   sortRunesByPrice, 
   calculateRuneValues, 
   getRuneBreakdown 
-} from '../lib/runeService';
+} from '../lib/economyService';
 export { buildTradeUrl } from '../lib/tradeUrlBuilder';
 
 // Utilities
@@ -28,4 +28,4 @@ export type {
   RuneValue, 
   RuneCombination 
 } from '../lib/types';
-export { RUNE_API_MAP, RANGE_MARGIN } from '../lib/types'; 
+export { ECONOMY_API_MAP, RANGE_MARGIN } from '../lib/types'; 

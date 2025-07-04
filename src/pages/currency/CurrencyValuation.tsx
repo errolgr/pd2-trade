@@ -6,10 +6,17 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useRuneData } from '../price-check/hooks/useRuneData';
-import { RUNE_HIERARCHY } from '../price-check/lib/runeService';
+import { RUNE_HIERARCHY } from '../price-check/lib/economyService';
 import { RuneValue } from '../price-check/components';
 import { DataTable } from './components/DataTable';
 import { columns } from './Columns';
+
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function CurrencyValuation() {
   const [currency, setCurrency] = React.useState<Currency>();
@@ -45,8 +52,13 @@ export function CurrencyValuation() {
       };
     });
 
+    const essenceData = Object.keys(currency.essence).map((essenceKey, i) => {
+      const amount = currency.essence[essenceKey];
+    })
+
     const totalValue = Math.round(runeData.reduce((acc, rune) => acc + rune.value, 0) * 100) / 100;
-    return { runeData, totalValue };
+    const data = { runes: runeData };
+    return { data, runeData, totalValue };
   }
 
   return (
@@ -76,13 +88,31 @@ export function CurrencyValuation() {
       </div>
 
       <Separator className="my-3" />
+      {currency && !loadingRunes && ( <DropdownMenu>
+        <DropdownMenuTrigger>
+          <Button variant="secondary" className="ml-auto rounded-xl">
+            Columns
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+                <DropdownMenuCheckboxItem
+                  key={currency.boss.dclone.black_soulstone}
+                  className="capitalize"
+                  checked={true}
+                  onCheckedChange={() => {}}
+                >
+                  {currency.boss.dclone.black_soulstone}
+                </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>)}
+
+     
       <div className="flex flex-col flex-grow min-h-[400px]">
         {currency && !loadingRunes ? (
           (() => {
             const { runeData, totalValue } = getHighRunesData(currency, calculatedRuneValues, RUNE_HIERARCHY);
             return (
               <>
-                {' '}
                 <DataTable columns={columns}
                   data={runeData} />
                 <p className="text-md text-gray-100 pt-4">
