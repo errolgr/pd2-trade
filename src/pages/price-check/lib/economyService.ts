@@ -1,53 +1,5 @@
-import { EconomyData } from '../hooks/useRuneData';
-import { ECONOMY_API_MAP, ItemData, ItemValue, RuneCombination } from './types';
-
-// Fixed pricing for lower runes
-const FIXED_RUNE_PRICES: Record<string, number> = {
-  'Vex Rune': 0.5,
-  'Gul Rune': 0.25,
-  'Ist Rune': 0.15,
-  'Mal Rune': 0.1,
-  'Um Rune': 0.05,
-  'Pul Rune': 0.03,
-  'Lem Rune': 0.01,
-};
-
-// Rune hierarchy order (highest to lowest)
-export const RUNE_HIERARCHY = [
-  'Zod Rune',
-  'Cham Rune',
-  'Jah Rune',
-  'Ber Rune',
-  'Sur Rune',
-  'Lo Rune',
-  'Ohm Rune',
-  'Vex Rune',
-  'Gul Rune',
-  'Ist Rune',
-  'Mal Rune',
-  'Um Rune',
-  'Pul Rune',
-  'Lem Rune',
-  'Fal Rune',
-  'Ko Rune',
-  'Lum Rune',
-  'Io Rune',
-  'Hel Rune',
-  'Dol Rune',
-  'Shael Rune',
-  'Sol Rune',
-  'Amn Rune',
-  'Thul Rune',
-  'Ort Rune',
-  'Ral Rune',
-  'Tal Rune',
-  'Ith Rune',
-  'Eth Rune',
-  'Nef Rune',
-  'Tir Rune',
-  'Eld Rune',
-  'El Rune',
-];
+import { FIXED_RUNE_PRICES, RUNE_HIERARCHY } from './constants';
+import { ECONOMY_API_MAP, EconomyData, ItemData, ItemValue, RuneCombination } from './types';
 
 export async function fetchEconomyData(): Promise<{
   Runes: Record<string, ItemData>;

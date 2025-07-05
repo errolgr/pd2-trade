@@ -7,13 +7,11 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useRuneData } from '../price-check/hooks/useRuneData';
 import { EconomyValue, RUNE_HIERARCHY } from '../price-check/lib/economyService';
-import { ECONOMY_API_MAP, ItemValue } from '../price-check/components';
 import { DataTable } from './components/DataTable';
 import { createColumns } from './Columns';
 
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,

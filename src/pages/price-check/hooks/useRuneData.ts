@@ -6,13 +6,7 @@ import {
   getRuneBreakdown,
   calculateEconomyValues,
 } from '../lib/economyService';
-import { ItemData } from '../lib/types';
-
-export type EconomyData = {
-  Runes: Record<string, ItemData>;
-  Currency: Record<string, ItemData>;
-  Ubers: Record<string, ItemData>;
-};
+import { EconomyData } from '../lib/types';
 
 export function useRuneData() {
   const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {}, Currency: {}, Ubers: {} });

@@ -132,4 +132,10 @@ export interface RuneCombination {
   difference: number;
 }
 
+export type EconomyData = {
+  Runes: Record<string, ItemData>;
+  Currency: Record<string, ItemData>;
+  Ubers: Record<string, ItemData>;
+};
+
 export const RANGE_MARGIN = 0.05; // 20% by default, make this configurable if needed
