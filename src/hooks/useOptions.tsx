@@ -85,9 +85,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   async function fetchSettings() {
     try {
-      const dirExists = await exists('.', { baseDir: SETTINGS_DIR });
-      if (!dirExists) {
-        await mkdir('.', { baseDir: SETTINGS_DIR, recursive: true });
+      // Always try to create the directory, ignore error if it already exists
+      try {
+        await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
+      } catch (e) {
+        // Directory may already exist, ignore error
       }
 
       const fileExists = await exists(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });

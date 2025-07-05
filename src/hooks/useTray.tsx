@@ -39,6 +39,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         transparent: true,
         alwaysOnTop: true,
         focus: true,
+        center: true,
         shadow: false,
         width: 1025,
         height: 650,

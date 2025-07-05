@@ -24,6 +24,7 @@
     }
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [],
     "security": {
       "csp": null
@@ -42,7 +43,7 @@
     "targets": "all",
     "icon": [
       "icons/favicon.ico",
-      "icons/favicon-96x96.png"
+      "icons/favicon-32x32.png"
     ]
   }
 }

@@ -226,8 +226,21 @@
     }
   body {
     @apply bg-background text-foreground;
-
   }
+
+  html, body, #root {
+    width: 100vw;
+    height: 100vh;
+    background: transparent !important;
+    /* Remove any background-color: white or similar! */
+  }
+}
+
+html, body, #root {
+  width: 100vw;
+  height: 100vh;
+  background: transparent !important;
+  /* Remove any background-color: white or similar! */
 }
 
 @font-face {

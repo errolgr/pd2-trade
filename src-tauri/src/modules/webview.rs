@@ -10,7 +10,6 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     .title("Project Diablo 2 Website")
     .inner_size(1200.0, 800.0)
     .decorations(true)
-    .transparent(false)
     .visible(true)
     .shadow(true)
     .focused(true)

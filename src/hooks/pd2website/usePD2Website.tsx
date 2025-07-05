@@ -56,8 +56,8 @@ export const Pd2WebsiteProvider = ({ children }) => {
       },
       body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token })
     });
-    return await handleApiResponse(response)
-  }, [settings]);
+    return await handleApiResponse(response, () => updateSettings({ pd2Token: null }));
+  }, [settings, updateSettings]);
 
   // Authenticate when pd2Token changes
   useEffect(() => {
@@ -104,10 +104,24 @@ export const usePd2Website = () => {
   return ctx;
 };
 
-
-export async function handleApiResponse(response: Response) {
+export async function handleApiResponse(response: Response, onUnauthenticated?: () => void) {
   if (!response.ok) {
     const errorBody = await response.text();
+    // Try to parse error body as JSON
+    let errorJson;
+    try {
+      errorJson = JSON.parse(errorBody);
+    } catch (e) {
+      errorJson = null;
+    }
+    if (
+      response.status === 401 &&
+      errorJson &&
+      errorJson.name === 'NotAuthenticated' &&
+      errorJson.message === 'jwt expired'
+    ) {
+      if (onUnauthenticated) onUnauthenticated();
+    }
     throw new Error(
       `API Error: ${response.status} ${response.statusText}\n${errorBody}`
     );

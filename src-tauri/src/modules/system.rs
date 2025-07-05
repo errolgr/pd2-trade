@@ -60,3 +60,13 @@ pub fn restart_as_admin() {
     }
     exit(0);
 }
+
+#[cfg(not(target_os = "windows"))]
+pub fn is_elevated() -> bool {
+    false
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn restart_as_admin() {
+    // no-op for Linux/macOS
+}

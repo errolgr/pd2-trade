@@ -1,4 +1,4 @@
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder, TitleBarStyle};
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::Foundation::RECT;
@@ -89,25 +89,23 @@ pub fn run() {
                 .title("PD2 Trader")
                 .inner_size(width, height)
                 .position(x, y)
-                .decorations(false)
-                .transparent(true)
-                .visible(true)
-                .focus()
+                .decorations(true)
                 .shadow(false)
+                .transparent(true)  
                 .always_on_top(true)
                 .skip_taskbar(true);
 
-            let main_window = win_builder.build().unwrap();
-            let _ = main_window.set_ignore_cursor_events(true);
+            let window = win_builder.build().unwrap();
+            let _ = window.set_ignore_cursor_events(false);
             
             // Create toast window
             let toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
                 .title("PD2 Trader - Toast")
                 .inner_size(400.0, 200.0)
                 .decorations(false)
-                .transparent(true)
                 .visible(false)
                 .shadow(false)
+                .transparent(true)
                 .always_on_top(true)
                 .skip_taskbar(true)
                 .build()
@@ -124,7 +122,27 @@ pub fn run() {
             });
             
             #[cfg(debug_assertions)]
-            main_window.open_devtools();
+            window.open_devtools();
+
+            #[cfg(target_os = "macos")]
+            {
+                use cocoa::appkit::{NSColor, NSWindow};
+                use cocoa::base::{id, nil};
+
+                // Note: If you have issues with this, consider setting the background color in your frontend CSS instead.
+                let ns_window = window.ns_window().unwrap() as id;
+                unsafe {
+                    let bg_color = NSColor::colorWithRed_green_blue_alpha_(
+                        nil, // use nil as the first argument
+                        50.0 / 255.0,
+                        158.0 / 255.0,
+                        163.5 / 255.0,
+                        0.0,
+                    );
+                    ns_window.setBackgroundColor_(bg_color);
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
