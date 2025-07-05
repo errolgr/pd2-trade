@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { ItemValue, RuneCombination } from "../lib/types";
 
 interface RunePricePopoverProps {
-  loadingRunes: boolean;
+  loading: boolean;
   calculatedRuneValues: ItemValue[];
   selectedRuneBreakdown: string | null;
   selectedRuneCombinations: RuneCombination[];
@@ -14,7 +14,7 @@ interface RunePricePopoverProps {
 }
 
 export function RunePricePopover({
-  loadingRunes,
+  loading,
   calculatedRuneValues,
   selectedRuneBreakdown,
   selectedRuneCombinations,
@@ -43,7 +43,7 @@ export function RunePricePopover({
       <PopoverContent className="w-80 overflow-y-auto">
         <div className="space-y-2">
           <h4 className="font-semibold text-sm">Current Rune Prices</h4>
-          {loadingRunes ? (
+          {loading ? (
             <div className="text-sm text-gray-500">Loading rune data...</div>
           ) : (
             <div className="space-y-1">

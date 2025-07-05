@@ -6,7 +6,7 @@ export { RunePricePopover } from './RunePricePopover';
 export { StatRow } from './StatRow';
 
 // Hooks
-export { useRuneData } from '../hooks/useRuneData';
+export { useEconomyData } from '../hooks/useEconomyData';
 export { useStatSelection } from '../hooks/useStatSelection';
 
 // Services

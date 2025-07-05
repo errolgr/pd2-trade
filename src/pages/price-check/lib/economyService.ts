@@ -1,6 +1,6 @@
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { ECONOMY_API_MAP, FIXED_RUNE_PRICES } from './constants';
-import { EconomyData, ItemData, ItemValue, RuneCombination } from './types';
+import { EconomyData, EconomyValue, ItemData, ItemValue, RuneCombination } from './types';
 
 export async function fetchEconomyData(): Promise<{
   Runes: Record<string, ItemData>;
@@ -65,12 +65,6 @@ export function sortItemsByPrice(runeData: Record<string, ItemData>) {
       return bPrice - aPrice;
     });
 }
-
-export type EconomyValue = {
-  Currency: ItemValue[];
-  Runes: ItemValue[];
-  Ubers: ItemValue[];
-};
 
 export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any }>): ItemValue[] {
   const runeValues: ItemValue[] = [];

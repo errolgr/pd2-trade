@@ -9,7 +9,7 @@ import { StatRow } from "./StatRow";
 import { useOptions } from "@/hooks/useOptions";
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { Props } from "../lib/types";
-import { useRuneData } from "../hooks/useRuneData";
+import { useEconomyData } from "../hooks/useEconomyData";
 import { useStatSelection } from "../hooks/useStatSelection";
 import { buildGetMarketListingByStashItemQuery, buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
@@ -28,12 +28,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Use custom hooks for state management
   const {
-    loadingRunes,
+    loading,
     calculatedRuneValues,
     selectedRuneBreakdown,
     selectedRuneCombinations,
     setSelectedRuneBreakdown
-  } = useRuneData();
+  } = useEconomyData();
 
   const {
     selected,
@@ -81,7 +81,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       <div className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
         {/* Rune Information Popover */}
         <RunePricePopover
-          loadingRunes={loadingRunes}
+          loading={loading}
           calculatedRuneValues={calculatedRuneValues}
           selectedRuneBreakdown={selectedRuneBreakdown}
           selectedRuneCombinations={selectedRuneCombinations}

@@ -8,21 +8,21 @@ import {
 } from '../lib/economyService';
 import { EconomyData } from '../lib/types';
 
-export function useRuneData() {
+export function useEconomyData() {
   const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {}, Currency: {}, Ubers: {} });
-  const [loadingRunes, setLoadingRunes] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedRuneBreakdown, setSelectedRuneBreakdown] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
-      setLoadingRunes(true);
+      setLoading(true);
       try {
         const data = await fetchEconomyData();
         setEconomyData(data);
       } catch (error) {
         console.error('Failed to fetch economy data:', error);
       } finally {
-        setLoadingRunes(false);
+        setLoading(false);
       }
     };
 
@@ -49,7 +49,7 @@ export function useRuneData() {
 
   return {
     economyData,
-    loadingRunes,
+    loading,
     calculatedRuneValues,
     calculatedEconomyValues,
     selectedRuneBreakdown,

@@ -39,4 +39,10 @@ export type EconomyData = {
   Ubers: Record<string, ItemData>;
 };
 
+export type EconomyValue = {
+  Currency: ItemValue[];
+  Runes: ItemValue[];
+  Ubers: ItemValue[];
+};
+
 export const RANGE_MARGIN = 0.05; // 20% by default, make this configurable if needed

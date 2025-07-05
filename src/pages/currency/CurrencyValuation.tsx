@@ -5,8 +5,7 @@ import { CheckIcon, ChevronDown, Loader2, X } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
-import { useRuneData } from '../price-check/hooks/useRuneData';
-import { EconomyValue } from '../price-check/lib/economyService';
+import { useEconomyData } from '../price-check/hooks/useEconomyData';
 import { DataTable } from './components/DataTable';
 import { createColumns } from './Columns';
 
@@ -18,17 +17,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { STASH_API_MAP } from './lib/constants';
 import { RUNE_HIERARCHY } from '@/common/constants';
+import { FormattedItem, FormattedStashCategory, FormattedStashData } from './lib/types';
+import { EconomyValue } from '../price-check/lib/types';
 
 
 export function CurrencyValuation() {
   const [currency, setCurrency] = React.useState<Currency>();
   const [selectedCategory, setSelectedCategory] = React.useState<FormattedStashCategory>('runes');
-  const categoryOptions: FormattedStashCategory[] = ['currency', 'runes', 'ubers'];
   const [data, setData] = React.useState<FormattedStashData>();
-  const { getCurrencyTab } = usePd2Website();
-  const columns = createColumns(selectedCategory);
 
-  const { calculatedEconomyValues, loadingRunes } = useRuneData();
+  const { getCurrencyTab } = usePd2Website();
+  const { calculatedEconomyValues, loading } = useEconomyData();
+
+  const categoryOptions: FormattedStashCategory[] = ['currency', 'runes', 'ubers'];
+  const columns = createColumns(selectedCategory);
 
   const fetchCurrency = async () => {
     const curr = await getCurrencyTab();
@@ -47,22 +49,6 @@ export function CurrencyValuation() {
       setData(formatted);
     }
   }, [currency, calculatedEconomyValues]);
-
-  type FormattedStashData = {
-    currency: { items: FormattedItem[]; total: number };
-    runes: { items: FormattedItem[]; total: number };
-    ubers: { items: FormattedItem[]; total: number };
-  };
-
-  type FormattedStashCategory = keyof FormattedStashData;
-
-  type FormattedItem = {
-    key: string;
-    item: string;
-    amount: number;
-    price: number;
-    value: number;
-  };
 
   function formatEconomyCategoryAmounts(
     category: keyof EconomyValue,
@@ -173,7 +159,7 @@ export function CurrencyValuation() {
       </div>
 
       <Separator className="" />
-      {currency && !loadingRunes && (
+      {currency && !loading && (
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Button variant="outline"
