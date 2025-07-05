@@ -8,20 +8,13 @@ export async function openCenteredWindow(
   url: string,
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | null> {
-  const monitor = await currentMonitor();
-  if (!monitor) return null;
 
   const width = options.width ?? 600;
   const height = options.height ?? 600;
 
-  const { position, size } = monitor;
-  const x = position.x + Math.round((size.width - width) / 2);
-  const y = position.y + Math.round((size.height - height) / 2);
-
   const w = new WebviewWindow(label, {
     url,
-    x,
-    y,
+    center: true,
     width,
     height,
     focus: true,
