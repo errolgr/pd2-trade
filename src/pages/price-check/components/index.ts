@@ -28,4 +28,4 @@ export type {
   ItemValue, 
   RuneCombination 
 } from '../lib/types';
-export { ECONOMY_API_MAP, RANGE_MARGIN } from '../lib/types'; 
+export { RANGE_MARGIN } from '../lib/types'; 

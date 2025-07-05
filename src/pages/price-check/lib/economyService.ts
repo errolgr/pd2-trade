@@ -1,5 +1,6 @@
-import { FIXED_RUNE_PRICES, RUNE_HIERARCHY } from './constants';
-import { ECONOMY_API_MAP, EconomyData, ItemData, ItemValue, RuneCombination } from './types';
+import { RUNE_HIERARCHY } from '@/common/constants';
+import { ECONOMY_API_MAP, FIXED_RUNE_PRICES } from './constants';
+import { EconomyData, ItemData, ItemValue, RuneCombination } from './types';
 
 export async function fetchEconomyData(): Promise<{
   Runes: Record<string, ItemData>;
