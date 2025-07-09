@@ -27,11 +27,12 @@ export async function openCenteredWindow(
 export async function openOverDiabloWindow(
   label: string,
   url: string,
-  options: Partial<WebviewOptions & WindowOptions> = {}
+  options: Partial<WebviewOptions & WindowOptions> = {},
+  windowName: string = 'Diablo II',
 ): Promise<WebviewWindow | null> {
   try {
     const { x: cursorX } = await cursorPosition();
-    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect', { windowName });
 
     const width = options.width ?? 500;
     const x = cursorX - width;

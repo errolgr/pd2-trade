@@ -2970,6 +2970,7 @@ version = "0.3.0"
 dependencies = [
  "cocoa 0.26.1",
  "enigo",
+ "objc",
  "rdev",
  "runas",
  "serde",

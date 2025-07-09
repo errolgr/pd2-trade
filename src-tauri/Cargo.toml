@@ -33,6 +33,7 @@ tauri-plugin-fs = "2"
 enigo = { version = "0.5.0", features = ["default"] }
 tauri-plugin-http = "2.5.0"
 cocoa = "0.26.1"
+objc = "0.2.7"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.10"

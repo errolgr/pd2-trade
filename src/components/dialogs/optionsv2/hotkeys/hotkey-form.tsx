@@ -35,6 +35,7 @@ const hotkeyFormSchema = z.object({
     .min(1, 'Enter a key')
     .max(1, 'Only one character allowed')
     .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+  focusWindowName: z.string().min(1, 'Enter a window name').default('Diablo II'),
 }).refine(
   (data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'),
   {
@@ -60,6 +61,7 @@ export function HotkeyForm() {
       hotkeyKeySettings: '',
       hotkeyModifierCurrencyValuation: 'ctrl',
       hotkeyKeyCurrencyValuation: '',
+      focusWindowName: 'Diablo II',
     },
   });
 
@@ -233,6 +235,26 @@ export function HotkeyForm() {
                     value={field.value?.toUpperCase()}
                     className="w-12 text-center"
                     onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex flex-col gap-2 mt-4">
+          <FormField
+            control={form.control}
+            name="focusWindowName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Focus Window Name</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Diablo II"
                   />
                 </FormControl>
                 <FormMessage />

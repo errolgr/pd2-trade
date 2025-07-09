@@ -92,9 +92,9 @@ const LandingPage: React.FC = () => {
    * Fire when the shortcut is pressed
    * --------------------------------- */
   const fireSearch = useCallback(async () => {
-    const focused = await invoke<boolean>('is_diablo_focused');
+    const focused = await invoke<boolean>('is_diablo_focused', { windowName: settings.focusWindowName || 'Diablo II' });
     if (!focused) {
-      console.warn("[LandingPage] Diablo is not focused, skipping search.");
+      console.warn("[LandingPage] Diablo is not focused, skipping search with window name: " + settings.focusWindowName);
       return;
     }
 
@@ -113,7 +113,7 @@ const LandingPage: React.FC = () => {
         alwaysOnTop: true,
         shadow: false,
         focus: true,
-      });
+      }, settings.focusWindowName || 'Diablo II');
 
       attachWindowCloseHandler(winRef.current, () => {
         winRef.current = null;
@@ -123,7 +123,7 @@ const LandingPage: React.FC = () => {
       await sleep(100);
       await winRef.current.show();
     }
-  }, []);
+  }, [settings.hotkeyModifier, settings.hotkeyKey, settings.focusWindowName]);
 
   const openCurrencyValuation = async () => {
     console.log('currency calc opened')

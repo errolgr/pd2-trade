@@ -153,7 +153,8 @@ pub fn run() {
             commands::update_window_bounds,
             commands::set_window_click_through,
             commands::force_window_focus,
-            commands::reposition_toast_window
+            commands::reposition_toast_window,
+            commands::open_accessibility_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

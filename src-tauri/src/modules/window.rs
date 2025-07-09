@@ -21,8 +21,8 @@ mod platform {
         OsStr::new(s).encode_wide().chain(iter::once(0)).collect()
     }
 
-    pub fn get_diablo_rect() -> Option<WindowRect> {
-        let title_w = to_wide("Diablo II");
+    pub fn get_diablo_rect(window_name: &str) -> Option<WindowRect> {
+        let title_w = to_wide(window_name);
         let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
         if hwnd == 0 {
             return None;
@@ -40,8 +40,8 @@ mod platform {
         })
     }
 
-    pub fn is_diablo_focused() -> bool {
-        let title_w = to_wide("Diablo II");
+    pub fn is_diablo_focused(window_name: &str) -> bool {
+        let title_w = to_wide(window_name);
         let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
         if hwnd == 0 {
             return false;
@@ -72,8 +72,8 @@ mod platform {
     }
 
     pub fn get_appropriate_window_bounds() -> Option<WindowRect> {
-        if is_diablo_focused() {
-            get_diablo_rect()
+        if is_diablo_focused("Diablo II") {
+            get_diablo_rect("Diablo II")
         } else {
             get_work_area()
         }
@@ -137,8 +137,8 @@ mod platform {
         pub height: i32,
     }
 
-    pub fn get_diablo_rect() -> Option<WindowRect> { None }
-    pub fn is_diablo_focused() -> bool { false }
+    pub fn get_diablo_rect(_window_name: &str) -> Option<WindowRect> { None }
+    pub fn is_diablo_focused(_window_name: &str) -> bool { false }
     pub fn get_work_area() -> Option<WindowRect> { None }
     pub fn get_appropriate_window_bounds() -> Option<WindowRect> { None }
     pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(_callback: F) {}
@@ -176,6 +176,36 @@ pub fn get_work_area(width: i32, height: i32) -> Option<WindowRect> {
         width,
         height,
     })
+}
+
+#[cfg(target_os = "macos")]
+pub fn is_diablo_focused(window_name: &str) -> bool {
+    use cocoa::base::nil;
+    use objc::{class, msg_send, sel, sel_impl};
+    use objc::runtime::{Object, BOOL, YES};
+    use std::ffi::CStr;
+
+    unsafe {
+        let workspace: *mut Object = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let apps: *mut Object = msg_send![workspace, runningApplications];
+        let count: usize = msg_send![apps, count];
+
+        for i in 0..count {
+            let app: *mut Object = msg_send![apps, objectAtIndex: i];
+            let is_active: BOOL = msg_send![app, isActive];
+            if is_active == YES {
+                let localized_name: *mut Object = msg_send![app, localizedName];
+                let cstr: *const std::os::raw::c_char = msg_send![localized_name, UTF8String];
+                if !cstr.is_null() {
+                    let name = CStr::from_ptr(cstr).to_string_lossy();
+                    if name.contains(window_name) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 #[cfg(target_os = "macos")]

@@ -23,6 +23,7 @@ export interface ISettings {
   hotkeyKeySettings?: string;
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
+  focusWindowName?: string;
 }
 
 interface OptionsContextProps {
@@ -45,6 +46,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySettings: 'o',
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
+  focusWindowName: 'Diablo II',
 };
 
 const SETTINGS_FILENAME = 'settings.json';

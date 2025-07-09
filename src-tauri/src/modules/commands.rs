@@ -7,8 +7,8 @@ pub fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-pub fn get_diablo_rect() -> Option<window::WindowRect> {
-    window::get_diablo_rect()
+pub fn get_diablo_rect(window_name: Option<String>) -> Option<window::WindowRect> {
+    window::get_diablo_rect(window_name.as_deref().unwrap_or("Diablo II"))
 }
 
 #[tauri::command]
@@ -17,8 +17,8 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn is_diablo_focused() -> bool {
-    window::is_diablo_focused()
+pub fn is_diablo_focused(window_name: Option<String>) -> bool {
+    window::is_diablo_focused(window_name.as_deref().unwrap_or("Diablo II"))
 }
 
 #[tauri::command]
@@ -120,4 +120,16 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
             .map_err(|e| format!("Failed to set toast window size: {}", e))?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub fn open_accessibility_settings() {
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let _ = Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .output();
+    }
+    // No-op on other platforms
 }
