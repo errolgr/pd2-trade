@@ -1,6 +1,7 @@
 import React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from './components/DataTableColumnHeader';
+import { formatHr, formatWithUnderscore } from '@/lib/utils';
 
 export type Currency = {
   key: string;
@@ -9,10 +10,6 @@ export type Currency = {
   price: number;
   value: number;
 };
-
-const formatWithUnderscore = (str: string) =>
-  str.trim().replace(/'/g, '').replace(/[-\s]+/g, '_');
-
 
 export function createColumns(category: string): ColumnDef<Currency>[] {
   return [
@@ -34,12 +31,12 @@ export function createColumns(category: string): ColumnDef<Currency>[] {
     {
       accessorKey: 'price',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Price" />,
-      cell: ({ row }) => <p className="text-sm text-gray-300">{row.getValue('price')} HR</p>,
+      cell: ({ row }) => <p className="text-sm text-gray-300">{formatHr(row.getValue('price'))}</p>,
     },
     {
       accessorKey: 'value',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Value" />,
-      cell: ({ row }) => <p className="text-sm text-gray-300">{row.getValue('value')} HR</p>,
+      cell: ({ row }) => <p className="text-sm text-gray-300">{formatHr(row.getValue('value'))}</p>,
     },
   ];
 }

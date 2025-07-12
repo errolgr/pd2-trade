@@ -19,6 +19,7 @@ import { STASH_API_MAP } from './lib/constants';
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { FormattedItem, FormattedStashCategory, FormattedStashData } from './lib/types';
 import { EconomyValue } from '../price-check/lib/types';
+import { formatHr } from '@/lib/utils';
 
 
 export function CurrencyValuation() {
@@ -190,10 +191,10 @@ export function CurrencyValuation() {
                 <DataTable columns={columns}
                   data={data[selectedCategory].items} />
                 <p className="text-sm text-gray-300 pt-4 capitalize">
-                  {selectedCategory} Value: <span className="text-gray-400">{data[selectedCategory].total} HR</span>
+                  {selectedCategory} Value: <span className="text-gray-400">{formatHr(data[selectedCategory].total)}</span>
                 </p>
                 <p className="text-md text-gray-300 pt-1">
-                  Estimated Stash Value: <span className="text-gray-400">{getGrandTotal(data)} HR</span>
+                  Estimated Stash Value: <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>
                 </p>
               </>
             );
