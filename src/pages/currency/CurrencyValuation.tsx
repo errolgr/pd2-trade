@@ -147,6 +147,7 @@ export function CurrencyValuation() {
             >
               pd2.tools
             </a>
+            {' '}- Only available for softcore.
           </div>
         </div>
 
