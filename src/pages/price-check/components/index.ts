@@ -6,16 +6,16 @@ export { RunePricePopover } from './RunePricePopover';
 export { StatRow } from './StatRow';
 
 // Hooks
-export { useRuneData } from '../hooks/useRuneData';
+export { useEconomyData } from '../hooks/useEconomyData';
 export { useStatSelection } from '../hooks/useStatSelection';
 
 // Services
 export { 
-  fetchRuneData, 
-  sortRunesByPrice, 
+  fetchEconomyData, 
+  sortItemsByPrice, 
   calculateRuneValues, 
   getRuneBreakdown 
-} from '../lib/runeService';
+} from '../lib/economyService';
 export { buildTradeUrl } from '../lib/tradeUrlBuilder';
 
 // Utilities
@@ -24,8 +24,8 @@ export { getTypeFromBaseType, getStatKey } from '../lib/utils';
 // Types
 export type { 
   Props, 
-  RuneData, 
-  RuneValue, 
+  ItemData, 
+  ItemValue, 
   RuneCombination 
 } from '../lib/types';
-export { RUNE_API_MAP, RANGE_MARGIN } from '../lib/types'; 
+export { RANGE_MARGIN } from '../lib/types'; 
