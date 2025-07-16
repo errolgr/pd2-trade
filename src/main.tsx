@@ -15,6 +15,7 @@ import {CurrencyPage} from './pages/currency/CurrencyPage';
 
 Sentry.init({
   dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
+  environment: process.env.NODE_ENV, // Set environment for filtering
   integrations: [
     Sentry.captureConsoleIntegration({levels: ['error']}),
     Sentry.browserTracingIntegration(),
@@ -37,6 +38,7 @@ Sentry.init({
     return breadcrumb;
   },
 });
+console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <BrowserRouter>
