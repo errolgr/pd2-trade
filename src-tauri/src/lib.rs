@@ -74,15 +74,29 @@ pub fn run() {
 
             #[cfg(not(target_os = "windows"))]
             let (x, y, width, height) = {
-                let monitor = app.primary_monitor().unwrap().unwrap();
-                let size = monitor.size();
-                let position = monitor.position();
-                (
-                    position.x as f64,
-                    position.y as f64,
-                    size.width as f64,
-                    size.height as f64,
-                )
+                if let Some(rect) = window::get_appropriate_window_bounds() {
+                    (
+                        rect.x as f64,
+                        rect.y as f64,
+                        rect.width as f64,
+                        rect.height as f64,
+                    )
+                } else {
+                    let monitor = app.primary_monitor().unwrap();
+                    if let Some(monitor) = monitor {
+                        let size = monitor.size();
+                        let position = monitor.position();
+                        (
+                            position.x as f64,
+                            position.y as f64,
+                            size.width as f64,
+                            size.height as f64,
+                        )
+                    } else {
+                        println!("Warning: No primary monitor detected. using default bounds.");
+                        (0.0, 0.0, 1024.0, 768.0)
+                    }
+                }
             };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())

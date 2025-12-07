@@ -1,5 +1,10 @@
 use serde::Serialize;
-use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr, sync::Mutex};
+use std::sync::Mutex;
+
+#[cfg(target_os = "windows")]
+use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
+
+#[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     Foundation::{HWND, RECT},
     UI::WindowsAndMessaging::{FindWindowW, GetForegroundWindow, GetWindowRect, SystemParametersInfoW, SPI_GETWORKAREA, EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT},
@@ -15,10 +20,12 @@ pub struct WindowRect {
     pub height: i32,
 }
 
+#[cfg(target_os = "windows")]
 fn to_wide(s: &str) -> Vec<u16> {
     OsStr::new(s).encode_wide().chain(iter::once(0)).collect()
 }
 
+#[cfg(target_os = "windows")]
 pub fn get_diablo_rect() -> Option<WindowRect> {
     let title_w = to_wide("Diablo II");
     let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
@@ -38,6 +45,12 @@ pub fn get_diablo_rect() -> Option<WindowRect> {
     })
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn get_diablo_rect() -> Option<WindowRect> {
+    None
+}
+
+#[cfg(target_os = "windows")]
 pub fn is_diablo_focused() -> bool {
     let title_w = to_wide("Diablo II");
     let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
@@ -48,6 +61,12 @@ pub fn is_diablo_focused() -> bool {
     hwnd == foreground
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn is_diablo_focused() -> bool {
+    false
+}
+
+#[cfg(target_os = "windows")]
 pub fn get_work_area() -> Option<WindowRect> {
     let mut work_area = RECT { left: 0, top: 0, right: 0, bottom: 0 };
     let ok = unsafe {
@@ -69,6 +88,11 @@ pub fn get_work_area() -> Option<WindowRect> {
     })
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn get_work_area() -> Option<WindowRect> {
+    None
+}
+
 pub fn get_appropriate_window_bounds() -> Option<WindowRect> {
     if is_diablo_focused() {
         get_diablo_rect()
@@ -78,9 +102,12 @@ pub fn get_appropriate_window_bounds() -> Option<WindowRect> {
 }
 
 // --- Event-driven foreground monitoring ---
+
+#[cfg(target_os = "windows")]
 static mut FOREGROUND_HOOK: Option<HWINEVENTHOOK> = None;
 static CALLBACK: Mutex<Option<Box<dyn Fn() + Send>>> = Mutex::new(None);
 
+#[cfg(target_os = "windows")]
 unsafe extern "system" fn win_event_proc(
     _hWinEventHook: HWINEVENTHOOK,
     _event: u32,
@@ -95,6 +122,7 @@ unsafe extern "system" fn win_event_proc(
     }
 }
 
+#[cfg(target_os = "windows")]
 pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
     unsafe {
         let hook = SetWinEventHook(
@@ -111,6 +139,12 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(_callback: F) {
+    // No-op on Linux
+}
+
+#[cfg(target_os = "windows")]
 pub fn cleanup_foreground_monitoring() {
     unsafe {
         if let Some(hook) = FOREGROUND_HOOK {
@@ -119,4 +153,9 @@ pub fn cleanup_foreground_monitoring() {
         }
         *CALLBACK.lock().unwrap() = None;
     }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn cleanup_foreground_monitoring() {
+    // No-op on Linux
 }

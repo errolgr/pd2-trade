@@ -28,6 +28,13 @@ pub fn is_elevated() -> bool {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
+pub fn is_elevated() -> bool {
+    // On Linux, we generally don't want to force root for a GUI app.
+    // Returning true bypasses the restart_as_admin check.
+    true
+}
+
 #[cfg(target_os = "windows")]
 pub fn restart_as_admin() {
     use std::{ffi::OsStr, os::windows::ffi::OsStrExt, process::exit};
@@ -59,4 +66,10 @@ pub fn restart_as_admin() {
         );
     }
     exit(0);
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn restart_as_admin() {
+    // No-op or log warning
+    println!("Elevation requested but not implemented for Linux");
 }
