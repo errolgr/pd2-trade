@@ -80,4 +80,4 @@ The frontend required updates to support the new configuration requirements.
     -   Ensure `d2gl.json` path construction handles case sensitivity correctly on Linux (Windows is case-insensitive) and supports alternative video modes for the PD2 game itself.
 4.  **Packaging**:
     -   Update [tauri.conf.json](../src-tauri/tauri.conf.json) to include Linux-specific bundle configurations (deb, appimage).
-    -   Make this cross-linux compatible, oof.  I have not tested packaging AT ALL, and only have it working via `npm run tauri dev`
+    -   Make this cross-linux compatible, oof.  I have not tested packaging, and only have it working via `npm run tauri dev` or as installed from a packaged .deb file in an Ubuntu container running in my Bazzite install through DistroBox.  But it does work there.
