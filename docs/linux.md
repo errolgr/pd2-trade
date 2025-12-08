@@ -67,7 +67,7 @@ The frontend required updates to support the new configuration requirements.
 ### Input Simulation
 -   **Current State**: Uses `enigo` and `rdev` which have known challenges and incompatibilities with Wayland.
 -   **Impact**:
-    -   **Wayland**: Input simulation (auto-typing) often fails. You may need to manually copy items to the clipboard.
+    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.  **You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.**
     -   **X11**: Should work generally fine, but is as yet untested.
 
 ## 4. Remaining Work
