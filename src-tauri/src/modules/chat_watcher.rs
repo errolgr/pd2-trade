@@ -92,7 +92,6 @@ fn find_diablo2_in_registry() -> Option<PathBuf> {
     None
 }
 
-// TODO: Ensure this is working cross-platform.
 /// Get the chat log file path, creating directories if needed
 pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     //println!("custom_d2_dir: {:?}", custom_d2_dir);
