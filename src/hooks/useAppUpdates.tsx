@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
+import { isTauriSync } from '@/lib/tauri-utils';
+import { emit } from '@/lib/browser-events';
 import { useUpdater } from './useUpdater';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
@@ -9,7 +9,7 @@ export const useAppUpdates = () => {
 
   // Initial update check
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
     
     checkForUpdates().then((update) => {
       if (update?.available) {
@@ -20,7 +20,7 @@ export const useAppUpdates = () => {
 
   // Periodic update checks
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
     
     let updateNotified = false;
 
@@ -37,7 +37,7 @@ export const useAppUpdates = () => {
             data: {},
           },
         };
-        emit('toast-event', updateToastPayload);
+        await emit('toast-event', updateToastPayload);
       }
     };
 

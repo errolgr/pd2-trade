@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { invoke, isTauri } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { emit } from '@tauri-apps/api/event';
+import { isTauriSync } from '@/lib/tauri-utils';
+import { emit } from '@/lib/browser-events';
+import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
 import { TrayProvider } from '@/hooks/useTray';
 import { OptionsProvider, useOptions } from '@/hooks/useOptions';
@@ -21,8 +21,8 @@ import { ItemsProvider } from '@/hooks/useItems';
 
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
-  const winRef = useRef<WebviewWindow | null>(null);
-  const quickListWinRef = useRef<WebviewWindow | null>(null);
+  const winRef = useRef<BrowserWindow | null>(null);
+  const quickListWinRef = useRef<BrowserWindow | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings } = useOptions();
@@ -38,11 +38,21 @@ const LandingPage: React.FC = () => {
 
   // Check if Diablo is focused
   const checkDiabloFocus = useCallback(async (): Promise<boolean> => {
-    const focused = await invoke<boolean>('is_diablo_focused');
-    if (!focused) {
-      console.warn('[LandingPage] Diablo is not focused, skipping action.');
+    if (!isTauriSync()) {
+      // In browser, always return true (no Diablo detection)
+      return true;
     }
-    return focused;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const focused = await invoke<boolean>('is_diablo_focused');
+      if (!focused) {
+        console.warn('[LandingPage] Diablo is not focused, skipping action.');
+      }
+      return focused;
+    } catch (error) {
+      console.warn('[LandingPage] Failed to check Diablo focus:', error);
+      return true; // Allow in browser or on error
+    }
   }, []);
 
   // Copy item from clipboard and validate
@@ -84,11 +94,13 @@ const LandingPage: React.FC = () => {
         focus: false,
         focusable: false,
       });
-      attachWindowCloseHandler(winRef.current, () => {
-        winRef.current = null;
-      });
+      if (winRef.current) {
+        attachWindowCloseHandler(winRef.current, () => {
+          winRef.current = null;
+        });
+      }
     } else {
-      winRef.current.emit('new-search', encoded);
+      await winRef.current.emit('new-search', encoded);
       await sleep(100);
       await winRef.current.show();
     }
@@ -150,7 +162,7 @@ const LandingPage: React.FC = () => {
         alwaysOnTop: true,
       });
     } else {
-      quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
       await sleep(100);
       await quickListWinRef.current.show();
     }
@@ -174,7 +186,7 @@ const LandingPage: React.FC = () => {
 
   // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
 
     const generalEnabled = settings.whisperNotificationsEnabled ?? true;
     const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
@@ -182,6 +194,7 @@ const LandingPage: React.FC = () => {
 
     const manageWatcher = async () => {
       try {
+        const { invoke } = await import('@tauri-apps/api/core');
         if (shouldWatch) {
           await invoke('start_chat_watcher', { custom_d2_dir: settings.diablo2Directory });
         } else {
@@ -195,8 +208,10 @@ const LandingPage: React.FC = () => {
     manageWatcher();
 
     return () => {
-      if (isTauri()) {
-        invoke('stop_chat_watcher').catch(console.error);
+      if (isTauriSync()) {
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+          invoke('stop_chat_watcher').catch(console.error);
+        });
       }
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);

@@ -7,7 +7,7 @@ import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import MarketListingBadge from './MarketListingBadge';
 import { Button } from '@/components/ui/button';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from '@/lib/browser-opener';
 import { PD2Website } from '@/common/constants';
 
 interface ItemSelectionListProps {

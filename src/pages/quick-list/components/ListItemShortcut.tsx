@@ -7,10 +7,10 @@ import { X, GripVertical, Loader2, AlertCircle } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { emit } from '@tauri-apps/api/event';
+import { emit } from '@/lib/browser-events';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
@@ -59,12 +59,18 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  // Get the current window reference (Tauri v2 API)
-  const appWindow = useMemo(() => getCurrentWebviewWindow(), []);
+  // Get the current window reference
+  const [appWindow, setAppWindow] = React.useState<any>(null);
+
+  useEffect(() => {
+    getCurrentWebviewWindow().then(setAppWindow);
+  }, []);
 
   // Window control handler
-  const handleClose = useCallback(() => {
-    appWindow.hide();
+  const handleClose = useCallback(async () => {
+    if (appWindow) {
+      await appWindow.hide();
+    }
   }, [appWindow]);
 
 
@@ -561,7 +567,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
         await fetchAllListings(); // Refresh all listings
-        await emit('toast-event', 'Listing updated!');
+        await emit('toast-event', { title: 'PD2 Trader', description: 'Listing updated!' });
         
         const duration = performance.now() - startTime;
         incrementMetric('list_item.update', 1, { status: 'success', listing_type: listingType });
@@ -570,7 +576,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           distributionMetric('list_item.update_price_hr', numericPrice);
         }
         
-        appWindow.hide();
+        if (appWindow) await appWindow.hide();
       } else {
         // Check if user has reached the maximum number of listings (50)
         if (totalListingsCount >= 50) {
@@ -608,7 +614,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         
         await emit('toast-event', toastPayload);
         await fetchAllListings(); // Refresh all listings
-        appWindow.hide();
+        if (appWindow) await appWindow.hide();
       }
     } catch (err) {
       const duration = performance.now() - startTime;
@@ -706,33 +712,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     form.reset(resetValues);
   }, [selectedItem, currentListingForSelected, form, item]);
 
-  // If no item is provided, show only the Listed Items tab
-  if (!item) {
-    return (
-      <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
-        <div className="flex justify-between mb-2 items-center" id="titlebar">
-          <div className="flex items-center gap-1">
-            <GripVertical 
-              data-tauri-drag-region
-              className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
-              id="titlebar-drag-handle"
-            />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">Listed Items</span>
-          </div>
-          <Button 
-            type="button" 
-            id="titlebar-close"
-            className="h-6 w-6" 
-            variant='ghost' 
-            onClick={handleClose}
-          >
-            <X className='h-4 w-4'/>
-          </Button>
-        </div>
-        <ListedItemsTab onClose={handleClose} />
-      </div>
-    );
-  }
+  // If no item is provided, show tabs with only the Manage tab enabled
+  // (List Item tab will be empty/disabled)
 
   // Check for loading/error states first
   if (isLoading || error) {
@@ -944,7 +925,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   return (
     <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
 
-      <Tabs defaultValue="list-item" className="w-full">
+      <Tabs defaultValue={item ? "list-item" : "listed-items"} className="w-full">
       <div className="flex justify-between mb-2 items-center" id="titlebar">
         <div className="flex items-center gap-1">
             <GripVertical 
@@ -953,7 +934,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               id="titlebar-drag-handle"
             />
             <TabsList>
-              <TabsTrigger value="list-item" className="font-bold" style={{fontFamily: 'DiabloFont'}}>List Item</TabsTrigger>
+              <TabsTrigger value="list-item" className="font-bold" style={{fontFamily: 'DiabloFont'}} disabled={!item}>
+                List Item
+              </TabsTrigger>
               <TabsTrigger value="listed-items" className="font-bold" >
                 <span className="font-bold" style={{fontFamily: 'DiabloFont'}}>Manage</span>
                 {totalListingsCount > 0 && <Badge className="font-bold text-xs rounded-full">{totalListingsCount}</Badge>}
@@ -973,32 +956,38 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         </div>
         
         <TabsContent value="list-item" className="mt-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}>
-              <ItemSelectionList
-                deleteMarketListing={deleteMarketListing}
-                matchingItems={matchingItems}
-                selectedItem={selectedItem}
-                currentListings={currentListings}
-                expandedItems={expandedItems}
-                isMarketListingsLoading={isMarketListingsLoading}
-                onItemSelect={setSelectedItem}
-                onToggleExpanded={toggleExpandedStats}
-                onExpandAll={expandAllStats}
-                onCollapseAll={collapseAllStats}
-                onBump={handleBump}
-                onRefresh={handleRefresh}
-              />
+          {item ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)}>
+                <ItemSelectionList
+                  deleteMarketListing={deleteMarketListing}
+                  matchingItems={matchingItems}
+                  selectedItem={selectedItem}
+                  currentListings={currentListings}
+                  expandedItems={expandedItems}
+                  isMarketListingsLoading={isMarketListingsLoading}
+                  onItemSelect={setSelectedItem}
+                  onToggleExpanded={toggleExpandedStats}
+                  onExpandAll={expandAllStats}
+                  onCollapseAll={collapseAllStats}
+                  onBump={handleBump}
+                  onRefresh={handleRefresh}
+                />
 
-              <ListingFormFields
-                form={form}
-                selectedItem={selectedItem}
-                currentListings={currentListings}
-                submitLoading={submitLoading}
-                onSubmit={handleSubmit}
-              />
-            </form>
-          </Form>
+                <ListingFormFields
+                  form={form}
+                  selectedItem={selectedItem}
+                  currentListings={currentListings}
+                  submitLoading={submitLoading}
+                  onSubmit={handleSubmit}
+                />
+              </form>
+            </Form>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+              <p className="text-center">No item selected. Use the shortcut or navigate with an item parameter to list items.</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="listed-items" className="mt-4">

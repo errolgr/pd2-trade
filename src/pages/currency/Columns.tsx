@@ -9,6 +9,7 @@ export type Currency = {
   amount: number;
   price: number;
   value: number;
+  sampleCount?: number; // Optional sample count for display
 };
 
 export function createColumns(category: string): ColumnDef<Currency>[] {
@@ -31,7 +32,18 @@ export function createColumns(category: string): ColumnDef<Currency>[] {
     {
       accessorKey: 'price',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Price" />,
-      cell: ({ row }) => <p className="text-sm text-gray-300">{formatHr(row.getValue('price'))}</p>,
+      cell: ({ row }) => {
+        const price = row.getValue('price') as number;
+        const sampleCount = row.original.sampleCount;
+        return (
+          <div className="flex flex-row flex-col items-center gap-2">
+            <p className="text-sm text-gray-300">{formatHr(price)}</p>
+            {sampleCount !== undefined && sampleCount > 0 && (
+              <p className="text-xs text-gray-500">({sampleCount} listings)</p>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'value',

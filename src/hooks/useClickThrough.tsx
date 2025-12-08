@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { invoke, isTauri } from '@tauri-apps/api/core';
-import { cursorPosition } from '@tauri-apps/api/window';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { isTauriSync } from '@/lib/tauri-utils';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -92,10 +90,11 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, []);
 
   const forceWindowFocus = useCallback(async () => {
-    if (!isTauri() || !forceFocusOnPopup) return;
+    if (!isTauriSync() || !forceFocusOnPopup) return;
     
     try {
       // Try to bring the window to front and focus it
+      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
       const mainWindow = await WebviewWindow.getByLabel('main');
       if (mainWindow) {
         await mainWindow.setFocus();
@@ -103,6 +102,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     } catch (error) {
       // Fallback to Tauri command
       try {
+        const { invoke } = await import('@tauri-apps/api/core');
         await invoke('force_window_focus');
       } catch (invokeError) {
       }
@@ -110,9 +110,10 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, [forceFocusOnPopup]);
 
   const checkCursorPosition = useCallback(async () => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
 
     try {
+      const { cursorPosition } = await import('@tauri-apps/api/window');
       const { x: cursorX, y: cursorY } = await cursorPosition();
       const popupBounds = getPopupBounds();
 
@@ -157,6 +158,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       }
 
       // Update click-through state if needed
+      const { invoke } = await import('@tauri-apps/api/core');
       if (isOverPopup && isClickThroughEnabled.current) {
         // Cursor is over popup, disable click-through
         await invoke('set_window_click_through', { ignore: false });
@@ -179,11 +181,13 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, [getPopupBounds, enableThrottling, forceWindowFocus, pollingInterval]);
 
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
 
     // Start with click-through enabled
-    invoke('set_window_click_through', { ignore: true });
-    isClickThroughEnabled.current = true;
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      invoke('set_window_click_through', { ignore: true });
+      isClickThroughEnabled.current = true;
+    });
 
     // Start polling for cursor position
     pollingIntervalRef.current = setInterval(checkCursorPosition, currentPollingInterval.current);
@@ -194,7 +198,11 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
         pollingIntervalRef.current = null;
       }
       // Re-enable click-through on cleanup
-      invoke('set_window_click_through', { ignore: true });
+      if (isTauriSync()) {
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+          invoke('set_window_click_through', { ignore: true });
+        });
+      }
     };
   }, [checkCursorPosition]);
 

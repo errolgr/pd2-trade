@@ -12,6 +12,7 @@ import { QuickListPage } from './pages/quick-list/QuickListPage';
 import { OptionsProvider } from './hooks/useOptions';
 import ToastPage from './pages/toast/ToastPage';
 import {CurrencyPage} from './pages/currency/CurrencyPage';
+import ChatPage from './pages/chat/ChatPage';
 
 Sentry.init({
   dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
@@ -79,6 +80,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <Route
         path={"/currency"}
         element={<CurrencyPage/>}
+      />
+
+      <Route
+        path={"/chat"}
+        element={<ChatPage/>}
       />
     </Routes>
   </BrowserRouter>,

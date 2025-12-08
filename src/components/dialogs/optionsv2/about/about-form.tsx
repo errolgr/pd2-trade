@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import imgPath from '../../../../assets/img.png'
-import { getVersion } from '@tauri-apps/api/app';
+import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauriSync } from '@/lib/tauri-utils';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -27,7 +27,7 @@ export function AboutForm() {
   }, []);
 
   const handleCheckForUpdates = async () => {
-    if (!isTauri()) return;
+    if (!isTauriSync()) return;
     
     setIsChecking(true);
     try {

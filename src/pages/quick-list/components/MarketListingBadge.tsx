@@ -5,10 +5,10 @@ import { Check, SquareArrowOutUpRight, Trash2 } from "lucide-react";
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import moment from 'moment';
-import { emit } from '@tauri-apps/api/event';
+import { emit } from '@/lib/browser-events';
 import { PD2Website } from '@/common/constants';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { openUrl } from '@/lib/browser-opener';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 interface MarketListingBadgeProps {
   stashItem: GameStashItem;
@@ -59,10 +59,10 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
       await onBump(marketId, stashItem.hash);
       await onRefresh();
       setJustBumped(stashItem.hash);
-      emit('toast-event', 'Item bumped successfully!');
+      await emit('toast-event', 'Item bumped successfully!');
     } catch (err) {
       console.error('Failed to bump item:', err);
-      emit('toast-event', 'Failed to bump item');
+      await emit('toast-event', 'Failed to bump item');
     } finally {
       setBumping(null);
     }
@@ -126,13 +126,12 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
             <TooltipTrigger asChild>
             <Trash2 
                 className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500" 
-            onClick={() => {
-             deleteMarketListing(listing._id).then(() => {
-                onRefresh();
-                emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
-                getCurrentWebviewWindow().hide();
-             })
-             
+            onClick={async () => {
+             await deleteMarketListing(listing._id);
+             await onRefresh();
+             await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
+             const win = await getCurrentWebviewWindow();
+             if (win) await win.hide();
            }}
          />
             </TooltipTrigger>

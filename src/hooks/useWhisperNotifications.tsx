@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
-import { isTauri } from '@tauri-apps/api/core';
+import { listen, emit } from '@/lib/browser-events';
+import { isTauriSync } from '@/lib/tauri-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import { useOptions } from '@/hooks/useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
@@ -33,7 +31,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
   const { settings } = useOptions();
 
   useEffect(() => {
-    if (!isTauri() || !enabled) {
+    if (!isTauriSync() || !enabled) {
       return;
     }
 
@@ -44,10 +42,21 @@ export const useWhisperNotifications = (enabled: boolean) => {
         unlisten = await listen<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
           
+          // Helper to check if Diablo is focused (returns false in browser)
+          const checkDiabloFocused = async (): Promise<boolean> => {
+            if (!isTauriSync()) return false;
+            try {
+              const { invoke } = await import('@tauri-apps/api/core');
+              return await invoke<boolean>('is_diablo_focused');
+            } catch {
+              return false;
+            }
+          };
+          
           // Handle join messages separately
           if (whisper.isJoin) {
             // Only notify if join notifications are enabled and Diablo is not focused
-            const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
+            const isDiabloFocused = await checkDiabloFocused();
             if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
               // Play notification sound
               const volume = settings?.whisperNotificationVolume ?? 70;
@@ -59,7 +68,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
                 duration: 5000,
                 variant: 'default',
               };
-              emit('toast-event', toastPayload);
+              await emit('toast-event', toastPayload);
             }
             return; // Don't process join messages as regular whispers
           }
@@ -85,7 +94,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
           }
           
           // Check if Diablo is focused
-          const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
+          const isDiabloFocused = await checkDiabloFocused();
           
           // Determine if we should notify based on timing setting
           const timing = settings?.whisperNotificationTiming || 'both';
@@ -120,7 +129,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
                   duration: 5000,
                   variant: 'success',
                 };
-                emit('toast-event', toastPayload);
+                await emit('toast-event', toastPayload);
               }
             }
             return; // Trade whispers handled

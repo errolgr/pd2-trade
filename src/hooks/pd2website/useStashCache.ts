@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import Fuse from 'fuse.js';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@/lib/browser-http';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { ItemQuality } from '@/common/types/Item';

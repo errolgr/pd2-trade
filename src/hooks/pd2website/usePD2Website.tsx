@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';

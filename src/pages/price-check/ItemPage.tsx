@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { listen } from "@/lib/browser-events";
+import { getCurrentWebviewWindow } from "@/lib/browser-webview";
 import ItemOverlayWidget from "@/pages/price-check/components/ItemOverlayWidget";
 import {OptionsProvider} from "@/hooks/useOptions";
 import { ItemsProvider } from "@/hooks/useItems";
