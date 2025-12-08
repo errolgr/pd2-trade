@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use tauri::Emitter;
+
 #[cfg(target_os = "windows")]
 use std::sync::Mutex;
 
@@ -117,6 +119,11 @@ pub fn get_work_area(app: &AppHandle) -> Option<WindowRect> {
     let install_dir = config.pd2_install_dir?;
     let d2gl_path = std::path::Path::new(&install_dir).join("d2gl.json");
     
+    if !d2gl_path.exists() {
+        let _ = app.emit("error", format!("d2gl.json not found at {:?}. Overlay positioning may be incorrect.", d2gl_path));
+        return None;
+    }
+
     let contents = fs::read_to_string(&d2gl_path).ok()?;
     
     let json: serde_json::Value = serde_json::from_str(&contents).ok()?;

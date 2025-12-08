@@ -56,17 +56,18 @@ The frontend required updates to support the new configuration requirements.
 ### Window Focus (Critical)
 -   **Current State**: The app assumes Diablo II is *always* focused on Linux.
 -   **Impact**: Global hotkeys (like `Ctrl+C` for price checking) will fire even if you are alt-tabbed to another window (e.g., a browser), potentially overwriting your clipboard or triggering unwanted searches.
+-   **Mitigation**: A warning is displayed in the Settings > General tab. Users should be aware of this behavior.
 -   **Fix Required**: Implement X11 (via `xdotool` or `xcb`) and Wayland (via protocol extensions, though difficult) checks to verify active window title/class.
 
 ### Window Bounds
--   **Current State**: Bounds are static based on `d2gl.json`.  Also unsure what happens if a different graphics backend is chosen for PD2, as it may not even use d2gl.json in that case, perhaps using ddraw.ini.
--   **Impact**: If the user resizes the window dynamically (if their window manager forces it) or uses a windowed mode not reflected in `d2gl.json`, the overlay might be misaligned.
--   **Fix Required**: None easy. `d2gl.json` is the source of truth for the game's internal resolution, which is usually what matters for overlays.  
+-   **Current State**: Bounds are static based on `d2gl.json`.
+-   **Impact**: If `d2gl.json` is missing or the user is not using D2GL, the overlay will not position correctly.
+-   **Mitigation**: The app now validates the existence of `d2gl.json` and will show an error if it is missing.
 
 ### Input Simulation
--   **Current State**: Uses `enigo` and `rdev` which have known challenges and incompatibilities with Wayland because of it's security posture with accessing windows not owned by the parent process(es).
+-   **Current State**: Uses `enigo` and `rdev` which have known challenges and incompatibilities with Wayland.
 -   **Impact**:
-    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.  **You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.**
+    -   **Wayland**: Input simulation (auto-typing) often fails. You may need to manually copy items to the clipboard.
     -   **X11**: Should work generally fine, but is as yet untested.
 
 ## 4. Remaining Work
