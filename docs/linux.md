@@ -1,7 +1,3 @@
----
-title: Linux
----
-
 # Linux Migration Summary
 
 This document outlines the changes made to port the PD2 Trader application to Linux, the rationale behind technical decisions, known limitations, and remaining work.
@@ -70,7 +66,7 @@ The frontend required updates to support the new configuration requirements.
 ### Input Simulation
 -   **Current State**: Uses `enigo` and `rdev` which have known challenges and incompatibilities with Wayland because of it's security posture with accessing windows not owned by the parent process(es).
 -   **Impact**:
-    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.
+    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.  **Note**: You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.
     -   **X11**: Should work generally fine, but is as yet untested.
 
 ## 4. Remaining Work
