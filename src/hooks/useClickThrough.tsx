@@ -41,12 +41,10 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     popupRefs.current = popupRefs.current.filter(p => p.id !== id);
     // Add new ref
     popupRefs.current.push({ ref, id });
-    console.log(`[useClickThrough] Registered popup: ${id}`);
   }, []);
 
   const unregisterPopup = useCallback((id: string) => {
     popupRefs.current = popupRefs.current.filter(p => p.id !== id);
-    console.log(`[useClickThrough] Unregistered popup: ${id}`);
   }, []);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
@@ -63,7 +61,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
           right: rect.right,
           bottom: rect.bottom,
         });
-        console.log(`[useClickThrough] Popup ${id} bounds:`, rect);
       }
     });
 
@@ -77,7 +74,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
         right: rect.right,
         bottom: rect.bottom,
       });
-      console.log(`[useClickThrough] Sonner toast ${index} bounds:`, rect);
     });
 
     // Get bounds for any other portal-rendered popups (dialogs, etc.)
@@ -90,7 +86,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
         right: rect.right,
         bottom: rect.bottom,
       });
-      console.log(`[useClickThrough] Portal popup ${index} bounds:`, rect);
     });
 
     return bounds;
@@ -104,16 +99,12 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       const mainWindow = await WebviewWindow.getByLabel('main');
       if (mainWindow) {
         await mainWindow.setFocus();
-        console.log('[useClickThrough] Forced window focus via WebviewWindow');
       }
     } catch (error) {
-      console.error('[useClickThrough] Failed to force window focus via WebviewWindow:', error);
       // Fallback to Tauri command
       try {
         await invoke('force_window_focus');
-        console.log('[useClickThrough] Forced window focus via Tauri command');
       } catch (invokeError) {
-        console.error('[useClickThrough] Failed to force window focus via Tauri command:', invokeError);
       }
     }
   }, [forceFocusOnPopup]);
@@ -168,7 +159,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       // Update click-through state if needed
       if (isOverPopup && isClickThroughEnabled.current) {
         // Cursor is over popup, disable click-through
-        console.log(`[useClickThrough] Cursor over popup (${consecutivePopupDetections.current} consecutive), disabling click-through`);
         await invoke('set_window_click_through', { ignore: false });
         isClickThroughEnabled.current = false;
         lastStateChange.current = now;
@@ -179,15 +169,9 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
         }
       } else if (!isOverPopup && !isClickThroughEnabled.current) {
         // Cursor is not over popup, enable click-through
-        console.log('[useClickThrough] Cursor not over popup, enabling click-through');
         await invoke('set_window_click_through', { ignore: true });
         isClickThroughEnabled.current = true;
         lastStateChange.current = now;
-      }
-
-      // Debug logging
-      if (isOverPopup) {
-        console.log(`[useClickThrough] Cursor position: (${cursorX}, ${cursorY}) - Over popup`);
       }
     } catch (error) {
       console.error('[useClickThrough] Error checking cursor position:', error);

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import Fuse from 'fuse.js';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -7,6 +7,9 @@ import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 import { handleApiResponse } from './usePD2Website';
+import { useItems } from '../useItems';
+import { createItemsMapByKey } from '@/lib/item-utils';
+import { allItems } from '@/assets/items';
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   if (!query) return base;
@@ -19,6 +22,8 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
 
 export function useStashCache(authData, settings) {
   const stashCache = useRef(null);
+  const itemsMapByKey = useMemo(() => createItemsMapByKey(allItems), []);
+
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   // Helper: fetch stash from server and update cache (RESTful)
@@ -118,8 +123,8 @@ export function useStashCache(authData, settings) {
           }
         }
       }
-      });
-    }
+    });
+  }
 
     // Handle sockets
     if (priceCheckItem.sockets !== undefined && stashItem.socket_count !== undefined) {
@@ -148,8 +153,9 @@ export function useStashCache(authData, settings) {
     let matchingItems: GameStashItem[] = [];
 
     // For rare, magic, and crafted items, search by type and base instead of name
-    if ((item.type !== "Jewel" &&
-       !item.type.includes("Charm")) &&
+    if (
+      item.type == "Jewel" && item.quality == ItemQuality.Rare || 
+      !item.type.includes("Charm") ||
        (item.quality === ItemQuality.Rare || 
         item.quality === ItemQuality.Magic || 
         item.quality === ItemQuality.Crafted ||
@@ -165,15 +171,23 @@ export function useStashCache(authData, settings) {
         
         // Search for items matching only the base
         matchingItems = fuse.search(typeBaseInfo.label).map(result => result.item);
-        console.log('[useStashCache] Matching items:', typeBaseInfo.base, stashItems, matchingItems, typeBaseInfo.label);
       }
     } else {
       // For other item qualities, search by name as before
-      const fuse = new Fuse(stashItems, {
-        keys: ['name'],
-        threshold: 0.3, // Adjust for strictness (lower = stricter)
-      });
-      matchingItems = fuse.search(item.isRuneword ? item.runeword : item.name).map(result => result.item);
+      const pd2Item = itemsMapByKey[item.name];
+      
+      if (pd2Item) {
+        // If pd2Item is found, use exact name matching
+        matchingItems = stashItems.filter(stashItem => stashItem.name === (item.isRuneword ? item.runeword : pd2Item.name));
+      } else {
+        // If pd2Item is not found, use Fuse to search with item.name
+        const fuse = new Fuse(stashItems, {
+          keys: ['name'],
+          threshold: 0.3, // Adjust for strictness (lower = stricter)
+        });
+        const searchName = item.isRuneword ? item.runeword : item.name;
+        matchingItems = fuse.search(searchName).map(result => result.item);
+      }
     }
 
     // Filter by quality - only return items with matching quality

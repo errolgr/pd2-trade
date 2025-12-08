@@ -1,4 +1,47 @@
 export const changeLog = {
+  "0.4.11": [
+    "🔧 Fixed stat range filters - min/max parameters are now only added when values are entered.",
+    "🔧 Fixed issue where chat message notifications were not shown after restarting the game.",
+  ],
+  "0.4.10": [
+    "✨ Join notifications - get notified when players join the game (disabled by default, only when Diablo is not focused).",
+    "🔧Prevent trade whispers from stealing focus from Diablo when diablo is focused.",
+    "⬇️⬇️⬇️ EVERYTHING ELSE FROM 0.4.9 ⬇️⬇️⬇️",
+    "✨ Corrupted filter now has three states: show all items (unchecked), show only corrupted items (checked), or show only non-corrupted items (X icon).",
+    "🆕 Added whisper notifications - play a sound when you receive whispers in-game.",
+    "🆕 Added chat settings section with whisper notification controls and ignore list.",
+    "🆕 Added ignore list feature - add players to ignore list to prevent whisper notifications from them.",
+    "🆕 Added auto-detection for Diablo II installation directory in General settings.",
+    "🆕 Show a warning toast when the user tries to list an item and they have reached the maximum number of listings (50).",
+    "🔧 Fixed an issue where when deleting a listing, the item would not be removed from the quick list window.",
+  ],
+  "0.4.9": [
+    "✨ Corrupted filter now has three states: show all items (unchecked), show only corrupted items (checked), or show only non-corrupted items (X icon).",
+    "🆕 Added whisper notifications - play a sound when you receive whispers in-game.",
+    "🆕 Added chat settings section with whisper notification controls and ignore list.",
+    "🆕 Added ignore list feature - add players to ignore list to prevent whisper notifications from them.",
+    "🆕 Added auto-detection for Diablo II installation directory in General settings.",
+    "🆕 Show a warning toast when the user tries to list an item and they have reached the maximum number of listings (50).",
+    "🔧 Fixed an issue where when deleting a listing, the item would not be removed from the quick list window.",
+  ],
+  "0.4.8": [
+    "🔧 Fixed an issue where the price input caused an error when updating a listing",
+  ],
+  "0.4.7": [
+    "🔧 Fixed an issue where class skills were incorrectly mapped.",
+    "🔧 Fixed an issue that caused an error while updating the pricing of a listing",
+  ],
+  "0.4.6": [
+    "🔧 Fixed an issue where rare jewels would not befound when listing an item",
+    "🔧 Fixed an issue where some uniques/sets would not found when listing an item",
+  ],
+  "0.4.5": [
+    "✨ You can now toggle between searching by base and searching by type in the price check window.",
+    "🆕 The listing price input is more consistent with the trade website.",
+    "🔧 Fixed an issue where the quick list window would not display the correct item name.",
+    "🔧 Go to trade now goes to only the active listings instead of archive listings unless show expired is enabled.",
+    "🔧 Fixed an issue where runewords would not be searchable in the price check window.",
+  ],
   "0.4.4": [
     "✨ Price check window now supports dragging and resizing.",
     "✨ Bases, gems, currency & maps will now be searchable in the price check window.",

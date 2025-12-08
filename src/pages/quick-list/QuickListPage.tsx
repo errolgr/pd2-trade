@@ -6,6 +6,7 @@ import { OptionsProvider } from "@/hooks/useOptions";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
 import { listen } from '@tauri-apps/api/event';
+import { ItemsProvider } from "@/hooks/useItems";
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
@@ -22,7 +23,6 @@ export const QuickListPage: React.FC<any> = () => {
           try {
             const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
             setItem(json);
-            console.log('[QuickListPage] Item: ' + json);
           } catch (err) {
             console.error("[QuickListPage] Failed to parse initial payload:", err);``
           }
@@ -44,9 +44,13 @@ export const QuickListPage: React.FC<any> = () => {
     return (
       <TooltipProvider>
         <OptionsProvider>
+        <ItemsProvider>
+
           <Pd2WebsiteProvider>
-            <ListItemShortcutForm item={item}></ListItemShortcutForm>
+            <ListItemShortcutForm item={item} />
           </Pd2WebsiteProvider>
+          </ItemsProvider>
+
         </OptionsProvider>
       </TooltipProvider>
     )

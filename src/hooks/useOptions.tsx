@@ -24,7 +24,14 @@ export interface ISettings {
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
   fillStatValue?: number;
-  pd2InstallDir?: string;
+  whisperNotificationsEnabled?: boolean; // General/non-trade whispers
+  diablo2Directory?: string;
+  whisperIgnoreList?: string[];
+  whisperAnnouncementsEnabled?: boolean;
+  whisperJoinNotificationsEnabled?: boolean;
+  tradeNotificationsEnabled?: boolean; // Trade whispers
+  whisperNotificationTiming?: 'in-game' | 'out-of-game' | 'both' | 'never'; // When to notify
+  whisperNotificationVolume?: number; // Volume for whisper notifications (0-100)
 }
 
 interface OptionsContextProps {
@@ -48,7 +55,10 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
   fillStatValue: 5,
-  pd2InstallDir: '',
+  whisperNotificationsEnabled: true,
+  tradeNotificationsEnabled: true,
+  whisperNotificationTiming: 'both',
+  whisperNotificationVolume: 70,
 };
 
 const SETTINGS_FILENAME = 'settings.json';

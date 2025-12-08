@@ -4636,10 +4636,8 @@ export function fuzzyMatchCharacterSkill(
   characterSkillList: CharacterSkill[] = Object.values(skillNameToIdMap),
 ): CharacterSkill | null {
 
-  console.log('[character-skills] Fuzzy matching character skill:', searchTerm);
   const fuse = createCharacterSkillFuse(characterSkillList);
   const results = fuse.search(searchTerm);
-  console.log('[character-skills] Results:', results);
   return results.length > 0 ? results[0].item : null;
 }
 

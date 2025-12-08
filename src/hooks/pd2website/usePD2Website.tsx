@@ -13,7 +13,7 @@ import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-webs
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
-  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
+  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note') => Promise<MarketListingEntry>;
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   deleteMarketListing: (listingId: string) => Promise<void>;

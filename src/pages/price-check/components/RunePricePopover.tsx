@@ -34,7 +34,6 @@ export function RunePricePopover({
   // Determine which runes to display
   const displayedRunes = showMore ? calculatedRuneValues : highRunes;
 
-  console.log(calculatedRuneValues);
   return (
     <Popover>
       <PopoverTrigger>

@@ -11,7 +11,7 @@ import { handleApiResponse } from './usePD2Website';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
-  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
+  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note') => Promise<MarketListingEntry>;
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
@@ -66,7 +66,7 @@ export function useMarketActions({
       }
     }
     const stashData = await fetchAndCacheStash();
-    items = stashData.items|| [];
+    items = stashData.items || [];
     const matching = findItemsByName(items, item);
     return matching;
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
@@ -84,7 +84,7 @@ export function useMarketActions({
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
 
   // List specific item (POST /market/listing)
-  const listSpecificItem = useCallback(async (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable'): Promise<MarketListingEntry> => {
+  const listSpecificItem = useCallback(async (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note'): Promise<MarketListingEntry> => {
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const bumped_at = new Date().toISOString();
@@ -100,7 +100,7 @@ export function useMarketActions({
         account_id,
       },
       hr_price: hrPrice,
-      price: type === 'negotiable' ? 'obo' : note,
+      price: note,
       bumped_at,
     };
     const response = await tauriFetch('https://api.projectdiablo2.com/market/listing', {

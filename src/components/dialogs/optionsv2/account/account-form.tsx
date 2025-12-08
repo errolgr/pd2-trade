@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { emit } from '@tauri-apps/api/event';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const accountFormSchema = z.object({
   account: z.string().min(1, 'Please select an account'),
@@ -49,7 +50,8 @@ export function AccountForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
+      <ScrollArea className="pr-2">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4 max-h-[330px]">
         <FormField
           control={form.control}
           name="account"
@@ -76,11 +78,12 @@ export function AccountForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="self-start cursor-pointer mt-2" disabled={saving}>
-          {saving ? <span className="animate-spin mr-2">⏳</span> : null}
-          {saving ? 'Saving...' : 'Update account'}
-        </Button>
-      </form>
+        </form>
+      </ScrollArea>
+      <Button type="submit" className="self-start cursor-pointer mt-2" disabled={saving} onClick={form.handleSubmit(onSubmit)}>
+        {saving ? <span className="animate-spin mr-2">⏳</span> : null}
+        {saving ? 'Saving...' : 'Update account'}
+      </Button>
     </Form>
   );
 } 

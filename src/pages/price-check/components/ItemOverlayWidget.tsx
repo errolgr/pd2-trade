@@ -14,7 +14,7 @@ import { useEconomyData } from "../hooks/useEconomyData";
 import { useStatSelection } from "../hooks/useStatSelection";
 import { buildGetMarketListingByStashItemQuery, buildGetMarketListingQuery, buildTradeUrl } from "../lib/tradeUrlBuilder";
 import { RunePricePopover } from "./RunePricePopover";
-import { getStatKey } from "../lib/utils";
+import { getStatKey, getTypeFromBaseType } from "../lib/utils";
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from "@/hooks/useItems";
@@ -26,6 +26,9 @@ import { Label } from "@/components/ui/label";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { openCenteredWindow } from "@/lib/window";
+import { itemTypes } from "@/common/item-types";
+import { ItemQuality } from "@/common/types/Item";
+import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -48,25 +51,51 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     updateFilter,
     setSelected,
     setFilters,
-    toggle
+    toggle,
+    corruptedState,
+    setCorruptedState
   } = useStatSelection(item);
 
-  const pd2Item = useMemo(() => findOneByName(item.name), [item])
+  const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName])
 
   // Market listings state
   const [marketListingsResult, setMarketListingsResult] = useState<MarketListingResult | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
   const [searchArchived, setSearchArchived] = useState(false);
+  
+  // Search mode: 0 = category (base), 1 = typeLabel
+  const [searchMode, setSearchMode] = useState(0);
+  
+  // Find the matched item type entry
+  const matchedItemType = useMemo(() => {
+    if (!item.type) return null;
+    return itemTypes.find(type =>
+      type.bases.some(b => b.label.toLowerCase() === item.type.toLowerCase())
+    );
+  }, [item.type]);
+  
+  // Check if item should use toggle (only for base item qualities, not uniques/sets/runewords)
+  const shouldUseToggle = useMemo(() => {
+    return item.quality === ItemQuality.Rare ||
+           item.quality === ItemQuality.Magic ||
+           item.quality === ItemQuality.Crafted ||
+           item.quality === ItemQuality.Normal ||
+           item.quality === ItemQuality.Superior;
+  }, [item.quality]);
 
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
-    return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper);
-  }, [selected, filters, item, statMapper, settings, pd2Item]);
+    // Only use searchMode for items that support toggle, otherwise use default (0)
+    const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+    return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper, effectiveSearchMode, matchedItemType, searchArchived, corruptedState);
+  }, [selected, filters, item, statMapper, settings, pd2Item, searchMode, matchedItemType, shouldUseToggle, searchArchived, corruptedState]);
 
   const pd2MarketQuery = useMemo(() => {
-    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived);
-  }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item]);
+    // Only use searchMode for items that support toggle, otherwise use default (0)
+    const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived, effectiveSearchMode, matchedItemType, corruptedState);
+  }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item, searchMode, matchedItemType, shouldUseToggle, corruptedState]);
 
   useEffect(() => {
     if (item) {
@@ -74,10 +103,36 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setMarketListingsResult(null);
       setSelected(new Set());
       setFilters({})
-      
-      console.log('[ItemOverlayWidget] Item loaded:', item);
+      setSearchMode(0); // Reset to default mode
+      setCorruptedState(0); // Reset corrupted state to default (both)
     }
-  }, [item])
+  }, [item, setSelected, setFilters, setCorruptedState])
+  
+  // Toggle search mode (only for items that support toggle)
+  const toggleSearchMode = useCallback(() => {
+    if (!shouldUseToggle) return; // Don't toggle for uniques/sets/runewords
+    setSearchMode((prev) => {
+      // Cycle through: 0 -> 1 -> 0
+      // Skip mode 1 if there's no matched item type
+      let next = (prev + 1) % 2;
+      if (next === 1 && !matchedItemType) {
+        next = 0;
+      }
+      return next;
+    });
+  }, [matchedItemType, shouldUseToggle]);
+  
+  // Get display text for current search mode
+  const getSearchModeDisplay = useCallback(() => {
+    switch (searchMode) {
+      case 0:
+        return `Base: ${item.type}`;
+      case 1:
+        return matchedItemType ? `Type: ${matchedItemType.typeLabel}` : `Base: ${item.type}`;
+      default:
+        return `Base: ${item.type}`;
+    }
+  }, [searchMode, item.type, matchedItemType]);
 
 
   const openCurrencyValuation = useCallback(async () => {
@@ -153,9 +208,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               {item.isRuneword && <Badge>Runeword</Badge>}
             </CardTitle>
             {item.type && <div
-                className={'text-lg text-gray-300'}               
-                style={{ fontFamily: 'DiabloFont', marginTop: '-5px'}}>
-                  {item.type}
+                className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}               
+                style={{ fontFamily: 'DiabloFont', marginTop: '-5px'}}
+                onClick={shouldUseToggle ? toggleSearchMode : undefined}
+                title={shouldUseToggle ? "Click to toggle search mode" : undefined}>
+                  {shouldUseToggle ? getSearchModeDisplay() : `Base: ${item.type}`}
               </div>
               }
 
@@ -180,6 +237,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 updateFilter={updateFilter}
                 filters={filters}
                 selected={selected}
+                corruptedState={corruptedState}
               />
             ))}
           </div>
@@ -195,12 +253,30 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     setMarketError(null);
                     setMarketLoading(true);
                     setMarketListingsResult(null);
+                    const startTime = performance.now();
                     try {
                       const result = searchArchived 
                         ? await getMarketListingsArchive(pd2MarketQuery)
                         : await getMarketListings(pd2MarketQuery);
+                      const duration = performance.now() - startTime;
                       setMarketListingsResult(result);
+                      
+                      incrementMetric('item_overlay.market_search', 1, { 
+                        status: 'success', 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      distributionMetric('item_overlay.market_search_duration_ms', duration);
+                      distributionMetric('item_overlay.market_search_results_count', result.total);
+                      distributionMetric('item_overlay.market_search_results_returned', result.data.length);
                     } catch (e: any) {
+                      const duration = performance.now() - startTime;
+                      incrementMetric('item_overlay.market_search', 1, { 
+                        status: 'error', 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      distributionMetric('item_overlay.market_search_duration_ms', duration);
                       console.log(e.message || 'Failed to fetch market listings')
                       setMarketError(e.message || 'Failed to fetch market listings');
                     } finally {
@@ -214,7 +290,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 variant="secondary"
                   className="mt-2 flex flex-row justify-center gap-2"
                   onClick={() => {
-                    if (tradeUrl) openUrl(tradeUrl);
+                    if (tradeUrl) {
+                      incrementMetric('item_overlay.trade_url_opened', 1, { 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      openUrl(tradeUrl);
+                    }
                   }}
                 >
                   <SquareArrowOutUpRight className="w-4 h-4"/>
@@ -226,7 +308,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               
               id="archived-toggle"
               checked={searchArchived}
-              onCheckedChange={setSearchArchived}
+              onCheckedChange={(checked) => {
+                setSearchArchived(checked);
+              }}
             />
            <Label htmlFor="archived-toggle" className="text-sm text-gray-300">Show Expired</Label>
           </div>

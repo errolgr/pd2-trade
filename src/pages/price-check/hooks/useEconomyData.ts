@@ -27,7 +27,6 @@ export function useEconomyData() {
     };
 
     loadData();
-    console.log('Setting Economy Data as...', economyData);
   }, []);
 
   const sortedRunes = useMemo(() => {

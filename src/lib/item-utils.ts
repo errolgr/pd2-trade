@@ -1,6 +1,18 @@
-import { ItemLocation } from '@/common/types/Location';
+import _ from 'lodash';
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
+import type { ItemType } from '@/assets/itemFuzzySearch';
+import { ItemLocation } from '@/common/types/Location';
+
+/**
+ * Creates a map of items keyed by their 'key' field using lodash.
+ * This allows O(1) lookup instead of iterating through the list.
+ * @param items Array of items to convert to a map
+ * @returns Map with item keys as keys and items as values
+ */
+export function createItemsMapByKey(items: ItemType[]): Record<string, ItemType> {
+  return _.keyBy(items, 'key');
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -68,4 +80,3 @@ export const isStashItem = (jsonString: string): boolean => {
 };
 
 export { sleep };
-

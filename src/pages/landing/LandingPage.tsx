@@ -13,9 +13,11 @@ import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
+import { useWhisperNotifications } from '@/hooks/useWhisperNotifications';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
+import { ItemsProvider } from '@/hooks/useItems';
 
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
@@ -79,7 +81,8 @@ const LandingPage: React.FC = () => {
         skipTaskbar: true,
         alwaysOnTop: true,
         shadow: false,
-        focus: true,
+        focus: false,
+        focusable: false,
       });
       attachWindowCloseHandler(winRef.current, () => {
         winRef.current = null;
@@ -137,9 +140,10 @@ const LandingPage: React.FC = () => {
       quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
         decorations: false,
         transparent: true,
-        focus: true,
+        focus: false,
         shadow: false,
         skipTaskbar: true,
+        focusable: false,
         width: 600,
         height: 512,
         resizable: true,
@@ -164,16 +168,51 @@ const LandingPage: React.FC = () => {
   // Handle changelog
   useChangelog();
 
+  // Handle whisper notifications
+  // Always enable the hook - it handles the logic internally based on settings
+  useWhisperNotifications(true);
+
+  // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    const generalEnabled = settings.whisperNotificationsEnabled ?? true;
+    const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
+    const shouldWatch = generalEnabled || tradeEnabled;
+
+    const manageWatcher = async () => {
+      try {
+        if (shouldWatch) {
+          await invoke('start_chat_watcher', { custom_d2_dir: settings.diablo2Directory });
+        } else {
+          await invoke('stop_chat_watcher');
+        }
+      } catch (error) {
+        console.error('Failed to manage chat watcher:', error);
+      }
+    };
+
+    manageWatcher();
+
+    return () => {
+      if (isTauri()) {
+        invoke('stop_chat_watcher').catch(console.error);
+      }
+    };
+  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);
+
   return (
-    <Pd2WebsiteProvider>
-      <div>
-        {showTitle && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
-          </div>
-        )}
-      </div>
-    </Pd2WebsiteProvider>
+    <ItemsProvider>
+      <Pd2WebsiteProvider>
+        <div>
+          {showTitle && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
+            </div>
+          )}
+        </div>
+      </Pd2WebsiteProvider>
+    </ItemsProvider>
   );
 };
 

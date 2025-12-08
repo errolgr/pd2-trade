@@ -233,6 +233,8 @@ export function useStatSelection(item: any) {
   const { settings } = useOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<Record<string, { value?: string; min?: string; max?: string }>>({});
+  // Corrupted state: 0 = both, 1 = corrupted only, 2 = non-corrupted only
+  const [corruptedState, setCorruptedState] = useState<number>(0);
 
   // Get range margin from settings (convert percentage 0-100 to decimal 0-1)
   // Default to 5% (0.05) if not set
@@ -317,6 +319,28 @@ export function useStatSelection(item: any) {
   /** Toggle selection and initialise filter defaults */
   const toggle = (stat: Stat) => {
     const key = getStatKey(stat);
+    
+    // Special handling for corrupted stat - three states
+    if (stat.stat_id === StatId.Corrupted) {
+      setCorruptedState((prev) => {
+        const next = (prev + 1) % 3; // Cycle: 0 -> 1 -> 2 -> 0
+        // Update selected set based on state
+        setSelected((sel) => {
+          const nextSel = new Set([...sel]);
+          if (next === 0) {
+            // State 0: both - remove from selected
+            nextSel.delete(key);
+          } else {
+            // State 1 or 2: add to selected
+            nextSel.add(key);
+          }
+          return nextSel;
+        });
+        return next;
+      });
+      return;
+    }
+    
     setSelected((prev) => {
       const next = new Set([...prev]);
       if (next.has(key)) {
@@ -364,6 +388,8 @@ export function useStatSelection(item: any) {
     setFilters,
     sortedStats,
     updateFilter,
-    toggle
+    toggle,
+    corruptedState,
+    setCorruptedState
   };
 } 

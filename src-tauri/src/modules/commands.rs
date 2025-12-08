@@ -1,4 +1,4 @@
-use crate::{keyboard, window};
+use crate::{chat_watcher, keyboard, window};
 use tauri::Manager;
 
 #[tauri::command]
@@ -101,4 +101,26 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
             .map_err(|e| format!("Failed to set toast window size: {}", e))?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub fn start_chat_watcher(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
+    chat_watcher::start_watching(app_handle, custom_d2_dir)
+}
+
+#[tauri::command]
+pub fn stop_chat_watcher() -> Result<(), String> {
+    chat_watcher::stop_watching()
+}
+
+#[tauri::command]
+pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
+    chat_watcher::find_diablo2_directory(custom_path.as_deref())
+        .and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub fn auto_detect_diablo2_directory() -> Option<String> {
+    chat_watcher::auto_detect_diablo2_directory()
+        .and_then(|p| p.to_str().map(|s| s.to_string()))
 }

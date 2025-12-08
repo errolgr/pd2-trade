@@ -31070,6 +31070,31225 @@ export const setItems = [{
     set: "Sander's Folly"
 }];
 
+export const runeWords = [{
+    id: 0,
+    kind: "item.runeword",
+    key: "Runeword1",
+    name: "Ancients' Pledge",
+    properties: [{
+        key: "res-cold",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 13,
+        max: 13,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-to-mana",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_damagetomana",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 11,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3w_PD2",
+                    negative_code: "ModStr3w_PD2",
+                    group: {},
+                    positive: "Damage Taken Gained as Mana when Hit",
+                    negative: "Damage Taken Gained as Mana when Hit"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r08", "r09", "r07"],
+    modifiers: [{
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_damagetomana",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 11,
+            value: 1,
+            label: {
+                positive_code: "ModStr3w_PD2",
+                negative_code: "ModStr3w_PD2",
+                group: {},
+                positive: "Damage Taken Gained as Mana when Hit",
+                negative: "Damage Taken Gained as Mana when Hit"
+            }
+        }
+    }]
+}, {
+    id: 1,
+    kind: "item.runeword",
+    key: "Runeword6",
+    name: "Black",
+    properties: [{
+        key: "crush",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "red-mag",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "att",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 115,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1h",
+                    negative_code: "ModStr1h",
+                    group: {},
+                    positive: "to Attack Rating",
+                    negative: "to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: 74,
+        min: 12,
+        max: 4,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "dmg",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_normaldamage",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 122,
+                value: 2,
+                label: {
+                    positive_code: "ModStr5b",
+                    negative_code: "ModStr5b",
+                    group: {},
+                    positive: "Damage",
+                    negative: "Damage"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["club", "hamm", "mace", "h2h"],
+        extended: []
+    },
+    runes: ["r10", "r16", "r04"],
+    modifiers: [{
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 115,
+            value: 1,
+            label: {
+                positive_code: "ModStr1h",
+                negative_code: "ModStr1h",
+                group: {},
+                positive: "to Attack Rating",
+                negative: "to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_normaldamage",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 122,
+            value: 2,
+            label: {
+                positive_code: "ModStr5b",
+                negative_code: "ModStr5b",
+                group: {},
+                positive: "Damage",
+                negative: "Damage"
+            }
+        }
+    }]
+}, {
+    id: 2,
+    kind: "item.runeword",
+    key: "Runeword44",
+    name: "Fury",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 239,
+        max: 299,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }, {
+        key: "skill",
+        param: 368,
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "lifesteal",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "lifedrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2z",
+                    negative_code: "ModStr2z",
+                    group: {},
+                    positive: "Life stolen per hit",
+                    negative: "Life stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "deadly",
+        param: "",
+        min: 33,
+        max: 66,
+        modifiers: [{
+            name: "item_deadlystrike",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 85,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5q",
+                    negative_code: "ModStr5q",
+                    group: {},
+                    positive: "Deadly Strike",
+                    negative: "Deadly Strike"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 147,
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele", "jave", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r31", "r25", "r05"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "lifedrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModStr2z",
+                negative_code: "ModStr2z",
+                group: {},
+                positive: "Life stolen per hit",
+                negative: "Life stolen per hit"
+            }
+        }
+    }, {
+        name: "item_deadlystrike",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 85,
+            value: 1,
+            label: {
+                positive_code: "ModStr5q",
+                negative_code: "ModStr5q",
+                group: {},
+                positive: "Deadly Strike",
+                negative: "Deadly Strike"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 3,
+    kind: "item.runeword",
+    key: "Runeword54",
+    name: "Holy Thunder",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: []
+    }, {
+        key: "dmg-ltng",
+        param: "",
+        min: 20,
+        max: 60,
+        modifiers: [{
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-max",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: []
+    }, {
+        key: "res-ltng",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }]
+    }, {
+        key: "res-ltng-max",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "maxlightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 43,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5w",
+                    negative_code: "ModStr5w",
+                    group: {},
+                    positive: "to Maximum Lightning Resist",
+                    negative: "to Maximum Lightning Resist"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 118,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: 53,
+        min: 60,
+        max: 7,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["scep"],
+        extended: []
+    },
+    runes: ["r05", "r08", "r09", "r07"],
+    modifiers: [{
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "maxlightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 43,
+            value: 1,
+            label: {
+                positive_code: "ModStr5w",
+                negative_code: "ModStr5w",
+                group: {},
+                positive: "to Maximum Lightning Resist",
+                negative: "to Maximum Lightning Resist"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }]
+}, {
+    id: 4,
+    kind: "item.runeword",
+    key: "Runeword55",
+    name: "Honor",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 160,
+        max: 200,
+        modifiers: []
+    }, {
+        key: "regen",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "att",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 115,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1h",
+                    negative_code: "ModStr1h",
+                    group: {},
+                    positive: "to Attack Rating",
+                    negative: "to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "deadly",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_deadlystrike",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 85,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5q",
+                    negative_code: "ModStr5q",
+                    group: {},
+                    positive: "Deadly Strike",
+                    negative: "Deadly Strike"
+                }
+            }
+        }]
+    }, {
+        key: "str",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele"],
+        extended: []
+    },
+    runes: ["r11", "r01", "r06", "r03", "r12"],
+    modifiers: [{
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 115,
+            value: 1,
+            label: {
+                positive_code: "ModStr1h",
+                negative_code: "ModStr1h",
+                group: {},
+                positive: "to Attack Rating",
+                negative: "to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_deadlystrike",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 85,
+            value: 1,
+            label: {
+                positive_code: "ModStr5q",
+                negative_code: "ModStr5q",
+                group: {},
+                positive: "Deadly Strike",
+                negative: "Deadly Strike"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }]
+}, {
+    id: 5,
+    kind: "item.runeword",
+    key: "Runeword65",
+    name: "King's Grace",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: []
+    }, {
+        key: "att",
+        param: "",
+        min: 150,
+        max: 150,
+        modifiers: [{
+            name: "tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 115,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1h",
+                    negative_code: "ModStr1h",
+                    group: {},
+                    positive: "to Attack Rating",
+                    negative: "to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-demon",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "att-demon",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_demon_tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 110,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4j",
+                    negative_code: "ModStr4j",
+                    group: {},
+                    positive: "to Attack Rating against Demons",
+                    negative: "to Attack Rating against Demons"
+                }
+            }
+        }]
+    }, {
+        key: "att-undead",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_undead_tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 106,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4k",
+                    negative_code: "ModStr4k",
+                    group: {},
+                    positive: "to Attack Rating against Undead",
+                    negative: "to Attack Rating against Undead"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 45,
+        max: 50,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "scep", "h2h", "jave", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r11", "r08", "r10"],
+    modifiers: [{
+        name: "tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 115,
+            value: 1,
+            label: {
+                positive_code: "ModStr1h",
+                negative_code: "ModStr1h",
+                group: {},
+                positive: "to Attack Rating",
+                negative: "to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "item_demon_tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 110,
+            value: 1,
+            label: {
+                positive_code: "ModStr4j",
+                negative_code: "ModStr4j",
+                group: {},
+                positive: "to Attack Rating against Demons",
+                negative: "to Attack Rating against Demons"
+            }
+        }
+    }, {
+        name: "item_undead_tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 106,
+            value: 1,
+            label: {
+                positive_code: "ModStr4k",
+                negative_code: "ModStr4k",
+                group: {},
+                positive: "to Attack Rating against Undead",
+                negative: "to Attack Rating against Undead"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }]
+}, {
+    id: 6,
+    kind: "item.runeword",
+    key: "Runeword72",
+    name: "Leaf",
+    properties: [{
+        key: "fireskill",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_elemskill",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 1,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }, {
+            name: "item_elemskill_fire",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 157,
+                value: 1,
+                label: {
+                    positive_code: "ModStrFireskills",
+                    negative_code: "ModStrFireskills",
+                    group: {},
+                    positive: "to Fire Skills",
+                    negative: "to Fire Skills"
+                }
+            }
+        }]
+    }, {
+        key: "ac/lvl",
+        param: "",
+        min: 16,
+        max: 16,
+        modifiers: [{
+            name: "item_armor_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 72,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "res-cold",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 41,
+        min: 1,
+        max: 2,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 36,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 37,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r03", "r08"],
+    modifiers: [{
+        name: "item_elemskill",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 1,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_elemskill_fire",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 157,
+            value: 1,
+            label: {
+                positive_code: "ModStrFireskills",
+                negative_code: "ModStrFireskills",
+                group: {},
+                positive: "to Fire Skills",
+                negative: "to Fire Skills"
+            }
+        }
+    }, {
+        name: "item_armor_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 72,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 7,
+    kind: "item.runeword",
+    key: "Runeword74",
+    name: "Lionheart",
+    properties: [{
+        key: "str",
+        param: "",
+        min: 0,
+        max: 15,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "vit",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "dex",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 80,
+        max: 110,
+        modifiers: []
+    }, {
+        key: "hp",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "maxhp",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 59,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r15", "r17", "r19"],
+    modifiers: [{
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "maxhp",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 59,
+            value: 1,
+            label: {
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }]
+}, {
+    id: 8,
+    kind: "item.runeword",
+    key: "Runeword75",
+    name: "Lore",
+    properties: [{
+        key: "enr",
+        param: "",
+        min: 5,
+        max: 10,
+        modifiers: [{
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "light",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 1,
+        max: 2,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r09", "r12"],
+    modifiers: [{
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 9,
+    kind: "item.runeword",
+    key: "Runeword81",
+    name: "Malice",
+    properties: [{
+        key: "openwounds",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_openwounds",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 83,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3m",
+                    negative_code: "ModStr3m",
+                    group: {},
+                    positive: "Chance of Open Wounds",
+                    negative: "Chance of Open Wounds"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-ac",
+        param: "",
+        min: -100,
+        max: -100,
+        modifiers: [{
+            name: "item_damagetargetac",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 75,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4d",
+                    negative_code: "ModStr4d",
+                    group: {},
+                    positive: "to Monster Defense Per Hit",
+                    negative: "to Monster Defense Per Hit"
+                }
+            }
+        }]
+    }, {
+        key: "noheal",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_preventheal",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4a",
+                    negative_code: "ModStr4a",
+                    group: {},
+                    positive: "Prevent Monster Heal",
+                    negative: "Prevent Monster Heal"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: []
+    }, {
+        key: "light",
+        param: "",
+        min: -1,
+        max: -1,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "regen",
+        param: "",
+        min: -5,
+        max: -5,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }, {
+        key: "deep-wounds",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "deep_wounds",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 82,
+                value: 1,
+                label: {
+                    positive_code: "OpenWoundsItem",
+                    negative_code: "OpenWoundsItem",
+                    group: {},
+                    positive: "Open Wounds Damage Per Second",
+                    negative: "Open Wounds Damage Per Second"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele", "jave", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r06", "r01", "r05"],
+    modifiers: [{
+        name: "item_openwounds",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 83,
+            value: 1,
+            label: {
+                positive_code: "ModStr3m",
+                negative_code: "ModStr3m",
+                group: {},
+                positive: "Chance of Open Wounds",
+                negative: "Chance of Open Wounds"
+            }
+        }
+    }, {
+        name: "item_damagetargetac",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 75,
+            value: 1,
+            label: {
+                positive_code: "ModStr4d",
+                negative_code: "ModStr4d",
+                group: {},
+                positive: "to Monster Defense Per Hit",
+                negative: "to Monster Defense Per Hit"
+            }
+        }
+    }, {
+        name: "item_preventheal",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModStr4a",
+                negative_code: "ModStr4a",
+                group: {},
+                positive: "Prevent Monster Heal",
+                negative: "Prevent Monster Heal"
+            }
+        }
+    }, {
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }, {
+        name: "deep_wounds",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 82,
+            value: 1,
+            label: {
+                positive_code: "OpenWoundsItem",
+                negative_code: "OpenWoundsItem",
+                group: {},
+                positive: "Open Wounds Damage Per Second",
+                negative: "Open Wounds Damage Per Second"
+            }
+        }
+    }]
+}, {
+    id: 10,
+    kind: "item.runeword",
+    key: "Runeword82",
+    name: "Melody",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: []
+    }, {
+        key: "skilltab",
+        param: 0,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 9,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 13,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 17,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r13", "r18", "r04"],
+    modifiers: [{
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }]
+}, {
+    id: 11,
+    kind: "item.runeword",
+    key: "Runeword83",
+    name: "Memory",
+    properties: [{
+        key: "mana%",
+        param: "",
+        min: 25,
+        max: 40,
+        modifiers: [{
+            name: "item_maxmana_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 54,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2h",
+                    negative_code: "ModStr2h",
+                    group: {},
+                    positive: "Increase Maximum Mana",
+                    negative: "Increase Maximum Mana"
+                }
+            }
+        }]
+    }, {
+        key: "red-mag",
+        param: "",
+        min: 7,
+        max: 7,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 58,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 42,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r17", "r16", "r12", "r05"],
+    modifiers: [{
+        name: "item_maxmana_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 54,
+            value: 2,
+            label: {
+                positive_code: "ModStr2h",
+                negative_code: "ModStr2h",
+                group: {},
+                positive: "Increase Maximum Mana",
+                negative: "Increase Maximum Mana"
+            }
+        }
+    }, {
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 12,
+    kind: "item.runeword",
+    key: "Runeword88",
+    name: "Nadir",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "light",
+        param: "",
+        min: -3,
+        max: -3,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: 264,
+        min: 9,
+        max: 13,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: -33,
+        max: -33,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "str",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 2,
+        max: 4,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r04", "r03"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 13,
+    kind: "item.runeword",
+    key: "Runeword116",
+    name: "Radiance",
+    properties: [{
+        key: "light",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "enr",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }]
+    }, {
+        key: "vit",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 20,
+        max: 40,
+        modifiers: []
+    }, {
+        key: "mana",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 75,
+        max: 75,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r04", "r12", "r06"],
+    modifiers: [{
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }]
+}, {
+    id: 14,
+    kind: "item.runeword",
+    key: "Runeword120",
+    name: "Rhyme",
+    properties: [{
+        key: "block2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }, {
+        key: "block",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "toblock",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 134,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3g",
+                    negative_code: "ModStr3g",
+                    group: {},
+                    positive: "Increased Chance of Blocking",
+                    negative: "Increased Chance of Blocking"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "mag%",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_magicbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 8,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r13", "r05"],
+    modifiers: [{
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }, {
+        name: "toblock",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 134,
+            value: 1,
+            label: {
+                positive_code: "ModStr3g",
+                negative_code: "ModStr3g",
+                group: {},
+                positive: "Increased Chance of Blocking",
+                negative: "Increased Chance of Blocking"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_magicbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 8,
+            value: 1,
+            label: {
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }]
+}, {
+    id: 15,
+    kind: "item.runeword",
+    key: "Runeword126",
+    name: "Silence",
+    properties: [{
+        key: "manasteal",
+        param: "",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "manadrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 89,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2y",
+                    negative_code: "ModStr2y",
+                    group: {},
+                    positive: "Mana stolen per hit",
+                    negative: "Mana stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "stupidity",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_stupidity",
+            encoding: 0,
+            description: {
+                function: 12,
+                priority: 80,
+                value: 2,
+                label: {
+                    positive_code: "ModStr6d",
+                    negative_code: "ModStr6d",
+                    group: {},
+                    positive: "Hit Blinds Target",
+                    negative: "Hit Blinds Target"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 275,
+        max: 375,
+        modifiers: []
+    }, {
+        key: "silence-fhr-ias",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }, {
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Thorns",
+        min: 23,
+        max: 25,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r14", "r02", "r15", "r24", "r03", "r26"],
+    modifiers: [{
+        name: "manadrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 89,
+            value: 1,
+            label: {
+                positive_code: "ModStr2y",
+                negative_code: "ModStr2y",
+                group: {},
+                positive: "Mana stolen per hit",
+                negative: "Mana stolen per hit"
+            }
+        }
+    }, {
+        name: "item_stupidity",
+        encoding: 0,
+        description: {
+            function: 12,
+            priority: 80,
+            value: 2,
+            label: {
+                positive_code: "ModStr6d",
+                negative_code: "ModStr6d",
+                group: {},
+                positive: "Hit Blinds Target",
+                negative: "Hit Blinds Target"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }]
+}, {
+    id: 16,
+    kind: "item.runeword",
+    key: "Runeword128",
+    name: "Smoke",
+    properties: [{
+        key: "ac-miss",
+        param: "",
+        min: 250,
+        max: 250,
+        modifiers: [{
+            name: "armorclass_vs_missile",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 69,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6a",
+                    negative_code: "ModStr6a",
+                    group: {},
+                    positive: "Defense vs. Missile",
+                    negative: "Defense vs. Missile"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 75,
+        max: 75,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 30,
+        max: 50,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "light",
+        param: "",
+        min: -1,
+        max: -1,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: 443,
+        min: 18,
+        max: 6,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r04", "r17"],
+    modifiers: [{
+        name: "armorclass_vs_missile",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 69,
+            value: 1,
+            label: {
+                positive_code: "ModStr6a",
+                negative_code: "ModStr6a",
+                group: {},
+                positive: "Defense vs. Missile",
+                negative: "Defense vs. Missile"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }]
+}, {
+    id: 17,
+    kind: "item.runeword",
+    key: "Runeword133",
+    name: "Stealth",
+    properties: [{
+        key: "red-mag",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "dex",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }]
+    }, {
+        key: "stam",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "maxstamina",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 51,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5d",
+                    negative_code: "ModStr5d",
+                    group: {},
+                    positive: "Maximum Stamina",
+                    negative: "Maximum Stamina"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r07", "r05"],
+    modifiers: [{
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "maxstamina",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 51,
+            value: 1,
+            label: {
+                positive_code: "ModStr5d",
+                negative_code: "ModStr5d",
+                group: {},
+                positive: "Maximum Stamina",
+                negative: "Maximum Stamina"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }]
+}, {
+    id: 18,
+    kind: "item.runeword",
+    key: "Runeword134",
+    name: "Steel",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-min",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: []
+    }, {
+        key: "dmg-max",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: []
+    }, {
+        key: "openwounds",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_openwounds",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 83,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3m",
+                    negative_code: "ModStr3m",
+                    group: {},
+                    positive: "Chance of Open Wounds",
+                    negative: "Chance of Open Wounds"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: []
+    }],
+    types: {
+        base: ["swor", "axe", "mace", "h2h", "thro", "aspe"],
+        extended: []
+    },
+    runes: ["r03", "r01"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_openwounds",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 83,
+            value: 1,
+            label: {
+                positive_code: "ModStr3m",
+                negative_code: "ModStr3m",
+                group: {},
+                positive: "Chance of Open Wounds",
+                negative: "Chance of Open Wounds"
+            }
+        }
+    }]
+}, {
+    id: 19,
+    kind: "item.runeword",
+    key: "Runeword139",
+    name: "Strength",
+    properties: [{
+        key: "str",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 65,
+        max: 95,
+        modifiers: []
+    }, {
+        key: "vit",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele", "jave", "aspe", "taxe", "tkni", "thro"],
+        extended: []
+    },
+    runes: ["r11", "r03"],
+    modifiers: [{
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }]
+}, {
+    id: 20,
+    kind: "item.runeword",
+    key: "Runeword154",
+    name: "Venom",
+    properties: [{
+        key: "oskill",
+        param: 73,
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "ignore-ac",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_ignoretargetac",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 119,
+                value: 0,
+                label: {
+                    positive_code: "ModStr3y",
+                    negative_code: "ModStr3y",
+                    group: {},
+                    positive: "Ignore Target's Defense",
+                    negative: "Ignore Target's Defense"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Desecrate",
+        min: 27,
+        max: 15,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 92,
+        min: 20,
+        max: 28,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "manasteal",
+        param: "",
+        min: 7,
+        max: 7,
+        modifiers: [{
+            name: "manadrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 89,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2y",
+                    negative_code: "ModStr2y",
+                    group: {},
+                    positive: "Mana stolen per hit",
+                    negative: "Mana stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-pois",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "passive_pois_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrespoissk",
+                    negative_code: "Moditemenrespoissk",
+                    group: {},
+                    positive: "to Enemy Poison Resistance",
+                    negative: "to Enemy Poison Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-pois",
+        param: 50,
+        min: 1024,
+        max: 1024,
+        modifiers: [{
+            name: "poisonmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 92,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4i",
+                    negative_code: "ModStr4i",
+                    group: {},
+                    positive: "to Minimum Poison Damage",
+                    negative: "to Minimum Poison Damage"
+                }
+            }
+        }, {
+            name: "poisonmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 91,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4h",
+                    negative_code: "ModStr4h",
+                    group: {},
+                    positive: "to Maximum Poison Damage",
+                    negative: "to Maximum Poison Damage"
+                }
+            }
+        }, {
+            name: "poisonlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap", "jave", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r07", "r14", "r23"],
+    modifiers: [{
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_ignoretargetac",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 119,
+            value: 0,
+            label: {
+                positive_code: "ModStr3y",
+                negative_code: "ModStr3y",
+                group: {},
+                positive: "Ignore Target's Defense",
+                negative: "Ignore Target's Defense"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "manadrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 89,
+            value: 1,
+            label: {
+                positive_code: "ModStr2y",
+                negative_code: "ModStr2y",
+                group: {},
+                positive: "Mana stolen per hit",
+                negative: "Mana stolen per hit"
+            }
+        }
+    }, {
+        name: "passive_pois_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrespoissk",
+                negative_code: "Moditemenrespoissk",
+                group: {},
+                positive: "to Enemy Poison Resistance",
+                negative: "to Enemy Poison Resistance"
+            }
+        }
+    }, {
+        name: "poisonmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 92,
+            value: 1,
+            label: {
+                positive_code: "ModStr4i",
+                negative_code: "ModStr4i",
+                group: {},
+                positive: "to Minimum Poison Damage",
+                negative: "to Minimum Poison Damage"
+            }
+        }
+    }, {
+        name: "poisonmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 91,
+            value: 1,
+            label: {
+                positive_code: "ModStr4h",
+                negative_code: "ModStr4h",
+                group: {},
+                positive: "to Maximum Poison Damage",
+                negative: "to Maximum Poison Damage"
+            }
+        }
+    }, {
+        name: "poisonlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 21,
+    kind: "item.runeword",
+    key: "Runeword160",
+    name: "Wealth",
+    properties: [{
+        key: "gold%",
+        param: "",
+        min: 250,
+        max: 250,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "mag%",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_magicbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 8,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r20", "r18", "r03"],
+    modifiers: [{
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_magicbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 8,
+            value: 1,
+            label: {
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 22,
+    kind: "item.runeword",
+    key: "Runeword162",
+    name: "White",
+    properties: [{
+        key: "skilltab",
+        param: 7,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "red-mag",
+        param: "",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 13,
+        max: 13,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 68,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 69,
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["wand"],
+        extended: []
+    },
+    runes: ["r14", "r16"],
+    modifiers: [{
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 23,
+    kind: "item.runeword",
+    key: "Runeword170",
+    name: "Zephyr",
+    properties: [{
+        key: "move2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 33,
+        max: 66,
+        modifiers: []
+    }, {
+        key: "att",
+        param: "",
+        min: 66,
+        max: 66,
+        modifiers: [{
+            name: "tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 115,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1h",
+                    negative_code: "ModStr1h",
+                    group: {},
+                    positive: "to Attack Rating",
+                    negative: "to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: 240,
+        min: 7,
+        max: 10,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss", "jave", "aspe", "taxe", "tkni", "thro"],
+        extended: []
+    },
+    runes: ["r09", "r05"],
+    modifiers: [{
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 115,
+            value: 1,
+            label: {
+                positive_code: "ModStr1h",
+                negative_code: "ModStr1h",
+                group: {},
+                positive: "to Attack Rating",
+                negative: "to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }]
+}, {
+    id: 24,
+    kind: "item.runeword",
+    key: "Runeword14",
+    name: "Chains of Honor",
+    properties: [{
+        key: "res-all",
+        param: "",
+        min: 35,
+        max: 45,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 70,
+        max: 70,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-demon",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "lifesteal",
+        param: "",
+        min: 8,
+        max: 8,
+        modifiers: [{
+            name: "lifedrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2z",
+                    negative_code: "ModStr2z",
+                    group: {},
+                    positive: "Life stolen per hit",
+                    negative: "Life stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "str",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r14", "r22", "r30", "r24"],
+    modifiers: [{
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "lifedrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModStr2z",
+                negative_code: "ModStr2z",
+                group: {},
+                positive: "Life stolen per hit",
+                negative: "Life stolen per hit"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }]
+}, {
+    id: 25,
+    kind: "item.runeword",
+    key: "Runeword9",
+    name: "Bramble",
+    properties: [{
+        key: "balance2",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Thorns",
+        min: 18,
+        max: 21,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "heal-kill",
+        param: "",
+        min: 4,
+        max: 6,
+        modifiers: [{
+            name: "item_healafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModitemHPaK",
+                    negative_code: "ModitemHPaK",
+                    group: {},
+                    positive: "Life after each Kill",
+                    negative: "Life after each Kill"
+                }
+            }
+        }]
+    }, {
+        key: "extra-pois",
+        param: "",
+        min: 40,
+        max: 50,
+        modifiers: [{
+            name: "passive_pois_mastery",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModitemdamPoissk",
+                    negative_code: "ModitemdamPoissk",
+                    group: {},
+                    positive: "to Poison Skill Damage",
+                    negative: "to Poison Skill Damage"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Spirit of Barbs",
+        min: 33,
+        max: 13,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r08", "r27", "r29", "r05"],
+    modifiers: [{
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_healafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModitemHPaK",
+                negative_code: "ModitemHPaK",
+                group: {},
+                positive: "Life after each Kill",
+                negative: "Life after each Kill"
+            }
+        }
+    }, {
+        name: "passive_pois_mastery",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModitemdamPoissk",
+                negative_code: "ModitemdamPoissk",
+                group: {},
+                positive: "to Poison Skill Damage",
+                negative: "to Poison Skill Damage"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }]
+}, {
+    id: 26,
+    kind: "item.runeword",
+    key: "Runeword11",
+    name: "Breath of the Dying",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 125,
+        max: 125,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "lifesteal",
+        param: "",
+        min: 8,
+        max: 12,
+        modifiers: [{
+            name: "lifedrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2z",
+                    negative_code: "ModStr2z",
+                    group: {},
+                    positive: "Life stolen per hit",
+                    negative: "Life stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "noheal",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_preventheal",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4a",
+                    negative_code: "ModStr4a",
+                    group: {},
+                    positive: "Prevent Monster Heal",
+                    negative: "Prevent Monster Heal"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Poison Nova",
+        min: 35,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 350,
+        max: 400,
+        modifiers: []
+    }, {
+        key: "all-stats",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }, {
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r26", "r15", "r01", "r02", "r33", "r05"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "lifedrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModStr2z",
+                negative_code: "ModStr2z",
+                group: {},
+                positive: "Life stolen per hit",
+                negative: "Life stolen per hit"
+            }
+        }
+    }, {
+        name: "item_preventheal",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModStr4a",
+                negative_code: "ModStr4a",
+                group: {},
+                positive: "Prevent Monster Heal",
+                negative: "Prevent Monster Heal"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }]
+}, {
+    id: 27,
+    kind: "item.runeword",
+    key: "Runeword13",
+    name: "Call to Arms",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 200,
+        max: 240,
+        modifiers: []
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Battle Command",
+        min: 2,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Battle Orders",
+        min: 2,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Battle Cry",
+        min: 1,
+        max: 3,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "regen",
+        param: "",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r11", "r08", "r23", "r24", "r27"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }]
+}, {
+    id: 28,
+    kind: "item.runeword",
+    key: "Runeword17",
+    name: "Crescent Moon",
+    properties: [{
+        key: "pierce-ltng",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "passive_ltng_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresltngsk",
+                    negative_code: "Moditemenresltngsk",
+                    group: {},
+                    positive: "to Enemy Lightning Resistance",
+                    negative: "to Enemy Lightning Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "ignore-ac",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_ignoretargetac",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 119,
+                value: 0,
+                label: {
+                    positive_code: "ModStr3y",
+                    negative_code: "ModStr3y",
+                    group: {},
+                    positive: "Ignore Target's Defense",
+                    negative: "Ignore Target's Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 180,
+        max: 220,
+        modifiers: []
+    }, {
+        key: "abs-mag",
+        param: "",
+        min: 3,
+        max: 5,
+        modifiers: [{
+            name: "item_absorbmagic",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 33,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5l",
+                    negative_code: "ModStr5l",
+                    group: {},
+                    positive: "Magic Absorb",
+                    negative: "Magic Absorb"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Summon Spirit Wolf",
+        min: 30,
+        max: 18,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Static Field",
+        min: 12,
+        max: 13,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Lightning",
+        min: 10,
+        max: 27,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["axe", "swor", "h2h", "thro", "taxe", "scep"],
+        extended: []
+    },
+    runes: ["r13", "r22", "r03"],
+    modifiers: [{
+        name: "passive_ltng_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresltngsk",
+                negative_code: "Moditemenresltngsk",
+                group: {},
+                positive: "to Enemy Lightning Resistance",
+                negative: "to Enemy Lightning Resistance"
+            }
+        }
+    }, {
+        name: "item_ignoretargetac",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 119,
+            value: 0,
+            label: {
+                positive_code: "ModStr3y",
+                negative_code: "ModStr3y",
+                group: {},
+                positive: "Ignore Target's Defense",
+                negative: "Ignore Target's Defense"
+            }
+        }
+    }, {
+        name: "item_absorbmagic",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 33,
+            value: 1,
+            label: {
+                positive_code: "ModStr5l",
+                negative_code: "ModStr5l",
+                group: {},
+                positive: "Magic Absorb",
+                negative: "Magic Absorb"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 29,
+    kind: "item.runeword",
+    key: "Runeword22",
+    name: "Delirium",
+    properties: [{
+        key: "hit-skill",
+        param: "Confuse",
+        min: 11,
+        max: 18,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Attract",
+        min: 60,
+        max: 17,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Terror",
+        min: 14,
+        max: 13,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 261,
+        max: 261,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Mind Blast",
+        min: 6,
+        max: 14,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r20", "r24", "r16"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }]
+}, {
+    id: 30,
+    kind: "item.runeword",
+    key: "Runeword26",
+    name: "Doom",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 290,
+        max: 330,
+        modifiers: []
+    }, {
+        key: "aura",
+        param: "Holy Freeze",
+        min: 16,
+        max: 16,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 45,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "noheal",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_preventheal",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4a",
+                    negative_code: "ModStr4a",
+                    group: {},
+                    positive: "Prevent Monster Heal",
+                    negative: "Prevent Monster Heal"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-cold",
+        param: "",
+        min: 30,
+        max: 50,
+        modifiers: [{
+            name: "passive_cold_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrescoldsk",
+                    negative_code: "Moditemenrescoldsk",
+                    group: {},
+                    positive: "to Enemy Cold Resistance",
+                    negative: "to Enemy Cold Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Molten Boulder",
+        min: 10,
+        max: 18,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["axe", "pole", "hamm", "spea", "swor", "scep"],
+        extended: []
+    },
+    runes: ["r15", "r27", "r22", "r28", "r32"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_preventheal",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModStr4a",
+                negative_code: "ModStr4a",
+                group: {},
+                positive: "Prevent Monster Heal",
+                negative: "Prevent Monster Heal"
+            }
+        }
+    }, {
+        name: "passive_cold_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrescoldsk",
+                negative_code: "Moditemenrescoldsk",
+                group: {},
+                positive: "to Enemy Cold Resistance",
+                negative: "to Enemy Cold Resistance"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 31,
+    kind: "item.runeword",
+    key: "Runeword33",
+    name: "Enigma",
+    properties: [{
+        key: "ac",
+        param: "",
+        min: 500,
+        max: 775,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "str/lvl",
+        param: "",
+        min: 4,
+        max: 6,
+        modifiers: [{
+            name: "item_strength_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 66,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "rep-charge",
+        param: 33,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_charges",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 1,
+                value: 0,
+                label: {
+                    secondary_code: "ModStrRepCharge2",
+                    positive_code: "ModStrRepCharge1",
+                    negative_code: "ModStrRepCharge1",
+                    group: {},
+                    secondary: "Charges per 100 seconds (do math)",
+                    positive: "Replenish 1 Charge in 3 Seconds",
+                    negative: "Replenish 1 Charge in 3 Seconds"
+                }
+            }
+        }]
+    }, {
+        key: "mag%/lvl",
+        param: "",
+        min: 4,
+        max: 6,
+        modifiers: [{
+            name: "item_find_magic_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 7,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Blink",
+        min: 5,
+        max: 1,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r31", "r06", "r30"],
+    modifiers: [{
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_strength_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 66,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "item_replenish_charges",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 1,
+            value: 0,
+            label: {
+                secondary_code: "ModStrRepCharge2",
+                positive_code: "ModStrRepCharge1",
+                negative_code: "ModStrRepCharge1",
+                group: {},
+                secondary: "Charges per 100 seconds (do math)",
+                positive: "Replenish 1 Charge in 3 Seconds",
+                negative: "Replenish 1 Charge in 3 Seconds"
+            }
+        }
+    }, {
+        name: "item_find_magic_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 7,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }]
+}, {
+    id: 32,
+    kind: "item.runeword",
+    key: "Runeword137",
+    name: "Stone",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 200,
+        max: 290,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Clay Golem",
+        min: 36,
+        max: 16,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "str-and-vit",
+        param: "",
+        min: 10,
+        max: 16,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "rep-charge",
+        param: 33,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_charges",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 1,
+                value: 0,
+                label: {
+                    secondary_code: "ModStrRepCharge2",
+                    positive_code: "ModStrRepCharge1",
+                    negative_code: "ModStrRepCharge1",
+                    group: {},
+                    secondary: "Charges per 100 seconds (do math)",
+                    positive: "Replenish 1 Charge in 3 Seconds",
+                    negative: "Replenish 1 Charge in 3 Seconds"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r13", "r22", "r21", "r17"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_replenish_charges",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 1,
+            value: 0,
+            label: {
+                secondary_code: "ModStrRepCharge2",
+                positive_code: "ModStrRepCharge1",
+                negative_code: "ModStrRepCharge1",
+                group: {},
+                secondary: "Charges per 100 seconds (do math)",
+                positive: "Replenish 1 Charge in 3 Seconds",
+                negative: "Replenish 1 Charge in 3 Seconds"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }]
+}, {
+    id: 33,
+    kind: "item.runeword",
+    key: "Runeword36",
+    name: "Eternity",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 260,
+        max: 310,
+        modifiers: []
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }, {
+        key: "extra-revives",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "extra_revives",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 68,
+                value: 2,
+                label: {
+                    secondary_code: "StrExtraRevives2",
+                    positive_code: "StrExtraRevives",
+                    negative_code: "StrExtraRevives",
+                    group: {},
+                    secondary: "Additional Revives",
+                    positive: "You May Summon",
+                    negative: "You May Summon"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Revive",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "reanimate",
+        param: 39,
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_reanimate",
+            encoding: 0,
+            description: {
+                function: 23,
+                priority: 17,
+                value: 1,
+                label: {
+                    positive_code: "Moditemreanimas",
+                    negative_code: "Moditemreanimas",
+                    group: {},
+                    positive: "Reanimate as:",
+                    negative: "Reanimate as:"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-norm",
+        param: "",
+        min: 61,
+        max: 71,
+        modifiers: [{
+            name: "mindamage",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 127,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1g",
+                    negative_code: "ModStr1g",
+                    group: {},
+                    positive: "to Minimum Damage",
+                    negative: "to Minimum Damage"
+                }
+            }
+        }, {
+            name: "maxdamage",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 126,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1f",
+                    negative_code: "ModStr1f",
+                    group: {},
+                    positive: "to Maximum Damage",
+                    negative: "to Maximum Damage"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele"],
+        extended: []
+    },
+    runes: ["r11", "r30", "r24", "r12", "r29"],
+    modifiers: [{
+        name: "extra_revives",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 68,
+            value: 2,
+            label: {
+                secondary_code: "StrExtraRevives2",
+                positive_code: "StrExtraRevives",
+                negative_code: "StrExtraRevives",
+                group: {},
+                secondary: "Additional Revives",
+                positive: "You May Summon",
+                negative: "You May Summon"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_reanimate",
+        encoding: 0,
+        description: {
+            function: 23,
+            priority: 17,
+            value: 1,
+            label: {
+                positive_code: "Moditemreanimas",
+                negative_code: "Moditemreanimas",
+                group: {},
+                positive: "Reanimate as:",
+                negative: "Reanimate as:"
+            }
+        }
+    }, {
+        name: "mindamage",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 127,
+            value: 1,
+            label: {
+                positive_code: "ModStr1g",
+                negative_code: "ModStr1g",
+                group: {},
+                positive: "to Minimum Damage",
+                negative: "to Minimum Damage"
+            }
+        }
+    }, {
+        name: "maxdamage",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 126,
+            value: 1,
+            label: {
+                positive_code: "ModStr1f",
+                negative_code: "ModStr1f",
+                group: {},
+                positive: "to Maximum Damage",
+                negative: "to Maximum Damage"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }]
+}, {
+    id: 34,
+    kind: "item.runeword",
+    key: "Runeword37",
+    name: "Exile",
+    properties: [{
+        key: "block2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }, {
+        key: "freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_freeze",
+            encoding: 0,
+            description: {
+                function: 12,
+                priority: 78,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3l",
+                    negative_code: "ModStr3l",
+                    group: {},
+                    positive: "Freezes target",
+                    negative: "Freezes target"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 220,
+        max: 260,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Defiance",
+        min: 13,
+        max: 16,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "skilltab",
+        param: 10,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Decrepify Proc",
+        min: 25,
+        max: 18,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "rep-dur",
+        param: 25,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_durability",
+            encoding: 0,
+            description: {
+                function: 11,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre9t",
+                    negative_code: "ModStre9t",
+                    group: {},
+                    positive: "Repairs %d durability per second",
+                    negative: "Repairs %d durability per second"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r26", "r27", "r24", "r14"],
+    modifiers: [{
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }, {
+        name: "item_freeze",
+        encoding: 0,
+        description: {
+            function: 12,
+            priority: 78,
+            value: 2,
+            label: {
+                positive_code: "ModStr3l",
+                negative_code: "ModStr3l",
+                group: {},
+                positive: "Freezes target",
+                negative: "Freezes target"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_replenish_durability",
+        encoding: 0,
+        description: {
+            function: 11,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre9t",
+                negative_code: "ModStre9t",
+                group: {},
+                positive: "Repairs %d durability per second",
+                negative: "Repairs %d durability per second"
+            }
+        }
+    }]
+}, {
+    id: 35,
+    kind: "item.runeword",
+    key: "Runeword39",
+    name: "Famine",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 280,
+        max: 330,
+        modifiers: []
+    }, {
+        key: "pierce-cold",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "passive_cold_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrescoldsk",
+                    negative_code: "Moditemenrescoldsk",
+                    group: {},
+                    positive: "to Enemy Cold Resistance",
+                    negative: "to Enemy Cold Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-ltng",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "passive_ltng_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresltngsk",
+                    negative_code: "Moditemenresltngsk",
+                    group: {},
+                    positive: "to Enemy Lightning Resistance",
+                    negative: "to Enemy Lightning Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-elem",
+        param: 100,
+        min: 100,
+        max: 225,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }, {
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }, {
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["axe", "hamm", "swor"],
+        extended: []
+    },
+    runes: ["r19", "r27", "r09", "r31"],
+    modifiers: [{
+        name: "passive_cold_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrescoldsk",
+                negative_code: "Moditemenrescoldsk",
+                group: {},
+                positive: "to Enemy Cold Resistance",
+                negative: "to Enemy Cold Resistance"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "passive_ltng_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresltngsk",
+                negative_code: "Moditemenresltngsk",
+                group: {},
+                positive: "to Enemy Lightning Resistance",
+                negative: "to Enemy Lightning Resistance"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }]
+}, {
+    id: 36,
+    kind: "item.runeword",
+    key: "Runeword48",
+    name: "Hand of Justice",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 280,
+        max: 330,
+        modifiers: []
+    }, {
+        key: "aura",
+        param: "Holy Fire",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "levelup-skill",
+        param: "Blaze",
+        min: 100,
+        max: 36,
+        modifiers: [{
+            name: "item_skillonlevelup",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonLevel",
+                    negative_code: "ModitemskonLevel",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                    negative: "%d%% Chance to cast level %d %s when you Level-Up"
+                }
+            }
+        }]
+    }, {
+        key: "death-skill",
+        param: "Meteor",
+        min: 100,
+        max: 48,
+        modifiers: [{
+            name: "item_skillondeath",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "Moditemskondeath",
+                    negative_code: "Moditemskondeath",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Die",
+                    negative: "%d%% Chance to cast level %d %s when you Die"
+                }
+            }
+        }]
+    }, {
+        key: "ignore-ac",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_ignoretargetac",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 119,
+                value: 0,
+                label: {
+                    positive_code: "ModStr3y",
+                    negative_code: "ModStr3y",
+                    group: {},
+                    positive: "Ignore Target's Defense",
+                    negative: "Ignore Target's Defense"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r29", "r32", "r11", "r28"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_skillonlevelup",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonLevel",
+                negative_code: "ModitemskonLevel",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                negative: "%d%% Chance to cast level %d %s when you Level-Up"
+            }
+        }
+    }, {
+        name: "item_skillondeath",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "Moditemskondeath",
+                negative_code: "Moditemskondeath",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Die",
+                negative: "%d%% Chance to cast level %d %s when you Die"
+            }
+        }
+    }, {
+        name: "item_ignoretargetac",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 119,
+            value: 0,
+            label: {
+                positive_code: "ModStr3y",
+                negative_code: "ModStr3y",
+                group: {},
+                positive: "Ignore Target's Defense",
+                negative: "Ignore Target's Defense"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }]
+}, {
+    id: 37,
+    kind: "item.runeword",
+    key: "Runeword51",
+    name: "Heart of the Oak",
+    properties: [{
+        key: "cast2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Raven",
+        min: 60,
+        max: 14,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "mana%",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_maxmana_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 54,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2h",
+                    negative_code: "ModStr2h",
+                    group: {},
+                    positive: "Increase Maximum Mana",
+                    negative: "Increase Maximum Mana"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "regen",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: 226,
+        min: 25,
+        max: 4,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf", "mace"],
+        extended: []
+    },
+    runes: ["r18", "r26", "r21", "r10"],
+    modifiers: [{
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_maxmana_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 54,
+            value: 2,
+            label: {
+                positive_code: "ModStr2h",
+                negative_code: "ModStr2h",
+                group: {},
+                positive: "Increase Maximum Mana",
+                negative: "Increase Maximum Mana"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }]
+}, {
+    id: 38,
+    kind: "item.runeword",
+    key: "Runeword66",
+    name: "Kingslayer",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 230,
+        max: 270,
+        modifiers: []
+    }, {
+        key: "reduce-ac",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fractionaltargetac",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 118,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5o",
+                    negative_code: "ModStr5o",
+                    group: {},
+                    positive: "Target Defense",
+                    negative: "Target Defense"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-cold",
+        param: 50,
+        min: 250,
+        max: 500,
+        modifiers: [{
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Vengeance",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "rep-dur",
+        param: 10,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_durability",
+            encoding: 0,
+            description: {
+                function: 11,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre9t",
+                    negative_code: "ModStre9t",
+                    group: {},
+                    positive: "Repairs %d durability per second",
+                    negative: "Repairs %d durability per second"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "axe"],
+        extended: []
+    },
+    runes: ["r23", "r22", "r25", "r19"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fractionaltargetac",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 118,
+            value: 1,
+            label: {
+                positive_code: "ModStr5o",
+                negative_code: "ModStr5o",
+                group: {},
+                positive: "Target Defense",
+                negative: "Target Defense"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_replenish_durability",
+        encoding: 0,
+        description: {
+            function: 11,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre9t",
+                negative_code: "ModStre9t",
+                group: {},
+                positive: "Repairs %d durability per second",
+                negative: "Repairs %d durability per second"
+            }
+        }
+    }]
+}, {
+    id: 39,
+    kind: "item.runeword",
+    key: "Runeword95",
+    name: "Passion",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 160,
+        max: 210,
+        modifiers: []
+    }, {
+        key: "oskill",
+        param: "Zeal",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "att%",
+        param: "",
+        min: 50,
+        max: 80,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Concentrate",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Heart of Wolverine",
+        min: 36,
+        max: 8,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "stupidity",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_stupidity",
+            encoding: 0,
+            description: {
+                function: 12,
+                priority: 80,
+                value: 2,
+                label: {
+                    positive_code: "ModStr6d",
+                    negative_code: "ModStr6d",
+                    group: {},
+                    positive: "Hit Blinds Target",
+                    negative: "Hit Blinds Target"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r14", "r09", "r02", "r20"],
+    modifiers: [{
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_stupidity",
+        encoding: 0,
+        description: {
+            function: 12,
+            priority: 80,
+            value: 2,
+            label: {
+                positive_code: "ModStr6d",
+                negative_code: "ModStr6d",
+                group: {},
+                positive: "Hit Blinds Target",
+                negative: "Hit Blinds Target"
+            }
+        }
+    }]
+}, {
+    id: 40,
+    kind: "item.runeword",
+    key: "Runeword45",
+    name: "Gloom",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 170,
+        max: 230,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Dim Vision",
+        min: 15,
+        max: 9,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 40,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-to-mana",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_damagetomana",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 11,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3w_PD2",
+                    negative_code: "ModStr3w_PD2",
+                    group: {},
+                    positive: "Damage Taken Gained as Mana when Hit",
+                    negative: "Damage Taken Gained as Mana when Hit"
+                }
+            }
+        }]
+    }, {
+        key: "curse-effectiveness",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "curse_effectiveness",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "StrCurseEffectiveness",
+                    negative_code: "StrCurseEffectiveness",
+                    group: {},
+                    positive: "Curse Resistance",
+                    negative: "Curse Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "half-freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_halffreezeduration",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 19,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4b",
+                    negative_code: "ModStr4b",
+                    group: {},
+                    positive: "Half Freeze Duration",
+                    negative: "Half Freeze Duration"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r19", "r22", "r21"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_damagetomana",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 11,
+            value: 1,
+            label: {
+                positive_code: "ModStr3w_PD2",
+                negative_code: "ModStr3w_PD2",
+                group: {},
+                positive: "Damage Taken Gained as Mana when Hit",
+                negative: "Damage Taken Gained as Mana when Hit"
+            }
+        }
+    }, {
+        name: "curse_effectiveness",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "StrCurseEffectiveness",
+                negative_code: "StrCurseEffectiveness",
+                group: {},
+                positive: "Curse Resistance",
+                negative: "Curse Resistance"
+            }
+        }
+    }, {
+        name: "item_halffreezeduration",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 19,
+            value: 0,
+            label: {
+                positive_code: "ModStr4b",
+                negative_code: "ModStr4b",
+                group: {},
+                positive: "Half Freeze Duration",
+                negative: "Half Freeze Duration"
+            }
+        }
+    }]
+}, {
+    id: 41,
+    kind: "item.runeword",
+    key: "Runeword122",
+    name: "Sanctuary",
+    properties: [{
+        key: "block",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "toblock",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 134,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3g",
+                    negative_code: "ModStr3g",
+                    group: {},
+                    positive: "Increased Chance of Blocking",
+                    negative: "Increased Chance of Blocking"
+                }
+            }
+        }]
+    }, {
+        key: "block2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 130,
+        max: 160,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Slow Movement",
+        min: 60,
+        max: 12,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 40,
+        max: 50,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r18", "r18", "r23"],
+    modifiers: [{
+        name: "toblock",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 134,
+            value: 1,
+            label: {
+                positive_code: "ModStr3g",
+                negative_code: "ModStr3g",
+                group: {},
+                positive: "Increased Chance of Blocking",
+                negative: "Increased Chance of Blocking"
+            }
+        }
+    }, {
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }]
+}, {
+    id: 42,
+    kind: "item.runeword",
+    key: "Runeword16",
+    name: "Chaos",
+    properties: [{
+        key: "demon-heal",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_healafterdemonkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 15,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6c",
+                    negative_code: "ModStr6c",
+                    group: {},
+                    positive: "Life after each Demon Kill",
+                    negative: "Life after each Demon Kill"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 200,
+        max: 250,
+        modifiers: []
+    }, {
+        key: "dmg-mag",
+        param: "",
+        min: 200,
+        max: 400,
+        modifiers: [{
+            name: "magicmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 104,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }, {
+            name: "magicmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 103,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 380,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Charged Bolt",
+        min: 18,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Frozen Orb",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }],
+    types: {
+        base: ["h2h"],
+        extended: []
+    },
+    runes: ["r19", "r27", "r22"],
+    modifiers: [{
+        name: "item_healafterdemonkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 15,
+            value: 1,
+            label: {
+                positive_code: "ModStr6c",
+                negative_code: "ModStr6c",
+                group: {},
+                positive: "Life after each Demon Kill",
+                negative: "Life after each Demon Kill"
+            }
+        }
+    }, {
+        name: "magicmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 104,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "magicmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 103,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 43,
+    kind: "item.runeword",
+    key: "Runeword4",
+    name: "Beast",
+    properties: [{
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Fanaticism",
+        min: 8,
+        max: 10,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 260,
+        max: 290,
+        modifiers: []
+    }, {
+        key: "oskill",
+        param: "Hunger",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Summon Grizzly",
+        min: 35,
+        max: 13,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Wearbear",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Maul",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["axe", "scep", "hamm", "staf"],
+        extended: []
+    },
+    runes: ["r30", "r03", "r22", "r23", "r17"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 44,
+    kind: "item.runeword",
+    key: "Runeword123",
+    name: "Serendipity",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 45,
+    kind: "item.runeword",
+    key: "Runeword124",
+    name: "Shadow",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 46,
+    kind: "item.runeword",
+    key: "Runeword125",
+    name: "Shadow of Doubt",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 47,
+    kind: "item.runeword",
+    key: "Runeword127",
+    name: "Siren's Song",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 48,
+    kind: "item.runeword",
+    key: "Runeword129",
+    name: "Sorrow",
+    properties: [{
+        key: "ease",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_req_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 0,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3h",
+                    negative_code: "ModStr3h",
+                    group: {},
+                    positive: "Requirements",
+                    negative: "Requirements"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: [{
+        name: "item_req_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 0,
+            value: 2,
+            label: {
+                positive_code: "ModStr3h",
+                negative_code: "ModStr3h",
+                group: {},
+                positive: "Requirements",
+                negative: "Requirements"
+            }
+        }
+    }]
+}, {
+    id: 49,
+    kind: "item.runeword",
+    key: "Runeword130",
+    name: "Spirit",
+    properties: [{
+        key: "balance3",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 59,
+        max: 82,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "ease",
+        param: "",
+        min: -15,
+        max: -15,
+        modifiers: [{
+            name: "item_req_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 0,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3h",
+                    negative_code: "ModStr3h",
+                    group: {},
+                    positive: "Requirements",
+                    negative: "Requirements"
+                }
+            }
+        }]
+    }, {
+        key: "vit",
+        param: "",
+        min: 11,
+        max: 22,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "cast3",
+        param: "",
+        min: 25,
+        max: 35,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "abs-mag",
+        param: "",
+        min: 3,
+        max: 8,
+        modifiers: [{
+            name: "item_absorbmagic",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 33,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5l",
+                    negative_code: "ModStr5l",
+                    group: {},
+                    positive: "Magic Absorb",
+                    negative: "Magic Absorb"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "shld"],
+        extended: []
+    },
+    runes: ["r07", "r10", "r09", "r11"],
+    modifiers: [{
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "item_req_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 0,
+            value: 2,
+            label: {
+                positive_code: "ModStr3h",
+                negative_code: "ModStr3h",
+                group: {},
+                positive: "Requirements",
+                negative: "Requirements"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_absorbmagic",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 33,
+            value: 1,
+            label: {
+                positive_code: "ModStr5l",
+                negative_code: "ModStr5l",
+                group: {},
+                positive: "Magic Absorb",
+                negative: "Magic Absorb"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }]
+}, {
+    id: 50,
+    kind: "item.runeword",
+    key: "Runeword131",
+    name: "Splendor",
+    properties: [{
+        key: "light",
+        param: "",
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "mag%",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_magicbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 8,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 60,
+        max: 100,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "block2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 20,
+        max: 35,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r05", "r17"],
+    modifiers: [{
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_magicbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 8,
+            value: 1,
+            label: {
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }]
+}, {
+    id: 51,
+    kind: "item.runeword",
+    key: "Runeword132",
+    name: "Starlight",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 52,
+    kind: "item.runeword",
+    key: "Runeword135",
+    name: "Still Water",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 53,
+    kind: "item.runeword",
+    key: "Runeword30",
+    name: "Duress",
+    properties: [{
+        key: "dmg-cold",
+        param: 50,
+        min: 37,
+        max: 133,
+        modifiers: [{
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 40,
+        max: 80,
+        modifiers: []
+    }, {
+        key: "ac%",
+        param: "",
+        min: 150,
+        max: 200,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "openwounds",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_openwounds",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 83,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3m",
+                    negative_code: "ModStr3m",
+                    group: {},
+                    positive: "Chance of Open Wounds",
+                    negative: "Chance of Open Wounds"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "stamdrain",
+        param: "",
+        min: -20,
+        max: -20,
+        modifiers: [{
+            name: "item_staminadrainpct",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 49,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6e",
+                    negative_code: "ModStr6e",
+                    group: {},
+                    positive: "Slower Stamina Drain",
+                    negative: "Slower Stamina Drain"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r13", "r22", "r10"],
+    modifiers: [{
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_openwounds",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 83,
+            value: 1,
+            label: {
+                positive_code: "ModStr3m",
+                negative_code: "ModStr3m",
+                group: {},
+                positive: "Chance of Open Wounds",
+                negative: "Chance of Open Wounds"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_staminadrainpct",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 49,
+            value: 1,
+            label: {
+                positive_code: "ModStr6e",
+                negative_code: "ModStr6e",
+                group: {},
+                positive: "Slower Stamina Drain",
+                negative: "Slower Stamina Drain"
+            }
+        }
+    }]
+}, {
+    id: 54,
+    kind: "item.runeword",
+    key: "Runeword138",
+    name: "Storm",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 55,
+    kind: "item.runeword",
+    key: "Runeword140",
+    name: "Tempest",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 56,
+    kind: "item.runeword",
+    key: "Runeword141",
+    name: "Temptation",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 57,
+    kind: "item.runeword",
+    key: "Runeword142",
+    name: "Terror",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 58,
+    kind: "item.runeword",
+    key: "Runeword90",
+    name: "Night",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 59,
+    kind: "item.runeword",
+    key: "Runeword91",
+    name: "Oath",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 210,
+        max: 340,
+        modifiers: []
+    }, {
+        key: "swing1",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Bone Spirit",
+        min: 30,
+        max: 20,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }, {
+        key: "charged",
+        param: "Heart of Wolverine",
+        min: 20,
+        max: 16,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "abs-mag",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "item_absorbmagic",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 33,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5l",
+                    negative_code: "ModStr5l",
+                    group: {},
+                    positive: "Magic Absorb",
+                    negative: "Magic Absorb"
+                }
+            }
+        }]
+    }, {
+        key: "rep-charge",
+        param: 33,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_charges",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 1,
+                value: 0,
+                label: {
+                    secondary_code: "ModStrRepCharge2",
+                    positive_code: "ModStrRepCharge1",
+                    negative_code: "ModStrRepCharge1",
+                    group: {},
+                    secondary: "Charges per 100 seconds (do math)",
+                    positive: "Replenish 1 Charge in 3 Seconds",
+                    negative: "Replenish 1 Charge in 3 Seconds"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "axe", "mace"],
+        extended: []
+    },
+    runes: ["r13", "r21", "r23", "r17"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_absorbmagic",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 33,
+            value: 1,
+            label: {
+                positive_code: "ModStr5l",
+                negative_code: "ModStr5l",
+                group: {},
+                positive: "Magic Absorb",
+                negative: "Magic Absorb"
+            }
+        }
+    }, {
+        name: "item_replenish_charges",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 1,
+            value: 0,
+            label: {
+                secondary_code: "ModStrRepCharge2",
+                positive_code: "ModStrRepCharge1",
+                negative_code: "ModStrRepCharge1",
+                group: {},
+                secondary: "Charges per 100 seconds (do math)",
+                positive: "Replenish 1 Charge in 3 Seconds",
+                negative: "Replenish 1 Charge in 3 Seconds"
+            }
+        }
+    }]
+}, {
+    id: 60,
+    kind: "item.runeword",
+    key: "Runeword92",
+    name: "Obedience",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 280,
+        max: 320,
+        modifiers: []
+    }, {
+        key: "crush",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "kill-skill",
+        param: "enchant",
+        min: 30,
+        max: 21,
+        modifiers: [{
+            name: "item_skillonkill",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonKill",
+                    negative_code: "ModitemskonKill",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Kill an Enemy",
+                    negative: "%d%% Chance to cast level %d %s when you Kill an Enemy"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 200,
+        max: 300,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "balance3",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "spea", "hamm"],
+        extended: []
+    },
+    runes: ["r15", "r18", "r10", "r05", "r19"],
+    modifiers: [{
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_skillonkill",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonKill",
+                negative_code: "ModitemskonKill",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Kill an Enemy",
+                negative: "%d%% Chance to cast level %d %s when you Kill an Enemy"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }]
+}, {
+    id: 61,
+    kind: "item.runeword",
+    key: "Runeword93",
+    name: "Oblivion",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 62,
+    kind: "item.runeword",
+    key: "Runeword94",
+    name: "Obsession",
+    properties: [{
+        key: "allskills",
+        param: "",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Weaken",
+        min: 24,
+        max: 18,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "hp%",
+        param: "",
+        min: 15,
+        max: 25,
+        modifiers: [{
+            name: "item_maxhp_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 58,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2g",
+                    negative_code: "ModStr2g",
+                    group: {},
+                    positive: "Increase Maximum Life",
+                    negative: "Increase Maximum Life"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 60,
+        max: 70,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "regen-mana",
+        param: "",
+        min: 15,
+        max: 30,
+        modifiers: [{
+            name: "manarecoverybonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 52,
+                value: 2,
+                label: {
+                    positive_code: "ModStr4g",
+                    negative_code: "ModStr4g",
+                    group: {},
+                    positive: "Regenerate Mana",
+                    negative: "Regenerate Mana"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r33", "r24", "r20", "r17", "r16", "r04"],
+    modifiers: [{
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_maxhp_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 58,
+            value: 2,
+            label: {
+                positive_code: "ModStr2g",
+                negative_code: "ModStr2g",
+                group: {},
+                positive: "Increase Maximum Life",
+                negative: "Increase Maximum Life"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "manarecoverybonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 52,
+            value: 2,
+            label: {
+                positive_code: "ModStr4g",
+                negative_code: "ModStr4g",
+                group: {},
+                positive: "Regenerate Mana",
+                negative: "Regenerate Mana"
+            }
+        }
+    }]
+}, {
+    id: 63,
+    kind: "item.runeword",
+    key: "Runeword49",
+    name: "Harmony",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 200,
+        max: 275,
+        modifiers: []
+    }, {
+        key: "dmg-elem",
+        param: "",
+        min: 55,
+        max: 160,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }, {
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }, {
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Revive",
+        min: 25,
+        max: 20,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Vigor",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "regen-mana",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "manarecoverybonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 52,
+                value: 2,
+                label: {
+                    positive_code: "ModStr4g",
+                    negative_code: "ModStr4g",
+                    group: {},
+                    positive: "Regenerate Mana",
+                    negative: "Regenerate Mana"
+                }
+            }
+        }]
+    }, {
+        key: "light",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_lightradius",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 6,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3f",
+                    negative_code: "ModStr3f",
+                    group: {},
+                    positive: "to Light Radius",
+                    negative: "to Light Radius"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 32,
+        min: 3,
+        max: 6,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r03", "r06", "r12", "r18"],
+    modifiers: [{
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "manarecoverybonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 52,
+            value: 2,
+            label: {
+                positive_code: "ModStr4g",
+                negative_code: "ModStr4g",
+                group: {},
+                positive: "Regenerate Mana",
+                negative: "Regenerate Mana"
+            }
+        }
+    }, {
+        name: "item_lightradius",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 6,
+            value: 1,
+            label: {
+                positive_code: "ModStr3f",
+                negative_code: "ModStr3f",
+                group: {},
+                positive: "to Light Radius",
+                negative: "to Light Radius"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 64,
+    kind: "item.runeword",
+    key: "Runeword50",
+    name: "Hatred",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 65,
+    kind: "item.runeword",
+    key: "Runeword40",
+    name: "Flickering Flame",
+    properties: [{
+        key: "aura",
+        param: "resist fire",
+        min: 1,
+        max: 6,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "fireskill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_elemskill",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 1,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }, {
+            name: "item_elemskill_fire",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 157,
+                value: 1,
+                label: {
+                    positive_code: "ModStrFireskills",
+                    negative_code: "ModStrFireskills",
+                    group: {},
+                    positive: "to Fire Skills",
+                    negative: "to Fire Skills"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 5,
+        max: 10,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 65,
+        max: 75,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "half-freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_halffreezeduration",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 19,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4b",
+                    negative_code: "ModStr4b",
+                    group: {},
+                    positive: "Half Freeze Duration",
+                    negative: "Half Freeze Duration"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois-len",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_poisonlengthresist",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 18,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3r",
+                    negative_code: "ModStr3r",
+                    group: {},
+                    positive: "Poison Length Reduced by",
+                    negative: "Poison Length Reduced by"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r04", "r21", "r26"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_elemskill",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 1,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_elemskill_fire",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 157,
+            value: 1,
+            label: {
+                positive_code: "ModStrFireskills",
+                negative_code: "ModStrFireskills",
+                group: {},
+                positive: "to Fire Skills",
+                negative: "to Fire Skills"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "item_halffreezeduration",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 19,
+            value: 0,
+            label: {
+                positive_code: "ModStr4b",
+                negative_code: "ModStr4b",
+                group: {},
+                positive: "Half Freeze Duration",
+                negative: "Half Freeze Duration"
+            }
+        }
+    }, {
+        name: "item_poisonlengthresist",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 18,
+            value: 2,
+            label: {
+                positive_code: "ModStr3r",
+                negative_code: "ModStr3r",
+                group: {},
+                positive: "Poison Length Reduced by",
+                negative: "Poison Length Reduced by"
+            }
+        }
+    }]
+}, {
+    id: 66,
+    kind: "item.runeword",
+    key: "Runeword41",
+    name: "Fortitude",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 250,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "cast3",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-to-mana",
+        param: "",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_damagetomana",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 11,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3w_PD2",
+                    negative_code: "ModStr3w_PD2",
+                    group: {},
+                    positive: "Damage Taken Gained as Mana when Hit",
+                    negative: "Damage Taken Gained as Mana when Hit"
+                }
+            }
+        }]
+    }, {
+        key: "hp/lvl",
+        param: "",
+        min: 8,
+        max: 12,
+        modifiers: [{
+            name: "item_hp_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 57,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 25,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r01", "r12", "r14", "r28"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_damagetomana",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 11,
+            value: 1,
+            label: {
+                positive_code: "ModStr3w_PD2",
+                negative_code: "ModStr3w_PD2",
+                group: {},
+                positive: "Damage Taken Gained as Mana when Hit",
+                negative: "Damage Taken Gained as Mana when Hit"
+            }
+        }
+    }, {
+        name: "item_hp_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 57,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }]
+}, {
+    id: 67,
+    kind: "item.runeword",
+    key: "Runeword42",
+    name: "Fortune",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 68,
+    kind: "item.runeword",
+    key: "Runeword89",
+    name: "Nature's Kingdom",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 69,
+    kind: "item.runeword",
+    key: "Runeword46",
+    name: "Glory",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 70,
+    kind: "item.runeword",
+    key: "Runeword38",
+    name: "Faith",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 280,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "att%",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 120,
+        max: 120,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "fanaticism",
+        min: 12,
+        max: 15,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "reanimate",
+        param: 1,
+        min: 6,
+        max: 8,
+        modifiers: [{
+            name: "item_reanimate",
+            encoding: 0,
+            description: {
+                function: 23,
+                priority: 17,
+                value: 1,
+                label: {
+                    positive_code: "Moditemreanimas",
+                    negative_code: "Moditemreanimas",
+                    group: {},
+                    positive: "Reanimate as:",
+                    negative: "Reanimate as:"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r27", "r31", "r20", "r02"],
+    modifiers: [{
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_reanimate",
+        encoding: 0,
+        description: {
+            function: 23,
+            priority: 17,
+            value: 1,
+            label: {
+                positive_code: "Moditemreanimas",
+                negative_code: "Moditemreanimas",
+                group: {},
+                positive: "Reanimate as:",
+                negative: "Reanimate as:"
+            }
+        }
+    }]
+}, {
+    id: 71,
+    kind: "item.runeword",
+    key: "Runeword43",
+    name: "Friendship",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 72,
+    kind: "item.runeword",
+    key: "Runeword2",
+    name: "Armageddon",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 73,
+    kind: "item.runeword",
+    key: "Runeword3",
+    name: "Authority",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 74,
+    kind: "item.runeword",
+    key: "Runeword5",
+    name: "Beauty",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 75,
+    kind: "item.runeword",
+    key: "Runeword7",
+    name: "Blood",
+    properties: [],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 76,
+    kind: "item.runeword",
+    key: "Runeword8",
+    name: "Bone",
+    properties: [{
+        key: "hit-skill",
+        param: "Bone Spear",
+        min: 30,
+        max: 25,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Bone Armor",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "nec",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r12", "r22", "r22"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }]
+}, {
+    id: 77,
+    kind: "item.runeword",
+    key: "Runeword10",
+    name: "Brand",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 260,
+        max: 340,
+        modifiers: []
+    }, {
+        key: "dmg-demon",
+        param: "",
+        min: 280,
+        max: 330,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 84,
+        min: 50,
+        max: 45,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "AmpDmg Proc",
+        min: 65,
+        max: 31,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "knock",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_knockback",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 76,
+                value: 0,
+                label: {
+                    positive_code: "ModStr1y",
+                    negative_code: "ModStr1y",
+                    group: {},
+                    positive: "Knockback",
+                    negative: "Knockback"
+                }
+            }
+        }]
+    }, {
+        key: "explosivearrow",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_explosivearrow",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 133,
+                value: 0,
+                label: {
+                    positive_code: "ModStr6i",
+                    negative_code: "ModStr6i",
+                    group: {},
+                    positive: "Fires Explosive Arrows or Bolts",
+                    negative: "Fires Explosive Arrows or Bolts"
+                }
+            }
+        }]
+    }, {
+        key: "extra-skele-archer",
+        param: "",
+        min: 8,
+        max: 8,
+        modifiers: [{
+            name: "extra_skele_archer",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 150,
+                value: 2,
+                label: {
+                    secondary_code: "ExtraSkeleArcher",
+                    positive_code: "YouMaySummon",
+                    negative_code: "YouMaySummon",
+                    group: {},
+                    secondary: "Additional Skeleton Archers",
+                    positive: "You May Summon",
+                    negative: "You May Summon"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r31", "r28", "r23", "r25"],
+    modifiers: [{
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_knockback",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 76,
+            value: 0,
+            label: {
+                positive_code: "ModStr1y",
+                negative_code: "ModStr1y",
+                group: {},
+                positive: "Knockback",
+                negative: "Knockback"
+            }
+        }
+    }, {
+        name: "item_explosivearrow",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 133,
+            value: 0,
+            label: {
+                positive_code: "ModStr6i",
+                negative_code: "ModStr6i",
+                group: {},
+                positive: "Fires Explosive Arrows or Bolts",
+                negative: "Fires Explosive Arrows or Bolts"
+            }
+        }
+    }, {
+        name: "extra_skele_archer",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 150,
+            value: 2,
+            label: {
+                secondary_code: "ExtraSkeleArcher",
+                positive_code: "YouMaySummon",
+                negative_code: "YouMaySummon",
+                group: {},
+                secondary: "Additional Skeleton Archers",
+                positive: "You May Summon",
+                negative: "You May Summon"
+            }
+        }
+    }]
+}, {
+    id: 78,
+    kind: "item.runeword",
+    key: "Runeword12",
+    name: "Broken Promise",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 79,
+    kind: "item.runeword",
+    key: "Runeword15",
+    name: "Chance",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 80,
+    kind: "item.runeword",
+    key: "Runeword136",
+    name: "Sting",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 81,
+    kind: "item.runeword",
+    key: "Runeword18",
+    name: "Darkness",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 82,
+    kind: "item.runeword",
+    key: "Runeword19",
+    name: "Daylight",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 83,
+    kind: "item.runeword",
+    key: "Runeword20",
+    name: "Death",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 275,
+        max: 320,
+        modifiers: []
+    }, {
+        key: "deadly/lvl",
+        param: 2,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_deadlystrike_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 84,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr5q",
+                    negative_code: "ModStr5q",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Deadly Strike",
+                    negative: "Deadly Strike"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "BloodGolem",
+        min: 18,
+        max: 18,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "att-skill",
+        param: "Glacial Spike",
+        min: 25,
+        max: 18,
+        modifiers: [{
+            name: "item_skillonattack",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChancX",
+                    negative_code: "ItemExpansiveChancX",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on attack",
+                    negative: "%d%% Chance to cast level %d %s on attack"
+                }
+            }
+        }]
+    }, {
+        key: "death-skill",
+        param: "Chain Lightning",
+        min: 100,
+        max: 44,
+        modifiers: [{
+            name: "item_skillondeath",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "Moditemskondeath",
+                    negative_code: "Moditemskondeath",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Die",
+                    negative: "%d%% Chance to cast level %d %s when you Die"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "indestruct",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: []
+    }],
+    types: {
+        base: ["swor", "axe"],
+        extended: []
+    },
+    runes: ["r15", "r01", "r26", "r09", "r25"],
+    modifiers: [{
+        name: "item_deadlystrike_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 84,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr5q",
+                negative_code: "ModStr5q",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Deadly Strike",
+                negative: "Deadly Strike"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_skillonattack",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChancX",
+                negative_code: "ItemExpansiveChancX",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on attack",
+                negative: "%d%% Chance to cast level %d %s on attack"
+            }
+        }
+    }, {
+        name: "item_skillondeath",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "Moditemskondeath",
+                negative_code: "Moditemskondeath",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Die",
+                negative: "%d%% Chance to cast level %d %s when you Die"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }]
+}, {
+    id: 84,
+    kind: "item.runeword",
+    key: "Runeword21",
+    name: "Deception",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 85,
+    kind: "item.runeword",
+    key: "Runeword23",
+    name: "Desire",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 86,
+    kind: "item.runeword",
+    key: "Runeword24",
+    name: "Despair",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 87,
+    kind: "item.runeword",
+    key: "Runeword32",
+    name: "Elation",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 88,
+    kind: "item.runeword",
+    key: "Runeword25",
+    name: "Destruction",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 30,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Molten Boulder",
+        min: 8,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Meteor",
+        min: 15,
+        max: 45,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "att-skill",
+        param: "Nova",
+        min: 15,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonattack",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChancX",
+                    negative_code: "ItemExpansiveChancX",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on attack",
+                    negative: "%d%% Chance to cast level %d %s on attack"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Frost Nova",
+        min: 20,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "swor", "spea"],
+        extended: []
+    },
+    runes: ["r26", "r28", "r30", "r31", "r18"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonattack",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChancX",
+                negative_code: "ItemExpansiveChancX",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on attack",
+                negative: "%d%% Chance to cast level %d %s on attack"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 89,
+    kind: "item.runeword",
+    key: "Runeword27",
+    name: "Dragon",
+    properties: [{
+        key: "ac",
+        param: "",
+        min: 400,
+        max: 550,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 62,
+        min: 4,
+        max: 5,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "str/lvl",
+        param: 3,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_strength_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 66,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Hydra",
+        min: 12,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Venom",
+        min: 20,
+        max: 18,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Holy Fire",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "extra-hydra",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "extra_hydra",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 240,
+                value: 2,
+                label: {
+                    secondary_code: "ExtraHydra",
+                    positive_code: "YouMaySummon",
+                    negative_code: "YouMaySummon",
+                    group: {},
+                    secondary: "Additional Hydra",
+                    positive: "You May Summon",
+                    negative: "You May Summon"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors", "shld"],
+        extended: []
+    },
+    runes: ["r29", "r28", "r12"],
+    modifiers: [{
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_strength_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 66,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "extra_hydra",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 240,
+            value: 2,
+            label: {
+                secondary_code: "ExtraHydra",
+                positive_code: "YouMaySummon",
+                negative_code: "YouMaySummon",
+                group: {},
+                secondary: "Additional Hydra",
+                positive: "You May Summon",
+                negative: "You May Summon"
+            }
+        }
+    }]
+}, {
+    id: 90,
+    kind: "item.runeword",
+    key: "Runeword28",
+    name: "Dread",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 91,
+    kind: "item.runeword",
+    key: "Runeword29",
+    name: "Dream",
+    properties: [{
+        key: "ac",
+        param: "",
+        min: 150,
+        max: 220,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Confuse",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "mana/lvl",
+        param: 5,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_mana_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 53,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance3",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Holy Shock",
+        min: 14,
+        max: 14,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "mag%",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_magicbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 8,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm", "shld"],
+        extended: []
+    },
+    runes: ["r16", "r31", "r21"],
+    modifiers: [{
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_mana_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 53,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_magicbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 8,
+            value: 1,
+            label: {
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }]
+}, {
+    id: 92,
+    kind: "item.runeword",
+    key: "Runeword56",
+    name: "Revenge",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 93,
+    kind: "item.runeword",
+    key: "Runeword31",
+    name: "Edge",
+    properties: [{
+        key: "dmg-demon",
+        param: "",
+        min: 320,
+        max: 380,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 280,
+        max: 280,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 35,
+        max: 35,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "noheal",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_preventheal",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4a",
+                    negative_code: "ModStr4a",
+                    group: {},
+                    positive: "Prevent Monster Heal",
+                    negative: "Prevent Monster Heal"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Thorns",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "all-stats",
+        param: "",
+        min: 5,
+        max: 10,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }, {
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r03", "r07", "r11"],
+    modifiers: [{
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_preventheal",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModStr4a",
+                negative_code: "ModStr4a",
+                group: {},
+                positive: "Prevent Monster Heal",
+                negative: "Prevent Monster Heal"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }]
+}, {
+    id: 94,
+    kind: "item.runeword",
+    key: "Runeword34",
+    name: "Enlightenment",
+    properties: [{
+        key: "cast-skill",
+        param: "Fire Ball",
+        min: 25,
+        max: 28,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Blaze",
+        min: 35,
+        max: 25,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "sor",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Warmth",
+        min: 5,
+        max: 8,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r21", "r08", "r12"],
+    modifiers: [{
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }]
+}, {
+    id: 95,
+    kind: "item.runeword",
+    key: "Runeword35",
+    name: "Envy",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 96,
+    kind: "item.runeword",
+    key: "Runeword52",
+    name: "Heaven's Will",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 97,
+    kind: "item.runeword",
+    key: "Runeword53",
+    name: "Holy Tears",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 98,
+    kind: "item.runeword",
+    key: "Runeword57",
+    name: "Humility",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 99,
+    kind: "item.runeword",
+    key: "Runeword58",
+    name: "Hunger",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 100,
+    kind: "item.runeword",
+    key: "Runeword59",
+    name: "Ice",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 140,
+        max: 210,
+        modifiers: []
+    }, {
+        key: "aura",
+        param: "Holy Freeze",
+        min: 18,
+        max: 18,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "extra-cold",
+        param: "",
+        min: 25,
+        max: 30,
+        modifiers: [{
+            name: "passive_cold_mastery",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModitemdamColdsk",
+                    negative_code: "ModitemdamColdsk",
+                    group: {},
+                    positive: "to Cold Skill Damage",
+                    negative: "to Cold Skill Damage"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Frost Nova",
+        min: 20,
+        max: 32,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "levelup-skill",
+        param: "Blizzard",
+        min: 100,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonlevelup",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonLevel",
+                    negative_code: "ModitemskonLevel",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                    negative: "%d%% Chance to cast level %d %s when you Level-Up"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-cold",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "passive_cold_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrescoldsk",
+                    negative_code: "Moditemenrescoldsk",
+                    group: {},
+                    positive: "to Enemy Cold Resistance",
+                    negative: "to Enemy Cold Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "gold%/lvl",
+        param: 25,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_find_gold_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 9,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r11", "r13", "r31", "r28"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "passive_cold_mastery",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModitemdamColdsk",
+                negative_code: "ModitemdamColdsk",
+                group: {},
+                positive: "to Cold Skill Damage",
+                negative: "to Cold Skill Damage"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonlevelup",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonLevel",
+                negative_code: "ModitemskonLevel",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                negative: "%d%% Chance to cast level %d %s when you Level-Up"
+            }
+        }
+    }, {
+        name: "passive_cold_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrescoldsk",
+                negative_code: "Moditemenrescoldsk",
+                group: {},
+                positive: "to Enemy Cold Resistance",
+                negative: "to Enemy Cold Resistance"
+            }
+        }
+    }, {
+        name: "item_find_gold_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 9,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }]
+}, {
+    id: 101,
+    kind: "item.runeword",
+    key: "Runeword60",
+    name: "Infinity",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 255,
+        max: 325,
+        modifiers: []
+    }, {
+        key: "move2",
+        param: "",
+        min: 35,
+        max: 35,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "vit/lvl",
+        param: 4,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_vitality_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 62,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Conviction",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Chain Lightning",
+        min: 25,
+        max: 20,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-ltng",
+        param: "",
+        min: 45,
+        max: 55,
+        modifiers: [{
+            name: "passive_ltng_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresltngsk",
+                    negative_code: "Moditemenresltngsk",
+                    group: {},
+                    positive: "to Enemy Lightning Resistance",
+                    negative: "to Enemy Lightning Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Cyclone Armor",
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "spea"],
+        extended: []
+    },
+    runes: ["r30", "r23", "r30", "r24"],
+    modifiers: [{
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_vitality_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 62,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "passive_ltng_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresltngsk",
+                negative_code: "Moditemenresltngsk",
+                group: {},
+                positive: "to Enemy Lightning Resistance",
+                negative: "to Enemy Lightning Resistance"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 102,
+    kind: "item.runeword",
+    key: "Runeword61",
+    name: "Innocence",
+    properties: [{
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "thorns",
+        param: "",
+        min: 600,
+        max: 800,
+        modifiers: [{
+            name: "item_attackertakesdamage",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 13,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1v",
+                    negative_code: "ModStr1v",
+                    group: {},
+                    positive: "Attacker Takes Damage of",
+                    negative: "Attacker Takes Damage of"
+                }
+            }
+        }]
+    }, {
+        key: "equipped-skill",
+        param: "Blade Shield SelfAura",
+        min: 8,
+        max: 12,
+        modifiers: [{
+            name: "item_skillonequip",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemSkillOnEquip",
+                    negative_code: "ModitemSkillOnEquip",
+                    group: {},
+                    positive: "Level %d %s When Equipped",
+                    negative: "Level %d %s When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 200,
+        max: 275,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois-len",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_poisonlengthresist",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 18,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3r",
+                    negative_code: "ModStr3r",
+                    group: {},
+                    positive: "Poison Length Reduced by",
+                    negative: "Poison Length Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "ease",
+        param: "",
+        min: -10,
+        max: -10,
+        modifiers: [{
+            name: "item_req_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 0,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3h",
+                    negative_code: "ModStr3h",
+                    group: {},
+                    positive: "Requirements",
+                    negative: "Requirements"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r25", "r20", "r33", "r15"],
+    modifiers: [{
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_attackertakesdamage",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 13,
+            value: 2,
+            label: {
+                positive_code: "ModStr1v",
+                negative_code: "ModStr1v",
+                group: {},
+                positive: "Attacker Takes Damage of",
+                negative: "Attacker Takes Damage of"
+            }
+        }
+    }, {
+        name: "item_skillonequip",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemSkillOnEquip",
+                negative_code: "ModitemSkillOnEquip",
+                group: {},
+                positive: "Level %d %s When Equipped",
+                negative: "Level %d %s When Equipped"
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_poisonlengthresist",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 18,
+            value: 2,
+            label: {
+                positive_code: "ModStr3r",
+                negative_code: "ModStr3r",
+                group: {},
+                positive: "Poison Length Reduced by",
+                negative: "Poison Length Reduced by"
+            }
+        }
+    }, {
+        name: "item_req_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 0,
+            value: 2,
+            label: {
+                positive_code: "ModStr3h",
+                negative_code: "ModStr3h",
+                group: {},
+                positive: "Requirements",
+                negative: "Requirements"
+            }
+        }
+    }]
+}, {
+    id: 103,
+    kind: "item.runeword",
+    key: "Runeword62",
+    name: "Insight",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 180,
+        max: 240,
+        modifiers: []
+    }, {
+        key: "att%",
+        param: "",
+        min: 180,
+        max: 250,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "mag%",
+        param: "",
+        min: 23,
+        max: 23,
+        modifiers: [{
+            name: "item_magicbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 8,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Critical Strike",
+        min: 1,
+        max: 6,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 35,
+        max: 35,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Meditation",
+        min: 12,
+        max: 17,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "all-stats",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }, {
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "staf", "spea"],
+        extended: []
+    },
+    runes: ["r08", "r03", "r07", "r12"],
+    modifiers: [{
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_magicbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 8,
+            value: 1,
+            label: {
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }]
+}, {
+    id: 104,
+    kind: "item.runeword",
+    key: "Runeword63",
+    name: "Jealousy",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 105,
+    kind: "item.runeword",
+    key: "Runeword64",
+    name: "Judgement",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 106,
+    kind: "item.runeword",
+    key: "Runeword67",
+    name: "Knight's Vigil",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 107,
+    kind: "item.runeword",
+    key: "Runeword69",
+    name: "Last Wish",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 350,
+        max: 400,
+        modifiers: []
+    }, {
+        key: "att-skill",
+        param: "Charged Bolt",
+        min: 60,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonattack",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChancX",
+                    negative_code: "ItemExpansiveChancX",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on attack",
+                    negative: "%d%% Chance to cast level %d %s on attack"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Life Tap Proc",
+        min: 10,
+        max: 11,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Fade",
+        min: 6,
+        max: 11,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 40,
+        max: 50,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "mag%/lvl",
+        param: 4,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_find_magic_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 7,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1x",
+                    negative_code: "ModStr1x",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Better Chance of Getting Magic Items",
+                    negative: "Better Chance of Getting Magic Items"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Might",
+        min: 19,
+        max: 19,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "hamm", "axe", "staf"],
+        extended: []
+    },
+    runes: ["r31", "r23", "r31", "r29", "r31", "r30"],
+    modifiers: [{
+        name: "item_skillonattack",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChancX",
+                negative_code: "ItemExpansiveChancX",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on attack",
+                negative: "%d%% Chance to cast level %d %s on attack"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_find_magic_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 7,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1x",
+                negative_code: "ModStr1x",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Better Chance of Getting Magic Items",
+                negative: "Better Chance of Getting Magic Items"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }]
+}, {
+    id: 108,
+    kind: "item.runeword",
+    key: "Runeword70",
+    name: "Law",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 109,
+    kind: "item.runeword",
+    key: "Runeword71",
+    name: "Lawbringer",
+    properties: [{
+        key: "dmg-cold",
+        param: "",
+        min: 130,
+        max: 180,
+        modifiers: [{
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 150,
+        max: 210,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 150,
+        max: 200,
+        modifiers: []
+    }, {
+        key: "hit-skill",
+        param: "Decrepify Proc",
+        min: 20,
+        max: 15,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "ac-miss",
+        param: "",
+        min: 200,
+        max: 250,
+        modifiers: [{
+            name: "armorclass_vs_missile",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 69,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6a",
+                    negative_code: "ModStr6a",
+                    group: {},
+                    positive: "Defense vs. Missile",
+                    negative: "Defense vs. Missile"
+                }
+            }
+        }]
+    }, {
+        key: "rip",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_restinpeace",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModitemSMRIP",
+                    negative_code: "ModitemSMRIP",
+                    group: {},
+                    positive: "Slain Monsters Rest in Peace",
+                    negative: "Slain Monsters Rest in Peace"
+                }
+            }
+        }]
+    }, {
+        key: "reduce-ac",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_fractionaltargetac",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 118,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5o",
+                    negative_code: "ModStr5o",
+                    group: {},
+                    positive: "Target Defense",
+                    negative: "Target Defense"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "hamm", "scep", "h2h", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r11", "r20", "r18"],
+    modifiers: [{
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "armorclass_vs_missile",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 69,
+            value: 1,
+            label: {
+                positive_code: "ModStr6a",
+                negative_code: "ModStr6a",
+                group: {},
+                positive: "Defense vs. Missile",
+                negative: "Defense vs. Missile"
+            }
+        }
+    }, {
+        name: "item_restinpeace",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModitemSMRIP",
+                negative_code: "ModitemSMRIP",
+                group: {},
+                positive: "Slain Monsters Rest in Peace",
+                negative: "Slain Monsters Rest in Peace"
+            }
+        }
+    }, {
+        name: "item_fractionaltargetac",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 118,
+            value: 1,
+            label: {
+                positive_code: "ModStr5o",
+                negative_code: "ModStr5o",
+                group: {},
+                positive: "Target Defense",
+                negative: "Target Defense"
+            }
+        }
+    }]
+}, {
+    id: 110,
+    kind: "item.runeword",
+    key: "Runeword73",
+    name: "Lightning",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 111,
+    kind: "item.runeword",
+    key: "Loyalty Spear",
+    name: "Loyalty",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 200,
+        max: 245,
+        modifiers: []
+    }, {
+        key: "skill",
+        param: 28,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skilltab",
+        param: 1,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "crush",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_crushingblow",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 87,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5c",
+                    negative_code: "ModStr5c",
+                    group: {},
+                    positive: "Chance of Crushing Blow",
+                    negative: "Chance of Crushing Blow"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 14,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["spea"],
+        extended: ["jave"]
+    },
+    runes: ["r21", "r03", "r14"],
+    modifiers: [{
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_crushingblow",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 87,
+            value: 1,
+            label: {
+                positive_code: "ModStr5c",
+                negative_code: "ModStr5c",
+                group: {},
+                positive: "Chance of Crushing Blow",
+                negative: "Chance of Crushing Blow"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 112,
+    kind: "item.runeword",
+    key: "Runeword78",
+    name: "Lust",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 113,
+    kind: "item.runeword",
+    key: "Runeword79",
+    name: "Madness",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 114,
+    kind: "item.runeword",
+    key: "Runeword84",
+    name: "Mist",
+    properties: [{
+        key: "aura",
+        param: "concentration",
+        min: 12,
+        max: 14,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "vit",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "pierce",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_pierce",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 132,
+                value: 1,
+                label: {
+                    positive_code: "ModPierceChance",
+                    negative_code: "ModPierceChance",
+                    group: {},
+                    positive: "Chance to Pierce",
+                    negative: "Chance to Pierce"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 325,
+        max: 375,
+        modifiers: []
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r32", "r13", "r25", "r10", "r06"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_pierce",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 132,
+            value: 1,
+            label: {
+                positive_code: "ModPierceChance",
+                negative_code: "ModPierceChance",
+                group: {},
+                positive: "Chance to Pierce",
+                negative: "Chance to Pierce"
+            }
+        }
+    }]
+}, {
+    id: 115,
+    kind: "item.runeword",
+    key: "Runeword85",
+    name: "Morning",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 116,
+    kind: "item.runeword",
+    key: "Runeword86",
+    name: "Mystery",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 117,
+    kind: "item.runeword",
+    key: "Runeword87",
+    name: "Myth",
+    properties: [{
+        key: "hit-skill",
+        param: "Taunt",
+        min: 5,
+        max: 1,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Howl",
+        min: 3,
+        max: 1,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "bar",
+        param: "",
+        min: 1,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "regen",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }, {
+        key: "thorns/lvl",
+        param: "",
+        min: 16,
+        max: 24,
+        modifiers: [{
+            name: "item_thorns_perlevel",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 12,
+                value: 2,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1v",
+                    negative_code: "ModStr1v",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Attacker Takes Damage of",
+                    negative: "Attacker Takes Damage of"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 3,
+        max: 4,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r15", "r11", "r04"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }, {
+        name: "item_thorns_perlevel",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 12,
+            value: 2,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1v",
+                negative_code: "ModStr1v",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Attacker Takes Damage of",
+                negative: "Attacker Takes Damage of"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 118,
+    kind: "item.runeword",
+    key: "Runeword95",
+    name: "Passion",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 119,
+    kind: "item.runeword",
+    key: "Runeword97",
+    name: "Pattern",
+    properties: [{
+        key: "att%",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 80,
+        max: 120,
+        modifiers: []
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 12,
+        max: 32,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 15,
+        max: 15,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "str",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }]
+    }, {
+        key: "dex",
+        param: "",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }]
+    }, {
+        key: "block2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["h2h"],
+        extended: []
+    },
+    runes: ["r07", "r09", "r03"],
+    modifiers: [{
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }]
+}, {
+    id: 120,
+    kind: "item.runeword",
+    key: "Runeword98",
+    name: "Peace",
+    properties: [{
+        key: "gethit-skill",
+        param: "Slow Movement",
+        min: 8,
+        max: 12,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "ama",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Critical Strike",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "extra-valk",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "extra_valk",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 240,
+                value: 2,
+                label: {
+                    secondary_code: "ExtraValk",
+                    positive_code: "YouMaySummon",
+                    negative_code: "YouMaySummon",
+                    group: {},
+                    secondary: "Additional Valkyrie",
+                    positive: "You May Summon",
+                    negative: "You May Summon"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r13", "r10", "r11"],
+    modifiers: [{
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "extra_valk",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 240,
+            value: 2,
+            label: {
+                secondary_code: "ExtraValk",
+                positive_code: "YouMaySummon",
+                negative_code: "YouMaySummon",
+                group: {},
+                secondary: "Additional Valkyrie",
+                positive: "You May Summon",
+                negative: "You May Summon"
+            }
+        }
+    }]
+}, {
+    id: 121,
+    kind: "item.runeword",
+    key: "Runeword100",
+    name: "Penitence",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 122,
+    kind: "item.runeword",
+    key: "Runeword101",
+    name: "Peril",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 123,
+    kind: "item.runeword",
+    key: "Runeword102",
+    name: "Pestilence",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 124,
+    kind: "item.runeword",
+    key: "Runeword103",
+    name: "Phoenix",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 250,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "ac-miss",
+        param: "",
+        min: 350,
+        max: 400,
+        modifiers: [{
+            name: "armorclass_vs_missile",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 69,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6a",
+                    negative_code: "ModStr6a",
+                    group: {},
+                    positive: "Defense vs. Missile",
+                    negative: "Defense vs. Missile"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Firestorm",
+        min: 20,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "levelup-skill",
+        param: "Blaze",
+        min: 100,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonlevelup",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonLevel",
+                    negative_code: "ModitemskonLevel",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                    negative: "%d%% Chance to cast level %d %s when you Level-Up"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 28,
+        max: 28,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Redemption",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r26", "r26", "r28", "r31"],
+    modifiers: [{
+        name: "armorclass_vs_missile",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 69,
+            value: 1,
+            label: {
+                positive_code: "ModStr6a",
+                negative_code: "ModStr6a",
+                group: {},
+                positive: "Defense vs. Missile",
+                negative: "Defense vs. Missile"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonlevelup",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonLevel",
+                negative_code: "ModitemskonLevel",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                negative: "%d%% Chance to cast level %d %s when you Level-Up"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }]
+}, {
+    id: 125,
+    kind: "item.runeword",
+    key: "Runeword104",
+    name: "Piety",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 126,
+    kind: "item.runeword",
+    key: "Runeword105",
+    name: "Pillar of Faith",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 127,
+    kind: "item.runeword",
+    key: "Runeword106",
+    name: "Plague",
+    properties: [{
+        key: "dmg-demon",
+        param: "",
+        min: 340,
+        max: 380,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "LowRes Proc",
+        min: 30,
+        max: 35,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Poison Nova",
+        min: 25,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "plague-fcr-pierce",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }, {
+            name: "passive_pois_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrespoissk",
+                    negative_code: "Moditemenrespoissk",
+                    group: {},
+                    positive: "to Enemy Poison Resistance",
+                    negative: "to Enemy Poison Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "deadly/lvl",
+        param: 3,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_deadlystrike_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 84,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr5q",
+                    negative_code: "ModStr5q",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Deadly Strike",
+                    negative: "Deadly Strike"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Cleansing",
+        min: 15,
+        max: 17,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 1,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap", "jave", "taxe", "thro"],
+        extended: []
+    },
+    runes: ["r32", "r19", "r22"],
+    modifiers: [{
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "passive_pois_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrespoissk",
+                negative_code: "Moditemenrespoissk",
+                group: {},
+                positive: "to Enemy Poison Resistance",
+                negative: "to Enemy Poison Resistance"
+            }
+        }
+    }, {
+        name: "item_deadlystrike_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 84,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr5q",
+                negative_code: "ModStr5q",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Deadly Strike",
+                negative: "Deadly Strike"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }]
+}, {
+    id: 128,
+    kind: "item.runeword",
+    key: "Runeword107",
+    name: "Praise",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 129,
+    kind: "item.runeword",
+    key: "Runeword108",
+    name: "Prayer",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 130,
+    kind: "item.runeword",
+    key: "Runeword109",
+    name: "Pride",
+    properties: [{
+        key: "dmg%/lvl",
+        param: 32,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_maxdamage_percent_perlevel",
+            encoding: 0,
+            description: {
+                function: 8,
+                priority: 128,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr2j",
+                    negative_code: "ModStr2j",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Enhanced Maximum Damage",
+                    negative: "Enhanced Maximum Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-ltng",
+        param: "",
+        min: 50,
+        max: 280,
+        modifiers: [{
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }]
+    }, {
+        key: "att%",
+        param: "",
+        min: 260,
+        max: 300,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Concentration",
+        min: 18,
+        max: 20,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Fire Wall",
+        min: 25,
+        max: 40,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "regen",
+        param: "",
+        min: 8,
+        max: 8,
+        modifiers: [{
+            name: "hpregen",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 56,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2l",
+                    negative_code: "ModStr2w",
+                    group: {},
+                    positive: "Replenish Life",
+                    negative: "Drain Life"
+                }
+            }
+        }]
+    }, {
+        key: "gold%/lvl",
+        param: 15,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_find_gold_perlevel",
+            encoding: 0,
+            description: {
+                function: 7,
+                priority: 9,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "spea", "staf"],
+        extended: []
+    },
+    runes: ["r32", "r29", "r16", "r28"],
+    modifiers: [{
+        name: "item_maxdamage_percent_perlevel",
+        encoding: 0,
+        description: {
+            function: 8,
+            priority: 128,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr2j",
+                negative_code: "ModStr2j",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Enhanced Maximum Damage",
+                negative: "Enhanced Maximum Damage"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "hpregen",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 56,
+            value: 2,
+            label: {
+                positive_code: "ModStr2l",
+                negative_code: "ModStr2w",
+                group: {},
+                positive: "Replenish Life",
+                negative: "Drain Life"
+            }
+        }
+    }, {
+        name: "item_find_gold_perlevel",
+        encoding: 0,
+        description: {
+            function: 7,
+            priority: 9,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }]
+}, {
+    id: 131,
+    kind: "item.runeword",
+    key: "Runeword110",
+    name: "Principle",
+    properties: [{
+        key: "hit-skill",
+        param: "Holy Bolt",
+        min: 75,
+        max: 25,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "pal",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "hp",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: [{
+            name: "maxhp",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 59,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-demon",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r08", "r25", "r02"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "maxhp",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 59,
+            value: 1,
+            label: {
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }]
+}, {
+    id: 132,
+    kind: "item.runeword",
+    key: "Runeword111",
+    name: "Prowess in Battle",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 133,
+    kind: "item.runeword",
+    key: "Runeword112",
+    name: "Prudence",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 140,
+        max: 170,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "red-mag",
+        param: "",
+        min: 6,
+        max: 10,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 5,
+        max: 13,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 25,
+        max: 35,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "rep-dur",
+        param: 25,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_replenish_durability",
+            encoding: 0,
+            description: {
+                function: 11,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre9t",
+                    negative_code: "ModStre9t",
+                    group: {},
+                    positive: "Repairs %d durability per second",
+                    negative: "Repairs %d durability per second"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r23", "r03"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_replenish_durability",
+        encoding: 0,
+        description: {
+            function: 11,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre9t",
+                negative_code: "ModStre9t",
+                group: {},
+                positive: "Repairs %d durability per second",
+                negative: "Repairs %d durability per second"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }]
+}, {
+    id: 134,
+    kind: "item.runeword",
+    key: "Runeword113",
+    name: "Punishment",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 135,
+    kind: "item.runeword",
+    key: "Runeword114",
+    name: "Purity",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 136,
+    kind: "item.runeword",
+    key: "Runeword115",
+    name: "Question",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 137,
+    kind: "item.runeword",
+    key: "Runeword117",
+    name: "Rain",
+    properties: [{
+        key: "hit-skill",
+        param: "Twister",
+        min: 20,
+        max: 25,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Cyclone Armor",
+        min: 8,
+        max: 15,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "dru",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 100,
+        max: 150,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r09", "r23", "r06"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }]
+}, {
+    id: 138,
+    kind: "item.runeword",
+    key: "Runeword118",
+    name: "Reason",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 139,
+    kind: "item.runeword",
+    key: "Runeword119",
+    name: "Red",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 140,
+    kind: "item.runeword",
+    key: "Runeword121",
+    name: "Rift",
+    properties: [{
+        key: "dmg-mag",
+        param: "",
+        min: 160,
+        max: 250,
+        modifiers: [{
+            name: "magicmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 104,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }, {
+            name: "magicmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 103,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-fire",
+        param: "",
+        min: 60,
+        max: 180,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-to-mana",
+        param: "",
+        min: 38,
+        max: 38,
+        modifiers: [{
+            name: "item_damagetomana",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 11,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3w_PD2",
+                    negative_code: "ModStr3w_PD2",
+                    group: {},
+                    positive: "Damage Taken Gained as Mana when Hit",
+                    negative: "Damage Taken Gained as Mana when Hit"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Tornado",
+        min: 26,
+        max: 30,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Frozen Orb",
+        min: 24,
+        max: 25,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "all-stats",
+        param: "",
+        min: 15,
+        max: 20,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }, {
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "scep", "spea", "swor"],
+        extended: []
+    },
+    runes: ["r15", "r18", "r20", "r25"],
+    modifiers: [{
+        name: "magicmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 104,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "magicmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 103,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "item_damagetomana",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 11,
+            value: 1,
+            label: {
+                positive_code: "ModStr3w_PD2",
+                negative_code: "ModStr3w_PD2",
+                group: {},
+                positive: "Damage Taken Gained as Mana when Hit",
+                negative: "Damage Taken Gained as Mana when Hit"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }]
+}, {
+    id: 141,
+    kind: "item.runeword",
+    key: "Runeword76",
+    name: "Love",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 142,
+    kind: "item.runeword",
+    key: "Runeword143",
+    name: "Thirst",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 143,
+    kind: "item.runeword",
+    key: "Runeword68",
+    name: "Knowledge",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 144,
+    kind: "item.runeword",
+    key: "Runeword144",
+    name: "Thought",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 145,
+    kind: "item.runeword",
+    key: "Runeword145",
+    name: "Thunder",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 146,
+    kind: "item.runeword",
+    key: "Runeword146",
+    name: "Time",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 147,
+    kind: "item.runeword",
+    key: "Runeword147",
+    name: "Tradition",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 148,
+    kind: "item.runeword",
+    key: "Runeword148",
+    name: "Treachery",
+    properties: [{
+        key: "hit-skill",
+        param: "Venom",
+        min: 25,
+        max: 15,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Mind Blast",
+        min: 15,
+        max: 21,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "ass",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 45,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r13", "r10", "r20"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }]
+}, {
+    id: 149,
+    kind: "item.runeword",
+    key: "Runeword149",
+    name: "Trust",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 150,
+    kind: "item.runeword",
+    key: "Runeword150",
+    name: "Truth",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 151,
+    kind: "item.runeword",
+    key: "Runeword151",
+    name: "Unbending Will",
+    properties: [{
+        key: "hit-skill",
+        param: "Taunt",
+        min: 8,
+        max: 18,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "skilltab",
+        param: 12,
+        min: 3,
+        max: 3,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 300,
+        max: 350,
+        modifiers: []
+    }, {
+        key: "lifesteal",
+        param: "",
+        min: 8,
+        max: 10,
+        modifiers: [{
+            name: "lifedrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2z",
+                    negative_code: "ModStr2z",
+                    group: {},
+                    positive: "Life stolen per hit",
+                    negative: "Life stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 8,
+        max: 8,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "noheal",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_preventheal",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 81,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4a",
+                    negative_code: "ModStr4a",
+                    group: {},
+                    positive: "Prevent Monster Heal",
+                    negative: "Prevent Monster Heal"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor"],
+        extended: []
+    },
+    runes: ["r19", "r16", "r06", "r02", "r01", "r15"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "lifedrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModStr2z",
+                negative_code: "ModStr2z",
+                group: {},
+                positive: "Life stolen per hit",
+                negative: "Life stolen per hit"
+            }
+        }
+    }, {
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_preventheal",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 81,
+            value: 0,
+            label: {
+                positive_code: "ModStr4a",
+                negative_code: "ModStr4a",
+                group: {},
+                positive: "Prevent Monster Heal",
+                negative: "Prevent Monster Heal"
+            }
+        }
+    }]
+}, {
+    id: 152,
+    kind: "item.runeword",
+    key: "Runeword152",
+    name: "Valor",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 153,
+    kind: "item.runeword",
+    key: "Runeword153",
+    name: "Vengeance",
+    properties: [],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r06", "r11", "r01"],
+    modifiers: []
+}, {
+    id: 154,
+    kind: "item.runeword",
+    key: "Runeword155",
+    name: "Victory",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 155,
+    kind: "item.runeword",
+    key: "Runeword156",
+    name: "Voice",
+    properties: [],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r03", "r06"],
+    modifiers: []
+}, {
+    id: 156,
+    kind: "item.runeword",
+    key: "Runeword157",
+    name: "Void",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 157,
+    kind: "item.runeword",
+    key: "Runeword158",
+    name: "War",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 158,
+    kind: "item.runeword",
+    key: "Runeword159",
+    name: "Water",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 159,
+    kind: "item.runeword",
+    key: "Runeword161",
+    name: "Whisper",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 160,
+    kind: "item.runeword",
+    key: "Runeword47",
+    name: "Grief",
+    properties: [{
+        key: "dmg-dem/lvl",
+        param: 15,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_damage_demon_perlevel",
+            encoding: 0,
+            description: {
+                function: 8,
+                priority: 111,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-min",
+        param: "",
+        min: 280,
+        max: 280,
+        modifiers: []
+    }, {
+        key: "dmg-max",
+        param: "",
+        min: 320,
+        max: 360,
+        modifiers: []
+    }, {
+        key: "swing3",
+        param: "",
+        min: 30,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Venom",
+        min: 35,
+        max: 15,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-pois",
+        param: "",
+        min: 15,
+        max: 20,
+        modifiers: [{
+            name: "passive_pois_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrespoissk",
+                    negative_code: "Moditemenrespoissk",
+                    group: {},
+                    positive: "to Enemy Poison Resistance",
+                    negative: "to Enemy Poison Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "heal-kill",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "item_healafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModitemHPaK",
+                    negative_code: "ModitemHPaK",
+                    group: {},
+                    positive: "Life after each Kill",
+                    negative: "Life after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "axe", "sc9", "pole"],
+        extended: []
+    },
+    runes: ["r05", "r03", "r28", "r23", "r08"],
+    modifiers: [{
+        name: "item_damage_demon_perlevel",
+        encoding: 0,
+        description: {
+            function: 8,
+            priority: 111,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "passive_pois_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrespoissk",
+                negative_code: "Moditemenrespoissk",
+                group: {},
+                positive: "to Enemy Poison Resistance",
+                negative: "to Enemy Poison Resistance"
+            }
+        }
+    }, {
+        name: "item_healafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModitemHPaK",
+                negative_code: "ModitemHPaK",
+                group: {},
+                positive: "Life after each Kill",
+                negative: "Life after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 161,
+    kind: "item.runeword",
+    key: "Runeword163",
+    name: "Wind",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 320,
+        max: 380,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "reduce-ac",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_fractionaltargetac",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 118,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5o",
+                    negative_code: "ModStr5o",
+                    group: {},
+                    positive: "Target Defense",
+                    negative: "Target Defense"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 245,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 240,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Cyclone Armor",
+        min: 5,
+        max: 9,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["mele"],
+        extended: ["staf", "thro"]
+    },
+    runes: ["r29", "r01"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fractionaltargetac",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 118,
+            value: 1,
+            label: {
+                positive_code: "ModStr5o",
+                negative_code: "ModStr5o",
+                group: {},
+                positive: "Target Defense",
+                negative: "Target Defense"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }]
+}, {
+    id: 162,
+    kind: "item.runeword",
+    key: "Runeword164",
+    name: "Wings of Hope",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 163,
+    kind: "item.runeword",
+    key: "Runeword99",
+    name: "Voice of Reason",
+    properties: [{
+        key: "dmg-demon",
+        param: "",
+        min: 240,
+        max: 300,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 280,
+        max: 250,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-cold",
+        param: "",
+        min: 200,
+        max: 320,
+        modifiers: [{
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "pierce-cold",
+        param: "",
+        min: 24,
+        max: 24,
+        modifiers: [{
+            name: "passive_cold_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrescoldsk",
+                    negative_code: "Moditemenrescoldsk",
+                    group: {},
+                    positive: "to Enemy Cold Resistance",
+                    negative: "to Enemy Cold Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Ice Blast",
+        min: 18,
+        max: 20,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Frozen Orb",
+        min: 15,
+        max: 16,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["swor", "mace", "miss", "scep"],
+        extended: []
+    },
+    runes: ["r20", "r18", "r01", "r02"],
+    modifiers: [{
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "passive_cold_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrescoldsk",
+                negative_code: "Moditemenrescoldsk",
+                group: {},
+                positive: "to Enemy Cold Resistance",
+                negative: "to Enemy Cold Resistance"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }]
+}, {
+    id: 164,
+    kind: "item.runeword",
+    key: "Runeword165",
+    name: "Wisdom",
+    properties: [{
+        key: "pierce",
+        param: "",
+        min: 33,
+        max: 33,
+        modifiers: [{
+            name: "item_pierce",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 132,
+                value: 1,
+                label: {
+                    positive_code: "ModPierceChance",
+                    negative_code: "ModPierceChance",
+                    group: {},
+                    positive: "Chance to Pierce",
+                    negative: "Chance to Pierce"
+                }
+            }
+        }]
+    }, {
+        key: "att%",
+        param: "",
+        min: 15,
+        max: 25,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }, {
+        key: "manasteal",
+        param: "",
+        min: 4,
+        max: 8,
+        modifiers: [{
+            name: "manadrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 89,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2y",
+                    negative_code: "ModStr2y",
+                    group: {},
+                    positive: "Mana stolen per hit",
+                    negative: "Mana stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "enr",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r21", "r06", "r02"],
+    modifiers: [{
+        name: "item_pierce",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 132,
+            value: 1,
+            label: {
+                positive_code: "ModPierceChance",
+                negative_code: "ModPierceChance",
+                group: {},
+                positive: "Chance to Pierce",
+                negative: "Chance to Pierce"
+            }
+        }
+    }, {
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }, {
+        name: "manadrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 89,
+            value: 1,
+            label: {
+                positive_code: "ModStr2y",
+                negative_code: "ModStr2y",
+                group: {},
+                positive: "Mana stolen per hit",
+                negative: "Mana stolen per hit"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 165,
+    kind: "item.runeword",
+    key: "Runeword166",
+    name: "Woe",
+    properties: [],
+    types: {
+        base: ["weap", "miss"],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 166,
+    kind: "item.runeword",
+    key: "Runeword167",
+    name: "Wonder",
+    properties: [],
+    types: {
+        base: ["wand"],
+        extended: []
+    },
+    runes: ["r04", "r12", "r24"],
+    modifiers: []
+}, {
+    id: 167,
+    kind: "item.runeword",
+    key: "Runeword168",
+    name: "Wrath",
+    properties: [{
+        key: "dmg-demon",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-undead",
+        param: "",
+        min: 250,
+        max: 300,
+        modifiers: [{
+            name: "item_undeaddamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 108,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4f",
+                    negative_code: "ModStr4f",
+                    group: {},
+                    positive: "Damage to Undead",
+                    negative: "Damage to Undead"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-ltng",
+        param: "",
+        min: 41,
+        max: 240,
+        modifiers: [{
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-mag",
+        param: "",
+        min: 85,
+        max: 120,
+        modifiers: [{
+            name: "magicmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 104,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }, {
+            name: "magicmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 103,
+                value: 1,
+                label: {
+                    positive_code: "strModMagicDamage",
+                    negative_code: "strModMagicDamage",
+                    group: {},
+                    positive: "+%d magic damage",
+                    negative: "+%d magic damage"
+                }
+            }
+        }]
+    }, {
+        key: "swing3",
+        param: "",
+        min: 30,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "AmpDmg Proc",
+        min: 60,
+        max: 31,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "nofreeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_cannotbefrozen",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 20,
+                value: 0,
+                label: {
+                    positive_code: "ModStr5z",
+                    negative_code: "ModStr5z",
+                    group: {},
+                    positive: "Cannot Be Frozen",
+                    negative: "Cannot Be Frozen"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r21", "r17", "r30", "r23"],
+    modifiers: [{
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }, {
+        name: "item_undeaddamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 108,
+            value: 1,
+            label: {
+                positive_code: "ModStr4f",
+                negative_code: "ModStr4f",
+                group: {},
+                positive: "Damage to Undead",
+                negative: "Damage to Undead"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "magicmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 104,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "magicmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 103,
+            value: 1,
+            label: {
+                positive_code: "strModMagicDamage",
+                negative_code: "strModMagicDamage",
+                group: {},
+                positive: "+%d magic damage",
+                negative: "+%d magic damage"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_cannotbefrozen",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 20,
+            value: 0,
+            label: {
+                positive_code: "ModStr5z",
+                negative_code: "ModStr5z",
+                group: {},
+                positive: "Cannot Be Frozen",
+                negative: "Cannot Be Frozen"
+            }
+        }
+    }]
+}, {
+    id: 168,
+    kind: "item.runeword",
+    key: "Runeword169",
+    name: "Youth",
+    properties: [],
+    types: {
+        base: [],
+        extended: []
+    },
+    runes: [],
+    modifiers: []
+}, {
+    id: 169,
+    kind: "item.runeword",
+    key: "Runeword26",
+    name: "Doom",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 290,
+        max: 330,
+        modifiers: []
+    }, {
+        key: "aura",
+        param: "Holy Freeze",
+        min: 16,
+        max: 16,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 45,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "cast3",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-cold",
+        param: "",
+        min: 30,
+        max: 50,
+        modifiers: [{
+            name: "passive_cold_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenrescoldsk",
+                    negative_code: "Moditemenrescoldsk",
+                    group: {},
+                    positive: "to Enemy Cold Resistance",
+                    negative: "to Enemy Cold Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Molten Boulder",
+        min: 10,
+        max: 28,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r15", "r27", "r22", "r28", "r32"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "passive_cold_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenrescoldsk",
+                negative_code: "Moditemenrescoldsk",
+                group: {},
+                positive: "to Enemy Cold Resistance",
+                negative: "to Enemy Cold Resistance"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }]
+}, {
+    id: 170,
+    kind: "item.runeword",
+    key: "Runeword60",
+    name: "Infinity",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 255,
+        max: 325,
+        modifiers: []
+    }, {
+        key: "infinityspeed",
+        param: "",
+        min: 35,
+        max: 35,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }, {
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "vit/lvl",
+        param: 4,
+        min: "",
+        max: "",
+        modifiers: [{
+            name: "item_vitality_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 62,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Conviction",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Chain Lightning",
+        min: 15,
+        max: 20,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-ltng",
+        param: "",
+        min: 45,
+        max: 55,
+        modifiers: [{
+            name: "passive_ltng_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresltngsk",
+                    negative_code: "Moditemenresltngsk",
+                    group: {},
+                    positive: "to Enemy Lightning Resistance",
+                    negative: "to Enemy Lightning Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Cyclone Armor",
+        min: 2,
+        max: 15,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r30", "r23", "r30", "r24"],
+    modifiers: [{
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_vitality_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 62,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "passive_ltng_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresltngsk",
+                negative_code: "Moditemenresltngsk",
+                group: {},
+                positive: "to Enemy Lightning Resistance",
+                negative: "to Enemy Lightning Resistance"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }]
+}, {
+    id: 171,
+    kind: "item.runeword",
+    key: "Runeword130",
+    name: "Spirit",
+    properties: [{
+        key: "balance3",
+        param: "",
+        min: 55,
+        max: 55,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 59,
+        max: 82,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "ease",
+        param: "",
+        min: -15,
+        max: -15,
+        modifiers: [{
+            name: "item_req_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 0,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3h",
+                    negative_code: "ModStr3h",
+                    group: {},
+                    positive: "Requirements",
+                    negative: "Requirements"
+                }
+            }
+        }]
+    }, {
+        key: "vit",
+        param: "",
+        min: 11,
+        max: 22,
+        modifiers: [{
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "cast3",
+        param: "",
+        min: 25,
+        max: 35,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "abs-mag",
+        param: "",
+        min: 3,
+        max: 8,
+        modifiers: [{
+            name: "item_absorbmagic",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 33,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5l",
+                    negative_code: "ModStr5l",
+                    group: {},
+                    positive: "Magic Absorb",
+                    negative: "Magic Absorb"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r07", "r10", "r09", "r11"],
+    modifiers: [{
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "item_req_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 0,
+            value: 2,
+            label: {
+                positive_code: "ModStr3h",
+                negative_code: "ModStr3h",
+                group: {},
+                positive: "Requirements",
+                negative: "Requirements"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_absorbmagic",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 33,
+            value: 1,
+            label: {
+                positive_code: "ModStr5l",
+                negative_code: "ModStr5l",
+                group: {},
+                positive: "Magic Absorb",
+                negative: "Magic Absorb"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }]
+}, {
+    id: 172,
+    kind: "item.runeword",
+    key: "Runeword103",
+    name: "Phoenix",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 400,
+        max: 450,
+        modifiers: []
+    }, {
+        key: "ac-miss",
+        param: "",
+        min: 350,
+        max: 400,
+        modifiers: [{
+            name: "armorclass_vs_missile",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 69,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6a",
+                    negative_code: "ModStr6a",
+                    group: {},
+                    positive: "Defense vs. Missile",
+                    negative: "Defense vs. Missile"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Firestorm",
+        min: 20,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "levelup-skill",
+        param: "Blaze",
+        min: 100,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonlevelup",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonLevel",
+                    negative_code: "ModitemskonLevel",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                    negative: "%d%% Chance to cast level %d %s when you Level-Up"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 28,
+        max: 28,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Redemption",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "abs-fire",
+        param: "",
+        min: 15,
+        max: 21,
+        modifiers: [{
+            name: "item_absorbfire",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 27,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5h",
+                    negative_code: "ModStr5h",
+                    group: {},
+                    positive: "Fire Absorb",
+                    negative: "Fire Absorb"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: ["staf"]
+    },
+    runes: ["r26", "r26", "r28", "r31"],
+    modifiers: [{
+        name: "armorclass_vs_missile",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 69,
+            value: 1,
+            label: {
+                positive_code: "ModStr6a",
+                negative_code: "ModStr6a",
+                group: {},
+                positive: "Defense vs. Missile",
+                negative: "Defense vs. Missile"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonlevelup",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonLevel",
+                negative_code: "ModitemskonLevel",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                negative: "%d%% Chance to cast level %d %s when you Level-Up"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_absorbfire",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 27,
+            value: 1,
+            label: {
+                positive_code: "ModStr5h",
+                negative_code: "ModStr5h",
+                group: {},
+                positive: "Fire Absorb",
+                negative: "Fire Absorb"
+            }
+        }
+    }]
+}, {
+    id: 173,
+    kind: "item.runeword",
+    key: "Runeword17",
+    name: "Crescent Moon",
+    properties: [{
+        key: "pierce-ltng",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "passive_ltng_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresltngsk",
+                    negative_code: "Moditemenresltngsk",
+                    group: {},
+                    positive: "to Enemy Lightning Resistance",
+                    negative: "to Enemy Lightning Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "ignore-ac",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_ignoretargetac",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 119,
+                value: 0,
+                label: {
+                    positive_code: "ModStr3y",
+                    negative_code: "ModStr3y",
+                    group: {},
+                    positive: "Ignore Target's Defense",
+                    negative: "Ignore Target's Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 180,
+        max: 220,
+        modifiers: []
+    }, {
+        key: "abs-mag",
+        param: "",
+        min: 3,
+        max: 5,
+        modifiers: [{
+            name: "item_absorbmagic",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 33,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5l",
+                    negative_code: "ModStr5l",
+                    group: {},
+                    positive: "Magic Absorb",
+                    negative: "Magic Absorb"
+                }
+            }
+        }]
+    }, {
+        key: "charged",
+        param: "Summon Spirit Wolf",
+        min: 30,
+        max: 18,
+        modifiers: [{
+            name: "item_charged_skill",
+            encoding: 3,
+            description: {
+                function: 24,
+                priority: 1,
+                value: 0,
+                label: {
+                    positive_code: "ModStre10d",
+                    negative_code: "ModStre10d",
+                    group: {},
+                    positive: "(%d/%d Charges)",
+                    negative: "(%d/%d Charges)"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Static Field",
+        min: 24,
+        max: 13,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Lightning",
+        min: 10,
+        max: 27,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "spea"],
+        extended: []
+    },
+    runes: ["r13", "r22", "r03"],
+    modifiers: [{
+        name: "passive_ltng_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresltngsk",
+                negative_code: "Moditemenresltngsk",
+                group: {},
+                positive: "to Enemy Lightning Resistance",
+                negative: "to Enemy Lightning Resistance"
+            }
+        }
+    }, {
+        name: "item_ignoretargetac",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 119,
+            value: 0,
+            label: {
+                positive_code: "ModStr3y",
+                negative_code: "ModStr3y",
+                group: {},
+                positive: "Ignore Target's Defense",
+                negative: "Ignore Target's Defense"
+            }
+        }
+    }, {
+        name: "item_absorbmagic",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 33,
+            value: 1,
+            label: {
+                positive_code: "ModStr5l",
+                negative_code: "ModStr5l",
+                group: {},
+                positive: "Magic Absorb",
+                negative: "Magic Absorb"
+            }
+        }
+    }, {
+        name: "item_charged_skill",
+        encoding: 3,
+        description: {
+            function: 24,
+            priority: 1,
+            value: 0,
+            label: {
+                positive_code: "ModStre10d",
+                negative_code: "ModStre10d",
+                group: {},
+                positive: "(%d/%d Charges)",
+                negative: "(%d/%d Charges)"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 174,
+    kind: "item.runeword",
+    key: "Ferocity",
+    name: "Ferocity",
+    properties: [{
+        key: "hit-skill",
+        param: "Taunt",
+        min: 12,
+        max: 10,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "lifesteal",
+        param: "",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "lifedrainmindam",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "ModStr2z",
+                    negative_code: "ModStr2z",
+                    group: {},
+                    positive: "Life stolen per hit",
+                    negative: "Life stolen per hit"
+                }
+            }
+        }]
+    }, {
+        key: "oskill",
+        param: "Zeal",
+        min: 18,
+        max: 18,
+        modifiers: [{
+            name: "item_nonclassskill",
+            encoding: 1,
+            description: {
+                function: 28,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "ac%",
+        param: "",
+        min: 150,
+        max: 200,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "red-mag",
+        param: "",
+        min: 6,
+        max: 12,
+        modifiers: [{
+            name: "magic_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 21,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2t_PD2",
+                    negative_code: "ModStr2t_PD2",
+                    group: {},
+                    positive: "Magic Damage Taken Reduced by",
+                    negative: "Magic Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "Thorns",
+        param: "",
+        min: 200,
+        max: 250,
+        modifiers: []
+    }],
+    types: {
+        base: ["helm"],
+        extended: []
+    },
+    runes: ["r33", "r32", "r13"],
+    modifiers: [{
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "lifedrainmindam",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "ModStr2z",
+                negative_code: "ModStr2z",
+                group: {},
+                positive: "Life stolen per hit",
+                negative: "Life stolen per hit"
+            }
+        }
+    }, {
+        name: "item_nonclassskill",
+        encoding: 1,
+        description: {
+            function: 28,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "magic_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 21,
+            value: 2,
+            label: {
+                positive_code: "ModStr2t_PD2",
+                negative_code: "ModStr2t_PD2",
+                group: {},
+                positive: "Magic Damage Taken Reduced by",
+                negative: "Magic Damage Taken Reduced by"
+            }
+        }
+    }]
+}, {
+    id: 175,
+    kind: "item.runeword",
+    key: "Runeword171",
+    name: "Dominion",
+    properties: [{
+        key: "skill",
+        param: 79,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 5,
+        max: 7,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "res-cold",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }]
+    }, {
+        key: "nec",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addclassskills",
+            encoding: 0,
+            description: {
+                function: 13,
+                priority: 150,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3a",
+                    negative_code: "ModStr3a",
+                    group: {},
+                    positive: "to Amazon Skill Levels",
+                    negative: "to Amazon Skill Levels"
+                }
+            }
+        }]
+    }, {
+        key: "ac",
+        param: "",
+        min: 300,
+        max: 450,
+        modifiers: [{
+            name: "armorclass",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 71,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1i",
+                    negative_code: "ModStr1i",
+                    group: {},
+                    positive: "Defense",
+                    negative: "Defense"
+                }
+            }
+        }]
+    }, {
+        key: "extra-golem",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "extra_golem",
+            encoding: 0,
+            description: {
+                function: 9,
+                priority: 150,
+                value: 2,
+                label: {
+                    secondary_code: "ExtraGolem",
+                    positive_code: "YouMaySummon",
+                    negative_code: "YouMaySummon",
+                    group: {},
+                    secondary: "Additional Golem",
+                    positive: "You May Summon",
+                    negative: "You May Summon"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["wand"],
+        extended: []
+    },
+    runes: ["r32", "r27"],
+    modifiers: [{
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "item_addclassskills",
+        encoding: 0,
+        description: {
+            function: 13,
+            priority: 150,
+            value: 1,
+            label: {
+                positive_code: "ModStr3a",
+                negative_code: "ModStr3a",
+                group: {},
+                positive: "to Amazon Skill Levels",
+                negative: "to Amazon Skill Levels"
+            }
+        }
+    }, {
+        name: "armorclass",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 71,
+            value: 1,
+            label: {
+                positive_code: "ModStr1i",
+                negative_code: "ModStr1i",
+                group: {},
+                positive: "Defense",
+                negative: "Defense"
+            }
+        }
+    }, {
+        name: "extra_golem",
+        encoding: 0,
+        description: {
+            function: 9,
+            priority: 150,
+            value: 2,
+            label: {
+                secondary_code: "ExtraGolem",
+                positive_code: "YouMaySummon",
+                negative_code: "YouMaySummon",
+                group: {},
+                secondary: "Additional Golem",
+                positive: "You May Summon",
+                negative: "You May Summon"
+            }
+        }
+    }]
+}, {
+    id: 176,
+    kind: "item.runeword",
+    key: "Zenith",
+    name: "Zenith",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 225,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "aura",
+        param: "Salvation",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-elem",
+        param: 100,
+        min: 360,
+        max: 420,
+        modifiers: [{
+            name: "firemindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 102,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1p",
+                    negative_code: "ModStr1p",
+                    group: {},
+                    positive: "to Minimum Fire Damage",
+                    negative: "to Minimum Fire Damage"
+                }
+            }
+        }, {
+            name: "firemaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 101,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1o",
+                    negative_code: "ModStr1o",
+                    group: {},
+                    positive: "to Maximum Fire Damage",
+                    negative: "to Maximum Fire Damage"
+                }
+            }
+        }, {
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }, {
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss", "spea", "pole", "staf", "2hsw"],
+        extended: []
+    },
+    runes: ["r31", "r33", "r09", "r10", "r08"],
+    modifiers: [{
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "firemindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 102,
+            value: 1,
+            label: {
+                positive_code: "ModStr1p",
+                negative_code: "ModStr1p",
+                group: {},
+                positive: "to Minimum Fire Damage",
+                negative: "to Minimum Fire Damage"
+            }
+        }
+    }, {
+        name: "firemaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 101,
+            value: 1,
+            label: {
+                positive_code: "ModStr1o",
+                negative_code: "ModStr1o",
+                group: {},
+                positive: "to Maximum Fire Damage",
+                negative: "to Maximum Fire Damage"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }]
+}, {
+    id: 177,
+    kind: "item.runeword",
+    key: "Rampage",
+    name: "Rampage",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 120,
+        max: 145,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 45,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "res-fire",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf", "spea", "pole"],
+        extended: []
+    },
+    runes: ["r13", "r01", "r06", "r05"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }]
+}, {
+    id: 178,
+    kind: "item.runeword",
+    key: "Neophyte",
+    name: "Neophyte",
+    properties: [{
+        key: "half-freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_halffreezeduration",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 19,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4b",
+                    negative_code: "ModStr4b",
+                    group: {},
+                    positive: "Half Freeze Duration",
+                    negative: "Half Freeze Duration"
+                }
+            }
+        }]
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 2,
+        max: 4,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois-len",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_poisonlengthresist",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 18,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3r",
+                    negative_code: "ModStr3r",
+                    group: {},
+                    positive: "Poison Length Reduced by",
+                    negative: "Poison Length Reduced by"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["scep", "club", "sorc", "h2h", "h2h2"],
+        extended: []
+    },
+    runes: ["r10", "r03"],
+    modifiers: [{
+        name: "item_halffreezeduration",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 19,
+            value: 0,
+            label: {
+                positive_code: "ModStr4b",
+                negative_code: "ModStr4b",
+                group: {},
+                positive: "Half Freeze Duration",
+                negative: "Half Freeze Duration"
+            }
+        }
+    }, {
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_poisonlengthresist",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 18,
+            value: 2,
+            label: {
+                positive_code: "ModStr3r",
+                negative_code: "ModStr3r",
+                group: {},
+                positive: "Poison Length Reduced by",
+                negative: "Poison Length Reduced by"
+            }
+        }
+    }]
+}, {
+    id: 179,
+    kind: "item.runeword",
+    key: "Neophyte2",
+    name: "Neophyte",
+    properties: [{
+        key: "half-freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_halffreezeduration",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 19,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4b",
+                    negative_code: "ModStr4b",
+                    group: {},
+                    positive: "Half Freeze Duration",
+                    negative: "Half Freeze Duration"
+                }
+            }
+        }]
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 4,
+        max: 6,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois-len",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_poisonlengthresist",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 18,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3r",
+                    negative_code: "ModStr3r",
+                    group: {},
+                    positive: "Poison Length Reduced by",
+                    negative: "Poison Length Reduced by"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r10", "r03"],
+    modifiers: [{
+        name: "item_halffreezeduration",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 19,
+            value: 0,
+            label: {
+                positive_code: "ModStr4b",
+                negative_code: "ModStr4b",
+                group: {},
+                positive: "Half Freeze Duration",
+                negative: "Half Freeze Duration"
+            }
+        }
+    }, {
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_poisonlengthresist",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 18,
+            value: 2,
+            label: {
+                positive_code: "ModStr3r",
+                negative_code: "ModStr3r",
+                group: {},
+                positive: "Poison Length Reduced by",
+                negative: "Poison Length Reduced by"
+            }
+        }
+    }]
+}, {
+    id: 180,
+    kind: "item.runeword",
+    key: "Wind Staff",
+    name: "Wind",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 320,
+        max: 380,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "reduce-ac",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_fractionaltargetac",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 118,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5o",
+                    negative_code: "ModStr5o",
+                    group: {},
+                    positive: "Target Defense",
+                    negative: "Target Defense"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: 245,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: 240,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Cyclone Armor",
+        min: 5,
+        max: 9,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r29", "r01"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fractionaltargetac",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 118,
+            value: 1,
+            label: {
+                positive_code: "ModStr5o",
+                negative_code: "ModStr5o",
+                group: {},
+                positive: "Target Defense",
+                negative: "Target Defense"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }]
+}, {
+    id: 181,
+    kind: "item.runeword",
+    key: "Phoenix Staff",
+    name: "Phoenix",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 400,
+        max: 450,
+        modifiers: []
+    }, {
+        key: "ac-miss",
+        param: "",
+        min: 350,
+        max: 400,
+        modifiers: [{
+            name: "armorclass_vs_missile",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 69,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6a",
+                    negative_code: "ModStr6a",
+                    group: {},
+                    positive: "Defense vs. Missile",
+                    negative: "Defense vs. Missile"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Firestorm",
+        min: 20,
+        max: 40,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "levelup-skill",
+        param: "Blaze",
+        min: 100,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonlevelup",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModitemskonLevel",
+                    negative_code: "ModitemskonLevel",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                    negative: "%d%% Chance to cast level %d %s when you Level-Up"
+                }
+            }
+        }]
+    }, {
+        key: "pierce-fire",
+        param: "",
+        min: 28,
+        max: 28,
+        modifiers: [{
+            name: "passive_fire_pierce",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 88,
+                value: 1,
+                label: {
+                    positive_code: "Moditemenresfiresk",
+                    negative_code: "Moditemenresfiresk",
+                    group: {},
+                    positive: "to Enemy Fire Resistance",
+                    negative: "to Enemy Fire Resistance"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Redemption",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "abs-fire",
+        param: "",
+        min: 15,
+        max: 21,
+        modifiers: [{
+            name: "item_absorbfire",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 27,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5h",
+                    negative_code: "ModStr5h",
+                    group: {},
+                    positive: "Fire Absorb",
+                    negative: "Fire Absorb"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r26", "r26", "r28", "r31"],
+    modifiers: [{
+        name: "armorclass_vs_missile",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 69,
+            value: 1,
+            label: {
+                positive_code: "ModStr6a",
+                negative_code: "ModStr6a",
+                group: {},
+                positive: "Defense vs. Missile",
+                negative: "Defense vs. Missile"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skillonlevelup",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModitemskonLevel",
+                negative_code: "ModitemskonLevel",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when you Level-Up",
+                negative: "%d%% Chance to cast level %d %s when you Level-Up"
+            }
+        }
+    }, {
+        name: "passive_fire_pierce",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 88,
+            value: 1,
+            label: {
+                positive_code: "Moditemenresfiresk",
+                negative_code: "Moditemenresfiresk",
+                group: {},
+                positive: "to Enemy Fire Resistance",
+                negative: "to Enemy Fire Resistance"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_absorbfire",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 27,
+            value: 1,
+            label: {
+                positive_code: "ModStr5h",
+                negative_code: "ModStr5h",
+                group: {},
+                positive: "Fire Absorb",
+                negative: "Fire Absorb"
+            }
+        }
+    }]
+}, {
+    id: 182,
+    kind: "item.runeword",
+    key: "Shattered Wall",
+    name: "Shattered Wall",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 160,
+        max: 200,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Holy Freeze",
+        min: 16,
+        max: 16,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "block2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fasterblockrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 136,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4y",
+                    negative_code: "ModStr4y",
+                    group: {},
+                    positive: "Faster Block Rate",
+                    negative: "Faster Block Rate"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 5,
+        max: 5,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-cold",
+        param: 50,
+        min: 200,
+        max: 250,
+        modifiers: [{
+            name: "coldmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 96,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1t",
+                    negative_code: "ModStr1t",
+                    group: {},
+                    positive: "to Minimum Cold Damage",
+                    negative: "to Minimum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 95,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1s",
+                    negative_code: "ModStr1s",
+                    group: {},
+                    positive: "to Maximum Cold Damage",
+                    negative: "to Maximum Cold Damage"
+                }
+            }
+        }, {
+            name: "coldlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "hp",
+        param: "",
+        min: 50,
+        max: 100,
+        modifiers: [{
+            name: "maxhp",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 59,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pala"],
+        extended: []
+    },
+    runes: ["r33", "r31", "r08", "r32"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_fasterblockrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 136,
+            value: 1,
+            label: {
+                positive_code: "ModStr4y",
+                negative_code: "ModStr4y",
+                group: {},
+                positive: "Faster Block Rate",
+                negative: "Faster Block Rate"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }, {
+        name: "coldmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 96,
+            value: 1,
+            label: {
+                positive_code: "ModStr1t",
+                negative_code: "ModStr1t",
+                group: {},
+                positive: "to Minimum Cold Damage",
+                negative: "to Minimum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 95,
+            value: 1,
+            label: {
+                positive_code: "ModStr1s",
+                negative_code: "ModStr1s",
+                group: {},
+                positive: "to Maximum Cold Damage",
+                negative: "to Maximum Cold Damage"
+            }
+        }
+    }, {
+        name: "coldlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "maxhp",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 59,
+            value: 1,
+            label: {
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }]
+}, {
+    id: 183,
+    kind: "item.runeword",
+    key: "Asylum",
+    name: "Asylum",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 265,
+        max: 315,
+        modifiers: []
+    }, {
+        key: "dex",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "openwounds",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_openwounds",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 83,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3m",
+                    negative_code: "ModStr3m",
+                    group: {},
+                    positive: "Chance of Open Wounds",
+                    negative: "Chance of Open Wounds"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Sanctuary",
+        min: 17,
+        max: 20,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 121,
+        min: 25,
+        max: 40,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["hamm", "pole", "spea", "miss", "2hsw"],
+        extended: []
+    },
+    runes: ["r25", "r32", "r15", "r31", "r14", "r22"],
+    modifiers: [{
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_openwounds",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 83,
+            value: 1,
+            label: {
+                positive_code: "ModStr3m",
+                negative_code: "ModStr3m",
+                group: {},
+                positive: "Chance of Open Wounds",
+                negative: "Chance of Open Wounds"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 184,
+    kind: "item.runeword",
+    key: "Asylum Staff",
+    name: "Asylum",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 265,
+        max: 315,
+        modifiers: []
+    }, {
+        key: "dex",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }]
+    }, {
+        key: "allskills",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_allskills",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 158,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3k",
+                    negative_code: "ModStr3k",
+                    group: {},
+                    positive: "to All Skills",
+                    negative: "to All Skills"
+                }
+            }
+        }]
+    }, {
+        key: "openwounds",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_openwounds",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 83,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3m",
+                    negative_code: "ModStr3m",
+                    group: {},
+                    positive: "Chance of Open Wounds",
+                    negative: "Chance of Open Wounds"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Sanctuary",
+        min: 17,
+        max: 20,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: 100,
+        max: 100,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: 121,
+        min: 25,
+        max: 40,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r25", "r32", "r15", "r31", "r14", "r22"],
+    modifiers: [{
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "item_allskills",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 158,
+            value: 1,
+            label: {
+                positive_code: "ModStr3k",
+                negative_code: "ModStr3k",
+                group: {},
+                positive: "to All Skills",
+                negative: "to All Skills"
+            }
+        }
+    }, {
+        name: "item_openwounds",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 83,
+            value: 1,
+            label: {
+                positive_code: "ModStr3m",
+                negative_code: "ModStr3m",
+                group: {},
+                positive: "Chance of Open Wounds",
+                negative: "Chance of Open Wounds"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }]
+}, {
+    id: 185,
+    kind: "item.runeword",
+    key: "Revenge",
+    name: "Revenge",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 250,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "red-dmg",
+        param: "",
+        min: 18,
+        max: 18,
+        modifiers: [{
+            name: "normal_damage_reduction",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 22,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2u_PD2",
+                    negative_code: "ModStr2u_PD2",
+                    group: {},
+                    positive: "Physical Damage Taken Reduced by",
+                    negative: "Physical Damage Taken Reduced by"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 68,
+        min: 6,
+        max: 8,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "balance2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fastergethitrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 139,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4p",
+                    negative_code: "ModStr4p",
+                    group: {},
+                    positive: "Faster Hit Recovery",
+                    negative: "Faster Hit Recovery"
+                }
+            }
+        }]
+    }, {
+        key: "poisskill",
+        param: "",
+        min: 4,
+        max: 4,
+        modifiers: [{
+            name: "item_elemskill",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 1,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }, {
+            name: "item_elemskill_poison",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 157,
+                value: 1,
+                label: {
+                    positive_code: "ModStrPoisonskills",
+                    negative_code: "ModStrPoisonskills",
+                    group: {},
+                    positive: "to Poison Skills",
+                    negative: "to Poison Skills"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-pois",
+        param: 50,
+        min: 28672,
+        max: 28672,
+        modifiers: [{
+            name: "poisonmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 92,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4i",
+                    negative_code: "ModStr4i",
+                    group: {},
+                    positive: "to Minimum Poison Damage",
+                    negative: "to Minimum Poison Damage"
+                }
+            }
+        }, {
+            name: "poisonmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 91,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4h",
+                    negative_code: "ModStr4h",
+                    group: {},
+                    positive: "to Maximum Poison Damage",
+                    negative: "to Maximum Poison Damage"
+                }
+            }
+        }, {
+            name: "poisonlength",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["sc9"],
+        extended: []
+    },
+    runes: ["r28", "r15", "r33", "r11"],
+    modifiers: [{
+        name: "normal_damage_reduction",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 22,
+            value: 2,
+            label: {
+                positive_code: "ModStr2u_PD2",
+                negative_code: "ModStr2u_PD2",
+                group: {},
+                positive: "Physical Damage Taken Reduced by",
+                negative: "Physical Damage Taken Reduced by"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fastergethitrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 139,
+            value: 1,
+            label: {
+                positive_code: "ModStr4p",
+                negative_code: "ModStr4p",
+                group: {},
+                positive: "Faster Hit Recovery",
+                negative: "Faster Hit Recovery"
+            }
+        }
+    }, {
+        name: "item_elemskill",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 1,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_elemskill_poison",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 157,
+            value: 1,
+            label: {
+                positive_code: "ModStrPoisonskills",
+                negative_code: "ModStrPoisonskills",
+                group: {},
+                positive: "to Poison Skills",
+                negative: "to Poison Skills"
+            }
+        }
+    }, {
+        name: "poisonmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 92,
+            value: 1,
+            label: {
+                positive_code: "ModStr4i",
+                negative_code: "ModStr4i",
+                group: {},
+                positive: "to Minimum Poison Damage",
+                negative: "to Minimum Poison Damage"
+            }
+        }
+    }, {
+        name: "poisonmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 91,
+            value: 1,
+            label: {
+                positive_code: "ModStr4h",
+                negative_code: "ModStr4h",
+                group: {},
+                positive: "to Maximum Poison Damage",
+                negative: "to Maximum Poison Damage"
+            }
+        }
+    }, {
+        name: "poisonlength",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }]
+}, {
+    id: 186,
+    kind: "item.runeword",
+    key: "Runeword41",
+    name: "Fortitude",
+    properties: [{
+        key: "ac%",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "item_armor_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 74,
+                value: 1,
+                label: {
+                    positive_code: "Modstr2v",
+                    negative_code: "Modstr2v",
+                    group: {},
+                    positive: "Enhanced Defense",
+                    negative: "Enhanced Defense"
+                }
+            }
+        }]
+    }, {
+        key: "dmg%",
+        param: "",
+        min: 300,
+        max: 350,
+        modifiers: []
+    }, {
+        key: "cast3",
+        param: "",
+        min: 25,
+        max: 25,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-to-mana",
+        param: "",
+        min: 12,
+        max: 12,
+        modifiers: [{
+            name: "item_damagetomana",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 11,
+                value: 1,
+                label: {
+                    positive_code: "ModStr3w_PD2",
+                    negative_code: "ModStr3w_PD2",
+                    group: {},
+                    positive: "Damage Taken Gained as Mana when Hit",
+                    negative: "Damage Taken Gained as Mana when Hit"
+                }
+            }
+        }]
+    }, {
+        key: "hp/lvl",
+        param: "",
+        min: 8,
+        max: 12,
+        modifiers: [{
+            name: "item_hp_perlevel",
+            encoding: 0,
+            description: {
+                function: 6,
+                priority: 57,
+                value: 1,
+                label: {
+                    secondary_code: "increaseswithplaylevelX",
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    secondary: "(Based on Character Level)",
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 25,
+        max: 30,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["weap"],
+        extended: []
+    },
+    runes: ["r01", "r12", "r14", "r28"],
+    modifiers: [{
+        name: "item_armor_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 74,
+            value: 1,
+            label: {
+                positive_code: "Modstr2v",
+                negative_code: "Modstr2v",
+                group: {},
+                positive: "Enhanced Defense",
+                negative: "Enhanced Defense"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_damagetomana",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 11,
+            value: 1,
+            label: {
+                positive_code: "ModStr3w_PD2",
+                negative_code: "ModStr3w_PD2",
+                group: {},
+                positive: "Damage Taken Gained as Mana when Hit",
+                negative: "Damage Taken Gained as Mana when Hit"
+            }
+        }
+    }, {
+        name: "item_hp_perlevel",
+        encoding: 0,
+        description: {
+            function: 6,
+            priority: 57,
+            value: 1,
+            label: {
+                secondary_code: "increaseswithplaylevelX",
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                secondary: "(Based on Character Level)",
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }]
+}, {
+    id: 187,
+    kind: "item.runeword",
+    key: "Runeword25",
+    name: "Destruction",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 300,
+        max: 300,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 30,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Molten Boulder",
+        min: 8,
+        max: 35,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Meteor",
+        min: 15,
+        max: 45,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Nova",
+        min: 15,
+        max: 40,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }, {
+        key: "cast-skill",
+        param: "Frost Nova",
+        min: 20,
+        max: 35,
+        modifiers: [{
+            name: "item_skilloncast",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ModItemSkOnCast",
+                    negative_code: "ModItemSkOnCast",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on casting",
+                    negative: "%d%% Chance to cast level %d %s on casting"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["staf"],
+        extended: []
+    },
+    runes: ["r26", "r28", "r30", "r31", "r18"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }, {
+        name: "item_skilloncast",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ModItemSkOnCast",
+                negative_code: "ModItemSkOnCast",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on casting",
+                negative: "%d%% Chance to cast level %d %s on casting"
+            }
+        }
+    }]
+}, {
+    id: 188,
+    kind: "item.runeword",
+    key: "Hustle",
+    name: "Hustle",
+    properties: [{
+        key: "equipped-skill",
+        param: "Quickness SelfAura",
+        min: 6,
+        max: 6,
+        modifiers: [{
+            name: "item_skillonequip",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemSkillOnEquip",
+                    negative_code: "ModitemSkillOnEquip",
+                    group: {},
+                    positive: "Level %d %s When Equipped",
+                    negative: "Level %d %s When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "stamdrain",
+        param: "",
+        min: 35,
+        max: 35,
+        modifiers: [{
+            name: "item_staminadrainpct",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 49,
+                value: 1,
+                label: {
+                    positive_code: "ModStr6e",
+                    negative_code: "ModStr6e",
+                    group: {},
+                    positive: "Slower Stamina Drain",
+                    negative: "Slower Stamina Drain"
+                }
+            }
+        }]
+    }, {
+        key: "res-all",
+        param: "",
+        min: 10,
+        max: 10,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }, {
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }, {
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }, {
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "half-freeze",
+        param: "",
+        min: 1,
+        max: 1,
+        modifiers: [{
+            name: "item_halffreezeduration",
+            encoding: 0,
+            description: {
+                function: 3,
+                priority: 19,
+                value: 0,
+                label: {
+                    positive_code: "ModStr4b",
+                    negative_code: "ModStr4b",
+                    group: {},
+                    positive: "Half Freeze Duration",
+                    negative: "Half Freeze Duration"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["tors"],
+        extended: []
+    },
+    runes: ["r13", "r18", "r02"],
+    modifiers: [{
+        name: "item_skillonequip",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemSkillOnEquip",
+                negative_code: "ModitemSkillOnEquip",
+                group: {},
+                positive: "Level %d %s When Equipped",
+                negative: "Level %d %s When Equipped"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_staminadrainpct",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 49,
+            value: 1,
+            label: {
+                positive_code: "ModStr6e",
+                negative_code: "ModStr6e",
+                group: {},
+                positive: "Slower Stamina Drain",
+                negative: "Slower Stamina Drain"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "item_halffreezeduration",
+        encoding: 0,
+        description: {
+            function: 3,
+            priority: 19,
+            value: 0,
+            label: {
+                positive_code: "ModStr4b",
+                negative_code: "ModStr4b",
+                group: {},
+                positive: "Half Freeze Duration",
+                negative: "Half Freeze Duration"
+            }
+        }
+    }]
+}, {
+    id: 189,
+    kind: "item.runeword",
+    key: "Purity",
+    name: "Purity",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 110,
+        max: 145,
+        modifiers: []
+    }, {
+        key: "att-demon",
+        param: "",
+        min: 200,
+        max: 200,
+        modifiers: [{
+            name: "item_demon_tohit",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 110,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4j",
+                    negative_code: "ModStr4j",
+                    group: {},
+                    positive: "to Attack Rating against Demons",
+                    negative: "to Attack Rating against Demons"
+                }
+            }
+        }]
+    }, {
+        key: "swing2",
+        param: "",
+        min: 45,
+        max: 45,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "aura",
+        param: "Prayer",
+        min: 10,
+        max: 12,
+        modifiers: [{
+            name: "item_aura",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemAura",
+                    negative_code: "ModitemAura",
+                    group: {},
+                    positive: "Level %d %s Aura When Equipped",
+                    negative: "Level %d %s Aura When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "curse-res",
+        param: "",
+        min: 30,
+        max: 30,
+        modifiers: [{
+            name: "curse_resistance",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 100,
+                value: 1,
+                label: {
+                    positive_code: "ModReduceCurseDuration",
+                    negative_code: "ModReduceCurseDuration",
+                    group: {},
+                    positive: "Reduced Curse Duration",
+                    negative: "Reduced Curse Duration"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-demon",
+        param: "",
+        min: 80,
+        max: 120,
+        modifiers: [{
+            name: "item_demondamage_percent",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 112,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4e",
+                    negative_code: "ModStr4e",
+                    group: {},
+                    positive: "Damage to Demons",
+                    negative: "Damage to Demons"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["pole", "staf", "spea", "miss"],
+        extended: []
+    },
+    runes: ["r11", "r05", "r10"],
+    modifiers: [{
+        name: "item_demon_tohit",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 110,
+            value: 1,
+            label: {
+                positive_code: "ModStr4j",
+                negative_code: "ModStr4j",
+                group: {},
+                positive: "to Attack Rating against Demons",
+                negative: "to Attack Rating against Demons"
+            }
+        }
+    }, {
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_aura",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemAura",
+                negative_code: "ModitemAura",
+                group: {},
+                positive: "Level %d %s Aura When Equipped",
+                negative: "Level %d %s Aura When Equipped"
+            }
+        }
+    }, {
+        name: "curse_resistance",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 100,
+            value: 1,
+            label: {
+                positive_code: "ModReduceCurseDuration",
+                negative_code: "ModReduceCurseDuration",
+                group: {},
+                positive: "Reduced Curse Duration",
+                negative: "Reduced Curse Duration"
+            }
+        }
+    }, {
+        name: "item_demondamage_percent",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 112,
+            value: 1,
+            label: {
+                positive_code: "ModStr4e",
+                negative_code: "ModStr4e",
+                group: {},
+                positive: "Damage to Demons",
+                negative: "Damage to Demons"
+            }
+        }
+    }]
+}, {
+    id: 190,
+    kind: "item.runeword",
+    key: "Rapture",
+    name: "Rapture",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 240,
+        max: 280,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "deadly",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_deadlystrike",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 85,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5q",
+                    negative_code: "ModStr5q",
+                    group: {},
+                    positive: "Deadly Strike",
+                    negative: "Deadly Strike"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 91,
+        min: 30,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "res-cold",
+        param: "",
+        min: 40,
+        max: 60,
+        modifiers: [{
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }]
+    }, {
+        key: "gold%",
+        param: "",
+        min: 80,
+        max: 120,
+        modifiers: [{
+            name: "item_goldbonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 10,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1w",
+                    negative_code: "ModStr1w",
+                    group: {},
+                    positive: "Extra Gold from Monsters",
+                    negative: "Extra Gold from Monsters"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: "Eruption",
+        min: 14,
+        max: 46,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["hamm"],
+        extended: []
+    },
+    runes: ["r26", "r31", "r28", "r08", "r18", "r23"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_deadlystrike",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 85,
+            value: 1,
+            label: {
+                positive_code: "ModStr5q",
+                negative_code: "ModStr5q",
+                group: {},
+                positive: "Deadly Strike",
+                negative: "Deadly Strike"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "item_goldbonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 10,
+            value: 1,
+            label: {
+                positive_code: "ModStr1w",
+                negative_code: "ModStr1w",
+                group: {},
+                positive: "Extra Gold from Monsters",
+                negative: "Extra Gold from Monsters"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }]
+}, {
+    id: 191,
+    kind: "item.runeword",
+    key: "Epiphany",
+    name: "Epiphany",
+    properties: [{
+        key: "es-efficiency-and-es-when-equip",
+        param: "Energy Shield SelfAura",
+        min: 18,
+        max: 18,
+        modifiers: [{
+            name: "es_efficiency",
+            encoding: 0,
+            description: {
+                function: 0,
+                priority: 0,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }, {
+            name: "item_skillonequip",
+            encoding: 0,
+            description: {
+                function: 16,
+                priority: 159,
+                value: 0,
+                label: {
+                    positive_code: "ModitemSkillOnEquip",
+                    negative_code: "ModitemSkillOnEquip",
+                    group: {},
+                    positive: "Level %d %s When Equipped",
+                    negative: "Level %d %s When Equipped"
+                }
+            }
+        }]
+    }, {
+        key: "all-stats",
+        param: "",
+        min: 10,
+        max: 15,
+        modifiers: [{
+            name: "strength",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 67,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1a",
+                    negative_code: "ModStr1a",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Strength",
+                    negative: "to Strength"
+                }
+            }
+        }, {
+            name: "energy",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 61,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1d",
+                    negative_code: "ModStr1d",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Energy",
+                    negative: "to Energy"
+                }
+            }
+        }, {
+            name: "dexterity",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 65,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1b",
+                    negative_code: "ModStr1b",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Dexterity",
+                    negative: "to Dexterity"
+                }
+            }
+        }, {
+            name: "vitality",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 63,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1c",
+                    negative_code: "ModStr1c",
+                    group: {
+                        positive_code: "Moditem2allattrib",
+                        negative_code: "Moditem2allattrib",
+                        positive: "to all Attributes",
+                        negative: "to all Attributes"
+                    },
+                    positive: "to Vitality",
+                    negative: "to Vitality"
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Static Field",
+        min: 25,
+        max: 27,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }, {
+        key: "mana%",
+        param: "",
+        min: 28,
+        max: 35,
+        modifiers: [{
+            name: "item_maxmana_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 54,
+                value: 2,
+                label: {
+                    positive_code: "ModStr2h",
+                    negative_code: "ModStr2h",
+                    group: {},
+                    positive: "Increase Maximum Mana",
+                    negative: "Increase Maximum Mana"
+                }
+            }
+        }]
+    }, {
+        key: "res-pois",
+        param: "",
+        min: 40,
+        max: 55,
+        modifiers: [{
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "dmg-ltng",
+        param: "",
+        min: 1,
+        max: 750,
+        modifiers: [{
+            name: "lightmindam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 99,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1r",
+                    negative_code: "ModStr1r",
+                    group: {},
+                    positive: "to Minimum Lightning Damage",
+                    negative: "to Minimum Lightning Damage"
+                }
+            }
+        }, {
+            name: "lightmaxdam",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 98,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1q",
+                    negative_code: "ModStr1q",
+                    group: {},
+                    positive: "to Maximum Lightning Damage",
+                    negative: "to Maximum Lightning Damage"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["shld"],
+        extended: []
+    },
+    runes: ["r28", "r06", "r28", "r24"],
+    modifiers: [{
+        name: "es_efficiency",
+        encoding: 0,
+        description: {
+            function: 0,
+            priority: 0,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_skillonequip",
+        encoding: 0,
+        description: {
+            function: 16,
+            priority: 159,
+            value: 0,
+            label: {
+                positive_code: "ModitemSkillOnEquip",
+                negative_code: "ModitemSkillOnEquip",
+                group: {},
+                positive: "Level %d %s When Equipped",
+                negative: "Level %d %s When Equipped"
+            }
+        }
+    }, {
+        name: "strength",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 67,
+            value: 1,
+            label: {
+                positive_code: "ModStr1a",
+                negative_code: "ModStr1a",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Strength",
+                negative: "to Strength"
+            }
+        }
+    }, {
+        name: "energy",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 61,
+            value: 1,
+            label: {
+                positive_code: "ModStr1d",
+                negative_code: "ModStr1d",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Energy",
+                negative: "to Energy"
+            }
+        }
+    }, {
+        name: "dexterity",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 65,
+            value: 1,
+            label: {
+                positive_code: "ModStr1b",
+                negative_code: "ModStr1b",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Dexterity",
+                negative: "to Dexterity"
+            }
+        }
+    }, {
+        name: "vitality",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 63,
+            value: 1,
+            label: {
+                positive_code: "ModStr1c",
+                negative_code: "ModStr1c",
+                group: {
+                    positive_code: "Moditem2allattrib",
+                    negative_code: "Moditem2allattrib",
+                    positive: "to all Attributes",
+                    negative: "to all Attributes"
+                },
+                positive: "to Vitality",
+                negative: "to Vitality"
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }, {
+        name: "item_maxmana_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 54,
+            value: 2,
+            label: {
+                positive_code: "ModStr2h",
+                negative_code: "ModStr2h",
+                group: {},
+                positive: "Increase Maximum Mana",
+                negative: "Increase Maximum Mana"
+            }
+        }
+    }, {
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "lightmindam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 99,
+            value: 1,
+            label: {
+                positive_code: "ModStr1r",
+                negative_code: "ModStr1r",
+                group: {},
+                positive: "to Minimum Lightning Damage",
+                negative: "to Minimum Lightning Damage"
+            }
+        }
+    }, {
+        name: "lightmaxdam",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 98,
+            value: 1,
+            label: {
+                positive_code: "ModStr1q",
+                negative_code: "ModStr1q",
+                group: {},
+                positive: "to Maximum Lightning Damage",
+                negative: "to Maximum Lightning Damage"
+            }
+        }
+    }]
+}, {
+    id: 192,
+    kind: "item.runeword",
+    key: "Loyalty Bow",
+    name: "Loyalty",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 200,
+        max: 245,
+        modifiers: []
+    }, {
+        key: "skill",
+        param: 26,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "skill",
+        param: 28,
+        min: 2,
+        max: 3,
+        modifiers: [{
+            name: "item_singleskill",
+            encoding: 1,
+            description: {
+                function: 27,
+                priority: 81,
+                value: 0,
+                label: {
+                    group: {}
+                }
+            }
+        }]
+    }, {
+        key: "cast2",
+        param: "",
+        min: 60,
+        max: 60,
+        modifiers: [{
+            name: "item_fastercastrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 142,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4v",
+                    negative_code: "ModStr4v",
+                    group: {},
+                    positive: "Faster Cast Rate",
+                    negative: "Faster Cast Rate"
+                }
+            }
+        }]
+    }, {
+        key: "pierce",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "item_pierce",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 132,
+                value: 1,
+                label: {
+                    positive_code: "ModPierceChance",
+                    negative_code: "ModPierceChance",
+                    group: {},
+                    positive: "Chance to Pierce",
+                    negative: "Chance to Pierce"
+                }
+            }
+        }]
+    }, {
+        key: "skilltab",
+        param: 1,
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_addskill_tab",
+            encoding: 0,
+            description: {
+                function: 14,
+                priority: 151,
+                value: 0,
+                label: {
+                    positive_code: "StrSklTabItem1",
+                    negative_code: "StrSklTabItem1",
+                    group: {},
+                    positive: "+%d to Javelin and Spear Skills",
+                    negative: "+%d to Javelin and Spear Skills"
+                }
+            }
+        }]
+    }, {
+        key: "mana-kill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_manaafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5f",
+                    negative_code: "ModStr5f",
+                    group: {},
+                    positive: "to Mana after each Kill",
+                    negative: "to Mana after each Kill"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["miss"],
+        extended: []
+    },
+    runes: ["r21", "r03", "r14"],
+    modifiers: [{
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_singleskill",
+        encoding: 1,
+        description: {
+            function: 27,
+            priority: 81,
+            value: 0,
+            label: {
+                group: {}
+            }
+        }
+    }, {
+        name: "item_fastercastrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 142,
+            value: 1,
+            label: {
+                positive_code: "ModStr4v",
+                negative_code: "ModStr4v",
+                group: {},
+                positive: "Faster Cast Rate",
+                negative: "Faster Cast Rate"
+            }
+        }
+    }, {
+        name: "item_pierce",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 132,
+            value: 1,
+            label: {
+                positive_code: "ModPierceChance",
+                negative_code: "ModPierceChance",
+                group: {},
+                positive: "Chance to Pierce",
+                negative: "Chance to Pierce"
+            }
+        }
+    }, {
+        name: "item_addskill_tab",
+        encoding: 0,
+        description: {
+            function: 14,
+            priority: 151,
+            value: 0,
+            label: {
+                positive_code: "StrSklTabItem1",
+                negative_code: "StrSklTabItem1",
+                group: {},
+                positive: "+%d to Javelin and Spear Skills",
+                negative: "+%d to Javelin and Spear Skills"
+            }
+        }
+    }, {
+        name: "item_manaafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModStr5f",
+                negative_code: "ModStr5f",
+                group: {},
+                positive: "to Mana after each Kill",
+                negative: "to Mana after each Kill"
+            }
+        }
+    }]
+}, {
+    id: 193,
+    kind: "item.runeword",
+    key: "Wind Throwable",
+    name: "Wind",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 220,
+        max: 280,
+        modifiers: []
+    }, {
+        key: "swing2",
+        param: "",
+        min: 40,
+        max: 40,
+        modifiers: [{
+            name: "item_fasterattackrate",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 145,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4m",
+                    negative_code: "ModStr4m",
+                    group: {},
+                    positive: "Increased Attack Speed",
+                    negative: "Increased Attack Speed"
+                }
+            }
+        }]
+    }, {
+        key: "move2",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_fastermovevelocity",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 148,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4s",
+                    negative_code: "ModStr4s",
+                    group: {},
+                    positive: "Faster Run/Walk",
+                    negative: "Faster Run/Walk"
+                }
+            }
+        }]
+    }, {
+        key: "reduce-ac",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_fractionaltargetac",
+            encoding: 0,
+            description: {
+                function: 20,
+                priority: 118,
+                value: 1,
+                label: {
+                    positive_code: "ModStr5o",
+                    negative_code: "ModStr5o",
+                    group: {},
+                    positive: "Target Defense",
+                    negative: "Target Defense"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 245,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "hit-skill",
+        param: 240,
+        min: 18,
+        max: 35,
+        modifiers: [{
+            name: "item_skillonhit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc1",
+                    negative_code: "ItemExpansiveChanc1",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s on striking",
+                    negative: "%d%% Chance to cast level %d %s on striking"
+                }
+            }
+        }]
+    }, {
+        key: "gethit-skill",
+        param: "Cyclone Armor",
+        min: 5,
+        max: 9,
+        modifiers: [{
+            name: "item_skillongethit",
+            encoding: 2,
+            description: {
+                function: 15,
+                priority: 160,
+                value: 0,
+                label: {
+                    positive_code: "ItemExpansiveChanc2",
+                    negative_code: "ItemExpansiveChanc2",
+                    group: {},
+                    positive: "%d%% Chance to cast level %d %s when struck",
+                    negative: "%d%% Chance to cast level %d %s when struck"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["thro"],
+        extended: []
+    },
+    runes: ["r29", "r01"],
+    modifiers: [{
+        name: "item_fasterattackrate",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 145,
+            value: 1,
+            label: {
+                positive_code: "ModStr4m",
+                negative_code: "ModStr4m",
+                group: {},
+                positive: "Increased Attack Speed",
+                negative: "Increased Attack Speed"
+            }
+        }
+    }, {
+        name: "item_fastermovevelocity",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 148,
+            value: 1,
+            label: {
+                positive_code: "ModStr4s",
+                negative_code: "ModStr4s",
+                group: {},
+                positive: "Faster Run/Walk",
+                negative: "Faster Run/Walk"
+            }
+        }
+    }, {
+        name: "item_fractionaltargetac",
+        encoding: 0,
+        description: {
+            function: 20,
+            priority: 118,
+            value: 1,
+            label: {
+                positive_code: "ModStr5o",
+                negative_code: "ModStr5o",
+                group: {},
+                positive: "Target Defense",
+                negative: "Target Defense"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillonhit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc1",
+                negative_code: "ItemExpansiveChanc1",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s on striking",
+                negative: "%d%% Chance to cast level %d %s on striking"
+            }
+        }
+    }, {
+        name: "item_skillongethit",
+        encoding: 2,
+        description: {
+            function: 15,
+            priority: 160,
+            value: 0,
+            label: {
+                positive_code: "ItemExpansiveChanc2",
+                negative_code: "ItemExpansiveChanc2",
+                group: {},
+                positive: "%d%% Chance to cast level %d %s when struck",
+                negative: "%d%% Chance to cast level %d %s when struck"
+            }
+        }
+    }]
+}, {
+    id: 194,
+    kind: "item.runeword",
+    key: "Ancient's Scripture",
+    name: "Ancient's Scripture",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: []
+    }, {
+        key: "res-pois",
+        param: "",
+        min: 5,
+        max: 15,
+        modifiers: [{
+            name: "poisonresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 34,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1n",
+                    negative_code: "ModStr1n",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Poison Resist",
+                    negative: "Poison Resist"
+                }
+            }
+        }]
+    }, {
+        key: "res-ltng",
+        param: "",
+        min: 5,
+        max: 15,
+        modifiers: [{
+            name: "lightresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 38,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1l",
+                    negative_code: "ModStr1l",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Lightning Resist",
+                    negative: "Lightning Resist"
+                }
+            }
+        }]
+    }, {
+        key: "hp",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "maxhp",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 59,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1u",
+                    negative_code: "ModStr1u",
+                    group: {},
+                    positive: "to Life",
+                    negative: "to Life"
+                }
+            }
+        }]
+    }, {
+        key: "regen-stam",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "staminarecoverybonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 48,
+                value: 2,
+                label: {
+                    positive_code: "ModStr3v",
+                    negative_code: "ModStr3v",
+                    group: {},
+                    positive: "Heal Stamina Plus",
+                    negative: "Heal Stamina Plus"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["misl"],
+        extended: []
+    },
+    runes: ["r07", "r09"],
+    modifiers: [{
+        name: "poisonresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 34,
+            value: 2,
+            label: {
+                positive_code: "ModStr1n",
+                negative_code: "ModStr1n",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Poison Resist",
+                negative: "Poison Resist"
+            }
+        }
+    }, {
+        name: "lightresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 38,
+            value: 2,
+            label: {
+                positive_code: "ModStr1l",
+                negative_code: "ModStr1l",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Lightning Resist",
+                negative: "Lightning Resist"
+            }
+        }
+    }, {
+        name: "maxhp",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 59,
+            value: 1,
+            label: {
+                positive_code: "ModStr1u",
+                negative_code: "ModStr1u",
+                group: {},
+                positive: "to Life",
+                negative: "to Life"
+            }
+        }
+    }, {
+        name: "staminarecoverybonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 48,
+            value: 2,
+            label: {
+                positive_code: "ModStr3v",
+                negative_code: "ModStr3v",
+                group: {},
+                positive: "Heal Stamina Plus",
+                negative: "Heal Stamina Plus"
+            }
+        }
+    }]
+}, {
+    id: 195,
+    kind: "item.runeword",
+    key: "Ancient's Foresight",
+    name: "Ancient's Foresight",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 10,
+        max: 20,
+        modifiers: []
+    }, {
+        key: "res-cold",
+        param: "",
+        min: 5,
+        max: 15,
+        modifiers: [{
+            name: "coldresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 40,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1k",
+                    negative_code: "ModStr1k",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Cold Resist",
+                    negative: "Cold Resist"
+                }
+            }
+        }]
+    }, {
+        key: "res-fire",
+        param: "",
+        min: 5,
+        max: 15,
+        modifiers: [{
+            name: "fireresist",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 36,
+                value: 2,
+                label: {
+                    positive_code: "ModStr1j",
+                    negative_code: "ModStr1j",
+                    group: {
+                        positive_code: "strModAllResistances",
+                        negative_code: "strModAllResistancesNeg",
+                        positive: "All Resistances +%d",
+                        negative: "All Resistances %d"
+                    },
+                    positive: "Fire Resist",
+                    negative: "Fire Resist"
+                }
+            }
+        }]
+    }, {
+        key: "mana",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "maxmana",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 55,
+                value: 1,
+                label: {
+                    positive_code: "ModStr1e",
+                    negative_code: "ModStr1e",
+                    group: {},
+                    positive: "to Mana",
+                    negative: "to Mana"
+                }
+            }
+        }]
+    }, {
+        key: "regen-mana",
+        param: "",
+        min: 20,
+        max: 20,
+        modifiers: [{
+            name: "manarecoverybonus",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 52,
+                value: 2,
+                label: {
+                    positive_code: "ModStr4g",
+                    negative_code: "ModStr4g",
+                    group: {},
+                    positive: "Regenerate Mana",
+                    negative: "Regenerate Mana"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["misl"],
+        extended: []
+    },
+    runes: ["r08", "r10"],
+    modifiers: [{
+        name: "coldresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 40,
+            value: 2,
+            label: {
+                positive_code: "ModStr1k",
+                negative_code: "ModStr1k",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Cold Resist",
+                negative: "Cold Resist"
+            }
+        }
+    }, {
+        name: "fireresist",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 36,
+            value: 2,
+            label: {
+                positive_code: "ModStr1j",
+                negative_code: "ModStr1j",
+                group: {
+                    positive_code: "strModAllResistances",
+                    negative_code: "strModAllResistancesNeg",
+                    positive: "All Resistances +%d",
+                    negative: "All Resistances %d"
+                },
+                positive: "Fire Resist",
+                negative: "Fire Resist"
+            }
+        }
+    }, {
+        name: "maxmana",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 55,
+            value: 1,
+            label: {
+                positive_code: "ModStr1e",
+                negative_code: "ModStr1e",
+                group: {},
+                positive: "to Mana",
+                negative: "to Mana"
+            }
+        }
+    }, {
+        name: "manarecoverybonus",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 52,
+            value: 2,
+            label: {
+                positive_code: "ModStr4g",
+                negative_code: "ModStr4g",
+                group: {},
+                positive: "Regenerate Mana",
+                negative: "Regenerate Mana"
+            }
+        }
+    }]
+}, {
+    id: 196,
+    kind: "item.runeword",
+    key: "Echo Weapon",
+    name: "Echo",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 40,
+        max: 60,
+        modifiers: []
+    }, {
+        key: "pierce",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_pierce",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 132,
+                value: 1,
+                label: {
+                    positive_code: "ModPierceChance",
+                    negative_code: "ModPierceChance",
+                    group: {},
+                    positive: "Chance to Pierce",
+                    negative: "Chance to Pierce"
+                }
+            }
+        }]
+    }, {
+        key: "heal-kill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_healafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModitemHPaK",
+                    negative_code: "ModitemHPaK",
+                    group: {},
+                    positive: "Life after each Kill",
+                    negative: "Life after each Kill"
+                }
+            }
+        }]
+    }, {
+        key: "att%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["thro", "jave"],
+        extended: []
+    },
+    runes: ["r12", "r14"],
+    modifiers: [{
+        name: "item_pierce",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 132,
+            value: 1,
+            label: {
+                positive_code: "ModPierceChance",
+                negative_code: "ModPierceChance",
+                group: {},
+                positive: "Chance to Pierce",
+                negative: "Chance to Pierce"
+            }
+        }
+    }, {
+        name: "item_healafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModitemHPaK",
+                negative_code: "ModitemHPaK",
+                group: {},
+                positive: "Life after each Kill",
+                negative: "Life after each Kill"
+            }
+        }
+    }, {
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }]
+}, {
+    id: 197,
+    kind: "item.runeword",
+    key: "Echo Quiver",
+    name: "Echo",
+    properties: [{
+        key: "dmg%",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: []
+    }, {
+        key: "pierce",
+        param: "",
+        min: 20,
+        max: 30,
+        modifiers: [{
+            name: "item_pierce",
+            encoding: 0,
+            description: {
+                function: 4,
+                priority: 132,
+                value: 1,
+                label: {
+                    positive_code: "ModPierceChance",
+                    negative_code: "ModPierceChance",
+                    group: {},
+                    positive: "Chance to Pierce",
+                    negative: "Chance to Pierce"
+                }
+            }
+        }]
+    }, {
+        key: "heal-kill",
+        param: "",
+        min: 2,
+        max: 2,
+        modifiers: [{
+            name: "item_healafterkill",
+            encoding: 0,
+            description: {
+                function: 1,
+                priority: 16,
+                value: 1,
+                label: {
+                    positive_code: "ModitemHPaK",
+                    negative_code: "ModitemHPaK",
+                    group: {},
+                    positive: "Life after each Kill",
+                    negative: "Life after each Kill"
+                }
+            }
+        }]
+    }, {
+        key: "att%",
+        param: "",
+        min: 50,
+        max: 50,
+        modifiers: [{
+            name: "item_tohit_percent",
+            encoding: 0,
+            description: {
+                function: 2,
+                priority: 117,
+                value: 1,
+                label: {
+                    positive_code: "ModStr4c",
+                    negative_code: "ModStr4c",
+                    group: {},
+                    positive: "Bonus to Attack Rating",
+                    negative: "Bonus to Attack Rating"
+                }
+            }
+        }]
+    }],
+    types: {
+        base: ["misl"],
+        extended: []
+    },
+    runes: ["r12", "r14"],
+    modifiers: [{
+        name: "item_pierce",
+        encoding: 0,
+        description: {
+            function: 4,
+            priority: 132,
+            value: 1,
+            label: {
+                positive_code: "ModPierceChance",
+                negative_code: "ModPierceChance",
+                group: {},
+                positive: "Chance to Pierce",
+                negative: "Chance to Pierce"
+            }
+        }
+    }, {
+        name: "item_healafterkill",
+        encoding: 0,
+        description: {
+            function: 1,
+            priority: 16,
+            value: 1,
+            label: {
+                positive_code: "ModitemHPaK",
+                negative_code: "ModitemHPaK",
+                group: {},
+                positive: "Life after each Kill",
+                negative: "Life after each Kill"
+            }
+        }
+    }, {
+        name: "item_tohit_percent",
+        encoding: 0,
+        description: {
+            function: 2,
+            priority: 117,
+            value: 1,
+            label: {
+                positive_code: "ModStr4c",
+                negative_code: "ModStr4c",
+                group: {},
+                positive: "Bonus to Attack Rating",
+                negative: "Bonus to Attack Rating"
+            }
+        }
+    }]
+}];
+
+
 
 export const allItems = [...uniqueItems, ...setItems];
 

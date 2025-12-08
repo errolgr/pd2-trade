@@ -39,7 +39,6 @@ const ItemWindow: React.FC = () => {
         const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
         setItem(json);
       } catch (err) {
-        console.error("[ItemWindow] Failed to parse new-search payload:", err);
       }
     });
 

@@ -43,7 +43,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         focus: true,
         shadow: false,
         width: 1025,
-        height: 650,
+        height: 700,
       });
       setIsSettingsOpen(true);
       attachWindowCloseHandler(settingsWinRef.current, () => {

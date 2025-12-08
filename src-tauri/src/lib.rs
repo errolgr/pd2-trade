@@ -9,7 +9,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GET
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{commands, keyboard, system, webview, window};
+pub use modules::{chat_watcher, commands, keyboard, system, webview, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -124,6 +124,7 @@ pub fn run() {
                 .shadow(false)
                 .always_on_top(true)
                 .skip_taskbar(true)
+                .focusable(false)
                 .build()
                 .unwrap();
             
@@ -149,7 +150,11 @@ pub fn run() {
             commands::update_window_bounds,
             commands::set_window_click_through,
             commands::force_window_focus,
-            commands::reposition_toast_window
+            commands::reposition_toast_window,
+            commands::start_chat_watcher,
+            commands::stop_chat_watcher,
+            commands::get_diablo2_directory,
+            commands::auto_detect_diablo2_directory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

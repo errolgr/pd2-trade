@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { isTauri } from '@tauri-apps/api/core';
 import { Loader2, RefreshCw } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function AboutForm() {
   const { settings, isLoading, updateSettings } = useOptions();
@@ -62,7 +63,8 @@ export function AboutForm() {
   };
 
   return (
-    <div className={'flex flex-col gap-4 flex flex-col items-center'}>
+    <ScrollArea className="pr-2">
+      <div className={'flex flex-col gap-4 flex flex-col items-center max-h-[330px]'}>
       <div className={'flex flex-col gap-1 items-center'}>
         <img src={imgPath}
           style={{width: 50}}/>
@@ -129,6 +131,7 @@ export function AboutForm() {
           @Doreet
         </div>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

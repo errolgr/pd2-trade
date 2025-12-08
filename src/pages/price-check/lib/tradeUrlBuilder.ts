@@ -1,7 +1,7 @@
 import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
-import { fuzzyMatchCharacterSkill, skillNameToIdMap } from "@/assets/character-skills";
-import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
+import { skillNameToIdMap } from "@/assets/character-skills";
+import {classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
@@ -16,7 +16,11 @@ export function buildTradeUrl(
   selected: Set<string>,
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
-  statMapper?: (statId: number, stat: Stat) => string | undefined
+  statMapper?: (statId: number, stat: Stat) => string | undefined,
+  searchMode: number = 0,
+  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
+  isArchive: boolean = false,
+  corruptedState: number = 0
 ): string {
   const searchParams = new URLSearchParams();
 
@@ -31,33 +35,43 @@ export function buildTradeUrl(
     let propKey = "stat_undefined";
 
     if ('skill' in stat && stat.skill) {
-      const skillEntry = fuzzyMatchCharacterSkill(stat.skill.toLowerCase());
+      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
       if (skillEntry) {
         propKey = `item_singleskill{${skillEntry.id}}`;
+      } else {
+        const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
+        if (classEntry) {
+          propKey = `item_addclassskills{${classEntry.id}}`;
+        } else {
+          const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase());
+          if (subClassEntry) {
+            propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
+          }
+        }
       }
-      const classEntry = fuzzyClassSkillByName(stat.skill.toLowerCase());
-      if (classEntry) {
-        propKey = `item_addclassskills{${classEntry.id}}`;
-      }
-      const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase())
-      if (subClassEntry) {
-        propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
-      }
-
-      console.log('[tradeUrlBuilder] Skill entry:', skillEntry, 'Class entry:', classEntry, 'Subclass entry:', subClassEntry);
 
     } else if (stat.stat_id !== undefined) {
       propKey = getPropertyKey(stat.stat_id, stat, statMapper);
     }
 
     if (stat.stat_id === StatId.Socket) {
-      searchParams.set("sockets_min", String(f.min ?? 0));
-      searchParams.set("sockets_max", String(f.max ?? 0));
+      if (f.min !== undefined && f.min !== '') {
+        searchParams.set("sockets_min", String(f.min));
+      }
+      if (f.max !== undefined && f.max !== '') {
+        searchParams.set("sockets_max", String(f.max));
+      }
       return;
     }
 
     if (stat.stat_id === StatId.Corrupted) {
-      searchParams.set("corrupted", "true");
+      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+      if (corruptedState === 1) {
+        searchParams.set("corrupted", "true");
+      } else if (corruptedState === 2) {
+        searchParams.set("corrupted", "false");
+      }
+      // If corruptedState === 0, don't add any corrupted filter
       return;
     }
 
@@ -73,6 +87,9 @@ export function buildTradeUrl(
   // Basic item meta
   searchParams.set("quality", item.quality);
 
+  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
+  // Uniques, Sets, and Runewords always use name search
   if (item.type === "Jewel") {
     searchParams.set("type", "jewl");
     searchParams.set("base", "jew");
@@ -80,21 +97,42 @@ export function buildTradeUrl(
     searchParams.set("type", `{"$in": ["scha", "mcha", "lcha", "torc"]}`);
     searchParams.set("base", ItemCharmMap[item.type]);
   } else {
-    if (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior) {
-      const result = getTypeFromBaseType(item.type, false);
-      if (result && result?.type && result?.type) {
-        searchParams.set("type", result.type as any);
-        searchParams.set("base", result.base);
-      } else {
-        console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
-      }
+    // Runewords always use name search regardless of base quality
+    if (item.isRuneword) {
+      searchParams.set("name", item.runeword || mappedItem?.name || item.name);
     } else {
-      searchParams.set("name", item.isRuneword ? item.runeword : mappedItem?.name || item.name);
+      // Check if item is a base quality that supports toggle
+      const isBaseQuality = item.quality === ItemQuality.Rare ||
+                            item.quality === ItemQuality.Magic ||
+                            item.quality === ItemQuality.Crafted ||
+                            item.quality === ItemQuality.Normal ||
+                            item.quality === ItemQuality.Superior;
+      
+      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+        // Mode 1: Search by typeLabel (category type) - only for base qualities
+        const typeValue = typeof matchedItemType.typeValue === 'string' 
+          ? matchedItemType.typeValue 
+          : JSON.stringify(matchedItemType.typeValue);
+        searchParams.set("type", typeValue);
+        // Don't set base parameter when searching by typeLabel
+      } else if (isBaseQuality) {
+        // Mode 0: Default behavior (category/base) - only for base qualities
+        const result = getTypeFromBaseType(item.type, false);
+        if (result && result?.type && result?.type) {
+          const typeValue = typeof result.type === 'string' ? result.type : JSON.stringify(result.type);
+          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
+          searchParams.set("type", typeValue);
+          // Only set base parameter if it's not "Any"
+          if (baseValue !== "Any") {
+            searchParams.set("base", baseValue);
+          }
+        } else {
+          console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+        }
+      } else {
+        // Uniques, Sets: Always use name search (original functionality)
+        searchParams.set("name", mappedItem?.name || item.name);
+      }
     }
   }
 
@@ -102,7 +140,7 @@ export function buildTradeUrl(
   searchParams.set("is_hardcore", `${(settings.mode === 'hardcore')}`);
   searchParams.set("is_ladder", `${(settings.ladder === 'ladder')}`);
 
-  return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;
+  return `https://www.projectdiablo2.com/${isArchive ? 'market/archive' : 'market'}?${searchParams.toString()}`;
 }
 
 export function buildGetMarketListingQuery(
@@ -112,7 +150,10 @@ export function buildGetMarketListingQuery(
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
   statMapper?: (statId: number, stat: Stat) => string | undefined,
-  isArchive: boolean = false
+  isArchive: boolean = false,
+  searchMode: number = 0,
+  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
+  corruptedState: number = 0
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -140,12 +181,22 @@ export function buildGetMarketListingQuery(
 
     // Sockets, Corrupted, Ethereal handled as top-level query fields
     if (stat.stat_id === StatId.Socket) {
-      if (f.min !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $gte: Number(f.min) };
-      if (f.max !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $lte: Number(f.max) };
+      if (f.min !== undefined && f.min !== '') {
+        query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $gte: Number(f.min) };
+      }
+      if (f.max !== undefined && f.max !== '') {
+        query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $lte: Number(f.max) };
+      }
       return;
     }
     if (stat.stat_id === StatId.Corrupted) {
-      query['item.corrupted'] = true;
+      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+      if (corruptedState === 1) {
+        query['item.corrupted'] = true;
+      } else if (corruptedState === 2) {
+        query['item.corrupted'] = false;
+      }
+      // If corruptedState === 0, don't add any corrupted filter
       return;
     }
     if (stat.stat_id === StatId.Ethereal || item.isEthereal) {
@@ -159,10 +210,10 @@ export function buildGetMarketListingQuery(
       if (skillEntry) {
         // Single skill
         const mod: any = { name: 'item_singleskill', 'values.0': skillEntry.id };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
@@ -171,22 +222,22 @@ export function buildGetMarketListingQuery(
       if (classEntry) {
         // Class skill
         const mod: any = { name: 'item_addclassskills', 'values.0': classEntry.id };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
       }
-      const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
+      const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase());
       if (subClassEntry) {
         // Subclass skill
         const mod: any = { name: 'item_addskill_tab', 'values.0': getSkillTabIndex(subClassEntry.id) };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
@@ -198,16 +249,19 @@ export function buildGetMarketListingQuery(
       const prop = statIdToProperty[stat.stat_id];
       if (prop) {
         const mod: any = { name: prop };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.0'] = {};
-          if (f.min !== undefined) mod['values.0'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.0'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.0'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.0'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
       }
     }
   });
 
+  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
+  // Uniques, Sets, and Runewords always use name search
   if (item.type === "Jewel") {
     query['item.base.type_code'] = "jewl";
     query['item.base_code'] = "jew";
@@ -215,24 +269,47 @@ export function buildGetMarketListingQuery(
     query['item.base.type_code'] = {"$in": ["scha", "mcha", "lcha", "torc"]}
     query['item.base_code'] = ItemCharmMap[item.type]
   } else {
-    if (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior) {
-      const result = getTypeFromBaseType(item.type, true);
-      if (result && result?.type && result?.type) {
-        let typeValue = result.type;
-        query['item.base.type_code'] = typeValue as any;
-        query['item.base_code'] = result.base;
-      } else {
-        console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+    // Runewords always use name search regardless of base quality
+    if (item.isRuneword) {
+      query['item.name'] = {
+        $regex: item.runeword || mappedItem?.name || item.name || '',
+        $options: 'i',
       }
     } else {
-      query['item.name'] = {
-        $regex: item.isRuneword ? item.runeword : item.name ? `${mappedItem?.name || item.name}` : '',
-        $options: 'i',
+      // Check if item is a base quality that supports toggle
+      const isBaseQuality = item.quality === ItemQuality.Rare ||
+                            item.quality === ItemQuality.Magic ||
+                            item.quality === ItemQuality.Crafted ||
+                            item.quality === ItemQuality.Normal ||
+                            item.quality === ItemQuality.Superior;
+      
+      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+        // Mode 1: Search by typeLabel (category type) - only for base qualities
+        const typeValue = typeof matchedItemType.typeValue === 'string' 
+          ? matchedItemType.typeValue 
+          : JSON.stringify(matchedItemType.typeValue);
+        query['item.base.type_code'] = typeValue as any;
+        // Don't set base_code parameter when searching by typeLabel
+      } else if (isBaseQuality) {
+        // Mode 0: Default behavior (category/base) - only for base qualities
+        const result = getTypeFromBaseType(item.type, true);
+        if (result && result?.type && result?.type) {
+          let typeValue = result.type;
+          query['item.base.type_code'] = typeValue as any;
+          // Only set base_code parameter if it's not "Any"
+          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
+          if (baseValue !== "Any") {
+            query['item.base_code'] = result.base;
+          }
+        } else {
+          console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+        }
+      } else {
+        // Uniques, Sets: Always use name search (original functionality)
+        query['item.name'] = {
+          $regex: item.name ? `${mappedItem?.name || item.name}` : '',
+          $options: 'i',
+        }
       }
     }
   } 

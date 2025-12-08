@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { emit } from '@tauri-apps/api/event';
 import { Loader2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const hotkeyFormSchema = z.object({
   hotkeyModifier: z.enum(['ctrl', 'alt']),
@@ -83,7 +84,8 @@ export function HotkeyForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-2">
+      <ScrollArea className="pr-2">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-2 max-h-[330px]">
         <div className="flex items-end gap-2">
           <FormField
             control={form.control}
@@ -240,11 +242,12 @@ export function HotkeyForm() {
             )}
           />
         </div>
-        <Button type="submit" className={'self-start cursor-pointer mt-2'} disabled={saving}>
-          {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-          {saving ? 'Saving...' : 'Update hotkey preferences'}
-        </Button>
       </form>
+      </ScrollArea>
+      <Button type="submit" className={'self-start cursor-pointer mt-2'} disabled={saving} onClick={form.handleSubmit(onSubmit)}>
+        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
+        {saving ? 'Saving...' : 'Update hotkey preferences'}
+      </Button>
     </Form>
   );
-} 
+}

@@ -14,8 +14,6 @@ export function getTypeFromBaseType(baseType: string, parseTypeValue: boolean = 
   if (!matchedType) return;
 
   const base = matchedType.bases.find(b => b.label.toLowerCase() === baseName);
-  if (!base) return;
-
   let typeValue: string | object = matchedType.typeValue;
   if (parseTypeValue && typeof typeValue === 'string' && typeValue.trim().startsWith('{') && typeValue.includes('$in')) {
     try {

@@ -8,7 +8,7 @@ export interface FindMarketplaceListingsRequest extends EventProps {
     stashItem: GameStashItem;
     price: number;
     note: string;
-    type: 'note' | 'negotiable' | 'exact';
+    type: 'note' | 'exact';
 }
 
 export interface FindMArketListingResponse extends EventProps {
@@ -31,7 +31,7 @@ export interface FindMarketplaceListingsResult extends EventProps {
     stashItem: GameStashItem;
     price: number;
     note: string;
-    type: 'note' | 'negotiable' | 'exact';
+    type: 'note' | 'exact';
 }
 
 export interface FindMatchingItemsRequest extends EventProps {

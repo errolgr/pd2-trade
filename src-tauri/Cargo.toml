@@ -1,6 +1,6 @@
 [package]
 name = "pd2-trader"
-version = "0.4.4"
+version = "0.5.0"
 description = "PD2 Trader"
 authors = ["you"]
 edition = "2021"
@@ -15,7 +15,7 @@ name = "dmg_meter_widget_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.5", features = [] }
 
 [dependencies]
 tauri = { version = "2.9.1", features = ["tray-icon"] }
@@ -32,6 +32,7 @@ serde_json = "1"
 runas = "0.2"
 rdev = "0.5.1"
 enigo = { version = "0.5.0", features = ["default"] }
+notify = "6.1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "minwindef"] }
@@ -45,9 +46,10 @@ windows-sys = { version = "0.48.0", features = [
     "Win32_UI_Accessibility",
 ] }
 windows = "0.58.0"
+tauri-plugin-http = "2.5"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-global-shortcut = "2"
+tauri-plugin-global-shortcut = "2.2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2.8.1"
+tauri-plugin-updater = "2.9"
 

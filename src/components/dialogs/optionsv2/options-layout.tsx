@@ -8,6 +8,7 @@ import SettingGenereal from './appearance/layout';
 import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
 import SettingsAccount from './account/layout';
+import SettingsChat from './chat/layout';
 
 export const metadata = {
   title: 'Forms',
@@ -26,6 +27,10 @@ const sidebarNavItems: INavItem[] = [
   {
     title: 'Account',
     content: <SettingsAccount />,
+  },
+  {
+    title: 'Chat',
+    content: <SettingsChat />,
   },
   {
     title: 'Hotkeys',

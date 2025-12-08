@@ -19,10 +19,9 @@ import { shortcutFormSchema, ShortcutFormData } from './types';
 import { Form } from '@/components/ui/form';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { priceTypeOptions } from './types';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 interface ListedItemsTabProps {
   onClose: () => void;
@@ -61,6 +60,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
+  // Watch form values to determine if Save button should be disabled
+  const editNote = editForm.watch('note');
+  const editPrice = editForm.watch('price');
+  const hasEditNote = !!editNote && editNote.toString().trim().length > 0;
+  const hasEditPrice = !!editPrice && (typeof editPrice === 'number' ? editPrice > 0 : Number(editPrice) > 0);
+  const isEditFormValid = hasEditNote || hasEditPrice;
+
   const marketQuery = useMemo(() => {
     if (!authData || !settings) return null;
     return buildGetAllUserMarketListingsQuery(
@@ -89,10 +95,18 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     
     setIsLoading(true);
     setError(null);
+    const startTime = performance.now();
     try {
       const result = await getMarketListings(marketQuery);
+      const duration = performance.now() - startTime;
       setListings(result.data);
       setTotalCount(result.total);
+      
+      incrementMetric('listed_items.fetch', 1, { status: 'success', page: currentPage.toString() });
+      distributionMetric('listed_items.fetch_duration_ms', duration);
+      distributionMetric('listed_items.fetch_count', result.data.length);
+      distributionMetric('listed_items.total_count', result.total);
+      
       // Update parent component if callbacks provided
       if (onTotalCountChange) {
         onTotalCountChange(result.total);
@@ -102,6 +116,9 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         onListingsChange(result.data);
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.fetch', 1, { status: 'error', page: currentPage.toString() });
+      distributionMetric('listed_items.fetch_duration_ms', duration);
       console.error('Failed to fetch market listings:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch listings');
     } finally {
@@ -159,12 +176,19 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);
+    const startTime = performance.now();
     try {
       await updateMarketListing(listing._id, { bumped_at: new Date().toISOString() });
       await updateItemByHash(listing.item.hash, { bumped_at: new Date().toISOString() });
       await fetchListings();
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump', 1, { status: 'success', source: 'listed_items_tab' });
+      distributionMetric('listed_items.bump_duration_ms', duration);
       emit('toast-event', 'Item bumped successfully!');
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump', 1, { status: 'error', source: 'listed_items_tab' });
+      distributionMetric('listed_items.bump_duration_ms', duration);
       console.error('Failed to bump item:', err);
       emit('toast-event', 'Failed to bump item');
     } finally {
@@ -173,22 +197,50 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   };
 
   const handleDelete = async (listing: MarketListingEntry) => {
+    const startTime = performance.now();
     try {
       await deleteMarketListing(listing._id);
+      
+      // Optimistically remove the item from local state
+      const updatedListings = listings.filter(l => l._id !== listing._id);
+      setListings(updatedListings);
+      setAllListingsForSearch(prev => prev.filter(l => l._id !== listing._id));
+      
+      // Decrement total count
+      const newTotalCount = Math.max(0, totalCount - 1);
+      setTotalCount(newTotalCount);
+      
+      // Update parent component if callbacks provided
+      if (onTotalCountChange) {
+        onTotalCountChange(newTotalCount);
+      }
+      if (onListingsChange) {
+        onListingsChange(updatedListings);
+      }
+      
+      // Refresh to ensure consistency
       await fetchListings();
+      
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.delete', 1, { status: 'success' });
+      distributionMetric('listed_items.delete_duration_ms', duration);
       emit('toast-event', `Removed ${listing.item.name} market listing.`);
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.delete', 1, { status: 'error' });
+      distributionMetric('listed_items.delete_duration_ms', duration);
       console.error('Failed to delete listing:', err);
       emit('toast-event', 'Failed to delete listing');
+      // Refresh on error to restore correct state
+      await fetchListings();
     }
   };
 
   const handleEdit = (listing: MarketListingEntry) => {
     setEditingListingId(listing._id);
+    incrementMetric('listed_items.edit_started', 1);
     editForm.reset({
-      type: listing.price.includes('obo') ? 'negotiable' :
-            typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' :
-            'note',
+      type: typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' : 'note',
       note: typeof listing.price === 'string' ? listing.price : '',
       price: listing.hr_price ?? '',
       currency: 'HR',
@@ -196,20 +248,40 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   };
 
   const handleSaveEdit = async (values: ShortcutFormData, listing: MarketListingEntry) => {
+    const startTime = performance.now();
     try {
+      // Determine type based on which fields are filled
+      // Normalize price: handle empty strings, whitespace, undefined, null
+      const priceValue = values.price === null || values.price === undefined || values.price === '' 
+        ? null 
+        : (typeof values.price === 'string' ? values.price.trim() : values.price);
+      const numericPrice = priceValue !== null ? Number(priceValue) : null;
+      const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
+      const listingType = hasPrice ? 'exact' : 'note';
+      
       let updateFields: Record<string, any> = {};
-      if (values.type === 'note') {
-        updateFields.price = values.note;
-      } else if (values.type === 'exact' || values.type === 'negotiable') {
-        updateFields.hr_price = Number(values.price);
-        updateFields.price = values.type === 'negotiable' ? 'obo' : values.note;
+      if (listingType === 'note') {
+        updateFields.price = values.note || '';
+        updateFields.hr_price = 0;
+      } else if (listingType === 'exact') {
+        updateFields.hr_price = numericPrice;
+        updateFields.price = values.note || '';
       }
       await updateMarketListing(listing._id, updateFields);
       await updateItemByHash(listing.item.hash, updateFields);
       setEditingListingId(null);
       await fetchListings();
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.edit_saved', 1, { status: 'success', listing_type: listingType });
+      distributionMetric('listed_items.edit_duration_ms', duration);
+      if (hasPrice && numericPrice !== null) {
+        distributionMetric('listed_items.edit_price_hr', numericPrice);
+      }
       emit('toast-event', 'Listing updated!');
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.edit_saved', 1, { status: 'error' });
+      distributionMetric('listed_items.edit_duration_ms', duration);
       console.error('Failed to update listing:', err);
       emit('toast-event', 'Failed to update listing');
     }
@@ -309,8 +381,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             placeholder="Search item by name..."
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value);
+              const newQuery = e.target.value;
+              setSearchQuery(newQuery);
               setCurrentPage(0); // Reset to first page when searching
+              if (newQuery.trim().length > 0) {
+                incrementMetric('listed_items.search', 1);
+                distributionMetric('listed_items.search_query_length', newQuery.length);
+              }
             }}
             className="pl-8 pr-8 h-8 text-sm"
           />
@@ -372,63 +449,42 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                         >
                           <FormField
                             control={editForm.control}
-                            name="type"
+                            name="note"
                             render={({ field }) => (
-                              <FormItem className="m-0 p-0 min-w-50">
+                              <FormItem className="m-0 p-0 min-w-0 flex-1">
                                 <FormControl>
-                                  <Select value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger className="w-full h-8 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {priceTypeOptions.map(opt => (
-                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input
+                                    placeholder="Note..."
+                                    {...field}
+                                    className="h-8 text-xs"
+                                    autoComplete="off"
+                                    value={editForm.getValues('note') || ''}
+                                  />
                                 </FormControl>
                               </FormItem>
                             )}
                           />
-                          {editForm.watch('type') === 'note' ? (
-                            <FormField
-                              control={editForm.control}
-                              name="note"
-                              render={({ field }) => (
-                                <FormItem className="m-0 p-0 min-w-0 w-32">
-                                  <FormControl>
-                                    <Input
-                                      placeholder="Note..."
-                                      {...field}
-                                      className="h-8 text-xs"
-                                      autoComplete="off"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          ) : (
-                            <FormField
-                              control={editForm.control}
-                              name="price"
-                              render={({ field }) => (
-                                <FormItem className="m-0 p-0 min-w-0 w-20">
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      step={0.01}
-                                      placeholder="HR"
-                                      {...field}
-                                      className="h-8 text-xs"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          )}
+                          <FormField
+                            control={editForm.control}
+                            name="price"
+                            render={({ field }) => (
+                              <FormItem className="m-0 p-0 min-w-0 w-20">
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    step={0.01}
+                                    placeholder="HR"
+                                    {...field}
+                                    className="h-8 text-xs"
+                                    value={editForm.getValues('price') || ''}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                           <ButtonGroup>
-                          <Button type="submit" size="sm" className="h-8 text-xs">Save</Button>
+                          <Button type="submit" size="sm" className="h-8 text-xs" disabled={isEditing && !isEditFormValid}>Save</Button>
                           <Button
                             type="button"
                             size="sm"
@@ -508,7 +564,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                           <TooltipTrigger asChild>
                             <SquareArrowOutUpRight
                               className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
-                              onClick={() => openUrl(`${PD2Website.Website}/market/listing/${listing._id}`)}
+                              onClick={() => {
+                                incrementMetric('listed_items.open_trade_url', 1);
+                                openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+                              }}
                             />
                           </TooltipTrigger>
                           <TooltipContent>Go to trade website</TooltipContent>
@@ -544,7 +603,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            onClick={() => {
+              setCurrentPage(prev => {
+                const newPage = Math.max(0, prev - 1);
+                incrementMetric('listed_items.pagination', 1, { direction: 'previous', page: newPage.toString() });
+                return newPage;
+              });
+            }}
             disabled={currentPage === 0 || isLoading || isLoadingAllListings}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -557,7 +622,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            onClick={() => {
+              setCurrentPage(prev => {
+                const newPage = Math.min(totalPages - 1, prev + 1);
+                incrementMetric('listed_items.pagination', 1, { direction: 'next', page: newPage.toString() });
+                return newPage;
+              });
+            }}
             disabled={currentPage >= totalPages - 1 || isLoading || isLoadingAllListings}
           >
             Next

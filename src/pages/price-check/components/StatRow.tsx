@@ -8,6 +8,7 @@ import {HoverPopover} from "@/components/custom/hover-popover";
 import {Badge} from "@/components/ui/badge";
 import {fuzzyMatchCharacterSkill, skillNameToIdMap} from "@/assets/character-skills";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName} from "@/assets/class-skills";
+import { X, Check } from "lucide-react";
 
 interface StatRowProps {
   stat: Stat;
@@ -16,6 +17,7 @@ interface StatRowProps {
   filters: Record<string, { value?: string; min?: string; max?: string }>;
   selected: Set<string>;
   toggle: (stat: Stat) => void;
+  corruptedState?: number; // 0 = both, 1 = corrupted only, 2 = non-corrupted only
 }
 
 const numberInputClass =
@@ -28,6 +30,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                                                   filters,
                                                   selected,
                                                   toggle,
+                                                  corruptedState = 0,
                                                 }) => {
   const statKey =
     "skill" in stat && stat.skill
@@ -42,6 +45,11 @@ export const StatRow: React.FC<StatRowProps> = ({
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase()));
   const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill) || isUnknownSkill;
+  
+  // For corrupted stat, determine checkbox state
+  const corruptedChecked = isCorrupted && corruptedState === 1;
+  const corruptedIndeterminate = isCorrupted && corruptedState === 2;
+  const corruptedUnchecked = isCorrupted && corruptedState === 0;
 
   return (
     <div className="border-b border-neutral-800 pb-2">
@@ -50,11 +58,35 @@ export const StatRow: React.FC<StatRowProps> = ({
       className={cn(`flex flex-row gap-1 ${nested ? "pl-6" : ""} justify-between`)}
     >
       <div className="flex items-center gap-2 cursor-pointer select-none">
-        <Checkbox
-          checked={selected.has(statKey)}
-          onCheckedChange={() => toggle(stat)}
-          disabled={isUnknown}
-        />
+        {isCorrupted ? (
+          <div
+            className={cn(
+              "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center cursor-pointer",
+              corruptedChecked && "bg-primary text-primary-foreground border-primary",
+              corruptedIndeterminate && "bg-destructive text-destructive-foreground border-destructive",
+              !corruptedChecked && !corruptedIndeterminate && "dark:bg-input/30"
+            )}
+            onClick={() => toggle(stat)}
+            role="checkbox"
+            aria-checked={corruptedChecked ? "true" : corruptedIndeterminate ? "mixed" : "false"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle(stat);
+              }
+            }}
+          >
+            {corruptedChecked && <Check className="size-3.5" />}
+            {corruptedIndeterminate && <X className="size-3.5" />}
+          </div>
+        ) : (
+          <Checkbox
+            checked={selected.has(statKey)}
+            onCheckedChange={() => toggle(stat)}
+            disabled={isUnknown}
+          />
+        )}
 
         <div className={"flex flex-row items-center"}>
           {isUnknown &&
