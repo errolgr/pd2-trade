@@ -106,7 +106,7 @@ pub fn run() {
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
-                .focus()
+                .focused(true)
                 .shadow(false)
                 .always_on_top(true)
                 .skip_taskbar(true);
@@ -115,7 +115,7 @@ pub fn run() {
             let _ = main_window.set_ignore_cursor_events(true);
             
             // Create toast window
-            let toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
+            let _toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
                 .title("PD2 Trader - Toast")
                 .inner_size(400.0, 200.0)
                 .decorations(false)

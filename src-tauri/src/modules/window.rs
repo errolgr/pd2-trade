@@ -1,4 +1,6 @@
 use serde::Serialize;
+
+#[cfg(target_os = "windows")]
 use std::sync::Mutex;
 
 #[cfg(target_os = "windows")]
@@ -157,6 +159,8 @@ pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
 
 #[cfg(target_os = "windows")]
 static mut FOREGROUND_HOOK: Option<HWINEVENTHOOK> = None;
+
+#[cfg(target_os = "windows")]
 static CALLBACK: Mutex<Option<Box<dyn Fn() + Send>>> = Mutex::new(None);
 
 #[cfg(target_os = "windows")]
