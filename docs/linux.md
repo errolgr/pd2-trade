@@ -66,7 +66,7 @@ The frontend required updates to support the new configuration requirements.
 ### Input Simulation
 -   **Current State**: Uses `enigo` and `rdev` which have known challenges and incompatibilities with Wayland because of it's security posture with accessing windows not owned by the parent process(es).
 -   **Impact**:
-    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.  **Note**: You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.
+    -   **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game.  **You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.**
     -   **X11**: Should work generally fine, but is as yet untested.
 
 ## 4. Remaining Work
@@ -80,3 +80,4 @@ The frontend required updates to support the new configuration requirements.
     -   Ensure `d2gl.json` path construction handles case sensitivity correctly on Linux (Windows is case-insensitive) and supports alternative video modes for the PD2 game itself.
 4.  **Packaging**:
     -   Update [tauri.conf.json](../src-tauri/tauri.conf.json) to include Linux-specific bundle configurations (deb, appimage).
+    -   Make this cross-linux compatible, oof.  I have not tested packaging AT ALL, and only have it working via `npm run tauri dev`
