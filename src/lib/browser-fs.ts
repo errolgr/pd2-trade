@@ -1,8 +1,9 @@
 /**
  * Browser-compatible file system utilities
- * Uses localStorage in browser, falls back to Tauri FS API in Tauri environment
+ * Uses Tauri FS API in Tauri environment, falls back to localStorage in browser
  */
 
+import { isTauri } from '@tauri-apps/api/core';
 import { BaseDirectory } from '@tauri-apps/api/path';
 
 // Re-export for convenience
@@ -40,19 +41,18 @@ export async function readTextFile(
   path: string,
   options: ReadTextFileOptions = {}
 ): Promise<string> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { readTextFile: tauriReadTextFile } = await import('@tauri-apps/plugin-fs');
     return await tauriReadTextFile(path, options as any);
-  } catch {
-    // Fallback to localStorage
-    const key = getStorageKey(path, options.baseDir);
-    const content = localStorage.getItem(key);
-    if (content === null) {
-      throw new Error(`File not found: ${path}`);
-    }
-    return content;
   }
+  
+  // Browser fallback: use localStorage
+  const key = getStorageKey(path, options.baseDir);
+  const content = localStorage.getItem(key);
+  if (content === null) {
+    throw new Error(`File not found: ${path}`);
+  }
+  return content;
 }
 
 /**
@@ -63,16 +63,15 @@ export async function writeTextFile(
   contents: string,
   options: WriteTextFileOptions = {}
 ): Promise<void> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { writeTextFile: tauriWriteTextFile } = await import('@tauri-apps/plugin-fs');
     await tauriWriteTextFile(path, contents, options as any);
     return;
-  } catch {
-    // Fallback to localStorage
-    const key = getStorageKey(path, options.baseDir);
-    localStorage.setItem(key, contents);
   }
+  
+  // Browser fallback: use localStorage
+  const key = getStorageKey(path, options.baseDir);
+  localStorage.setItem(key, contents);
 }
 
 /**
@@ -82,15 +81,14 @@ export async function exists(
   path: string,
   options: ExistsOptions = {}
 ): Promise<boolean> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { exists: tauriExists } = await import('@tauri-apps/plugin-fs');
     return await tauriExists(path, options as any);
-  } catch {
-    // Fallback to localStorage
-    const key = getStorageKey(path, options.baseDir);
-    return localStorage.getItem(key) !== null;
   }
+  
+  // Browser fallback: use localStorage
+  const key = getStorageKey(path, options.baseDir);
+  return localStorage.getItem(key) !== null;
 }
 
 /**
@@ -100,19 +98,18 @@ export async function mkdir(
   path: string,
   options: MkdirOptions = {}
 ): Promise<void> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { mkdir: tauriMkdir } = await import('@tauri-apps/plugin-fs');
     await tauriMkdir(path, options as any);
     return;
-  } catch {
-    // Fallback: directories are implicit in localStorage
-    // We just ensure the path exists by creating a marker
-    if (options.recursive) {
-      const key = getStorageKey(path, options.baseDir);
-      // Create a directory marker
-      localStorage.setItem(`${key}/.dir`, '');
-    }
+  }
+  
+  // Browser fallback: directories are implicit in localStorage
+  // We just ensure the path exists by creating a marker
+  if (options.recursive) {
+    const key = getStorageKey(path, options.baseDir);
+    // Create a directory marker
+    localStorage.setItem(`${key}/.dir`, '');
   }
 }
 

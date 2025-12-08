@@ -17,8 +17,8 @@ import {
 import { emit } from '@/lib/browser-events';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { isTauriSync } from '@/lib/tauri-utils';
 import { ExternalLink } from 'lucide-react';
+import { isTauri } from '@tauri-apps/api/core';
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -76,7 +76,7 @@ export function AccountForm() {
     <Form {...form}>
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4 max-h-[330px]">
-        {!isTauriSync() && (
+        {!isTauri() && (
           <FormField
             control={form.control}
             name="pd2Token"

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -38,7 +38,7 @@ const LandingPage: React.FC = () => {
 
   // Check if Diablo is focused
   const checkDiabloFocus = useCallback(async (): Promise<boolean> => {
-    if (!isTauriSync()) {
+    if (!isTauri()) {
       // In browser, always return true (no Diablo detection)
       return true;
     }
@@ -186,7 +186,7 @@ const LandingPage: React.FC = () => {
 
   // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
   useEffect(() => {
-    if (!isTauriSync()) return;
+    if (!isTauri()) return;
 
     const generalEnabled = settings.whisperNotificationsEnabled ?? true;
     const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
@@ -208,7 +208,7 @@ const LandingPage: React.FC = () => {
     manageWatcher();
 
     return () => {
-      if (isTauriSync()) {
+      if (isTauri()) {
         import('@tauri-apps/api/core').then(({ invoke }) => {
           invoke('stop_chat_watcher').catch(console.error);
         });

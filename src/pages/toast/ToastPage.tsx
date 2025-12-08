@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { listen } from '@/lib/browser-events';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
@@ -9,7 +9,7 @@ import { openUrl } from '@/lib/browser-opener';
 
 const ToastPage: React.FC = () => {
   const closeToastWebview = async () => {
-    if (isTauriSync()) {
+    if (isTauri()) {
       const win = await getCurrentWebviewWindow();
       if (win) win.hide().catch(console.error);
     }
@@ -21,7 +21,7 @@ const ToastPage: React.FC = () => {
     
     listen('toast-event', async (event) => {
       // Show the window when we receive a toast event (only in Tauri)
-      if (isTauriSync()) {
+      if (isTauri()) {
         try {
           const win = await getCurrentWebviewWindow();
           if (win) await win.show();
@@ -84,7 +84,7 @@ const ToastPage: React.FC = () => {
                     break;
                   }
                   case ToastActionType.UPDATE_AVAILABLE:
-                    if (isTauriSync()) {
+                    if (isTauri()) {
                       const { relaunch } = await import('@tauri-apps/plugin-process');
                       await relaunch();
                     } else {

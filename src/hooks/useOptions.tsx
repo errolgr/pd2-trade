@@ -6,7 +6,7 @@ import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib
 import merge from 'lodash.merge';
 import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { jwtDecode } from 'jwt-decode';
 
 export interface ISettings {
@@ -153,7 +153,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Check for token in URL parameters (browser mode)
   useEffect(() => {
-    if (isTauriSync()) return; // Skip in Tauri mode
+    if (isTauri()) return; // Skip in Tauri mode
     
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');

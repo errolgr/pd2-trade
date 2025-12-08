@@ -24,7 +24,7 @@ import {
   SelectItem
 } from '@/components/ui/select';
 import { emit } from '@/lib/browser-events';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const appearanceFormSchema = z.object({
@@ -70,7 +70,7 @@ export function GeneralForm() {
 
   // Auto-detect directory on mount
   React.useEffect(() => {
-    if (isTauriSync() && !detectedDirectory) {
+    if (isTauri() && !detectedDirectory) {
       import('@tauri-apps/api/core').then(({ invoke }) => {
       invoke<string | null>('auto_detect_diablo2_directory')
         .then((dir) => {

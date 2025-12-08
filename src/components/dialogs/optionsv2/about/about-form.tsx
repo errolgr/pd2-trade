@@ -5,7 +5,7 @@ import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -27,7 +27,7 @@ export function AboutForm() {
   }, []);
 
   const handleCheckForUpdates = async () => {
-    if (!isTauriSync()) return;
+    if (!isTauri()) return;
     
     setIsChecking(true);
     try {

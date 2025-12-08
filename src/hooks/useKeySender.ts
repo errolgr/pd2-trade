@@ -1,4 +1,4 @@
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { useCallback } from "react";
 
 /**
@@ -12,7 +12,7 @@ import { useCallback } from "react";
  */
 export function useKeySender() {
   return useCallback(async (sequence: string) => {
-    if (!isTauriSync()) {
+    if (!isTauri()) {
       // Key simulation not available in browser
       console.warn('[KeySender] Key simulation not available in browser');
       return;

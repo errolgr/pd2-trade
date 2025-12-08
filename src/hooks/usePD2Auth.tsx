@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { emit, listen } from '@/lib/browser-events';
 import { jwtDecode } from 'jwt-decode';
 import { useOptions } from './useOptions';
 import { GenericToastPayload } from '@/common/types/Events';
 
 const openAuthWebview = async () => {
-  if (!isTauriSync()) {
+  if (!isTauri()) {
     // In browser, open auth URL in new window
     window.open('https://projectdiablo2.com/auth', '_blank', 'noopener,noreferrer');
     return;
@@ -62,7 +62,7 @@ export const usePD2Auth = () => {
     if (isLoading) return;
 
     if (!settings?.pd2Token) {
-      if (isTauriSync()) {
+      if (isTauri()) {
         // In Tauri, open webview for authentication
         const authRequiredToastPayload: GenericToastPayload = {
           title: 'PD2 Trader',
@@ -83,7 +83,7 @@ export const usePD2Auth = () => {
     }
 
     if (isTokenExpiringSoon(settings.pd2Token)) {
-      if (isTauriSync()) {
+      if (isTauri()) {
         openAuthWebview();
       } else {
         const tokenExpiringToastPayload: GenericToastPayload = {

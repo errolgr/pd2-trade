@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from './useOptions';
 
 type ShortcutHandler = () => void | Promise<void>;
@@ -18,7 +18,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
   const registeredShortcuts = useRef<string[]>([]);
 
   useEffect(() => {
-    if (!isTauriSync()) {
+    if (!isTauri()) {
       // Global shortcuts not available in browser
       return;
     }
@@ -59,7 +59,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
     registerShortcuts();
 
     return () => {
-      if (isTauriSync()) {
+      if (isTauri()) {
         import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
       registeredShortcuts.current.forEach((shortcut) => {
         unregister(shortcut).catch(() => void 0);

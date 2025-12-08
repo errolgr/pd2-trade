@@ -1,4 +1,4 @@
-import { isTauriSync } from './tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import * as browserWindow from './browser-window';
 
 // Re-export browser window types
@@ -17,35 +17,31 @@ export async function openCenteredWindow(
   url: string,
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
-  if (isTauriSync()) {
-    try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      const { currentMonitor } = await import('@tauri-apps/api/window');
-      
-      const monitor = await currentMonitor();
-      if (!monitor) return null;
+  if (isTauri()) {
+    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+    const { currentMonitor } = await import('@tauri-apps/api/window');
+    
+    const monitor = await currentMonitor();
+    if (!monitor) return null;
 
-      const width = options.width ?? 600;
-      const height = options.height ?? 600;
+    const width = options.width ?? 600;
+    const height = options.height ?? 600;
 
-      const { position, size } = monitor;
-      const x = position.x + Math.round((size.width - width) / 2);
-      const y = position.y + Math.round((size.height - height) / 2);
+    const { position, size } = monitor;
+    const x = position.x + Math.round((size.width - width) / 2);
+    const y = position.y + Math.round((size.height - height) / 2);
 
-      const w = new WebviewWindow(label, {
-        url,
-        x,
-        y,
-        width,
-        height,
-        focus: true,
-        ...options,
-      });
+    const w = new WebviewWindow(label, {
+      url,
+      x,
+      y,
+      width,
+      height,
+      focus: true,
+      ...options,
+    });
 
-      return w;
-    } catch (e) {
-      console.warn('[openCenteredWindow] Tauri failed, falling back to browser:', e);
-    }
+    return w;
   }
   
   // Browser fallback
@@ -60,34 +56,30 @@ export async function openOverDiabloWindow(
   url: string,
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
-  if (isTauriSync()) {
-    try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      const { cursorPosition } = await import('@tauri-apps/api/window');
-      const { invoke } = await import('@tauri-apps/api/core');
-      
-      const { x: cursorX } = await cursorPosition();
-      const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+  if (isTauri()) {
+    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+    const { cursorPosition } = await import('@tauri-apps/api/window');
+    const { invoke } = await import('@tauri-apps/api/core');
+    
+    const { x: cursorX } = await cursorPosition();
+    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
 
-      const width = options.width ?? 500;
-      const x = cursorX - width;
-      const y = rect.y;
+    const width = options.width ?? 500;
+    const x = cursorX - width;
+    const y = rect.y;
 
-      const w = new WebviewWindow(label, {
-        url,
-        x,
-        y,
-        width,
-        height: rect.height,
-        minHeight: 1080,
-        focus: true,
-        ...options,
-      });
+    const w = new WebviewWindow(label, {
+      url,
+      x,
+      y,
+      width,
+      height: rect.height,
+      minHeight: 1080,
+      focus: true,
+      ...options,
+    });
 
-      return w;
-    } catch (e) {
-      console.warn('[openOverDiabloWindow] Tauri failed, falling back to browser:', e);
-    }
+    return w;
   }
   
   // Browser fallback
@@ -102,29 +94,25 @@ export async function openWindowAtCursor(
   url: string,
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
-  if (isTauriSync()) {
-    try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      const { cursorPosition } = await import('@tauri-apps/api/window');
-      
-      const { x, y } = await cursorPosition();
-      const width = options.width ?? 600;
-      const height = options.height ?? 600;
+  if (isTauri()) {
+    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+    const { cursorPosition } = await import('@tauri-apps/api/window');
+    
+    const { x, y } = await cursorPosition();
+    const width = options.width ?? 600;
+    const height = options.height ?? 600;
 
-      const w = new WebviewWindow(label, {
-        url,
-        x,
-        y,
-        width,
-        height,
-        focus: true,
-        ...options,
-      });
+    const w = new WebviewWindow(label, {
+      url,
+      x,
+      y,
+      width,
+      height,
+      focus: true,
+      ...options,
+    });
 
-      return w;
-    } catch (e) {
-      console.warn('[openWindowAtCursor] Tauri failed, falling back to browser:', e);
-    }
+    return w;
   }
   
   // Browser fallback
@@ -138,7 +126,7 @@ export function attachWindowLifecycle(
   w: WebviewWindow | browserWindow.BrowserWindow,
   onClose: () => void
 ) {
-  if (isTauriSync() && 'onCloseRequested' in w) {
+  if (isTauri() && 'onCloseRequested' in w) {
     // Tauri window
     (w as WebviewWindow).onCloseRequested(() => {
       onClose();
@@ -164,7 +152,7 @@ export function attachWindowCloseHandler(
   onClose: () => void,
   onFocusLost?: () => void,
 ) {
-  if (isTauriSync() && 'onCloseRequested' in w) {
+  if (isTauri() && 'onCloseRequested' in w) {
     // Tauri window
     (w as WebviewWindow).onCloseRequested(() => {
       onClose();
@@ -199,13 +187,9 @@ export function attachWindowCloseHandler(
  * Update main window bounds - no-op in browser
  */
 export async function updateMainWindowBounds(): Promise<void> {
-  if (isTauriSync()) {
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('update_window_bounds');
-    } catch (e) {
-      console.warn('[updateMainWindowBounds] failed:', e);
-    }
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('update_window_bounds');
   } else {
     // No-op in browser
     await browserWindow.updateMainWindowBounds();

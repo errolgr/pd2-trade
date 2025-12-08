@@ -1,20 +1,21 @@
 /**
  * Browser-compatible URL opener
- * Uses window.open in browser, falls back to Tauri opener in Tauri environment
+ * Uses Tauri opener in Tauri environment, falls back to window.open in browser
  */
+
+import { isTauri } from '@tauri-apps/api/core';
 
 /**
  * Open a URL
  */
 export async function openUrl(url: string): Promise<void> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { openUrl: tauriOpenUrl } = await import('@tauri-apps/plugin-opener');
     await tauriOpenUrl(url);
     return;
-  } catch {
-    // Fallback to window.open
-    window.open(url, '_blank', 'noopener,noreferrer');
   }
+  
+  // Browser fallback: use window.open
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 

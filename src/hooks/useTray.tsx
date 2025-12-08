@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import {useOptions} from "@/hooks/useOptions";
 import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
 import { listen } from '@/lib/browser-events';
@@ -68,7 +68,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   // Register global shortcut for opening settings
   useEffect(() => {
-    if (!isTauriSync() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+    if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
 
     const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
 
@@ -93,7 +93,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     registerShortcut();
 
     return () => {
-      if (isTauriSync() && lastShortcutRef.current) {
+      if (isTauri() && lastShortcutRef.current) {
         import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
           unregister(lastShortcutRef.current!);
           lastShortcutRef.current = null;
@@ -103,7 +103,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
 
   useEffect(() => {
-    if (!isTauriSync()) {
+    if (!isTauri()) {
       // Tray not available in browser
       return;
     }

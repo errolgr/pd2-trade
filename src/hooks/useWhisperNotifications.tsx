@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen, emit } from '@/lib/browser-events';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 import { GenericToastPayload } from '@/common/types/Events';
 import { useOptions } from '@/hooks/useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
@@ -31,7 +31,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
   const { settings } = useOptions();
 
   useEffect(() => {
-    if (!isTauriSync() || !enabled) {
+    if (!isTauri() || !enabled) {
       return;
     }
 
@@ -44,7 +44,7 @@ export const useWhisperNotifications = (enabled: boolean) => {
           
           // Helper to check if Diablo is focused (returns false in browser)
           const checkDiabloFocused = async (): Promise<boolean> => {
-            if (!isTauriSync()) return false;
+            if (!isTauri()) return false;
             try {
               const { invoke } = await import('@tauri-apps/api/core');
               return await invoke<boolean>('is_diablo_focused');

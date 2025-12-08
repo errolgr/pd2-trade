@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { isTauriSync } from '@/lib/tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -90,7 +90,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, []);
 
   const forceWindowFocus = useCallback(async () => {
-    if (!isTauriSync() || !forceFocusOnPopup) return;
+    if (!isTauri() || !forceFocusOnPopup) return;
     
     try {
       // Try to bring the window to front and focus it
@@ -110,7 +110,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, [forceFocusOnPopup]);
 
   const checkCursorPosition = useCallback(async () => {
-    if (!isTauriSync()) return;
+    if (!isTauri()) return;
 
     try {
       const { cursorPosition } = await import('@tauri-apps/api/window');
@@ -181,7 +181,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   }, [getPopupBounds, enableThrottling, forceWindowFocus, pollingInterval]);
 
   useEffect(() => {
-    if (!isTauriSync()) return;
+    if (!isTauri()) return;
 
     // Start with click-through enabled
     import('@tauri-apps/api/core').then(({ invoke }) => {
@@ -198,7 +198,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
         pollingIntervalRef.current = null;
       }
       // Re-enable click-through on cleanup
-      if (isTauriSync()) {
+      if (isTauri()) {
         import('@tauri-apps/api/core').then(({ invoke }) => {
           invoke('set_window_click_through', { ignore: true });
         });

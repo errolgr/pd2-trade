@@ -3,19 +3,34 @@
  * Uses native fetch in browser with proxy, falls back to Tauri HTTP plugin in Tauri environment
  */
 
-import { isTauriSync } from './tauri-utils';
+import { isTauri } from '@tauri-apps/api/core';
 
 /**
  * Convert a URL to use the proxy if we're in browser mode
  */
-function getProxiedUrl(url: string | URL): string {
-  if (isTauriSync()) {
+function getProxiedUrl(input: RequestInfo | URL): string {
+  if (isTauri()) {
     // In Tauri, use the URL as-is
-    return typeof url === 'string' ? url : url.toString();
+    if (typeof input === 'string') {
+      return input;
+    } else if (input instanceof URL) {
+      return input.toString();
+    } else {
+      // Request object
+      return input.url;
+    }
   }
   
   // In browser, use the Vite proxy
-  const urlString = typeof url === 'string' ? url : url.toString();
+  let urlString: string;
+  if (typeof input === 'string') {
+    urlString = input;
+  } else if (input instanceof URL) {
+    urlString = input.toString();
+  } else {
+    // Request object
+    urlString = input.url;
+  }
   
   // Check if it's a projectdiablo2.com API URL
   if (urlString.includes('api.projectdiablo2.com')) {
@@ -31,14 +46,13 @@ export async function fetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  try {
-    // Try Tauri API first
+  if (isTauri()) {
     const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
     return await tauriFetch(input, init);
-  } catch {
-    // Fallback to native fetch with proxy in browser
-    const proxiedUrl = getProxiedUrl(input);
-    return window.fetch(proxiedUrl, init);
   }
+  
+  // Browser fallback: use native fetch with proxy
+  const proxiedUrl = getProxiedUrl(input);
+  return window.fetch(proxiedUrl, init);
 }
 
