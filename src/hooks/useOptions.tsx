@@ -24,6 +24,7 @@ export interface ISettings {
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
   fillStatValue?: number;
+  pd2InstallDir?: string;
 }
 
 interface OptionsContextProps {
@@ -47,6 +48,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
   fillStatValue: 5,
+  pd2InstallDir: '',
 };
 
 const SETTINGS_FILENAME = 'settings.json';

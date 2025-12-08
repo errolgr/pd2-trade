@@ -7,8 +7,15 @@ pub fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-pub fn get_diablo_rect() -> Option<window::WindowRect> {
-    window::get_diablo_rect()
+pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
+    #[cfg(target_os = "windows")]
+    {
+        window::get_diablo_rect()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        window::get_diablo_rect(&app_handle)
+    }
 }
 
 #[tauri::command]
@@ -32,7 +39,7 @@ pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Resul
 
 #[tauri::command]
 pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if let Some(bounds) = window::get_appropriate_window_bounds() {
+    if let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) {
         if let Some(main_window) = app_handle.get_webview_window("main") {
             let _ = main_window.set_position(tauri::PhysicalPosition::new(bounds.x as f64, bounds.y as f64));
             let _ = main_window.set_size(tauri::PhysicalSize::new(bounds.width as f64, bounds.height as f64));
@@ -74,7 +81,7 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
     use tauri::{PhysicalPosition, PhysicalSize};
 
     // Get bounds of the focused area (Diablo or work area)
-    let bounds = window::get_appropriate_window_bounds()
+    let bounds = window::get_appropriate_window_bounds(&app_handle)
         .ok_or("Could not get window bounds")?;
 
     // Toast window size

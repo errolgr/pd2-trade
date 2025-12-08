@@ -41,7 +41,7 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             let (x, y, width, height) = {
                 // Get appropriate bounds based on Diablo focus state
-                if let Some(rect) = window::get_appropriate_window_bounds() {
+                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
                     (
                         rect.x as f64,
                         rect.y as f64,
@@ -74,7 +74,7 @@ pub fn run() {
 
             #[cfg(not(target_os = "windows"))]
             let (x, y, width, height) = {
-                if let Some(rect) = window::get_appropriate_window_bounds() {
+                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
                     (
                         rect.x as f64,
                         rect.y as f64,

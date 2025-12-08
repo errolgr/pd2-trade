@@ -11,6 +11,9 @@ use windows_sys::Win32::{
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
 };
 
+#[cfg(not(target_os = "windows"))]
+use std::fs;
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowRect {
@@ -46,8 +49,8 @@ pub fn get_diablo_rect() -> Option<WindowRect> {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn get_diablo_rect() -> Option<WindowRect> {
-    None
+pub fn get_diablo_rect(app: &AppHandle) -> Option<WindowRect> {
+    get_work_area(app)
 }
 
 #[cfg(target_os = "windows")]
@@ -88,16 +91,65 @@ pub fn get_work_area() -> Option<WindowRect> {
     })
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn get_work_area() -> Option<WindowRect> {
-    None
+use tauri::{AppHandle, Manager};
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AppConfig {
+    pd2_install_dir: Option<String>,
 }
 
-pub fn get_appropriate_window_bounds() -> Option<WindowRect> {
-    if is_diablo_focused() {
-        get_diablo_rect()
-    } else {
-        get_work_area()
+#[cfg(not(target_os = "windows"))]
+pub fn get_work_area(app: &AppHandle) -> Option<WindowRect> {
+    let config_dir = app.path().app_config_dir().ok()?;
+    let config_path = config_dir.join("settings.json");
+    
+    if !config_path.exists() {
+        println!("Config file not found at {:?}", config_path);
+        return None;
+    }
+
+    let config_content = fs::read_to_string(&config_path).ok()?;
+    let config: AppConfig = serde_json::from_str(&config_content).ok()?;
+    
+    let install_dir = config.pd2_install_dir?;
+    let d2gl_path = std::path::Path::new(&install_dir).join("d2gl.json");
+    
+    let contents = fs::read_to_string(&d2gl_path).ok()?;
+    println!("Found d2gl.json at {:?}", d2gl_path);
+    let json: serde_json::Value = serde_json::from_str(&contents).ok()?;
+    let width = json["screen"]["window_size_width"].as_i64()? as f64;
+    let height = json["screen"]["window_size_height"].as_i64()? as f64;
+    let mut x = 0.0;
+    let mut y = 0.0;
+    if !json["screen"]["window_centered"].as_bool()? {
+        x = json["screen"]["window_position_x"].as_f64()?;
+        y = json["screen"]["window_position_y"].as_f64()?;
+    }
+    Some(WindowRect {
+        x: x as i32,
+        y: y as i32,
+        width: width as i32,
+        height: height as i32,
+    })
+}
+
+pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
+    #[cfg(target_os = "windows")]
+    {
+        if is_diablo_focused() {
+            get_diablo_rect()
+        } else {
+            get_work_area()
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        if is_diablo_focused() {
+            get_diablo_rect(app)
+        } else {
+            get_work_area(app)
+        }
     }
 }
 

@@ -7,8 +7,8 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useOptions } from '@/hooks/useOptions';
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {Input} from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Input } from "@/components/ui/input";
 import {
   Tabs,
   TabsContent,
@@ -32,6 +32,7 @@ const appearanceFormSchema = z.object({
     required_error: 'Please select a ladder.',
   }),
   fillStatValue: z.number().int().min(0).max(100).optional(),
+  pd2InstallDir: z.string().optional(),
 });
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
@@ -47,6 +48,7 @@ export function GeneralForm() {
       mode: settings?.mode || 'softcore',
       ladder: settings?.ladder || 'non-ladder',
       fillStatValue: settings?.fillStatValue ?? 5,
+      pd2InstallDir: settings?.pd2InstallDir || '',
     },
   });
 
@@ -57,6 +59,7 @@ export function GeneralForm() {
         mode: settings.mode || 'softcore',
         ladder: settings.ladder || 'non-ladder',
         fillStatValue: settings.fillStatValue ?? 5,
+        pd2InstallDir: settings.pd2InstallDir || '',
       });
     }
   }, [settings, form]);
@@ -150,6 +153,26 @@ export function GeneralForm() {
               </FormControl>
               <FormDescription>
                 Percentage used to automatically populate stat value ranges when selecting stats with ranges.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="pd2InstallDir"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Project Diablo 2 Installation Directory</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="/path/to/ProjectD2"
+                  className="w-full"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Directory containing d2gl.json (usually the ProjectD2 folder).
               </FormDescription>
               <FormMessage />
             </FormItem>
