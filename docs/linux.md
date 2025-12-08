@@ -5,8 +5,8 @@ This document outlines the changes made to port the PD2 Trader application to Li
 ### Assumptions
 * Let's for now assume you are running Bazzite with Wayland.  Terrible assumption, but I've got to start somewhere.
 * Let's also assume you are running in Steam with some Proton compatibility layer that you have verified works with PD2.
-* Let's assume you also know how to use the terminal, install system packages, and know your various installation directories, or at least how to find them.s
-* I have not declared all of the assumptions and steps I had to run to get this working.  I will update this document as I remember them.  There was work involved to get Rust and NPM installed, but I generally just followed the default installation path(Bazzite flavored).
+* Let's assume you also know how to use the terminal, install system packages, and know your various installation directories, or at least how to find them.
+* I have not declared all of the assumptions and steps I had to run to get this working.  I will update this document as I remember them.  There was work involved to get Rust and NPM installed, but I generally just followed the default installation for those system packages(Bazzite flavored).
 
 ## 1. Backend Changes (`src-tauri`)
 
@@ -55,7 +55,7 @@ The frontend required updates to support the new configuration requirements.
 
 ### Window Focus (Critical)
 -   **Current State**: The app assumes Diablo II is *always* focused on Linux.
--   **Impact**: Global hotkeys (like `Ctrl+C` for price checking) will fire even if you are alt-tabbed to another window (e.g., a browser), potentially overwvnriting your clipboard or triggering unwanted searches.
+-   **Impact**: Global hotkeys (like `Ctrl+C` for price checking) will fire even if you are alt-tabbed to another window (e.g., a browser), potentially overwriting your clipboard or triggering unwanted searches.
 -   **Fix Required**: Implement X11 (via `xdotool` or `xcb`) and Wayland (via protocol extensions, though difficult) checks to verify active window title/class.
 
 ### Window Bounds
