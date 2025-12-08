@@ -63,7 +63,7 @@ pub fn is_diablo_focused() -> bool {
 
 #[cfg(not(target_os = "windows"))]
 pub fn is_diablo_focused() -> bool {
-    false
+    return true;
 }
 
 #[cfg(target_os = "windows")]

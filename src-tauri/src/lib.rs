@@ -94,7 +94,7 @@ pub fn run() {
                         )
                     } else {
                         println!("Warning: No primary monitor detected. using default bounds.");
-                        (0.0, 0.0, 1024.0, 768.0)
+                        (0.0, 0.0, 1920.0, 1080.0)
                     }
                 }
             };
