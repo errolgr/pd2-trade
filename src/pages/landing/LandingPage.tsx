@@ -183,7 +183,7 @@ const LandingPage: React.FC = () => {
     const manageWatcher = async () => {
       try {
         if (shouldWatch) {
-          await invoke('start_chat_watcher', { custom_d2_dir: settings.diablo2Directory });
+          await invoke('start_chat_watcher', { customD2Dir: settings.diablo2Directory });
         } else {
           await invoke('stop_chat_watcher');
         }

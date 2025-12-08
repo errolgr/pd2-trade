@@ -20,7 +20,6 @@
         "https://github.com/errolgr/pd2-trade/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI2QjU2MzkwQjQ5RTlBMDgKUldRSW1wNjBrR08xSnV6QndCMUhVaWVlWkNJRUtENWZGVzhMSGZGanhKaDQrT2ZONWoxYVZ0RVQK"
-
     }
   },
   "app": {
@@ -36,13 +35,12 @@
         "sidebarImage": "icons/banner.bmp"
       }
     },
-
     "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [
       "icons/favicon.ico",
-      "icons/favicon-96x96.png"
+      "icons/favicon-32x32.png"
     ]
   }
 }

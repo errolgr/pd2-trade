@@ -118,7 +118,7 @@ pub fn get_work_area(app: &AppHandle) -> Option<WindowRect> {
     let d2gl_path = std::path::Path::new(&install_dir).join("d2gl.json");
     
     let contents = fs::read_to_string(&d2gl_path).ok()?;
-    println!("Found d2gl.json at {:?}", d2gl_path);
+    
     let json: serde_json::Value = serde_json::from_str(&contents).ok()?;
     let width = json["screen"]["window_size_width"].as_i64()? as f64;
     let height = json["screen"]["window_size_height"].as_i64()? as f64;

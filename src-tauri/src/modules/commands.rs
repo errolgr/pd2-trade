@@ -105,6 +105,7 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
 
 #[tauri::command]
 pub fn start_chat_watcher(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
+
     chat_watcher::start_watching(app_handle, custom_d2_dir)
 }
 

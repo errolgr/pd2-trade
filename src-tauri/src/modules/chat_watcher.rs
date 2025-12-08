@@ -92,11 +92,13 @@ fn find_diablo2_in_registry() -> Option<PathBuf> {
     None
 }
 
+// TODO: Ensure this is working cross-platform.
 /// Get the chat log file path, creating directories if needed
 pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
+    //println!("custom_d2_dir: {:?}", custom_d2_dir);
     let d2_dir = find_diablo2_directory(custom_d2_dir)?;
     let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
-    
+    //println!("logs_dir: {}", logs_dir.display());
     // Create directories if they don't exist
     if let Err(_e) = fs::create_dir_all(&logs_dir) {
         return None;
@@ -343,6 +345,7 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
 
 /// Start watching the chat log file
 pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
+
     let log_path = get_chat_log_path(custom_d2_dir.as_deref()).ok_or("Could not find or create chat log file")?;
     
     // Also create the game log file
