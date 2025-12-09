@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
+import { useSocialActions } from './useSocialActions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
@@ -9,6 +10,7 @@ import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-we
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
 
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
@@ -21,6 +23,11 @@ interface Pd2WebsiteContextType {
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
   getCurrencyTab: () => Promise<Currency>;
+  deleteConversation: (conversationId: string) => Promise<void>;
+  getConversations: (participantId: string) => Promise<ConversationListResponse>;
+  getMessages: (conversationId: string) => Promise<MessageListResponse>;
+  sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
+  markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -46,6 +53,12 @@ export const Pd2WebsiteProvider = ({ children }) => {
     findItemsByName,
     stashCache,
     CACHE_TTL,
+  });
+
+  // Social actions (RESTful)
+  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead } = useSocialActions({
+    settings,
+    authData,
   });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
@@ -93,7 +106,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab, deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );

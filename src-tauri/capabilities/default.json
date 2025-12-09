@@ -11,6 +11,7 @@
     "core:window:allow-start-dragging",
     "core:window:allow-hide",
     "core:window:allow-show",
+    "core:window:allow-set-focus",
     "core:app:allow-app-show",
     "core:window:allow-set-ignore-cursor-events",
     "core:webview:allow-create-webview-window",

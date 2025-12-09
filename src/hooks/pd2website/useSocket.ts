@@ -3,6 +3,7 @@ import io, { Socket } from 'socket.io-client';
 import { usePd2Website } from './usePD2Website';
 import { ConversationListResponse, MessageListResponse } from '@/common/types/pd2-website/ChatTypes';
 import { useOptions } from '../useOptions';
+import { emit } from '@/lib/browser-events';
 
 interface PendingRequest {
   resolve: (value: any) => void;
@@ -62,8 +63,23 @@ export const useSocket = () => {
               return; // Don't process auth response as a regular request response
             }
 
-            // Handle other responses - match to pending requests
+            // Handle push events (like "social/message pushed")
             if (Array.isArray(parsedPayload) && parsedPayload.length === 2) {
+              const eventType = parsedPayload[0];
+              const eventData = parsedPayload[1];
+              
+              // Check if this is a push event
+              if (typeof eventType === 'string' && eventType.includes('pushed')) {
+                // Emit a custom event for push notifications
+                // Replace spaces and special chars with underscores for Tauri compatibility
+                const sanitizedEventType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
+                emit(`socket:${sanitizedEventType}`, eventData).catch(err => {
+                  console.error('[Socket] Failed to emit push event:', err);
+                });
+                return; // Don't process push events as request responses
+              }
+              
+              // Handle other responses - match to pending requests
               // Match responses to requests in order (FIFO queue)
               // This works because responses typically come back in the same order as requests
               if (pendingRequestsRef.current.length > 0) {

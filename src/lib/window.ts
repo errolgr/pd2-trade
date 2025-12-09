@@ -1,13 +1,13 @@
 import { isTauri } from '@tauri-apps/api/core';
+import {WindowOptions} from '@tauri-apps/api/window';
 import * as browserWindow from './browser-window';
+import {WebviewOptions} from "@tauri-apps/api/webview";
 
 // Re-export browser window types
 export type BrowserWindow = browserWindow.BrowserWindow;
 
 // Tauri types (only used when in Tauri)
 type WebviewWindow = any;
-type WindowOptions = any;
-type WebviewOptions = any;
 
 /**
  * Opens a centered window - uses Tauri in Tauri environment, browser window.open in browser
