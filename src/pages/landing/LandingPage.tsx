@@ -26,6 +26,7 @@ const LandingPage: React.FC = () => {
   const quickListWinRef = useRef<BrowserWindow | null>(null);
   const chatWindowRef = useRef<any>(null);
   const chatButtonWindowRef = useRef<any>(null);
+  const tradeMessagesWindowRef = useRef<any>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings } = useOptions();
@@ -269,7 +270,10 @@ const LandingPage: React.FC = () => {
       }
 
       // Set up toggle handler
-      const toggleChatWindow = async () => {
+      const toggleChatWindow = async (event?: { payload?: { conversationId?: string; conversation?: any } }) => {
+        const conversationId = event?.payload?.conversationId;
+        const conversation = event?.payload?.conversation;
+        
         if (!chatWindowRef.current) {
           // Create the window if it doesn't exist
           chatWindowRef.current = await openOverDiabloWindow('Chat', '/chat', {
@@ -296,6 +300,13 @@ const LandingPage: React.FC = () => {
             if (chatWindowRef.current) {
               await chatWindowRef.current.show();
               await chatWindowRef.current.setFocus();
+              
+              // If conversationId was provided, emit event to select it
+              if (conversationId) {
+                setTimeout(() => {
+                  emit('select-chat-conversation', { conversationId, conversation });
+                }, 200); // Small delay to ensure chat widget is ready
+              }
             }
           }, 100);
           return;
@@ -308,6 +319,13 @@ const LandingPage: React.FC = () => {
           } else {
             await chatWindowRef.current.show();
             await chatWindowRef.current.setFocus();
+            
+            // If conversationId was provided, emit event to select it
+            if (conversationId) {
+              setTimeout(() => {
+                emit('select-chat-conversation', { conversationId, conversation });
+              }, 200); // Small delay to ensure chat widget is ready
+            }
           }
         } catch (error) {
           console.error('Error toggling chat window:', error);
@@ -330,6 +348,98 @@ const LandingPage: React.FC = () => {
       }
       if (focusCheckInterval) {
         clearInterval(focusCheckInterval);
+      }
+    };
+  }, []);
+
+  // Set up trade messages window - always display for testing
+  useEffect(() => {
+    let toggleUnlisten: (() => void) | null = null;
+
+    const openTradeMessagesWindow = async () => {
+      // Small delay to ensure app is fully initialized
+      await sleep(500);
+      
+      // Create and show the trade messages window
+      tradeMessagesWindowRef.current = await openWindowAtCursor('trade-messages', '/trade-messages', {
+        decorations: false,
+        transparent: true,
+        skipTaskbar: true,
+        alwaysOnTop: true,
+        shadow: false,
+        focus: false,
+        focusable: true,
+        width: 600,
+        resizable: true,
+        height: 400,
+        visible: true, // Always visible for testing
+      });
+      
+      if (tradeMessagesWindowRef.current) {
+        // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
+        //   tradeMessagesWindowRef.current = null;
+        // });
+      }
+    };
+
+    const toggleTradeMessagesWindow = async () => {
+      if (!tradeMessagesWindowRef.current) {
+        // Create the window if it doesn't exist
+        tradeMessagesWindowRef.current = await openWindowAtCursor('trade-messages', '/trade-messages', {
+          decorations: false,
+          transparent: true,
+          skipTaskbar: true,
+          alwaysOnTop: true,
+          shadow: false,
+          focus: false,
+          focusable: true,
+          width: 600,
+          height: 400,
+          visible: true, // Always visible for testing
+        });
+        
+        if (tradeMessagesWindowRef.current) {
+          // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
+          //   tradeMessagesWindowRef.current = null;
+          // });
+        }
+        
+        // Wait a bit for window to be created, then show it
+        setTimeout(async () => {
+          if (tradeMessagesWindowRef.current) {
+            await tradeMessagesWindowRef.current.show();
+            await tradeMessagesWindowRef.current.setFocus();
+          }
+        }, 100);
+        return;
+      }
+
+      try {
+        const isVisible = await tradeMessagesWindowRef.current.isVisible();
+        if (isVisible) {
+          await tradeMessagesWindowRef.current.hide();
+        } else {
+          await tradeMessagesWindowRef.current.show();
+          await tradeMessagesWindowRef.current.setFocus();
+        }
+      } catch (error) {
+        console.error('Error toggling trade messages window:', error);
+      }
+    };
+
+    // Open window on startup
+    openTradeMessagesWindow();
+
+    // Listen for toggle trade messages window event
+    listen('toggle-trade-messages-window', toggleTradeMessagesWindow).then((off) => {
+      toggleUnlisten = off;
+    }).catch((err) => {
+      console.error('Failed to listen for toggle-trade-messages-window event:', err);
+    });
+
+    return () => {
+      if (toggleUnlisten) {
+        toggleUnlisten();
       }
     };
   }, []);

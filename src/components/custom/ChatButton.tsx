@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, GripVertical, Settings } from 'lucide-react';
+import { MessageSquare, GripVertical, Settings, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -7,10 +7,11 @@ import { cn } from '@/lib/utils';
 interface ChatButtonProps {
   handleClick: () => void;
   onSettingsClick?: () => void;
+  onTradeMessagesClick?: () => void;
   unreadCount?: number;
 }
 
-export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsClick, unreadCount = 0 }) => {
+export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsClick, onTradeMessagesClick, unreadCount = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -44,6 +45,24 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
             aria-label="Settings"
           >
             <Settings className={cn(
+              "text-neutral-200 transition-all duration-200",
+              isHovered ? "h-5 w-5" : "h-4 w-4"
+            )} />
+          </Button>
+        )}
+
+        {/* Trade Messages Button Circle */}
+        {onTradeMessagesClick && (
+          <Button
+            onClick={onTradeMessagesClick}
+            className={cn(
+              "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-200",
+              isHovered ? "h-12 w-12 scale-110" : "h-10 w-10 scale-100 opacity-0 pointer-events-none"
+            )}
+            size="icon"
+            aria-label="Trade Messages"
+          >
+            <ShoppingBag className={cn(
               "text-neutral-200 transition-all duration-200",
               isHovered ? "h-5 w-5" : "h-4 w-4"
             )} />

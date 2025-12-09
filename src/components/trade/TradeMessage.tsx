@@ -1,187 +1,547 @@
-import React from 'react';
-import { X, RefreshCw, UserPlus, ShoppingCart, ThumbsUp, ArrowRight, ArrowUp, Home, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  X, RefreshCw, User, ShoppingCart, ThumbsUp, ArrowRight, ArrowUp, Home, Package,
+  Volume2, VolumeX, MessageSquare, Eye, Trash2, CheckCircle, XCircle, ArrowLeftRight,
+  History, CheckSquare, RotateCcw, MessageCircle
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useClipboard } from '@/hooks/useClipboard';
+import { openUrl } from '@/lib/browser-opener';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { emit } from '@/lib/browser-events';
+
+export interface TradeMessageHistoryEntry {
+  id: string;
+  isIncoming: boolean;
+  message: string;
+  timestamp: Date;
+}
 
 export interface TradeMessageData {
   id: string;
   isIncoming: boolean;
   playerName: string;
+  accountName?: string;
+  characterName?: string;
   message: string;
   itemName?: string;
   price?: string;
   timestamp: Date;
+  history?: TradeMessageHistoryEntry[];
+  listingId?: string; // For website offers
+  userId?: string; // User ID for website offers
 }
 
 interface TradeMessageProps {
   trade: TradeMessageData;
   onClose: (id: string) => void;
   onRefresh?: (id: string) => void;
+  onRevoke?: (id: string) => Promise<void>;
 }
 
-export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRefresh }) => {
+export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRefresh, onRevoke }) => {
+  const { authData, createConversation } = usePd2Website();
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
+  const [viewPopoverOpen, setViewPopoverOpen] = useState(false);
+  const [historyPopoverOpen, setHistoryPopoverOpen] = useState(false);
+  const [gameName, setGameName] = useState('');
+  const [password, setPassword] = useState('');
+  const [copiedAction, setCopiedAction] = useState<'accept' | 'whisper' | 'reject' | 'sold' | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const historyCardRef = React.useRef<HTMLDivElement>(null);
+  const { copy } = useClipboard();
+
+  // Update timer every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle click outside and blur to close history card
+  useEffect(() => {
+    if (!historyPopoverOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (historyCardRef.current && !historyCardRef.current.contains(event.target as Node)) {
+        setHistoryPopoverOpen(false);
+      }
+    };
+
+    const handleBlur = (event: FocusEvent) => {
+      if (historyCardRef.current && !historyCardRef.current.contains(event.target as Node)) {
+        setHistoryPopoverOpen(false);
+      }
+    };
+
+    // Small delay to prevent immediate close when opening
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('blur', handleBlur);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [historyPopoverOpen]);
+
   const formatTimeAgo = (date: Date): string => {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h`;
+    const totalSeconds = Math.floor((currentTime.getTime() - date.getTime()) / 1000);
+    if (totalSeconds < 3600) {
+      // Show MM:SS for times under an hour (matching the image)
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else {
+      // Show HH:MM for times over an hour
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  };
+
+  const handleStop = () => {
+    // Stop notifications for this trade
+    onClose(trade.id);
+  };
+
+  const handleToggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+  };
+
+  const handleViewProfile = () => {
+    // Open profile on website using account name
+    const characterName = trade.characterName;
+    const url = `https://www.projectdiablo2.com/character/${characterName}`;
+    openUrl(url);
+
+  };
+
+  const handleChat = async () => {
+    // Copy whisper command to clipboard
+    const whisperCommand = `/w *${trade.accountName} `;
+    await copy(whisperCommand);
+    setCopiedAction('whisper');
+    setTimeout(() => setCopiedAction(null), 2000);
+  };
+
+
+
+  const handleTrade = () => {
+    // Initiate trade
+    console.log('Initiate trade:', trade.playerName);
+  };
+
+  const handleAccept = async () => {
+    if (!gameName) {
+      return; // Don't proceed if game name is empty
+    }
+    
+    const accountName = trade.accountName;
+    const gameInfo = password ? `${gameName}////${password}` : gameName;
+    const acceptMessage = `/w *${accountName} Your offer has been accepted. Game: ${gameInfo}`;
+    await copy(acceptMessage);
+    setCopiedAction('accept');
+    setTimeout(() => setCopiedAction(null), 2000);
+    setAcceptPopoverOpen(false);
+    setGameName('');
+    setPassword('');
+  };
+
+  const handleDecline = async () => {
+    // Copy rejection message to clipboard
+    const accountName = trade.accountName;
+    const rejectMessage = `/w *${accountName} Your offer has been rejected.`;
+    await copy(rejectMessage);
+    setCopiedAction('reject');
+    setTimeout(() => setCopiedAction(null), 2000);
+  };
+
+  const handleSold = async () => {
+    // Copy sold message to clipboard
+    const accountName = trade.accountName;
+    const soldMessage = `/w *${accountName} The item has been sold.`;
+    await copy(soldMessage);
+    setCopiedAction('sold');
+    setTimeout(() => setCopiedAction(null), 2000);
+  };
+
+  const handleHistory = () => {
+    // Show history popover
+    setHistoryPopoverOpen(true);
+  };
+
+  const handleRevoke = async () => {
+    if (onRevoke) {
+      try {
+        await onRevoke(trade.id);
+      } catch (error) {
+        console.error('Failed to revoke offer:', error);
+      }
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!trade.userId || !authData?.user?._id) {
+      console.error('Missing user ID for starting chat');
+      return;
+    }
+
+    try {
+      // Create conversation with both user IDs
+      const participantIds = [authData.user._id, trade.userId];
+      const conversation = await createConversation(participantIds);
+      
+      console.log('Conversation created:', conversation);
+
+      // Toggle chat window and pass conversation object
+      await emit('toggle-chat-window', { 
+        conversationId: conversation._id,
+        conversation: conversation 
+      });
+    } catch (error) {
+      console.error('Failed to start chat:', error);
+    }
   };
 
   return (
+    <>
     <Card
       className={cn(
-        'relative w-full max-w-md border-2 shadow-lg',
+          'relative w-full border-2 shadow-sm',
         trade.isIncoming ? 'border-green-500 dark:border-green-600' : 'border-red-500 dark:border-red-600'
       )}
     >
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold">{trade.playerName}</span>
+        <CardContent className="p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-semibold text-sm">{trade.playerName}</span>
+              <span className="text-xs text-muted-foreground">{formatTimeAgo(trade.timestamp)}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm mb-2">
+              {trade.itemName && (
+                <>
+                  {trade.listingId ? (
+                    <a
+                      href={`https://www.projectdiablo2.com/market/listing/${trade.listingId}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openUrl(`https://www.projectdiablo2.com/market/listing/${trade.listingId}`);
+                      }}
+                      className="truncate text-blue-400 hover:text-blue-400 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer"
+                    >
+                      {trade.itemName}
+                    </a>
+                  ) : (
+                    <span className="truncate">{trade.itemName}</span>
+                  )}
+                  <ArrowLeftRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                </>
+              )}
               {trade.price && (
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="secondary" className="text-xs">
-                    {trade.price}
-                  </Badge>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-1">
+                  <span>{trade.price}</span>
+                  <Package className="h-3 w-3 text-muted-foreground" />
                 </div>
               )}
+              {!trade.itemName && !trade.price && (
+                <span className="text-muted-foreground">{trade.message}</span>
+              )}
             </div>
+
+            <div className="flex items-center gap-1 flex-wrap justify-between">
             <div className="flex items-center gap-1">
-              {onRefresh && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                <TooltipTrigger>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onRefresh(trade.id)}
-                      className="h-8 w-8"
+                    onClick={handleStop}
+                    className="h-7 w-7 cursor-pointer"
                     >
-                      <RefreshCw className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Refresh</p>
+                  <p>Stop notifications</p>
                   </TooltipContent>
                 </Tooltip>
-              )}
+
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onClose(trade.id)}
-                    className="h-8 w-8"
+                    onClick={handleViewProfile}
+                    className="h-7 w-7 cursor-pointer"
                   >
-                    <X className="h-4 w-4" />
+                    <User className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Close</p>
+                  <p>View profile</p>
                 </TooltipContent>
               </Tooltip>
-            </div>
+
+              <Tooltip open={copiedAction === 'whisper' ? true : undefined}>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleChat}
+                    className="h-7 w-7 cursor-pointer"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                  <p>{copiedAction === 'whisper' ? 'Copied to clipboard!' : 'Copy whisper command'}</p>
+                  </TooltipContent>
+                </Tooltip>
+
+              {!trade.listingId && (
+                <Tooltip open={copiedAction === 'sold' ? true : undefined}>
+                  <TooltipTrigger>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleSold}
+                      className="h-7 w-7 cursor-pointer"
+                    >
+                      <CheckSquare className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                    <p>{copiedAction === 'sold' ? 'Copied to clipboard!' : 'Item sold'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+              )}
+
+              {!trade.listingId && (
+                <Tooltip>
+                  <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 cursor-pointer"
+                    onClick={() => setHistoryPopoverOpen(true)}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View history</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              </div>
+
+              <div className="flex items-center justify-end gap-1">
+                {trade.listingId && trade.userId && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleStartChat}
+                        className="h-7 w-7 cursor-pointer text-blue-400 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Start chat</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {trade.listingId && !trade.isIncoming && onRevoke && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRevoke}
+                        className="h-7 w-7 cursor-pointer text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Revoke offer</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              
+            {trade.isIncoming && (
+                <div className="flex items-center gap-1">
+                  <Tooltip open={copiedAction === 'accept' ? true : undefined}>
+                    <TooltipTrigger>
+                      <div>
+                        <Popover open={acceptPopoverOpen} onOpenChange={setAcceptPopoverOpen}>
+                          <PopoverTrigger>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 cursor-pointer text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                    </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2">
+                            <div className="flex gap-2">
+                              <Input
+                                value={gameName}
+                                onChange={(e) => setGameName(e.target.value)}
+                                placeholder="Game"
+                                className="w-32 focus-visible:ring-0"
+                              />
+                              <Input
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                                className="w-32 focus-visible:ring-0"
+                              />
+                              <Button
+                                onClick={handleAccept}
+                                disabled={!gameName}
+                                className="cursor-pointer"
+                              >
+                                Accept
+                    </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>{copiedAction === 'accept' ? 'Copied to clipboard!' : 'Accept'}</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                  <Tooltip open={copiedAction === 'reject' ? true : undefined}>
+                    <TooltipTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleDecline}
+                        className="h-7 w-7 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 pt-1"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>{copiedAction === 'reject' ? 'Copied to clipboard!' : 'Reject'}</p>
+                  </TooltipContent>
+                </Tooltip>
+                </div>
+              )}
           </div>
-          <div className="text-xs text-muted-foreground">{formatTimeAgo(trade.timestamp)}</div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="text-sm font-medium mb-4">{trade.itemName || trade.message}</div>
-          <div className="flex items-center gap-1">
-            {trade.isIncoming ? (
-              <>
+          </div>
+          </div>
+
+          {onRefresh && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <UserPlus className="h-4 w-4" />
+                  <TooltipTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onRefresh(trade.id)}
+                  className="h-7 w-7 flex-shrink-0 cursor-pointer"
+                >
+                  <RefreshCw className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Add friend</p>
+                <p>Refresh</p>
                   </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View listing</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ThumbsUp className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Accept</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reply</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
-            ) : (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Send</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View listing</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ThumbsUp className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Accept</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Home className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Home</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
             )}
           </div>
         </CardContent>
       </Card>
+
+    {historyPopoverOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/50" 
+          onClick={() => setHistoryPopoverOpen(false)}
+        />
+        {/* Centered Card */}
+        <Card 
+          ref={historyCardRef}
+          className="relative z-50 w-96 max-h-[80vh] flex flex-col shadow-lg"
+          onBlur={() => setHistoryPopoverOpen(false)}
+          tabIndex={-1}
+        >
+          <CardContent className="p-4 flex flex-col flex-1 min-h-0">
+            <div className="flex items-center justify-between mb-3 flex-shrink-0">
+              <h4 className="font-medium text-sm">Communication History</h4>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setHistoryPopoverOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="space-y-2 pr-4">
+                {trade.history && trade.history.length > 0 ? (
+                  trade.history
+                    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+                    .map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={cn(
+                          'rounded-md p-2 text-sm',
+                          entry.isIncoming
+                            ? 'bg-muted/50 border-l-2 border-green-500'
+                            : 'bg-muted/30 border-l-2 border-blue-500'
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium">
+                            {entry.isIncoming ? trade.playerName : 'You'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatTimeAgo(entry.timestamp)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-foreground whitespace-pre-wrap break-words">
+                          {entry.message}
+                        </p>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    No history yet
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+    </>
   );
 };
 

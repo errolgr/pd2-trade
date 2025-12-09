@@ -28,6 +28,7 @@ interface Pd2WebsiteContextType {
   getMessages: (conversationId: string) => Promise<MessageListResponse>;
   sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
   markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
+  createConversation: (participantIds: string[]) => Promise<any>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -56,7 +57,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   });
 
   // Social actions (RESTful)
-  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead } = useSocialActions({
+  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } = useSocialActions({
     settings,
     authData,
   });
@@ -106,7 +107,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab, deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab, deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );

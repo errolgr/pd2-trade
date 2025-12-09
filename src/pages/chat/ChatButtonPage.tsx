@@ -40,11 +40,16 @@ const ChatButtonPage: React.FC = () => {
     await emit('open-settings');
   };
 
+  const handleTradeMessagesClick = async () => {
+    await emit('toggle-trade-messages-window');
+  };
+
   return (
     <div className="w-screen h-screen pointer-events-none">
       <ChatButton 
         handleClick={handleClick} 
         onSettingsClick={handleSettingsClick}
+        onTradeMessagesClick={handleTradeMessagesClick}
         unreadCount={unreadCount} 
       />
     </div>

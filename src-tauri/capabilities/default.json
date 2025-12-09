@@ -32,6 +32,7 @@
     "process:allow-exit",
     "clipboard-manager:default",
     "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text",
     "core:app:allow-default-window-icon",
     "app-exit:default",
     "fs:default",

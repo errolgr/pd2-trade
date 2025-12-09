@@ -35,6 +35,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
   const messagesRef = useRef<Message[]>([]);
   const selectedConversationRef = useRef<Conversation | null>(null);
+  const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -77,6 +78,102 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (currentUserId) {
       loadConversations();
     }
+  }, [currentUserId]);
+
+  // Listen for conversation selection event
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<{ conversationId: string; conversation?: any }>('select-chat-conversation', async (event) => {
+          const { conversationId, conversation: newConversation } = event.payload;
+          
+          // If a new conversation object was provided, inject it into the list
+          if (newConversation) {
+            // Format the conversation to match the Conversation type
+            const formattedConversation: Conversation = {
+              _id: newConversation._id,
+              participant_ids: newConversation.participant_ids,
+              created_at: newConversation.created_at,
+              updated_at: newConversation.updated_at,
+              created_by_id: newConversation.created_by_id,
+              unread_count: 0, // New conversation has no unread messages
+              participants: newConversation.participants || [],
+              latest_message: undefined, // No messages yet
+            };
+            
+            // Check if conversation already exists in the list
+            setConversations(prev => {
+              const exists = prev.some(c => c._id === conversationId);
+              if (exists) {
+                // Update existing conversation
+                return prev.map(c => c._id === conversationId ? formattedConversation : c);
+              } else {
+                // Add new conversation to the beginning of the list
+                return [formattedConversation, ...prev];
+              }
+            });
+            
+            // Select the conversation
+            setSelectedConversation(formattedConversation);
+            return;
+          }
+          
+          // If no new conversation object provided, try to find existing one
+          if (!newConversation) {
+            // Wait for conversations to be loaded
+            setConversations(prev => {
+              if (prev.length === 0) {
+                // If conversations aren't loaded yet, wait a bit and try again
+                setTimeout(() => {
+                  setConversations(current => {
+                    const conversation = current.find(c => c._id === conversationId);
+                    if (conversation) {
+                      setSelectedConversation(conversation);
+                    }
+                    return current;
+                  });
+                }, 500);
+                return prev;
+              }
+              
+              // Find and select the conversation
+              const conversation = prev.find(c => c._id === conversationId);
+              if (conversation) {
+                setSelectedConversation(conversation);
+              } else {
+                // If conversation not found, reload conversations and try again
+                if (loadConversationsRef.current) {
+                  loadConversationsRef.current().then(() => {
+                    setTimeout(() => {
+                      setConversations(current => {
+                        const foundConversation = current.find(c => c._id === conversationId);
+                        if (foundConversation) {
+                          setSelectedConversation(foundConversation);
+                        }
+                        return current;
+                      });
+                    }, 500);
+                  });
+                }
+              }
+              return prev;
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Failed to set up select-chat-conversation listener:', error);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
   }, [currentUserId]);
 
   // Listen for new messages from socket
@@ -271,6 +368,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       setLoadingConversations(false);
     }
   };
+
+  // Store loadConversations in ref
+  useEffect(() => {
+    loadConversationsRef.current = loadConversations;
+  }, [currentUserId, getConversations]);
 
   // Update refs when state changes
   useEffect(() => {

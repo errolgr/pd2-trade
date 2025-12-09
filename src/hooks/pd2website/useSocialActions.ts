@@ -17,6 +17,7 @@ interface UseSocialActionsReturn {
   getMessages: (conversationId: string) => Promise<MessageListResponse>;
   sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
   markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
+  createConversation: (participantIds: string[]) => Promise<any>;
 }
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
@@ -164,12 +165,34 @@ export function useSocialActions({ settings, authData }: UseSocialActionsProps):
     await handleApiResponse(response);
   }, [settings]);
 
+  const createConversation = useCallback(async (participantIds: string[]): Promise<any> => {
+    if (!settings?.pd2Token) {
+      throw new Error('No auth token available');
+    }
+
+    const body = {
+      participant_ids: participantIds,
+    };
+
+    const response = await tauriFetch('https://api.projectdiablo2.com/social/conversation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    });
+    
+    return await handleApiResponse(response);
+  }, [settings]);
+
   return {
     deleteConversation,
     getConversations,
     getMessages,
     sendMessage,
     markMessagesAsRead,
+    createConversation,
   };
 }
 
