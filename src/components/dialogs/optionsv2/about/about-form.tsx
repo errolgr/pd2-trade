@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import imgPath from '../../../../assets/img.png'
-import { getVersion } from '@tauri-apps/api/app';
+import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

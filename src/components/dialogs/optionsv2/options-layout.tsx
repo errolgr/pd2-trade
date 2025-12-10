@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {Card} from "@/components/ui/card";
 import {GripVertical, X} from "lucide-react";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWebviewWindow } from "@/lib/browser-webview";
 import SettingGenereal from './appearance/layout';
 import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';

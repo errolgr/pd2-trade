@@ -1,4 +1,4 @@
-import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
+import { writeText, readText } from '@/lib/browser-clipboard';
 import { useState, useCallback } from "react";
 
 export function useClipboard() {

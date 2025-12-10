@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
+import { emit } from '@/lib/browser-events';
 import { useUpdater } from './useUpdater';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
@@ -37,7 +37,7 @@ export const useAppUpdates = () => {
             data: {},
           },
         };
-        emit('toast-event', updateToastPayload);
+        await emit('toast-event', updateToastPayload);
       }
     };
 

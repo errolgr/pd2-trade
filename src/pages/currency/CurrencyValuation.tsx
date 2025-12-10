@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown, GripVertical, Loader2, X } from 'lucide-react';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
@@ -33,22 +33,29 @@ export function CurrencyValuation() {
   const [selectedCategory, setSelectedCategory] = React.useState<FormattedStashCategory>('runes');
   const [data, setData] = React.useState<FormattedStashData>();
 
-  const { getCurrencyTab } = usePd2Website();
+  const { getCurrencyTab, authData } = usePd2Website();
   const { calculatedEconomyValues, loading } = useEconomyData();
 
   const categoryOptions: FormattedStashCategory[] = ['currency', 'runes', 'ubers'];
   const columns = createColumns(selectedCategory);
 
-  const fetchCurrency = async () => {
-    const curr = await getCurrencyTab();
-    setCurrency(curr);
-  };
+  const fetchCurrency = React.useCallback(async () => {
+    if (!authData) {
+      return;
+    }
+    try {
+      const curr = await getCurrencyTab();
+      setCurrency(curr);
+    } catch (error) {
+      console.error('Failed to fetch currency:', error);
+    }
+  }, [authData, getCurrencyTab]);
 
   React.useEffect(() => {
-    if (!currency) {
+    if (!currency && authData) {
       fetchCurrency();
     }
-  }, [currency, fetchCurrency]);
+  }, [currency, authData, fetchCurrency]);
 
   React.useEffect(() => {
     if (currency && calculatedEconomyValues) {
@@ -73,9 +80,17 @@ export function CurrencyValuation() {
         const item = runeHierarchy[i];
         const match = calculatedEconomyValues.Runes.find((r) => r.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 100) / 100;
+        const value = Math.round(amount * price * 1000) / 1000;
+        const sampleCount = match?.numListings ?? undefined;
 
-        return { key: runeKey, item, amount, price: Math.round(price * 100) / 100, value };
+        return { 
+          key: runeKey, 
+          item, 
+          amount, 
+          price: Math.round(price * 1000) / 1000, 
+          value,
+          sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
+        };
       });
     } else {
       const source =
@@ -113,21 +128,33 @@ export function CurrencyValuation() {
         const item = map[key];
         const match = calculatedEconomyValues[category].find((val) => val.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 100) / 100;
+        const value = Math.round(amount * price * 1000) / 1000;
+        const sampleCount = match?.numListings ?? undefined;
 
-        return { key, item, amount, price: Math.round(price * 100) / 100, value };
+        // Debug log to verify data
+        if (match) {
+          console.log(`${category} item: ${item}, match price: ${match.price}, match numListings: ${match.numListings}, final price: ${price}`);
+        }
+
+        return { 
+          key, 
+          item, 
+          amount, 
+          price: Math.round(price * 1000) / 1000, 
+          value,
+          sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
+        };
       });
     }
 
-    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 100) / 100;
+    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 1000) / 1000;
     return { items, total };
   }
 
   function formattedEconomyData(currency: Currency, calculatedValues: EconomyValue): FormattedStashData {
     const runes = formatEconomyCategoryAmounts('Runes', currency, calculatedValues, RUNE_HIERARCHY);
-    // Currency and Ubers are disabled - return empty data
-    const ubers = { items: [], total: 0 };
-    const currencyItems = { items: [], total: 0 };
+    const ubers = formatEconomyCategoryAmounts('Ubers', currency, calculatedValues);
+    const currencyItems = formatEconomyCategoryAmounts('Currency', currency, calculatedValues);
 
     return {
       runes,
@@ -137,8 +164,7 @@ export function CurrencyValuation() {
   }
 
   function getGrandTotal(data: FormattedStashData): number {
-    // Only calculate runes total since currency and ubers are disabled
-    return data.runes.total;
+    return data.runes.total + data.currency.total + data.ubers.total;
   }
 
   return (
@@ -154,13 +180,16 @@ export function CurrencyValuation() {
                 <h2 className="text-2xl font-bold">Currency Valuation</h2>
           </div>
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
-          Displays the total value of the runes in your stash, based on fixed prices.
+          Displays the total value of items in your stash, based on current market prices from the PD2 Price Crawler API.
           </div>
         </div>
 
         <Button variant="ghost"
           size="icon"
-          onClick={() => getCurrentWebviewWindow().close()}
+          onClick={async () => {
+            const window = getCurrentWebviewWindow();
+            await window.close();
+          }}
           className="self-start">
           <X className="h-4 w-4" />
         </Button>
@@ -177,35 +206,16 @@ export function CurrencyValuation() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {categoryOptions.map((category) => {
-                const isDisabled = category !== 'runes';
-                const menuItem = (
-                  <DropdownMenuItem
-                    key={category}
-                    className={`capitalize ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => !isDisabled && setSelectedCategory(category)}
-                    disabled={isDisabled}>
-                    <div className="w-full flex items-center justify-between">
-                      <p>{category}</p> {category === selectedCategory && <CheckIcon />}
-                    </div>
-                  </DropdownMenuItem>
-                );
-
-                if (isDisabled) {
-                  return (
-                    <Tooltip key={category} delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <div>{menuItem}</div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>pd2.tools is undergoing changes and economy data is unavailable</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                }
-
-                return menuItem;
-              })}
+              {categoryOptions.map((category) => (
+                <DropdownMenuItem
+                  key={category}
+                  className="capitalize"
+                  onClick={() => setSelectedCategory(category)}>
+                  <div className="w-full flex items-center justify-between">
+                    <p>{category}</p> {category === selectedCategory && <CheckIcon />}
+                  </div>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </TooltipProvider>
@@ -222,7 +232,7 @@ export function CurrencyValuation() {
                   {selectedCategory} Value: <span className="text-gray-400">{formatHr(data[selectedCategory].total)}</span>
                 </p>
                 <p className="text-md text-gray-300 pt-1">
-                  Estimated Stash Value (Runes Only): <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>
+                  Estimated Total Stash Value: <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>
                 </p>
               </>
             );

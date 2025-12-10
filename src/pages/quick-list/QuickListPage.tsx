@@ -5,7 +5,7 @@ import { Item as PriceCheckItem } from "../price-check/lib/interfaces";
 import { OptionsProvider } from "@/hooks/useOptions";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
-import { listen } from '@tauri-apps/api/event';
+import { listen } from '@/lib/browser-events';
 import { ItemsProvider } from "@/hooks/useItems";
 
 // Simple unescape function to handle Unicode characters

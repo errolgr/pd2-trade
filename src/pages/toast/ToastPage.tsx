@@ -1,29 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { listen } from '@/lib/browser-events';
 import { isTauri } from '@tauri-apps/api/core';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { openUrl } from '@/lib/browser-opener';
 
 const ToastPage: React.FC = () => {
-  const closeToastWebview = () => {
-    if (isTauri()) getCurrentWebviewWindow().hide().catch(console.error);
+  const closeToastWebview = async () => {
+    if (isTauri()) {
+      const win = await getCurrentWebviewWindow();
+      if (win) win.hide().catch(console.error);
+    }
   };
 
-  // Listen for Tauri 'toast-event' and show a toast
+  // Listen for 'toast-event' and show a toast
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    if (isTauri()) {
-      listen('toast-event', async (event) => {
-        // Show the window when we receive a toast event
+    let unlistenPromise: Promise<() => void>;
+    
+    listen('toast-event', async (event) => {
+      // Show the window when we receive a toast event (only in Tauri)
+      if (isTauri()) {
         try {
-          await getCurrentWebviewWindow().show();
+          const win = await getCurrentWebviewWindow();
+          if (win) await win.show();
         } catch (error) {
           console.error('Failed to show toast window:', error);
         }
+      }
 
         // event.payload can be string or object
         if (typeof event.payload === 'string') {
@@ -79,7 +84,13 @@ const ToastPage: React.FC = () => {
                     break;
                   }
                   case ToastActionType.UPDATE_AVAILABLE:
-                    await relaunch();
+                    if (isTauri()) {
+                      const { relaunch } = await import('@tauri-apps/plugin-process');
+                      await relaunch();
+                    } else {
+                      // In browser, just reload the page
+                      window.location.reload();
+                    }
                     break;
                   default:
                     console.warn('Unknown toast action type:', customPayload.action.type);
@@ -120,12 +131,14 @@ const ToastPage: React.FC = () => {
             });
           }
         }
-      }).then((off) => {
-        unlisten = off;
-      });
-    }
+    }).then((off) => {
+      unlistenPromise = Promise.resolve(off);
+    });
+    
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenPromise) {
+        unlistenPromise.then((off) => off());
+      }
     };
   }, []);
 

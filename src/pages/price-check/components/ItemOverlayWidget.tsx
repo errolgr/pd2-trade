@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { qualityColor } from "../lib/qualityColor";
 import { StatRow } from "./StatRow";
 import { useOptions } from "@/hooks/useOptions";
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from '@/lib/browser-opener';
 import { Props } from "../lib/types";
 import { useEconomyData } from "../hooks/useEconomyData";
 import { useStatSelection } from "../hooks/useStatSelection";
@@ -20,7 +20,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from "@/hooks/useItems";
 import { MarketListingEntry, MarketListingResult } from "@/common/types/pd2-website/GetMarketListingsResponse";
 import { usePd2Website } from "@/hooks/pd2website/usePD2Website";
-import { emit } from "@tauri-apps/api/event";
+import { emit } from "@/lib/browser-events";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -148,7 +148,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, []);
 
   const openSettingsPage = useCallback(async () => {
-    await emit('open-settings');
+    await emit('open-settings', undefined);
   }, []);
 
   /** -------------------

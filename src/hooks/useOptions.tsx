@@ -2,11 +2,11 @@ import * as React from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import merge from 'lodash.merge';
-import { emit, listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
-import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@tauri-apps/api/core';
 import { jwtDecode } from 'jwt-decode';
 
 export interface ISettings {
@@ -23,9 +23,14 @@ export interface ISettings {
   hotkeyKeySettings?: string;
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
+  hotkeyModifierChat: 'ctrl' | 'alt';
+  hotkeyKeyChat: string;
+  hotkeyModifierOffers: 'ctrl' | 'alt';
+  hotkeyKeyOffers: string;
   fillStatValue?: number;
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
+  chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
   whisperIgnoreList?: string[];
   whisperAnnouncementsEnabled?: boolean;
   whisperJoinNotificationsEnabled?: boolean;
@@ -54,11 +59,16 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySettings: 'o',
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
+  hotkeyModifierChat: 'ctrl',
+  hotkeyKeyChat: 't',
+  hotkeyModifierOffers: 'ctrl',
+  hotkeyKeyOffers: 'b',
   fillStatValue: 5,
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
+  chatButtonOverlayEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -91,7 +101,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       setSettings(updated);
-      emit('settings-updated', updated); // Notify other parts of the app
+      await emit('settings-updated', updated); // Notify other parts of the app
     } catch (error) {
       console.error('Error updating settings:', error);
     }
@@ -136,15 +146,46 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     fetchSettings();
 
-    const unlisten = listen<ISettings>('settings-updated', () => {
+    let unlistenPromise: Promise<() => void>;
+    listen<ISettings>('settings-updated', () => {
       console.log('[OptionsProvider] Settings update detected, reloading...');
       fetchSettings();
+    }).then((unlisten) => {
+      unlistenPromise = Promise.resolve(unlisten);
     });
 
     return () => {
-      unlisten.then((off) => off());
+      if (unlistenPromise) {
+        unlistenPromise.then((off) => off());
+      }
     };
   }, []);
+
+  // Check for token in URL parameters (browser mode)
+  useEffect(() => {
+    if (isTauri()) return; // Skip in Tauri mode
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    
+    if (tokenFromUrl && !isLoading) {
+      // Only update if we don't already have a token or if it's different
+      if (!settings?.pd2Token || settings.pd2Token !== tokenFromUrl) {
+        console.log('[OptionsProvider] Token found in URL, updating settings...');
+        updateSettings({ pd2Token: tokenFromUrl });
+        
+        // Clean up URL by removing token parameter
+        urlParams.delete('token');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+        
+        emit('toast-event', { 
+          title: 'PD2 Trader', 
+          description: 'Token loaded from URL successfully!' 
+        });
+      }
+    }
+  }, [isLoading, settings?.pd2Token, updateSettings]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

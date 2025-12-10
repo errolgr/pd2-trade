@@ -28,6 +28,7 @@ const chatFormSchema = z.object({
   whisperJoinNotificationsEnabled: z.boolean().optional(),
   whisperNotificationTiming: z.enum(['in-game', 'out-of-game', 'both', 'never']).optional(),
   whisperNotificationVolume: z.number().int().min(0).max(100).optional(),
+  chatButtonOverlayEnabled: z.boolean().optional(),
 });
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
@@ -47,6 +48,7 @@ export function ChatForm() {
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
       whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
       whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
+      chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
     },
   });
 
@@ -61,6 +63,7 @@ export function ChatForm() {
         whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
         whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
         whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
+        chatButtonOverlayEnabled: settings.chatButtonOverlayEnabled ?? true,
       });
     }
   }, [settings, form]);
@@ -298,6 +301,26 @@ export function ChatForm() {
                 Adjust the volume for whisper notification sounds (0-100%).
               </FormDescription>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="chatButtonOverlayEnabled"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center gap-2">
+                <FormLabel>Chat Button Overlay</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value ?? true}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </div>
+              <FormDescription>
+                Show the floating chat button overlay in the bottom-right corner of the screen.
+              </FormDescription>
             </FormItem>
           )}
         />

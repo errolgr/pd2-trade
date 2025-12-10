@@ -1,18 +1,11 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
-import { defaultWindowIcon } from '@tauri-apps/api/app';
-import { Menu } from "@tauri-apps/api/menu";
-import { exit } from '@tauri-apps/plugin-process';
+import { isTauri } from '@tauri-apps/api/core';
 import {useOptions} from "@/hooks/useOptions";
 import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
-import {isRegistered, register, unregister} from '@tauri-apps/plugin-global-shortcut';
-import { openPath } from '@tauri-apps/plugin-opener';
-import { appConfigDir } from '@tauri-apps/api/path';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { listen } from '@tauri-apps/api/event';
+import { listen } from '@/lib/browser-events';
 
 type TrayContextValue = {
-  tray: TrayIcon | null;
+  tray: any | null;
 };
 
 const TrayContext = createContext<TrayContextValue>({ tray: null });
@@ -20,11 +13,11 @@ const TrayContext = createContext<TrayContextValue>({ tray: null });
 export const useTray = () => useContext(TrayContext);
 
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const [tray, setTray] = useState<TrayIcon | null>(null);
+  const [tray, setTray] = useState<any | null>(null);
   const { setIsOpen, settings } = useOptions();
-  const trayRef = useRef<TrayIcon | null>(null);
+  const trayRef = useRef<any | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
-  const settingsWinRef = useRef<WebviewWindow | null>(null);
+  const settingsWinRef = useRef<any | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isSettingsOpenRef = useRef(isSettingsOpen);
 
@@ -75,12 +68,13 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   // Register global shortcut for opening settings
   useEffect(() => {
-    if (!settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+    if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
 
     const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
 
     async function registerShortcut() {
       try {
+        const { isRegistered, register, unregister } = await import('@tauri-apps/plugin-global-shortcut');
         if (lastShortcutRef.current) {
           await unregister(lastShortcutRef.current);
         }
@@ -99,18 +93,32 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     registerShortcut();
 
     return () => {
-      if (lastShortcutRef.current) {
-        unregister(lastShortcutRef.current);
-        lastShortcutRef.current = null;
+      if (isTauri() && lastShortcutRef.current) {
+        import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
+          unregister(lastShortcutRef.current!);
+          lastShortcutRef.current = null;
+        });
       }
     };
   }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
 
   useEffect(() => {
+    if (!isTauri()) {
+      // Tray not available in browser
+      return;
+    }
+
     let isMounted = true;
 
     async function setupTray() {
       try {
+        const { Menu } = await import('@tauri-apps/api/menu');
+        const { TrayIcon, TrayIconEvent } = await import('@tauri-apps/api/tray');
+        const { defaultWindowIcon } = await import('@tauri-apps/api/app');
+        const { appConfigDir } = await import('@tauri-apps/api/path');
+        const { openPath } = await import('@tauri-apps/plugin-opener');
+        const { exit } = await import('@tauri-apps/plugin-process');
+
         const menu = await Menu.new({
           items: [
             {

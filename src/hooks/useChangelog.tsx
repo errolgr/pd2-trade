@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getVersion } from '@tauri-apps/api/app';
+import { getVersion } from '@/lib/browser-app';
 import { openCenteredWindow } from '@/lib/window';
 import { changeLog } from '@/assets/changeLog';
 import { useOptions } from './useOptions';

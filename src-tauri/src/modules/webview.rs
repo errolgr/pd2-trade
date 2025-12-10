@@ -13,6 +13,7 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
     .transparent(false)
     .visible(true)
     .shadow(true)
+    .always_on_top(true)
     .focused(true)
     .skip_taskbar(false)
     .devtools(true)

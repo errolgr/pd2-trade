@@ -1,4 +1,17 @@
 export const changeLog = {
+  "0.5.1": [
+    "🔧 Fixed an issue where the rune price breakdown would not display the correct price.",
+  ],
+  "0.5.0": [
+    "🆕 Added chat system - communicate with other players through the PD2 overlay interface with real-time messaging",
+    "🆕 Added chat overlay widget with spiral menu button - quick access to conversations, settings, and trade messages while in-game",
+    "🆕 Added trade offers system - view and manage incoming/outgoing trade offers from the website",
+    "🆕 Added trade messages container - unified view for whispers and website offers with accept/reject/revoke actions",
+    "🆕 PD2 Trader now ingests item prices and offers current market prices - updated currency valuation and rune exchange pages to use this information",
+    "🆕 Price data is now publicly available at pd2trader.com - browse currency, runes, and uber item prices with real-time market data",
+    "🆕 Added real-time socket connection - receive live updates for offers, messages, and notifications",
+    "🔧 Fixed authentication error handling - improved error recovery and user feedback",
+  ],
   "0.4.11": [
     "🔧 Fixed stat range filters - min/max parameters are now only added when values are entered.",
     "🔧 Fixed issue where chat message notifications were not shown after restarting the game.",

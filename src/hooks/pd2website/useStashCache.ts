@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import Fuse from 'fuse.js';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@/lib/browser-http';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { ItemQuality } from '@/common/types/Item';
@@ -20,7 +20,7 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   return url.toString();
 }
 
-export function useStashCache(authData, settings) {
+export function useStashCache(authData, settings, onAuthErrorRef?: React.MutableRefObject<(() => void | Promise<void>) | null>) {
   const stashCache = useRef(null);
   const itemsMapByKey = useMemo(() => createItemsMapByKey(allItems), []);
 
@@ -47,10 +47,11 @@ export function useStashCache(authData, settings) {
         'Authorization': `Bearer ${settings.pd2Token}`,
       },
     });
-    const stashData = await handleApiResponse(response)
+    const onAuthError = onAuthErrorRef?.current || undefined;
+    const stashData = await handleApiResponse(response, onAuthError)
     stashCache.current = { data: stashData, timestamp: Date.now() };
     return stashData;
-  }, [settings, authData]);
+  }, [settings, authData, onAuthErrorRef]);
 
   // Helper: calculate modifier similarity score between PriceCheckItem and stash item
   function calculateModifierSimilarity(priceCheckItem: PriceCheckItem, stashItem: GameStashItem): number {
@@ -216,5 +217,10 @@ export function useStashCache(authData, settings) {
     return true;
   }, [stashCache]);
 
-  return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash };
+  // Clear the stash cache
+  const clearStashCache = useCallback(() => {
+    stashCache.current = null;
+  }, []);
+
+  return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache };
 } 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,8 +10,8 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { emit } from '@tauri-apps/api/event';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { emit } from '@/lib/browser-events';
+import { openUrl } from '@/lib/browser-opener';
 import { PD2Website } from '@/common/constants';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import moment from 'moment';
@@ -126,53 +126,90 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     }
   }, [marketQuery, getMarketListings, onTotalCountChange, onListingsChange, currentPage]);
 
-  // Fetch all listings when search query is entered
+  // Track if we've fetched all listings for search
+  const hasFetchedAllListings = React.useRef(false);
+
+  // Fetch all listings for search (fetch when query becomes available, or when user starts typing)
   useEffect(() => {
     const fetchAllForSearch = async () => {
       if (!allListingsQuery) {
         setAllListingsForSearch([]);
+        hasFetchedAllListings.current = false;
         return;
       }
+      
+      // Only fetch if user is searching or if we haven't fetched yet
+      if (!searchQuery.trim() && hasFetchedAllListings.current) {
+        return; // Don't refetch if we already have data and not searching
+      }
+      
       setIsLoadingAllListings(true);
       try {
+        // Fetch all listings (not paginated) for search
         const result = await getMarketListings(allListingsQuery);
         setAllListingsForSearch(result.data);
+        hasFetchedAllListings.current = true;
       } catch (err) {
         console.error('Failed to fetch all listings for search:', err);
         setAllListingsForSearch([]);
+        hasFetchedAllListings.current = false;
       } finally {
         setIsLoadingAllListings(false);
       }
     };
-    fetchAllForSearch();
-  }, [allListingsQuery, getMarketListings]);
-
-  useEffect(() => {
-    // If searching, don't fetch paginated results
-    if (searchQuery.trim()) {
-      return;
+    
+    // Fetch when query is available and (user is searching OR we don't have data yet)
+    if (allListingsQuery && (searchQuery.trim() || !hasFetchedAllListings.current)) {
+      fetchAllForSearch();
     }
-    // If we have initial data (even if empty) and we're on page 0, use it instead of fetching
-    // This prevents infinite loops when there are no items
-    if (currentPage === 0 && !hasInitialized && initialTotalCount !== undefined) {
+  }, [allListingsQuery, getMarketListings, searchQuery]);
+
+  // Initialize with initial data if available, or fetch if not
+  useEffect(() => {
+    if (hasInitialized) return; // Already initialized
+    
+    if (currentPage === 0) {
+      if (initialTotalCount !== undefined && initialListings) {
+        // Use initial data if provided
+        if (initialListings.length > 0) {
+          setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+        } else {
+          setListings([]);
+        }
+        setTotalCount(initialTotalCount);
+        setHasInitialized(true);
+      } else if (marketQuery) {
+        // No initial data, fetch on mount
+        fetchListings();
+        setHasInitialized(true);
+      }
+    }
+  }, [currentPage, hasInitialized, initialListings, initialTotalCount, marketQuery, fetchListings]);
+
+  // Fetch listings when page changes (after initialization)
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      return; // Don't fetch paginated results when searching
+    }
+    
+    if (marketQuery && hasInitialized && currentPage !== 0) {
+      fetchListings();
+    }
+  }, [marketQuery, fetchListings, currentPage, searchQuery, hasInitialized]);
+
+  // Refresh when initial data changes (e.g., after authentication)
+  useEffect(() => {
+    if (hasInitialized && initialTotalCount !== undefined && marketQuery && currentPage === 0) {
+      // If initial data changed and we're on page 0, update the listings
       if (initialListings && initialListings.length > 0) {
         setListings(initialListings.slice(0, ITEMS_PER_PAGE));
-      } else {
-        // Empty initial listings - set empty state to prevent fetch loop
+      } else if (initialTotalCount === 0) {
+        // Explicitly set empty if total is 0
         setListings([]);
       }
       setTotalCount(initialTotalCount);
-      setHasInitialized(true);
-      return;
     }
-    // Only fetch if we've initialized and we're not on the initial page
-    // OR if we haven't initialized but we're not on page 0 (shouldn't happen, but safety check)
-    if (marketQuery && hasInitialized && currentPage !== 0) {
-      fetchListings();
-    } else if (marketQuery && !hasInitialized && currentPage !== 0) {
-      fetchListings();
-    }
-  }, [marketQuery, fetchListings, currentPage, initialListings, initialTotalCount, searchQuery, hasInitialized]);
+  }, [initialListings, initialTotalCount, hasInitialized, currentPage, marketQuery]);
 
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);

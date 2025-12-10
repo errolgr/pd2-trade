@@ -1,5 +1,4 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from './useOptions';
 
@@ -19,9 +18,15 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
   const registeredShortcuts = useRef<string[]>([]);
 
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauri()) {
+      // Global shortcuts not available in browser
+      return;
+    }
 
     const registerShortcuts = async () => {
+      try {
+        const { register, unregister } = await import('@tauri-apps/plugin-global-shortcut');
+        
       // Unregister previous shortcuts
       for (const shortcut of registeredShortcuts.current) {
         try {
@@ -45,16 +50,23 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         } catch (error) {
           console.error(`Failed to register shortcut ${shortcut}:`, error);
         }
+        }
+      } catch (error) {
+        console.error('Failed to load global shortcut plugin:', error);
       }
     };
 
     registerShortcuts();
 
     return () => {
+      if (isTauri()) {
+        import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
       registeredShortcuts.current.forEach((shortcut) => {
         unregister(shortcut).catch(() => void 0);
       });
       registeredShortcuts.current = [];
+        });
+      }
     };
   }, [shortcuts]);
 };
@@ -62,7 +74,9 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 export const useAppShortcuts = (
   onItemSearch: ShortcutHandler,
   onQuickList: ShortcutHandler,
-  onCurrencyValuation: ShortcutHandler
+  onCurrencyValuation: ShortcutHandler,
+  onChat?: ShortcutHandler,
+  onOffers?: ShortcutHandler
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -95,6 +109,22 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeyChat && onChat) {
+      configs.push({
+        modifier: settings.hotkeyModifierChat,
+        key: settings.hotkeyKeyChat,
+        handler: onChat,
+      });
+    }
+
+    if (settings.hotkeyKeyOffers && onOffers) {
+      configs.push({
+        modifier: settings.hotkeyModifierOffers,
+        key: settings.hotkeyKeyOffers,
+        handler: onOffers,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -104,9 +134,15 @@ export const useAppShortcuts = (
     settings.hotkeyKeyListItem,
     settings.hotkeyModifierCurrencyValuation,
     settings.hotkeyKeyCurrencyValuation,
+    settings.hotkeyModifierChat,
+    settings.hotkeyKeyChat,
+    settings.hotkeyModifierOffers,
+    settings.hotkeyKeyOffers,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
+    onChat,
+    onOffers,
   ]);
 
   useShortcuts(shortcuts);

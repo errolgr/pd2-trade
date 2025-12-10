@@ -20,6 +20,19 @@ pub struct WhisperEvent {
     pub message: String,
     pub item_name: Option<String>,
     pub is_join: bool,
+    pub is_incoming: bool,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TradeMessageEvent {
+    pub is_incoming: bool,
+    pub player_name: String,
+    pub account_name: Option<String>,
+    pub character_name: Option<String>,
+    pub message: String,
+    pub item_name: Option<String>,
+    pub price: Option<String>,
 }
 
 static WATCHER_HANDLE: Mutex<Option<Arc<Mutex<Option<RecommendedWatcher>>>>> = Mutex::new(None);
@@ -187,6 +200,7 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
                     message: after_prefix.to_string(),
                     item_name: None,
                     is_join: true,
+                    is_incoming: true,
                 });
             }
         }
@@ -198,25 +212,29 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
         return None; // Not a whisper line, ignore
     }
 
-    // Ignore "Sent to" messages (outgoing whispers)
-    if line.contains("Sent to ") {
-        return None;
+    let is_incoming = line.contains("From ");
+    let is_outgoing = line.contains("Sent to ");
+
+    if !is_incoming && !is_outgoing {
+        return None; // Neither From nor Sent to, ignore
     }
 
-    // Extract the message part after "From"
-    let from_start = match line.find("From ") {
-        Some(pos) => pos,
-        None => return None, // Not a "From" message, ignore
+    // Extract the message part after "From" or "Sent to"
+    let after_prefix = if is_incoming {
+        let from_start = line.find("From ")?;
+        &line[from_start + 5..] // Skip "From "
+    } else {
+        let sent_to_start = line.find("Sent to ")?;
+        &line[sent_to_start + 8..] // Skip "Sent to "
     };
-    let after_from = &line[from_start + 5..]; // Skip "From "
     
     // Find the colon that separates sender from message
-    let colon_pos = match after_from.find(':') {
+    let colon_pos = match after_prefix.find(':') {
         Some(pos) => pos,
         None => return None, // No colon found, malformed line, ignore
     };
-    let sender_part = &after_from[..colon_pos].trim();
-    let message = after_from[colon_pos + 1..].trim();
+    let sender_part = &after_prefix[..colon_pos].trim();
+    let message = after_prefix[colon_pos + 1..].trim();
 
     // Ignore friend online/offline messages
     if message.contains("Your friend") && (message.contains("has left Project Diablo 2") || message.contains("has entered Project Diablo 2")) {
@@ -268,6 +286,99 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
         message: message.to_string(),
         item_name,
         is_join: false,
+        is_incoming,
+    })
+}
+
+/// Parse a trade message from a log line
+/// Incoming format: "2,From shrack (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Outgoing format: "2,Sent to Shrackb (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss"
+fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
+    // Check if it's a whisper (starts with "2,")
+    if !line.starts_with("2,") {
+        return None; // Not a whisper line, ignore
+    }
+
+    // Check if it's a trade message (contains "Hi, I'm interested in your")
+    if !line.contains("Hi, I'm interested in your") {
+        return None; // Not a trade message
+    }
+
+    let is_incoming = line.contains("From ");
+    let is_outgoing = line.contains("Sent to ");
+
+    if !is_incoming && !is_outgoing {
+        return None; // Neither From nor Sent to, ignore
+    }
+
+    // Extract the message part
+    let after_prefix = if is_incoming {
+        let from_start = line.find("From ")?;
+        &line[from_start + 5..]
+    } else {
+        let sent_to_start = line.find("Sent to ")?;
+        &line[sent_to_start + 8..]
+    };
+
+    // Find the colon that separates sender from message
+    let colon_pos = after_prefix.find(':')?;
+    let sender_part = after_prefix[..colon_pos].trim();
+    let message = after_prefix[colon_pos + 1..].trim();
+
+    // Extract character name and account name
+    // Format: "shrack (*shrack)" or "DoreetDrood (*Doreets)" or just "shrack"
+    let (character_name, account_name, player_name) = if let Some(paren_start) = sender_part.find('(') {
+        // Extract character name (before parentheses)
+        let char_name = sender_part[..paren_start].trim();
+        // Extract account name from parentheses (e.g., "*shrack" from "(*shrack)")
+        if let Some(paren_end) = sender_part[paren_start..].find(')') {
+            let acc_name = &sender_part[paren_start + 1..paren_start + paren_end].trim();
+            // Remove "*" prefix if present
+            let acc_name_clean = acc_name.strip_prefix('*').unwrap_or(acc_name);
+            (Some(char_name.to_string()), Some(acc_name_clean.to_string()), acc_name_clean)
+        } else {
+            // Fallback to character name if parentheses are malformed
+            (Some(char_name.to_string()), None, char_name)
+        }
+    } else if let Some(space_pos) = sender_part.find(' ') {
+        let char_name = &sender_part[..space_pos];
+        (Some(char_name.to_string()), None, char_name)
+    } else {
+        (Some(sender_part.to_string()), None, sender_part)
+    };
+
+    // Extract item name from trade message
+    // Format: "Hi, I'm interested in your Frostburn listed for 2 wss"
+    let item_name = if let Some(your_pos) = message.find("your ") {
+        let after_your = &message[your_pos + 5..];
+        if let Some(listed_pos) = after_your.find(" listed") {
+            Some(after_your[..listed_pos].trim().to_string())
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // Extract price from trade message
+    // Format: "listed for 2 wss" or "listed for 2 wss."
+    let price = if let Some(listed_pos) = message.find("listed for ") {
+        let after_listed = &message[listed_pos + 11..];
+        // Take everything until end of line or period
+        let price_end = after_listed.find('.').unwrap_or(after_listed.len());
+        Some(after_listed[..price_end].trim().to_string())
+    } else {
+        None
+    };
+
+    Some(TradeMessageEvent {
+        is_incoming,
+        player_name: player_name.to_string(),
+        account_name,
+        character_name,
+        message: message.to_string(),
+        item_name,
+        price,
     })
 }
 
@@ -320,6 +431,12 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
             Ok(_bytes_read) => {
                 // Convert bytes to string, replacing invalid UTF-8 sequences with replacement characters
                 let line_str = String::from_utf8_lossy(&line);
+                
+                // Parse trade message first (both incoming and outgoing)
+                if let Some(trade_message) = parse_trade_message(&line_str) {
+                    // Emit trade message event to frontend
+                    let _ = app_handle.emit("trade-message", trade_message.clone());
+                }
                 
                 // Parse whisper - if it returns None, just skip the line (it's not a whisper we care about)
                 if let Some(whisper) = parse_whisper(&line_str) {

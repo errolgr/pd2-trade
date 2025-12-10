@@ -48,5 +48,20 @@ export default defineConfig(async () => ({
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    // Proxy API requests to bypass CORS in browser
+    proxy: {
+      '/api': {
+        target: 'https://api.projectdiablo2.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: true,
+      },
+      '/price-api': {
+        target: process.env.VITE_PRICE_API_URL || 'https://pd2-trader-prod-827ad8402665.herokuapp.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/price-api/, ''),
+        secure: true,
+      },
+    },
   },
 }));

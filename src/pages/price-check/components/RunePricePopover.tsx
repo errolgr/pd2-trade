@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ItemValue, RuneCombination } from "../lib/types";
-import { FIXED_RUNE_PRICES } from "../lib/constants";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RunePricePopoverProps {
   loading: boolean;
@@ -42,9 +47,23 @@ export function RunePricePopover({
           <ArrowRightLeft className="h-2 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 overflow-y-auto">
+      <PopoverContent className="w-[500px] max-h-[600px] overflow-y-auto">
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Current Rune Prices</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-sm">Current Rune Prices</h4>
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-gray-400 hover:text-gray-300 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Rune prices are calculated from market listings using the median price over the last 7 days. Prices are updated daily.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           {loading ? (
             <div className="text-sm text-gray-500">Loading rune data...</div>
           ) : (
@@ -63,10 +82,10 @@ export function RunePricePopover({
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "font-medium",
-                      rune.isFixed ? "text-gray-400" : rune.isCalculated ? "text-yellow-500" : "text-green-500"
+                      rune.isFixed ? "text-gray-400" : "text-green-500"
                     )}>
                       {rune.price} HR
-                      {(rune.isCalculated || rune.isFixed) && <span className="text-xs ml-1">*</span>}
+                      {rune.isFixed && <span className="text-xs ml-1">*</span>}
                     </span>
                     <span className="text-gray-500 text-xs">
                       ({rune.isFixed ? "fixed" : `${rune.numListings} listings`})
@@ -94,7 +113,7 @@ export function RunePricePopover({
                   )}
                 </button>
               )}
-              
+
               {/* Breakdown combinations */}
               {selectedRuneBreakdown && selectedRuneCombinations.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-600">
@@ -115,7 +134,7 @@ export function RunePricePopover({
                               combo.difference > targetValue * 0.2 && "text-yellow-400",
                               combo.difference > targetValue * 0.4 && "text-gray-400"
                             )}>
-                              = {combo.totalValue.toFixed(2)} HR
+                              = {combo.totalValue} HR
                             </span>
                           </div>
                           {combo.difference > 0.1 && (
@@ -124,7 +143,7 @@ export function RunePricePopover({
                               combo.difference > targetValue * 0.2 && "text-yellow-500",
                               combo.difference > targetValue * 0.4 && "text-gray-600"
                             )}>
-                              Diff: {combo.difference.toFixed(2)} HR
+                              Diff: {combo.difference} HR
                             </div>
                           )}
                         </div>
@@ -135,7 +154,7 @@ export function RunePricePopover({
               )}
               
                 <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                  * Standard pricing used when &lt;10 listings or when value drops too far below floor price
+                  * Fixed pricing used with Vex and below, as it generally does not change or when &lt;10 listings available
                 </div>
             </div>
           )}

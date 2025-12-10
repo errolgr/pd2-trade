@@ -1,13 +1,18 @@
 import { useEffect } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import { invoke } from '@tauri-apps/api/core';
-import { emit, listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@/lib/browser-events';
 import { jwtDecode } from 'jwt-decode';
 import { useOptions } from './useOptions';
 import { GenericToastPayload } from '@/common/types/Events';
 
 const openAuthWebview = async () => {
+  if (!isTauri()) {
+    // In browser, open auth URL in new window
+    window.open('https://projectdiablo2.com/auth', '_blank', 'noopener,noreferrer');
+    return;
+  }
   try {
+    const { invoke } = await import('@tauri-apps/api/core');
     await invoke('open_project_diablo2_webview');
   } catch (error) {
     console.error('Failed to open Project Diablo 2 webview:', error);
@@ -32,9 +37,7 @@ export const usePD2Auth = () => {
 
   // Listen for token updates
   useEffect(() => {
-    if (!isTauri()) return;
-    
-    let unlisten: (() => void) | undefined;
+    let unlistenPromise: Promise<() => void>;
     
     listen<string>('pd2-token-found', (event) => {
       updateSettings({ pd2Token: event.payload });
@@ -44,11 +47,13 @@ export const usePD2Auth = () => {
       };
       emit('toast-event', successToastPayload);
     }).then((off) => {
-      unlisten = off;
+      unlistenPromise = Promise.resolve(off);
     });
 
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenPromise) {
+        unlistenPromise.then((off) => off());
+      }
     };
   }, [updateSettings]);
 
@@ -57,17 +62,37 @@ export const usePD2Auth = () => {
     if (isLoading) return;
 
     if (!settings?.pd2Token) {
-      const authRequiredToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'PD2 website authentication required!',
-      };
-      emit('toast-event', authRequiredToastPayload);
-      openAuthWebview();
+      if (isTauri()) {
+        // In Tauri, open webview for authentication
+        const authRequiredToastPayload: GenericToastPayload = {
+          title: 'PD2 Trader',
+          description: 'PD2 website authentication required!',
+        };
+        emit('toast-event', authRequiredToastPayload);
+        openAuthWebview();
+      } else {
+        // In browser, show instructions to enter token manually
+        const authRequiredToastPayload: GenericToastPayload = {
+          title: 'PD2 Trader - Authentication Required',
+          description: 'Please enter your PD2 token in Settings > Account. Get your token from projectdiablo2.com after logging in.',
+          variant: 'warning',
+        };
+        emit('toast-event', authRequiredToastPayload);
+      }
       return;
     }
 
     if (isTokenExpiringSoon(settings.pd2Token)) {
-      openAuthWebview();
+      if (isTauri()) {
+        openAuthWebview();
+      } else {
+        const tokenExpiringToastPayload: GenericToastPayload = {
+          title: 'PD2 Trader - Token Expiring',
+          description: 'Your token is expiring soon. Please update it in Settings > Account.',
+          variant: 'warning',
+        };
+        emit('toast-event', tokenExpiringToastPayload);
+      }
     }
   }, [settings?.pd2Token, isLoading]);
 };

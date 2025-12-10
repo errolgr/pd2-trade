@@ -24,9 +24,8 @@ import {
   SelectContent,
   SelectItem
 } from '@/components/ui/select';
-import { emit } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
-import { isTauri } from '@tauri-apps/api/core';
+import { emit } from '@/lib/browser-events';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const appearanceFormSchema = z.object({
@@ -73,6 +72,7 @@ export function GeneralForm() {
   // Auto-detect directory on mount
   React.useEffect(() => {
     if (isTauri() && !detectedDirectory) {
+      import('@tauri-apps/api/core').then(({ invoke }) => {
       invoke<string | null>('auto_detect_diablo2_directory')
         .then((dir) => {
           if (dir) {
@@ -80,6 +80,7 @@ export function GeneralForm() {
           }
         })
         .catch(console.error);
+      });
     }
   }, [detectedDirectory]);
 
@@ -92,7 +93,7 @@ export function GeneralForm() {
     await updateSettings(values);
     await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
     setSaving(false);
-    emit('toast-event', 'Preferences saved!');
+    await emit('toast-event', { title: 'PD2 Trader', description: 'Preferences saved!' });
   };
 
   return (
