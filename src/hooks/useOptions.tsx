@@ -23,9 +23,14 @@ export interface ISettings {
   hotkeyKeySettings?: string;
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
+  hotkeyModifierChat: 'ctrl' | 'alt';
+  hotkeyKeyChat: string;
+  hotkeyModifierOffers: 'ctrl' | 'alt';
+  hotkeyKeyOffers: string;
   fillStatValue?: number;
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
+  chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
   whisperIgnoreList?: string[];
   whisperAnnouncementsEnabled?: boolean;
   whisperJoinNotificationsEnabled?: boolean;
@@ -54,11 +59,16 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySettings: 'o',
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
+  hotkeyModifierChat: 'ctrl',
+  hotkeyKeyChat: 't',
+  hotkeyModifierOffers: 'ctrl',
+  hotkeyKeyOffers: 'b',
   fillStatValue: 5,
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
+  chatButtonOverlayEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';

@@ -73,14 +73,14 @@ export function CurrencyValuation() {
         const item = runeHierarchy[i];
         const match = calculatedEconomyValues.Runes.find((r) => r.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 100) / 100;
+        const value = Math.round(amount * price * 1000) / 1000;
         const sampleCount = match?.numListings ?? undefined;
 
         return { 
           key: runeKey, 
           item, 
           amount, 
-          price: Math.round(price * 100) / 100, 
+          price: Math.round(price * 1000) / 1000, 
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
@@ -121,21 +121,21 @@ export function CurrencyValuation() {
         const item = map[key];
         const match = calculatedEconomyValues[category].find((val) => val.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 100) / 100;
+        const value = Math.round(amount * price * 1000) / 1000;
         const sampleCount = match?.numListings ?? undefined;
 
         return { 
           key, 
           item, 
           amount, 
-          price: Math.round(price * 100) / 100, 
+          price: Math.round(price * 1000) / 1000, 
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
       });
     }
 
-    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 100) / 100;
+    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 1000) / 1000;
     return { items, total };
   }
 
@@ -175,7 +175,7 @@ export function CurrencyValuation() {
         <Button variant="ghost"
           size="icon"
           onClick={async () => {
-            const window = await getCurrentWebviewWindow();
+            const window = getCurrentWebviewWindow();
             await window.close();
           }}
           className="self-start">

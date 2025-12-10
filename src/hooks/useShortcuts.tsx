@@ -74,7 +74,9 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 export const useAppShortcuts = (
   onItemSearch: ShortcutHandler,
   onQuickList: ShortcutHandler,
-  onCurrencyValuation: ShortcutHandler
+  onCurrencyValuation: ShortcutHandler,
+  onChat?: ShortcutHandler,
+  onOffers?: ShortcutHandler
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -107,6 +109,22 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeyChat && onChat) {
+      configs.push({
+        modifier: settings.hotkeyModifierChat,
+        key: settings.hotkeyKeyChat,
+        handler: onChat,
+      });
+    }
+
+    if (settings.hotkeyKeyOffers && onOffers) {
+      configs.push({
+        modifier: settings.hotkeyModifierOffers,
+        key: settings.hotkeyKeyOffers,
+        handler: onOffers,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -116,9 +134,15 @@ export const useAppShortcuts = (
     settings.hotkeyKeyListItem,
     settings.hotkeyModifierCurrencyValuation,
     settings.hotkeyKeyCurrencyValuation,
+    settings.hotkeyModifierChat,
+    settings.hotkeyKeyChat,
+    settings.hotkeyModifierOffers,
+    settings.hotkeyKeyOffers,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
+    onChat,
+    onOffers,
   ]);
 
   useShortcuts(shortcuts);

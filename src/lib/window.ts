@@ -74,7 +74,6 @@ export async function openOverDiabloWindow(
       y,
       width,
       height: rect.height,
-      minHeight: 1080,
       focus: true,
       ...options,
     });
@@ -117,6 +116,41 @@ export async function openWindowAtCursor(
   
   // Browser fallback
   return browserWindow.openWindowAtCursor(label, url, options);
+}
+
+/**
+ * Opens a window centered on the Diablo screen - uses Tauri in Tauri environment, browser window.open in browser
+ */
+export async function openWindowCenteredOnDiablo(
+  label: string,
+  url: string,
+  options: Partial<WebviewOptions & WindowOptions> = {}
+): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
+  if (isTauri()) {
+    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+    const { invoke } = await import('@tauri-apps/api/core');
+    
+    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+    const windowWidth = options.width ?? 600;
+    const windowHeight = options.height ?? 600;
+    const x = rect.x + (rect.width - windowWidth) / 2;
+    const y = rect.y + (rect.height - windowHeight) / 2;
+
+    const w = new WebviewWindow(label, {
+      url,
+      x,
+      y,
+      width: windowWidth,
+      height: windowHeight,
+      focus: true,
+      ...options,
+    });
+
+    return w;
+  }
+  
+  // Browser fallback - use centered window
+  return browserWindow.openCenteredWindow(label, url, options);
 }
 
 /**

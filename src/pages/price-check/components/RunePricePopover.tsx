@@ -134,7 +134,7 @@ export function RunePricePopover({
                               combo.difference > targetValue * 0.2 && "text-yellow-400",
                               combo.difference > targetValue * 0.4 && "text-gray-400"
                             )}>
-                              = {combo.totalValue.toFixed(2)} HR
+                              = {combo.totalValue.toFixed(3)} HR
                             </span>
                           </div>
                           {combo.difference > 0.1 && (
@@ -143,7 +143,7 @@ export function RunePricePopover({
                               combo.difference > targetValue * 0.2 && "text-yellow-500",
                               combo.difference > targetValue * 0.4 && "text-gray-600"
                             )}>
-                              Diff: {combo.difference.toFixed(2)} HR
+                              Diff: {combo.difference.toFixed(3)} HR
                             </div>
                           )}
                         </div>

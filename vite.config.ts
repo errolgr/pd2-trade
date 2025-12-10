@@ -57,10 +57,10 @@ export default defineConfig(async () => ({
         secure: true,
       },
       '/price-api': {
-        target: process.env.VITE_PRICE_API_URL || 'http://localhost:3000',
+        target: process.env.VITE_PRICE_API_URL || 'https://pd2-trader-prod-827ad8402665.herokuapp.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/price-api/, ''),
-        secure: false,
+        secure: true,
       },
     },
   },

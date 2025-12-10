@@ -858,12 +858,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   };
 
   return (
-    <Card className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-none relative z-10">
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div
         data-tauri-drag-region
         id="titlebar-drag-handle"
-        className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800"
+        className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800 flex-shrink-0"
       >
         {!isConnected && (
           <Badge variant="destructive" className="text-xs mr-2">
@@ -880,11 +880,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         </Button>
       </div>
 
-      <div className="flex h-[calc(100vh-3rem)]">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Conversations List */}
-        <div className="w-80 border-r border-neutral-700 bg-neutral-900 flex flex-col">
+        <div className="w-80 border-r border-neutral-700 bg-neutral-900 flex flex-col min-h-0 overflow-hidden">
           {/* Header */}
-          <div className="p-4 border-b border-neutral-700">
+          <div className="p-4 border-b border-neutral-700 flex-shrink-0">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-white">Chats</h1>
       
@@ -902,7 +902,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
           </div>
 
           {/* Conversations */}
-          <ScrollArea className="flex-1 h-0">
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden">
             <div className="h-full">
               {loadingConversations && conversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -947,9 +947,26 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                           </div>
                           {latestMessage && (
                             <div className="flex items-center gap-1">
-                              {latestMessage.sender_id === currentUserId && (
-                                <CheckCheck className="h-3 w-3 text-green-500 shrink-0" />
-                              )}
+                              {(() => {
+                                // Show read receipt only for own messages
+                                if (latestMessage.sender_id === currentUserId) {
+                                  const otherParticipant = getOtherParticipant(conversation);
+                                  const otherParticipantId = otherParticipant?._id;
+                                  const readerIds = latestMessage.reader_ids || [];
+                                  
+                                  // Check if the other participant has read the message
+                                  const isRead = otherParticipantId && readerIds.includes(otherParticipantId);
+                                  
+                                  if (isRead) {
+                                    // Double check = read
+                                    return <CheckCheck className="h-3 w-3 text-blue-500 shrink-0" />;
+                                  } else {
+                                    // Single check = sent/delivered
+                                    return <Check className="h-3 w-3 text-neutral-400 shrink-0" />;
+                                  }
+                                }
+                                return null;
+                              })()}
                               <span className="text-xs text-neutral-400 truncate">
                                 {(() => {
                                   // Check if message contains a market listing URL
@@ -984,11 +1001,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col bg-neutral-900">
+        <div className="flex-1 flex flex-col bg-neutral-900 min-h-0 overflow-hidden">
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
-              <div className="p-4 border-b border-neutral-700 bg-neutral-800">
+              <div className="p-4 border-b border-neutral-700 bg-neutral-800 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div>
@@ -998,7 +1015,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                           return otherParticipant?.display_name || otherParticipant?.username || "Unknown";
                         })()}
                       </h3>
-                      <p className="text-xs text-green-500">Online</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1033,7 +1049,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               </div>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 h-0 bg-neutral-900" ref={messagesContainerRef}>
+              <ScrollArea className="flex-1 min-h-0 bg-neutral-900 overflow-hidden" ref={messagesContainerRef}>
                 <div className="h-full">
                   {loadingMessages ? (
                     <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -1098,7 +1114,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-2 border-t border-neutral-700 bg-neutral-800">
+              <div className="p-2 border-t border-neutral-700 bg-neutral-800 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Input
                     value={messageInput}

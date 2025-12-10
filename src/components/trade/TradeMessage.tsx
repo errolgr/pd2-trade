@@ -38,6 +38,7 @@ export interface TradeMessageData {
   history?: TradeMessageHistoryEntry[];
   listingId?: string; // For website offers
   userId?: string; // User ID for website offers
+  acceptedOfferId?: string; // ID of the accepted offer for this listing
 }
 
 interface TradeMessageProps {
@@ -45,9 +46,12 @@ interface TradeMessageProps {
   onClose: (id: string) => void;
   onRefresh?: (id: string) => void;
   onRevoke?: (id: string) => Promise<void>;
+  onAccept?: (listingId: string, offerId: string) => Promise<void>;
+  onReject?: (offerId: string) => Promise<void>;
+  onUnaccept?: (listingId: string) => Promise<void>;
 }
 
-export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRefresh, onRevoke }) => {
+export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRefresh, onRevoke, onAccept, onReject, onUnaccept }) => {
   const { authData, createConversation } = usePd2Website();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
@@ -57,6 +61,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
   const [password, setPassword] = useState('');
   const [copiedAction, setCopiedAction] = useState<'accept' | 'whisper' | 'reject' | 'sold' | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isProcessing, setIsProcessing] = useState(false);
   const historyCardRef = React.useRef<HTMLDivElement>(null);
   const { copy } = useClipboard();
 
@@ -146,6 +151,23 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
   };
 
   const handleAccept = async () => {
+    // For website offers, use the hook function
+    if (trade.listingId && trade.id && onAccept) {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      try {
+        await onAccept(trade.listingId, trade.id);
+        setCopiedAction('accept');
+        setTimeout(() => setCopiedAction(null), 2000);
+      } catch (error) {
+        console.error('Failed to accept offer:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // For non-website offers, use the old clipboard method
     if (!gameName) {
       return; // Don't proceed if game name is empty
     }
@@ -162,13 +184,49 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
   };
 
   const handleDecline = async () => {
-    // Copy rejection message to clipboard
+    // For website offers, use the hook function
+    if (trade.listingId && trade.id && onReject) {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      try {
+        await onReject(trade.id);
+        setCopiedAction('reject');
+        setTimeout(() => setCopiedAction(null), 2000);
+      } catch (error) {
+        console.error('Failed to reject offer:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // For non-website offers, use the old clipboard method
     const accountName = trade.accountName;
     const rejectMessage = `/w *${accountName} Your offer has been rejected.`;
     await copy(rejectMessage);
     setCopiedAction('reject');
     setTimeout(() => setCopiedAction(null), 2000);
   };
+
+  const handleUnaccept = async () => {
+    // For website offers, use the hook function
+    if (trade.listingId && onUnaccept) {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      try {
+        await onUnaccept(trade.listingId);
+        setCopiedAction('reject');
+        setTimeout(() => setCopiedAction(null), 2000);
+      } catch (error) {
+        console.error('Failed to unaccept offer:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  // Check if this offer is accepted
+  const isAccepted = trade.listingId && trade.acceptedOfferId === trade.id;
 
   const handleSold = async () => {
     // Copy sold message to clipboard
@@ -221,7 +279,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
     <>
     <Card
       className={cn(
-          'relative w-full border-2 shadow-sm',
+          'relative w-full border-1 shadow-sm bg-neutral-800',
         trade.isIncoming ? 'border-green-500 dark:border-green-600' : 'border-red-500 dark:border-red-600'
       )}
     >
@@ -229,8 +287,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-sm">{trade.playerName}</span>
-              <span className="text-xs text-muted-foreground">{formatTimeAgo(trade.timestamp)}</span>
+              <span className="font-semibold text-sm text-white" style={{ fontFamily: 'DiabloFont' }}>{trade.playerName}</span>
+              <span className="text-xs text-neutral-400">{formatTimeAgo(trade.timestamp)}</span>
             </div>
             
             <div className="flex items-center gap-2 text-sm mb-2">
@@ -248,24 +306,25 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                       {trade.itemName}
                     </a>
                   ) : (
-                    <span className="truncate">{trade.itemName}</span>
+                    <span className="truncate text-white">{trade.itemName}</span>
                   )}
-                  <ArrowLeftRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <ArrowLeftRight className="h-3 w-3 text-neutral-400 flex-shrink-0" />
                 </>
               )}
               {trade.price && (
                 <div className="flex items-center gap-1">
-                  <span>{trade.price}</span>
-                  <Package className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-white">{trade.price}</span>
+                  <Package className="h-3 w-3 text-neutral-400" />
                 </div>
               )}
               {!trade.itemName && !trade.price && (
-                <span className="text-muted-foreground">{trade.message}</span>
+                <span className="text-neutral-300">{trade.message}</span>
               )}
             </div>
 
             <div className="flex items-center gap-1 flex-wrap justify-between">
             <div className="flex items-center gap-1">
+                {!trade.listingId && (
                 <Tooltip>
                 <TooltipTrigger>
                     <Button
@@ -281,6 +340,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                   <p>Stop notifications</p>
                   </TooltipContent>
                 </Tooltip>
+                )}
 
               <Tooltip>
                 <TooltipTrigger>
@@ -390,6 +450,28 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
               
             {trade.isIncoming && (
                 <div className="flex items-center gap-1">
+                  {trade.listingId ? (
+                    // Website offers: show accept button only if not accepted
+                    !isAccepted && (
+                      <Tooltip open={copiedAction === 'accept' ? true : undefined}>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isProcessing}
+                            onClick={handleAccept}
+                            className="h-7 w-7 cursor-pointer text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{copiedAction === 'accept' ? 'Offer accepted!' : 'Accept'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  ) : (
+                    // Non-website offers: popover with game/password inputs
                   <Tooltip open={copiedAction === 'accept' ? true : undefined}>
                     <TooltipTrigger>
                       <div>
@@ -433,22 +515,45 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                       <p>{copiedAction === 'accept' ? 'Copied to clipboard!' : 'Accept'}</p>
                   </TooltipContent>
                 </Tooltip>
+                  )}
 
+                  {trade.listingId && isAccepted ? (
+                    // Show unaccept button if offer is accepted
+                    <Tooltip open={copiedAction === 'reject' ? true : undefined}>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleUnaccept}
+                          disabled={isProcessing}
+                          className="h-7 w-7 cursor-pointer text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 pt-1"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{copiedAction === 'reject' ? 'Offer unaccepted!' : 'Unaccept'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    // Show reject button if offer is not accepted (or non-website offer)
                   <Tooltip open={copiedAction === 'reject' ? true : undefined}>
                     <TooltipTrigger>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleDecline}
+                          disabled={isProcessing}
                         className="h-7 w-7 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 pt-1"
                       >
                         <XCircle className="h-3.5 w-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                      <p>{copiedAction === 'reject' ? 'Copied to clipboard!' : 'Reject'}</p>
+                        <p>{copiedAction === 'reject' ? (trade.listingId ? 'Offer rejected!' : 'Copied to clipboard!') : 'Reject'}</p>
                   </TooltipContent>
                 </Tooltip>
+                  )}
                 </div>
               )}
           </div>
@@ -486,13 +591,13 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
         {/* Centered Card */}
         <Card 
           ref={historyCardRef}
-          className="relative z-50 w-96 max-h-[80vh] flex flex-col shadow-lg"
+          className="relative z-50 w-96 max-h-[80vh] flex flex-col shadow-lg bg-neutral-800 border-neutral-700"
           onBlur={() => setHistoryPopoverOpen(false)}
           tabIndex={-1}
         >
           <CardContent className="p-4 flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
-              <h4 className="font-medium text-sm">Communication History</h4>
+              <h4 className="font-medium text-sm text-white">Communication History</h4>
               <Button
                 variant="ghost"
                 size="icon"
@@ -513,25 +618,25 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                         className={cn(
                           'rounded-md p-2 text-sm',
                           entry.isIncoming
-                            ? 'bg-muted/50 border-l-2 border-green-500'
-                            : 'bg-muted/30 border-l-2 border-blue-500'
+                            ? 'bg-neutral-700/50 border-l-2 border-green-500'
+                            : 'bg-neutral-700/30 border-l-2 border-blue-500'
                         )}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium">
+                          <span className="text-xs font-medium text-white" style={{ fontFamily: entry.isIncoming ? 'DiabloFont' : 'inherit' }}>
                             {entry.isIncoming ? trade.playerName : 'You'}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-neutral-400">
                             {formatTimeAgo(entry.timestamp)}
                           </span>
                         </div>
-                        <p className="text-xs text-foreground whitespace-pre-wrap break-words">
+                        <p className="text-xs text-neutral-200 whitespace-pre-wrap break-words">
                           {entry.message}
                         </p>
                       </div>
                     ))
                 ) : (
-                  <div className="text-sm text-muted-foreground text-center py-4">
+                  <div className="text-sm text-neutral-400 text-center py-4">
                     No history yet
                   </div>
                 )}

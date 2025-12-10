@@ -60,18 +60,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   });
 
   // Get the current window reference
-  const [appWindow, setAppWindow] = React.useState<any>(null);
-
-  useEffect(() => {
-    getCurrentWebviewWindow().then(setAppWindow);
-  }, []);
+  const appWindow = getCurrentWebviewWindow();
 
   // Window control handler
   const handleClose = useCallback(async () => {
-    if (appWindow) {
-      await appWindow.hide();
-    }
-  }, [appWindow]);
+    await appWindow.hide();
+  }, []);
 
 
   // Complete reset function for new items
@@ -438,7 +432,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       
       await emit('toast-event', toastPayload);
       console.log('[Queue] Toast notification sent, hiding window');
-      appWindow.hide();
+      await appWindow.hide();
     } catch (err) {
       console.error('[Queue] Failed to process queued listing:', err);
       incrementMetric('list_item.create', 1, { status: 'error', source: 'queued' });
@@ -452,7 +446,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // Processing flag is managed by pollForAllQueuedItems
       console.log('[Queue] Processing complete');
     }
-  }, [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, authData, settings, appWindow, emit]);
+  }, [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, authData, settings, emit]);
 
   // Start polling for all queued items
   useEffect(() => {
@@ -531,7 +525,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         variant: 'default'
       };
       await emit('toast-event', queuedToast);
-      appWindow.hide();
+      await appWindow.hide();
       return;
     }
 
@@ -576,7 +570,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           distributionMetric('list_item.update_price_hr', numericPrice);
         }
         
-        if (appWindow) await appWindow.hide();
+        await appWindow.hide();
       } else {
         // Check if user has reached the maximum number of listings (50)
         if (totalListingsCount >= 50) {
@@ -614,7 +608,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         
         await emit('toast-event', toastPayload);
         await fetchAllListings(); // Refresh all listings
-        if (appWindow) await appWindow.hide();
+        await appWindow.hide();
       }
     } catch (err) {
       const duration = performance.now() - startTime;

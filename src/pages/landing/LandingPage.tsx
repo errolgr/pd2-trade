@@ -8,7 +8,7 @@ import { OptionsProvider, useOptions } from '@/hooks/useOptions';
 import { useKeySender } from '@/hooks/useKeySender';
 import { DialogProvider } from '@/hooks/useDialog';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
-import { openCenteredWindow, openOverDiabloWindow, openWindowAtCursor, attachWindowCloseHandler } from '@/lib/window';
+import { openCenteredWindow, openOverDiabloWindow, openWindowAtCursor, openWindowCenteredOnDiablo, attachWindowCloseHandler } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
@@ -27,9 +27,16 @@ const LandingPage: React.FC = () => {
   const chatWindowRef = useRef<any>(null);
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
+  const settingsRef = useRef<any>(null);
+  const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings } = useOptions();
+  
+  // Keep settings ref up to date
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   // Hide launch title after 2 seconds
   useEffect(() => {
@@ -96,7 +103,7 @@ const LandingPage: React.FC = () => {
         alwaysOnTop: true,
         shadow: false,
         focus: false,
-        focusable: false,
+        focusable: true,
       });
       if (winRef.current) {
         attachWindowCloseHandler(winRef.current, () => {
@@ -159,7 +166,7 @@ const LandingPage: React.FC = () => {
         focus: false,
         shadow: false,
         skipTaskbar: true,
-        focusable: false,
+        focusable: true,
         width: 600,
         height: 512,
         resizable: true,
@@ -172,8 +179,18 @@ const LandingPage: React.FC = () => {
     }
   }, [checkDiabloFocus, copyAndValidateItem]);
 
+  // Toggle chat window handler
+  const toggleChatWindow = useCallback(async () => {
+    await emit('toggle-chat-window');
+  }, []);
+
+  // Toggle trade messages window handler
+  const toggleTradeMessagesWindow = useCallback(async () => {
+    await emit('toggle-trade-messages-window');
+  }, []);
+
   // Register shortcuts
-  useAppShortcuts(fireSearch, openQuickListWindow, openCurrencyValuation);
+  useAppShortcuts(fireSearch, openQuickListWindow, openCurrencyValuation, toggleChatWindow, toggleTradeMessagesWindow);
 
   // Handle updates
   useAppUpdates();
@@ -188,34 +205,50 @@ const LandingPage: React.FC = () => {
   // Always enable the hook - it handles the logic internally based on settings
   useWhisperNotifications(true);
 
-  // Auto-open chat window on startup and set up toggle handler
+  // Handle chat button overlay visibility based on settings
   useEffect(() => {
-    let toggleUnlisten: (() => void) | null = null;
-    let focusCheckInterval: NodeJS.Timeout | null = null;
+    // Clear any existing interval first
+    if (focusCheckIntervalRef.current) {
+      clearInterval(focusCheckIntervalRef.current);
+      focusCheckIntervalRef.current = null;
+    }
 
-    const openChat = async () => {
+    if (settings.chatButtonOverlayEnabled === false) {
+      // Hide the window if overlay is disabled
+      if (chatButtonWindowRef.current) {
+        chatButtonWindowRef.current.hide().catch((error: any) => {
+          console.error('Error hiding chat button window:', error);
+        });
+      }
+      return;
+    }
+
+    // Overlay is enabled - set up window and monitoring
+    if (!isTauri()) return;
+
+    const setupChatButton = async () => {
       // Small delay to ensure app is fully initialized
       await sleep(500);
       
-      // Open chat button window
-      if (isTauri()) {
+      // Create window if it doesn't exist
+      if (!chatButtonWindowRef.current) {
         const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
         const { invoke } = await import('@tauri-apps/api/core');
         
         const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
         
-        // Position button in bottom right corner
-        const buttonSize = 83; // 48px button + padding
-        const x = rect.x + rect.width - buttonSize - 120;
-        const y = rect.y + rect.height - buttonSize - 20
+        // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
+        const buttonSize = 160; // 48px button + padding
+        const x = rect.x + rect.width - buttonSize - 20;
+        const y = rect.y + rect.height - buttonSize - 40;
 
         chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
           url: '/chat-button',
           x,
           y,
-          width: 180,
+          width: buttonSize,
           height: buttonSize,
-          decorations: false,
+          decorations: true,
           transparent: true,
           skipTaskbar: true,
           alwaysOnTop: true,
@@ -223,34 +256,69 @@ const LandingPage: React.FC = () => {
           focus: false,
           focusable: false,
         });
-
-        // Monitor Diablo focus state and hide/show chat button accordingly
-        const checkDiabloFocus = async () => {
-          if (!chatButtonWindowRef.current) return;
-          
-          try {
-            const isFocused = await invoke<boolean>('is_diablo_focused');
-            const isVisible = await chatButtonWindowRef.current.isVisible();
-            
-            if (isFocused && !isVisible) {
-              await chatButtonWindowRef.current.show();
-            } else if (!isFocused && isVisible) {
-              await chatButtonWindowRef.current.hide();
-            }
-          } catch (error) {
-            console.error('Error checking Diablo focus:', error);
-          }
-        };
-
-        // Check immediately
-        checkDiabloFocus();
-        
-        // Check periodically (every 500ms)
-        focusCheckInterval = setInterval(checkDiabloFocus, 500);
       }
 
-      // Open chat window (hidden by default)
-      chatWindowRef.current = await openOverDiabloWindow('Chat', '/chat', {
+      // Monitor Diablo focus state and hide/show chat button accordingly
+      const checkDiabloFocus = async () => {
+        if (!chatButtonWindowRef.current) return;
+        
+        // Always check current settings value from ref (not from closure)
+        const currentSettings = settingsRef.current;
+        if (currentSettings?.chatButtonOverlayEnabled === false) {
+          const isVisible = await chatButtonWindowRef.current.isVisible();
+          if (isVisible) {
+            await chatButtonWindowRef.current.hide();
+          }
+          // Clear interval if disabled
+          if (focusCheckIntervalRef.current) {
+            clearInterval(focusCheckIntervalRef.current);
+            focusCheckIntervalRef.current = null;
+          }
+          return;
+        }
+        
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          const isFocused = await invoke<boolean>('is_diablo_focused');
+          const isVisible = await chatButtonWindowRef.current.isVisible();
+          
+          if (isFocused && !isVisible) {
+            await chatButtonWindowRef.current.show();
+          } else if (!isFocused && isVisible) {
+            await chatButtonWindowRef.current.hide();
+          }
+        } catch (error) {
+          console.error('Error checking Diablo focus:', error);
+        }
+      };
+
+      // Check immediately
+      checkDiabloFocus();
+      
+      // Check periodically (every 500ms)
+      focusCheckIntervalRef.current = setInterval(checkDiabloFocus, 500);
+    };
+
+    setupChatButton();
+
+    return () => {
+      if (focusCheckIntervalRef.current) {
+        clearInterval(focusCheckIntervalRef.current);
+        focusCheckIntervalRef.current = null;
+      }
+    };
+  }, [settings.chatButtonOverlayEnabled]);
+
+  // Auto-open chat window on startup and set up toggle handler
+  useEffect(() => {
+    let toggleUnlisten: (() => void) | null = null;
+
+    const openChat = async () => {
+      // Small delay to ensure app is fully initialized
+      await sleep(500);
+
+      // Open chat window (hidden by default) - centered on Diablo screen
+      chatWindowRef.current = await openWindowCenteredOnDiablo('Chat', '/chat', {
         decorations: false,
         transparent: true,
         skipTaskbar: true,
@@ -264,9 +332,9 @@ const LandingPage: React.FC = () => {
       });
       
       if (chatWindowRef.current) {
-        // attachWindowCloseHandler(chatWindowRef.current, () => {
-        //   chatWindowRef.current = null;
-        // });
+         attachWindowCloseHandler(chatWindowRef.current, () => {
+           chatWindowRef.current = null;
+         });
       }
 
       // Set up toggle handler
@@ -275,8 +343,8 @@ const LandingPage: React.FC = () => {
         const conversation = event?.payload?.conversation;
         
         if (!chatWindowRef.current) {
-          // Create the window if it doesn't exist
-          chatWindowRef.current = await openOverDiabloWindow('Chat', '/chat', {
+          // Create the window if it doesn't exist - centered on Diablo screen
+          chatWindowRef.current = await openWindowCenteredOnDiablo('Chat', '/chat', {
             decorations: false,
             transparent: true,
             skipTaskbar: true,
@@ -346,11 +414,12 @@ const LandingPage: React.FC = () => {
       if (toggleUnlisten) {
         toggleUnlisten();
       }
-      if (focusCheckInterval) {
-        clearInterval(focusCheckInterval);
+      if (focusCheckIntervalRef.current) {
+        clearInterval(focusCheckIntervalRef.current);
+        focusCheckIntervalRef.current = null;
       }
     };
-  }, []);
+  }, [settings.chatButtonOverlayEnabled]);
 
   // Set up trade messages window - always display for testing
   useEffect(() => {
@@ -360,9 +429,9 @@ const LandingPage: React.FC = () => {
       // Small delay to ensure app is fully initialized
       await sleep(500);
       
-      // Create and show the trade messages window
-      tradeMessagesWindowRef.current = await openWindowAtCursor('trade-messages', '/trade-messages', {
-        decorations: false,
+      // Create and show the trade messages window - centered on Diablo screen
+      tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
+        decorations: true,
         transparent: true,
         skipTaskbar: true,
         alwaysOnTop: true,
@@ -372,7 +441,7 @@ const LandingPage: React.FC = () => {
         width: 600,
         resizable: true,
         height: 400,
-        visible: true, // Always visible for testing
+        visible: false,
       });
       
       if (tradeMessagesWindowRef.current) {
@@ -384,8 +453,8 @@ const LandingPage: React.FC = () => {
 
     const toggleTradeMessagesWindow = async () => {
       if (!tradeMessagesWindowRef.current) {
-        // Create the window if it doesn't exist
-        tradeMessagesWindowRef.current = await openWindowAtCursor('trade-messages', '/trade-messages', {
+        // Create the window if it doesn't exist - centered on Diablo screen
+        tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
           decorations: false,
           transparent: true,
           skipTaskbar: true,
@@ -394,8 +463,9 @@ const LandingPage: React.FC = () => {
           focus: false,
           focusable: true,
           width: 600,
+          resizable: true,
           height: 400,
-          visible: true, // Always visible for testing
+          visible: true,
         });
         
         if (tradeMessagesWindowRef.current) {

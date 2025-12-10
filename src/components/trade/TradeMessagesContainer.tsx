@@ -3,14 +3,17 @@ import { TradeMessage, TradeMessageData } from './TradeMessage';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GripVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { GripVertical, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTradeMessages } from '@/hooks/useTradeMessages';
 import { useTradeOffers } from '@/hooks/useTradeOffers';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 export const TradeMessagesContainer: React.FC = () => {
   const { trades, removeTrade } = useTradeMessages();
-  const { incomingOffers, outgoingOffers, revokeOffer } = useTradeOffers();
+  const { incomingOffers, outgoingOffers, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } = useTradeOffers();
+
   const incomingWhispers = useMemo(() => {
     return trades.filter(t => t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [trades]);
@@ -29,15 +32,15 @@ export const TradeMessagesContainer: React.FC = () => {
 
   return (
     <TooltipProvider>
-      <div className="w-full h-full flex flex-col bg-background">
+      <div className="w-full h-full flex flex-col bg-neutral-900 opacity-90 rounded-md overflow-hidden">
         <Tabs defaultValue="whispers" className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Drag Handle with Title and Tabs */}
           <div
             data-tauri-drag-region
-            className="flex items-center gap-4 px-4 py-2 border-b border-border cursor-move flex-shrink-0"
+            className="flex items-center gap-4 px-4 py-1 border-b border-neutral-700 bg-neutral-800 cursor-move flex-shrink-0"
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <h2 className="text-sm font-semibold flex-shrink-0">Offers</h2>
+            <GripVertical className="h-4 w-4 text-neutral-400 flex-shrink-0" />
+            <h2 className="text-sm font-semibold text-white flex-shrink-0">Offers</h2>
             <TabsList className="flex-shrink-0">
               <TabsTrigger value="whispers">
                 Whispers ({incomingWhispers.length + outgoingWhispers.length})
@@ -46,6 +49,15 @@ export const TradeMessagesContainer: React.FC = () => {
                 Website ({incomingWebsiteOffersSorted.length + outgoingWebsiteOffersSorted.length})
               </TabsTrigger>
             </TabsList>
+            <div className="flex-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => getCurrentWebviewWindow().hide()}
+              className="h-7 w-7 cursor-pointer flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
           {/* Whispers Tab */}
@@ -62,11 +74,11 @@ export const TradeMessagesContainer: React.FC = () => {
                 </TabsList>
               </div>
               
-              <TabsContent value="incoming" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col">
+              <TabsContent value="incoming" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {incomingWhispers.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
+                      <div className="text-center text-neutral-400 py-8">
                         No incoming whispers
                       </div>
                     ) : (
@@ -78,11 +90,11 @@ export const TradeMessagesContainer: React.FC = () => {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="outgoing" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col">
+              <TabsContent value="outgoing" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {outgoingWhispers.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
+                      <div className="text-center text-neutral-400 py-8">
                         No outgoing whispers
                       </div>
                     ) : (
@@ -97,7 +109,7 @@ export const TradeMessagesContainer: React.FC = () => {
           </TabsContent>
 
           {/* Website Offers Tab */}
-          <TabsContent value="website" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col">
+          <TabsContent value="website" className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col">
             <Tabs defaultValue="incoming" className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-shrink-0 px-4 pt-2">
                 <TabsList>
@@ -110,27 +122,34 @@ export const TradeMessagesContainer: React.FC = () => {
                 </TabsList>
               </div>
               
-              <TabsContent value="incoming" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col">
+              <TabsContent value="incoming" className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {incomingWebsiteOffersSorted.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
+                      <div className="text-center text-neutral-400 py-8">
                         No incoming website offers
                       </div>
                     ) : (
                       incomingWebsiteOffersSorted.map((trade) => (
-                        <TradeMessage key={trade.id} trade={trade} onClose={removeTrade} />
+                        <TradeMessage 
+                          key={trade.id} 
+                          trade={trade} 
+                          onClose={removeTrade}
+                          onAccept={acceptOffer}
+                          onReject={rejectOffer}
+                          onUnaccept={unacceptOffer}
+                        />
                       ))
                     )}
                   </div>
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="outgoing" className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col">
+              <TabsContent value="outgoing" className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {outgoingWebsiteOffersSorted.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
+                      <div className="text-center text-neutral-400 py-8">
                         No outgoing website offers
                       </div>
                     ) : (
