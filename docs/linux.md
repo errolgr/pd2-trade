@@ -86,7 +86,7 @@ The frontend required updates to support the new configuration requirements.
 ## 5. Build Process
  I started with a fresh Debian bookworm container image: docker.io/library/debian:bookworm-backports
  - sudo apt-get update
- - sudo apt-get install -y git build-essential pkg-config libx11-dev libxi-dev libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev xdg-utils librsvg2-dev patchelf
+ - sudo apt-get install -y git build-essential pkg-config libx11-dev libxi-dev libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev xdg-utils librsvg2-dev patchelf file
  - git clone https://github.com/combatwombat16/pd2-trade.git
  - cd pd2-trade
  - ./scripts/install-rust.sh
