@@ -35,6 +35,11 @@
         "sidebarImage": "icons/banner.bmp"
       }
     },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
     "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",

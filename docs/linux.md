@@ -82,3 +82,16 @@ The frontend required updates to support the new configuration requirements.
 4.  **Packaging**:
     -   Update [tauri.conf.json](../src-tauri/tauri.conf.json) to include Linux-specific bundle configurations (deb, appimage).
     -   Make this cross-linux compatible, oof.  I have not tested packaging, and only have it working via `npm run tauri dev` or as installed from a packaged .deb file in an Ubuntu container running in my Bazzite install through DistroBox.  But it does work there.
+
+## 5. Build Process
+ I started with a fresh Debian bookworm container image: docker.io/library/debian:bookworm-backports
+ - sudo apt-get update
+ - sudo apt-get install -y git build-essential pkg-config libx11-dev libxi-dev libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev xdg-utils librsvg2-dev patchelf
+ - git clone https://github.com/combatwombat16/pd2-trade.git
+ - cd pd2-trade
+ - ./scripts/install-rust.sh
+ - ./scripts/install-node.sh
+ - npm install
+ - npm run tauri build
+ 
+ This should create a deb, rpm, and appimage version of the application in the releases directory.
