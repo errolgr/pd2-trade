@@ -57,8 +57,57 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     }, 200);
   };
 
+  const lastCursorRef = React.useRef({ x: 0, y: 0, time: 0 });
+
   React.useEffect(() => {
+    // Helper to force collapse the button
+    const forceCollapse = () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setIsHovered(false);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      lastCursorRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        time: Date.now(),
+      };
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+
+    // Watchdog for missing mouseleave events (common with fast movement over transparent windows)
+    const watchdogInterval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceMove = now - lastCursorRef.current.time;
+
+      // Condition 1: Browser says nothing is hovered
+      const nothingHovered = document.querySelectorAll(':hover').length === 0;
+
+      // Condition 2: Mouse hasn't moved for a bit AND last known position was near the edge
+      // This implies it flew out of the window
+      const { x, y } = lastCursorRef.current;
+      const { innerWidth, innerHeight } = window;
+      const edgeThreshold = 10;
+
+      const isNearEdge =
+        x < edgeThreshold ||
+        x > innerWidth - edgeThreshold ||
+        y < edgeThreshold ||
+        y > innerHeight - edgeThreshold;
+
+      // If we are "stuck" near the edge with no updates, force close
+      if (nothingHovered || (isNearEdge && timeSinceMove > 500)) {
+        forceCollapse();
+      }
+    }, 200);
+
     return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      clearInterval(watchdogInterval);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }

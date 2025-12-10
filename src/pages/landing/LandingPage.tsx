@@ -46,9 +46,14 @@ const LandingPage: React.FC = () => {
 
   // Hide launch title after 2 seconds
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setShowTitle(false);
-      emit('toast-event', 'is now running in the background...');
+      try {
+        console.log('[LandingPage] Hiding launch title and emitting toast...');
+        await emit('toast-event', 'is now running in the background...');
+      } catch (error) {
+        console.error('[LandingPage] Failed to emit launch toast:', error);
+      }
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
