@@ -33,7 +33,7 @@ const LandingPage: React.FC = () => {
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
-  const { settings } = useOptions();
+  const { settings, isLoading } = useOptions();
   const { isConnected } = useSocket({ settings });
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
@@ -519,7 +519,7 @@ const LandingPage: React.FC = () => {
 
   // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauri() || isLoading) return;
 
     const generalEnabled = settings.whisperNotificationsEnabled ?? true;
     const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
@@ -544,7 +544,7 @@ const LandingPage: React.FC = () => {
         invoke('stop_chat_watcher').catch(console.error);
       }
     };
-  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);
+  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
 
   return (
     <ItemsProvider>
