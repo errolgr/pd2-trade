@@ -2,19 +2,7 @@
  * Service to fetch prices from the PD2 Price Crawler API
  */
 
-// Use proxy in browser, direct URL in Tauri
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_PRICE_API_URL) {
-    return import.meta.env.VITE_PRICE_API_URL;
-  }
-  // In browser, use proxy; in Tauri, use localhost
-  if (typeof window !== 'undefined' && !window.__TAURI__) {
-    return '/price-api';
-  }
-  return 'http://localhost:3000';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://pd2trader.com';
 
 export interface AveragePriceResponse {
   typeCode: string;
@@ -123,15 +111,8 @@ export async function fetchMultipleItemPrices(
     }
   } catch (error) {
     console.error(`Error fetching batch prices:`, error);
-    // Fallback to individual requests if batch fails
-    console.warn('Falling back to individual requests...');
-    const promises = items.map(async (item) => {
-      const price = await fetchItemPrice(item.baseCode, config);
-      if (price) {
-        results.set(item.baseCode, price);
-      }
-    });
-    await Promise.all(promises);
+    // Don't fallback to individual requests to avoid N+1 problem
+    // Return empty results instead - the calling code should handle missing data
   }
 
   return results;

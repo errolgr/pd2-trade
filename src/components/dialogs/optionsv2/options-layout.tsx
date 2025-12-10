@@ -9,6 +9,7 @@ import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
 import SettingsAccount from './account/layout';
 import SettingsChat from './chat/layout';
+import SettingsInterface from './interface/layout';
 
 export const metadata = {
   title: 'Forms',
@@ -31,6 +32,10 @@ const sidebarNavItems: INavItem[] = [
   {
     title: 'Chat',
     content: <SettingsChat />,
+  },
+  {
+    title: 'Interface',
+    content: <SettingsInterface />,
   },
   {
     title: 'Hotkeys',

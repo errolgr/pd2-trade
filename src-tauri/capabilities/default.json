@@ -97,6 +97,6 @@
         }
       ]
     },
-    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }] }
+    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }, { "url": "https://pd2trader.com/**" }] }
   ]
 }

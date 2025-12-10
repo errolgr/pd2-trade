@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { listen, emit } from '@tauri-apps/api/event';
 import { isTauri } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { TradeMessageData, TradeMessageHistoryEntry } from '@/components/trade/TradeMessage';
 
 interface TradeMessageEvent {
@@ -27,6 +26,7 @@ export const useTradeMessages = () => {
   const [trades, setTrades] = useState<TradeMessageData[]>([]);
   const unlistenRef = useRef<(() => void) | null>(null);
   const whisperUnlistenRef = useRef<(() => void) | null>(null);
+  const removeUnlistenRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!isTauri()) {
@@ -38,15 +38,7 @@ export const useTradeMessages = () => {
         const unlisten = await listen<TradeMessageEvent>('trade-message', async (event) => {
           const tradeEvent = event.payload;
           
-          // Show the trade messages window when a trade message is received
-          try {
-            const tradeWindow = await WebviewWindow.getByLabel('trade-messages');
-            if (tradeWindow) {
-              await tradeWindow.show();
-            }
-          } catch (error) {
-            console.error('Failed to show trade messages window:', error);
-          }
+          // Don't automatically show the trade messages window - let user open it manually
           
           const newTrade: TradeMessageData = {
             id: `${Date.now()}-${Math.random()}`,
@@ -156,6 +148,24 @@ export const useTradeMessages = () => {
         });
 
         whisperUnlistenRef.current = whisperUnlisten;
+
+        // Listen for trade removal events from other windows (only if isTauri)
+        if (isTauri()) {
+          const removeUnlisten = await listen<{ id: string }>('trade-message-removed', (event) => {
+            const { id } = event.payload;
+            console.log('[useTradeMessages] Received trade-message-removed event for:', id);
+            setTrades((prev) => {
+              // Only remove if the trade still exists (avoid unnecessary updates)
+              if (prev.some(trade => trade.id === id)) {
+                const updated = prev.filter((trade) => trade.id !== id);
+                console.log('[useTradeMessages] Updated trades from event, count:', prev.length, '->', updated.length);
+                return updated;
+              }
+              return prev;
+            });
+          });
+          removeUnlistenRef.current = removeUnlisten;
+        }
       } catch (error) {
         console.error('Failed to set up trade message listener:', error);
       }
@@ -172,16 +182,42 @@ export const useTradeMessages = () => {
         whisperUnlistenRef.current();
         whisperUnlistenRef.current = null;
       }
+      if (removeUnlistenRef.current) {
+        removeUnlistenRef.current();
+        removeUnlistenRef.current = null;
+      }
     };
   }, []);
 
   const removeTrade = useCallback((id: string) => {
-    setTrades((prev) => prev.filter((trade) => trade.id !== id));
+    console.log('[useTradeMessages] Removing trade:', id);
+    // Update state first
+    setTrades((prev) => {
+      const updated = prev.filter((trade) => trade.id !== id);
+      console.log('[useTradeMessages] Updated trades count:', prev.length, '->', updated.length);
+      return updated;
+    });
+    
+    // Emit event after state update so other windows/components can sync
+    if (isTauri()) {
+      emit('trade-message-removed', { id }).catch(err => {
+        console.error('[useTradeMessages] Failed to emit trade-message-removed:', err);
+      });
+    }
   }, []);
 
   const clearAll = useCallback(() => {
     setTrades([]);
   }, []);
+
+  // Emit trade count updates whenever trades change
+  useEffect(() => {
+    if (isTauri()) {
+      emit('trade-messages-count-updated', { count: trades.length }).catch(err => {
+        console.error('[useTradeMessages] Failed to emit trade-messages-count-updated:', err);
+      });
+    }
+  }, [trades.length]);
 
   return {
     trades,

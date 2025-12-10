@@ -44,8 +44,8 @@ export function CurrencyValuation() {
       return;
     }
     try {
-      const curr = await getCurrencyTab();
-      setCurrency(curr);
+    const curr = await getCurrencyTab();
+    setCurrency(curr);
     } catch (error) {
       console.error('Failed to fetch currency:', error);
     }
@@ -80,14 +80,14 @@ export function CurrencyValuation() {
         const item = runeHierarchy[i];
         const match = calculatedEconomyValues.Runes.find((r) => r.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 1000) / 1000;
+        const value = Math.round(amount * price * 100) / 100;
         const sampleCount = match?.numListings ?? undefined;
 
         return { 
           key: runeKey, 
           item, 
           amount, 
-          price: Math.round(price * 1000) / 1000, 
+          price: Math.round(price * 100) / 100, 
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
@@ -128,26 +128,21 @@ export function CurrencyValuation() {
         const item = map[key];
         const match = calculatedEconomyValues[category].find((val) => val.name === item);
         const price = match?.price ?? 0;
-        const value = Math.round(amount * price * 1000) / 1000;
+        const value = Math.round(amount * price * 100) / 100;
         const sampleCount = match?.numListings ?? undefined;
-
-        // Debug log to verify data
-        if (match) {
-          console.log(`${category} item: ${item}, match price: ${match.price}, match numListings: ${match.numListings}, final price: ${price}`);
-        }
 
         return { 
           key, 
           item, 
           amount, 
-          price: Math.round(price * 1000) / 1000, 
+          price: Math.round(price * 100) / 100, 
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
       });
     }
 
-    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 1000) / 1000;
+    const total = Math.round(items.reduce((sum, { value }) => sum + value, 0) * 100) / 100;
     return { items, total };
   }
 
@@ -180,7 +175,15 @@ export function CurrencyValuation() {
                 <h2 className="text-2xl font-bold">Currency Valuation</h2>
           </div>
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
-          Displays the total value of items in your stash, based on current market prices from the PD2 Price Crawler API.
+          Displays the total value of items in your stash, based on current market prices from the PD2 Trader API.{' '}
+          <a 
+            href="https://pd2trader.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline"
+          >
+            View prices on pd2trader.com
+          </a>
           </div>
         </div>
 

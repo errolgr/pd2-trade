@@ -17,6 +17,7 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
+import { useOptions } from '@/hooks/useOptions';
 
 export interface TradeMessageHistoryEntry {
   id: string;
@@ -53,6 +54,7 @@ interface TradeMessageProps {
 
 export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRefresh, onRevoke, onAccept, onReject, onUnaccept }) => {
   const { authData, createConversation } = usePd2Website();
+  const { settings } = useOptions();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
   const [viewPopoverOpen, setViewPopoverOpen] = useState(false);
@@ -172,15 +174,26 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
       return; // Don't proceed if game name is empty
     }
     
-    const accountName = trade.accountName;
+    const accountName = trade.accountName || '';
+    const characterName = trade.characterName || '';
+    const itemName = trade.itemName || '';
+    const price = trade.price || '';
     const gameInfo = password ? `${gameName}////${password}` : gameName;
-    const acceptMessage = `/w *${accountName} Your offer has been accepted. Game: ${gameInfo}`;
+    
+    // Use custom message template from settings, or fall back to default
+    const template = settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}';
+    let message = template
+      .replace(/{gameInfo}/g, gameInfo)
+      .replace(/{accountName}/g, accountName)
+      .replace(/{characterName}/g, characterName)
+      .replace(/{itemName}/g, itemName)
+      .replace(/{price}/g, price);
+    const acceptMessage = `/w *${accountName} ${message}`;
+    
     await copy(acceptMessage);
     setCopiedAction('accept');
     setTimeout(() => setCopiedAction(null), 2000);
     setAcceptPopoverOpen(false);
-    setGameName('');
-    setPassword('');
   };
 
   const handleDecline = async () => {
@@ -201,8 +214,18 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
     }
 
     // For non-website offers, use the old clipboard method
-    const accountName = trade.accountName;
-    const rejectMessage = `/w *${accountName} Your offer has been rejected.`;
+    const accountName = trade.accountName || '';
+    const characterName = trade.characterName || '';
+    const itemName = trade.itemName || '';
+    const price = trade.price || '';
+    
+    const template = settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.';
+    let message = template
+      .replace(/{accountName}/g, accountName)
+      .replace(/{characterName}/g, characterName)
+      .replace(/{itemName}/g, itemName)
+      .replace(/{price}/g, price);
+    const rejectMessage = `/w *${accountName} ${message}`;
     await copy(rejectMessage);
     setCopiedAction('reject');
     setTimeout(() => setCopiedAction(null), 2000);
@@ -230,8 +253,18 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
 
   const handleSold = async () => {
     // Copy sold message to clipboard
-    const accountName = trade.accountName;
-    const soldMessage = `/w *${accountName} The item has been sold.`;
+    const accountName = trade.accountName || '';
+    const characterName = trade.characterName || '';
+    const itemName = trade.itemName || '';
+    const price = trade.price || '';
+    
+    const template = settings?.soldOfferMessageTemplate || 'The item has been sold.';
+    let message = template
+      .replace(/{accountName}/g, accountName)
+      .replace(/{characterName}/g, characterName)
+      .replace(/{itemName}/g, itemName)
+      .replace(/{price}/g, price);
+    const soldMessage = `/w *${accountName} ${message}`;
     await copy(soldMessage);
     setCopiedAction('sold');
     setTimeout(() => setCopiedAction(null), 2000);
@@ -337,7 +370,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                  <p>Stop notifications</p>
+                  <p>Delete trade offer</p>
                   </TooltipContent>
                 </Tooltip>
                 )}
@@ -607,8 +640,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="space-y-2 pr-4">
+            <ScrollArea>
+              <div className="space-y-2 pr-4 max-h-[200px]">
                 {trade.history && trade.history.length > 0 ? (
                   trade.history
                     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())

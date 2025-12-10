@@ -13,5 +13,5 @@ export function formatWithUnderscore(str: string) {
 }
 
 export function formatHr(value: number): string {
-  return `${value.toFixed(3)} HR`;
+  return `${value.toFixed(2)} HR`;
 }

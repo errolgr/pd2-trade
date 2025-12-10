@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listen } from '@/lib/browser-events';
+import { listen, emit } from '@/lib/browser-events';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
@@ -14,6 +14,52 @@ const ToastPage: React.FC = () => {
       if (win) win.hide().catch(console.error);
     }
   };
+
+  // Listen for 'toast-confirm-disable-overlay' and show confirmation toast
+  useEffect(() => {
+    let unlistenConfirmPromise: Promise<() => void>;
+    
+    listen('toast-confirm-disable-overlay', async (event: any) => {
+      // Show the window when we receive a toast event (only in Tauri)
+      if (isTauri()) {
+        try {
+          const win = await getCurrentWebviewWindow();
+          if (win) await win.show();
+        } catch (error) {
+          console.error('Failed to show toast window:', error);
+        }
+      }
+
+      toast('Disable Chat Button Overlay?', {
+        description: 'You can re-enable it later in Settings → Interface.',
+        position: 'bottom-right',
+        duration: 5000,
+        action: {
+          label: 'Disable',
+          onClick: async () => {
+            emit('confirm-disable-overlay');
+            closeToastWebview();
+          },
+        },
+        cancel: {
+          label: 'Cancel',
+          onClick: () => {
+            closeToastWebview();
+          },
+        },
+        onDismiss: () => closeToastWebview(),
+        onAutoClose: () => closeToastWebview(),
+      });
+    }).then((off) => {
+      unlistenConfirmPromise = Promise.resolve(off);
+    });
+    
+    return () => {
+      if (unlistenConfirmPromise) {
+        unlistenConfirmPromise.then((off) => off());
+      }
+    };
+  }, []);
 
   // Listen for 'toast-event' and show a toast
   useEffect(() => {

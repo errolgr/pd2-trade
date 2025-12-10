@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
-import { MessageSquare, GripVertical, Settings, ShoppingBag } from 'lucide-react';
+import { MessageSquare, GripVertical, Settings, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { emit } from '@/lib/browser-events';
 
 interface ChatButtonProps {
   handleClick: () => void;
   onSettingsClick?: () => void;
   onTradeMessagesClick?: () => void;
+  onDisableClick?: () => void;
   unreadCount?: number;
+  tradeOffersCount?: number;
 }
 
-export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsClick, onTradeMessagesClick, unreadCount = 0 }) => {
+export const ChatButton: React.FC<ChatButtonProps> = ({ 
+  handleClick, 
+  onSettingsClick, 
+  onTradeMessagesClick, 
+  onDisableClick,
+  unreadCount = 0,
+  tradeOffersCount = 0,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,7 +31,16 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
     { angle: 45, distance: 70, component: 'settings' }, // Settings at 45°
     { angle: 135, distance: 70, component: 'trade' }, // Trade messages at 135°
     { angle: 225, distance: 50, component: 'drag' }, // Drag handle at 225°
+    { angle: 315, distance: 50, component: 'disable' }, // Disable button at 315° (closer)
   ];
+
+  const handleDisableClick = () => {
+    // Emit a toast event that will show a confirmation dialog
+    // The actual disable will happen when user confirms in the toast
+    if (onDisableClick) {
+      emit('toast-confirm-disable-overlay');
+    }
+  };
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
@@ -103,7 +122,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
           <Button
             onClick={onSettingsClick}
             className={cn(
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out",
+               "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
               isHovered ? "h-12 w-12" : "h-10 w-10"
             )}
             size="icon"
@@ -119,19 +138,46 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
 
         {/* Trade Messages Button Circle */}
         {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={getButtonStyle(135, 70, 'trade')}>
           <Button
             onClick={onTradeMessagesClick}
             className={cn(
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out",
+                 "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
               isHovered ? "h-12 w-12" : "h-10 w-10"
             )}
             size="icon"
             aria-label="Trade Messages"
-            style={getButtonStyle(135, 70, 'trade')}
           >
             <ShoppingBag className={cn(
               "text-neutral-200 transition-all duration-300",
               isHovered ? "h-5 w-5" : "h-4 w-4"
+               )} />
+             </Button>
+             {tradeOffersCount > 0 && isHovered && (
+               <Badge 
+                 className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
+               >
+                 {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
+               </Badge>
+             )}
+           </div>
+         )}
+
+         {/* Disable Button Circle */}
+         {onDisableClick && buttonPositions.find(p => p.component === 'disable') && (
+           <Button
+             onClick={handleDisableClick}
+             className={cn(
+               "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-red-600/90 hover:bg-red-700/90 border border-red-500/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
+               isHovered ? "h-8 w-8" : "h-7 w-7"
+             )}
+             size="icon"
+             aria-label="Disable Overlay"
+             style={getButtonStyle(315, 50, 'disable')}
+           >
+             <X className={cn(
+               "text-white transition-all duration-300",
+               isHovered ? "h-2.5 w-2.5" : "h-2 w-2"
             )} />
           </Button>
         )}
@@ -141,7 +187,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
           <Button
             onClick={handleClick}
             className={cn(
-              "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out",
+              "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out cursor-pointer",
               isHovered ? "h-14 w-14 scale-110" : "h-12 w-12 scale-100"
             )}
             size="icon"
@@ -157,6 +203,13 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ handleClick, onSettingsC
               className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+          {tradeOffersCount > 0 && !isHovered && (
+            <Badge 
+              className="absolute -top-1 -left-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
+            >
+              {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
             </Badge>
           )}
         </div>

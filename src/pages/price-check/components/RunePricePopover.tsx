@@ -63,6 +63,14 @@ export function RunePricePopover({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <a 
+              href="https://pd2trader.com/?category=runes" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-blue-400 hover:text-blue-300 ml-auto"
+            >
+              View on pd2trader.com →
+            </a>
           </div>
           {loading ? (
             <div className="text-sm text-gray-500">Loading rune data...</div>

@@ -14,7 +14,8 @@ import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
-import { useWhisperNotifications } from '@/hooks/useWhisperNotifications';
+import { useSocketNotifications } from '@/hooks/useSocketNotifications';
+import { useSocket } from '@/hooks/pd2website/useSocket';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
@@ -32,6 +33,10 @@ const LandingPage: React.FC = () => {
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings } = useOptions();
+  const { isConnected } = useSocket({ settings });
+  
+  // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
+  useSocketNotifications({ isConnected, settings, whisperNotificationsEnabled: true });
   
   // Keep settings ref up to date
   useEffect(() => {
@@ -201,9 +206,6 @@ const LandingPage: React.FC = () => {
   // Handle changelog
   useChangelog();
 
-  // Handle whisper notifications
-  // Always enable the hook - it handles the logic internally based on settings
-  useWhisperNotifications(true);
 
   // Handle chat button overlay visibility based on settings
   useEffect(() => {

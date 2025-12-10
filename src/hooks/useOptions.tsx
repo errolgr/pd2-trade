@@ -37,6 +37,9 @@ export interface ISettings {
   tradeNotificationsEnabled?: boolean; // Trade whispers
   whisperNotificationTiming?: 'in-game' | 'out-of-game' | 'both' | 'never'; // When to notify
   whisperNotificationVolume?: number; // Volume for whisper notifications (0-100)
+  acceptOfferMessageTemplate?: string; // Custom message template for accepting offers (without /w *{accountName})
+  rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
+  soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
 }
 
 interface OptionsContextProps {
@@ -69,6 +72,9 @@ const DEFAULT_SETTINGS: ISettings = {
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
   chatButtonOverlayEnabled: true,
+  acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
+  rejectOfferMessageTemplate: 'Your offer has been rejected.',
+  soldOfferMessageTemplate: 'The item has been sold.',
 };
 
 const SETTINGS_FILENAME = 'settings.json';
