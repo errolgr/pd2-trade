@@ -59,6 +59,7 @@ jobs:
           - platform: "windows-latest"
             args: ""
           - platform: "ubuntu-22.04"
+            args: ""
           # Add more platforms as needed...
     runs-on: ${{ matrix.platform }}
     steps:
