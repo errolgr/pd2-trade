@@ -58,6 +58,8 @@ jobs:
         include:
           - platform: "windows-latest"
             args: ""
+          - platform: "ubuntu-22.04"
+            args: ""
           # Add more platforms as needed...
     runs-on: ${{ matrix.platform }}
     steps:
@@ -77,9 +79,12 @@ jobs:
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        run: >
+          sudo apt-get update && 
+          sudo apt-get install -y build-essential pkg-config libx11-dev libxi-dev 
+          libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev 
+          libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev 
+          xdg-utils librsvg2-dev patchelf file 
 
       - name: Install frontend dependencies
         run: npm install

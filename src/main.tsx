@@ -88,17 +88,17 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route
         path={"/chat"}
-        element={<ChatPage/>}
+        element={<ChatPage />}
       />
 
       <Route
         path={"/chat-button"}
-        element={<ChatButtonPage/>}
+        element={<ChatButtonPage />}
       />
 
       <Route
         path={"/trade-messages"}
-        element={<TradeMessagesPage/>}
+        element={<TradeMessagesPage />}
       />
     </Routes>
   </BrowserRouter>,
