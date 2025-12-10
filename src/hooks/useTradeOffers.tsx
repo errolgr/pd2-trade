@@ -11,6 +11,7 @@ import { listen } from '@/lib/browser-events';
 import { emit } from '@/lib/browser-events';
 import { ToastActionType } from '@/common/types/Events';
 import qs from 'qs';
+import poeWhisperSound from '@/assets/poe_whisper.mp3';
 
 interface WebsiteOffer {
   _id: string;
@@ -285,6 +286,19 @@ const unacceptOffer = async (settings: ISettings, listingId: string): Promise<vo
   await handleApiResponse(response);
 };
 
+// Play the notification sound from assets
+function playNotificationSound(volume: number = 70) {
+  try {
+    const audio = new Audio(poeWhisperSound);
+    audio.volume = volume / 100; // Convert 0-100 to 0-1
+    audio.play().catch((error) => {
+      console.error('Failed to play notification sound:', error);
+    });
+  } catch (error) {
+    console.error('Failed to create audio element:', error);
+  }
+}
+
 export const useTradeOffers = (): UseTradeOffersReturn => {
   const { settings } = useOptions();
   const { authData } = usePd2Website();
@@ -365,6 +379,10 @@ export const useTradeOffers = (): UseTradeOffersReturn => {
             const listingId = notification.data.listing_id;
             const offerMessage = notification.meta?.string || 'New offer received';
             
+            // Play notification sound
+            const volume = settings?.whisperNotificationVolume ?? 70;
+            playNotificationSound(volume);
+            
             // Show toast notification with link to listing
             await emit('toast-event', {
               title: 'New Offer',
@@ -396,7 +414,7 @@ export const useTradeOffers = (): UseTradeOffersReturn => {
         unlisten = null;
       }
     };
-  }, [isConnected, fetchIncomingOffers]);
+  }, [isConnected, fetchIncomingOffers, settings?.whisperNotificationVolume]);
 
   const handleRevokeOffer = useCallback(async (offerId: string) => {
     if (!settings?.pd2Token) {

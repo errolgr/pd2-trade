@@ -248,7 +248,7 @@ const LandingPage: React.FC = () => {
           y,
           width: buttonSize,
           height: buttonSize,
-          decorations: true,
+          decorations: false,
           transparent: true,
           skipTaskbar: true,
           alwaysOnTop: true,
@@ -431,7 +431,7 @@ const LandingPage: React.FC = () => {
       
       // Create and show the trade messages window - centered on Diablo screen
       tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
-        decorations: true,
+        decorations: false,
         transparent: true,
         skipTaskbar: true,
         alwaysOnTop: true,
