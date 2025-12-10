@@ -4,6 +4,7 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { emit as tauriEmit, listen as tauriListen } from '@tauri-apps/api/event';
 
 type EventCallback<T = any> = (event: { payload: T }) => void;
 
@@ -14,7 +15,6 @@ const eventListeners = new Map<string, Set<EventCallback>>();
  */
 export async function emit<T = any>(event: string, payload?: T): Promise<void> {
   if (isTauri()) {
-    const { emit: tauriEmit } = await import('@tauri-apps/api/event');
     await tauriEmit(event, payload);
     return;
   }
@@ -44,7 +44,6 @@ export async function listen<T = any>(
   callback: EventCallback<T>
 ): Promise<() => void> {
   if (isTauri()) {
-    const { listen: tauriListen } = await import('@tauri-apps/api/event');
     return await tauriListen<T>(event, callback);
   }
   

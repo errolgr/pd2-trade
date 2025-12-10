@@ -1,8 +1,15 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import {useOptions} from "@/hooks/useOptions";
-import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
+import { useOptions } from "@/hooks/useOptions";
+import { openCenteredWindow, attachWindowCloseHandler } from "@/lib/window";
 import { listen } from '@/lib/browser-events';
+import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import { Menu } from '@tauri-apps/api/menu';
+import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
+import { defaultWindowIcon } from '@tauri-apps/api/app';
+import { appConfigDir } from '@tauri-apps/api/path';
+import { openPath } from '@tauri-apps/plugin-opener';
+import { exit } from '@tauri-apps/plugin-process';
 
 type TrayContextValue = {
   tray: any | null;
@@ -74,7 +81,6 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     async function registerShortcut() {
       try {
-        const { isRegistered, register, unregister } = await import('@tauri-apps/plugin-global-shortcut');
         if (lastShortcutRef.current) {
           await unregister(lastShortcutRef.current);
         }
@@ -94,10 +100,9 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     return () => {
       if (isTauri() && lastShortcutRef.current) {
-        import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
-          unregister(lastShortcutRef.current!);
+        unregister(lastShortcutRef.current).then(() => {
           lastShortcutRef.current = null;
-        });
+        }).catch(console.error);
       }
     };
   }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
@@ -112,13 +117,6 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     async function setupTray() {
       try {
-        const { Menu } = await import('@tauri-apps/api/menu');
-        const { TrayIcon, TrayIconEvent } = await import('@tauri-apps/api/tray');
-        const { defaultWindowIcon } = await import('@tauri-apps/api/app');
-        const { appConfigDir } = await import('@tauri-apps/api/path');
-        const { openPath } = await import('@tauri-apps/plugin-opener');
-        const { exit } = await import('@tauri-apps/plugin-process');
-
         const menu = await Menu.new({
           items: [
             {

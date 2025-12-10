@@ -4,6 +4,7 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { getCurrentWebviewWindow as tauriGetCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 export interface BrowserWebviewWindow {
   label: string;
@@ -35,8 +36,7 @@ export function getCurrentWebviewWindow(): BrowserWebviewWindow {
     
     windowPromise = (async () => {
       if (isTauri()) {
-        const { getCurrentWebviewWindow: tauriGetCurrent } = await import('@tauri-apps/api/webviewWindow');
-        const win = await tauriGetCurrent();
+        const win = await tauriGetCurrentWebviewWindow();
         if (win) {
           cachedWindow = win;
         }

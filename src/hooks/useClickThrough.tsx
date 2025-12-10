@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { cursorPosition } from '@tauri-apps/api/window';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -94,7 +96,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     
     try {
       // Try to bring the window to front and focus it
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
       const mainWindow = await WebviewWindow.getByLabel('main');
       if (mainWindow) {
         await mainWindow.setFocus();
@@ -102,7 +103,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     } catch (error) {
       // Fallback to Tauri command
       try {
-        const { invoke } = await import('@tauri-apps/api/core');
         await invoke('force_window_focus');
       } catch (invokeError) {
       }
@@ -113,7 +113,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     if (!isTauri()) return;
 
     try {
-      const { cursorPosition } = await import('@tauri-apps/api/window');
       const { x: cursorX, y: cursorY } = await cursorPosition();
       const popupBounds = getPopupBounds();
 
@@ -158,7 +157,6 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       }
 
       // Update click-through state if needed
-      const { invoke } = await import('@tauri-apps/api/core');
       if (isOverPopup && isClickThroughEnabled.current) {
         // Cursor is over popup, disable click-through
         await invoke('set_window_click_through', { ignore: false });
@@ -184,8 +182,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     if (!isTauri()) return;
 
     // Start with click-through enabled
-    import('@tauri-apps/api/core').then(({ invoke }) => {
-      invoke('set_window_click_through', { ignore: true });
+    invoke('set_window_click_through', { ignore: true }).then(() => {
       isClickThroughEnabled.current = true;
     });
 
@@ -199,9 +196,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       }
       // Re-enable click-through on cleanup
       if (isTauri()) {
-        import('@tauri-apps/api/core').then(({ invoke }) => {
-          invoke('set_window_click_through', { ignore: true });
-        });
+        invoke('set_window_click_through', { ignore: true }).catch(console.error);
       }
     };
   }, [checkCursorPosition]);

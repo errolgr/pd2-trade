@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { cursorPosition } from '@tauri-apps/api/window';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -60,9 +62,6 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
     if (!isTauri()) return;
 
     try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      const { cursorPosition } = await import('@tauri-apps/api/window');
-      
       const window = await WebviewWindow.getByLabel(windowLabel);
       if (!window) return;
 
@@ -106,7 +105,6 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
     // Start with click-through enabled for the window
     const initClickThrough = async () => {
       try {
-        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
         const window = await WebviewWindow.getByLabel(windowLabel);
         if (window) {
           await window.setIgnoreCursorEvents(true);
@@ -129,9 +127,9 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
       }
       // Re-enable click-through on cleanup
       if (isTauri()) {
-        import('@tauri-apps/api/webviewWindow').then(async ({ WebviewWindow }) => {
+        WebviewWindow.getByLabel(windowLabel).then(async (window) => {
           try {
-            const window = await WebviewWindow.getByLabel(windowLabel);
+            if (!window) return;
             if (window) {
               await window.setIgnoreCursorEvents(true);
             }

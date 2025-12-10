@@ -5,6 +5,7 @@
 
 import { isTauri } from '@tauri-apps/api/core';
 import { BaseDirectory } from '@tauri-apps/api/path';
+import { readTextFile as tauriReadTextFile, writeTextFile as tauriWriteTextFile, exists as tauriExists, mkdir as tauriMkdir } from '@tauri-apps/plugin-fs';
 
 // Re-export for convenience
 export { BaseDirectory };
@@ -42,7 +43,6 @@ export async function readTextFile(
   options: ReadTextFileOptions = {}
 ): Promise<string> {
   if (isTauri()) {
-    const { readTextFile: tauriReadTextFile } = await import('@tauri-apps/plugin-fs');
     return await tauriReadTextFile(path, options as any);
   }
   
@@ -64,7 +64,6 @@ export async function writeTextFile(
   options: WriteTextFileOptions = {}
 ): Promise<void> {
   if (isTauri()) {
-    const { writeTextFile: tauriWriteTextFile } = await import('@tauri-apps/plugin-fs');
     await tauriWriteTextFile(path, contents, options as any);
     return;
   }
@@ -82,7 +81,6 @@ export async function exists(
   options: ExistsOptions = {}
 ): Promise<boolean> {
   if (isTauri()) {
-    const { exists: tauriExists } = await import('@tauri-apps/plugin-fs');
     return await tauriExists(path, options as any);
   }
   
@@ -99,7 +97,6 @@ export async function mkdir(
   options: MkdirOptions = {}
 ): Promise<void> {
   if (isTauri()) {
-    const { mkdir: tauriMkdir } = await import('@tauri-apps/plugin-fs');
     await tauriMkdir(path, options as any);
     return;
   }

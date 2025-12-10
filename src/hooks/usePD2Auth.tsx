@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { emit, listen } from '@/lib/browser-events';
 import { jwtDecode } from 'jwt-decode';
 import { useOptions } from './useOptions';
@@ -12,7 +12,6 @@ const openAuthWebview = async () => {
     return;
   }
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
     await invoke('open_project_diablo2_webview');
   } catch (error) {
     console.error('Failed to open Project Diablo 2 webview:', error);

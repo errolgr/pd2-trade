@@ -4,6 +4,7 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { getVersion as tauriGetVersion } from '@tauri-apps/api/app';
 
 /**
  * Get app version
@@ -11,7 +12,6 @@ import { isTauri } from '@tauri-apps/api/core';
  */
 export async function getVersion(): Promise<string> {
   if (isTauri()) {
-    const { getVersion: tauriGetVersion } = await import('@tauri-apps/api/app');
     return await tauriGetVersion();
   }
   

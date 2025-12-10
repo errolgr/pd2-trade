@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { listen, emit } from '@/lib/browser-events';
 import { isTauri } from '@tauri-apps/api/core';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
@@ -131,7 +132,6 @@ const ToastPage: React.FC = () => {
                   }
                   case ToastActionType.UPDATE_AVAILABLE:
                     if (isTauri()) {
-                      const { relaunch } = await import('@tauri-apps/plugin-process');
                       await relaunch();
                     } else {
                       // In browser, just reload the page

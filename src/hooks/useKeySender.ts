@@ -1,4 +1,4 @@
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { useCallback } from "react";
 
 /**
@@ -18,7 +18,6 @@ export function useKeySender() {
       return;
     }
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
       await invoke("press_key", { sequence });
     } catch (err) {
       console.error("[KeySender] failed:", err);

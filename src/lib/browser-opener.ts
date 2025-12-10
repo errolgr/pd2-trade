@@ -4,13 +4,13 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { openUrl as tauriOpenUrl } from '@tauri-apps/plugin-opener';
 
 /**
  * Open a URL
  */
 export async function openUrl(url: string): Promise<void> {
   if (isTauri()) {
-    const { openUrl: tauriOpenUrl } = await import('@tauri-apps/plugin-opener');
     await tauriOpenUrl(url);
     return;
   }

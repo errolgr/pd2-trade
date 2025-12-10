@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { useOptions } from './useOptions';
 
 type ShortcutHandler = () => void | Promise<void>;
@@ -25,9 +26,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 
     const registerShortcuts = async () => {
       try {
-        const { register, unregister } = await import('@tauri-apps/plugin-global-shortcut');
-        
-      // Unregister previous shortcuts
+        // Unregister previous shortcuts
       for (const shortcut of registeredShortcuts.current) {
         try {
           await unregister(shortcut);
@@ -60,12 +59,10 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 
     return () => {
       if (isTauri()) {
-        import('@tauri-apps/plugin-global-shortcut').then(({ unregister }) => {
-      registeredShortcuts.current.forEach((shortcut) => {
-        unregister(shortcut).catch(() => void 0);
-      });
-      registeredShortcuts.current = [];
+        registeredShortcuts.current.forEach((shortcut) => {
+          unregister(shortcut).catch(() => void 0);
         });
+        registeredShortcuts.current = [];
       }
     };
   }, [shortcuts]);

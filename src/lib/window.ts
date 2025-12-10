@@ -1,13 +1,12 @@
 import { isTauri } from '@tauri-apps/api/core';
-import {WindowOptions} from '@tauri-apps/api/window';
+import {WindowOptions, currentMonitor, cursorPosition} from '@tauri-apps/api/window';
+import {WebviewWindow} from '@tauri-apps/api/webviewWindow';
+import {invoke} from '@tauri-apps/api/core';
 import * as browserWindow from './browser-window';
 import {WebviewOptions} from "@tauri-apps/api/webview";
 
 // Re-export browser window types
 export type BrowserWindow = browserWindow.BrowserWindow;
-
-// Tauri types (only used when in Tauri)
-type WebviewWindow = any;
 
 /**
  * Opens a centered window - uses Tauri in Tauri environment, browser window.open in browser
@@ -18,9 +17,6 @@ export async function openCenteredWindow(
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-    const { currentMonitor } = await import('@tauri-apps/api/window');
-    
     const monitor = await currentMonitor();
     if (!monitor) return null;
 
@@ -57,10 +53,6 @@ export async function openOverDiabloWindow(
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-    const { cursorPosition } = await import('@tauri-apps/api/window');
-    const { invoke } = await import('@tauri-apps/api/core');
-    
     const { x: cursorX } = await cursorPosition();
     const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
 
@@ -94,9 +86,6 @@ export async function openWindowAtCursor(
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-    const { cursorPosition } = await import('@tauri-apps/api/window');
-    
     const { x, y } = await cursorPosition();
     const width = options.width ?? 600;
     const height = options.height ?? 600;
@@ -127,9 +116,6 @@ export async function openWindowCenteredOnDiablo(
   options: Partial<WebviewOptions & WindowOptions> = {}
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-    const { invoke } = await import('@tauri-apps/api/core');
-    
     const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
     const windowWidth = options.width ?? 600;
     const windowHeight = options.height ?? 600;
@@ -222,7 +208,6 @@ export function attachWindowCloseHandler(
  */
 export async function updateMainWindowBounds(): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
     await invoke('update_window_bounds');
   } else {
     // No-op in browser

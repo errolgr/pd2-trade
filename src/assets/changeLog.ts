@@ -1,4 +1,9 @@
 export const changeLog = {
+  "0.5.2": [
+    "🆕 Message templates have been added to the chat overlay - you can now save custom messages for quick replies.",
+    "🆕 Game name will now persist through offers",
+    "🔧 Fixed an issue trade whispers were not being notified from the last patch"
+    ],
   "0.5.1": [
     "🔧 Fixed an issue where the rune price breakdown would not display the correct price.",
     "🔧 Fixed an issue in the currency valuation page where HR values were rounded to 3 decimal places.",

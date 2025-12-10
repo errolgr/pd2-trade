@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -59,7 +60,6 @@ const LandingPage: React.FC = () => {
       return true;
     }
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
       const focused = await invoke<boolean>('is_diablo_focused');
       if (!focused) {
         console.warn('[LandingPage] Diablo is not focused, skipping action.');
@@ -234,9 +234,6 @@ const LandingPage: React.FC = () => {
       
       // Create window if it doesn't exist
       if (!chatButtonWindowRef.current) {
-        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-        const { invoke } = await import('@tauri-apps/api/core');
-        
         const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
         
         // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
@@ -280,7 +277,6 @@ const LandingPage: React.FC = () => {
         }
         
         try {
-          const { invoke } = await import('@tauri-apps/api/core');
           const isFocused = await invoke<boolean>('is_diablo_focused');
           const isVisible = await chatButtonWindowRef.current.isVisible();
           
@@ -526,7 +522,6 @@ const LandingPage: React.FC = () => {
 
     const manageWatcher = async () => {
       try {
-        const { invoke } = await import('@tauri-apps/api/core');
         if (shouldWatch) {
           await invoke('start_chat_watcher', { customD2Dir: settings.diablo2Directory });
         } else {
@@ -541,9 +536,7 @@ const LandingPage: React.FC = () => {
 
     return () => {
       if (isTauri()) {
-        import('@tauri-apps/api/core').then(({ invoke }) => {
-          invoke('stop_chat_watcher').catch(console.error);
-        });
+        invoke('stop_chat_watcher').catch(console.error);
       }
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);

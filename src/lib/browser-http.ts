@@ -4,6 +4,7 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
 /**
  * Convert a URL to use the proxy if we're in browser mode
@@ -47,7 +48,6 @@ export async function fetch(
   init?: RequestInit
 ): Promise<Response> {
   if (isTauri()) {
-    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
     return await tauriFetch(input, init);
   }
   

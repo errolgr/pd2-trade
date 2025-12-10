@@ -356,13 +356,13 @@ export function ChatForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Sold Item Message Template</FormLabel>
-              <FormControl>
+                <FormControl>
                 <Input
                   {...field}
                   placeholder="The item has been sold."
                   className="font-mono text-sm"
-                />
-              </FormControl>
+                  />
+                </FormControl>
               <FormDescription>
                 Customize the message copied when marking an item as sold. Available placeholders: {'{accountName}'}, {'{characterName}'}, {'{itemName}'}, {'{price}'}.
               </FormDescription>

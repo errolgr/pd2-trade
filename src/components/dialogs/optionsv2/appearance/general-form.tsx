@@ -72,7 +72,6 @@ export function GeneralForm() {
   // Auto-detect directory on mount
   React.useEffect(() => {
     if (isTauri() && !detectedDirectory) {
-      import('@tauri-apps/api/core').then(({ invoke }) => {
       invoke<string | null>('auto_detect_diablo2_directory')
         .then((dir) => {
           if (dir) {
@@ -80,7 +79,6 @@ export function GeneralForm() {
           }
         })
         .catch(console.error);
-      });
     }
   }, [detectedDirectory]);
 

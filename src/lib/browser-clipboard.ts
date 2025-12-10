@@ -4,6 +4,7 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
+import { readText as tauriReadText, writeText as tauriWriteText } from '@tauri-apps/plugin-clipboard-manager';
 
 /**
  * Read text from clipboard
@@ -11,7 +12,6 @@ import { isTauri } from '@tauri-apps/api/core';
 export async function readText(): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { readText: tauriReadText } = await import('@tauri-apps/plugin-clipboard-manager');
       return await tauriReadText();
     } catch (error) {
       console.error('Failed to read clipboard:', error);
@@ -37,7 +37,6 @@ export async function readText(): Promise<string | null> {
 export async function writeText(text: string): Promise<void> {
   if (isTauri()) {
     try {
-      const { writeText: tauriWriteText } = await import('@tauri-apps/plugin-clipboard-manager');
       await tauriWriteText(text);
       return;
     } catch (error) {
