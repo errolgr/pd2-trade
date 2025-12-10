@@ -1,136 +1,13 @@
-name: "publish"
+name: "Test Discord Webhook"
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 jobs:
-  ########################################################################
-  # 1. Create Release in errolgr/pd2-trade
-  ########################################################################
-  create-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.create-release.outputs.result }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Get version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Create release in pd2-trade
-        id: create-release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data } = await github.rest.repos.createRelease({
-              owner: "errolgr",            // target owner
-              repo: "pd2-trade",         // target release repo
-              tag_name: `app-v${process.env.PACKAGE_VERSION}`,
-              name: `PD2 Trader v${process.env.PACKAGE_VERSION}`,
-              body: 'Take a look at the assets to download and install this app.',
-              draft: true,
-              prerelease: false
-            });
-            return data.id;
-
-  ########################################################################
-  # 2. Build Tauri (unchanged)
-  ########################################################################
-  build-tauri:
-    needs: create-release
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: "windows-latest"
-            args: ""
-          - platform: "ubuntu-22.04"
-            args: ""
-          # Add more platforms as needed...
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: >
-          sudo apt-get update && 
-          sudo apt-get install -y build-essential pkg-config libx11-dev libxi-dev 
-          libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev 
-          libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev 
-          xdg-utils librsvg2-dev patchelf file 
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - uses: tauri-apps/tauri-action@v0.5.20
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.PD2_GITHUB_TOKEN }}
-        with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          owner: errolgr
-          repo: pd2-trade
-          args: ${{ matrix.args }}
-
-  ########################################################################
-  # 3. Publish Release in pd2-trade
-  ########################################################################
-  publish-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    needs: [create-release, build-tauri]
-    steps:
-      - name: Publish release in pd2-trade
-        id: publish-release
-        uses: actions/github-script@v6
-        env:
-          release_id: ${{ needs.create-release.outputs.release_id }}
-        with:
-          script: |
-            await github.rest.repos.updateRelease({
-              owner: "errolgr",            // target owner
-              repo: "pd2-trade",         // target release repo
-              release_id: process.env.release_id,
-              draft: false,
-              prerelease: false
-            });
-
-  ########################################################################
-  # 4. Send Discord Notification
-  ########################################################################
-  discord-notification:
+  test-discord-notification:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    needs: [publish-release]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,7 +18,7 @@ jobs:
         with:
           node-version: lts/*
 
-      - name: Send Discord notification
+      - name: Test Discord notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -195,9 +72,9 @@ jobs:
           // Create Discord embed payload
           const payload = {
             embeds: [{
-              title: `🚀 PD2 Trader v${version} Released`,
+              title: `🧪 TEST: PD2 Trader v${version} Released`,
               description: changelogText,
-              color: 3447003,
+              color: 15158332, // Red color for test
               fields: [
                 {
                   name: '📦 Download',
@@ -211,7 +88,7 @@ jobs:
                 }
               ],
               footer: {
-                text: 'PD2 Trader'
+                text: 'PD2 Trader - TEST MESSAGE'
               },
               timestamp: new Date().toISOString()
             }]
@@ -259,3 +136,4 @@ jobs:
           req.write(postData);
           req.end();
           EOF
+
