@@ -77,15 +77,17 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   return (
     <div className='flex flex-row items-center gap-2'>
         <span
-      onMouseEnter={() => setHoveredHash(stashItem.hash)}
-      onMouseLeave={() => {
+          onMouseEnter={() => setHoveredHash(stashItem.hash)}
+          onMouseLeave={() => {
         setHoveredHash(null);
         setJustBumped(null);
       }}
-      style={{ display: 'inline-block', position: 'relative' }}
+          style={{ display: 'inline-block', position: 'relative' }}
     >
       {justBumped === stashItem.hash ? (
-        <Badge variant="secondary" className="text-xs rounded-lg flex items-center gap-1 justify-center w-13 h-5" style={{ background: 'white', color: 'black' }}>
+        <Badge variant="secondary"
+          className="text-xs rounded-lg flex items-center gap-1 justify-center w-13 h-5"
+          style={{ background: 'white', color: 'black' }}>
           <Check className="w-3 h-3" />
         </Badge>
       ) : hoveredHash === stashItem.hash ? (
@@ -103,8 +105,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
             <TooltipTrigger asChild>
               <span>
                 <Badge 
-                    variant="secondary" 
-                    className="text-xs rounded-lg bg-green-600 text-white cursor-not-allowed flex items-center gap-1 justify-center w-13 h-5">
+                  variant="secondary" 
+                  className="text-xs rounded-lg bg-green-600 text-white cursor-not-allowed flex items-center gap-1 justify-center w-13 h-5">
                 Listed
                 </Badge>
               </span>
@@ -116,8 +118,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
         )
       ) : (
         <Badge 
-            variant="secondary"
-            className="text-xs rounded-lg bg-green-600 text-white flex items-center gap-1 justify-center w-13 h-5">
+          variant="secondary"
+          className="text-xs rounded-lg bg-green-600 text-white flex items-center gap-1 justify-center w-13 h-5">
             Listed
         </Badge>
       )}
@@ -125,8 +127,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
         <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
             <Trash2 
-                className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500" 
-            onClick={async () => {
+              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500" 
+              onClick={async () => {
              await deleteMarketListing(listing._id);
              await onRefresh();
              await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
@@ -143,8 +145,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
             <SquareArrowOutUpRight 
-                className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer" 
-            onClick={() => {
+              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer" 
+              onClick={() => {
              openUrl(`${PD2Website.Website}/market/listing/${listing._id}`)
            }}
          />

@@ -162,7 +162,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             )}
             style={getButtonStyle(225, 50, 'drag')}
           >
-            <GripVertical data-tauri-drag-region className="h-4 w-4 text-neutral-400" />
+            <GripVertical data-tauri-drag-region
+              className="h-4 w-4 text-neutral-400" />
           </div>
         )}
 
@@ -187,7 +188,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
         {/* Trade Messages Button Circle */}
         {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={getButtonStyle(135, 70, 'trade')}>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={getButtonStyle(135, 70, 'trade')}>
             <Button
               onClick={onTradeMessagesClick}
               className={cn(

@@ -43,7 +43,9 @@ export function RunePricePopover({
     <Popover>
       <PopoverTrigger>
 
-        <Button variant="ghost" size="sm" className="flex items-center gap-2 h-6">
+        <Button variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 h-6">
           <ArrowRightLeft className="h-2 w-4" />
         </Button>
       </PopoverTrigger>
@@ -77,7 +79,8 @@ export function RunePricePopover({
           ) : (
             <div className="space-y-1">
               {displayedRunes.map((rune) => (
-                <div key={rune.name} className="flex justify-between items-center text-sm">
+                <div key={rune.name}
+                  className="flex justify-between items-center text-sm">
                   <button
                     onClick={() => onRuneBreakdownSelect(selectedRuneBreakdown === rune.name ? null : rune.name)}
                     className={cn(
@@ -132,7 +135,8 @@ export function RunePricePopover({
                     {selectedRuneCombinations.map((combo, index) => {
                       const targetValue = calculatedRuneValues.find(r => r.name === selectedRuneBreakdown)?.price || 0;
                       return (
-                        <div key={index} className="text-xs bg-gray-800 p-2 rounded">
+                        <div key={index}
+                          className="text-xs bg-gray-800 p-2 rounded">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-gray-300">
                               {combo.runes.map(r => `${r.count}x ${r.name.replace(' Rune', '')}`).join(" + ")}

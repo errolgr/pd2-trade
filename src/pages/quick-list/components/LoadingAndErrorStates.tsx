@@ -33,9 +33,12 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
               data-tauri-drag-region
               className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
             />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+            <span style={{fontFamily: 'DiabloFont'}}
+              className="mt-1">List Item</span>
           </div>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
+          <Button className="h-6 w-6"
+            variant='ghost'
+            onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
@@ -56,14 +59,18 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
               data-tauri-drag-region
               className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
             />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+            <span style={{fontFamily: 'DiabloFont'}}
+              className="mt-1">List Item</span>
           </div>
-          <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
+          <Button className="h-6 w-6"
+            variant='ghost'
+            onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
         </div>
         <div className="text-red-500 mb-4">{error}</div>
-        <Button onClick={onRetry} className="w-full">
+        <Button onClick={onRetry}
+          className="w-full">
           <Search className="h-4 w-4 mr-2" />
           Retry Search
         </Button>

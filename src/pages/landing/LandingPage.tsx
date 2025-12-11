@@ -569,7 +569,9 @@ const LandingPage: React.FC = () => {
         <div>
           {showTitle && (
             <div className="fixed inset-0 flex items-center justify-center z-50">
-              <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
+              <img src={iconPath}
+                style={{ width: 400 }}
+                alt="PD2 Trader" />
             </div>
           )}
         </div>

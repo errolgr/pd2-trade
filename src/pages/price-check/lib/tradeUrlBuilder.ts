@@ -294,7 +294,7 @@ export function buildGetMarketListingQuery(
         // Mode 0: Default behavior (category/base) - only for base qualities
         const result = getTypeFromBaseType(item.type, true);
         if (result && result?.type && result?.type) {
-          let typeValue = result.type;
+          const typeValue = result.type;
           query['item.base.type_code'] = typeValue as any;
           // Only set base_code parameter if it's not "Any"
           const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);

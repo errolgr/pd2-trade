@@ -101,7 +101,8 @@ export function HotkeyForm() {
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-2 max-h-[330px]">
+        <form onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-y-2 max-h-[330px]">
         <div className="flex items-end gap-2">
           <FormField
             control={form.control}
@@ -110,10 +111,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Price check</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -149,10 +153,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">List item</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -188,10 +195,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Open Settings</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -227,10 +237,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Currency</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -266,10 +279,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Chat Window</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -305,10 +321,13 @@ export function HotkeyForm() {
               <FormItem>
                 <FormLabel className="mb-1 block">Offers Window</FormLabel>
                 <FormControl>
-                  <Tabs defaultValue={'ctrl'} value={field.value}>
+                  <Tabs defaultValue={'ctrl'}
+                    value={field.value}>
                     <TabsList>
-                      <TabsTrigger value={'ctrl'} onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'} onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
+                      <TabsTrigger value={'ctrl'}
+                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
+                      <TabsTrigger value={'alt'}
+                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </FormControl>
@@ -338,7 +357,10 @@ export function HotkeyForm() {
         </div>
       </form>
       </ScrollArea>
-      <Button type="submit" className={'self-start cursor-pointer mt-2'} disabled={saving} onClick={form.handleSubmit(onSubmit)}>
+      <Button type="submit"
+        className={'self-start cursor-pointer mt-2'}
+        disabled={saving}
+        onClick={form.handleSubmit(onSubmit)}>
         {saving ? <Loader2 className="animate-spin mr-2" /> : null}
         {saving ? 'Saving...' : 'Update hotkey preferences'}
       </Button>

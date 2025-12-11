@@ -866,7 +866,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800 flex-shrink-0"
       >
         {!isConnected && (
-          <Badge variant="destructive" className="text-xs mr-2">
+          <Badge variant="destructive"
+            className="text-xs mr-2">
             Disconnected
           </Badge>
         )}
@@ -1049,7 +1050,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               </div>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 min-h-0 bg-neutral-900 overflow-hidden" ref={messagesContainerRef}>
+              <ScrollArea className="flex-1 min-h-0 bg-neutral-900 overflow-hidden"
+                ref={messagesContainerRef}>
                 <div className="h-full">
                   {loadingMessages ? (
                     <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -1096,7 +1098,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                                 : "bg-neutral-800 text-white"
                             )}
                           >
-                            <MessageContent content={message.content} isOwnMessage={isOwnMessage} />
+                            <MessageContent content={message.content}
+                              isOwnMessage={isOwnMessage} />
                             <div className="flex items-center gap-1 mt-1 justify-end">
                               <span className="text-xs text-neutral-400">
                                 {formatMessageTime(message.created_at)}

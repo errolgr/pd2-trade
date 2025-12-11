@@ -45,7 +45,10 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           <FormItem className="flex-1 m-0 p-0 min-w-0">
             <FormLabel className="sr-only">Note</FormLabel>
             <FormControl>
-              <Input placeholder="Note..." {...field} autoComplete={'off'} value={form.getValues('note') || ''} />
+              <Input placeholder="Note..."
+                {...field}
+                autoComplete={'off'}
+                value={form.getValues('note') || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -61,7 +64,12 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           <FormItem className="m-0 p-0 min-w-0 w-20">
             <FormLabel className="sr-only">HR</FormLabel>
             <FormControl>
-              <Input type="number" min={0} step={0.01} placeholder="HR" {...field} value={form.getValues('price') || ''} />
+              <Input type="number"
+                min={0}
+                step={0.01}
+                placeholder="HR"
+                {...field}
+                value={form.getValues('price') || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -70,12 +78,16 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
       
       {/* Submit Button */}
       {isAlreadyListed ? (
-        <Button type="submit" style={{fontFamily: 'DiabloFont', fontWeight: 600}} disabled={submitLoading || !isFormValid}>
+        <Button type="submit"
+          style={{fontFamily: 'DiabloFont', fontWeight: 600}}
+          disabled={submitLoading || !isFormValid}>
           {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
           Update
         </Button>
       ) : (
-        <Button type="submit" disabled={(!selectedItem && !allowQueue) || submitLoading || !isFormValid} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+        <Button type="submit"
+          disabled={(!selectedItem && !allowQueue) || submitLoading || !isFormValid}
+          style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
           {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
           {allowQueue && !selectedItem ? 'Queue Item' : 'Post'}
         </Button>

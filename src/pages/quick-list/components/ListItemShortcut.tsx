@@ -550,7 +550,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const isAlreadyListed = !!currentListingForSelected;
       if (isAlreadyListed) {
         // Prepare update fields
-        let updateFields: Record<string, any> = {};
+        const updateFields: Record<string, any> = {};
         if (listingType === 'note') {
           updateFields.price = values.note || '';
           updateFields.hr_price = 0;
@@ -730,14 +730,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
-        <div className="flex justify-between mb-2 items-center" id="titlebar">
+        <div className="flex justify-between mb-2 items-center"
+          id="titlebar">
           <div className="flex items-center gap-1">
             <GripVertical 
               data-tauri-drag-region
               className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
               id="titlebar-drag-handle"
             />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">
+            <span style={{fontFamily: 'DiabloFont'}}
+              className="mt-1">
               Queued Items ({queuedItems.length})
             </span>
           </div>
@@ -774,7 +776,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               const minutesRemaining = Math.floor(timeRemaining / 60000);
               
               return (
-                <div key={pendingListing.id} className="p-3 border rounded-lg flex justify-between items-center">
+                <div key={pendingListing.id}
+                  className="p-3 border rounded-lg flex justify-between items-center">
                   <div className="flex-1">
                     <div className="font-medium">{itemName}</div>
                     <div className="text-xs text-muted-foreground">
@@ -822,14 +825,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   if (showMultipleMatchSelector && pendingMatches.length > 0) {
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
-        <div className="flex justify-between mb-2 items-center" id="titlebar">
+        <div className="flex justify-between mb-2 items-center"
+          id="titlebar">
           <div className="flex items-center gap-1">
             <GripVertical 
               data-tauri-drag-region
               className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
               id="titlebar-drag-handle"
             />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">Select Item to List</span>
+            <span style={{fontFamily: 'DiabloFont'}}
+              className="mt-1">Select Item to List</span>
           </div>
           <Button 
             type="button" 
@@ -861,14 +866,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   if (matchingItems.length === 0 && !isLoading && !error && item) {
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
-        <div className="flex justify-between mb-2 items-center" id="titlebar">
+        <div className="flex justify-between mb-2 items-center"
+          id="titlebar">
           <div className="flex items-center gap-1">
             <GripVertical 
               data-tauri-drag-region
               className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
               id="titlebar-drag-handle"
             />
-            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+            <span style={{fontFamily: 'DiabloFont'}}
+              className="mt-1">List Item</span>
           </div>
           <Button 
             type="button" 
@@ -900,7 +907,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             </div>
           </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="w-full max-w-md">
+            <form onSubmit={form.handleSubmit(handleSubmit)}
+              className="w-full max-w-md">
               <ListingFormFields
                 form={form}
                 selectedItem={null}
@@ -919,8 +927,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   return (
     <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
 
-      <Tabs defaultValue={item ? "list-item" : "listed-items"} className="w-full">
-      <div className="flex justify-between mb-2 items-center" id="titlebar">
+      <Tabs defaultValue={item ? "list-item" : "listed-items"}
+        className="w-full">
+      <div className="flex justify-between mb-2 items-center"
+        id="titlebar">
         <div className="flex items-center gap-1">
             <GripVertical 
               data-tauri-drag-region
@@ -928,11 +938,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               id="titlebar-drag-handle"
             />
             <TabsList>
-              <TabsTrigger value="list-item" className="font-bold" style={{fontFamily: 'DiabloFont'}} disabled={!item}>
+              <TabsTrigger value="list-item"
+                className="font-bold"
+                style={{fontFamily: 'DiabloFont'}}
+                disabled={!item}>
                 List Item
               </TabsTrigger>
-              <TabsTrigger value="listed-items" className="font-bold" >
-                <span className="font-bold" style={{fontFamily: 'DiabloFont'}}>Manage</span>
+              <TabsTrigger value="listed-items"
+                className="font-bold" >
+                <span className="font-bold"
+                  style={{fontFamily: 'DiabloFont'}}>Manage</span>
                 {totalListingsCount > 0 && <Badge className="font-bold text-xs rounded-full">{totalListingsCount}</Badge>}
               </TabsTrigger>
             </TabsList>  
@@ -949,7 +964,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </Button>
         </div>
         
-        <TabsContent value="list-item" className="mt-4">
+        <TabsContent value="list-item"
+          className="mt-4">
           {item ? (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -984,7 +1000,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           )}
         </TabsContent>
 
-        <TabsContent value="listed-items" className="mt-4">
+        <TabsContent value="listed-items"
+          className="mt-4">
           <ListedItemsTab 
             onClose={handleClose} 
             initialListings={allListings}

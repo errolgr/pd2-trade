@@ -75,7 +75,8 @@ export function AccountForm() {
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4 max-h-[330px]">
+        <form onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-y-4 max-h-[330px]">
         {!isTauri() && (
           <FormField
             control={form.control}
@@ -127,7 +128,8 @@ export function AccountForm() {
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map((acc: string) => (
-                      <SelectItem key={acc} value={acc}>{acc}</SelectItem>
+                      <SelectItem key={acc}
+                        value={acc}>{acc}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -138,7 +140,10 @@ export function AccountForm() {
         />
         </form>
       </ScrollArea>
-      <Button type="submit" className="self-start cursor-pointer mt-2" disabled={saving} onClick={form.handleSubmit(onSubmit)}>
+      <Button type="submit"
+        className="self-start cursor-pointer mt-2"
+        disabled={saving}
+        onClick={form.handleSubmit(onSubmit)}>
         {saving ? <span className="animate-spin mr-2">⏳</span> : null}
         {saving ? 'Saving...' : 'Update account'}
       </Button>
