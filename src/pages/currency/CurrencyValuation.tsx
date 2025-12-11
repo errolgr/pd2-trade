@@ -168,9 +168,9 @@ export function CurrencyValuation() {
         <div className="space-y-0.5">
           <div className="flex items-center gap-1">
               <GripVertical 
-                  data-tauri-drag-region
-                  className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
-                  id="titlebar-drag-handle"
+                data-tauri-drag-region
+                className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+                id="titlebar-drag-handle"
                 />
                 <h2 className="text-2xl font-bold">Currency Valuation</h2>
           </div>

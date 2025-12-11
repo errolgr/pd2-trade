@@ -158,9 +158,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none">
       {/* Top Bar */}
       <div 
-      data-tauri-drag-region
-      id="titlebar-drag-handle"
-      className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
+        data-tauri-drag-region
+        id="titlebar-drag-handle"
+        className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
         {/* Rune Information Popover */}
         <div className="flex flex-row items-center">
           <RunePricePopover
@@ -171,9 +171,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             onRuneBreakdownSelect={setSelectedRuneBreakdown}
           />
           <Button variant="ghost"
-              size="icon"
-              onClick={openCurrencyValuation}
-              className="self-start h-7 w-7">
+            size="icon"
+            onClick={openCurrencyValuation}
+            className="self-start h-7 w-7">
             <LuggageIcon className="h-4 w-4" />
           </Button>
         </div>
@@ -181,16 +181,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         <div className="flex flex-row items-center">
  
         <Button variant="ghost"
-            size="icon"
-            onClick={openSettingsPage}
-            className="self-start h-7 w-7">
+          size="icon"
+          onClick={openSettingsPage}
+          className="self-start h-7 w-7">
             <SettingsIcon className="h-2 w-2" />
         </Button>
       
         <Button variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="self-start h-7 w-7">
+          size="icon"
+          onClick={onClose}
+          className="self-start h-7 w-7">
             <X className="h-2 w-2" />
         </Button>
         </div>
@@ -208,16 +208,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               {item.isRuneword && <Badge>Runeword</Badge>}
             </CardTitle>
             {item.type && <div
-                className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}               
-                style={{ fontFamily: 'DiabloFont', marginTop: '-5px'}}
-                onClick={shouldUseToggle ? toggleSearchMode : undefined}
-                title={shouldUseToggle ? "Click to toggle search mode" : undefined}>
+              className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}               
+              style={{ fontFamily: 'DiabloFont', marginTop: '-5px'}}
+              onClick={shouldUseToggle ? toggleSearchMode : undefined}
+              title={shouldUseToggle ? "Click to toggle search mode" : undefined}>
                   {shouldUseToggle ? getSearchModeDisplay() : `Base: ${item.type}`}
               </div>
               }
 
             
-            {item.defense && <Badge variant='outline' className={'text-sm border-gray-300 text-gray-300 rounded-lg mt-1'}>Defense: {item.defense} </Badge>}
+            {item.defense && <Badge variant='outline'
+              className={'text-sm border-gray-300 text-gray-300 rounded-lg mt-1'}>Defense: {item.defense} </Badge>}
           </div>
 
   
@@ -287,7 +288,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   Search
                 </Button>
                 <Button
-                variant="secondary"
+                  variant="secondary"
                   className="mt-2 flex flex-row justify-center gap-2"
                   onClick={() => {
                     if (tradeUrl) {
@@ -312,7 +313,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 setSearchArchived(checked);
               }}
             />
-           <Label htmlFor="archived-toggle" className="text-sm text-gray-300">Show Expired</Label>
+           <Label htmlFor="archived-toggle"
+             className="text-sm text-gray-300">Show Expired</Label>
           </div>
         </div>
 
@@ -331,10 +333,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </thead>
               <tbody>
                 {marketListingsResult.data.length === 0 && (
-                  <tr><td colSpan={2} className="px-2 py-2 text-center text-gray-400">No listings found</td></tr>
+                  <tr><td colSpan={2}
+                    className="px-2 py-2 text-center text-gray-400">No listings found</td></tr>
                 )}
                 {marketListingsResult.data.map((listing: MarketListingEntry, idx: number) => (
-                  <tr key={listing._id || idx} className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
+                  <tr key={listing._id || idx}
+                    className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
                     <td className="px-2 py-1 flex flex-row items-center">
                       {listing.hr_price ? (
                         `${listing.hr_price} HR`

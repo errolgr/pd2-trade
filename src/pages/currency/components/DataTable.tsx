@@ -41,7 +41,8 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id} className={header.column.id === 'item' ? 'w-66' : ''}>
+                  <TableHead key={header.id}
+                    className={header.column.id === 'item' ? 'w-66' : ''}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 );
@@ -52,9 +53,11 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+              <TableRow key={row.id}
+                data-state={row.getIsSelected() && 'selected'}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className={cell.column.id === 'item' ? 'w-66 max-w-66 truncate' : ''}>
+                  <TableCell key={cell.id}
+                    className={cell.column.id === 'item' ? 'w-66 max-w-66 truncate' : ''}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -62,7 +65,8 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell colSpan={columns.length}
+                className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>

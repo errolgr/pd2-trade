@@ -182,7 +182,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
     
     // Use custom message template from settings, or fall back to default
     const template = settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}';
-    let message = template
+    const message = template
       .replace(/{gameInfo}/g, gameInfo)
       .replace(/{accountName}/g, accountName)
       .replace(/{characterName}/g, characterName)
@@ -220,7 +220,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
     const price = trade.price || '';
     
     const template = settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.';
-    let message = template
+    const message = template
       .replace(/{accountName}/g, accountName)
       .replace(/{characterName}/g, characterName)
       .replace(/{itemName}/g, itemName)
@@ -259,7 +259,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
     const price = trade.price || '';
     
     const template = settings?.soldOfferMessageTemplate || 'The item has been sold.';
-    let message = template
+    const message = template
       .replace(/{accountName}/g, accountName)
       .replace(/{characterName}/g, characterName)
       .replace(/{itemName}/g, itemName)
@@ -320,7 +320,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-sm text-white" style={{ fontFamily: 'DiabloFont' }}>{trade.playerName}</span>
+              <span className="font-semibold text-sm text-white"
+                style={{ fontFamily: 'DiabloFont' }}>{trade.playerName}</span>
               <span className="text-xs text-neutral-400">{formatTimeAgo(trade.timestamp)}</span>
             </div>
             
@@ -363,8 +364,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                     <Button
                       variant="ghost"
                       size="icon"
-                    onClick={handleStop}
-                    className="h-7 w-7 cursor-pointer"
+                      onClick={handleStop}
+                      className="h-7 w-7 cursor-pointer"
                     >
                     <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -508,7 +509,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                   <Tooltip open={copiedAction === 'accept' ? true : undefined}>
                     <TooltipTrigger>
                       <div>
-                        <Popover open={acceptPopoverOpen} onOpenChange={setAcceptPopoverOpen}>
+                        <Popover open={acceptPopoverOpen}
+                          onOpenChange={setAcceptPopoverOpen}>
                           <PopoverTrigger>
                             <Button
                               variant="ghost"
@@ -576,7 +578,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                         variant="ghost"
                         size="icon"
                         onClick={handleDecline}
-                          disabled={isProcessing}
+                        disabled={isProcessing}
                         className="h-7 w-7 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 pt-1"
                       >
                         <XCircle className="h-3.5 w-3.5" />
@@ -656,7 +658,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                         )}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-white" style={{ fontFamily: entry.isIncoming ? 'DiabloFont' : 'inherit' }}>
+                          <span className="text-xs font-medium text-white"
+                            style={{ fontFamily: entry.isIncoming ? 'DiabloFont' : 'inherit' }}>
                             {entry.isIncoming ? trade.playerName : 'You'}
                           </span>
                           <span className="text-xs text-neutral-400">

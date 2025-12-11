@@ -296,7 +296,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
       
-      let updateFields: Record<string, any> = {};
+      const updateFields: Record<string, any> = {};
       if (listingType === 'note') {
         updateFields.price = values.note || '';
         updateFields.hr_price = 0;
@@ -470,7 +470,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               >
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="flex-1">
-                    <div className={qualityColor(listing.item.quality.name)} style={{fontFamily: 'DiabloFont'}}>
+                    <div className={qualityColor(listing.item.quality.name)}
+                      style={{fontFamily: 'DiabloFont'}}>
                       {listing.item.name}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -521,7 +522,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                             )}
                           />
                           <ButtonGroup>
-                          <Button type="submit" size="sm" className="h-8 text-xs" disabled={isEditing && !isEditFormValid}>Save</Button>
+                          <Button type="submit"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={isEditing && !isEditFormValid}>Save</Button>
                           <Button
                             type="button"
                             size="sm"

@@ -34,13 +34,16 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
           <Badge className='text-xs rounded-lg'>Ethereal</Badge>
         )}
         {stashItem.corrupted && (
-          <Badge variant={'destructive'} className='text-xs rounded-lg'>Corrupted</Badge>
+          <Badge variant={'destructive'}
+            className='text-xs rounded-lg'>Corrupted</Badge>
         )}
         {stashItem.is_runeword && (
-          <Badge variant='secondary' className='text-xs rounded-lg'>Runeword</Badge>
+          <Badge variant='secondary'
+            className='text-xs rounded-lg'>Runeword</Badge>
         )}
         {stashItem.socket_count > 0 && (
-          <Badge variant='secondary' className='text-xs rounded-lg'>
+          <Badge variant='secondary'
+            className='text-xs rounded-lg'>
             <Badge className='rounded-4xl text-xs h-4 w-4'>
               {stashItem.socket_count}
             </Badge>
@@ -54,7 +57,8 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
           {isExpanded ? (
             // Show all modifiers when expanded
             sortedModifiers.map((mod, idx) => (
-              <div key={idx} className={cn("text-gray-200 truncate", {'text-red-500': stashItem?.corruptions && stashItem.corruptions.includes(mod.name)})}>
+              <div key={idx}
+                className={cn("text-gray-200 truncate", {'text-red-500': stashItem?.corruptions && stashItem.corruptions.includes(mod.name)})}>
                 {mod.label}
                 {mod?.min && mod?.max && `: [${mod.min} - ${mod.max}]`}
               </div>
@@ -63,7 +67,8 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
             // Show first 3 modifiers when collapsed
             <>
               {sortedModifiers.slice(0, 3).map((mod, idx) => (
-                <div key={idx} className={cn("text-gray-200 truncate", {'text-red-500': stashItem?.corruptions && stashItem.corruptions.includes(mod.name)})}>
+                <div key={idx}
+                  className={cn("text-gray-200 truncate", {'text-red-500': stashItem?.corruptions && stashItem.corruptions.includes(mod.name)})}>
                   {mod.label}
                   {mod?.min && mod?.max && `: [${mod.min} - ${mod.max}]`}
                 </div>

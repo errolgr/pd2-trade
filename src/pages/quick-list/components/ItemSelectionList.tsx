@@ -71,7 +71,8 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
               onClick={() => onItemSelect(stashItem)}
             >
               <div className="flex justify-between items-center gap-2">
-                <div className={qualityColor(stashItem.quality.name)} style={{fontFamily: 'DiabloFont'}}>
+                <div className={qualityColor(stashItem.quality.name)}
+                  style={{fontFamily: 'DiabloFont'}}>
                   {stashItem.name}
                 </div>
                 <MarketListingBadge

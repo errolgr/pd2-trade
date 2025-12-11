@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { LogicalSize } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -33,7 +34,7 @@ const LandingPage: React.FC = () => {
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
-  const { settings } = useOptions();
+  const { settings, isLoading } = useOptions();
   const { isConnected } = useSocket({ settings });
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
@@ -45,9 +46,30 @@ const LandingPage: React.FC = () => {
 
   // Hide launch title after 2 seconds
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setShowTitle(false);
-      emit('toast-event', 'is now running in the background...');
+
+      // Give React/Browser a moment to paint the removal of the image (which creates the ghost)
+      await sleep(50);
+
+      try {
+        // Linux/AppImage Compositor Fix: "Kick" the window to force a repaint
+        // Transparent windows can sometimes leave "ghost" images if the compositor
+        // doesn't realize the surface needs updating after a DOM change.
+        if (isTauri()) {
+          const win = WebviewWindow.getCurrent();
+          const size = await win.innerSize();
+          await win.setSize(new LogicalSize(size.width + 1, size.height));
+          // Small delay to ensure the compositor processes the new size frame
+          await sleep(50);
+          await win.setSize(new LogicalSize(size.width, size.height));
+        }
+
+        console.log('[LandingPage] Hiding launch title and emitting toast...');
+        await emit('toast-event', 'is now running in the background...');
+      } catch (error) {
+        console.error('[LandingPage] Failed to emit launch toast or kick compositor:', error);
+      }
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
@@ -501,7 +523,7 @@ const LandingPage: React.FC = () => {
 
   // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauri() || isLoading) return;
 
     const generalEnabled = settings.whisperNotificationsEnabled ?? true;
     const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
@@ -526,7 +548,7 @@ const LandingPage: React.FC = () => {
         invoke('stop_chat_watcher').catch(console.error);
       }
     };
-  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);
+  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
 
   return (
     <ItemsProvider>
@@ -534,7 +556,9 @@ const LandingPage: React.FC = () => {
         <div>
           {showTitle && (
             <div className="fixed inset-0 flex items-center justify-center z-50">
-              <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
+              <img src={iconPath}
+                style={{ width: 400 }}
+                alt="PD2 Trader" />
             </div>
           )}
         </div>
