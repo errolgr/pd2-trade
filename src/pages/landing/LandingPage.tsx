@@ -39,10 +39,6 @@ const LandingPage: React.FC = () => {
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
   useSocketNotifications({ isConnected, settings, whisperNotificationsEnabled: true });
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
   // Keep settings ref up to date
   useEffect(() => {
     settingsRef.current = settings;
@@ -285,10 +281,6 @@ const LandingPage: React.FC = () => {
       // Monitor Diablo focus state and hide/show chat button accordingly
       const checkDiabloFocus = async () => {
         if (!chatButtonWindowRef.current) return;
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
         // Always check current settings value from ref (not from closure)
         const currentSettings = settingsRef.current;
         if (currentSettings?.chatButtonOverlayEnabled === false) {
@@ -307,10 +299,6 @@ const LandingPage: React.FC = () => {
         try {
           const isFocused = await invoke<boolean>('is_diablo_focused');
           const isVisible = await chatButtonWindowRef.current.isVisible();
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
           if (isFocused && !isVisible) {
             await chatButtonWindowRef.current.show();
           } else if (!isFocused && isVisible) {
@@ -323,10 +311,6 @@ const LandingPage: React.FC = () => {
 
       // Check immediately
       checkDiabloFocus();
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
       // Check periodically (every 500ms)
       focusCheckIntervalRef.current = setInterval(checkDiabloFocus, 500);
     };
@@ -373,10 +357,6 @@ const LandingPage: React.FC = () => {
       const toggleChatWindow = async (event?: { payload?: { conversationId?: string; conversation?: any } }) => {
         const conversationId = event?.payload?.conversationId;
         const conversation = event?.payload?.conversation;
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
         if (!chatWindowRef.current) {
           // Create the window if it doesn't exist - centered on Diablo screen
           chatWindowRef.current = await openWindowCenteredOnDiablo('Chat', '/chat', {
@@ -391,28 +371,16 @@ const LandingPage: React.FC = () => {
             height: 700,
             visible: false,
           });
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
           if (chatWindowRef.current) {
             attachWindowCloseHandler(chatWindowRef.current, () => {
               chatWindowRef.current = null;
             });
           }
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
           // Wait a bit for window to be created, then show it
           setTimeout(async () => {
             if (chatWindowRef.current) {
               await chatWindowRef.current.show();
               await chatWindowRef.current.setFocus();
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
               // If conversationId was provided, emit event to select it
               if (conversationId) {
                 setTimeout(() => {
@@ -431,10 +399,6 @@ const LandingPage: React.FC = () => {
           } else {
             await chatWindowRef.current.show();
             await chatWindowRef.current.setFocus();
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
             // If conversationId was provided, emit event to select it
             if (conversationId) {
               setTimeout(() => {
@@ -454,10 +418,6 @@ const LandingPage: React.FC = () => {
         console.error('Failed to listen for toggle-chat-window event:', err);
       });
     };
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
     openChat();
 
     return () => {
@@ -478,10 +438,6 @@ const LandingPage: React.FC = () => {
     const openTradeMessagesWindow = async () => {
       // Small delay to ensure app is fully initialized
       await sleep(500);
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
       // Create and show the trade messages window - centered on Diablo screen
       tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
         decorations: false,
@@ -496,10 +452,6 @@ const LandingPage: React.FC = () => {
         height: 400,
         visible: false,
       });
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
       if (tradeMessagesWindowRef.current) {
         // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
         //   tradeMessagesWindowRef.current = null;
@@ -529,10 +481,6 @@ const LandingPage: React.FC = () => {
           //   tradeMessagesWindowRef.current = null;
           // });
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> 6064932955135ebefa25b029a904f72091db0a80
         // Wait a bit for window to be created, then show it
         setTimeout(async () => {
           if (tradeMessagesWindowRef.current) {
