@@ -95,4 +95,8 @@ The frontend required updates to support the new configuration requirements.
  - npm install
  - npm run tauri build
  
+<<<<<<< HEAD
  This should create a deb, rpm, and appimage version of the application in the releases directory.
+=======
+ This should create a deb, rpm, and appimage version of the application in the releases directory.
+>>>>>>> 6064932955135ebefa25b029a904f72091db0a80
