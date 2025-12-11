@@ -190,6 +190,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             style={getButtonStyle(135, 70, 'trade')}>
+
             <Button
               onClick={onTradeMessagesClick}
               className={cn(
