@@ -9,6 +9,7 @@ import { emit } from '@/lib/browser-events';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { useOptions } from '@/hooks/useOptions';
 
 interface MarketListingBadgeProps {
   stashItem: GameStashItem;
@@ -25,6 +26,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   deleteMarketListing,
   onRefresh,
 }) => {
+  const { settings } = useOptions();
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
   const [bumping, setBumping] = useState<string | null>(null);
@@ -147,7 +149,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
           <SquareArrowOutUpRight
             className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
             onClick={() => {
-              openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+              openUrl(`${PD2Website.Website}/market/listing/${listing._id}`, settings?.pd2Token);
             }}
           />
         </TooltipTrigger>

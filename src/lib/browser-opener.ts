@@ -3,15 +3,19 @@
  * Uses Tauri opener in Tauri environment, falls back to window.open in browser
  */
 
-import { isTauri } from '@tauri-apps/api/core';
-import { openUrl as tauriOpenUrl } from '@tauri-apps/plugin-opener';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 
 /**
  * Open a URL
  */
-export async function openUrl(url: string): Promise<void> {
+export async function openUrl(url: string, token?: string): Promise<void> {
   if (isTauri()) {
-    await tauriOpenUrl(url);
+    try {
+      // Use internal webview browser (works reliably on Linux AppImages)
+      await invoke('open_browser_window', { url, token });
+    } catch (err) {
+      console.error('Failed to open internal browser:', err);
+    }
     return;
   }
 

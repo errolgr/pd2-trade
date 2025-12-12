@@ -2,9 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": [
-    "*"
-  ],
+  "windows": ["*"],
   "permissions": [
     "core:default",
     "opener:default",
@@ -20,9 +18,6 @@
     "core:window:allow-close",
     "core:webview:allow-webview-close",
     "core:resources:allow-close",
-    "shell:default",
-    "shell:allow-open",
-    "shell:default",
     "dialog:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
@@ -55,17 +50,14 @@
     "fs:read-dirs",
     "fs:create-app-specific-dirs",
     "fs:allow-mkdir",
-    "fs:allow-read-text-file",
     "fs:allow-appconfig-write",
     "fs:allow-app-write-recursive",
     "fs:write-all",
-    "fs:scope-resource-recursive",
     "fs:allow-appconfig-read-recursive",
     "fs:allow-appconfig-write-recursive",
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",
     "opener:allow-open-url",
-    "shell:allow-open",
     {
       "identifier": "fs:scope-appdata-recursive",
       "allow": [
@@ -82,7 +74,6 @@
         }
       ]
     },
-    "opener:default",
     {
       "identifier": "opener:allow-open-path",
       "allow": [
@@ -97,6 +88,16 @@
         }
       ]
     },
-    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }, { "url": "https://pd2trader.com/**" }] }
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.projectdiablo2.com/**"
+        },
+        {
+          "url": "https://pd2trader.com/**"
+        }
+      ]
+    }
   ]
 }

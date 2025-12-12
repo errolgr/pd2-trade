@@ -54,3 +54,72 @@ pub fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), 
 
     Ok(())
 }
+
+pub fn open_internal_browser(
+    app_handle: tauri::AppHandle,
+    url: String,
+    token: Option<String>,
+) -> Result<(), String> {
+    // If the browser window is already open, focus it and navigate to the new URL
+    if let Some(window) = app_handle.get_webview_window("internal-browser") {
+        let _ = window.set_focus();
+
+        // Inject token if provided (refresh session) ONLY for trusted domains
+        if let Some(t) = &token {
+            let is_trusted = url.starts_with("https://projectdiablo2.com")
+                || url.starts_with("https://www.projectdiablo2.com")
+                || url.starts_with("https://live.projectdiablo2.com")
+                || url.starts_with("https://api.projectdiablo2.com");
+
+            if is_trusted {
+                let script = format!("localStorage.setItem('pd2-token', '{}')", t);
+                let _ = window.eval(&script);
+            } else {
+                println!(
+                    "Security Warning: Refusing to inject token into untrusted domain: {}",
+                    url
+                );
+            }
+        }
+
+        // Use eval to change location since we can't easily re-use the builder
+        let script = format!("window.location.href = '{}'", url);
+        let _ = window.eval(&script);
+        return Ok(());
+    }
+
+    let webview_window = WebviewWindowBuilder::new(
+        &app_handle,
+        "internal-browser",
+        WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?),
+    )
+    .title("PD2 Trader Browser")
+    .inner_size(1200.0, 800.0)
+    .decorations(true)
+    .resizable(true)
+    .visible(true)
+    .build()
+    .map_err(|e| format!("Failed to create webview: {}", e))?;
+
+    // Inject token if provided ONLY for trusted domains
+    if let Some(t) = token {
+        let is_trusted = url.starts_with("https://projectdiablo2.com")
+            || url.starts_with("https://www.projectdiablo2.com")
+            || url.starts_with("https://live.projectdiablo2.com")
+            || url.starts_with("https://api.projectdiablo2.com");
+
+        if is_trusted {
+            let script = format!("localStorage.setItem('pd2-token', '{}')", t);
+            let _ = webview_window.eval(&script);
+        } else {
+            println!(
+                "Security Warning: Refusing to inject token into untrusted domain: {}",
+                url
+            );
+        }
+    }
+
+    let _ = webview_window.center();
+
+    Ok(())
+}

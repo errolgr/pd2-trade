@@ -159,7 +159,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     // Open profile on website using account name
     const characterName = trade.characterName;
     const url = `https://www.projectdiablo2.com/character/${characterName}`;
-    openUrl(url);
+    openUrl(url, settings?.pd2Token);
   };
 
   const handleChat = async () => {
@@ -358,7 +358,10 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                         href={`https://www.projectdiablo2.com/market/listing/${trade.listingId}`}
                         onClick={(e) => {
                           e.preventDefault();
-                          openUrl(`https://www.projectdiablo2.com/market/listing/${trade.listingId}`);
+                          openUrl(
+                            `https://www.projectdiablo2.com/market/listing/${trade.listingId}`,
+                            settings?.pd2Token,
+                          );
                         }}
                         className="truncate text-blue-400 hover:text-blue-400 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer"
                       >

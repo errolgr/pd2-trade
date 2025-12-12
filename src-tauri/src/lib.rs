@@ -27,7 +27,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
-       .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
                 .expect("no main window")
@@ -113,25 +113,26 @@ pub fn run() {
 
             let main_window = win_builder.build().unwrap();
             let _ = main_window.set_ignore_cursor_events(true);
-            
+
             // Create toast window
-            let _toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
-                .title("PD2 Trader - Toast")
-                .inner_size(400.0, 200.0)
-                .decorations(false)
-                .transparent(true)
-                .visible(false)
-                .shadow(false)
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .focusable(false)
-                .build()
-                .unwrap();
-            
+            let _toast_window =
+                WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
+                    .title("PD2 Trader - Toast")
+                    .inner_size(400.0, 200.0)
+                    .decorations(false)
+                    .transparent(true)
+                    .visible(false)
+                    .shadow(false)
+                    .always_on_top(true)
+                    .skip_taskbar(true)
+                    .focusable(false)
+                    .build()
+                    .unwrap();
+
             // Position the toast window initially
             let app_handle = app.app_handle().clone();
             let _ = commands::reposition_toast_window(app_handle.clone());
-            
+
             // Initialize Diablo focus monitoring for hotkey management and window repositioning
             // This combines both concerns into a single event hook to avoid duplicate hooks
             let app_handle_bounds = app.app_handle().clone();
@@ -144,7 +145,7 @@ pub fn run() {
                     let _ = commands::reposition_toast_window(app_handle_bounds.clone());
                 })),
             );
-            
+
             #[cfg(debug_assertions)]
             main_window.open_devtools();
             Ok(())
@@ -161,7 +162,8 @@ pub fn run() {
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
-            commands::auto_detect_diablo2_directory
+            commands::auto_detect_diablo2_directory,
+            commands::open_browser_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

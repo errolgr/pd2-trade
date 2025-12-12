@@ -664,7 +664,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                               className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
                               onClick={() => {
                                 incrementMetric('listed_items.open_trade_url', 1);
-                                openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+                                openUrl(`${PD2Website.Website}/market/listing/${listing._id}`, settings?.pd2Token);
                               }}
                             />
                           </TooltipTrigger>

@@ -3125,6 +3125,7 @@ dependencies = [
  "tauri-plugin-shell",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "url",
  "winapi",
  "windows 0.58.0",
  "windows-sys 0.48.0",

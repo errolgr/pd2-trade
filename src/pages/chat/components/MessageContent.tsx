@@ -2,6 +2,7 @@ import React from 'react';
 import { openUrl } from '@/lib/browser-opener';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useOptions } from '@/hooks/useOptions';
 
 interface MessageContentProps {
   content: string;
@@ -22,6 +23,8 @@ interface ParsedSegment {
 }
 
 export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
+  const { settings } = useOptions();
+
   const parseContent = (text: string): ParsedSegment[] => {
     const segments: ParsedSegment[] = [];
     let lastIndex = 0;
@@ -76,7 +79,7 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
   const handleLinkClick = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
     e.stopPropagation();
-    openUrl(url);
+    openUrl(url, settings?.pd2Token);
   };
 
   return (

@@ -73,8 +73,14 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           </OptionsProvider>
         }
       />
-      <Route path={'/toast'}
-        element={<ToastPage />} />
+      <Route
+        path={'/toast'}
+        element={
+          <OptionsProvider>
+            <ToastPage />
+          </OptionsProvider>
+        }
+      />
 
       <Route path={'/currency'}
         element={<CurrencyPage />} />

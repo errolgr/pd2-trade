@@ -343,7 +343,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       archived: searchArchived.toString(),
                       search_mode: shouldUseToggle ? searchMode.toString() : '0',
                     });
-                    openUrl(tradeUrl);
+                    openUrl(tradeUrl, settings?.pd2Token);
                   }
                 }}
               >

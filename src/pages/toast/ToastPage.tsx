@@ -7,8 +7,11 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { openUrl } from '@/lib/browser-opener';
+import { useOptions } from '@/hooks/useOptions';
 
 const ToastPage: React.FC = () => {
+  const { settings } = useOptions();
+
   const closeToastWebview = async () => {
     if (isTauri()) {
       const win = await getCurrentWebviewWindow();
@@ -144,7 +147,7 @@ const ToastPage: React.FC = () => {
                   const listingId = customPayload.action.data?.listingId;
                   if (listingId) {
                     const marketUrl = `https://www.projectdiablo2.com/market/listing/${listingId}`;
-                    await openUrl(marketUrl);
+                    await openUrl(marketUrl, settings?.pd2Token);
                     closeToastWebview();
                   }
                   break;
