@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown, GripVertical, Loader2, X } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
@@ -171,10 +172,12 @@ export function CurrencyValuation() {
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
             Displays the total value of items in your stash, based on current market prices from the PD2 Trader API.{' '}
             <a
-              href="https://pd2trader.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 underline"
+              onClick={(e) => {
+                e.preventDefault();
+                openUrl('https://pd2trader.com/');
+              }}
+              href="#"
+              className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
             >
               View prices on pd2trader.com
             </a>

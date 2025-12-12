@@ -169,7 +169,8 @@ const ToastPage: React.FC = () => {
               if (customPayload.action.type === ToastActionType.OPEN_MARKET_LISTING) {
                 const listingId = customPayload.action.data?.listingId;
                 if (listingId) {
-                  window.open(`https://www.projectdiablo2.com/market/listing/${listingId}`, '_blank');
+                  const marketUrl = `https://www.projectdiablo2.com/market/listing/${listingId}`;
+                  await openUrl(marketUrl, settings?.pd2Token);
                   closeToastWebview();
                 }
               }

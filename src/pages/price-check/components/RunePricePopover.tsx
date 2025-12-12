@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ArrowRightLeft, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { openUrl } from '@/lib/browser-opener';
 import { ItemValue, RuneCombination } from '../lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -61,10 +62,12 @@ export function RunePricePopover({
               </Tooltip>
             </TooltipProvider>
             <a
-              href="https://pd2trader.com/?category=runes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-400 hover:text-blue-300 ml-auto"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                openUrl('https://pd2trader.com/?category=runes');
+              }}
+              className="text-xs text-blue-400 hover:text-blue-300 ml-auto cursor-pointer"
             >
               View on pd2trader.com →
             </a>

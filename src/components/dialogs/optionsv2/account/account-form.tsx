@@ -13,6 +13,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExternalLink } from 'lucide-react';
 import { isTauri } from '@tauri-apps/api/core';
+import { openUrl } from '@/lib/browser-opener';
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -87,10 +88,12 @@ export function AccountForm() {
                   <FormDescription>
                     Get your token from{' '}
                     <a
-                      href="https://projectdiablo2.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openUrl('https://projectdiablo2.com', settings?.pd2Token);
+                      }}
+                      className="text-blue-500 hover:underline inline-flex items-center gap-1 cursor-pointer"
                     >
                       projectdiablo2.com
                       <ExternalLink className="w-3 h-3" />
