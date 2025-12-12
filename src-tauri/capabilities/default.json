@@ -5,7 +5,6 @@
   "windows": ["*"],
   "permissions": [
     "core:default",
-    "opener:default",
     "core:window:allow-start-dragging",
     "core:window:allow-hide",
     "core:window:allow-show",
@@ -57,7 +56,7 @@
     "fs:allow-appconfig-write-recursive",
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",
-    "opener:allow-open-url",
+    "fs:allow-appdata-write-recursive",
     {
       "identifier": "fs:scope-appdata-recursive",
       "allow": [
