@@ -98,6 +98,7 @@ pub fn open_internal_browser(
     .decorations(true)
     .resizable(true)
     .visible(true)
+    .devtools(true)
     .build()
     .map_err(|e| format!("Failed to create webview: {}", e))?;
 

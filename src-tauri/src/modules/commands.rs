@@ -137,11 +137,15 @@ pub fn auto_detect_diablo2_directory() -> Option<String> {
 }
 
 #[tauri::command]
-pub fn open_browser_window(
+pub async fn open_browser_window(
     app_handle: tauri::AppHandle,
     url: String,
     token: Option<String>,
 ) -> Result<(), String> {
     // Delegate to the generic internal browser implementation
-    super::webview::open_internal_browser(app_handle, url, token)
+    // Spawn a new thread to avoid deadlocks/blocking the reactor (same pattern as open_project_diablo2_webview)
+    std::thread::spawn(move || {
+        let _ = super::webview::open_internal_browser(app_handle, url, token);
+    });
+    Ok(())
 }
