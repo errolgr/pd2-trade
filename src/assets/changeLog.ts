@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.6.1': [
+    '🆕 Add logout/login functionality to the account settings window',
+    '🔧 Fixed issue where chat window would show duplicate links',
+    '🔧 Fixed issue where mulitple notification sounds would play',
+  ],
   '0.6.0': [
     '✨ Linux support - PD2 Trader is now available on Linux! Thank you @pandamancer for the contributions!',
     '✨ Bump all button has been added to the manage listing window',

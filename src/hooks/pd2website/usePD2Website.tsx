@@ -61,6 +61,7 @@ interface Pd2WebsiteContextType {
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;
   unacceptOffer: (listingId: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -122,6 +123,46 @@ export const Pd2WebsiteProvider = ({ children }) => {
       setTimeout(() => {
         isHandlingAuthError.current = false;
       }, 2000);
+    }
+  }, []);
+
+  // Logout function to manually trigger re-authentication
+  const logout = useCallback(async () => {
+    // Clear auth data
+    setAuthData(null);
+
+    // Clear stash cache using ref
+    if (clearStashCacheRef.current) {
+      clearStashCacheRef.current();
+    }
+
+    // Show toast notification
+    if (isTauri()) {
+      const toastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'Logged out. Please reauthenticate.',
+        variant: 'default',
+        duration: 3000,
+      };
+      emit('toast-event', toastPayload);
+    }
+
+    // Open auth webview
+    if (isTauri()) {
+      try {
+        await invoke('open_project_diablo2_webview');
+      } catch (error) {
+        console.error('Failed to open Project Diablo 2 webview:', error);
+      }
+    } else {
+      // In browser, show instructions
+      const toastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'Logged out. Please enter your PD2 token in Settings > Account.',
+        variant: 'default',
+        duration: 5000,
+      };
+      emit('toast-event', toastPayload);
     }
   }, []);
 
@@ -242,6 +283,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
         acceptOffer,
         rejectOffer,
         unacceptOffer,
+        logout,
       }}
     >
       {children}

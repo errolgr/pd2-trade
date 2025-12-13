@@ -57,63 +57,95 @@ export const useSocketNotifications = ({
   whisperNotificationsEnabled = true,
 }: UseSocketNotificationsProps) => {
   const processedNotificationsRef = useRef<Set<string>>(new Set());
+  const unlistenRef = useRef<(() => void) | null>(null);
+  const isListenerSetupRef = useRef<boolean>(false);
 
   // Listen for offer received notifications via socket
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected) {
+      // Clean up listener if disconnected
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+        isListenerSetupRef.current = false;
+      }
+      return;
+    }
 
-    let unlisten: (() => void) | null = null;
+    // Prevent multiple listeners from being set up
+    if (isListenerSetupRef.current) {
+      return;
+    }
 
     const setupListener = async () => {
+      // Double-check after async gap
+      if (isListenerSetupRef.current) {
+        return;
+      }
+
       try {
-        unlisten = await listenBrowser<SystemNotification>('socket:system/notification_pushed', async (event) => {
-          const notification = event.payload;
+        // Clean up any existing listener first
+        if (unlistenRef.current) {
+          unlistenRef.current();
+          unlistenRef.current = null;
+        }
 
-          // Only handle offer_received notifications
-          if (notification.type === 'offer_received' && notification.data?.listing_id) {
-            // Prevent duplicate notifications by tracking processed notification IDs
-            if (processedNotificationsRef.current.has(notification._id)) {
-              return;
-            }
+        const unlistenFn = await listenBrowser<SystemNotification>(
+          'socket:system/notification_pushed',
+          async (event) => {
+            const notification = event.payload;
 
-            // Mark this notification as processed
-            processedNotificationsRef.current.add(notification._id);
+            // Only handle offer_received notifications
+            if (notification.type === 'offer_received' && notification.data?.listing_id) {
+              // Atomic check-and-add to prevent race conditions
+              // If the ID already exists, return immediately
+              if (processedNotificationsRef.current.has(notification._id)) {
+                return;
+              }
 
-            // Clean up old notification IDs (keep only last 100)
-            if (processedNotificationsRef.current.size > 100) {
-              const idsArray = Array.from(processedNotificationsRef.current);
-              processedNotificationsRef.current = new Set(idsArray.slice(-100));
-            }
+              // Mark as processed immediately to prevent duplicate processing
+              processedNotificationsRef.current.add(notification._id);
 
-            const listingId = notification.data.listing_id;
-            const offerMessage = notification.meta?.string || 'New offer received';
+              // Clean up old notification IDs (keep only last 100)
+              if (processedNotificationsRef.current.size > 100) {
+                const idsArray = Array.from(processedNotificationsRef.current);
+                processedNotificationsRef.current = new Set(idsArray.slice(-100));
+              }
 
-            // Play notification sound if trade notifications are enabled
-            const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
-            if (tradeEnabled) {
-              const volume = settings?.whisperNotificationVolume ?? 70;
-              playNotificationSound(volume);
-            }
+              const listingId = notification.data.listing_id;
+              const offerMessage = notification.meta?.string || 'New offer received';
 
-            // Show toast notification with link to listing
-            await emit('toast-event', {
-              title: 'New Offer',
-              description: offerMessage,
-              action: {
-                label: 'View Listing',
-                type: ToastActionType.OPEN_MARKET_LISTING,
-                data: {
-                  listingId: listingId,
+              // Play notification sound if trade notifications are enabled
+              const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
+              if (tradeEnabled) {
+                const volume = settings?.whisperNotificationVolume ?? 70;
+                playNotificationSound(volume);
+              }
+
+              // Show toast notification with link to listing
+              await emit('toast-event', {
+                title: 'New Offer',
+                description: offerMessage,
+                action: {
+                  label: 'View Listing',
+                  type: ToastActionType.OPEN_MARKET_LISTING,
+                  data: {
+                    listingId: listingId,
+                  },
                 },
-              },
-            });
+              });
 
-            // Emit event to refresh offers (this will be handled by useTradeOffers)
-            await emit('refresh-offers');
-          }
-        });
+              // Emit event to refresh offers (this will be handled by useTradeOffers)
+              await emit('refresh-offers');
+            }
+          },
+        );
+
+        unlistenRef.current = unlistenFn;
+        isListenerSetupRef.current = true;
       } catch (error) {
         console.error('Failed to set up offer notification listener:', error);
+        isListenerSetupRef.current = false;
       }
     };
 
@@ -121,9 +153,10 @@ export const useSocketNotifications = ({
 
     return () => {
       // Cleanup: unlisten when component unmounts or dependencies change
-      if (unlisten) {
-        unlisten();
-        unlisten = null;
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+        isListenerSetupRef.current = false;
       }
     };
   }, [isConnected, settings?.whisperNotificationVolume, settings?.tradeNotificationsEnabled]);

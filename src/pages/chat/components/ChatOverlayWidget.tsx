@@ -71,6 +71,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const messagesRef = useRef<Message[]>([]);
   const selectedConversationRef = useRef<Conversation | null>(null);
   const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
+  const processedMessagesRef = useRef<Set<string>>(new Set());
+  const messageListenerUnlistenRef = useRef<(() => void) | null>(null);
+  const isMessageListenerSetupRef = useRef<boolean>(false);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -216,14 +219,51 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Listen for new messages from socket
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      // Clean up listener if no user ID
+      if (messageListenerUnlistenRef.current) {
+        messageListenerUnlistenRef.current();
+        messageListenerUnlistenRef.current = null;
+        isMessageListenerSetupRef.current = false;
+      }
+      return;
+    }
 
-    let unlisten: (() => void) | null = null;
+    // Prevent multiple listeners from being set up
+    if (isMessageListenerSetupRef.current) {
+      return;
+    }
 
     const setupListener = async () => {
+      // Double-check after async gap
+      if (isMessageListenerSetupRef.current) {
+        return;
+      }
+
       try {
-        unlisten = await listen<Message>('socket:social/message_pushed', async (event) => {
+        // Clean up any existing listener first
+        if (messageListenerUnlistenRef.current) {
+          messageListenerUnlistenRef.current();
+          messageListenerUnlistenRef.current = null;
+        }
+
+        const unlistenFn = await listen<Message>('socket:social/message_pushed', async (event) => {
           const newMessage = event.payload;
+
+          // Atomic de-duping check: prevent duplicate processing
+          // Check if this message has already been processed
+          if (processedMessagesRef.current.has(newMessage._id)) {
+            return;
+          }
+
+          // Mark as processed immediately to prevent duplicate processing
+          processedMessagesRef.current.add(newMessage._id);
+
+          // Clean up old message IDs (keep only last 500)
+          if (processedMessagesRef.current.size > 500) {
+            const idsArray = Array.from(processedMessagesRef.current);
+            processedMessagesRef.current = new Set(idsArray.slice(-500));
+          }
 
           // Get current selected conversation before updating conversations list
           const currentSelectedConversation = selectedConversationRef.current;
@@ -384,16 +424,23 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
             });
           }
         });
+
+        messageListenerUnlistenRef.current = unlistenFn;
+        isMessageListenerSetupRef.current = true;
       } catch (error) {
         console.error('Failed to set up socket message listener:', error);
+        isMessageListenerSetupRef.current = false;
       }
     };
 
     setupListener();
 
     return () => {
-      if (unlisten) {
-        unlisten();
+      // Cleanup: unlisten when component unmounts or dependencies change
+      if (messageListenerUnlistenRef.current) {
+        messageListenerUnlistenRef.current();
+        messageListenerUnlistenRef.current = null;
+        isMessageListenerSetupRef.current = false;
       }
     };
   }, [

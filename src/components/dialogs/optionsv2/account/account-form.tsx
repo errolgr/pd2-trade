@@ -9,11 +9,12 @@ import { useOptions } from '@/hooks/useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { emit } from '@/lib/browser-events';
+import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink } from 'lucide-react';
-import { isTauri } from '@tauri-apps/api/core';
-import { openUrl } from '@/lib/browser-opener';
+import { ExternalLink, LogOut, LogIn, AlertCircle } from 'lucide-react';
+import { isTauri, invoke } from '@tauri-apps/api/core';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -24,9 +25,11 @@ type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 export function AccountForm() {
   const { settings, updateSettings } = useOptions();
-  const { authData } = usePd2Website();
+  const { authData, logout } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -49,8 +52,34 @@ export function AccountForm() {
   useEffect(() => {
     if (authData?.user?.game?.accounts) {
       setAccounts(authData.user.game.accounts);
+    } else {
+      setAccounts([]);
     }
   }, [authData]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setLoggingIn(true);
+    try {
+      if (isTauri()) {
+        await invoke('open_project_diablo2_webview');
+      } else {
+        window.open('https://projectdiablo2.com/auth', '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Failed to open authentication:', error);
+    } finally {
+      setLoggingIn(false);
+    }
+  };
 
   const onSubmit = async (values: AccountFormValues) => {
     setSaving(true);
@@ -72,6 +101,16 @@ export function AccountForm() {
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-y-4 max-h-[330px]">
+          {accounts.length === 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No accounts available</AlertTitle>
+              <AlertDescription>
+                If you don&apos;t have the right account selected, you may receive 404 errors when listing items. Please
+                authenticate to load your accounts.
+              </AlertDescription>
+            </Alert>
+          )}
           {!isTauri() && (
             <FormField
               control={form.control}
@@ -112,24 +151,49 @@ export function AccountForm() {
               <FormItem>
                 <FormLabel>Account</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={accounts.length === 0}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((acc: string) => (
-                        <SelectItem key={acc}
-                          value={acc}>
-                          {acc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={accounts.length === 0}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((acc: string) => (
+                          <SelectItem key={acc}
+                            value={acc}>
+                            {acc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {authData ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="gap-2"
+                      >
+                        <LogOut className="h-3 w-3" />
+                        {loggingOut ? 'Logging out...' : 'Log out'}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleLogin}
+                        disabled={loggingIn}
+                        className="gap-2"
+                      >
+                        <LogIn className="h-3 w-3" />
+                        {loggingIn ? 'Logging in...' : 'Log in'}
+                      </Button>
+                    )}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

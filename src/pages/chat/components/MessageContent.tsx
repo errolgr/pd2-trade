@@ -32,17 +32,16 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
 
     // Create a new regex instance to avoid modifying the global one
     const regex = new RegExp(MARKET_LISTING_URL_REGEX.source, MARKET_LISTING_URL_REGEX.flags);
+    const matches: Array<{
+      matchStart: number;
+      matchEnd: number;
+      listingId: string;
+      displayName: string | null;
+      fullUrl: string;
+    }> = [];
 
+    // First pass: collect all matches
     while ((match = regex.exec(text)) !== null) {
-      // Add text before the match
-      if (match.index > lastIndex) {
-        segments.push({
-          type: 'text',
-          content: text.substring(lastIndex, match.index),
-        });
-      }
-
-      // Extract listing ID and display name
       const listingId = match[1];
       let displayName: string | null = null;
       if (match[2]) {
@@ -51,6 +50,64 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
         displayName = decodeURIComponent(rawDisplay);
       }
       const fullUrl = match[0];
+      matches.push({
+        matchStart: match.index,
+        matchEnd: match.index + match[0].length,
+        listingId,
+        displayName,
+        fullUrl,
+      });
+    }
+
+    // Second pass: process matches and handle display name replacement
+    for (let i = 0; i < matches.length; i++) {
+      const { matchStart, matchEnd, listingId, displayName, fullUrl } = matches[i];
+
+      // Check if display name appears in text before the URL
+      if (displayName && matchStart > lastIndex) {
+        const textBefore = text.substring(lastIndex, matchStart);
+        const displayNameIndex = textBefore.lastIndexOf(displayName);
+
+        if (displayNameIndex !== -1) {
+          // Display name found before URL - replace it with link
+          // Add text before display name
+          if (displayNameIndex > 0) {
+            segments.push({
+              type: 'text',
+              content: textBefore.substring(0, displayNameIndex),
+            });
+          }
+
+          // Add link for display name
+          segments.push({
+            type: 'link',
+            content: displayName,
+            url: fullUrl,
+            listingId,
+            displayName,
+          });
+
+          // Add text between display name and URL (excluding the URL itself)
+          const textAfterDisplayName = textBefore.substring(displayNameIndex + displayName.length);
+          if (textAfterDisplayName.trim()) {
+            segments.push({
+              type: 'text',
+              content: textAfterDisplayName,
+            });
+          }
+
+          lastIndex = matchEnd;
+          continue;
+        }
+      }
+
+      // No display name replacement needed - add text before URL and then the link
+      if (matchStart > lastIndex) {
+        segments.push({
+          type: 'text',
+          content: text.substring(lastIndex, matchStart),
+        });
+      }
 
       segments.push({
         type: 'link',
@@ -60,7 +117,7 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
         displayName: displayName || undefined,
       });
 
-      lastIndex = MARKET_LISTING_URL_REGEX.lastIndex;
+      lastIndex = matchEnd;
     }
 
     // Add remaining text
