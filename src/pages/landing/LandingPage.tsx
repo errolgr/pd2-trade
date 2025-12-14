@@ -102,7 +102,7 @@ const LandingPage: React.FC = () => {
   // Copy item from clipboard and validate
   const copyAndValidateItem = useCallback(async (): Promise<string | null> => {
     await keyPress('ctrl+c');
-    await sleep(100);
+    await sleep(250);
     const raw = await read();
     return clipboardContainsValidItem(raw) ? raw : null;
   }, [read, keyPress]);
@@ -114,7 +114,7 @@ const LandingPage: React.FC = () => {
     if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
       await keyPress('ctrl+c');
     }
-    await sleep(100);
+    await sleep(250);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) {
       const errorToastPayload: GenericToastPayload = {
