@@ -170,27 +170,14 @@ const LandingPage: React.FC = () => {
     if (!(await checkDiabloFocus())) return;
 
     const raw = await copyAndValidateItem();
-    if (!raw) {
-      const errorToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Item is not supported or invalid.',
-        variant: 'error',
-      };
-      emit('toast-event', errorToastPayload);
-      return;
-    }
+    let encodedItem = '';
 
-    if (!isStashItem(raw)) {
-      const errorToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Item must be located in stash in order to list',
-        variant: 'error',
-      };
-      emit('toast-event', errorToastPayload);
-      return;
+    // Only encode if we have a valid item in the stash
+    // If not, we just open the window with an empty item (encodedItem = ''),
+    // which effectively opens the "Manage Listings" tab.
+    if (raw && isStashItem(raw)) {
+      encodedItem = encodeItemForQuickList(raw);
     }
-
-    const encodedItem = encodeItemForQuickList(raw);
 
     if (!quickListWinRef.current) {
       quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {

@@ -25,15 +25,23 @@ export const QuickListPage: React.FC<any> = () => {
         setItem(json);
       } catch (err) {
         console.error('[QuickListPage] Failed to parse initial payload:', err);
+        setItem(null);
       }
+    } else {
+      setItem(null);
     }
     // Listen for quick-list-new-item events
     const unlistenPromise = listen<string>('quick-list-new-item', ({ payload }) => {
       try {
+        if (!payload) {
+          setItem(null);
+          return;
+        }
         const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
         setItem(json);
       } catch (err) {
         console.error('[QuickListPage] Failed to parse event payload:', err);
+        setItem(null);
       }
     });
     return () => {
