@@ -6,6 +6,9 @@ import { OptionsProvider } from '@/hooks/useOptions';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { openWindowAtCursor } from '@/lib/window';
+
 interface UnreadCountEvent {
   count: number;
 }
@@ -84,6 +87,44 @@ const ChatButtonPageContent: React.FC = () => {
     await emit('toggle-trade-messages-window');
   };
 
+  const handleManageListingsClick = async () => {
+    const quickListLabel = 'QuickList';
+    try {
+      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
+
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          return;
+        } catch (err) {
+          console.warn('[ChatButtonPage] Failed to reuse QuickList window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ChatButtonPage] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openWindowAtCursor(quickListLabel, '/quick-list', {
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+      });
+    } catch (err) {
+      console.error('[ChatButtonPage] Failed to open QuickList:', err);
+    }
+  };
+
   const handleDisableClick = () => {
     // The actual disable logic is handled by the 'confirm-disable-overlay' listener
     // This function just needs to exist to pass to ChatButton
@@ -95,6 +136,7 @@ const ChatButtonPageContent: React.FC = () => {
         handleClick={handleClick}
         onSettingsClick={handleSettingsClick}
         onTradeMessagesClick={handleTradeMessagesClick}
+        onManageListingsClick={handleManageListingsClick}
         onDisableClick={handleDisableClick}
         unreadCount={unreadCount}
         tradeOffersCount={tradeOffersCount}

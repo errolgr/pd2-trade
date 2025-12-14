@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, GripVertical, Settings, ShoppingBag, X } from 'lucide-react';
+import { MessageSquare, GripVertical, Settings, ShoppingBag, X, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ interface ChatButtonProps {
   handleClick: () => void;
   onSettingsClick?: () => void;
   onTradeMessagesClick?: () => void;
+  onManageListingsClick?: () => void;
   onDisableClick?: () => void;
   unreadCount?: number;
   tradeOffersCount?: number;
@@ -18,6 +19,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   handleClick,
   onSettingsClick,
   onTradeMessagesClick,
+  onManageListingsClick,
   onDisableClick,
   unreadCount = 0,
   tradeOffersCount = 0,
@@ -26,12 +28,15 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const hoverTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Spiral positions: angle in degrees, distance from center
+  // Re-arranged: Settings (30), Trade (90), Manage (150) -> Fan at bottom
+  // Fixed: Drag (225), Disable (315)
   const buttonPositions = [
     { angle: 0, distance: 0, component: 'main' }, // Main chat button at center
-    { angle: 45, distance: 70, component: 'settings' }, // Settings at 45°
-    { angle: 135, distance: 70, component: 'trade' }, // Trade messages at 135°
-    { angle: 225, distance: 50, component: 'drag' }, // Drag handle at 225°
-    { angle: 315, distance: 50, component: 'disable' }, // Disable button at 315° (closer)
+    { angle: 30, distance: 60, component: 'settings' }, // Right-ish, rotated down
+    { angle: 90, distance: 60, component: 'trade' }, // Bottom
+    { angle: 150, distance: 60, component: 'manage' }, // Left-ish, rotated down
+    { angle: 225, distance: 60, component: 'drag' }, // Top-Left
+    { angle: 315, distance: 60, component: 'disable' }, // Top-Right
   ];
 
   const handleDisableClick = () => {
@@ -126,7 +131,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   };
 
   // Calculate the expanded area size (largest distance + button size + padding)
-  const expandedRadius = 70 + 28 + 20; // max distance + button radius + padding
+  const expandedRadius = 60 + 24 + 16; // max distance + button radius + padding
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
@@ -153,9 +158,9 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           <div
             data-tauri-drag-region
             className={cn(
-              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out',
+              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out',
             )}
-            style={getButtonStyle(225, 50, 'drag')}
+            style={getButtonStyle(225, 60, 'drag')}
           >
             <GripVertical data-tauri-drag-region
               className="h-4 w-4 text-neutral-400" />
@@ -168,11 +173,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             onClick={onSettingsClick}
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
-              isHovered ? 'h-12 w-12' : 'h-10 w-10',
+              isHovered ? 'h-11 w-11' : 'h-9 w-9',
             )}
             size="icon"
             aria-label="Settings"
-            style={getButtonStyle(45, 70, 'settings')}
+            style={getButtonStyle(30, 60, 'settings')}
           >
             <Settings
               className={cn('text-neutral-200 transition-all duration-300', isHovered ? 'h-5 w-5' : 'h-4 w-4')}
@@ -184,13 +189,13 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {onTradeMessagesClick && buttonPositions.find((p) => p.component === 'trade') && (
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={getButtonStyle(135, 70, 'trade')}
+            style={getButtonStyle(90, 60, 'trade')}
           >
             <Button
               onClick={onTradeMessagesClick}
               className={cn(
                 'rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
-                isHovered ? 'h-12 w-12' : 'h-10 w-10',
+                isHovered ? 'h-11 w-11' : 'h-9 w-9',
               )}
               size="icon"
               aria-label="Trade Messages"
@@ -207,6 +212,22 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           </div>
         )}
 
+        {/* Manage Listings Button Circle */}
+        {onManageListingsClick && buttonPositions.find((p) => p.component === 'manage') && (
+          <Button
+            onClick={onManageListingsClick}
+            className={cn(
+              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
+              isHovered ? 'h-11 w-11' : 'h-9 w-9',
+            )}
+            size="icon"
+            aria-label="Manage Listings"
+            style={getButtonStyle(150, 60, 'manage')}
+          >
+            <List className={cn('text-neutral-200 transition-all duration-300', isHovered ? 'h-5 w-5' : 'h-4 w-4')} />
+          </Button>
+        )}
+
         {/* Disable Button Circle */}
         {onDisableClick && buttonPositions.find((p) => p.component === 'disable') && (
           <Button
@@ -217,7 +238,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             )}
             size="icon"
             aria-label="Disable Overlay"
-            style={getButtonStyle(315, 50, 'disable')}
+            style={getButtonStyle(315, 60, 'disable')}
           >
             <X className={cn('text-white transition-all duration-300', isHovered ? 'h-2.5 w-2.5' : 'h-2 w-2')} />
           </Button>
@@ -229,7 +250,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             onClick={handleClick}
             className={cn(
               'rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out cursor-pointer',
-              isHovered ? 'h-14 w-14 scale-110' : 'h-12 w-12 scale-100',
+              isHovered ? 'h-13 w-13 scale-110' : 'h-11 w-11 scale-100',
             )}
             size="icon"
             aria-label="Open PD2 Chat"
