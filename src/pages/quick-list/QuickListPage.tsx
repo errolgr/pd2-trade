@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { listen } from '@/lib/browser-events';
 import { ItemsProvider } from '@/hooks/useItems';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
@@ -30,22 +31,44 @@ export const QuickListPage: React.FC<any> = () => {
     } else {
       setItem(null);
     }
-    // Listen for quick-list-new-item events
-    const unlistenPromise = listen<string>('quick-list-new-item', ({ payload }) => {
-      try {
-        if (!payload) {
+    // Listen for quick-list-new-item events (global and window-specific)
+    const setupListeners = async () => {
+      const handler = (payload: string | null) => {
+        try {
+          if (!payload) {
+            setItem(null);
+            return;
+          }
+          const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
+          setItem(json);
+        } catch (err) {
+          console.error('[QuickListPage] Failed to parse event payload:', err);
           setItem(null);
-          return;
         }
-        const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
-        setItem(json);
-      } catch (err) {
-        console.error('[QuickListPage] Failed to parse event payload:', err);
-        setItem(null);
+      };
+
+      // Global listener
+      const unlistenGlobal = await listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
+
+      // Window-specific listener (for when emitted directly to this window)
+      let unlistenWindow: (() => void) | undefined;
+      try {
+        const appWindow = getCurrentWebviewWindow();
+        unlistenWindow = await appWindow.listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
+      } catch {
+        // Ignore if not in Tauri or fails
       }
-    });
+
+      return () => {
+        unlistenGlobal();
+        if (unlistenWindow) unlistenWindow();
+      };
+    };
+
+    const cleanupPromise = setupListeners();
+
     return () => {
-      unlistenPromise.then((unlisten) => unlisten());
+      cleanupPromise.then((cleanup) => cleanup());
     };
   }, [searchParams]);
 

@@ -1,3 +1,6 @@
+import { openWindowAtCursor } from '@/lib/window';
+import { encodeItemForQuickList } from '@/lib/item-utils';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,23 +15,17 @@ import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
 import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
-import {
-  buildGetMarketListingByStashItemQuery,
-  buildGetMarketListingQuery,
-  buildTradeUrl,
-} from '../lib/tradeUrlBuilder';
+import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey, getTypeFromBaseType } from '../lib/utils';
+import { getStatKey } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
-import { Toggle } from '@/components/ui/toggle';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
@@ -36,7 +33,7 @@ import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
-  const { getMarketListings, getMarketListingsArchive, authData } = usePd2Website();
+  const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
 
   // Use custom hooks for state management
@@ -191,6 +188,50 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     });
   }, []);
 
+  const openListWindow = useCallback(async () => {
+    const raw = JSON.stringify(item);
+    const encodedItem = encodeItemForQuickList(raw);
+    const quickListLabel = 'QuickList';
+    const safeEncodedItem = encodeURIComponent(encodedItem);
+
+    try {
+      // Check if window exists
+      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
+
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          await existingWin.emit('quick-list-new-item', safeEncodedItem);
+          return;
+        } catch (err) {
+          console.warn('[ItemOverlay] Failed to reuse QuickList window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openWindowAtCursor(quickListLabel, `/quick-list?item=${safeEncodedItem}`, {
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+      });
+    } catch (err) {
+      console.error('[ItemOverlay] Failed to open QuickList:', err);
+    }
+  }, [item]);
+
   const openSettingsPage = useCallback(async () => {
     await emit('open-settings', undefined);
   }, []);
@@ -333,6 +374,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 }}
               >
                 Search
+              </Button>
+              <Button
+                variant="secondary"
+                className="mt-2 flex flex-row justify-center gap-2"
+                onClick={openListWindow}
+                title="List Item"
+              >
+                List
               </Button>
               <Button
                 variant="secondary"
