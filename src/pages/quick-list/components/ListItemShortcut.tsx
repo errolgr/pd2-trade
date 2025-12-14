@@ -4,11 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { X, GripVertical, Loader2, AlertCircle } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@/lib/browser-events';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -981,11 +982,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               id="titlebar-drag-handle"
             />
             <TabsList>
-              <TabsTrigger value="list-item"
-                className="font-bold"
-                style={{ fontFamily: 'DiabloFont' }}>
-                List Item
-              </TabsTrigger>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={-1}>
+                      <TabsTrigger
+                        value="list-item"
+                        className="font-bold"
+                        style={{ fontFamily: 'DiabloFont' }}
+                        disabled={item ? !isStashItem(item) : false}
+                      >
+                        List Item
+                      </TabsTrigger>
+                    </span>
+                  </TooltipTrigger>
+                  {item && !isStashItem(item) && (
+                    <TooltipContent>
+                      <p>Item must be in your shared stash to list.</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               <TabsTrigger value="listed-items"
                 className="font-bold">
                 <span className="font-bold"

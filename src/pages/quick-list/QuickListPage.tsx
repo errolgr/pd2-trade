@@ -14,13 +14,28 @@ const unescapeUnicode = (str: string): string => {
   return decodeURIComponent(escape(str));
 };
 
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
+
+// ...
+
 export const QuickListPage: React.FC<any> = () => {
   const [item, setItem] = useState<PriceCheckItem>(null);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const param = searchParams.get('item');
-    if (param) {
+    const errorParam = searchParams.get('error');
+
+    if (errorParam === 'not_shared_stash') {
+      setTimeout(() => {
+        toast.error('Cannot List Item', {
+          description: 'This item is not in your shared stash and cannot be listed.',
+          duration: 5000,
+        });
+      }, 500); // Small delay to ensure window is visible
+      setItem(null);
+    } else if (param) {
       try {
         const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
         setItem(json);
@@ -47,21 +62,38 @@ export const QuickListPage: React.FC<any> = () => {
         }
       };
 
+      const errorHandler = (payload: string) => {
+        if (payload === 'not_shared_stash') {
+          toast.error('Cannot List Item', {
+            description: 'This item is not in your shared stash and cannot be listed.',
+            duration: 5000,
+          });
+          setItem(null);
+        }
+      };
+
       // Global listener
       const unlistenGlobal = await listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
+      const unlistenErrorGlobal = await listen<string>('quick-list-error', ({ payload }) => errorHandler(payload));
 
       // Window-specific listener (for when emitted directly to this window)
       let unlistenWindow: (() => void) | undefined;
+      let unlistenWindowError: (() => void) | undefined;
       try {
         const appWindow = getCurrentWebviewWindow();
         unlistenWindow = await appWindow.listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
+        unlistenWindowError = await appWindow.listen<string>('quick-list-error', ({ payload }) =>
+          errorHandler(payload),
+        );
       } catch {
         // Ignore if not in Tauri or fails
       }
 
       return () => {
         unlistenGlobal();
+        unlistenErrorGlobal();
         if (unlistenWindow) unlistenWindow();
+        if (unlistenWindowError) unlistenWindowError();
       };
     };
 
@@ -74,6 +106,7 @@ export const QuickListPage: React.FC<any> = () => {
 
   return (
     <TooltipProvider>
+      <Toaster />
       <OptionsProvider>
         <ItemsProvider>
           <Pd2WebsiteProvider>

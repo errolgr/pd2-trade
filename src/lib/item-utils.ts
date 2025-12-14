@@ -66,10 +66,10 @@ export const clipboardContainsValidItem = (jsonString: string): boolean => {
   }
 };
 
-export const isStashItem = (jsonString: string): boolean => {
+export const isStashItem = (itemOrJson: string | any): boolean => {
   try {
-    const item = JSON.parse(jsonString);
-    return item.location === ItemLocation.STASH;
+    const item = typeof itemOrJson === 'string' ? JSON.parse(itemOrJson) : itemOrJson;
+    return item?.location === ItemLocation.STASH;
   } catch {
     return false;
   }

@@ -1,9 +1,10 @@
 import { openWindowAtCursor } from '@/lib/window';
-import { encodeItemForQuickList } from '@/lib/item-utils';
+import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -333,11 +334,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         </ScrollArea>
         {/* Search button */}
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row gap-2 w-full mt-2">
             <ButtonGroup>
               <Button
                 variant="secondary"
-                className="w-full mt-2"
+                className=""
                 onClick={async () => {
                   setMarketError(null);
                   setMarketLoading(true);
@@ -377,15 +378,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </Button>
               <Button
                 variant="secondary"
-                className="mt-2 flex flex-row justify-center gap-2"
-                onClick={openListWindow}
-                title="List Item"
-              >
-                List
-              </Button>
-              <Button
-                variant="secondary"
-                className="mt-2 flex flex-row justify-center gap-2"
+                className="flex flex-row justify-center gap-2 px-3"
                 onClick={() => {
                   if (tradeUrl) {
                     incrementMetric('item_overlay.trade_url_opened', 1, {
@@ -399,6 +392,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <SquareArrowOutUpRight className="w-4 h-4" />
               </Button>
             </ButtonGroup>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="secondary"
+                      className="flex flex-row justify-center gap-2"
+                      onClick={openListWindow}
+                      disabled={!isStashItem(item)}
+                    >
+                      List
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!isStashItem(item) && (
+                  <TooltipContent side="top">
+                    <p>Item must be in your shared stash to list.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex flex-row items-center gap-2 mt-1">
             <Switch

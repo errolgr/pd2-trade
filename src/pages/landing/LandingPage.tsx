@@ -16,7 +16,6 @@ import {
   openWindowAtCursor,
   openWindowCenteredOnDiablo,
   attachWindowCloseHandler,
-  getDiabloRectWithRetry,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -171,16 +170,20 @@ const LandingPage: React.FC = () => {
 
     const raw = await copyAndValidateItem();
     let encodedItem = '';
+    let queryString = '';
 
-    // Only encode if we have a valid item in the stash
-    // If not, we just open the window with an empty item (encodedItem = ''),
-    // which effectively opens the "Manage Listings" tab.
-    if (raw && isStashItem(raw)) {
-      encodedItem = encodeItemForQuickList(raw);
+    if (raw) {
+      if (isStashItem(raw)) {
+        encodedItem = encodeItemForQuickList(raw);
+        queryString = `?item=${encodedItem}`;
+      } else {
+        // Valid item but not in stash - pass error to window
+        queryString = `?error=not_shared_stash`;
+      }
     }
 
     if (!quickListWinRef.current) {
-      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
+      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list${queryString}`, {
         decorations: false,
         transparent: true,
         focus: false,
@@ -193,7 +196,15 @@ const LandingPage: React.FC = () => {
         alwaysOnTop: true,
       });
     } else {
-      await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      if (encodedItem) {
+        await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      } else if (queryString.includes('error=')) {
+        // Emit error event if needed, or just let the user see the empty form
+        // For now, we just show the window. The user will see the Manage tab.
+        // If we want to show a toast on an already-open window, we'd need a specific event.
+        // We'll emit a 'quick-list-error' event.
+        await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
+      }
       await sleep(100);
       await quickListWinRef.current.show();
     }
@@ -248,23 +259,10 @@ const LandingPage: React.FC = () => {
 
       // Create window if it doesn't exist
       if (!chatButtonWindowRef.current) {
-        const rect = await getDiabloRectWithRetry();
-
-        // Check if rect is null (Diablo window not found after retries)
-        if (!rect) {
-          console.warn('[LandingPage] Diablo window rect not found after retries, cannot position chat button overlay');
-          return;
-        }
-
-        // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
+        // Use helper to center on Diablo screen
         const buttonSize = 240; // 48px button + padding + expanded radius
-        const x = rect.x + rect.width - buttonSize - 20;
-        const y = rect.y + rect.height - buttonSize - 40;
 
-        chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
-          url: '/chat-button',
-          x,
-          y,
+        chatButtonWindowRef.current = await openWindowCenteredOnDiablo('ChatButton', '/chat-button', {
           width: buttonSize,
           height: buttonSize,
           decorations: false,
