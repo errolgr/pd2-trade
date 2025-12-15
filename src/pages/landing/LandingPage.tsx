@@ -190,9 +190,19 @@ const LandingPage: React.FC = () => {
         await emit('toast-event', {
           title: 'Cannot List Item',
           description: 'This item is not in your shared stash and cannot be listed.',
-          variant: 'destructive',
+          variant: 'error',
         });
       }
+    } else {
+      // Invalid or missing item - pass error to window logic if newly opened
+      queryString = `?error=not_shared_stash`;
+
+      // Also emit GLOBAL toast immediately if we're not just opening the window fresh?
+      await emit('toast-event', {
+        title: 'Cannot List Item',
+        description: 'This item is not in your shared stash and cannot be listed.',
+        variant: 'error',
+      });
     }
 
     if (!quickListWinRef.current) {
@@ -212,12 +222,6 @@ const LandingPage: React.FC = () => {
       if (encodedItem) {
         await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
       } else if (queryString.includes('error=')) {
-        // Valid item but not in stash - warn user GLOBAL toast
-        await emit('toast-event', {
-          title: 'Cannot List Item',
-          description: 'This item is not in your shared stash and cannot be listed.',
-          variant: 'destructive', // or warning
-        });
         // Clear item state in window
         await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
       }
