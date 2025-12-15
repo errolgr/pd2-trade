@@ -973,7 +973,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   return (
-    <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen flex flex-col overflow-hidden">
+    <div className="flex flex-col p-4 border rounded-lg bg-background shadow w-screen h-screen overflow-hidden">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -1037,7 +1037,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         </TabsContent>
 
         <TabsContent value="listed-items"
-          className="mt-4">
+          className="mt-4 flex-1 flex flex-col min-h-0">
           <ListedItemsTab
             onClose={handleClose}
             initialListings={allListings}

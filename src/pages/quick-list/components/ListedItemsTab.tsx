@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, SquareArrowOutUpRight, Trash2, Search, X as XIcon } from 'lucide-react';
+import { Loader2, SquareArrowOutUpRight, Trash2, Search, X as XIcon } from 'lucide-react';
 import Fuse from 'fuse.js';
+import { useInView } from 'react-intersection-observer';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -17,7 +17,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import moment from 'moment';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import { Form } from '@/components/ui/form';
-import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -34,7 +34,7 @@ interface ListedItemsTabProps {
 const ITEMS_PER_PAGE = 5;
 
 const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
-  onClose,
+  onClose: _onClose,
   initialListings,
   initialTotalCount,
   onTotalCountChange,
@@ -62,6 +62,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [allListingsForSearch, setAllListingsForSearch] = useState<MarketListingEntry[]>([]);
   const [isLoadingAllListings, setIsLoadingAllListings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasReachedEnd, setHasReachedEnd] = useState(false);
+
+  const { ref: loaderRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px', // Start loading before reaching the bottom
+  });
 
   const editForm = useForm<ShortcutFormData>({
     resolver: zodResolver(shortcutFormSchema),
@@ -107,7 +113,22 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     try {
       const result = await getMarketListings(marketQuery);
       const duration = performance.now() - startTime;
-      setListings(result.data);
+
+      if (result.data.length === 0) {
+        setHasReachedEnd(true);
+      }
+
+      setListings((prev) => {
+        // If page 0, replace. Else append.
+        if (currentPage === 0) {
+          return result.data;
+        }
+        // Avoid duplicates just in case
+        const existingIds = new Set(prev.map((l) => l._id));
+        const newItems = result.data.filter((l) => !existingIds.has(l._id));
+        return [...prev, ...newItems];
+      });
+
       setTotalCount(result.total);
 
       incrementMetric('listed_items.fetch', 1, { status: 'success', page: currentPage.toString() });
@@ -133,6 +154,21 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       setIsLoading(false);
     }
   }, [marketQuery, getMarketListings, onTotalCountChange, onListingsChange, currentPage]);
+
+  // Handle infinite scroll trigger
+  useEffect(() => {
+    // Only load more if:
+    // 1. Trigger is visible
+    // 2. Not currently loading
+    // 3. Not searching (search loads everything at once)
+    // 4. We haven't loaded all items yet
+    // 5. We haven't confirmed end of list
+    if (inView && !isLoading && !searchQuery.trim() && listings.length < totalCount && !hasReachedEnd) {
+      // Safeguard: Ensure we don't skip pages or double fetch
+      // React strict mode might trigger this twice, better to debounce or rely on isLoading
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [inView, isLoading, searchQuery, listings.length, totalCount, hasReachedEnd]);
 
   // Track if we've fetched all listings for search
   const hasFetchedAllListings = React.useRef(false);
@@ -186,10 +222,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         }
         setTotalCount(initialTotalCount);
         setHasInitialized(true);
+        // Reset end reached on init
+        setHasReachedEnd(false);
       } else if (marketQuery) {
         // No initial data, fetch on mount
         fetchListings();
         setHasInitialized(true);
+        setHasReachedEnd(false);
       }
     }
   }, [currentPage, hasInitialized, initialListings, initialTotalCount, marketQuery, fetchListings]);
@@ -202,8 +241,20 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
     if (marketQuery && hasInitialized && currentPage !== 0) {
       fetchListings();
+    } else if (marketQuery && hasInitialized && currentPage === 0 && listings.length === 0 && totalCount > 0) {
+      // Refetch if we reset to page 0 and have no items but expect some
+      fetchListings();
     }
-  }, [marketQuery, fetchListings, currentPage, searchQuery, hasInitialized]);
+  }, [marketQuery, fetchListings, currentPage, searchQuery, hasInitialized, listings.length, totalCount]);
+
+  // Handle Search Query Change - Reset Pagination
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      setCurrentPage(0);
+      // We don't clear listings here because we switch to displaying filteredListings
+      // But we should ensure we don't trigger infinite scroll
+    }
+  }, [searchQuery]);
 
   // Refresh when initial data changes (e.g., after authentication)
   useEffect(() => {
@@ -225,7 +276,14 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     try {
       await updateMarketListing(listing._id, { bumped_at: new Date().toISOString() });
       await updateItemByHash(listing.item.hash, { bumped_at: new Date().toISOString() });
-      await fetchListings();
+      // await fetchListings(); // Don't refetch whole list on bump, just update local state if needed or let it be
+      // Optimistic update or just leave it, bump only changes sort order usually.
+      // For now, let's just leave it to not jump the scroll.
+      // Or we can update the single item in the list
+      setListings((prev) =>
+        prev.map((l) => (l._id === listing._id ? { ...l, bumped_at: new Date().toISOString() } : l)),
+      );
+
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.bump', 1, { status: 'success', source: 'listed_items_tab' });
       distributionMetric('listed_items.bump_duration_ms', duration);
@@ -251,7 +309,9 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     const startTime = performance.now();
     try {
       await bumpAllMarketListings(authData.user._id);
-      await fetchListings();
+
+      // Update all local items
+      setListings((prev) => prev.map((l) => ({ ...l, bumped_at: new Date().toISOString() })));
 
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.bump_all', 1, { status: 'success' });
@@ -290,8 +350,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         onListingsChange(updatedListings);
       }
 
-      // Refresh to ensure consistency
-      await fetchListings();
+      // No need to fetchListings here, we just removed it.
+      // If we dropped below threshold, infinite scroll might trigger automatically (listings.length < totalCount?? No totalCount decr too)
 
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.delete', 1, { status: 'success' });
@@ -304,6 +364,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       console.error('Failed to delete listing:', err);
       emit('toast-event', 'Failed to delete listing');
       // Refresh on error to restore correct state
+      setCurrentPage(0);
       await fetchListings();
     }
   };
@@ -344,8 +405,19 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       }
       await updateMarketListing(listing._id, updateFields);
       await updateItemByHash(listing.item.hash, updateFields);
+
+      // Update local state instead of refetching
+      setListings((prev) =>
+        prev.map((l) => {
+          if (l._id === listing._id) {
+            return { ...l, ...updateFields, hr_price: updateFields.hr_price, price: updateFields.price };
+          }
+          return l;
+        }),
+      );
+
       setEditingListingId(null);
-      await fetchListings();
+      // await fetchListings();
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.edit_saved', 1, { status: 'success', listing_type: listingType });
       distributionMetric('listed_items.edit_duration_ms', duration);
@@ -413,20 +485,14 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     return results.map((result) => result.item);
   }, [searchQuery, listings, allListingsForSearch, fuse]);
 
-  const totalPages = Math.ceil((searchQuery.trim() ? filteredListings.length : totalCount) / ITEMS_PER_PAGE);
-
-  // Paginate filtered results
-  const paginatedListings = useMemo(() => {
+  // Paginate filtered results or use full list
+  const displayListings = useMemo(() => {
     if (!searchQuery.trim()) {
-      // When not searching, listings should already be paginated from the API
-      // The API returns exactly ITEMS_PER_PAGE items per request
       return listings;
     }
-    // When searching, paginate the filtered results
-    const start = currentPage * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredListings.slice(start, end);
-  }, [filteredListings, currentPage, searchQuery, listings]);
+    // Return all filtered results when searching
+    return filteredListings;
+  }, [filteredListings, searchQuery, listings]);
 
   if (isLoading && listings.length === 0 && !searchQuery.trim()) {
     return (
@@ -441,13 +507,20 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     return (
       <div className="flex flex-col items-center justify-center p-8">
         <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={fetchListings}>Retry</Button>
+        <Button
+          onClick={() => {
+            setCurrentPage(0);
+            fetchListings();
+          }}
+        >
+          Retry
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0 h-full">
       <div className="flex items-center justify-between mb-2 gap-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
@@ -459,7 +532,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               onChange={(e) => {
                 const newQuery = e.target.value;
                 setSearchQuery(newQuery);
-                setCurrentPage(0); // Reset to first page when searching
+                // setCurrentPage(0); // Handled in useEffect
                 if (newQuery.trim().length > 0) {
                   incrementMetric('listed_items.search', 1);
                   distributionMetric('listed_items.search_query_length', newQuery.length);
@@ -471,7 +544,6 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  setCurrentPage(0);
                 }}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
@@ -512,14 +584,14 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
         </div>
       )}
-      <ScrollArea className="flex-1 pr-2">
-        <div className="flex flex-col gap-2 max-h-[20rem]">
-          {paginatedListings.length === 0 && searchQuery.trim() && !isLoadingAllListings && (
+      <div className="flex-1 overflow-y-scroll pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="flex flex-col gap-2">
+          {displayListings.length === 0 && searchQuery.trim() && !isLoadingAllListings && (
             <div className="text-center text-sm text-muted-foreground p-4">
               No items found matching &quot;{searchQuery}&quot;
             </div>
           )}
-          {paginatedListings.map((listing) => {
+          {displayListings.map((listing) => {
             const isEditing = editingListingId === listing._id;
             const itemHash = listing.item.hash;
 
@@ -693,47 +765,16 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               </div>
             );
           })}
-        </div>
-      </ScrollArea>
 
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 pt-2 border-t">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setCurrentPage((prev) => {
-                const newPage = Math.max(0, prev - 1);
-                incrementMetric('listed_items.pagination', 1, { direction: 'previous', page: newPage.toString() });
-                return newPage;
-              });
-            }}
-            disabled={currentPage === 0 || isLoading || isLoadingAllListings}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage + 1} of {totalPages}
-            {searchQuery.trim() && ` (${filteredListings.length} results)`}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setCurrentPage((prev) => {
-                const newPage = Math.min(totalPages - 1, prev + 1);
-                incrementMetric('listed_items.pagination', 1, { direction: 'next', page: newPage.toString() });
-                return newPage;
-              });
-            }}
-            disabled={currentPage >= totalPages - 1 || isLoading || isLoadingAllListings}
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* Infinite Scroll Trigger */}
+          {!searchQuery.trim() && listings.length < totalCount && (
+            <div ref={loaderRef}
+              className="py-4 flex justify-center w-full">
+              {isLoading && <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

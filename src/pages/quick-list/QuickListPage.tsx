@@ -98,7 +98,9 @@ export const QuickListPage: React.FC<any> = () => {
       <OptionsProvider>
         <ItemsProvider>
           <Pd2WebsiteProvider>
-            <ListItemShortcutForm item={item} />
+            <div className="h-screen w-screen overflow-hidden bg-transparent">
+              <ListItemShortcutForm item={item} />
+            </div>
           </Pd2WebsiteProvider>
         </ItemsProvider>
       </OptionsProvider>
