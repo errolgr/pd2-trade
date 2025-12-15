@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { LogicalSize } from '@tauri-apps/api/dpi';
+import { currentMonitor } from '@tauri-apps/api/window';
+import { LogicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -18,6 +19,8 @@ import {
   attachWindowCloseHandler,
   getDiabloRectWithRetry,
   updateMainWindowBounds,
+  moveWindowBy,
+  getLogicalRect,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -39,6 +42,7 @@ const LandingPage: React.FC = () => {
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
   const settingsRef = useRef<any>(null);
+  const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
@@ -317,11 +321,6 @@ const LandingPage: React.FC = () => {
           if (isVisible) {
             await chatButtonWindowRef.current.hide();
           }
-          // Clear interval if disabled
-          if (focusCheckIntervalRef.current) {
-            clearInterval(focusCheckIntervalRef.current);
-            focusCheckIntervalRef.current = null;
-          }
           return;
         }
 
@@ -331,6 +330,8 @@ const LandingPage: React.FC = () => {
           if (isFocused && !isVisible) {
             await chatButtonWindowRef.current.show();
           } else if (!isFocused && isVisible) {
+            // Only hide if not tracking? Or always hide on blur?
+            // The original logic hid it on blur.
             await chatButtonWindowRef.current.hide();
           }
         } catch (error) {
@@ -338,9 +339,16 @@ const LandingPage: React.FC = () => {
         }
       };
 
-      // Check immediately
+      // Initial check
       checkDiabloFocus();
-      // Check periodically (every 500ms)
+      // We rely on the main Consolidated Tracking Loop (below) to call this check now?
+      // actually, the focus check is separate from position tracking.
+      // But we can consolidate it too if we want.
+      // For now, let's KEEP the focus check interval here but REMOVE position logic if any existed (none existed, it was static).
+      // Wait, if tracking is enabled, we need to UPDATE position.
+
+      // Let's keep the focus interval for now as it handles visibility.
+      // We will handle POSITION in the main loop.
       focusCheckIntervalRef.current = setInterval(checkDiabloFocus, 500);
     };
 
@@ -583,19 +591,201 @@ const LandingPage: React.FC = () => {
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
   // Dynamic Window Tracking
+  // Consolidated Dynamic Window Tracking & Focus Loop
   useEffect(() => {
-    if (!isTauri() || settings.windowTrackingEnabled === false) return;
+    if (!isTauri()) return;
+
+    // Use a shared interval for both tracking and focus checks if possible,
+    // but focus checks need to run regardless of tracking setting?
+    // Actually, focus checks for "Main" window aren't needed (backend handles global hotkeys).
+    // Focus checks for "Chat Button" are handled in its own effect above.
+
+    // This effect handles POSITION TRACKING only.
+    if (settings.windowTrackingEnabled === false) return;
 
     const intervalId = setInterval(async () => {
       try {
+        // 1. Get Diablo Rect once
+        const rect = await getDiabloRectWithRetry(1, 0); // Single attempt, fail fast
+        if (!rect) {
+          prevRectRef.current = null; // Lost D2, reset tracking
+          return;
+        }
+
+        // Calculate Delta
+        let dx = 0;
+        let dy = 0;
+        if (prevRectRef.current) {
+          dx = rect.x - prevRectRef.current.x;
+          dy = rect.y - prevRectRef.current.y;
+        }
+        prevRectRef.current = { x: rect.x, y: rect.y };
+
+        // 2. Update Main Window (Overlay) - Always Snap to D2 Size/Pos
+        // We want this to match D2 exactly.
         await updateMainWindowBounds();
-      } catch (e) {
-        console.error('Failed to update window bounds during tracking', e);
+
+        // 3. Update Chat Window (Floating) - Move by Delta
+        if (chatWindowRef.current && (dx !== 0 || dy !== 0)) {
+          await moveWindowBy(chatWindowRef.current, dx, dy);
+        }
+
+        // 4. Update Trade Messages Window (Floating) - Move by Delta
+        if (tradeMessagesWindowRef.current && (dx !== 0 || dy !== 0)) {
+          await moveWindowBy(tradeMessagesWindowRef.current, dx, dy);
+        }
+
+        // 5. Update Quick List / Item Search (Floating) - Move by Delta
+        if (winRef.current && (dx !== 0 || dy !== 0)) {
+          await moveWindowBy(winRef.current, dx, dy);
+        }
+        if (quickListWinRef.current && (dx !== 0 || dy !== 0)) {
+          await moveWindowBy(quickListWinRef.current, dx, dy);
+        }
+
+        // 6. Chat Button Overlay (Pinned Bottom Right) - Always Re-Pin
+        // This needs absolute position relative to current D2 rect to stay valid.
+        if (chatButtonWindowRef.current) {
+          // Logic to pin to bottom right
+          const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
+          const logical = getLogicalRect(rect, scaleFactor);
+          const buttonSize = 240;
+          const x = logical.x + logical.width - buttonSize - 20;
+          const y = logical.y + logical.height - buttonSize - 10;
+
+          // Check visibility first to avoid errors
+          if (await chatButtonWindowRef.current.isVisible()) {
+            await chatButtonWindowRef.current.setPosition(new PhysicalPosition(x, y));
+          }
+        }
+      } catch {
+        // console.error("Tracking error");
       }
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, [settings.windowTrackingEnabled]);
+
+  // Set up trade messages window - always display for testing
+  useEffect(() => {
+    let toggleUnlisten: (() => void) | null = null;
+
+    const openTradeMessagesWindow = async () => {
+      // Small delay to ensure app is fully initialized
+      await sleep(500);
+      // Create and show the trade messages window - centered on Diablo screen
+      tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
+        decorations: false,
+        transparent: true,
+        skipTaskbar: true,
+        alwaysOnTop: true,
+        shadow: false,
+        focus: false,
+        focusable: true,
+        width: 600,
+        resizable: true,
+        height: 400,
+        visible: false,
+      });
+      if (tradeMessagesWindowRef.current) {
+        // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
+        //   tradeMessagesWindowRef.current = null;
+        // });
+      }
+    };
+
+    const toggleTradeMessagesWindow = async () => {
+      if (!tradeMessagesWindowRef.current) {
+        // Create the window if it doesn't exist - centered on Diablo screen
+        tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
+          decorations: false,
+          transparent: true,
+          skipTaskbar: true,
+          alwaysOnTop: true,
+          shadow: false,
+          focus: false,
+          focusable: true,
+          width: 600,
+          resizable: true,
+          height: 400,
+          visible: true,
+        });
+
+        if (tradeMessagesWindowRef.current) {
+          // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
+          //   tradeMessagesWindowRef.current = null;
+          // });
+        }
+        // Wait a bit for window to be created, then show it
+        setTimeout(async () => {
+          if (tradeMessagesWindowRef.current) {
+            await tradeMessagesWindowRef.current.show();
+            await tradeMessagesWindowRef.current.setFocus();
+          }
+        }, 100);
+        return;
+      }
+
+      try {
+        const isVisible = await tradeMessagesWindowRef.current.isVisible();
+        if (isVisible) {
+          await tradeMessagesWindowRef.current.hide();
+        } else {
+          await tradeMessagesWindowRef.current.show();
+          await tradeMessagesWindowRef.current.setFocus();
+        }
+      } catch (error) {
+        console.error('Error toggling trade messages window:', error);
+      }
+    };
+
+    // Open window on startup
+    openTradeMessagesWindow();
+
+    // Listen for toggle trade messages window event
+    listen('toggle-trade-messages-window', toggleTradeMessagesWindow)
+      .then((off) => {
+        toggleUnlisten = off;
+      })
+      .catch((err) => {
+        console.error('Failed to listen for toggle-trade-messages-window event:', err);
+      });
+
+    return () => {
+      if (toggleUnlisten) {
+        toggleUnlisten();
+      }
+    };
+  }, []);
+
+  // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
+  useEffect(() => {
+    if (!isTauri() || isLoading) return;
+
+    const generalEnabled = settings.whisperNotificationsEnabled ?? true;
+    const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
+    const shouldWatch = generalEnabled || tradeEnabled;
+
+    const manageWatcher = async () => {
+      try {
+        if (shouldWatch) {
+          await invoke('start_chat_watcher', { customD2Dir: settings.diablo2Directory });
+        } else {
+          await invoke('stop_chat_watcher');
+        }
+      } catch (error) {
+        console.error('Failed to manage chat watcher:', error);
+      }
+    };
+
+    manageWatcher();
+
+    return () => {
+      if (isTauri()) {
+        invoke('stop_chat_watcher').catch(console.error);
+      }
+    };
+  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
 
   return (
     <ItemsProvider>

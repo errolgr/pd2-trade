@@ -79,7 +79,7 @@ export async function openOverDiabloWindow(
   options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { x: cursorX } = await cursorPosition();
+    // const { x: cursorX } = await cursorPosition(); // Unused
     const rect = await getDiabloRectWithRetry();
 
     if (!rect) {
@@ -276,7 +276,7 @@ export function attachWindowLifecycle(w: WebviewWindow | browserWindow.BrowserWi
     (w as WebviewWindow).onCloseRequested(async () => {
       try {
         await saveWindowState(StateFlags.ALL);
-      } catch (e) {
+      } catch {
         // Ignore manual save errors in this legacy handler
       }
       onClose();
@@ -343,4 +343,74 @@ export async function updateMainWindowBounds(): Promise<void> {
     // No-op in browser
     await browserWindow.updateMainWindowBounds();
   }
+}
+
+/**
+ * Calculates logical rect from physical X11 rect given scale factor
+ */
+export function getLogicalRect(rect: DiabloRect, scaleFactor: number) {
+  return {
+    x: Math.round(rect.x / scaleFactor),
+    y: Math.round(rect.y / scaleFactor),
+    width: Math.round(rect.width / scaleFactor),
+    height: Math.round(rect.height / scaleFactor),
+  };
+}
+
+/**
+ * Updates a specific window to match the Diablo bounds (DPI aware)
+ */
+export async function updateWindowPositionRelative(w: WebviewWindow | any, rect: DiabloRect): Promise<void> {
+  const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
+  const logical = getLogicalRect(rect, scaleFactor);
+
+  // We only update position if the window is visible to avoid flashing
+  if (await w.isVisible()) {
+    await w.setPosition(new PhysicalPosition(logical.x, logical.y));
+    await w.setSize(new PhysicalSize(logical.width, logical.height));
+  }
+}
+
+/**
+ * Updates a specific window to be centered over the Diablo bounds (DPI aware)
+ * Keeps current size of the window, only updates position.
+ */
+export async function centerWindowOverRect(w: WebviewWindow | any, rect: DiabloRect): Promise<void> {
+  if (!(await w.isVisible())) return;
+
+  const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
+  const logicalRect = getLogicalRect(rect, scaleFactor);
+
+  // Get current window size (logical)
+  // outerSize is physical, innerSize is logical?
+  // Tauri v2: innerSize() returns PhysicalSize. We need to convert or use logic.
+  // Actually, setPosition uses PhysicalPosition (or Logical if configured).
+  // Let's use Logical coordinates for calculation but Physical for setting if easier,
+  // or just convert everything to Logical.
+
+  // Simplest way: Get window size in Logical pixels.
+  const factor = await w.scaleFactor(); // Get window's scale factor
+  const size = await w.innerSize(); // Physical
+  const windowWidth = size.width / factor;
+  const windowHeight = size.height / factor;
+
+  const x = logicalRect.x + (logicalRect.width - windowWidth) / 2;
+  const y = logicalRect.y + (logicalRect.height - windowHeight) / 2;
+
+  await w.setPosition(new PhysicalPosition(x * factor, y * factor));
+}
+
+/**
+ * Moves a window by a delta (logical pixels translated to physical if needed, or reading current pos)
+ */
+export async function moveWindowBy(w: WebviewWindow | any, dx: number, dy: number): Promise<void> {
+  if (!(await w.isVisible())) return;
+
+  // Tauri v2 `outerPosition` returns PhysicalPosition.
+  // D2 Rect x/y are physical. dx/dy are physical.
+  const pos = await w.outerPosition();
+  const newX = pos.x + dx;
+  const newY = pos.y + dy;
+
+  await w.setPosition(new PhysicalPosition(newX, newY));
 }
