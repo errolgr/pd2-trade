@@ -89,11 +89,14 @@ const ChatButtonPageContent: React.FC = () => {
 
   const handleManageListingsClick = async () => {
     const quickListLabel = 'QuickList';
+    console.log('[ChatButtonPage] handleManageListingsClick called for label:', quickListLabel);
     try {
       const existingWin = await WebviewWindow.getByLabel(quickListLabel);
+      console.log('[ChatButtonPage] existingWin found?', !!existingWin);
 
       if (existingWin) {
         try {
+          console.log('[ChatButtonPage] Reusing existing QuickList window');
           await existingWin.unminimize();
           await existingWin.show();
           await existingWin.setFocus();
@@ -106,6 +109,10 @@ const ChatButtonPageContent: React.FC = () => {
             console.warn('[ChatButtonPage] Failed to close zombie window:', closeErr);
           }
         }
+      } else {
+        console.log(
+          '[ChatButtonPage] No existing QuickList window found. Creating new one via openWindowCenteredOnDiablo.',
+        );
       }
 
       await openWindowCenteredOnDiablo(quickListLabel, '/quick-list', {

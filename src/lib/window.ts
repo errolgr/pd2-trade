@@ -4,6 +4,8 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { invoke } from '@tauri-apps/api/core';
 import * as browserWindow from './browser-window';
 import { WebviewOptions } from '@tauri-apps/api/webview';
+import { PhysicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
+import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state';
 
 // Re-export browser window types
 export type BrowserWindow = browserWindow.BrowserWindow;
@@ -51,13 +53,15 @@ export async function openCenteredWindow(
 
     const w = new WebviewWindow(label, {
       url,
+      focus: true,
+      ...options,
       x,
       y,
       width,
       height,
-      focus: true,
-      ...options,
     });
+
+    attachSaveBehavior(w);
 
     return w;
   }
@@ -89,13 +93,15 @@ export async function openOverDiabloWindow(
 
     const w = new WebviewWindow(label, {
       url,
+      focus: true,
+      ...options,
       x,
       y,
       width,
       height: rect.height,
-      focus: true,
-      ...options,
     });
+
+    attachSaveBehavior(w);
 
     return w;
   }
@@ -113,19 +119,21 @@ export async function openWindowAtCursor(
   options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const { x, y } = await cursorPosition();
+    const { x: cursorX, y: cursorY } = await cursorPosition();
     const width = options.width ?? 600;
     const height = options.height ?? 600;
 
     const w = new WebviewWindow(label, {
       url,
-      x,
-      y,
-      width,
-      height,
       focus: true,
       ...options,
+      x: cursorX,
+      y: cursorY,
+      width,
+      height,
     });
+
+    attachSaveBehavior(w);
 
     return w;
   }
@@ -157,13 +165,15 @@ export async function openWindowCenteredOnDiablo(
 
     const w = new WebviewWindow(label, {
       url,
+      focus: true,
+      ...options,
       x,
       y,
       width: windowWidth,
       height: windowHeight,
-      focus: true,
-      ...options,
     });
+
+    attachSaveBehavior(w);
 
     return w;
   }
@@ -175,10 +185,81 @@ export async function openWindowCenteredOnDiablo(
 /**
  * Attach window lifecycle handlers - works with both Tauri and browser windows
  */
+/**
+ * Internal helper to attach save-on-close behavior with sanitization
+ */
+function attachSaveBehavior(w: WebviewWindow) {
+  let isClosing = false;
+  w.onCloseRequested(async (event) => {
+    if (isClosing) return;
+    event.preventDefault();
+    isClosing = true;
+
+    try {
+      // Sanitize window bounds before saving to prevent Linux integer overflow bug
+      if (isTauri()) {
+        try {
+          const size = await w.outerSize();
+          const pos = await w.outerPosition();
+          if (size.width > 10000 || size.height > 10000 || Math.abs(pos.x) > 50000 || Math.abs(pos.y) > 50000) {
+            console.warn(
+              '[window] Validating bounds before save: detected invalid dimensions, resetting...',
+              size,
+              pos,
+            );
+            await w.setSize(new PhysicalSize(800, 600));
+            await w.setPosition(new PhysicalPosition(100, 100));
+          }
+        } catch (err) {
+          console.warn('[window] Failed to validate bounds:', err);
+        }
+      }
+
+      console.log('[window] saving window state...');
+      await saveWindowState(StateFlags.ALL);
+      console.log('[window] window state saved.');
+    } catch (e) {
+      console.error('[window] Failed to manually save window state on close:', e);
+    }
+
+    // We don't call onClose() here because this helper is for the generic window creation
+    // The specific attachWindowLifecycle below will handle its own onClose callback
+
+    w.close();
+  });
+}
+
+/**
+ * Attach window lifecycle handlers - works with both Tauri and browser windows
+ */
 export function attachWindowLifecycle(w: WebviewWindow | browserWindow.BrowserWindow, onClose: () => void) {
   if (isTauri() && 'onCloseRequested' in w) {
     // Tauri window
-    (w as WebviewWindow).onCloseRequested(() => {
+    // We attach a specific listener for the "Close on Blur" logic + Callback
+    // The Save logic is attached separately or effectively duplicated if we reuse the helper?
+    // If we call attachSaveBehavior(w), it attaches a listener.
+    // If we ALSO attach a listener here for onClose(), they both run.
+    // But both might try to preventDefault?
+    // Doing it separately is risky.
+
+    // Since this function is UNUSED, I will leave it as is (or minimal fix)
+    // and rely on the open* functions using attachSaveBehavior.
+
+    // But wait, if I use attachSaveBehavior below in open*, then this function (if used) would add a second listener.
+    // Tauri allows multiple listeners.
+    // Both receive the event.
+    // If attachSaveBehavior calls w.close(), it triggers them again.
+
+    // Let's just update open* functions to call attachSaveBehavior.
+    // And leave this function mostly alone (revert to simple version + save) or similar.
+
+    // Reverting this to simple version with manual save just in case
+    (w as WebviewWindow).onCloseRequested(async () => {
+      try {
+        await saveWindowState(StateFlags.ALL);
+      } catch (e) {
+        // Ignore manual save errors in this legacy handler
+      }
       onClose();
     });
 

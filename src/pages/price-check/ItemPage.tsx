@@ -15,6 +15,7 @@ const unescapeUnicode = (str: string): string => {
 const ItemWindow: React.FC = () => {
   const [item, setItem] = useState<any>(null);
   const [searchParams] = useSearchParams();
+
   /* ---------------------------------
    * Parse the ?text param on first load
    * --------------------------------- */
@@ -48,16 +49,16 @@ const ItemWindow: React.FC = () => {
     };
   }, []);
 
-  if (!item) {
-    return <div className="text-center text-gray-500">No item data provided or failed to parse.</div>;
-  }
-
   return (
     <OptionsProvider>
       <ItemsProvider>
         <Pd2WebsiteProvider>
-          <ItemOverlayWidget item={item}
-            onClose={() => getCurrentWebviewWindow().hide()} />
+          {!item ? (
+            <div className="text-center text-gray-500">No item data provided or failed to parse.</div>
+          ) : (
+            <ItemOverlayWidget item={item}
+              onClose={() => getCurrentWebviewWindow().hide()} />
+          )}
         </Pd2WebsiteProvider>
       </ItemsProvider>
     </OptionsProvider>

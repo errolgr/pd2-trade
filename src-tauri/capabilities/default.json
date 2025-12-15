@@ -2,9 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": [
-    "*"
-  ],
+  "windows": ["*"],
   "permissions": [
     "core:default",
     "opener:default",
@@ -20,9 +18,7 @@
     "core:window:allow-close",
     "core:webview:allow-webview-close",
     "core:resources:allow-close",
-    "shell:default",
     "shell:allow-open",
-    "shell:default",
     "dialog:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
@@ -97,6 +93,17 @@
         }
       ]
     },
-    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }, { "url": "https://pd2trader.com/**" }] }
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.projectdiablo2.com/**"
+        },
+        {
+          "url": "https://pd2trader.com/**"
+        }
+      ]
+    },
+    "window-state:default"
   ]
 }

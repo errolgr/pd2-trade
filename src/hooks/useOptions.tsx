@@ -89,23 +89,25 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateSettings = useCallback(async (newSettings: Partial<ISettings>) => {
     try {
-      let currentSettings: ISettings;
-      try {
-        const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
-        currentSettings = JSON.parse(file);
-      } catch {
-        console.warn('Settings file missing during update, using defaults.');
-        currentSettings = DEFAULT_SETTINGS;
-      }
+      await navigator.locks.request('settings-file', async () => {
+        let currentSettings: ISettings;
+        try {
+          const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+          currentSettings = JSON.parse(file);
+        } catch {
+          console.warn('Settings file missing during update, using defaults.');
+          currentSettings = DEFAULT_SETTINGS;
+        }
 
-      const updated = { ...currentSettings, ...newSettings };
+        const updated = { ...currentSettings, ...newSettings };
 
-      await writeTextFile(SETTINGS_FILENAME, JSON.stringify(updated, null, 2), {
-        baseDir: SETTINGS_DIR,
+        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(updated, null, 2), {
+          baseDir: SETTINGS_DIR,
+        });
+
+        setSettings(updated);
+        await emit('settings-updated', updated); // Notify other parts of the app
       });
-
-      setSettings(updated);
-      await emit('settings-updated', updated); // Notify other parts of the app
     } catch (error) {
       console.error('Error updating settings:', error);
     }
@@ -113,34 +115,36 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   async function fetchSettings() {
     try {
-      // Use empty string to refer to the base directory itself
-      const dirExists = await exists('', { baseDir: SETTINGS_DIR });
-      if (!dirExists) {
-        console.log('[OptionsProvider] creating config directory...');
-        await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
-      }
+      await navigator.locks.request('settings-file', async () => {
+        // Use empty string to refer to the base directory itself
+        const dirExists = await exists('', { baseDir: SETTINGS_DIR });
+        if (!dirExists) {
+          console.log('[OptionsProvider] creating config directory...');
+          await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
+        }
 
-      const fileExists = await exists(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
-      if (!fileExists) {
-        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(DEFAULT_SETTINGS, null, 2), {
-          baseDir: SETTINGS_DIR,
-        });
-      }
+        const fileExists = await exists(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+        if (!fileExists) {
+          await writeTextFile(SETTINGS_FILENAME, JSON.stringify(DEFAULT_SETTINGS, null, 2), {
+            baseDir: SETTINGS_DIR,
+          });
+        }
 
-      const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
-      const parsed = JSON.parse(file);
+        const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
+        const parsed = JSON.parse(file);
 
-      // Deep merge parsed into a copy of the defaults
-      const merged = merge({}, DEFAULT_SETTINGS, parsed);
+        // Deep merge parsed into a copy of the defaults
+        const merged = merge({}, DEFAULT_SETTINGS, parsed);
 
-      // Write merged settings back to disk if anything was missing
-      if (JSON.stringify(parsed) !== JSON.stringify(merged)) {
-        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(merged, null, 2), {
-          baseDir: SETTINGS_DIR,
-        });
-      }
+        // Write merged settings back to disk if anything was missing
+        if (JSON.stringify(parsed) !== JSON.stringify(merged)) {
+          await writeTextFile(SETTINGS_FILENAME, JSON.stringify(merged, null, 2), {
+            baseDir: SETTINGS_DIR,
+          });
+        }
 
-      setSettings(merged);
+        setSettings(merged);
+      });
     } catch (error) {
       console.warn('Error fetching settings', error);
       setSettings(DEFAULT_SETTINGS);
