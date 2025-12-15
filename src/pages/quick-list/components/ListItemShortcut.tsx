@@ -753,12 +753,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [selectedItem, currentListingForSelected, form, item]);
 
   // State for active tab
-  const [activeTab, setActiveTab] = useState(item ? 'list-item' : 'listed-items');
+  const [activeTab, setActiveTab] = useState(item && isStashItem(item) ? 'list-item' : 'listed-items');
 
-  // Auto-switch to list-item tab when a new item is detected
+  // Auto-switch to list-item tab when a new valid stash item is detected
+  // Otherwise default to Manage tab
   useEffect(() => {
-    if (item) {
+    if (item && isStashItem(item)) {
       setActiveTab('list-item');
+    } else {
+      setActiveTab('listed-items');
     }
   }, [item, resetAllState]);
 

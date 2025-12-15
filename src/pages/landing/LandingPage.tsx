@@ -173,36 +173,29 @@ const LandingPage: React.FC = () => {
     let encodedItem = '';
     let queryString = '';
 
+    let errorToastPayload = null;
+
     if (raw) {
       if (isStashItem(raw)) {
         encodedItem = encodeItemForQuickList(raw);
         queryString = `?item=${encodedItem}`;
       } else {
-        // Valid item but not in stash - pass error to window logic if newly opened
+        // Valid item but not in stash
         queryString = `?error=not_shared_stash`;
-
-        // Also emit GLOBAL toast immediately if we're not just opening the window fresh?
-        // Wait, openQuickListWindow handles the opening logic.
-        // If we want consistent behavior:
-        // If window is NEW: error param works -> but who manages toast?
-        // If I removed local toaster, QuickListPage won't show it.
-        // So I must emit global toast HERE if it IS a new window too?
-        await emit('toast-event', {
+        errorToastPayload = {
           title: 'Cannot List Item',
           description: 'This item is not in your shared stash and cannot be listed.',
           variant: 'error',
-        });
+        };
       }
     } else {
-      // Invalid or missing item - pass error to window logic if newly opened
+      // Invalid or missing item
       queryString = `?error=not_shared_stash`;
-
-      // Also emit GLOBAL toast immediately if we're not just opening the window fresh?
-      await emit('toast-event', {
+      errorToastPayload = {
         title: 'Cannot List Item',
-        description: 'This item is not in your shared stash and cannot be listed.',
+        description: 'Item is not supported or invalid.',
         variant: 'error',
-      });
+      };
     }
 
     if (!quickListWinRef.current) {
@@ -227,6 +220,11 @@ const LandingPage: React.FC = () => {
       }
       await sleep(100);
       await quickListWinRef.current.show();
+    }
+
+    // Emit toast at the end to ensure it appears atop the window and isn't duplicated
+    if (errorToastPayload) {
+      await emit('toast-event', errorToastPayload);
     }
   }, [checkDiabloFocus, copyAndValidateItem]);
 
