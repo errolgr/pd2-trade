@@ -1,13 +1,11 @@
 import * as React from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import merge from 'lodash.merge';
 import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
-import { jwtDecode } from 'jwt-decode';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -115,9 +113,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   async function fetchSettings() {
     try {
-      const dirExists = await exists('.', { baseDir: SETTINGS_DIR });
+      // Use empty string to refer to the base directory itself
+      const dirExists = await exists('', { baseDir: SETTINGS_DIR });
       if (!dirExists) {
-        await mkdir('.', { baseDir: SETTINGS_DIR, recursive: true });
+        console.log('[OptionsProvider] creating config directory...');
+        await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
       }
 
       const fileExists = await exists(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
