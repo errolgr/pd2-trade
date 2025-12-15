@@ -190,7 +190,7 @@ const LandingPage: React.FC = () => {
         await emit('toast-event', {
           title: 'Cannot List Item',
           description: 'This item is not in your shared stash and cannot be listed.',
-          variant: 'error',
+          variant: 'destructive',
         });
       }
     }
@@ -216,7 +216,7 @@ const LandingPage: React.FC = () => {
         await emit('toast-event', {
           title: 'Cannot List Item',
           description: 'This item is not in your shared stash and cannot be listed.',
-          variant: 'error',
+          variant: 'destructive', // or warning
         });
         // Clear item state in window
         await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
@@ -276,11 +276,22 @@ const LandingPage: React.FC = () => {
       // Create window if it doesn't exist
       if (!chatButtonWindowRef.current) {
         const rect = await getDiabloRectWithRetry();
+
+        // Check if rect is null (Diablo window not found after retries)
+        if (!rect) {
+          console.warn('[LandingPage] Diablo window rect not found after retries, cannot position chat button overlay');
+          return;
+        }
+
+        // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
         const buttonSize = 240; // 48px button + padding + expanded radius
         const x = rect.x + rect.width - buttonSize - 20;
         const y = rect.y + rect.height - buttonSize - 40;
 
-        chatButtonWindowRef.current = await openCenteredWindow('ChatButton', '/chat-button', {
+        chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
+          url: '/chat-button',
+          x,
+          y,
           width: buttonSize,
           height: buttonSize,
           decorations: false,
@@ -290,8 +301,6 @@ const LandingPage: React.FC = () => {
           shadow: false,
           focus: false,
           focusable: false,
-          x,
-          y,
         });
       }
 
