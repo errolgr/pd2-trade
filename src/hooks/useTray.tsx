@@ -102,8 +102,10 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         await unregisterShortcut();
 
         if (!(await isRegistered(shortcut))) {
-          await register(shortcut, () => {
-            showSettingsWindow();
+          await register(shortcut, (event) => {
+            if (event.state === 'Pressed') {
+              showSettingsWindow();
+            }
           });
           lastShortcutRef.current = shortcut;
         }
@@ -112,23 +114,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       }
     };
 
-    const isLinux = navigator.userAgent.includes('Linux');
-
-    // On Linux, always enable hotkeys since window focus detection isn't available
-    if (isLinux) {
-      registerShortcut().catch((error) => {
-        console.error('Failed to register settings shortcut on Linux:', error);
-      });
-
-      return () => {
-        // Unregister shortcut on cleanup
-        if (isTauri() && lastShortcutRef.current) {
-          unregisterShortcut().catch(console.error);
-        }
-      };
-    }
-
-    // On other platforms, listen for Diablo focus changes
+    // Listen for Diablo focus changes to register/unregister hotkey
     let unlisten: (() => void) | null = null;
 
     listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
