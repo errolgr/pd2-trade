@@ -1,10 +1,10 @@
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
 use std::fs;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use tauri::Emitter;
-use notify::{Watcher, RecommendedWatcher, RecursiveMode, Event, EventKind};
 
 #[cfg(target_os = "windows")]
 use winreg::enums::*;
@@ -130,7 +130,7 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     }
 
     let log_file = logs_dir.join("pd2_chat.log");
-    
+
     // Create file if it doesn't exist
     if !log_file.exists() {
         if let Err(_e) = fs::File::create(&log_file) {
@@ -145,14 +145,14 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
 pub fn get_game_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     let d2_dir = find_diablo2_directory(custom_d2_dir)?;
     let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
-    
+
     // Create directories if they don't exist
     if let Err(_e) = fs::create_dir_all(&logs_dir) {
         return None;
     }
 
     let log_file = logs_dir.join("pd2_game.log");
-    
+
     // Create file if it doesn't exist
     if !log_file.exists() {
         if let Err(_e) = fs::File::create(&log_file) {
@@ -178,7 +178,8 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
                 let (character, account) = if let Some(paren_start) = player_part.find('(') {
                     let character_name = player_part[..paren_start].trim();
                     if let Some(paren_end) = player_part[paren_start..].find(')') {
-                        let account_name = player_part[paren_start + 1..paren_start + paren_end].trim();
+                        let account_name =
+                            player_part[paren_start + 1..paren_start + paren_end].trim();
                         (character_name, account_name)
                     } else {
                         (character_name, "")
@@ -186,14 +187,14 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
                 } else {
                     (player_part, "")
                 };
-                
+
                 // Use account name if available, otherwise character name
                 let sender = if !account.is_empty() {
                     account.strip_prefix('*').unwrap_or(account)
                 } else {
                     character
                 };
-                
+
                 return Some(WhisperEvent {
                     is_trade: false,
                     from: sender.to_string(),
@@ -227,7 +228,7 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
         let sent_to_start = line.find("Sent to ")?;
         &line[sent_to_start + 8..] // Skip "Sent to "
     };
-    
+
     // Find the colon that separates sender from message
     let colon_pos = match after_prefix.find(':') {
         Some(pos) => pos,
@@ -237,7 +238,10 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
     let message = after_prefix[colon_pos + 1..].trim();
 
     // Ignore friend online/offline messages
-    if message.contains("Your friend") && (message.contains("has left Project Diablo 2") || message.contains("has entered Project Diablo 2")) {
+    if message.contains("Your friend")
+        && (message.contains("has left Project Diablo 2")
+            || message.contains("has entered Project Diablo 2"))
+    {
         return None;
     }
 
@@ -261,7 +265,7 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
 
     // Check if it's a trade whisper
     let is_trade = message.starts_with("Hi, I'm interested in your");
-    
+
     // Extract item name from trade whisper
     let item_name = if is_trade {
         // Format: "Hi, I'm interested in your Frostburn listed for 2 wss"
@@ -327,25 +331,30 @@ fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
 
     // Extract character name and account name
     // Format: "shrack (*shrack)" or "DoreetDrood (*Doreets)" or just "shrack"
-    let (character_name, account_name, player_name) = if let Some(paren_start) = sender_part.find('(') {
-        // Extract character name (before parentheses)
-        let char_name = sender_part[..paren_start].trim();
-        // Extract account name from parentheses (e.g., "*shrack" from "(*shrack)")
-        if let Some(paren_end) = sender_part[paren_start..].find(')') {
-            let acc_name = &sender_part[paren_start + 1..paren_start + paren_end].trim();
-            // Remove "*" prefix if present
-            let acc_name_clean = acc_name.strip_prefix('*').unwrap_or(acc_name);
-            (Some(char_name.to_string()), Some(acc_name_clean.to_string()), acc_name_clean)
-        } else {
-            // Fallback to character name if parentheses are malformed
+    let (character_name, account_name, player_name) =
+        if let Some(paren_start) = sender_part.find('(') {
+            // Extract character name (before parentheses)
+            let char_name = sender_part[..paren_start].trim();
+            // Extract account name from parentheses (e.g., "*shrack" from "(*shrack)")
+            if let Some(paren_end) = sender_part[paren_start..].find(')') {
+                let acc_name = &sender_part[paren_start + 1..paren_start + paren_end].trim();
+                // Remove "*" prefix if present
+                let acc_name_clean = acc_name.strip_prefix('*').unwrap_or(acc_name);
+                (
+                    Some(char_name.to_string()),
+                    Some(acc_name_clean.to_string()),
+                    acc_name_clean,
+                )
+            } else {
+                // Fallback to character name if parentheses are malformed
+                (Some(char_name.to_string()), None, char_name)
+            }
+        } else if let Some(space_pos) = sender_part.find(' ') {
+            let char_name = &sender_part[..space_pos];
             (Some(char_name.to_string()), None, char_name)
-        }
-    } else if let Some(space_pos) = sender_part.find(' ') {
-        let char_name = &sender_part[..space_pos];
-        (Some(char_name.to_string()), None, char_name)
-    } else {
-        (Some(sender_part.to_string()), None, sender_part)
-    };
+        } else {
+            (Some(sender_part.to_string()), None, sender_part)
+        };
 
     // Extract item name from trade message
     // Format: "Hi, I'm interested in your Frostburn listed for 2 wss"
@@ -383,32 +392,35 @@ fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
 }
 
 /// Read new lines from the chat log file
-fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+fn read_new_lines(
+    file_path: &Path,
+    app_handle: tauri::AppHandle,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Check file size first
     let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
-    
+
     let file = fs::File::open(file_path)?;
     let mut reader = BufReader::new(file);
-    
+
     let mut last_pos = LAST_POSITION.lock().unwrap();
-    
+
     // If file size is less than last position, file might have been truncated/reset (new game created)
     if file_size < *last_pos {
         *last_pos = file_size;
         return Ok(()); // Don't read old messages, just update position
     }
-    
+
     // If file was reset to 0 and hasn't grown yet, nothing to read
     if file_size == 0 {
         *last_pos = 0;
         return Ok(());
     }
-    
+
     // If we're already at the end, nothing to read
     if *last_pos >= file_size {
         return Ok(());
     }
-    
+
     // Seek to last position
     if let Err(_e) = reader.seek(SeekFrom::Start(*last_pos)) {
         // If seek fails, try to get current file size and start from there
@@ -421,9 +433,9 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
             return Ok(()); // Return early if we can't get metadata
         }
     }
-    
+
     let mut line = Vec::new();
-    
+
     loop {
         // Read line - handle errors gracefully
         match reader.read_until(b'\n', &mut line) {
@@ -431,13 +443,13 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
             Ok(_bytes_read) => {
                 // Convert bytes to string, replacing invalid UTF-8 sequences with replacement characters
                 let line_str = String::from_utf8_lossy(&line);
-                
+
                 // Parse trade message first (both incoming and outgoing)
                 if let Some(trade_message) = parse_trade_message(&line_str) {
                     // Emit trade message event to frontend
                     let _ = app_handle.emit("trade-message", trade_message.clone());
                 }
-                
+
                 // Parse whisper - if it returns None, just skip the line (it's not a whisper we care about)
                 if let Some(whisper) = parse_whisper(&line_str) {
                     // Emit whisper event to frontend
@@ -455,7 +467,7 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
             }
         }
     }
-    
+
     // Always update last position, even if there were errors
     match reader.seek(SeekFrom::Current(0)) {
         Ok(current_pos) => {
@@ -468,13 +480,15 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
             }
         }
     }
-    
+
     Ok(())
 }
 
 /// Start watching the chat log file
-pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
-
+pub fn start_watching(
+    app_handle: tauri::AppHandle,
+    custom_d2_dir: Option<String>,
+) -> Result<(), String> {
     let log_path = match get_chat_log_path(custom_d2_dir.as_deref()) {
         Some(path) => path,
         None => {
@@ -483,10 +497,10 @@ pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String
             return Err(msg.to_string());
         }
     };
-    
+
     // Also create the game log file
     let _ = get_game_log_path(custom_d2_dir.as_deref());
-    
+
     // Initialize last position to end of file
     if let Ok(file) = fs::File::open(&log_path) {
         if let Ok(metadata) = file.metadata() {
@@ -496,28 +510,31 @@ pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String
 
     // Create watcher
     let log_path_for_watcher = log_path.clone();
-    
-    let mut watcher: RecommendedWatcher = notify::recommended_watcher(move |result: Result<Event, notify::Error>| {
-        match result {
-            Ok(event) => {
-                if matches!(event.kind, EventKind::Modify(_)) {
-                    let app_handle_clone = app_handle.clone();
-                    let log_path_clone = log_path_for_watcher.clone();
-                    
-                    // Small delay to ensure file is fully written
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    
-                    let _ = read_new_lines(&log_path_clone, app_handle_clone);
+
+    let mut watcher: RecommendedWatcher =
+        notify::recommended_watcher(move |result: Result<Event, notify::Error>| {
+            match result {
+                Ok(event) => {
+                    if matches!(event.kind, EventKind::Modify(_)) {
+                        let app_handle_clone = app_handle.clone();
+                        let log_path_clone = log_path_for_watcher.clone();
+
+                        // Small delay to ensure file is fully written
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+
+                        let _ = read_new_lines(&log_path_clone, app_handle_clone);
+                    }
+                }
+                Err(_e) => {
+                    // Silently ignore watcher errors
                 }
             }
-            Err(_e) => {
-                // Silently ignore watcher errors
-            }
-        }
-    }).map_err(|e| format!("Failed to create file watcher: {}", e))?;
+        })
+        .map_err(|e| format!("Failed to create file watcher: {}", e))?;
 
     // Watch the log file
-    watcher.watch(&log_path, RecursiveMode::NonRecursive)
+    watcher
+        .watch(&log_path, RecursiveMode::NonRecursive)
         .map_err(|e| format!("Failed to watch chat log file: {}", e))?;
 
     // Store watcher handle
@@ -536,4 +553,3 @@ pub fn stop_watching() -> Result<(), String> {
     }
     Ok(())
 }
-
