@@ -288,7 +288,7 @@ const LandingPage: React.FC = () => {
         // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
         const buttonSize = 240; // 48px button + padding + expanded radius
         const x = rect.x + rect.width - buttonSize - 20;
-        const y = rect.y + rect.height - buttonSize - 40;
+        const y = rect.y + rect.height - buttonSize - 10;
 
         chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
           url: '/chat-button',
