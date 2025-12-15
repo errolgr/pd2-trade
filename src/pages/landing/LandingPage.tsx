@@ -16,6 +16,7 @@ import {
   openWindowAtCursor,
   openWindowCenteredOnDiablo,
   attachWindowCloseHandler,
+  getDiabloRectWithRetry,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -177,8 +178,20 @@ const LandingPage: React.FC = () => {
         encodedItem = encodeItemForQuickList(raw);
         queryString = `?item=${encodedItem}`;
       } else {
-        // Valid item but not in stash - pass error to window
+        // Valid item but not in stash - pass error to window logic if newly opened
         queryString = `?error=not_shared_stash`;
+
+        // Also emit GLOBAL toast immediately if we're not just opening the window fresh?
+        // Wait, openQuickListWindow handles the opening logic.
+        // If we want consistent behavior:
+        // If window is NEW: error param works -> but who manages toast?
+        // If I removed local toaster, QuickListPage won't show it.
+        // So I must emit global toast HERE if it IS a new window too?
+        await emit('toast-event', {
+          title: 'Cannot List Item',
+          description: 'This item is not in your shared stash and cannot be listed.',
+          variant: 'error',
+        });
       }
     }
 
@@ -199,10 +212,13 @@ const LandingPage: React.FC = () => {
       if (encodedItem) {
         await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
       } else if (queryString.includes('error=')) {
-        // Emit error event if needed, or just let the user see the empty form
-        // For now, we just show the window. The user will see the Manage tab.
-        // If we want to show a toast on an already-open window, we'd need a specific event.
-        // We'll emit a 'quick-list-error' event.
+        // Valid item but not in stash - warn user GLOBAL toast
+        await emit('toast-event', {
+          title: 'Cannot List Item',
+          description: 'This item is not in your shared stash and cannot be listed.',
+          variant: 'error',
+        });
+        // Clear item state in window
         await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
       }
       await sleep(100);
@@ -259,10 +275,12 @@ const LandingPage: React.FC = () => {
 
       // Create window if it doesn't exist
       if (!chatButtonWindowRef.current) {
-        // Use helper to center on Diablo screen
+        const rect = await getDiabloRectWithRetry();
         const buttonSize = 240; // 48px button + padding + expanded radius
+        const x = rect.x + rect.width - buttonSize - 20;
+        const y = rect.y + rect.height - buttonSize - 40;
 
-        chatButtonWindowRef.current = await openWindowCenteredOnDiablo('ChatButton', '/chat-button', {
+        chatButtonWindowRef.current = await openCenteredWindow('ChatButton', '/chat-button', {
           width: buttonSize,
           height: buttonSize,
           decorations: false,
@@ -272,6 +290,8 @@ const LandingPage: React.FC = () => {
           shadow: false,
           focus: false,
           focusable: false,
+          x,
+          y,
         });
       }
 

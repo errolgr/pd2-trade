@@ -14,9 +14,6 @@ const unescapeUnicode = (str: string): string => {
   return decodeURIComponent(escape(str));
 };
 
-import { Toaster } from '@/components/ui/sonner';
-import { toast } from 'sonner';
-
 // ...
 
 export const QuickListPage: React.FC<any> = () => {
@@ -28,12 +25,6 @@ export const QuickListPage: React.FC<any> = () => {
     const errorParam = searchParams.get('error');
 
     if (errorParam === 'not_shared_stash') {
-      setTimeout(() => {
-        toast.error('Cannot List Item', {
-          description: 'This item is not in your shared stash and cannot be listed.',
-          duration: 5000,
-        });
-      }, 500); // Small delay to ensure window is visible
       setItem(null);
     } else if (param) {
       try {
@@ -64,10 +55,8 @@ export const QuickListPage: React.FC<any> = () => {
 
       const errorHandler = (payload: string) => {
         if (payload === 'not_shared_stash') {
-          toast.error('Cannot List Item', {
-            description: 'This item is not in your shared stash and cannot be listed.',
-            duration: 5000,
-          });
+          // Toast handled globally by LandingPage
+          // Just clear the item state here
           setItem(null);
         }
       };
@@ -106,7 +95,6 @@ export const QuickListPage: React.FC<any> = () => {
 
   return (
     <TooltipProvider>
-      <Toaster />
       <OptionsProvider>
         <ItemsProvider>
           <Pd2WebsiteProvider>

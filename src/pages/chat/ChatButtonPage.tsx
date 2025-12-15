@@ -7,7 +7,7 @@ import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { openWindowAtCursor } from '@/lib/window';
+import { openWindowCenteredOnDiablo } from '@/lib/window';
 
 interface UnreadCountEvent {
   count: number;
@@ -108,7 +108,7 @@ const ChatButtonPageContent: React.FC = () => {
         }
       }
 
-      await openWindowAtCursor(quickListLabel, '/quick-list', {
+      await openWindowCenteredOnDiablo(quickListLabel, '/quick-list', {
         decorations: false,
         transparent: true,
         focus: false,
