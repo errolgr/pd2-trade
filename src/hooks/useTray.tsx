@@ -13,15 +13,17 @@ import { exit } from '@tauri-apps/plugin-process';
 
 type TrayContextValue = {
   tray: any | null;
+  settingsWindow: any | null;
 };
 
-const TrayContext = createContext<TrayContextValue>({ tray: null });
+const TrayContext = createContext<TrayContextValue>({ tray: null, settingsWindow: null });
 
 export const useTray = () => useContext(TrayContext);
 
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [tray, setTray] = useState<any | null>(null);
-  const { setIsOpen, settings } = useOptions();
+  const [settingsWindow, setSettingsWindow] = useState<any | null>(null);
+  const { settings } = useOptions();
   const trayRef = useRef<any | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
   const settingsWinRef = useRef<any | null>(null);
@@ -45,9 +47,11 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         width: 1025,
         height: 700,
       });
+      setSettingsWindow(settingsWinRef.current);
       setIsSettingsOpen(true);
       attachWindowCloseHandler(settingsWinRef.current, () => {
         settingsWinRef.current = null;
+        setSettingsWindow(null);
         setIsSettingsOpen(false);
       });
     } else {
@@ -86,7 +90,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         try {
           await unregister(lastShortcutRef.current);
           lastShortcutRef.current = null;
-        } catch (err) {
+        } catch {
           // Ignore errors
         }
       }
@@ -231,5 +235,5 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
+  return <TrayContext.Provider value={{ tray, settingsWindow }}>{children}</TrayContext.Provider>;
 };

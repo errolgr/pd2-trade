@@ -6,7 +6,7 @@ import { LogicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
-import { TrayProvider } from '@/hooks/useTray';
+import { TrayProvider, useTray } from '@/hooks/useTray';
 import { OptionsProvider, useOptions } from '@/hooks/useOptions';
 import { useKeySender } from '@/hooks/useKeySender';
 import { DialogProvider } from '@/hooks/useDialog';
@@ -20,7 +20,6 @@ import {
   getDiabloRectWithRetry,
   updateMainWindowBounds,
   moveWindowBy,
-  getLogicalRect,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -47,6 +46,7 @@ const LandingPage: React.FC = () => {
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
+  const { settingsWindow } = useTray();
   const { isConnected } = useSocket({ settings });
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
@@ -608,7 +608,7 @@ const LandingPage: React.FC = () => {
         // 1. Get Diablo Rect once
         const rect = await getDiabloRectWithRetry(1, 0); // Single attempt, fail fast
         if (!rect) {
-          prevRectRef.current = null; // Lost D2, reset tracking
+          // prevRectRef.current = null; // Do NOT reset on transient failure.
           return;
         }
 
@@ -618,8 +618,17 @@ const LandingPage: React.FC = () => {
         if (prevRectRef.current) {
           dx = rect.x - prevRectRef.current.x;
           dy = rect.y - prevRectRef.current.y;
+        } else {
+          // First successful detection, initialize ref
+          prevRectRef.current = { x: rect.x, y: rect.y };
         }
         prevRectRef.current = { x: rect.x, y: rect.y };
+
+        if (dx !== 0 || dy !== 0) {
+          console.log(`[Tracking] Delta: ${dx}, ${dy} | Rect: ${rect.x}, ${rect.y}`);
+        } else {
+          // console.log(`[Tracking] No Delta | Rect: ${rect.x}, ${rect.y}`);
+        }
 
         // 2. Update Main Window (Overlay) - Always Snap to D2 Size/Pos
         // We want this to match D2 exactly.
@@ -643,19 +652,34 @@ const LandingPage: React.FC = () => {
           await moveWindowBy(quickListWinRef.current, dx, dy);
         }
 
+        // 6. Update Settings Window (Floating) - Move by Delta
+        if (settingsWindow && (dx !== 0 || dy !== 0)) {
+          await moveWindowBy(settingsWindow, dx, dy);
+        }
+
         // 6. Chat Button Overlay (Pinned Bottom Right) - Always Re-Pin
         // This needs absolute position relative to current D2 rect to stay valid.
+        // 6. Chat Button Overlay (Bottom Right)
         if (chatButtonWindowRef.current) {
-          // Logic to pin to bottom right
+          // Logic to pin to bottom right - Use PHYSICAL coordinates
           const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
-          const logical = getLogicalRect(rect, scaleFactor);
-          const buttonSize = 240;
-          const x = logical.x + logical.width - buttonSize - 20;
-          const y = logical.y + logical.height - buttonSize - 10;
+
+          // rect is Physical. ButtonSize is Logical (240).
+          // We need to convert ButtonSize/Padding to Physical.
+          const buttonSizePhysical = Math.round(240 * scaleFactor);
+          const paddingXPhysical = Math.round(20 * scaleFactor);
+          const paddingYPhysical = Math.round(10 * scaleFactor);
+
+          const x = rect.x + rect.width - buttonSizePhysical - paddingXPhysical;
+          const y = rect.y + rect.height - buttonSizePhysical - paddingYPhysical;
 
           // Check visibility first to avoid errors
-          if (await chatButtonWindowRef.current.isVisible()) {
-            await chatButtonWindowRef.current.setPosition(new PhysicalPosition(x, y));
+          try {
+            if (await chatButtonWindowRef.current.isVisible()) {
+              await chatButtonWindowRef.current.setPosition(new PhysicalPosition(x, y));
+            }
+          } catch {
+            // Ignore errors if window is destroyed/busy
           }
         }
       } catch {
@@ -664,7 +688,7 @@ const LandingPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [settings.windowTrackingEnabled]);
+  }, [settings.windowTrackingEnabled, settingsWindow]);
 
   // Set up trade messages window - always display for testing
   useEffect(() => {

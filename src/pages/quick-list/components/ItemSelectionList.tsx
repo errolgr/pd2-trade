@@ -1,14 +1,11 @@
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, SquareArrowOutUpRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import MarketListingBadge from './MarketListingBadge';
-import { Button } from '@/components/ui/button';
-import { openUrl } from '@/lib/browser-opener';
-import { PD2Website } from '@/common/constants';
 
 interface ItemSelectionListProps {
   matchingItems: GameStashItem[];
@@ -40,7 +37,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   onRefresh,
 }) => {
   return (
-    <div className="mb-4">
+    <div className="mb-4 flex flex-col flex-1 min-h-0">
       <div className="flex justify-between items-center mb-2">
         <div className="text-xs font-medium flex items-center gap-2">
           Select Item ({matchingItems.length} found)
@@ -60,8 +57,8 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           </button>
         </div>
       </div>
-      <ScrollArea className="pr-2">
-        <div className="flex flex-col gap-2 max-h-[20rem]">
+      <ScrollArea className="pr-2 flex-1">
+        <div className="flex flex-col gap-2">
           {matchingItems.map((stashItem, index) => (
             <div
               key={stashItem.hash || index}
