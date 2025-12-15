@@ -17,6 +17,7 @@ import {
   openWindowCenteredOnDiablo,
   attachWindowCloseHandler,
   getDiabloRectWithRetry,
+  updateMainWindowBounds,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -581,6 +582,20 @@ const LandingPage: React.FC = () => {
       }
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
+  // Dynamic Window Tracking
+  useEffect(() => {
+    if (!isTauri() || settings.windowTrackingEnabled === false) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        await updateMainWindowBounds();
+      } catch (e) {
+        console.error('Failed to update window bounds during tracking', e);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [settings.windowTrackingEnabled]);
 
   return (
     <ItemsProvider>

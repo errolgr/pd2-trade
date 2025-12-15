@@ -38,6 +38,7 @@ export interface ISettings {
   acceptOfferMessageTemplate?: string; // Custom message template for accepting offers (without /w *{accountName})
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
+  windowTrackingEnabled?: boolean; // Dynamically track D2 window position/size
 }
 
 interface OptionsContextProps {
@@ -73,6 +74,7 @@ const DEFAULT_SETTINGS: ISettings = {
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
+  windowTrackingEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';

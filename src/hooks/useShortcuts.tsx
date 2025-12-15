@@ -66,20 +66,6 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
       }
     };
 
-    const isLinux = navigator.userAgent.includes('Linux');
-
-    // On Linux, always enable hotkeys since window focus detection isn't available
-    if (isLinux) {
-      registerShortcuts().catch((error) => {
-        console.error('Failed to register shortcuts on Linux:', error);
-      });
-
-      return () => {
-        // Unregister all shortcuts on cleanup
-        unregisterAllShortcuts().catch(() => void 0);
-      };
-    }
-
     // On other platforms, listen for Diablo focus changes
     let unlisten: (() => void) | null = null;
 

@@ -19,7 +19,7 @@ use windows_sys::Win32::{
 };
 
 #[cfg(not(target_os = "windows"))]
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowRect {
     pub x: i32,
@@ -102,12 +102,6 @@ pub fn get_work_area() -> Option<WindowRect> {
 
 use tauri::AppHandle;
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AppConfig {
-    pd2_install_dir: Option<String>,
-}
-
 // --- X11 implementation for Linux ---
 
 #[cfg(not(target_os = "windows"))]
@@ -174,45 +168,79 @@ mod linux_x11 {
         Ok(String::new())
     }
 
-    pub fn find_diablo_window() -> Result<Option<Window>, Box<dyn Error>> {
-        let (conn, screen_num) = x11rb::connect(None)?;
-        let screen = &conn.setup().roots[screen_num];
+    pub fn find_diablo_window(conn: &impl Connection) -> Result<Option<Window>, Box<dyn Error>> {
+        let screen = &conn.setup().roots[0]; // Assuming screen 0 is fine for finding root properties
         let root = screen.root;
 
-        let net_client_list = get_atom(&conn, "_NET_CLIENT_LIST")?;
+        let net_client_list = get_atom(conn, "_NET_CLIENT_LIST")?;
 
-        let clients = get_property_u32(&conn, root, net_client_list, AtomEnum::WINDOW.into())?
+        let clients = get_property_u32(conn, root, net_client_list, AtomEnum::WINDOW.into())?
             .unwrap_or_default();
 
-        for window in clients {
-            if let Ok(name) = get_window_name(&conn, window) {
+        for window in &clients {
+            if let Ok(name) = get_window_name(conn, *window) {
+                // println!("DEBUG: Found window: '{}'", name);
                 if name.contains("Diablo II") {
+                    // println!("DEBUG: Match found! Window: '{}'", name);
                     // Match partial name to be safe
-                    return Ok(Some(window));
+                    return Ok(Some(*window));
                 }
             }
         }
-
         Ok(None)
     }
 
     pub fn get_diablo_rect() -> Option<WindowRect> {
-        let (conn, _screen_num) = x11rb::connect(None).ok()?;
+        let (conn, _screen_num) = match x11rb::connect(None) {
+            Ok(c) => c,
+            Err(e) => {
+                println!("DEBUG: get_diablo_rect connect failed: {}", e);
+                return None;
+            }
+        };
 
         // Find window
-        let window = find_diablo_window().ok()??;
+        let window = match find_diablo_window(&conn) {
+            Ok(Some(w)) => w,
+            Ok(None) => {
+                println!("DEBUG: get_diablo_rect: find_diablo_window returned None");
+                return None;
+            }
+            Err(_) => {
+                return None;
+            }
+        };
+
+        // println!("DEBUG: get_diablo_rect working on window ID: {}", window);
 
         // Get geometry
-        let geom = conn.get_geometry(window).ok()?.reply().ok()?;
+        let geom_cookie = match conn.get_geometry(window) {
+            Ok(c) => c,
+            Err(_) => return None,
+        };
+        let geom = match geom_cookie.reply() {
+            Ok(g) => g,
+            Err(_) => return None,
+        };
 
         // Translate coordinates to root (absolute position)
-        // geom.x/y might be relative to parent.
-        let tree = conn.query_tree(window).ok()?.reply().ok()?;
-        let trans = conn
-            .translate_coordinates(window, tree.root, 0, 0)
-            .ok()?
-            .reply()
-            .ok()?;
+        let tree_cookie = match conn.query_tree(window) {
+            Ok(c) => c,
+            Err(_) => return None,
+        };
+        let tree = match tree_cookie.reply() {
+            Ok(t) => t,
+            Err(_) => return None,
+        };
+
+        let trans_cookie = match conn.translate_coordinates(window, tree.root, 0, 0) {
+            Ok(c) => c,
+            Err(_) => return None,
+        };
+        let trans = match trans_cookie.reply() {
+            Ok(t) => t,
+            Err(_) => return None,
+        };
 
         Some(WindowRect {
             x: trans.dst_x as i32,
@@ -247,7 +275,7 @@ mod linux_x11 {
 
         let active_window = active_window_prop[0];
 
-        if let Ok(Some(diablo_window)) = find_diablo_window() {
+        if let Ok(Some(diablo_window)) = find_diablo_window(&conn) {
             // In some WMs, the active window might be a child or frame.
             // But usually _NET_ACTIVE_WINDOW points to the client window.
             return active_window == diablo_window;
@@ -282,7 +310,12 @@ pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        get_diablo_rect(app).or_else(|| get_work_area(app))
+        let d2 = get_diablo_rect(app);
+        if let Some(rect) = &d2 {
+            return Some(rect.clone());
+        }
+        let wa = get_work_area(app);
+        wa
     }
 }
 
@@ -378,14 +411,29 @@ pub fn initialize_diablo_focus_monitoring(
     app_handle: AppHandle,
     on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
 ) {
-    // On Linux, use the actual focus state
-    let initial_focus_state = is_diablo_focused();
-    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
-    if let Some(callback) = &on_focus_change {
-        callback(initial_focus_state);
-    }
-    // No event-driven monitoring for now, so focus state won't update dynamically.
-    // This would require X11 event loop integration.
+    // On Linux, use polling since we don't have an event loop hook handy
+    std::thread::spawn(move || {
+        let mut last_state = is_diablo_focused();
+
+        // Initial emit
+        let _ = app_handle.emit("diablo-focus-changed", last_state);
+        if let Some(callback) = &on_focus_change {
+            callback(last_state);
+        }
+
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            let current_state = is_diablo_focused();
+
+            if current_state != last_state {
+                last_state = current_state;
+                let _ = app_handle.emit("diablo-focus-changed", current_state);
+                if let Some(callback) = &on_focus_change {
+                    callback(current_state);
+                }
+            }
+        }
+    });
 }
 
 #[cfg(not(target_os = "windows"))]

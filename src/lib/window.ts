@@ -87,9 +87,19 @@ export async function openOverDiabloWindow(
       return openCenteredWindow(label, url, options);
     }
 
+    const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
+
+    // Backend returns physical pixels, we need logical for window creation
+    const logicalRect = {
+      x: Math.round(rect.x / scaleFactor),
+      y: Math.round(rect.y / scaleFactor),
+      width: Math.round(rect.width / scaleFactor),
+      height: Math.round(rect.height / scaleFactor),
+    };
+
     const width = options.width ?? 500;
-    const x = cursorX - width;
-    const y = rect.y;
+    const x = logicalRect.x + logicalRect.width - width; // Align right edge
+    const y = logicalRect.y;
 
     const w = new WebviewWindow(label, {
       url,
@@ -98,7 +108,7 @@ export async function openOverDiabloWindow(
       x,
       y,
       width,
-      height: rect.height,
+      height: logicalRect.height,
     });
 
     attachSaveBehavior(w);
@@ -158,10 +168,19 @@ export async function openWindowCenteredOnDiablo(
       return openCenteredWindow(label, url, options);
     }
 
+    const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
+
+    const logicalRect = {
+      x: Math.round(rect.x / scaleFactor),
+      y: Math.round(rect.y / scaleFactor),
+      width: Math.round(rect.width / scaleFactor),
+      height: Math.round(rect.height / scaleFactor),
+    };
+
     const windowWidth = options.width ?? 600;
     const windowHeight = options.height ?? 600;
-    const x = rect.x + (rect.width - windowWidth) / 2;
-    const y = rect.y + (rect.height - windowHeight) / 2;
+    const x = logicalRect.x + (logicalRect.width - windowWidth) / 2;
+    const y = logicalRect.y + (logicalRect.height - windowHeight) / 2;
 
     const w = new WebviewWindow(label, {
       url,
