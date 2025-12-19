@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { currentMonitor } from '@tauri-apps/api/window';
-import { LogicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
+
+import { LogicalSize } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
