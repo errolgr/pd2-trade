@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-
 import { LogicalSize } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
@@ -690,7 +689,6 @@ const LandingPage: React.FC = () => {
             // Wait, default visible is true?
             // In setupChatButton, we don't specify visible: false. So yes.
           } else {
-            // ... Existing update logic ...
             // Start tracking movement instead of forcing position (allows dragging)
             if (dx !== 0 || dy !== 0) {
               await moveWindowBy(chatButtonWindowRef.current, dx, dy);

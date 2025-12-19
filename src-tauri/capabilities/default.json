@@ -12,6 +12,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-set-size",
     "core:window:allow-set-position",
+    "core:window:allow-unminimize",
     "core:app:allow-app-show",
     "core:window:allow-set-ignore-cursor-events",
     "core:webview:allow-create-webview-window",

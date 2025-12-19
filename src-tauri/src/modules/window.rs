@@ -275,23 +275,26 @@ mod linux_x11 {
 
         let active_window = active_window_prop[0];
 
-        // Instead of comparing IDs (which might fail if active window is a frame/parent),
-        // check if the active window's name contains "Diablo II".
-        if let Ok(name) = get_window_name(&conn, active_window) {
-            // Treat our own windows as "Diablo focused" to prevent UI from hiding/flickering
-            // when interacting with overlays (or if they briefly steal focus).
-            if name.contains("Diablo II")
-                || name.contains("ChatButton")
-                || name.contains("PD2 Trader")
-                || name.contains("TradeMessages")
-                || name.contains("QuickList")
-                || name.contains("Chat")
+        // 1. Check if the active window belongs to THIS application (PID check)
+        // This covers ALL app windows (Chat, Settings, Overlays, etc.) preventing flickering/hiding
+        if let Ok(net_wm_pid) = get_atom(&conn, "_NET_WM_PID") {
+            if let Ok(Some(pids)) =
+                get_property_u32(&conn, active_window, net_wm_pid, AtomEnum::CARDINAL.into())
             {
+                if !pids.is_empty() && pids[0] == std::process::id() {
+                    return true;
+                }
+            }
+        }
+
+        // 2. Check if the active window is Diablo II (Name check)
+        if let Ok(name) = get_window_name(&conn, active_window) {
+            if name.contains("Diablo II") {
                 return true;
             }
         }
 
-        // Fallback: Check if it matches the found Diablo window ID directly (just in case name fails)
+        // Fallback: Check if it matches the found Diablo window ID directly
         if let Ok(Some(diablo_window)) = find_diablo_window(&conn) {
             return active_window == diablo_window;
         }

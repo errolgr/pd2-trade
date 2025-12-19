@@ -404,7 +404,7 @@ export async function centerWindowOverRect(w: WebviewWindow | any, rect: DiabloR
  * Moves a window by a delta (logical pixels translated to physical if needed, or reading current pos)
  */
 export async function moveWindowBy(w: WebviewWindow | any, dx: number, dy: number): Promise<void> {
-  if (!(await w.isVisible())) return;
+  // if (!(await w.isVisible())) return; // Allow moving hidden windows to keep them in sync
 
   // Tauri v2 `outerPosition` returns PhysicalPosition.
   // D2 Rect x/y are physical. dx/dy are physical.
