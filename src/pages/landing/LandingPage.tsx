@@ -308,6 +308,7 @@ const LandingPage: React.FC = () => {
           shadow: false,
           focus: false,
           focusable: false,
+          visible: true,
         });
       }
 
@@ -659,29 +660,41 @@ const LandingPage: React.FC = () => {
 
         // 6. Chat Button Overlay (Bottom Right) - Always Re-Pin
         // This needs absolute position relative to current D2 rect to stay valid (handles resize + move)
-        if (chatButtonWindowRef.current) {
-          try {
-            // Logic to pin to bottom right - Use PHYSICAL coordinates
-            // We need scale factor to convert our logical constants (240px size) to physical pixels
-            const monitor = await currentMonitor();
-            const scaleFactor = monitor?.scaleFactor || 1;
+        // 6. Chat Button Overlay (Bottom Right)
+        if (settings.chatButtonOverlayEnabled !== false) {
+          if (!chatButtonWindowRef.current) {
+            // Lazy Creation: If button doesn't exist but we have D2 Rect, create it now
+            const buttonSize = 240;
+            const x = rect.x + rect.width - buttonSize - 20;
+            const y = rect.y + rect.height - buttonSize - 10;
 
-            // rect is Physical. ButtonSize is Logical (240).
-            const buttonSizePhysical = Math.round(240 * scaleFactor);
-            const paddingXPhysical = Math.round(20 * scaleFactor);
-            const paddingYPhysical = Math.round(10 * scaleFactor);
-
-            // Calculate target physical position (Bottom-Right anchor)
-            const x = rect.x + rect.width - buttonSizePhysical - paddingXPhysical;
-            const y = rect.y + rect.height - buttonSizePhysical - paddingYPhysical;
-
-            // Only update if visible to prevent errors/flashing
-            if (await chatButtonWindowRef.current.isVisible()) {
-              // console.log('[Tracking] Setting Chat Button Pos:', x, y);
-              await chatButtonWindowRef.current.setPosition(new PhysicalPosition(x, y));
+            console.log('[Tracking] Creating Chat Button Late...');
+            chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
+              url: '/chat-button',
+              x,
+              y,
+              width: buttonSize,
+              height: buttonSize,
+              decorations: false,
+              transparent: true,
+              skipTaskbar: true,
+              alwaysOnTop: true,
+              shadow: false,
+              focus: false,
+              focusable: false,
+              visible: true, // Ensure it is visible immediately since we are creating it because D2 is present
+            });
+            // Give it a moment to init before showing? The generic focus check loop will handle showing it.
+            // But we can ensure it is visible if D2 is focused.
+            // For now, let the existing creation logic defaults (visible: true usually?) apply.
+            // Wait, default visible is true?
+            // In setupChatButton, we don't specify visible: false. So yes.
+          } else {
+            // ... Existing update logic ...
+            // Start tracking movement instead of forcing position (allows dragging)
+            if (dx !== 0 || dy !== 0) {
+              await moveWindowBy(chatButtonWindowRef.current, dx, dy);
             }
-          } catch (err) {
-            console.error('[Tracking] Error updating Chat Button position:', err);
           }
         }
       } catch {
@@ -690,7 +703,7 @@ const LandingPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [settings.windowTrackingEnabled, settingsWindow]);
+  }, [settings.windowTrackingEnabled, settingsWindow, settings.chatButtonOverlayEnabled]);
 
   // Set up trade messages window - always display for testing
   useEffect(() => {

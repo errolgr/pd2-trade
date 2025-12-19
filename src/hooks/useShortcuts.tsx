@@ -19,6 +19,7 @@ const formatShortcut = (modifier: 'ctrl' | 'alt', key: string): string => {
 export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
   const registeredShortcuts = useRef<string[]>([]);
   const shortcutsRef = useRef<ShortcutConfig[]>(shortcuts);
+  const lastFocusState = useRef<boolean | null>(null);
 
   // Keep shortcuts ref up to date
   useEffect(() => {
@@ -70,6 +71,12 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
     let unlisten: (() => void) | null = null;
 
     listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+      // Prevent duplicate events or re(un)registering if state hasn't changed
+      if (lastFocusState.current === isFocused) {
+        return;
+      }
+      lastFocusState.current = isFocused;
+
       if (isFocused) {
         // Diablo gained focus - register hotkeys
         await registerShortcuts();

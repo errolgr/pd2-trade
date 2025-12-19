@@ -3,15 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { ChevronDown, Loader2, TriangleAlert } from 'lucide-react';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
@@ -88,17 +83,6 @@ export function GeneralForm() {
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-y-4 max-h-[330px]">
-          {navigator.userAgent.includes('Linux') && (
-            <Alert variant="destructive">
-              <TriangleAlert className="h-4 w-4" />
-              <AlertTitle>Linux Compatibility Warning</AlertTitle>
-              <AlertDescription>
-                Global hotkeys (like Ctrl+C) are always active on Linux. Please be careful when using other applications
-                while PD2 Trader is running.
-              </AlertDescription>
-            </Alert>
-          )}
-
           <FormField
             control={form.control}
             name="ladder"

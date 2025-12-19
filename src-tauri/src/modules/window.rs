@@ -275,9 +275,24 @@ mod linux_x11 {
 
         let active_window = active_window_prop[0];
 
+        // Instead of comparing IDs (which might fail if active window is a frame/parent),
+        // check if the active window's name contains "Diablo II".
+        if let Ok(name) = get_window_name(&conn, active_window) {
+            // Treat our own windows as "Diablo focused" to prevent UI from hiding/flickering
+            // when interacting with overlays (or if they briefly steal focus).
+            if name.contains("Diablo II")
+                || name.contains("ChatButton")
+                || name.contains("PD2 Trader")
+                || name.contains("TradeMessages")
+                || name.contains("QuickList")
+                || name.contains("Chat")
+            {
+                return true;
+            }
+        }
+
+        // Fallback: Check if it matches the found Diablo window ID directly (just in case name fails)
         if let Ok(Some(diablo_window)) = find_diablo_window(&conn) {
-            // In some WMs, the active window might be a child or frame.
-            // But usually _NET_ACTIVE_WINDOW points to the client window.
             return active_window == diablo_window;
         }
 
@@ -417,12 +432,23 @@ pub fn initialize_diablo_focus_monitoring(
         callback(initial_focus_state);
     }
 
+    // State tracking to prevent duplicate events
+    // We use Arc<Mutex<>> because the closure must be 'static
+    use std::sync::{Arc, Mutex};
+    let last_state = Arc::new(Mutex::new(Some(initial_focus_state)));
+
     // Use our new event-driven foreground monitoring, mirroring Windows structure
     initialize_foreground_monitoring(move || {
         let current_state = is_diablo_focused();
-        let _ = app_handle.emit("diablo-focus-changed", current_state);
-        if let Some(ref callback) = on_focus_change {
-            callback(current_state);
+
+        let mut last_state_guard = last_state.lock().unwrap();
+        // Only emit if state has changed
+        if last_state_guard.unwrap_or(!current_state) != current_state {
+            *last_state_guard = Some(current_state);
+            let _ = app_handle.emit("diablo-focus-changed", current_state);
+            if let Some(ref callback) = on_focus_change {
+                callback(current_state);
+            }
         }
     });
 }
