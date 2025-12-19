@@ -13,8 +13,8 @@ use windows_sys::Win32::{
     Foundation::{HWND, RECT},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetForegroundWindow, GetWindowRect, SystemParametersInfoW,
-        EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
+        FindWindowW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
+        SystemParametersInfoW, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
     },
 };
 
@@ -67,11 +67,29 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
 pub fn is_diablo_focused() -> bool {
     let title_w = to_wide("Diablo II");
     let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
+
+    // 1. Check if Diablo II window was found
     if hwnd == 0 {
         return false;
     }
+
     let foreground = unsafe { GetForegroundWindow() };
-    hwnd == foreground
+
+    // 2. Check if Diablo II is the foreground window
+    if hwnd == foreground {
+        return true;
+    }
+
+    // 3. Check if the foreground window belongs to THIS application (PID check)
+    // This prevents flickering when interacting with overlays (Chat, Settings, etc.)
+    let mut foreground_pid: u32 = 0;
+    unsafe { GetWindowThreadProcessId(foreground, &mut foreground_pid) };
+
+    if foreground_pid == std::process::id() {
+        return true;
+    }
+
+    false
 }
 
 #[cfg(not(target_os = "windows"))]
