@@ -18,7 +18,6 @@ use windows_sys::Win32::{
     },
 };
 
-#[cfg(not(target_os = "windows"))]
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowRect {

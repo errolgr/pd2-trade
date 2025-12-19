@@ -156,6 +156,8 @@ export function buildGetMarketListingQuery(
   searchMode: number = 0,
   matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
   corruptedState: number = 0,
+  limit: number = 10,
+  offset: number = 0,
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -163,8 +165,8 @@ export function buildGetMarketListingQuery(
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
-    $limit: 10,
-    $skip: 0,
+    $limit: limit,
+    $skip: offset,
     accepted_offer_id: null,
     updated_at: { $gte: dateThreshold.toISOString() },
     $sort: { bumped_at: -1 },
