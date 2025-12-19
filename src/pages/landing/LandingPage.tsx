@@ -657,29 +657,31 @@ const LandingPage: React.FC = () => {
           await moveWindowBy(settingsWindow, dx, dy);
         }
 
-        // 6. Chat Button Overlay (Pinned Bottom Right) - Always Re-Pin
-        // This needs absolute position relative to current D2 rect to stay valid.
-        // 6. Chat Button Overlay (Bottom Right)
+        // 6. Chat Button Overlay (Bottom Right) - Always Re-Pin
+        // This needs absolute position relative to current D2 rect to stay valid (handles resize + move)
         if (chatButtonWindowRef.current) {
-          // Logic to pin to bottom right - Use PHYSICAL coordinates
-          const scaleFactor = await currentMonitor().then((m) => m?.scaleFactor || 1);
-
-          // rect is Physical. ButtonSize is Logical (240).
-          // We need to convert ButtonSize/Padding to Physical.
-          const buttonSizePhysical = Math.round(240 * scaleFactor);
-          const paddingXPhysical = Math.round(20 * scaleFactor);
-          const paddingYPhysical = Math.round(10 * scaleFactor);
-
-          const x = rect.x + rect.width - buttonSizePhysical - paddingXPhysical;
-          const y = rect.y + rect.height - buttonSizePhysical - paddingYPhysical;
-
-          // Check visibility first to avoid errors
           try {
+            // Logic to pin to bottom right - Use PHYSICAL coordinates
+            // We need scale factor to convert our logical constants (240px size) to physical pixels
+            const monitor = await currentMonitor();
+            const scaleFactor = monitor?.scaleFactor || 1;
+
+            // rect is Physical. ButtonSize is Logical (240).
+            const buttonSizePhysical = Math.round(240 * scaleFactor);
+            const paddingXPhysical = Math.round(20 * scaleFactor);
+            const paddingYPhysical = Math.round(10 * scaleFactor);
+
+            // Calculate target physical position (Bottom-Right anchor)
+            const x = rect.x + rect.width - buttonSizePhysical - paddingXPhysical;
+            const y = rect.y + rect.height - buttonSizePhysical - paddingYPhysical;
+
+            // Only update if visible to prevent errors/flashing
             if (await chatButtonWindowRef.current.isVisible()) {
+              // console.log('[Tracking] Setting Chat Button Pos:', x, y);
               await chatButtonWindowRef.current.setPosition(new PhysicalPosition(x, y));
             }
-          } catch {
-            // Ignore errors if window is destroyed/busy
+          } catch (err) {
+            console.error('[Tracking] Error updating Chat Button position:', err);
           }
         }
       } catch {
