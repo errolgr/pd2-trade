@@ -18,7 +18,7 @@ use windows_sys::Win32::{
     },
 };
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowRect {
     pub x: i32,
@@ -128,6 +128,36 @@ mod linux_x11 {
     use x11rb::connection::Connection;
     use x11rb::protocol::xproto::{AtomEnum, ConnectionExt, Window};
 
+    // Use a persistent connection to avoid reconnecting on every call
+    use once_cell::sync::Lazy;
+    use std::sync::Mutex;
+    use x11rb::rust_connection::RustConnection;
+
+    // We use a Lazy Mutex to hold the connection.
+    // This assumes the connection remains valid. If X server restarts, this will break (but app likely would too).
+    // Note: RustConnection is the default backend for x11rb on Linux.
+    static X11_CONNECTION: Lazy<Mutex<Option<(RustConnection, usize)>>> =
+        Lazy::new(|| Mutex::new(x11rb::connect(None).ok()));
+
+    // Helper to get access to the connection
+    fn with_connection<F, T>(f: F) -> Option<T>
+    where
+        F: FnOnce(&RustConnection, usize) -> T,
+    {
+        // Try to lock the global connection
+        if let Ok(mut guard) = X11_CONNECTION.lock() {
+            // Initialize if empty (retry connect) - simple retry logic
+            if guard.is_none() {
+                *guard = x11rb::connect(None).ok();
+            }
+
+            if let Some((conn, screen_num)) = &*guard {
+                return Some(f(conn, *screen_num));
+            }
+        }
+        None
+    }
+
     pub fn get_atom(conn: &impl Connection, name: &str) -> Result<u32, Box<dyn Error>> {
         let reply = conn.intern_atom(false, name.as_bytes())?.reply()?;
         Ok(reply.atom)
@@ -161,8 +191,13 @@ mod linux_x11 {
         conn: &impl Connection,
         window: Window,
     ) -> Result<String, Box<dyn Error>> {
-        let net_wm_name = get_atom(conn, "_NET_WM_NAME")?;
-        let utf8_string = get_atom(conn, "UTF8_STRING")?;
+        // Optimization: Pipelining here would be good but for now let's rely on persistent connection
+        let net_wm_name_cookie = conn.intern_atom(false, b"_NET_WM_NAME")?;
+        let utf8_string_cookie = conn.intern_atom(false, b"UTF8_STRING")?;
+
+        // Blocking waits for atoms
+        let net_wm_name = net_wm_name_cookie.reply()?.atom;
+        let utf8_string = utf8_string_cookie.reply()?.atom;
 
         // Try _NET_WM_NAME first
         let reply = conn
@@ -186,6 +221,8 @@ mod linux_x11 {
     }
 
     pub fn find_diablo_window(conn: &impl Connection) -> Result<Option<Window>, Box<dyn Error>> {
+        // ... reuse existing implementation ...
+        // For brevity, using the existing Logic but adapting to &impl Connection
         let screen = &conn.setup().roots[0]; // Assuming screen 0 is fine for finding root properties
         let root = screen.root;
 
@@ -208,115 +245,127 @@ mod linux_x11 {
     }
 
     pub fn get_diablo_rect() -> Option<WindowRect> {
-        let (conn, _screen_num) = match x11rb::connect(None) {
-            Ok(c) => c,
-            Err(e) => {
-                println!("DEBUG: get_diablo_rect connect failed: {}", e);
-                return None;
-            }
-        };
+        with_connection(|conn, _screen_num| {
+            // Find window
+            let window = match find_diablo_window(conn) {
+                Ok(Some(w)) => w,
+                Ok(None) => {
+                    println!("DEBUG: get_diablo_rect: find_diablo_window returned None");
+                    return None;
+                }
+                Err(_) => {
+                    return None;
+                }
+            };
 
-        // Find window
-        let window = match find_diablo_window(&conn) {
-            Ok(Some(w)) => w,
-            Ok(None) => {
-                println!("DEBUG: get_diablo_rect: find_diablo_window returned None");
-                return None;
-            }
-            Err(_) => {
-                return None;
-            }
-        };
+            // println!("DEBUG: get_diablo_rect working on window ID: {}", window);
 
-        // println!("DEBUG: get_diablo_rect working on window ID: {}", window);
+            // Get geometry
+            let geom = conn.get_geometry(window).ok()?.reply().ok()?;
 
-        // Get geometry
-        let geom_cookie = match conn.get_geometry(window) {
-            Ok(c) => c,
-            Err(_) => return None,
-        };
-        let geom = match geom_cookie.reply() {
-            Ok(g) => g,
-            Err(_) => return None,
-        };
+            // Translate coordinates to root (absolute position)
+            let tree = conn.query_tree(window).ok()?.reply().ok()?;
 
-        // Translate coordinates to root (absolute position)
-        let tree_cookie = match conn.query_tree(window) {
-            Ok(c) => c,
-            Err(_) => return None,
-        };
-        let tree = match tree_cookie.reply() {
-            Ok(t) => t,
-            Err(_) => return None,
-        };
+            let trans = conn
+                .translate_coordinates(window, tree.root, 0, 0)
+                .ok()?
+                .reply()
+                .ok()?;
 
-        let trans_cookie = match conn.translate_coordinates(window, tree.root, 0, 0) {
-            Ok(c) => c,
-            Err(_) => return None,
-        };
-        let trans = match trans_cookie.reply() {
-            Ok(t) => t,
-            Err(_) => return None,
-        };
-
-        Some(WindowRect {
-            x: trans.dst_x as i32,
-            y: trans.dst_y as i32,
-            width: geom.width as i32,
-            height: geom.height as i32,
+            Some(WindowRect {
+                x: trans.dst_x as i32,
+                y: trans.dst_y as i32,
+                width: geom.width as i32,
+                height: geom.height as i32,
+            })
         })
+        .flatten()
     }
 
     pub fn is_diablo_focused() -> bool {
-        let (conn, screen_num) = match x11rb::connect(None) {
-            Ok(c) => c,
-            Err(_) => return false,
-        };
-        let screen = &conn.setup().roots[screen_num];
-        let root = screen.root;
+        with_connection(|conn, screen_num| {
+            let screen = &conn.setup().roots[screen_num];
+            let root = screen.root;
 
-        let net_active_window = match get_atom(&conn, "_NET_ACTIVE_WINDOW") {
-            Ok(a) => a,
-            Err(_) => return false,
-        };
+            // Pipeline atom requests
+            let net_active_window_cookie = conn.intern_atom(false, b"_NET_ACTIVE_WINDOW");
+            let net_wm_pid_cookie = conn.intern_atom(false, b"_NET_WM_PID");
+            let net_wm_name_cookie = conn.intern_atom(false, b"_NET_WM_NAME");
+            let utf8_string_cookie = conn.intern_atom(false, b"UTF8_STRING");
 
-        let active_window_prop =
-            match get_property_u32(&conn, root, net_active_window, AtomEnum::WINDOW.into()) {
-                Ok(Some(v)) => v,
-                _ => return false,
-            };
+            let net_active_window = net_active_window_cookie
+                .ok()
+                .and_then(|c| c.reply().ok())
+                .map(|r| r.atom)
+                .unwrap_or(0);
+            let net_wm_pid = net_wm_pid_cookie
+                .ok()
+                .and_then(|c| c.reply().ok())
+                .map(|r| r.atom)
+                .unwrap_or(0);
+            let net_wm_name = net_wm_name_cookie
+                .ok()
+                .and_then(|c| c.reply().ok())
+                .map(|r| r.atom)
+                .unwrap_or(0);
+            let utf8_string = utf8_string_cookie
+                .ok()
+                .and_then(|c| c.reply().ok())
+                .map(|r| r.atom)
+                .unwrap_or(0);
 
-        if active_window_prop.is_empty() {
-            return false;
-        }
+            if net_active_window == 0 {
+                return false;
+            }
 
-        let active_window = active_window_prop[0];
+            // Get Active Window Property
+            let active_window =
+                match get_property_u32(conn, root, net_active_window, AtomEnum::WINDOW.into()) {
+                    Ok(Some(v)) if !v.is_empty() => v[0],
+                    _ => return false,
+                };
 
-        // 1. Check if the active window belongs to THIS application (PID check)
-        // This covers ALL app windows (Chat, Settings, Overlays, etc.) preventing flickering/hiding
-        if let Ok(net_wm_pid) = get_atom(&conn, "_NET_WM_PID") {
-            if let Ok(Some(pids)) =
-                get_property_u32(&conn, active_window, net_wm_pid, AtomEnum::CARDINAL.into())
-            {
-                if !pids.is_empty() && pids[0] == std::process::id() {
-                    return true;
+            // 1. Check PID (Own process check)
+            if net_wm_pid != 0 {
+                if let Ok(Some(pids)) =
+                    get_property_u32(conn, active_window, net_wm_pid, AtomEnum::CARDINAL.into())
+                {
+                    if !pids.is_empty() && pids[0] == std::process::id() {
+                        return true;
+                    }
                 }
             }
-        }
 
-        // 2. Check if the active window is Diablo II (Name check)
-        if let Ok(name) = get_window_name(&conn, active_window) {
-            if name.contains("Diablo II") {
+            // 2. Check Name (Diablo II check)
+            let check_name = |atom: u32, type_: u32| -> bool {
+                if atom == 0 {
+                    return false;
+                }
+                if let Ok(reply) = conn.get_property(false, active_window, atom, type_, 0, 1024) {
+                    if let Ok(reply) = reply.reply() {
+                        if reply.format == 8 && reply.value_len > 0 {
+                            let name = String::from_utf8_lossy(&reply.value);
+                            return name.contains("Diablo II");
+                        }
+                    }
+                }
+                false
+            };
+
+            if check_name(net_wm_name, utf8_string) {
                 return true;
             }
-        }
+            if check_name(AtomEnum::WM_NAME.into(), AtomEnum::STRING.into()) {
+                return true;
+            }
 
-        // Fallback: Check if it matches the found Diablo window ID directly
-        if let Ok(Some(diablo_window)) = find_diablo_window(&conn) {
-            return active_window == diablo_window;
-        }
-
-        false
+            // Fallback
+            match find_diablo_window(conn) {
+                Ok(Some(dw)) => active_window == dw,
+                _ => false,
+            }
+        })
+        .unwrap_or(false)
     }
 }
 
@@ -546,4 +595,61 @@ pub fn cleanup_foreground_monitoring() {
 #[cfg(not(target_os = "windows"))]
 pub fn cleanup_foreground_monitoring() {
     // No-op on Linux
+}
+
+// --- Tracking Thread ---
+
+pub fn start_tracking_thread(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let mut prev_rect: Option<WindowRect> = None;
+        let diff_threshold = 0; // Pixel difference to trigger update
+
+        loop {
+            // Platform-specific get_diablo_rect
+            #[cfg(target_os = "windows")]
+            let rect_opt = get_diablo_rect();
+            #[cfg(not(target_os = "windows"))]
+            let rect_opt = linux_x11::get_diablo_rect();
+
+            if let Some(rect) = rect_opt {
+                let should_emit = match prev_rect {
+                    Some(prev) => {
+                        (rect.x - prev.x).abs() > diff_threshold
+                            || (rect.y - prev.y).abs() > diff_threshold
+                            || (rect.width - prev.width).abs() > diff_threshold
+                            || (rect.height - prev.height).abs() > diff_threshold
+                    }
+                    None => true,
+                };
+
+                if should_emit {
+                    let delta_x = if let Some(p) = prev_rect {
+                        rect.x - p.x
+                    } else {
+                        0
+                    };
+                    let delta_y = if let Some(p) = prev_rect {
+                        rect.y - p.y
+                    } else {
+                        0
+                    };
+
+                    // Emit event
+                    let payload = serde_json::json!({
+                       "rect": rect,
+                       "delta": { "dx": delta_x, "dy": delta_y }
+                    });
+
+                    if let Err(e) = app.emit("diablo-window-moved", payload) {
+                        eprintln!("[Tracking] Failed to emit event: {}", e);
+                    }
+
+                    prev_rect = Some(rect);
+                }
+            }
+
+            // Sleep 50ms (20hz) - fast enough for smooth drag, low CPU
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+    });
 }

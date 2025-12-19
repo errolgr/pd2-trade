@@ -3108,6 +3108,7 @@ version = "0.6.1"
 dependencies = [
  "enigo",
  "notify",
+ "once_cell",
  "rdev",
  "runas",
  "serde",

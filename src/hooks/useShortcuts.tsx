@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { listen } from '@/lib/browser-events';
 import { useOptions } from './useOptions';
@@ -20,6 +20,8 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
   const registeredShortcuts = useRef<string[]>([]);
   const shortcutsRef = useRef<ShortcutConfig[]>(shortcuts);
   const lastFocusState = useRef<boolean | null>(null);
+  const unlistenRef = useRef<(() => void) | null>(null);
+  const operationChain = useRef<Promise<void>>(Promise.resolve());
 
   // Keep shortcuts ref up to date
   useEffect(() => {
@@ -33,14 +35,15 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
     }
 
     const unregisterAllShortcuts = async () => {
-      for (const shortcut of registeredShortcuts.current) {
-        try {
-          await unregister(shortcut);
-        } catch {
-          // Ignore errors
-        }
-      }
+      await Promise.all(registeredShortcuts.current.map((shortcut) => unregister(shortcut).catch(() => {})));
       registeredShortcuts.current = [];
+    };
+
+    // Serialize operations to prevent races between cleanup/setup/events
+    const scheduleOperation = (op: () => Promise<void>) => {
+      operationChain.current = operationChain.current
+        .then(op)
+        .catch((err) => console.error('Shortcut operation failed:', err));
     };
 
     const registerShortcuts = async () => {
@@ -48,56 +51,79 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         // Unregister previous shortcuts first
         await unregisterAllShortcuts();
 
-        // Register new shortcuts
-        for (const { modifier, key, handler } of shortcutsRef.current) {
-          const shortcut = formatShortcut(modifier, key);
-          try {
-            await register(shortcut, (e) => {
-              if (e.state === 'Pressed') {
-                handler();
+        // Register new shortcuts in parallel
+        await Promise.all(
+          shortcutsRef.current.map(async ({ modifier, key, handler }) => {
+            const shortcut = formatShortcut(modifier, key);
+            try {
+              await register(shortcut, (e) => {
+                if (e.state === 'Pressed') {
+                  handler();
+                }
+              });
+              registeredShortcuts.current.push(shortcut);
+            } catch (error: any) {
+              const msg = error ? error.toString().toLowerCase() : '';
+              if (msg.includes('already') || msg.includes('exists') || msg.includes('conflict')) {
+                registeredShortcuts.current.push(shortcut);
+              } else {
+                console.error(`Failed to register shortcut ${shortcut}:`, error);
               }
-            });
-            registeredShortcuts.current.push(shortcut);
-          } catch (error) {
-            console.error(`Failed to register shortcut ${shortcut}:`, error);
-          }
-        }
+            }
+          }),
+        );
       } catch (error) {
         console.error('Failed to load global shortcut plugin:', error);
       }
     };
 
-    // On other platforms, listen for Diablo focus changes
-    let unlisten: (() => void) | null = null;
+    const setup = async () => {
+      try {
+        // OP REQ: Always initialize assuming D2 is focused
+        // We schedule registration immediately.
+        scheduleOperation(async () => {
+          // Optimistically set focused
+          lastFocusState.current = true;
+          await registerShortcuts();
+        });
 
-    listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
-      // Prevent duplicate events or re(un)registering if state hasn't changed
-      if (lastFocusState.current === isFocused) {
-        return;
-      }
-      lastFocusState.current = isFocused;
+        // 1. Check actual state to correct if needed
+        const isFocused = await invoke<boolean>('is_diablo_focused');
 
-      if (isFocused) {
-        // Diablo gained focus - register hotkeys
-        await registerShortcuts();
-      } else {
-        // Diablo lost focus - unregister hotkeys
-        await unregisterAllShortcuts();
+        scheduleOperation(async () => {
+          // Update state based on reality
+          if (lastFocusState.current !== isFocused) {
+            lastFocusState.current = isFocused;
+            if (isFocused) await registerShortcuts();
+            else await unregisterAllShortcuts();
+          }
+        });
+
+        // 2. Listen for changes
+        unlistenRef.current = await listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+          scheduleOperation(async () => {
+            if (lastFocusState.current === isFocused) return;
+            lastFocusState.current = isFocused;
+
+            if (isFocused) await registerShortcuts();
+            else await unregisterAllShortcuts();
+          });
+        });
+      } catch (error) {
+        console.error('Failed to setup shortcut listener:', error);
       }
-    })
-      .then((off) => {
-        unlisten = off;
-      })
-      .catch((error) => {
-        console.error('Failed to listen for diablo-focus-changed event:', error);
-      });
+    };
+
+    setup();
 
     return () => {
-      if (unlisten) {
-        unlisten();
+      if (unlistenRef.current) {
+        unlistenRef.current();
       }
-      // Unregister all shortcuts on cleanup
-      unregisterAllShortcuts().catch(() => void 0);
+      // Cleanup: Unregister
+      scheduleOperation(async () => {
+        await unregisterAllShortcuts();
+      });
     };
   }, [shortcuts]);
 };

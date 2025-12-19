@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
+import { listen as tauriListen } from '@tauri-apps/api/event';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { Item } from '../price-check/lib/interfaces';
 import { LogicalSize } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
@@ -15,7 +17,6 @@ import {
   openOverDiabloWindow,
   openWindowAtCursor,
   openWindowCenteredOnDiablo,
-  attachWindowCloseHandler,
   getDiabloRectWithRetry,
   updateMainWindowBounds,
   moveWindowBy,
@@ -40,7 +41,7 @@ const LandingPage: React.FC = () => {
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
   const settingsRef = useRef<any>(null);
-  const prevRectRef = useRef<{ x: number; y: number } | null>(null);
+  // const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { read } = useClipboard();
   const keyPress = useKeySender();
@@ -92,7 +93,12 @@ const LandingPage: React.FC = () => {
       return true;
     }
     try {
+      const startTime = performance.now();
       const focused = await invoke<boolean>('is_diablo_focused');
+      const duration = performance.now() - startTime;
+      if (duration > 50) {
+        console.warn(`[Focus] is_diablo_focused took ${duration.toFixed(2)}ms`);
+      }
       if (!focused) {
         console.warn('[LandingPage] Diablo is not focused, skipping action.');
       }
@@ -143,7 +149,7 @@ const LandingPage: React.FC = () => {
         focusable: true,
       });
       if (winRef.current) {
-        attachWindowCloseHandler(winRef.current, () => {
+        winRef.current.onCloseRequested(async () => {
           winRef.current = null;
         });
       }
@@ -170,67 +176,87 @@ const LandingPage: React.FC = () => {
   }, [checkDiabloFocus]);
 
   // Open quick list window
-  const openQuickListWindow = useCallback(async () => {
-    if (!(await checkDiabloFocus())) return;
+  const openQuickListWindow = useCallback(
+    async (item: Item | null) => {
+      console.log('[QuickList] openQuickListWindow called', item);
+      if (!(await checkDiabloFocus())) return;
 
-    const raw = await copyAndValidateItem();
-    let encodedItem = '';
-    let queryString = '';
+      const raw = await copyAndValidateItem();
+      let encodedItem = '';
+      let queryString = '';
 
-    let errorToastPayload = null;
+      let errorToastPayload = null;
 
-    if (raw) {
-      if (isStashItem(raw)) {
-        encodedItem = encodeItemForQuickList(raw);
-        queryString = `?item=${encodedItem}`;
+      if (raw) {
+        if (isStashItem(raw)) {
+          encodedItem = encodeItemForQuickList(raw);
+          queryString = `?item=${encodedItem}`;
+        } else {
+          // Valid item but not in stash
+          queryString = `?error=not_shared_stash`;
+          errorToastPayload = {
+            title: 'Cannot List Item',
+            description: 'This item is not in your shared stash and cannot be listed.',
+            variant: 'error',
+          };
+        }
       } else {
-        // Valid item but not in stash
+        // Invalid or missing item
         queryString = `?error=not_shared_stash`;
         errorToastPayload = {
           title: 'Cannot List Item',
-          description: 'This item is not in your shared stash and cannot be listed.',
+          description: 'Item is not supported or invalid.',
           variant: 'error',
         };
       }
-    } else {
-      // Invalid or missing item
-      queryString = `?error=not_shared_stash`;
-      errorToastPayload = {
-        title: 'Cannot List Item',
-        description: 'Item is not supported or invalid.',
-        variant: 'error',
-      };
-    }
 
-    if (!quickListWinRef.current) {
-      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list${queryString}`, {
-        decorations: false,
-        transparent: true,
-        focus: false,
-        shadow: false,
-        skipTaskbar: true,
-        focusable: true,
-        width: 600,
-        height: 512,
-        resizable: true,
-        alwaysOnTop: true,
-      });
-    } else {
-      if (encodedItem) {
-        await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
-      } else if (queryString.includes('error=')) {
-        // Clear item state in window
-        await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
+      if (!quickListWinRef.current) {
+        quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list${queryString}`, {
+          decorations: false,
+          transparent: true,
+          focus: false,
+          shadow: false,
+          skipTaskbar: true,
+          focusable: true,
+          width: 600,
+          height: 512,
+          resizable: true,
+          alwaysOnTop: true,
+        });
+
+        if (quickListWinRef.current) {
+          console.log('[QuickList] Window created successfully, assigning ref.');
+          quickListWinRef.current.onCloseRequested(async () => {
+            console.log('[QuickList] Window closed (onCloseRequested), clearing ref.');
+            quickListWinRef.current = null;
+          });
+        } else {
+          console.error('[QuickList] openWindowAtCursor returned null!');
+        }
+      } else {
+        console.log('[QuickList] Window already exists, showing and focusing.');
+        try {
+          await quickListWinRef.current.show();
+          await quickListWinRef.current.setFocus();
+          if (encodedItem) {
+            await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+          } else if (queryString.includes('error=')) {
+            // Clear item state in window
+            await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
+          }
+        } catch (_e) {
+          // console.error("[QuickList] Failed to show/focus existing window:", e);
+          quickListWinRef.current = null;
+        }
       }
-      await sleep(100);
-      await quickListWinRef.current.show();
-    }
 
-    // Emit toast at the end to ensure it appears atop the window and isn't duplicated
-    if (errorToastPayload) {
-      await emit('toast-event', errorToastPayload);
-    }
-  }, [checkDiabloFocus, copyAndValidateItem]);
+      // Emit toast at the end to ensure it appears atop the window and isn't duplicated
+      if (errorToastPayload) {
+        await emit('toast-event', errorToastPayload);
+      }
+    },
+    [checkDiabloFocus, copyAndValidateItem],
+  );
 
   // Toggle chat window handler
   const toggleChatWindow = useCallback(async () => {
@@ -243,7 +269,29 @@ const LandingPage: React.FC = () => {
   }, []);
 
   // Register shortcuts
-  useAppShortcuts(fireSearch, openQuickListWindow, openCurrencyValuation, toggleChatWindow, toggleTradeMessagesWindow);
+  // Register shortcuts
+  useAppShortcuts(
+    async () => {
+      console.log('[Hotkey] item-search triggered');
+      fireSearch();
+    },
+    async () => {
+      console.log('[Hotkey] quick-list triggered');
+      await openQuickListWindow(null);
+    },
+    async () => {
+      console.log('[Hotkey] price-check triggered');
+      await openCurrencyValuation();
+    },
+    async () => {
+      console.log('[Hotkey] toggle-chat triggered');
+      await toggleChatWindow();
+    },
+    async () => {
+      console.log('[Hotkey] toggle-trade-messages triggered');
+      await toggleTradeMessagesWindow();
+    },
+  );
 
   // Handle updates
   useAppUpdates();
@@ -385,7 +433,7 @@ const LandingPage: React.FC = () => {
       });
 
       if (chatWindowRef.current) {
-        attachWindowCloseHandler(chatWindowRef.current, () => {
+        chatWindowRef.current.onCloseRequested(async () => {
           chatWindowRef.current = null;
         });
       }
@@ -409,7 +457,7 @@ const LandingPage: React.FC = () => {
             visible: false,
           });
           if (chatWindowRef.current) {
-            attachWindowCloseHandler(chatWindowRef.current, () => {
+            chatWindowRef.current.onCloseRequested(async () => {
               chatWindowRef.current = null;
             });
           }
@@ -492,9 +540,9 @@ const LandingPage: React.FC = () => {
         visible: false,
       });
       if (tradeMessagesWindowRef.current) {
-        // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
-        //   tradeMessagesWindowRef.current = null;
-        // });
+        tradeMessagesWindowRef.current.onCloseRequested(async () => {
+          tradeMessagesWindowRef.current = null;
+        });
       }
     };
 
@@ -516,9 +564,9 @@ const LandingPage: React.FC = () => {
         });
 
         if (tradeMessagesWindowRef.current) {
-          // attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
-          //   tradeMessagesWindowRef.current = null;
-          // });
+          tradeMessagesWindowRef.current.onCloseRequested(async () => {
+            tradeMessagesWindowRef.current = null;
+          });
         }
         // Wait a bit for window to be created, then show it
         setTimeout(async () => {
@@ -591,83 +639,68 @@ const LandingPage: React.FC = () => {
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
   // Dynamic Window Tracking
-  // Consolidated Dynamic Window Tracking & Focus Loop
+  // Consolidated Dynamic Window Tracking & Focus Event Listener
   useEffect(() => {
     if (!isTauri()) return;
 
-    // Use a shared interval for both tracking and focus checks if possible,
-    // but focus checks need to run regardless of tracking setting?
-    // Actually, focus checks for "Main" window aren't needed (backend handles global hotkeys).
-    // Focus checks for "Chat Button" are handled in its own effect above.
+    // Position Tracking (Event Driven)
+    let unlisten: (() => void) | null = null;
 
-    // This effect handles POSITION TRACKING only.
-    if (settings.windowTrackingEnabled === false) return;
+    // We retain the logic to handle chat button lazy creation and movement
+    const setupListener = async () => {
+      unlisten = await tauriListen<any>('diablo-window-moved', async (event) => {
+        if (settings.windowTrackingEnabled === false) return;
 
-    const intervalId = setInterval(async () => {
-      try {
-        // 1. Get Diablo Rect once
-        const rect = await getDiabloRectWithRetry(1, 0); // Single attempt, fail fast
-        if (!rect) {
-          // prevRectRef.current = null; // Do NOT reset on transient failure.
-          return;
-        }
-
-        // Calculate Delta
-        let dx = 0;
-        let dy = 0;
-        if (prevRectRef.current) {
-          dx = rect.x - prevRectRef.current.x;
-          dy = rect.y - prevRectRef.current.y;
-        } else {
-          // First successful detection, initialize ref
-          prevRectRef.current = { x: rect.x, y: rect.y };
-        }
-        prevRectRef.current = { x: rect.x, y: rect.y };
-
-        if (dx !== 0 || dy !== 0) {
-          console.log(`[Tracking] Delta: ${dx}, ${dy} | Rect: ${rect.x}, ${rect.y}`);
-        } else {
-          // console.log(`[Tracking] No Delta | Rect: ${rect.x}, ${rect.y}`);
-        }
+        const { rect, delta } = event.payload;
+        const { dx, dy } = delta;
 
         // 2. Update Main Window (Overlay) - Always Snap to D2 Size/Pos
-        // We want this to match D2 exactly.
+        // Always update main bounds on event to ensure sync
         await updateMainWindowBounds();
 
-        // 3. Update Chat Window (Floating) - Move by Delta
-        if (chatWindowRef.current && (dx !== 0 || dy !== 0)) {
-          await moveWindowBy(chatWindowRef.current, dx, dy);
+        // Parallelize updates for smoother tracking
+        const updatePromises: Promise<void>[] = [];
+
+        if (dx !== 0 || dy !== 0) {
+          // 3. Update Chat Window (Floating)
+          if (chatWindowRef.current) {
+            updatePromises.push(moveWindowBy(chatWindowRef.current, dx, dy));
+          }
+
+          // 4. Update Trade Messages Window (Floating)
+          if (tradeMessagesWindowRef.current) {
+            updatePromises.push(moveWindowBy(tradeMessagesWindowRef.current, dx, dy));
+          }
+
+          // 5. Update Quick List / Item Search (Floating)
+          if (winRef.current) {
+            updatePromises.push(moveWindowBy(winRef.current, dx, dy));
+          }
+          if (quickListWinRef.current) {
+            updatePromises.push(moveWindowBy(quickListWinRef.current, dx, dy));
+          }
+
+          // 6. Update Settings Window (Floating)
+          if (settingsWindow) {
+            updatePromises.push(moveWindowBy(settingsWindow, dx, dy));
+          }
+
+          // 7. Chat Button Overlay
+          if (settings.chatButtonOverlayEnabled !== false) {
+            if (chatButtonWindowRef.current) {
+              updatePromises.push(moveWindowBy(chatButtonWindowRef.current, dx, dy));
+            }
+          }
         }
 
-        // 4. Update Trade Messages Window (Floating) - Move by Delta
-        if (tradeMessagesWindowRef.current && (dx !== 0 || dy !== 0)) {
-          await moveWindowBy(tradeMessagesWindowRef.current, dx, dy);
-        }
-
-        // 5. Update Quick List / Item Search (Floating) - Move by Delta
-        if (winRef.current && (dx !== 0 || dy !== 0)) {
-          await moveWindowBy(winRef.current, dx, dy);
-        }
-        if (quickListWinRef.current && (dx !== 0 || dy !== 0)) {
-          await moveWindowBy(quickListWinRef.current, dx, dy);
-        }
-
-        // 6. Update Settings Window (Floating) - Move by Delta
-        if (settingsWindow && (dx !== 0 || dy !== 0)) {
-          await moveWindowBy(settingsWindow, dx, dy);
-        }
-
-        // 6. Chat Button Overlay (Bottom Right) - Always Re-Pin
-        // This needs absolute position relative to current D2 rect to stay valid (handles resize + move)
-        // 6. Chat Button Overlay (Bottom Right)
+        // Handle Chat Button Lazy Creation if needed (outside parallel block since it's async check/create)
         if (settings.chatButtonOverlayEnabled !== false) {
           if (!chatButtonWindowRef.current) {
-            // Lazy Creation: If button doesn't exist but we have D2 Rect, create it now
+            // Lazy Creation
             const buttonSize = 240;
             const x = rect.x + rect.width - buttonSize - 20;
             const y = rect.y + rect.height - buttonSize - 10;
 
-            console.log('[Tracking] Creating Chat Button Late...');
             chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
               url: '/chat-button',
               x,
@@ -681,26 +714,20 @@ const LandingPage: React.FC = () => {
               shadow: false,
               focus: false,
               focusable: false,
-              visible: true, // Ensure it is visible immediately since we are creating it because D2 is present
+              visible: true,
             });
-            // Give it a moment to init before showing? The generic focus check loop will handle showing it.
-            // But we can ensure it is visible if D2 is focused.
-            // For now, let the existing creation logic defaults (visible: true usually?) apply.
-            // Wait, default visible is true?
-            // In setupChatButton, we don't specify visible: false. So yes.
-          } else {
-            // Start tracking movement instead of forcing position (allows dragging)
-            if (dx !== 0 || dy !== 0) {
-              await moveWindowBy(chatButtonWindowRef.current, dx, dy);
-            }
           }
         }
-      } catch {
-        // console.error("Tracking error");
-      }
-    }, 1000);
 
-    return () => clearInterval(intervalId);
+        await Promise.all(updatePromises);
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, [settings.windowTrackingEnabled, settingsWindow, settings.chatButtonOverlayEnabled]);
 
   // Set up trade messages window - always display for testing
