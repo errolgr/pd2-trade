@@ -411,34 +411,79 @@ pub fn initialize_diablo_focus_monitoring(
     app_handle: AppHandle,
     on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
 ) {
-    // On Linux, use polling since we don't have an event loop hook handy
-    std::thread::spawn(move || {
-        let mut last_state = is_diablo_focused();
+    let initial_focus_state = is_diablo_focused();
+    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
+    if let Some(ref callback) = on_focus_change {
+        callback(initial_focus_state);
+    }
 
-        // Initial emit
-        let _ = app_handle.emit("diablo-focus-changed", last_state);
-        if let Some(callback) = &on_focus_change {
-            callback(last_state);
-        }
-
-        loop {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-            let current_state = is_diablo_focused();
-
-            if current_state != last_state {
-                last_state = current_state;
-                let _ = app_handle.emit("diablo-focus-changed", current_state);
-                if let Some(callback) = &on_focus_change {
-                    callback(current_state);
-                }
-            }
+    // Use our new event-driven foreground monitoring, mirroring Windows structure
+    initialize_foreground_monitoring(move || {
+        let current_state = is_diablo_focused();
+        let _ = app_handle.emit("diablo-focus-changed", current_state);
+        if let Some(ref callback) = on_focus_change {
+            callback(current_state);
         }
     });
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(_callback: F) {
-    // No-op on Linux
+pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
+    std::thread::spawn(move || {
+        let (conn, screen_num) = match x11rb::connect(None) {
+            Ok(c) => c,
+            Err(e) => {
+                println!("Error connecting to X11 for foreground monitoring: {}", e);
+                return;
+            }
+        };
+
+        let screen = &conn.setup().roots[screen_num];
+        let root = screen.root;
+
+        // Subscribe to PropertyChange events on the root window
+        use x11rb::connection::Connection;
+        use x11rb::protocol::xproto::{ConnectionExt, EventMask, Property};
+        if let Err(e) = conn.change_window_attributes(
+            root,
+            &x11rb::protocol::xproto::ChangeWindowAttributesAux::new()
+                .event_mask(EventMask::PROPERTY_CHANGE),
+        ) {
+            println!("Error setting event mask: {}", e);
+            return;
+        }
+
+        if let Err(e) = conn.flush() {
+            println!("Error flushing connection: {}", e);
+            return;
+        }
+
+        let net_active_window = match linux_x11::get_atom(&conn, "_NET_ACTIVE_WINDOW") {
+            Ok(a) => a,
+            Err(e) => {
+                println!("Error getting _NET_ACTIVE_WINDOW atom: {}", e);
+                return;
+            }
+        };
+
+        loop {
+            match conn.wait_for_event() {
+                Ok(event) => {
+                    use x11rb::protocol::Event;
+                    if let Event::PropertyNotify(event) = event {
+                        if event.atom == net_active_window && event.state == Property::NEW_VALUE {
+                            callback();
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("Error waiting for X11 event: {}", e);
+                    // Prevent tight loop in case of repeated errors
+                    std::thread::sleep(std::time::Duration::from_millis(1000));
+                }
+            }
+        }
+    });
 }
 
 #[cfg(target_os = "windows")]

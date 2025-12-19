@@ -45,66 +45,19 @@ pub fn run() {
         .setup(|app| {
             let _handle = app.app_handle();
 
-            #[cfg(target_os = "windows")]
-            let (x, y, width, height) = {
-                // Get appropriate bounds based on Diablo focus state
-                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
-                    (
+            let (x, y, width, height) =
+                match window::get_appropriate_window_bounds(app.app_handle()) {
+                    Some(rect) => (
                         rect.x as f64,
                         rect.y as f64,
                         rect.width as f64,
                         rect.height as f64,
-                    )
-                } else {
-                    // Fallback to work area
-                    let mut work_area = RECT {
-                        left: 0,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                    };
-                    unsafe {
-                        SystemParametersInfoW(
-                            SPI_GETWORKAREA,
-                            0,
-                            &mut work_area as *mut _ as *mut _,
-                            0,
-                        );
-                    }
-                    let width = (work_area.right - work_area.left) as f64;
-                    let height = (work_area.bottom - work_area.top) as f64;
-                    let x = work_area.left as f64;
-                    let y = work_area.top as f64;
-                    (x, y, width, height)
-                }
-            };
-
-            #[cfg(not(target_os = "windows"))]
-            let (x, y, width, height) = {
-                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
-                    (
-                        rect.x as f64,
-                        rect.y as f64,
-                        rect.width as f64,
-                        rect.height as f64,
-                    )
-                } else {
-                    let monitor = app.primary_monitor().unwrap();
-                    if let Some(monitor) = monitor {
-                        let size = monitor.size();
-                        let position = monitor.position();
-                        (
-                            position.x as f64,
-                            position.y as f64,
-                            size.width as f64,
-                            size.height as f64,
-                        )
-                    } else {
-                        println!("Warning: No primary monitor detected. using default bounds.");
+                    ),
+                    None => {
+                        println!("Warning: Could not determine window bounds, using defaults.");
                         (0.0, 0.0, 1920.0, 1080.0)
                     }
-                }
-            };
+                };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("PD2 Trader")
