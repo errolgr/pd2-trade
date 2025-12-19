@@ -6,12 +6,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 
-#[cfg(target_os = "windows")]
-use winreg::enums::*;
-
-#[cfg(target_os = "windows")]
-use winreg::RegKey;
-
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WhisperEvent {
@@ -51,45 +45,7 @@ pub fn find_diablo2_directory(custom_path: Option<&str>) -> Option<PathBuf> {
         }
     }
 
-    // Try registry first
-    #[cfg(target_os = "windows")]
-    if let Some(path) = find_diablo2_in_registry() {
-        if path.exists() {
-            return Some(path);
-        }
-    }
-
-    // Try common installation paths
-    // Try common installation paths
-    #[cfg(target_os = "windows")]
-    let common_paths = vec![
-        PathBuf::from(r"C:\Diablo II"),
-        PathBuf::from(r"D:\Diablo II"),
-        PathBuf::from(r"E:\Diablo II"),
-        PathBuf::from(r"C:\Program Files\Diablo II"),
-        PathBuf::from(r"C:\Program Files (x86)\Diablo II"),
-        PathBuf::from(r"D:\Program Files\Diablo II"),
-        PathBuf::from(r"D:\Program Files (x86)\Diablo II"),
-    ];
-
-    #[cfg(not(target_os = "windows"))]
-    let common_paths = {
-        let home = std::env::var("HOME").unwrap_or_default();
-        let home_path = PathBuf::from(home);
-        vec![
-            home_path.join("Games/Diablo II"),
-            home_path.join("Games/project-diablo-2"),
-            home_path.join(".wine/drive_c/Program Files (x86)/Diablo II"),
-        ]
-    };
-
-    for path in common_paths {
-        if path.exists() {
-            return Some(path);
-        }
-    }
-
-    None
+    crate::modules::system::find_diablo2_install_path()
 }
 
 /// Auto-detect the Diablo II installation directory (without using custom path)
@@ -97,26 +53,7 @@ pub fn auto_detect_diablo2_directory() -> Option<PathBuf> {
     find_diablo2_directory(None)
 }
 
-#[cfg(target_os = "windows")]
-fn find_diablo2_in_registry() -> Option<PathBuf> {
-    // Try HKEY_LOCAL_MACHINE\SOFTWARE\Blizzard Entertainment\Diablo II
-    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(key) = hklm.open_subkey(r"SOFTWARE\Blizzard Entertainment\Diablo II") {
-        if let Ok(install_path) = key.get_value::<String, _>("InstallPath") {
-            return Some(PathBuf::from(install_path));
-        }
-    }
-
-    // Try HKEY_CURRENT_USER
-    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    if let Ok(key) = hkcu.open_subkey(r"SOFTWARE\Blizzard Entertainment\Diablo II") {
-        if let Ok(install_path) = key.get_value::<String, _>("InstallPath") {
-            return Some(PathBuf::from(install_path));
-        }
-    }
-
-    None
-}
+// find_diablo2_in_registry removed
 
 /// Get the chat log file path, creating directories if needed
 pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {

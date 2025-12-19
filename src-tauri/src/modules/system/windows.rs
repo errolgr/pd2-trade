@@ -1,4 +1,7 @@
-#[cfg(target_os = "windows")]
+use std::path::PathBuf;
+use winreg::enums::*;
+use winreg::RegKey;
+
 pub fn is_elevated() -> bool {
     use std::mem::size_of;
     use windows_sys::Win32::{
@@ -28,14 +31,6 @@ pub fn is_elevated() -> bool {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn is_elevated() -> bool {
-    // On Linux, we generally don't want to force root for a GUI app.
-    // Returning true bypasses the restart_as_admin check.
-    true
-}
-
-#[cfg(target_os = "windows")]
 pub fn restart_as_admin() {
     use std::{ffi::OsStr, os::windows::ffi::OsStrExt, process::exit};
     use windows_sys::Win32::UI::Shell::ShellExecuteW;
@@ -68,8 +63,50 @@ pub fn restart_as_admin() {
     exit(0);
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn restart_as_admin() {
-    // No-op or log warning
-    println!("Elevation requested but not implemented for Linux");
+fn find_diablo2_in_registry() -> Option<PathBuf> {
+    // Try HKEY_LOCAL_MACHINE\SOFTWARE\Blizzard Entertainment\Diablo II
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    if let Ok(key) = hklm.open_subkey(r"SOFTWARE\Blizzard Entertainment\Diablo II") {
+        if let Ok(install_path) = key.get_value::<String, _>("InstallPath") {
+            return Some(PathBuf::from(install_path));
+        }
+    }
+
+    // Try HKEY_CURRENT_USER
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok(key) = hkcu.open_subkey(r"SOFTWARE\Blizzard Entertainment\Diablo II") {
+        if let Ok(install_path) = key.get_value::<String, _>("InstallPath") {
+            return Some(PathBuf::from(install_path));
+        }
+    }
+
+    None
+}
+
+pub fn find_diablo2_install_path() -> Option<PathBuf> {
+    // Try registry first
+    if let Some(path) = find_diablo2_in_registry() {
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    // Try common installation paths
+    let common_paths = vec![
+        PathBuf::from(r"C:\Diablo II"),
+        PathBuf::from(r"D:\Diablo II"),
+        PathBuf::from(r"E:\Diablo II"),
+        PathBuf::from(r"C:\Program Files\Diablo II"),
+        PathBuf::from(r"C:\Program Files (x86)\Diablo II"),
+        PathBuf::from(r"D:\Program Files\Diablo II"),
+        PathBuf::from(r"D:\Program Files (x86)\Diablo II"),
+    ];
+
+    for path in common_paths {
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    None
 }

@@ -8,14 +8,7 @@ pub fn greet(name: &str) -> String {
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
-    #[cfg(target_os = "windows")]
-    {
-        window::get_diablo_rect()
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        window::get_diablo_rect(&app_handle)
-    }
+    window::get_diablo_rect(&app_handle)
 }
 
 #[tauri::command]
