@@ -8,7 +8,7 @@ pub fn is_elevated() -> bool {
 
 pub fn restart_as_admin() {
     // No-op or log warning
-    println!("Elevation requested but not implemented for Linux");
+    eprintln!("Elevation requested but not implemented for Linux");
 }
 
 pub fn find_diablo2_install_path() -> Option<PathBuf> {

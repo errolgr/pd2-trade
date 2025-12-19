@@ -10,24 +10,19 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
     for part in seq.split('+') {
         match part.to_ascii_lowercase().as_str() {
             "ctrl" | "control" => {
-                println!("  -> Found modifier: Ctrl");
                 mods.push(Key::Control);
             }
             "alt" => {
-                println!("  -> Found modifier: Alt");
                 mods.push(Key::Alt);
             }
             "shift" => {
-                println!("  -> Found modifier: Shift");
                 mods.push(Key::Shift);
             }
             "cmd" | "command" => {
-                println!("  -> Found modifier: Meta");
                 mods.push(Key::Meta);
             }
             k if k.len() == 1 => {
                 let ch = k.chars().next().unwrap();
-                println!("  -> Found layout key: {}", ch);
                 main = Some(Key::Unicode(ch));
             }
             k if k.starts_with('f') && k.len() <= 3 => {
@@ -47,7 +42,6 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
                         12 => Key::F12,
                         _ => {
                             let err = format!("Unsupported function key: F{}", n);
-                            println!("[str_to_keys] Error: {}", err);
                             return Err(err);
                         }
                     });
@@ -55,7 +49,6 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
             }
             _ => {
                 let err = format!("Unsupported fragment: {part}");
-                println!("[str_to_keys] Error: {}", err);
                 return Err(err);
             }
         }
@@ -63,7 +56,7 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
 
     let main = main.ok_or_else(|| {
         let err = "No main key found".to_string();
-        println!("[str_to_keys] Error: {}", err);
+        eprintln!("[str_to_keys] Error: {}", err);
         err
     })?;
 
@@ -71,32 +64,24 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
 }
 
 pub fn press_key(sequence: String) -> Result<(), String> {
-    println!("[press_key] Received sequence: {}", sequence);
-
     let (mods, main) = str_to_keys(&sequence)?;
     let mut enigo =
         Enigo::new(&Settings::default()).map_err(|e| format!("Failed to init Enigo: {:?}", e))?;
 
-    println!("[press_key] Pressing modifiers...");
     for m in &mods {
-        println!("  -> Down: {:?}", m);
         enigo.key(*m, Direction::Press).map_err(|e| e.to_string())?;
     }
 
-    println!("[press_key] Pressing main key: {:?}", main);
     enigo
         .key(main, Direction::Click)
         .map_err(|e| e.to_string())?;
 
-    println!("[press_key] Releasing modifiers...");
     for m in mods.iter().rev() {
-        println!("  -> Up: {:?}", m);
         enigo
             .key(*m, Direction::Release)
             .map_err(|e| e.to_string())?;
     }
 
-    println!("[press_key] Done.");
     Ok(())
 }
 

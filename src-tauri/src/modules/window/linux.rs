@@ -115,11 +115,7 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
         // Find window
         let window = match find_diablo_window(conn) {
             Ok(Some(w)) => w,
-            Ok(None) => {
-                // println!("DEBUG: get_diablo_rect: find_diablo_window returned None");
-                return None;
-            }
-            Err(_) => {
+            _ => {
                 return None;
             }
         };
@@ -290,7 +286,7 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
         let (conn, screen_num) = match x11rb::connect(None) {
             Ok(c) => c,
             Err(e) => {
-                println!("Error connecting to X11 for foreground monitoring: {}", e);
+                eprintln!("Error connecting to X11 for foreground monitoring: {}", e);
                 return;
             }
         };
@@ -306,19 +302,19 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
             &x11rb::protocol::xproto::ChangeWindowAttributesAux::new()
                 .event_mask(EventMask::PROPERTY_CHANGE),
         ) {
-            println!("Error setting event mask: {}", e);
+            eprintln!("Error setting event mask: {}", e);
             return;
         }
 
         if let Err(e) = conn.flush() {
-            println!("Error flushing connection: {}", e);
+            eprintln!("Error flushing connection: {}", e);
             return;
         }
 
         let net_active_window = match get_atom(&conn, "_NET_ACTIVE_WINDOW") {
             Ok(a) => a,
             Err(e) => {
-                println!("Error getting _NET_ACTIVE_WINDOW atom: {}", e);
+                eprintln!("Error getting _NET_ACTIVE_WINDOW atom: {}", e);
                 return;
             }
         };
@@ -334,7 +330,7 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
                     }
                 }
                 Err(e) => {
-                    println!("Error waiting for X11 event: {}", e);
+                    eprintln!("Error waiting for X11 event: {}", e);
                     // Prevent tight loop in case of repeated errors
                     std::thread::sleep(std::time::Duration::from_millis(1000));
                 }

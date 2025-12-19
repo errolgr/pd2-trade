@@ -93,15 +93,7 @@ const LandingPage: React.FC = () => {
       return true;
     }
     try {
-      const startTime = performance.now();
       const focused = await invoke<boolean>('is_diablo_focused');
-      const duration = performance.now() - startTime;
-      if (duration > 50) {
-        console.warn(`[Focus] is_diablo_focused took ${duration.toFixed(2)}ms`);
-      }
-      if (!focused) {
-        console.warn('[LandingPage] Diablo is not focused, skipping action.');
-      }
       return focused;
     } catch (error) {
       console.warn('[LandingPage] Failed to check Diablo focus:', error);
@@ -177,8 +169,7 @@ const LandingPage: React.FC = () => {
 
   // Open quick list window
   const openQuickListWindow = useCallback(
-    async (item: Item | null) => {
-      console.log('[QuickList] openQuickListWindow called', item);
+    async (_item: Item | null) => {
       if (!(await checkDiabloFocus())) return;
 
       const raw = await copyAndValidateItem();
@@ -225,7 +216,6 @@ const LandingPage: React.FC = () => {
         });
 
         if (quickListWinRef.current) {
-          console.log('[QuickList] Window created successfully, assigning ref.');
           quickListWinRef.current.onCloseRequested(async () => {
             console.log('[QuickList] Window closed (onCloseRequested), clearing ref.');
             quickListWinRef.current = null;
@@ -272,23 +262,18 @@ const LandingPage: React.FC = () => {
   // Register shortcuts
   useAppShortcuts(
     async () => {
-      console.log('[Hotkey] item-search triggered');
       fireSearch();
     },
     async () => {
-      console.log('[Hotkey] quick-list triggered');
       await openQuickListWindow(null);
     },
     async () => {
-      console.log('[Hotkey] price-check triggered');
       await openCurrencyValuation();
     },
     async () => {
-      console.log('[Hotkey] toggle-chat triggered');
       await toggleChatWindow();
     },
     async () => {
-      console.log('[Hotkey] toggle-trade-messages triggered');
       await toggleTradeMessagesWindow();
     },
   );

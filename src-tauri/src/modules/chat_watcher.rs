@@ -57,10 +57,8 @@ pub fn auto_detect_diablo2_directory() -> Option<PathBuf> {
 
 /// Get the chat log file path, creating directories if needed
 pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
-    //println!("custom_d2_dir: {:?}", custom_d2_dir);
     let d2_dir = find_diablo2_directory(custom_d2_dir)?;
     let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
-    //println!("logs_dir: {}", logs_dir.display());
     // Create directories if they don't exist
     if let Err(_e) = fs::create_dir_all(&logs_dir) {
         return None;

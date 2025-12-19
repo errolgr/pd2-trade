@@ -54,7 +54,7 @@ pub fn run() {
                         rect.height as f64,
                     ),
                     None => {
-                        println!("Warning: Could not determine window bounds, using defaults.");
+                        eprintln!("Warning: Using default window bounds.");
                         (0.0, 0.0, 1920.0, 1080.0)
                     }
                 };
@@ -93,8 +93,7 @@ pub fn run() {
             let app_handle = app.app_handle().clone();
             let _ = commands::reposition_toast_window(app_handle.clone());
 
-            // Initialize Diablo focus monitoring for hotkey management and window repositioning
-            // This combines both concerns into a single event hook to avoid duplicate hooks
+            // Initialize Diablo focus monitoring (hotkeys & window repositioning)
             let app_handle_bounds = app.app_handle().clone();
             let app_handle_focus = app.app_handle().clone();
             window::initialize_diablo_focus_monitoring(
