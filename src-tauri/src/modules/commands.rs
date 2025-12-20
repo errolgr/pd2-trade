@@ -136,3 +136,18 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
 }
+
+#[tauri::command]
+pub fn start_click_through_poll(app_handle: tauri::AppHandle) -> Result<(), String> {
+    window::start_cursor_monitoring(app_handle);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn update_click_through_areas(
+    window_label: String,
+    rects: Vec<window::PopupRect>,
+) -> Result<(), String> {
+    window::update_popup_rects(window_label, rects);
+    Ok(())
+}

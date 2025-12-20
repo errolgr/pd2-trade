@@ -10,6 +10,15 @@ pub struct WindowRect {
     pub height: i32,
 }
 
+#[derive(Serialize, serde::Deserialize, Clone, Copy, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PopupRect {
+    pub left: f64,
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64,
+}
+
 #[cfg(not(target_os = "windows"))]
 mod linux;
 #[cfg(not(target_os = "windows"))]

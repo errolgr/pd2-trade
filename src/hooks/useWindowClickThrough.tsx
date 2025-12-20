@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { cursorPosition } from '@tauri-apps/api/window';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -22,22 +20,11 @@ interface WindowClickThroughOptions {
 }
 
 export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
-  const { windowLabel, pollingInterval = 100, enableThrottling = true } = options;
+  const { windowLabel } = options;
 
   const popupRefs = useRef<PopupRef[]>([]);
-  const isClickThroughEnabled = useRef(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastStateChange = useRef<number>(0);
-  const currentPollingInterval = useRef<number>(pollingInterval);
-
-  const registerPopup = useCallback((ref: React.RefObject<HTMLElement>, id: string) => {
-    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
-    popupRefs.current.push({ ref, id });
-  }, []);
-
-  const unregisterPopup = useCallback((id: string) => {
-    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
-  }, []);
+  // Use a resize observer to detect changes in popup sizes/positions
+  const resizeObserver = useRef<ResizeObserver | null>(null);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
     const bounds: PopupBounds[] = [];
@@ -58,104 +45,72 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
     return bounds;
   }, []);
 
-  const checkCursorPosition = useCallback(async () => {
+  const updateBackend = useCallback(async () => {
     if (!isTauri()) return;
 
     try {
-      const window = await WebviewWindow.getByLabel(windowLabel);
-      if (!window) return;
-
-      // Get cursor position (screen coordinates)
-      const { x: cursorScreenX, y: cursorScreenY } = await cursorPosition();
-
-      // Get window position (screen coordinates)
-      const windowPosition = await window.outerPosition();
-      const windowX = windowPosition.x;
-      const windowY = windowPosition.y;
-
-      // Get popup bounds (viewport-relative coordinates)
-      const popupBounds = getPopupBounds();
-
-      // Convert cursor position to viewport-relative coordinates
-      const cursorViewportX = cursorScreenX - windowX;
-      const cursorViewportY = cursorScreenY - windowY;
-
-      const isOverPopup = popupBounds.some(
-        (bounds) =>
-          cursorViewportX >= bounds.left &&
-          cursorViewportX <= bounds.right &&
-          cursorViewportY >= bounds.top &&
-          cursorViewportY <= bounds.bottom,
-      );
-
-      const now = Date.now();
-
-      // Throttle rapid state changes if enabled
-      if (enableThrottling && now - lastStateChange.current < 50) {
-        return;
-      }
-
-      // Update click-through state for the window
-      if (isOverPopup && isClickThroughEnabled.current) {
-        // Cursor is over popup, disable click-through
-        await window.setIgnoreCursorEvents(false);
-        isClickThroughEnabled.current = false;
-        lastStateChange.current = now;
-      } else if (!isOverPopup && !isClickThroughEnabled.current) {
-        // Cursor is not over popup, enable click-through
-        await window.setIgnoreCursorEvents(true);
-        isClickThroughEnabled.current = true;
-        lastStateChange.current = now;
-      }
+      const bounds = getPopupBounds();
+      // Send bounds to backend (which expects PopupRect struct with left, top, right, bottom)
+      await invoke('update_click_through_areas', { windowLabel, rects: bounds });
     } catch (error) {
-      console.error(`[useWindowClickThrough:${windowLabel}] Error checking cursor position:`, error);
+      console.error(`[useWindowClickThrough:${windowLabel}] Failed to update backend:`, error);
     }
-  }, [windowLabel, getPopupBounds, enableThrottling]);
+  }, [windowLabel, getPopupBounds]);
 
+  const registerPopup = useCallback(
+    (ref: React.RefObject<HTMLElement>, id: string) => {
+      // Remove if already exists to avoid duplicates
+      popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
+      popupRefs.current.push({ ref, id });
+
+      // Observe the element
+      if (ref.current && resizeObserver.current) {
+        resizeObserver.current.observe(ref.current);
+      }
+
+      // Trigger immediate update
+      updateBackend();
+    },
+    [updateBackend],
+  );
+
+  const unregisterPopup = useCallback(
+    (id: string) => {
+      const popup = popupRefs.current.find((p) => p.id === id);
+      if (popup && popup.ref.current && resizeObserver.current) {
+        resizeObserver.current.unobserve(popup.ref.current);
+      }
+
+      popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
+      updateBackend();
+    },
+    [updateBackend],
+  );
+
+  // Initialize monitoring on mount
   useEffect(() => {
     if (!isTauri()) return;
 
-    // Start with click-through enabled for the window
-    const initClickThrough = async () => {
-      try {
-        const window = await WebviewWindow.getByLabel(windowLabel);
-        if (window) {
-          await window.setIgnoreCursorEvents(true);
-          isClickThroughEnabled.current = true;
-        }
-      } catch (error) {
-        console.error(`[useWindowClickThrough:${windowLabel}] Failed to initialize click-through:`, error);
-      }
-    };
+    // Initialize ResizeObserver
+    resizeObserver.current = new ResizeObserver(() => {
+      // Debounce updates slightly if needed, but for now direct update is likely fine
+      // as ResizeObserver batches changes
+      updateBackend();
+    });
 
-    initClickThrough();
+    // Start the backend polling thread (idempotent)
+    invoke('start_click_through_poll').catch((err) => console.error('Failed to start click-through poll:', err));
 
-    // Start polling for cursor position
-    pollingIntervalRef.current = setInterval(checkCursorPosition, currentPollingInterval.current);
+    // Initial clear
+    updateBackend();
 
     return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
+      if (resizeObserver.current) {
+        resizeObserver.current.disconnect();
       }
-      // Re-enable click-through on cleanup
-      if (isTauri()) {
-        WebviewWindow.getByLabel(windowLabel)
-          .then(async (window) => {
-            try {
-              if (window) {
-                await window.setIgnoreCursorEvents(true);
-              }
-            } catch (error) {
-              // Ignore errors on cleanup
-            }
-          })
-          .catch(() => {
-            // Ignore errors on cleanup
-          });
-      }
+      // We don't stop the backend poll as it's global
     };
-  }, [windowLabel, checkCursorPosition]);
+  }, [updateBackend]);
 
   return {
     registerPopup,

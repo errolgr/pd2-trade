@@ -124,7 +124,9 @@ pub fn run() {
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
-            commands::auto_detect_diablo2_directory
+            commands::auto_detect_diablo2_directory,
+            commands::start_click_through_poll,
+            commands::update_click_through_areas
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

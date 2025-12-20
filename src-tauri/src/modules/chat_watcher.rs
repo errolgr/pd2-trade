@@ -337,31 +337,37 @@ fn read_new_lines(
     let file = fs::File::open(file_path)?;
     let mut reader = BufReader::new(file);
 
-    let mut last_pos = LAST_POSITION.lock().unwrap();
+    let mut last_pos_guard = match LAST_POSITION.lock() {
+        Ok(g) => g,
+        Err(e) => {
+            eprintln!("Failed to lock LAST_POSITION: {}", e);
+            return Ok(());
+        }
+    };
 
     // If file size is less than last position, file might have been truncated/reset (new game created)
-    if file_size < *last_pos {
-        *last_pos = file_size;
+    if file_size < *last_pos_guard {
+        *last_pos_guard = file_size;
         return Ok(()); // Don't read old messages, just update position
     }
 
     // If file was reset to 0 and hasn't grown yet, nothing to read
     if file_size == 0 {
-        *last_pos = 0;
+        *last_pos_guard = 0;
         return Ok(());
     }
 
     // If we're already at the end, nothing to read
-    if *last_pos >= file_size {
+    if *last_pos_guard >= file_size {
         return Ok(());
     }
 
     // Seek to last position
-    if let Err(_e) = reader.seek(SeekFrom::Start(*last_pos)) {
+    if let Err(_e) = reader.seek(SeekFrom::Start(*last_pos_guard)) {
         // If seek fails, try to get current file size and start from there
         if let Ok(metadata) = file_path.metadata() {
-            *last_pos = metadata.len();
-            if let Err(_e2) = reader.seek(SeekFrom::Start(*last_pos)) {
+            *last_pos_guard = metadata.len();
+            if let Err(_e2) = reader.seek(SeekFrom::Start(*last_pos_guard)) {
                 return Ok(()); // Return early if we can't seek
             }
         } else {
@@ -396,7 +402,7 @@ fn read_new_lines(
             Err(_e) => {
                 // Try to update position and continue
                 if let Ok(current_pos) = reader.seek(SeekFrom::Current(0)) {
-                    *last_pos = current_pos;
+                    *last_pos_guard = current_pos;
                 }
                 break; // Exit loop on read error
             }
@@ -406,12 +412,12 @@ fn read_new_lines(
     // Always update last position, even if there were errors
     match reader.seek(SeekFrom::Current(0)) {
         Ok(current_pos) => {
-            *last_pos = current_pos;
+            *last_pos_guard = current_pos;
         }
         Err(_e) => {
             // Try to get position from file metadata as fallback
             if let Ok(metadata) = file_path.metadata() {
-                *last_pos = metadata.len();
+                *last_pos_guard = metadata.len();
             }
         }
     }
@@ -439,7 +445,9 @@ pub fn start_watching(
     // Initialize last position to end of file
     if let Ok(file) = fs::File::open(&log_path) {
         if let Ok(metadata) = file.metadata() {
-            *LAST_POSITION.lock().unwrap() = metadata.len();
+            if let Ok(mut guard) = LAST_POSITION.lock() {
+                *guard = metadata.len();
+            }
         }
     }
 
@@ -454,10 +462,12 @@ pub fn start_watching(
                         let app_handle_clone = app_handle.clone();
                         let log_path_clone = log_path_for_watcher.clone();
 
-                        // Small delay to ensure file is fully written
-                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        std::thread::spawn(move || {
+                            // Small delay to ensure file is fully written
+                            std::thread::sleep(std::time::Duration::from_millis(100));
 
-                        let _ = read_new_lines(&log_path_clone, app_handle_clone);
+                            let _ = read_new_lines(&log_path_clone, app_handle_clone);
+                        });
                     }
                 }
                 Err(_e) => {
@@ -473,14 +483,22 @@ pub fn start_watching(
         .map_err(|e| format!("Failed to watch chat log file: {}", e))?;
 
     // Store watcher handle
-    *WATCHER_HANDLE.lock().unwrap() = Some(Arc::new(Mutex::new(Some(watcher))));
+    if let Ok(mut guard) = WATCHER_HANDLE.lock() {
+        *guard = Some(Arc::new(Mutex::new(Some(watcher))));
+    } else {
+        return Err("Failed to lock watcher handle".to_string());
+    }
 
     Ok(())
 }
 
 /// Stop watching the chat log file
 pub fn stop_watching() -> Result<(), String> {
-    let mut handle_guard = WATCHER_HANDLE.lock().unwrap();
+    let mut handle_guard = match WATCHER_HANDLE.lock() {
+        Ok(g) => g,
+        Err(_) => return Err("Failed to lock watcher handle".to_string()),
+    };
+
     if let Some(arc_watcher) = handle_guard.take() {
         if let Ok(mut watcher_guard) = arc_watcher.lock() {
             watcher_guard.take();

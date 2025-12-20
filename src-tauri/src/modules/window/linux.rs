@@ -1,5 +1,8 @@
-use super::WindowRect;
+use super::{PopupRect, WindowRect};
+use std::collections::HashMap;
 use std::error::Error;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::Manager; // Ensure Manager is imported for get_webview_window
 use tauri::{AppHandle, Emitter};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{AtomEnum, ConnectionExt, Window};
@@ -344,4 +347,107 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
 pub fn cleanup_foreground_monitoring() {
     // No-op on Linux, as the thread will die with the app
     // or we could implement a kill signal but this is acceptable for now
+}
+
+static POPUP_RECTS: Lazy<Mutex<HashMap<String, Vec<PopupRect>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+static MONITORING_STARTED: AtomicBool = AtomicBool::new(false);
+
+pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
+    if let Ok(mut guard) = POPUP_RECTS.lock() {
+        guard.insert(window_label, rects);
+    }
+}
+
+pub fn start_cursor_monitoring(app_handle: AppHandle) {
+    if MONITORING_STARTED.swap(true, Ordering::SeqCst) {
+        return; // Already started
+    }
+
+    std::thread::spawn(move || {
+        let (conn, screen_num) = match x11rb::connect(None) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Error connecting to X11 for cursor monitoring: {}", e);
+                return;
+            }
+        };
+
+        let root = conn.setup().roots[screen_num].root;
+        let mut last_states: HashMap<String, bool> = HashMap::new(); // label -> is_ignoring
+
+        loop {
+            // Poll at 20Hz (50ms)
+            std::thread::sleep(std::time::Duration::from_millis(50));
+
+            // Get cursor position
+            let pointer = match conn.query_pointer(root) {
+                Ok(cookie) => match cookie.reply() {
+                    Ok(r) => r,
+                    Err(_) => continue,
+                },
+                Err(_) => continue,
+            };
+
+            let cursor_x = pointer.root_x as f64;
+            let cursor_y = pointer.root_y as f64;
+
+            // Check each window
+            let windows_to_check: Vec<(String, Vec<PopupRect>)> = {
+                match POPUP_RECTS.lock() {
+                    Ok(guard) => guard.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+                    Err(_) => continue,
+                }
+            };
+
+            for (label, rects) in windows_to_check {
+                if let Some(window) = app_handle.get_webview_window(&label) {
+                    // Skip if window is not visible to avoid unnecessary work/IPC
+                    if let Ok(false) = window.is_visible() {
+                        continue;
+                    }
+
+                    // Get window position
+                    if let Ok(pos) = window.outer_position() {
+                        let win_x = pos.x as f64;
+                        let win_y = pos.y as f64;
+
+                        let rel_x = cursor_x - win_x;
+                        let rel_y = cursor_y - win_y;
+
+                        let is_over_popup = rects.iter().any(|r| {
+                            rel_x >= r.left
+                                && rel_x <= r.right
+                                && rel_y >= r.top
+                                && rel_y <= r.bottom
+                        });
+
+                        // If over popup, we want INTERACTIVE (ignore = false)
+                        // If NOT over popup, we want CLICK-THROUGH (ignore = true)
+                        let should_ignore = !is_over_popup;
+
+                        // Check if state changed
+                        let current_ignore = last_states.get(&label).copied().unwrap_or(false);
+
+                        // Force update if not tracked yet (first run) or changed
+                        let is_first_run = !last_states.contains_key(&label);
+
+                        if is_first_run || current_ignore != should_ignore {
+                            match window.set_ignore_cursor_events(should_ignore) {
+                                Ok(_) => {
+                                    last_states.insert(label, should_ignore);
+                                }
+                                Err(e) => {
+                                    eprintln!(
+                                        "Failed to set ignore cursor events for {}: {}",
+                                        label, e
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 }

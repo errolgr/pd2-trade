@@ -1,13 +1,16 @@
-use super::WindowRect;
+use super::{PopupRect, WindowRect};
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use tauri::{AppHandle, Emitter}; // Added Emitter for emit() call
+use tauri::{AppHandle, Emitter, Manager};
 
 use windows_sys::Win32::{
-    Foundation::{HWND, RECT},
+    Foundation::{HWND, POINT, RECT},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
+        FindWindowW, GetCursorPos, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
         SystemParametersInfoW, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
     },
 };
@@ -185,4 +188,95 @@ pub fn cleanup_foreground_monitoring() {
         }
         *CALLBACK.lock().unwrap() = None;
     }
+}
+
+static POPUP_RECTS: Lazy<Mutex<HashMap<String, Vec<PopupRect>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+static MONITORING_STARTED: AtomicBool = AtomicBool::new(false);
+
+pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
+    if let Ok(mut guard) = POPUP_RECTS.lock() {
+        guard.insert(window_label, rects);
+    }
+}
+
+pub fn start_cursor_monitoring(app_handle: AppHandle) {
+    if MONITORING_STARTED.swap(true, Ordering::SeqCst) {
+        return; // Already started
+    }
+
+    std::thread::spawn(move || {
+        let mut last_states: HashMap<String, bool> = HashMap::new(); // label -> is_ignoring
+
+        loop {
+            // Poll at 20Hz (50ms)
+            std::thread::sleep(std::time::Duration::from_millis(50));
+
+            // Get cursor position
+            let mut point = POINT { x: 0, y: 0 };
+            unsafe {
+                if GetCursorPos(&mut point) == 0 {
+                    continue;
+                }
+            }
+
+            let cursor_x = point.x as f64;
+            let cursor_y = point.y as f64;
+
+            // Check each window
+            let windows_to_check: Vec<(String, Vec<PopupRect>)> = {
+                match POPUP_RECTS.lock() {
+                    Ok(guard) => guard.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+                    Err(_) => continue,
+                }
+            };
+
+            for (label, rects) in windows_to_check {
+                if let Some(window) = app_handle.get_webview_window(&label) {
+                    // Skip if window is not visible
+                    if let Ok(false) = window.is_visible() {
+                        continue;
+                    }
+
+                    // Get window position
+                    if let Ok(pos) = window.outer_position() {
+                        let win_x = pos.x as f64;
+                        let win_y = pos.y as f64;
+
+                        let rel_x = cursor_x - win_x;
+                        let rel_y = cursor_y - win_y;
+
+                        let is_over_popup = rects.iter().any(|r| {
+                            rel_x >= r.left
+                                && rel_x <= r.right
+                                && rel_y >= r.top
+                                && rel_y <= r.bottom
+                        });
+
+                        // If over popup, we want INTERACTIVE (ignore = false)
+                        // If NOT over popup, we want CLICK-THROUGH (ignore = true)
+                        let should_ignore = !is_over_popup;
+
+                        // Check if state changed
+                        let current_ignore = last_states.get(&label).copied().unwrap_or(false);
+                        let is_first_run = !last_states.contains_key(&label);
+
+                        if is_first_run || current_ignore != should_ignore {
+                            match window.set_ignore_cursor_events(should_ignore) {
+                                Ok(_) => {
+                                    last_states.insert(label, should_ignore);
+                                }
+                                Err(e) => {
+                                    eprintln!(
+                                        "Failed to set ignore cursor events for {}: {}",
+                                        label, e
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
