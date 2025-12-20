@@ -41,6 +41,7 @@ const LandingPage: React.FC = () => {
   const chatWindowRef = useRef<any>(null);
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
+  const currencyWindowRef = useRef<any>(null);
   const settingsRef = useRef<any>(null);
   // const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -158,15 +159,34 @@ const LandingPage: React.FC = () => {
   const openCurrencyValuation = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
 
-    await openCenteredWindow('Currency', '/currency', {
-      decorations: false,
-      focus: true,
-      shadow: false,
-      skipTaskbar: true,
-      width: 640,
-      height: 870,
-      alwaysOnTop: true,
-    });
+    if (!currencyWindowRef.current) {
+      currencyWindowRef.current = await openCenteredWindow('Currency', '/currency', {
+        title: WindowTitles.Currency,
+        decorations: false,
+        focus: true,
+        shadow: false,
+        skipTaskbar: true,
+        width: 640,
+        height: 870,
+        alwaysOnTop: true,
+      });
+
+      if (currencyWindowRef.current) {
+        currencyWindowRef.current.onCloseRequested(async () => {
+          currencyWindowRef.current = null;
+        });
+      }
+    } else {
+      try {
+        await currencyWindowRef.current.show();
+        await currencyWindowRef.current.setFocus();
+      } catch (err) {
+        console.error('[LandingPage] Failed to focus existing currency window:', err);
+        currencyWindowRef.current = null;
+        // Retry open? No, let user click again or recursive call?
+        // Simple retry logic could be added but usually nulling ref is enough for next click
+      }
+    }
   }, [checkDiabloFocus]);
 
   // Open quick list window
@@ -660,7 +680,12 @@ const LandingPage: React.FC = () => {
             updatePromises.push(moveWindowBy(settingsWindow, dx, dy));
           }
 
-          // 7. Chat Button Overlay
+          // 7. Update Currency Window (Floating)
+          if (currencyWindowRef.current) {
+            updatePromises.push(moveWindowBy(currencyWindowRef.current, dx, dy));
+          }
+
+          // 8. Chat Button Overlay
           if (settings.chatButtonOverlayEnabled !== false) {
             if (chatButtonWindowRef.current) {
               updatePromises.push(moveWindowBy(chatButtonWindowRef.current, dx, dy));
@@ -770,6 +795,11 @@ const LandingPage: React.FC = () => {
             await settingsWindow.show();
           }
 
+          // 7. Currency Window
+          if (snapshot.has('currency') && currencyWindowRef.current) {
+            await currencyWindowRef.current.show();
+          }
+
           // Clear snapshot after restoring - we assume we are back to normal state
           snapshot.clear();
         } else {
@@ -823,6 +853,12 @@ const LandingPage: React.FC = () => {
             if (settingsWindow && (await settingsWindow.isVisible())) {
               snapshot.add('settings');
               await settingsWindow.hide();
+            }
+
+            // 7. Currency Window
+            if (currencyWindowRef.current && (await currencyWindowRef.current.isVisible())) {
+              snapshot.add('currency');
+              await currencyWindowRef.current.hide();
             }
 
             console.log('[VisibilityManager] Hidden windows due to focus loss. Snapshot:', Array.from(snapshot));

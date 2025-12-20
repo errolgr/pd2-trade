@@ -34,6 +34,7 @@ import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { WindowTitles } from '@/lib/window-titles';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -197,6 +198,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openCurrencyValuation = useCallback(async () => {
     await openCenteredWindow('Currency', '/currency', {
+      title: WindowTitles.Currency,
       decorations: false,
       focus: true,
       shadow: false,

@@ -5,6 +5,7 @@ export const WindowTitles = {
   QuickList: 'PD2Trade: QuickList',
   ItemSearch: 'PD2Trade: Item Search',
   Settings: 'PD2Trade: Settings',
+  Currency: 'PD2Trade: Currency',
   // Common prefix for backend detection
   PREFIX: 'PD2Trade:',
 } as const;
