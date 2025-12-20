@@ -10,6 +10,7 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
+import { WindowTitles } from '@/lib/window-titles';
 
 type TrayContextValue = {
   tray: any | null;
@@ -38,6 +39,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const showSettingsWindow = async () => {
     if (!settingsWinRef.current) {
       settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
+        title: WindowTitles.Settings,
         decorations: false,
         skipTaskbar: true,
         transparent: true,

@@ -950,13 +950,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               onRefresh={handleRefresh}
             />
 
-            <ListingFormFields
-              form={form}
-              selectedItem={selectedItem}
-              currentListings={currentListings}
-              submitLoading={submitLoading}
-              onSubmit={handleSubmit}
-            />
+            <div className="flex-shrink-0">
+              <ListingFormFields
+                form={form}
+                selectedItem={selectedItem}
+                currentListings={currentListings}
+                submitLoading={submitLoading}
+                onSubmit={handleSubmit}
+              />
+            </div>
           </form>
         </Form>
       );

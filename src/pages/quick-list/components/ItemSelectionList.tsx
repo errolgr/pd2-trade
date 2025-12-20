@@ -1,5 +1,4 @@
 import React from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -57,8 +56,8 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           </button>
         </div>
       </div>
-      <ScrollArea className="pr-2 flex-1">
-        <div className="flex flex-col gap-2">
+      <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex flex-col gap-2 pb-4">
           {matchingItems.map((stashItem, index) => (
             <div
               key={stashItem.hash || index}
@@ -89,7 +88,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

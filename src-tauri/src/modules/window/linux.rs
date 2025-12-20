@@ -205,7 +205,9 @@ pub fn is_diablo_focused() -> bool {
                 if let Ok(reply) = reply.reply() {
                     if reply.format == 8 && reply.value_len > 0 {
                         let name = String::from_utf8_lossy(&reply.value);
-                        return name.contains("Diablo II");
+                        // Whitelist our own windows (via prefix) + Diablo II
+                        // See src/lib/window-titles.ts for the common prefix
+                        return name.contains("Diablo II") || name.contains("PD2Trade:");
                     }
                 }
             }
