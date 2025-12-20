@@ -339,8 +339,8 @@ fn read_new_lines(
 
     let mut last_pos_guard = match LAST_POSITION.lock() {
         Ok(g) => g,
-        Err(e) => {
-            eprintln!("Failed to lock LAST_POSITION: {}", e);
+        Err(_e) => {
+            // eprintln!("Failed to lock LAST_POSITION: {}", e);
             return Ok(());
         }
     };

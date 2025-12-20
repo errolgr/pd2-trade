@@ -110,7 +110,6 @@ export const useSocket = (props?: UseSocketProps) => {
     };
 
     socket.on('connect', () => {
-      console.log('[Socket] Connected');
       setIsConnected(true);
       setError(null);
 

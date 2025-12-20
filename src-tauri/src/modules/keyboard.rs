@@ -5,8 +5,6 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
     let mut mods = Vec::<Key>::new();
     let mut main: Option<Key> = None;
 
-    println!("[str_to_keys] Parsing sequence: {}", seq);
-
     for part in seq.split('+') {
         match part.to_ascii_lowercase().as_str() {
             "ctrl" | "control" => {
@@ -56,7 +54,7 @@ pub fn str_to_keys(seq: &str) -> Result<(Vec<Key>, Key), String> {
 
     let main = main.ok_or_else(|| {
         let err = "No main key found".to_string();
-        eprintln!("[str_to_keys] Error: {}", err);
+        // eprintln!("[str_to_keys] Error: {}", err);
         err
     })?;
 

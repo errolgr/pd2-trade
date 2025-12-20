@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { listen, emit } from '@tauri-apps/api/event';
 import { isTauri } from '@tauri-apps/api/core';
 import { TradeMessageData, TradeMessageHistoryEntry } from '@/components/trade/TradeMessage';
@@ -156,12 +156,12 @@ export const useTradeMessages = () => {
         if (isTauri()) {
           const removeUnlisten = await listen<{ id: string }>('trade-message-removed', (event) => {
             const { id } = event.payload;
-            console.log('[useTradeMessages] Received trade-message-removed event for:', id);
+
             setTrades((prev) => {
               // Only remove if the trade still exists (avoid unnecessary updates)
               if (prev.some((trade) => trade.id === id)) {
                 const updated = prev.filter((trade) => trade.id !== id);
-                console.log('[useTradeMessages] Updated trades from event, count:', prev.length, '->', updated.length);
+
                 return updated;
               }
               return prev;

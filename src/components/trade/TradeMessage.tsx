@@ -3,16 +3,7 @@ import {
   X,
   RefreshCw,
   User,
-  ShoppingCart,
-  ThumbsUp,
-  ArrowRight,
-  ArrowUp,
-  Home,
-  Package,
-  Volume2,
-  VolumeX,
   MessageSquare,
-  Eye,
   Trash2,
   CheckCircle,
   XCircle,
@@ -21,15 +12,14 @@ import {
   CheckSquare,
   RotateCcw,
   MessageCircle,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useClipboard } from '@/hooks/useClipboard';
 import { openUrl } from '@/lib/browser-opener';
@@ -83,9 +73,9 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
 }) => {
   const { authData, createConversation, sendMessage } = usePd2Website();
   const { settings } = useOptions();
-  const [soundEnabled, setSoundEnabled] = useState(true);
+
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
-  const [viewPopoverOpen, setViewPopoverOpen] = useState(false);
+
   const [historyPopoverOpen, setHistoryPopoverOpen] = useState(false);
   const [gameName, setGameName] = useState('');
   const [password, setPassword] = useState('');
@@ -153,10 +143,6 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     onClose(trade.id);
   };
 
-  const handleToggleSound = () => {
-    setSoundEnabled(!soundEnabled);
-  };
-
   const handleViewProfile = () => {
     // Open profile on website using account name
     const characterName = trade.characterName;
@@ -170,11 +156,6 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     await copy(whisperCommand);
     setCopiedAction('whisper');
     setTimeout(() => setCopiedAction(null), 2000);
-  };
-
-  const handleTrade = () => {
-    // Initiate trade
-    console.log('Initiate trade:', trade.playerName);
   };
 
   const handleAccept = async () => {
@@ -369,11 +350,6 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     setTimeout(() => setCopiedAction(null), 2000);
   };
 
-  const handleHistory = () => {
-    // Show history popover
-    setHistoryPopoverOpen(true);
-  };
-
   const handleRevoke = async () => {
     if (onRevoke) {
       try {
@@ -394,8 +370,6 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
       // Create conversation with both user IDs
       const participantIds = [authData.user._id, trade.userId];
       const conversation = await createConversation(participantIds);
-
-      console.log('Conversation created:', conversation);
 
       // Toggle chat window and pass conversation object
       await emit('toggle-chat-window', {
