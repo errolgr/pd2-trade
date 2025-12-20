@@ -17,11 +17,13 @@ import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
 import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
+import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
 import { RunePricePopover } from './RunePricePopover';
 import { getStatKey } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -509,75 +511,24 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <thead>
                   <tr>
                     <th className="px-2 py-1 border-b border-neutral-700">Price</th>
+                    <th className="px-2 py-1 border-b border-neutral-700">Corrupted</th>
+                    <th className="px-2 py-1 border-b border-neutral-700">Sockets</th>
                     <th className="px-2 py-1 border-b border-neutral-700">Listed</th>
                   </tr>
                 </thead>
                 <tbody>
                   {marketListings.length === 0 && (
                     <tr>
-                      <td colSpan={2}
+                      <td colSpan={3}
                         className="px-2 py-2 text-center text-gray-400">
                         No listings found
                       </td>
                     </tr>
                   )}
                   {marketListings.map((listing: MarketListingEntry, idx: number) => (
-                    <tr key={listing._id || idx}
-                      className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
-                      <td className="px-2 py-1 flex flex-row items-center">
-                        {listing.hr_price ? (
-                          `${listing.hr_price} HR`
-                        ) : listing.price && listing.price.length > 40 ? (
-                          <HoverPopover
-                            content={
-                              <Card>
-                                <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
-                              </Card>
-                            }
-                          >
-                            <span className="cursor-pointer underline decoration-dotted">
-                              {listing.price.slice(0, 40)}...
-                            </span>
-                          </HoverPopover>
-                        ) : (
-                          listing.price || '-'
-                        )}
-                        {/* Red dot for corruption with hover popover */}
-                        {listing.item?.corruptions?.length > 0 && (
-                          <HoverPopover
-                            content={
-                              <Card>
-                                <div className="text-xs p-2">
-                                  <div className="font-bold mb-1 text-red-500">Corruptions:</div>
-                                  <ul className="list-disc pl-4">
-                                    {listing.item.modifiers?.filter((mod: any) => mod.corrupted).length > 0
-                                      ? listing.item.modifiers
-                                          .filter((mod: any) => mod.corrupted)
-                                          .map((mod: any, i: number) =>
-                                            mod.name === 'item_numsockets' ? (
-                                              <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
-                                            ) : (
-                                              <li key={i}>{mod.label}</li>
-                                            ),
-                                          )
-                                      : listing.item.corruptions.map((c: string, i: number) =>
-                                          c === 'item_numsockets' ? (
-                                            <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
-                                          ) : (
-                                            <li key={i}>{c}</li>
-                                          ),
-                                        )}
-                                  </ul>
-                                </div>
-                              </Card>
-                            }
-                          >
-                            <span className="inline-block align-middle ml-2 w-2 h-2 rounded-full bg-red-500 cursor-pointer" />
-                          </HoverPopover>
-                        )}
-                      </td>
-                      <td className="px-2 py-1">{listing.bumped_at ? moment(listing.bumped_at).fromNow() : '-'}</td>
-                    </tr>
+                    <ListingRow key={listing._id || idx}
+                      listing={listing}
+                      idx={idx} />
                   ))}
                 </tbody>
               </table>
@@ -595,3 +546,82 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     </Card>
   );
 }
+
+const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
+  const [open, setOpen] = useState(false);
+  const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
+
+  // Clean corruptions similar to logic used elsewhere if needed, but for now we rely on the list
+
+  return (
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <tr
+          className={`cursor-help ${idx % 2 === 0 ? 'bg-neutral-800' : ''} hover:bg-neutral-700 transition-colors`}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+        >
+          {/* Price Column */}
+          <td className="px-2 py-1 flex flex-row items-center">
+            {listing.hr_price ? (
+              `${listing.hr_price} HR`
+            ) : listing.price && listing.price.length > 40 ? (
+              <HoverPopover
+                content={
+                  <Card>
+                    <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
+                  </Card>
+                }
+              >
+                <span className="cursor-pointer underline decoration-dotted">{listing.price.slice(0, 40)}...</span>
+              </HoverPopover>
+            ) : (
+              listing.price || '-'
+            )}
+          </td>
+
+          {/* Corruption Column */}
+          <td className="px-2 py-1">
+            <Badge variant={isCorrupted ? 'destructive' : 'secondary'}
+              className="h-5 px-1 text-[10px]">
+              {isCorrupted ? 'Corrupted' : 'Clean'}
+            </Badge>
+          </td>
+
+          {/* Sockets Column */}
+          <td className="px-2 py-1">
+            <div className="flex flex-row gap-1">
+              {Array.from({ length: listing.item.socket_count || 0 }).map((_, i) => (
+                <div key={i}
+                  className="w-3 h-3 rounded-full border border-neutral-500 bg-black/40" />
+              ))}
+              {!listing.item.socket_count && <span className="text-gray-500">-</span>}
+            </div>
+          </td>
+
+          {/* Listed Column */}
+          <td className="px-2 py-1">{listing.bumped_at ? moment(listing.bumped_at).fromNow() : '-'}</td>
+        </tr>
+      </PopoverTrigger>
+
+      {/* Row Hover Stats Popover */}
+      <PopoverContent
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        side="bottom"
+        align="start"
+        className="p-0 bg-transparent border-0 w-auto"
+      >
+        <Card className="p-2 bg-neutral-950 border-neutral-700 max-w-sm">
+          <ItemStatsDisplay
+            stashItem={listing.item as any}
+            isExpanded={true}
+            onToggleExpanded={() => {}}
+            hideToggle={true}
+          />
+        </Card>
+      </PopoverContent>
+    </Popover>
+  );
+};

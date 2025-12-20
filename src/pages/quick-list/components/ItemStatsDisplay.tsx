@@ -7,9 +7,10 @@ interface ItemStatsDisplayProps {
   stashItem: GameStashItem;
   isExpanded: boolean;
   onToggleExpanded: (itemHash: string) => void;
+  hideToggle?: boolean;
 }
 
-const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpanded, onToggleExpanded }) => {
+const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpanded, onToggleExpanded, hideToggle }) => {
   const hasModifiers = stashItem.modifiers && stashItem.modifiers.length > 0;
 
   const filteredModifiers = stashItem.modifiers.filter((mod) => {
@@ -79,7 +80,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
                   {mod?.min && mod?.max && `: [${mod.min} - ${mod.max}]`}
                 </div>
               ))}
-              {sortedModifiers.length > 3 && (
+              {sortedModifiers.length > 3 && !hideToggle && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -92,7 +93,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
               )}
             </>
           )}
-          {isExpanded && (
+          {isExpanded && !hideToggle && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
