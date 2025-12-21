@@ -514,9 +514,42 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <thead>
                   <tr>
                     <th className="px-2 py-1 border-b border-neutral-700 w-full">Price</th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">E</th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">C</th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">S</th>
+                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
+                      <HoverPopover
+                        side="top"
+                        content={
+                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
+                            Ethereal
+                          </div>
+                        }
+                      >
+                        <span className="cursor-help">E</span>
+                      </HoverPopover>
+                    </th>
+                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
+                      <HoverPopover
+                        side="top"
+                        content={
+                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
+                            Corrupted
+                          </div>
+                        }
+                      >
+                        <span className="cursor-help">C</span>
+                      </HoverPopover>
+                    </th>
+                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
+                      <HoverPopover
+                        side="top"
+                        content={
+                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
+                            Socket Count
+                          </div>
+                        }
+                      >
+                        <span className="cursor-help">S</span>
+                      </HoverPopover>
+                    </th>
                     <th className="px-2 py-1 border-b border-neutral-700 whitespace-nowrap w-[1%]">Listed</th>
                   </tr>
                 </thead>
