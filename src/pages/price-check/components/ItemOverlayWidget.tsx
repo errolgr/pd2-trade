@@ -514,6 +514,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <thead>
                   <tr>
                     <th className="px-2 py-1 border-b border-neutral-700 w-full">Price</th>
+                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">E</th>
                     <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">C</th>
                     <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">S</th>
                     <th className="px-2 py-1 border-b border-neutral-700 whitespace-nowrap w-[1%]">Listed</th>
@@ -522,7 +523,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <tbody>
                   {marketListings.length === 0 && (
                     <tr>
-                      <td colSpan={4}
+                      <td colSpan={5}
                         className="px-2 py-2 text-center text-gray-400">
                         No listings found
                       </td>
@@ -584,15 +585,37 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             )}
           </td>
 
+          {/* Ethereal Column */}
+          <td className="px-1 py-1 text-center">
+            <div className="flex justify-center">
+              {listing.item.is_ethereal ? (
+                <span
+                  className="inline-block w-3 h-3 rounded-full border border-neutral-600 bg-white"
+                  title="Ethereal"
+                />
+              ) : (
+                <span className="text-gray-600 text-[10px]"
+                  title="Not Ethereal">
+                  -
+                </span>
+              )}
+            </div>
+          </td>
+
           {/* Corruption Column */}
           <td className="px-1 py-1 text-center">
             <div className="flex justify-center">
-              <span
-                className={`inline-block w-3 h-3 rounded-full border border-neutral-600 ${
-                  isCorrupted ? 'bg-red-500' : 'bg-black/40'
-                }`}
-                title={isCorrupted ? 'Corrupted' : 'Clean'}
-              />
+              {isCorrupted ? (
+                <span
+                  className="inline-block w-3 h-3 rounded-full border border-neutral-600 bg-red-500"
+                  title="Corrupted"
+                />
+              ) : (
+                <span className="text-gray-600 text-[10px]"
+                  title="Clean">
+                  -
+                </span>
+              )}
             </div>
           </td>
 
