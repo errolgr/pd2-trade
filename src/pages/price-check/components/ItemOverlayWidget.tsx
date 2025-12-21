@@ -590,7 +590,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             <div className="flex justify-center">
               {listing.item.is_ethereal ? (
                 <span
-                  className="inline-block w-3 h-3 rounded-full border border-neutral-600 bg-white"
+                  className="inline-block w-2.5 h-2.5 rounded-full border border-neutral-600 bg-white"
                   title="Ethereal"
                 />
               ) : (
@@ -607,7 +607,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             <div className="flex justify-center">
               {isCorrupted ? (
                 <span
-                  className="inline-block w-3 h-3 rounded-full border border-neutral-600 bg-red-500"
+                  className="inline-block w-2.5 h-2.5 rounded-full border border-neutral-600 bg-red-500"
                   title="Corrupted"
                 />
               ) : (
