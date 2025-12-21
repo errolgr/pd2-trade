@@ -6,9 +6,16 @@ interface HoverPopoverProps {
   children: React.ReactNode;
   className?: string;
   onSelect?: () => void;
+  side?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-export const HoverPopover: React.FC<HoverPopoverProps> = ({ content, children, className, onSelect }) => {
+export const HoverPopover: React.FC<HoverPopoverProps> = ({
+  content,
+  children,
+  className,
+  onSelect,
+  side = 'bottom',
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -25,9 +32,9 @@ export const HoverPopover: React.FC<HoverPopoverProps> = ({ content, children, c
       <PopoverContent
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        side="bottom" // optional: position the popover below the trigger
+        side={side}
         align="center"
-        className={className ? className : 'p-0 bg-transparent border-0'}
+        className={className ? className : 'p-0 bg-transparent border-0 w-auto'}
       >
         {content}
       </PopoverContent>
