@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { useOptions } from '@/hooks/useOptions';
-import { useClickThrough } from '@/hooks/useClickThrough';
 
 interface ChatOverlayWidgetProps {
   onClose: () => void;
@@ -54,18 +53,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const messageListenerUnlistenRef = useRef<(() => void) | null>(null);
   const isMessageListenerSetupRef = useRef<boolean>(false);
 
-  const { registerPopup, unregisterPopup } = useClickThrough();
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Register the chat window as an interactive popup
-  useEffect(() => {
-    if (containerRef.current) {
-      registerPopup(containerRef as any, 'chat-window');
-    }
-    return () => {
-      unregisterPopup('chat-window');
-    };
-  }, [registerPopup, unregisterPopup]);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;

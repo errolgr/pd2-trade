@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { emit } from '@/lib/browser-events';
-import { useClickThrough } from '@/hooks/useClickThrough';
 
 interface ChatButtonProps {
   handleClick: () => void;
@@ -63,7 +62,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     }, 200);
   };
 
-  const { registerPopup, unregisterPopup } = useClickThrough();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
@@ -72,43 +70,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const manageRef = useRef<HTMLButtonElement>(null);
   const disableRef = useRef<HTMLButtonElement>(null);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Register interactive elements with backend for click-through monitoring
-  useEffect(() => {
-    // Helper to register only if element exists and is visible (or relevant)
-    const updateRegistrations = () => {
-      if (mainButtonRef.current) registerPopup(mainButtonRef as any, 'chat-main-btn');
-
-      if (isHovered) {
-        // Register satellite buttons when expanded
-        if (dragRef.current) registerPopup(dragRef as any, 'chat-drag-btn');
-        if (settingsRef.current) registerPopup(settingsRef as any, 'chat-settings-btn');
-        // Trade ref is a div wrapping the button
-        if (tradeRef.current) registerPopup(tradeRef as any, 'chat-trade-area');
-        if (manageRef.current) registerPopup(manageRef as any, 'chat-manage-btn');
-        if (disableRef.current) registerPopup(disableRef as any, 'chat-disable-btn');
-      } else {
-        // Unregister satellites when collapsed
-        unregisterPopup('chat-drag-btn');
-        unregisterPopup('chat-settings-btn');
-        unregisterPopup('chat-trade-area');
-        unregisterPopup('chat-manage-btn');
-        unregisterPopup('chat-disable-btn');
-      }
-    };
-
-    updateRegistrations();
-
-    // Cleanup on unmount
-    return () => {
-      unregisterPopup('chat-main-btn');
-      unregisterPopup('chat-drag-btn');
-      unregisterPopup('chat-settings-btn');
-      unregisterPopup('chat-trade-area');
-      unregisterPopup('chat-manage-btn');
-      unregisterPopup('chat-disable-btn');
-    };
-  }, [isHovered, registerPopup, unregisterPopup]);
 
   // Use a simple timeout for collapse, but backend will enforce click-through
   // when cursor is not over these registered areas.

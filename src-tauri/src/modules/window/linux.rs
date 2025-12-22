@@ -365,6 +365,7 @@ pub fn stop_cursor_monitoring() {
 }
 
 pub fn start_cursor_monitoring(app_handle: AppHandle) {
+    println!("[CursorMonitor] start_cursor_monitoring called");
     if MONITORING_STARTED.swap(true, Ordering::SeqCst) {
         MONITORING_ACTIVE.store(true, Ordering::SeqCst);
         return; // Already started
@@ -384,6 +385,7 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
         let root = conn.setup().roots[screen_num].root;
         let mut last_states: HashMap<String, bool> = HashMap::new(); // label -> is_ignoring
         let mut consecutive_focus_requests: i32 = 0;
+        let mut listing_counter: u64 = 0;
 
         loop {
             // Check if we should be running
@@ -432,11 +434,29 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                         let rel_x = cursor_x - win_x;
                         let rel_y = cursor_y - win_y;
 
+                        // DEBUG LOGGING
+                        if label == "chat_button" || label == "main" {
+                            if listing_counter % 20 == 0 {
+                                // Log ~1Hz
+                                println!("[CursorPoll] Win: {}, Pos: ({}, {}), Cursor: ({}, {}), Rel: ({}, {})",
+                                    label, win_x, win_y, cursor_x, cursor_y, rel_x, rel_y
+                                );
+                            }
+                        }
+
                         let is_over_popup = rects.iter().any(|r| {
-                            rel_x >= r.left
+                            let hit = rel_x >= r.left
                                 && rel_x <= r.right
                                 && rel_y >= r.top
-                                && rel_y <= r.bottom
+                                && rel_y <= r.bottom;
+
+                            if hit && (listing_counter % 20 == 0) {
+                                println!(
+                                    "[CursorPoll] HIT! Rect: {:?}, Rel: ({}, {})",
+                                    r, rel_x, rel_y
+                                );
+                            }
+                            hit
                         });
 
                         if is_over_popup {
@@ -454,8 +474,13 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                         let is_first_run = !last_states.contains_key(&label);
 
                         if is_first_run || current_ignore != should_ignore {
+                            println!(
+                                "[CursorPoll] State Change for {}: Ignore={} (was {})",
+                                label, should_ignore, current_ignore
+                            );
                             match window.set_ignore_cursor_events(should_ignore) {
                                 Ok(_) => {
+                                    println!("[CursorPoll] Successfully set ignore_cursor_events({}) for {}", should_ignore, label);
                                     last_states.insert(label, should_ignore);
                                 }
                                 Err(e) => {
@@ -469,6 +494,8 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                     }
                 }
             }
+
+            listing_counter += 1;
 
             // Force Focus Logic (Linux simplified)
             // Linux window managers are tricky. We will attempt standard set_focus()
