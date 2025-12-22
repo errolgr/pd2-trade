@@ -1,10 +1,7 @@
-use super::{PopupRect, WindowRect};
-use once_cell::sync::Lazy;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use super::WindowRect;
 use std::sync::Mutex;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
 use windows_sys::Win32::{
     Foundation::{HWND, POINT, RECT},
