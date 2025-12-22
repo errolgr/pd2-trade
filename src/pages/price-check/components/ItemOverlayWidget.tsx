@@ -629,7 +629,8 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
         onMouseLeave={() => setOpen(false)}
         side="bottom"
         align="start"
-        className="p-0 bg-transparent border-0 w-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="p-0 bg-transparent border-0 w-auto pointer-events-none"
       >
         <Card className="p-2 bg-neutral-950 border-neutral-700 max-w-sm">
           <ItemStatsDisplay
