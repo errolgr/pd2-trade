@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { cursorPosition } from '@tauri-apps/api/window';
 
 interface PopupRef {
   ref: React.RefObject<HTMLElement>;
@@ -15,34 +13,15 @@ interface PopupBounds {
   bottom: number;
 }
 
-interface ClickThroughOptions {
-  pollingInterval?: number; // Default: 100ms
-  enableThrottling?: boolean; // Default: false - throttles rapid state changes
-  forceFocusOnPopup?: boolean; // Default: true - force window focus when cursor is over popup
-}
-
-export const useClickThrough = (options: ClickThroughOptions = {}) => {
-  const { pollingInterval = 100, enableThrottling = false, forceFocusOnPopup = true } = options;
-
+export const useClickThrough = () => {
   const popupRefs = useRef<PopupRef[]>([]);
-  const isClickThroughEnabled = useRef(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastStateChange = useRef<number>(0);
-  const consecutivePopupDetections = useRef<number>(0);
-  const lastPopupDetectionTime = useRef<number>(0);
-  const currentPollingInterval = useRef<number>(pollingInterval);
-  const checkCursorPositionRef = useRef<() => Promise<void>>();
 
-  const registerPopup = useCallback((ref: React.RefObject<HTMLElement>, id: string) => {
-    // Remove existing ref with same id if it exists
-    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
-    // Add new ref
-    popupRefs.current.push({ ref, id });
-  }, []);
-
-  const unregisterPopup = useCallback((id: string) => {
-    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
-  }, []);
+  // Use a resize observer to detect changes in popup sizes/positions
+  // We'll also attach it to document.body to detect global DOM changes that might affect portals?
+  // Actually, MutationObserver is better for Portals appearing/disappearing.
+  // ResizeObserver is better for size changes.
+  const resizeObserver = useRef<ResizeObserver | null>(null);
+  const mutationObserver = useRef<MutationObserver | null>(null);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
     const bounds: PopupBounds[] = [];
@@ -90,125 +69,110 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     return bounds;
   }, []);
 
-  const forceWindowFocus = useCallback(async () => {
-    if (!isTauri() || !forceFocusOnPopup) return;
-
-    try {
-      // Try to bring the window to front and focus it
-      const mainWindow = await WebviewWindow.getByLabel('main');
-      if (mainWindow) {
-        await mainWindow.setFocus();
-      }
-    } catch (error) {
-      // Fallback to Tauri command
-      try {
-        await invoke('force_window_focus');
-      } catch {
-        // Ignore errors on fallback
-      }
-    }
-  }, [forceFocusOnPopup]);
-
-  const checkCursorPosition = useCallback(async () => {
+  const updateBackend = useCallback(async () => {
     if (!isTauri()) return;
 
     try {
-      const { x: cursorX, y: cursorY } = await cursorPosition();
-      const popupBounds = getPopupBounds();
+      const bounds = getPopupBounds();
+      // Send bounds to backend for the "main" window
+      await invoke('update_click_through_areas', { windowLabel: 'main', rects: bounds });
 
-      // Check if cursor is over any popup area
-      const isOverPopup = popupBounds.some(
-        (bounds) =>
-          cursorX >= bounds.left && cursorX <= bounds.right && cursorY >= bounds.top && cursorY <= bounds.bottom,
-      );
+      // Control logic:
+      // If we have interactive areas (including portals), we MUST be monitoring.
+      // If we have ZERO interactive areas... we could stop monitoring?
+      // But wait: if we stop monitoring, the backend thread sleeps.
+      // BUT the backend thread also handles the "click-through" vs "interactive" toggle logic.
+      // If we stop monitoring, the thread pauses. The window stays in its LAST STATE.
+      // If the last state was "Interactive", and we clear all popups, we probably want to revert to "Click-Through"
+      // before stopping.
+      // HOWEVER, the standard use case is: items on screen -> monitor. No items -> maybe just leave it running?
+      // The user specifically asked for "stop if not required".
 
-      const now = Date.now();
+      // Strategy:
+      // If bounds.length > 0 -> START (ensure active)
+      // If bounds.length == 0 -> STOP (disable monitoring)
+      // Note: We need to ensure we set the window to click-through (ignore=true) before stopping if it was interactive.
+      // The backend 'stop' just pauses the thread. It doesn't reset state.
+      // So we should manually set click-through if we are about to stop.
 
-      // Track consecutive popup detections
-      if (isOverPopup) {
-        if (now - lastPopupDetectionTime.current < 1000) {
-          // Within 1 second
-          consecutivePopupDetections.current++;
-        } else {
-          consecutivePopupDetections.current = 1;
-        }
-        lastPopupDetectionTime.current = now;
+      if (bounds.length > 0) {
+        await invoke('start_click_through_poll');
       } else {
-        consecutivePopupDetections.current = 0;
-      }
-
-      // Adjust polling interval based on popup detection
-      const newPollingInterval = isOverPopup ? Math.max(50, pollingInterval / 2) : pollingInterval;
-      if (newPollingInterval !== currentPollingInterval.current) {
-        currentPollingInterval.current = newPollingInterval;
-        // Restart polling with new interval
-        if (pollingIntervalRef.current && checkCursorPositionRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = setInterval(() => {
-            checkCursorPositionRef.current?.();
-          }, newPollingInterval);
-        }
-      }
-
-      // Throttling: prevent rapid state changes
-      if (enableThrottling) {
-        if (now - lastStateChange.current < 50) {
-          // 50ms throttle
-          return;
-        }
-      }
-
-      // Update click-through state if needed
-      if (isOverPopup && isClickThroughEnabled.current) {
-        // Cursor is over popup, disable click-through
-        await invoke('set_window_click_through', { ignore: false });
-        isClickThroughEnabled.current = false;
-        lastStateChange.current = now;
-
-        // Force window focus if we have multiple consecutive detections (indicating potential focus issue)
-        if (consecutivePopupDetections.current >= 3) {
-          await forceWindowFocus();
-        }
-      } else if (!isOverPopup && !isClickThroughEnabled.current) {
-        // Cursor is not over popup, enable click-through
+        // Force click-through before stopping
         await invoke('set_window_click_through', { ignore: true });
-        isClickThroughEnabled.current = true;
-        lastStateChange.current = now;
+        await invoke('stop_click_through_poll');
       }
     } catch (error) {
-      console.error('[useClickThrough] Error checking cursor position:', error);
+      console.error('[useClickThrough] Failed to update backend:', error);
     }
-  }, [getPopupBounds, enableThrottling, forceWindowFocus, pollingInterval]);
+  }, [getPopupBounds]);
 
-  // Update ref when checkCursorPosition changes
-  useEffect(() => {
-    checkCursorPositionRef.current = checkCursorPosition;
-  }, [checkCursorPosition]);
+  const registerPopup = useCallback(
+    (ref: React.RefObject<HTMLElement>, id: string) => {
+      // Remove existing ref with same id if it exists
+      popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
+      // Add new ref
+      popupRefs.current.push({ ref, id });
+
+      // observe
+      if (ref.current && resizeObserver.current) {
+        resizeObserver.current.observe(ref.current);
+      }
+
+      updateBackend();
+    },
+    [updateBackend],
+  );
+
+  const unregisterPopup = useCallback(
+    (id: string) => {
+      const popup = popupRefs.current.find((p) => p.id === id);
+      if (popup && popup.ref.current && resizeObserver.current) {
+        resizeObserver.current.unobserve(popup.ref.current);
+      }
+
+      popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
+      updateBackend();
+    },
+    [updateBackend],
+  );
 
   useEffect(() => {
     if (!isTauri()) return;
 
-    // Start with click-through enabled
-    invoke('set_window_click_through', { ignore: true }).then(() => {
-      isClickThroughEnabled.current = true;
+    // Initialize Observers
+    let animationFrameId: number;
+
+    resizeObserver.current = new ResizeObserver(() => {
+      // Throttled update
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(updateBackend);
     });
 
-    // Start polling for cursor position
-    pollingIntervalRef.current = setInterval(() => {
-      checkCursorPositionRef.current?.();
-    }, currentPollingInterval.current);
+    mutationObserver.current = new MutationObserver(() => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(updateBackend);
+    });
+
+    // Observe body for Portal changes (additions/removals of dialogs/toasts)
+    mutationObserver.current.observe(document.body, { childList: true, subtree: true });
+
+    // Initial Sync
+    updateBackend();
 
     return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      // Re-enable click-through on cleanup
+      cancelAnimationFrame(animationFrameId);
+      if (resizeObserver.current) resizeObserver.current.disconnect();
+      if (mutationObserver.current) mutationObserver.current.disconnect();
+
+      // Cleanup: disable monitoring on unmount?
+      // This hook is likely used at the top level of the page, so yes.
       if (isTauri()) {
         invoke('set_window_click_through', { ignore: true }).catch(console.error);
+        invoke('stop_click_through_poll').catch(console.error);
       }
     };
-  }, [checkCursorPosition]);
+  }, [updateBackend]);
 
   return {
     registerPopup,

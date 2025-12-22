@@ -351,6 +351,7 @@ pub fn cleanup_foreground_monitoring() {
 
 static POPUP_RECTS: Lazy<Mutex<HashMap<String, Vec<PopupRect>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
+static MONITORING_ACTIVE: AtomicBool = AtomicBool::new(false);
 static MONITORING_STARTED: AtomicBool = AtomicBool::new(false);
 
 pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
@@ -359,10 +360,17 @@ pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
     }
 }
 
+pub fn stop_cursor_monitoring() {
+    MONITORING_ACTIVE.store(false, Ordering::SeqCst);
+}
+
 pub fn start_cursor_monitoring(app_handle: AppHandle) {
     if MONITORING_STARTED.swap(true, Ordering::SeqCst) {
+        MONITORING_ACTIVE.store(true, Ordering::SeqCst);
         return; // Already started
     }
+
+    MONITORING_ACTIVE.store(true, Ordering::SeqCst);
 
     std::thread::spawn(move || {
         let (conn, screen_num) = match x11rb::connect(None) {
@@ -375,8 +383,15 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
 
         let root = conn.setup().roots[screen_num].root;
         let mut last_states: HashMap<String, bool> = HashMap::new(); // label -> is_ignoring
+        let mut consecutive_focus_requests: i32 = 0;
 
         loop {
+            // Check if we should be running
+            if !MONITORING_ACTIVE.load(Ordering::SeqCst) {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                continue;
+            }
+
             // Poll at 20Hz (50ms)
             std::thread::sleep(std::time::Duration::from_millis(50));
 
@@ -400,6 +415,8 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                 }
             };
 
+            let mut is_over_any_popup = false;
+
             for (label, rects) in windows_to_check {
                 if let Some(window) = app_handle.get_webview_window(&label) {
                     // Skip if window is not visible to avoid unnecessary work/IPC
@@ -421,6 +438,10 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                                 && rel_y >= r.top
                                 && rel_y <= r.bottom
                         });
+
+                        if is_over_popup {
+                            is_over_any_popup = true;
+                        }
 
                         // If over popup, we want INTERACTIVE (ignore = false)
                         // If NOT over popup, we want CLICK-THROUGH (ignore = true)
@@ -447,6 +468,24 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                         }
                     }
                 }
+            }
+
+            // Force Focus Logic (Linux simplified)
+            // Linux window managers are tricky. We will attempt standard set_focus()
+            if is_over_any_popup {
+                consecutive_focus_requests += 1;
+
+                if consecutive_focus_requests >= 3 {
+                    // Linux check is harder without pulling in more X11 atoms,
+                    // but we can blindly attempt focus if we think we might need it.
+                    // For now, let's trust Tauri's set_focus
+                    if let Some(main_window) = app_handle.get_webview_window("main") {
+                        let _ = main_window.set_focus();
+                    }
+                    consecutive_focus_requests = 2;
+                }
+            } else {
+                consecutive_focus_requests = 0;
             }
         }
     });

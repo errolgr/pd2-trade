@@ -192,6 +192,7 @@ pub fn cleanup_foreground_monitoring() {
 
 static POPUP_RECTS: Lazy<Mutex<HashMap<String, Vec<PopupRect>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
+static MONITORING_ACTIVE: AtomicBool = AtomicBool::new(false);
 static MONITORING_STARTED: AtomicBool = AtomicBool::new(false);
 
 pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
@@ -200,15 +201,31 @@ pub fn update_popup_rects(window_label: String, rects: Vec<PopupRect>) {
     }
 }
 
+pub fn stop_cursor_monitoring() {
+    MONITORING_ACTIVE.store(false, Ordering::SeqCst);
+}
+
 pub fn start_cursor_monitoring(app_handle: AppHandle) {
+    // If we are already running, just ensure the active flag is true
     if MONITORING_STARTED.swap(true, Ordering::SeqCst) {
-        return; // Already started
+        MONITORING_ACTIVE.store(true, Ordering::SeqCst);
+        return;
     }
+
+    // Set active immediately for the first run
+    MONITORING_ACTIVE.store(true, Ordering::SeqCst);
 
     std::thread::spawn(move || {
         let mut last_states: HashMap<String, bool> = HashMap::new(); // label -> is_ignoring
+        let mut consecutive_focus_requests: i32 = 0;
 
         loop {
+            // Check if we should be running
+            if !MONITORING_ACTIVE.load(Ordering::SeqCst) {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                continue;
+            }
+
             // Poll at 20Hz (50ms)
             std::thread::sleep(std::time::Duration::from_millis(50));
 
@@ -231,6 +248,8 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                 }
             };
 
+            let mut is_over_any_popup = false;
+
             for (label, rects) in windows_to_check {
                 if let Some(window) = app_handle.get_webview_window(&label) {
                     // Skip if window is not visible
@@ -252,6 +271,10 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                                 && rel_y >= r.top
                                 && rel_y <= r.bottom
                         });
+
+                        if is_over_popup {
+                            is_over_any_popup = true;
+                        }
 
                         // If over popup, we want INTERACTIVE (ignore = false)
                         // If NOT over popup, we want CLICK-THROUGH (ignore = true)
@@ -276,6 +299,37 @@ pub fn start_cursor_monitoring(app_handle: AppHandle) {
                         }
                     }
                 }
+            }
+
+            // Force Focus Logic
+            // If the cursor is over a popup, we want to ensure the window (or app) has focus
+            // so that clicks register immediately.
+            if is_over_any_popup {
+                consecutive_focus_requests += 1;
+
+                // If we've been hovering for ~150ms (3 ticks)
+                // And we are NOT the foreground window (or at least, we suspect we might not be)
+                if consecutive_focus_requests >= 3 {
+                    let foreground = unsafe { GetForegroundWindow() };
+                    let mut foreground_pid: u32 = 0;
+                    unsafe { GetWindowThreadProcessId(foreground, &mut foreground_pid) };
+
+                    if foreground_pid != std::process::id() {
+                        // Try to bring the main window to front and focus it
+                        // We use the "main" window as a proxy for the app
+                        if let Some(main_window) = app_handle.get_webview_window("main") {
+                            let _ = main_window.set_focus();
+                        }
+                    }
+
+                    // Reset counter to avoid spamming focus requests every frame
+                    // But keep it "hot" enough to retry if focus is lost again immediately?
+                    // Setting it to 0 means we wait another 150ms.
+                    // Setting it to 2 means we check every frame after the initial delay.
+                    consecutive_focus_requests = 2;
+                }
+            } else {
+                consecutive_focus_requests = 0;
             }
         }
     });

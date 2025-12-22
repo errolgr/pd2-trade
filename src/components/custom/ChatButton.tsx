@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, GripVertical, Settings, ShoppingBag, X, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { emit } from '@/lib/browser-events';
+import { useClickThrough } from '@/hooks/useClickThrough';
 
 interface ChatButtonProps {
   handleClick: () => void;
@@ -62,58 +63,69 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     }, 200);
   };
 
-  const lastCursorRef = React.useRef({ x: 0, y: 0, time: 0 });
+  const { registerPopup, unregisterPopup } = useClickThrough();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLButtonElement>(null);
+  const tradeRef = useRef<HTMLDivElement>(null);
+  const manageRef = useRef<HTMLButtonElement>(null);
+  const disableRef = useRef<HTMLButtonElement>(null);
+  const mainButtonRef = useRef<HTMLButtonElement>(null);
 
-  React.useEffect(() => {
-    // Helper to force collapse the button
-    const forceCollapse = () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
+  // Register interactive elements with backend for click-through monitoring
+  useEffect(() => {
+    // Helper to register only if element exists and is visible (or relevant)
+    const updateRegistrations = () => {
+      if (mainButtonRef.current) registerPopup(mainButtonRef as any, 'chat-main-btn');
+
+      if (isHovered) {
+        // Register satellite buttons when expanded
+        if (dragRef.current) registerPopup(dragRef as any, 'chat-drag-btn');
+        if (settingsRef.current) registerPopup(settingsRef as any, 'chat-settings-btn');
+        // Trade ref is a div wrapping the button
+        if (tradeRef.current) registerPopup(tradeRef as any, 'chat-trade-area');
+        if (manageRef.current) registerPopup(manageRef as any, 'chat-manage-btn');
+        if (disableRef.current) registerPopup(disableRef as any, 'chat-disable-btn');
+      } else {
+        // Unregister satellites when collapsed
+        unregisterPopup('chat-drag-btn');
+        unregisterPopup('chat-settings-btn');
+        unregisterPopup('chat-trade-area');
+        unregisterPopup('chat-manage-btn');
+        unregisterPopup('chat-disable-btn');
       }
+    };
+
+    updateRegistrations();
+
+    // Cleanup on unmount
+    return () => {
+      unregisterPopup('chat-main-btn');
+      unregisterPopup('chat-drag-btn');
+      unregisterPopup('chat-settings-btn');
+      unregisterPopup('chat-trade-area');
+      unregisterPopup('chat-manage-btn');
+      unregisterPopup('chat-disable-btn');
+    };
+  }, [isHovered, registerPopup, unregisterPopup]);
+
+  // Use a simple timeout for collapse, but backend will enforce click-through
+  // when cursor is not over these registered areas.
+  useEffect(() => {
+    const handleMouseLeaveWindow = () => {
+      // If the backend decides we are "ignoring cursor events", the browser
+      // might receive a mouseleave or we might just lose focus.
+      // For the spiral UI, we want it to close if we are no longer interacting.
+      // We can listen to a window blur or similar, but the simpler approach
+      // is to rely on the existing onMouseLeave from the div, which should fire
+      // when the backend sets ignore=true (effectively "removing" the window from under the mouse).
       setIsHovered(false);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      lastCursorRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        time: Date.now(),
-      };
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-
-    // Watchdog for missing mouseleave events (common with fast movement over transparent windows)
-    const watchdogInterval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceMove = now - lastCursorRef.current.time;
-
-      // Condition 1: Browser says nothing is hovered
-      const nothingHovered = document.querySelectorAll(':hover').length === 0;
-
-      // Condition 2: Mouse hasn't moved for a bit AND last known position was near the edge
-      // This implies it flew out of the window
-      const { x, y } = lastCursorRef.current;
-      const { innerWidth, innerHeight } = window;
-      const edgeThreshold = 10;
-
-      const isNearEdge =
-        x < edgeThreshold || x > innerWidth - edgeThreshold || y < edgeThreshold || y > innerHeight - edgeThreshold;
-
-      // If we are "stuck" near the edge with no updates, force close
-      if (nothingHovered || (isNearEdge && timeSinceMove > 500)) {
-        forceCollapse();
-      }
-    }, 200);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      clearInterval(watchdogInterval);
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
+    // We can also listen to the standard window blur event as a safety net
+    window.addEventListener('blur', handleMouseLeaveWindow);
+    return () => window.removeEventListener('blur', handleMouseLeaveWindow);
   }, []);
 
   const getButtonStyle = (angle: number, distance: number, component: string) => {
@@ -156,6 +168,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Drag Handle Circle */}
         {buttonPositions.find((p) => p.component === 'drag') && (
           <div
+            ref={dragRef}
             data-tauri-drag-region
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out',
@@ -170,6 +183,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Settings Button Circle */}
         {onSettingsClick && buttonPositions.find((p) => p.component === 'settings') && (
           <Button
+            ref={settingsRef}
             onClick={onSettingsClick}
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
@@ -188,6 +202,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Trade Messages Button Circle */}
         {onTradeMessagesClick && buttonPositions.find((p) => p.component === 'trade') && (
           <div
+            ref={tradeRef}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             style={getButtonStyle(90, 60, 'trade')}
           >
@@ -215,6 +230,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Manage Listings Button Circle */}
         {onManageListingsClick && buttonPositions.find((p) => p.component === 'manage') && (
           <Button
+            ref={manageRef}
             onClick={onManageListingsClick}
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
@@ -231,6 +247,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Disable Button Circle */}
         {onDisableClick && buttonPositions.find((p) => p.component === 'disable') && (
           <Button
+            ref={disableRef}
             onClick={handleDisableClick}
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-red-600/90 hover:bg-red-700/90 border border-red-500/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
@@ -247,6 +264,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Chat Button Circle - Main */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <Button
+            ref={mainButtonRef}
             onClick={handleClick}
             className={cn(
               'rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out cursor-pointer',

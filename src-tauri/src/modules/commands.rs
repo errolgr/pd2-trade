@@ -144,6 +144,12 @@ pub fn start_click_through_poll(app_handle: tauri::AppHandle) -> Result<(), Stri
 }
 
 #[tauri::command]
+pub fn stop_click_through_poll(_app_handle: tauri::AppHandle) -> Result<(), String> {
+    window::stop_cursor_monitoring();
+    Ok(())
+}
+
+#[tauri::command]
 pub fn update_click_through_areas(
     window_label: String,
     rects: Vec<window::PopupRect>,
