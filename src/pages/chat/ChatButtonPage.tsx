@@ -6,9 +6,6 @@ import { OptionsProvider } from '@/hooks/useOptions';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { openWindowCenteredOnDiablo } from '@/lib/window';
-
 interface UnreadCountEvent {
   count: number;
 }
@@ -88,48 +85,8 @@ const ChatButtonPageContent: React.FC = () => {
   };
 
   const handleManageListingsClick = async () => {
-    const quickListLabel = 'QuickList';
-    console.log('[ChatButtonPage] handleManageListingsClick called for label:', quickListLabel);
-    try {
-      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
-      console.log('[ChatButtonPage] existingWin found?', !!existingWin);
-
-      if (existingWin) {
-        try {
-          console.log('[ChatButtonPage] Reusing existing QuickList window');
-          await existingWin.unminimize();
-          await existingWin.show();
-          await existingWin.setFocus();
-          return;
-        } catch (err) {
-          console.warn('[ChatButtonPage] Failed to reuse QuickList window, attempting to recreate:', err);
-          try {
-            await existingWin.close();
-          } catch (closeErr) {
-            console.warn('[ChatButtonPage] Failed to close zombie window:', closeErr);
-          }
-        }
-      } else {
-        console.log(
-          '[ChatButtonPage] No existing QuickList window found. Creating new one via openWindowCenteredOnDiablo.',
-        );
-      }
-
-      await openWindowCenteredOnDiablo(quickListLabel, '/quick-list', {
-        decorations: false,
-        transparent: true,
-        focus: false,
-        shadow: false,
-        skipTaskbar: true,
-        focusable: true,
-        width: 600,
-        height: 512,
-        resizable: true,
-        alwaysOnTop: true,
-      });
-    } catch (err) {
-      console.error('[ChatButtonPage] Failed to open QuickList:', err);
-    }
+    console.log('[ChatButtonPage] handleManageListingsClick called, emitting open-quick-list-manage');
+    await emit('open-quick-list-manage');
   };
 
   const handleDisableClick = () => {

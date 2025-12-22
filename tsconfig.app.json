@@ -4,16 +4,15 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "jsx": "react",
     "module": "ES2017",
     "moduleResolution": "Node",
     "target": "ESNext",
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
-  "exclude": [ "node_modules"]
+  "exclude": ["node_modules"]
 }

@@ -1,0 +1,25 @@
+{
+  "labels": {
+    "Main": "Main",
+    "Chat": "Chat",
+    "ChatButton": "ChatButton",
+    "TradeMessages": "TradeMessages",
+    "QuickList": "QuickList",
+    "ItemSearch": "ItemSearch",
+    "Settings": "Settings",
+    "Currency": "Currency",
+    "Toast": "Toast"
+  },
+  "titles": {
+    "Main": "PD2Trader",
+    "Chat": "PD2Trader: Chat",
+    "ChatButton": "PD2Trader: Button",
+    "TradeMessages": "PD2Trader: Trade Messages",
+    "QuickList": "PD2Trader: QuickList",
+    "ItemSearch": "PD2Trader: Item Search",
+    "Settings": "PD2Trader: Settings",
+    "Currency": "PD2Trader: Currency",
+    "Toast": "PD2Trader: Toast",
+    "PREFIX": "PD2Trader"
+  }
+}

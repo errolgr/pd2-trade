@@ -36,7 +36,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
-                .get_webview_window("main")
+                .get_webview_window(&modules::config::WINDOW_CONFIG.labels.Main)
                 .expect("no main window")
                 .set_focus();
         }))
@@ -59,35 +59,42 @@ pub fn run() {
                     }
                 };
 
-            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("PD2 Trader")
-                .inner_size(width, height)
-                .position(x, y)
-                .decorations(false)
-                .transparent(true)
-                .visible(true)
-                .focused(true)
-                .shadow(false)
-                .always_on_top(true)
-                .skip_taskbar(true);
+            let win_builder = WebviewWindowBuilder::new(
+                app,
+                &modules::config::WINDOW_CONFIG.labels.Main,
+                WebviewUrl::default(),
+            )
+            .title(&modules::config::WINDOW_CONFIG.titles.Main)
+            .inner_size(width, height)
+            .position(x, y)
+            .decorations(false)
+            .transparent(true)
+            .visible(true)
+            .focused(true)
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true);
 
             let main_window = win_builder.build().unwrap();
             let _ = main_window.set_ignore_cursor_events(true);
 
             // Create toast window
-            let _toast_window =
-                WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
-                    .title("PD2 Trader - Toast")
-                    .inner_size(400.0, 200.0)
-                    .decorations(false)
-                    .transparent(true)
-                    .visible(false)
-                    .shadow(false)
-                    .always_on_top(true)
-                    .skip_taskbar(true)
-                    .focusable(false)
-                    .build()
-                    .unwrap();
+            let _toast_window = WebviewWindowBuilder::new(
+                app,
+                &modules::config::WINDOW_CONFIG.labels.Toast,
+                WebviewUrl::App("toast".into()),
+            )
+            .title(&modules::config::WINDOW_CONFIG.titles.Toast)
+            .inner_size(400.0, 200.0)
+            .decorations(false)
+            .transparent(true)
+            .visible(false)
+            .shadow(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focusable(false)
+            .build()
+            .unwrap();
 
             // Position the toast window initially
             let app_handle = app.app_handle().clone();

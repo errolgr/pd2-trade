@@ -33,7 +33,9 @@ pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Resul
 #[tauri::command]
 pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) {
-        if let Some(main_window) = app_handle.get_webview_window("main") {
+        if let Some(main_window) =
+            app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
+        {
             // Ensure window is not maximized before resizing
             if let Ok(true) = main_window.is_maximized() {
                 let _ = main_window.unmaximize();
@@ -57,7 +59,9 @@ pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> 
 
 #[tauri::command]
 pub fn set_window_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
-    if let Some(main_window) = app_handle.get_webview_window("main") {
+    if let Some(main_window) =
+        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
+    {
         main_window
             .set_ignore_cursor_events(ignore)
             .map_err(|e| format!("Failed to set click-through: {}", e))?;
@@ -67,7 +71,9 @@ pub fn set_window_click_through(app_handle: tauri::AppHandle, ignore: bool) -> R
 
 #[tauri::command]
 pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if let Some(main_window) = app_handle.get_webview_window("main") {
+    if let Some(main_window) =
+        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
+    {
         main_window
             .set_focus()
             .map_err(|e| format!("Failed to set window focus: {}", e))?;
@@ -78,7 +84,9 @@ pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
         let app_handle_clone = app_handle.clone();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(100));
-            if let Some(window) = app_handle_clone.get_webview_window("main") {
+            if let Some(window) = app_handle_clone
+                .get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
+            {
                 let _ = window.set_always_on_top(false);
             }
         });
@@ -102,7 +110,9 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
     let x = bounds.x + bounds.width - toast_width - margin;
     let y = bounds.y + bounds.height - toast_height - margin;
 
-    if let Some(toast_window) = app_handle.get_webview_window("toast") {
+    if let Some(toast_window) =
+        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Toast)
+    {
         toast_window
             .set_position(PhysicalPosition::new(x as f64, y as f64))
             .map_err(|e| format!("Failed to set toast window position: {}", e))?;

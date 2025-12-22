@@ -32,7 +32,7 @@ import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuick
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
 import { ItemsProvider } from '@/hooks/useItems';
-import { WindowTitles } from '@/lib/window-titles';
+import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
@@ -57,6 +57,13 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  // Set Main Window Title
+  useEffect(() => {
+    if (isTauri()) {
+      WebviewWindow.getCurrent().setTitle(WindowTitles.PREFIX);
+    }
+  }, []);
 
   // Hide launch title after 2 seconds
   useEffect(() => {
@@ -133,7 +140,7 @@ const LandingPage: React.FC = () => {
     const encoded = encodeItem(raw);
 
     if (!winRef.current) {
-      winRef.current = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
+      winRef.current = await openOverDiabloWindow(WindowLabels.ItemSearch, `/item?text=${encoded}`, {
         title: WindowTitles.ItemSearch,
         decorations: false,
         transparent: true,
@@ -160,7 +167,7 @@ const LandingPage: React.FC = () => {
     if (!(await checkDiabloFocus())) return;
 
     if (!currencyWindowRef.current) {
-      currencyWindowRef.current = await openCenteredWindow('Currency', '/currency', {
+      currencyWindowRef.current = await openCenteredWindow(WindowLabels.Currency, '/currency', {
         title: WindowTitles.Currency,
         decorations: false,
         focus: true,
@@ -224,7 +231,7 @@ const LandingPage: React.FC = () => {
       }
 
       if (!quickListWinRef.current) {
-        quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list${queryString}`, {
+        quickListWinRef.current = await openWindowAtCursor(WindowLabels.QuickList, `/quick-list${queryString}`, {
           title: WindowTitles.QuickList,
           decorations: false,
           transparent: true,
@@ -257,7 +264,7 @@ const LandingPage: React.FC = () => {
             // Clear item state in window
             await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
           }
-        } catch (_e) {
+        } catch {
           // console.error("[QuickList] Failed to show/focus existing window:", e);
           quickListWinRef.current = null;
         }
@@ -275,6 +282,81 @@ const LandingPage: React.FC = () => {
   const toggleChatWindow = useCallback(async () => {
     await emit('toggle-chat-window');
   }, []);
+
+  // Listen for request to open Quick List (Manage View) from Chat Button
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    const setupListener = async () => {
+      unlisten = await listen<void>('open-quick-list-manage', async () => {
+        if (!(await checkDiabloFocus())) return;
+
+        const label = WindowLabels.QuickList;
+
+        // 1. Check existing ref
+        if (quickListWinRef.current) {
+          try {
+            await quickListWinRef.current.show();
+            await quickListWinRef.current.setFocus();
+            return;
+          } catch {
+            quickListWinRef.current = null;
+          }
+        }
+
+        // 2. Check by label
+        const existing = await WebviewWindow.getByLabel(label);
+        if (existing) {
+          console.log('[LandingPage] Found existing QuickList by label, attaching.');
+          try {
+            // Try to interact with it to verify it's alive
+            await existing.show();
+            await existing.setFocus();
+
+            quickListWinRef.current = existing;
+            // Attach close listener
+            existing.onCloseRequested(async () => {
+              quickListWinRef.current = null;
+            });
+            return;
+          } catch (e) {
+            console.warn('Found zombie window by label, ignoring:', e);
+            // Do NOT return here, fall through to create new
+          }
+        }
+
+        // 3. Create new
+        console.log('[LandingPage] Creating new QuickList window (Manage Mode).');
+        quickListWinRef.current = await openWindowCenteredOnDiablo(label, '/quick-list', {
+          title: WindowTitles.QuickList,
+          decorations: false,
+          transparent: true,
+          focus: false,
+          shadow: false,
+          skipTaskbar: true,
+          focusable: true,
+          width: 600,
+          height: 512,
+          resizable: true,
+          alwaysOnTop: true,
+          visible: true, // Keep explicit visible
+        });
+
+        if (quickListWinRef.current) {
+          // Explicitly show to be safe
+          await quickListWinRef.current.show();
+
+          quickListWinRef.current.onCloseRequested(async () => {
+            quickListWinRef.current = null;
+          });
+        }
+      });
+    };
+    setupListener();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [checkDiabloFocus]);
 
   // Toggle trade messages window handler
   const toggleTradeMessagesWindow = useCallback(async () => {
@@ -350,7 +432,7 @@ const LandingPage: React.FC = () => {
         const x = rect.x + rect.width - buttonSize - 20;
         const y = rect.y + rect.height - buttonSize - 10;
 
-        chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
+        chatButtonWindowRef.current = new WebviewWindow(WindowLabels.ChatButton, {
           url: '/chat-button',
           title: WindowTitles.ChatButton,
           x,
@@ -410,7 +492,7 @@ const LandingPage: React.FC = () => {
       await sleep(500);
 
       // Open chat window (hidden by default) - centered on Diablo screen
-      chatWindowRef.current = await openWindowCenteredOnDiablo('Chat', '/chat', {
+      chatWindowRef.current = await openWindowCenteredOnDiablo(WindowLabels.Chat, '/chat', {
         title: WindowTitles.Chat,
         decorations: false,
         transparent: true,
@@ -436,7 +518,7 @@ const LandingPage: React.FC = () => {
         const conversation = event?.payload?.conversation;
         if (!chatWindowRef.current) {
           // Create the window if it doesn't exist - centered on Diablo screen
-          chatWindowRef.current = await openWindowCenteredOnDiablo('Chat', '/chat', {
+          chatWindowRef.current = await openWindowCenteredOnDiablo(WindowLabels.Chat, '/chat', {
             title: WindowTitles.Chat,
             decorations: false,
             transparent: true,
@@ -519,7 +601,7 @@ const LandingPage: React.FC = () => {
       // Small delay to ensure app is fully initialized
       await sleep(500);
       // Create and show the trade messages window - centered on Diablo screen
-      tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
+      tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo(WindowLabels.TradeMessages, '/trade-messages', {
         title: WindowTitles.TradeMessages,
         decorations: false,
         transparent: true,
@@ -543,20 +625,24 @@ const LandingPage: React.FC = () => {
     const toggleTradeMessagesWindow = async () => {
       if (!tradeMessagesWindowRef.current) {
         // Create the window if it doesn't exist - centered on Diablo screen
-        tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo('trade-messages', '/trade-messages', {
-          title: WindowTitles.TradeMessages,
-          decorations: false,
-          transparent: true,
-          skipTaskbar: true,
-          alwaysOnTop: true,
-          shadow: false,
-          focus: false,
-          focusable: true,
-          width: 600,
-          resizable: true,
-          height: 400,
-          visible: true,
-        });
+        tradeMessagesWindowRef.current = await openWindowCenteredOnDiablo(
+          WindowLabels.TradeMessages,
+          '/trade-messages',
+          {
+            title: WindowTitles.TradeMessages,
+            decorations: false,
+            transparent: true,
+            skipTaskbar: true,
+            alwaysOnTop: true,
+            shadow: false,
+            focus: false,
+            focusable: true,
+            width: 600,
+            resizable: true,
+            height: 400,
+            visible: true,
+          },
+        );
 
         if (tradeMessagesWindowRef.current) {
           tradeMessagesWindowRef.current.onCloseRequested(async () => {
@@ -656,40 +742,45 @@ const LandingPage: React.FC = () => {
         // Parallelize updates for smoother tracking
         const updatePromises: Promise<void>[] = [];
 
+        // Helper to safely move window and clear ref on failure
+        const safeMove = async (winRef: React.MutableRefObject<any>, name: string) => {
+          if (!winRef.current) return;
+          try {
+            await moveWindowBy(winRef.current, dx, dy);
+          } catch (err) {
+            console.warn(`[Tracking] Failed to move ${name} window, clearing ref:`, err);
+            winRef.current = null;
+          }
+        };
+
         if (dx !== 0 || dy !== 0) {
           // 3. Update Chat Window (Floating)
-          if (chatWindowRef.current) {
-            updatePromises.push(moveWindowBy(chatWindowRef.current, dx, dy));
-          }
+          updatePromises.push(safeMove(chatWindowRef, 'Chat'));
 
           // 4. Update Trade Messages Window (Floating)
-          if (tradeMessagesWindowRef.current) {
-            updatePromises.push(moveWindowBy(tradeMessagesWindowRef.current, dx, dy));
-          }
+          updatePromises.push(safeMove(tradeMessagesWindowRef, 'TradeMessages'));
 
           // 5. Update Quick List / Item Search (Floating)
-          if (winRef.current) {
-            updatePromises.push(moveWindowBy(winRef.current, dx, dy));
-          }
-          if (quickListWinRef.current) {
-            updatePromises.push(moveWindowBy(quickListWinRef.current, dx, dy));
-          }
+          updatePromises.push(safeMove(winRef, 'ItemSearch'));
+          updatePromises.push(safeMove(quickListWinRef, 'QuickList'));
 
           // 6. Update Settings Window (Floating)
+          // Settings isn't a RefObject, it's from useTray hook...
+          // complex to fix generically, let's just wrap it manually or skip for now if it's not the cause.
+          // The user reported "window not found" which matches the QuickList behavior.
+          // Let's wrap settings manually if needed.
           if (settingsWindow) {
-            updatePromises.push(moveWindowBy(settingsWindow, dx, dy));
+            updatePromises.push(
+              moveWindowBy(settingsWindow, dx, dy).catch((e) => console.warn('Failed to move settings:', e)),
+            );
           }
 
           // 7. Update Currency Window (Floating)
-          if (currencyWindowRef.current) {
-            updatePromises.push(moveWindowBy(currencyWindowRef.current, dx, dy));
-          }
+          updatePromises.push(safeMove(currencyWindowRef, 'Currency'));
 
           // 8. Chat Button Overlay
           if (settings.chatButtonOverlayEnabled !== false) {
-            if (chatButtonWindowRef.current) {
-              updatePromises.push(moveWindowBy(chatButtonWindowRef.current, dx, dy));
-            }
+            updatePromises.push(safeMove(chatButtonWindowRef, 'ChatButton'));
           }
         }
 

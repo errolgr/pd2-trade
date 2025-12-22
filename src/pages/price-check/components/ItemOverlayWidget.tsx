@@ -34,7 +34,7 @@ import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
-import { WindowTitles } from '@/lib/window-titles';
+import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -197,7 +197,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [searchMode, item.type, matchedItemType]);
 
   const openCurrencyValuation = useCallback(async () => {
-    await openCenteredWindow('Currency', '/currency', {
+    await openCenteredWindow(WindowLabels.Currency, '/currency', {
       title: WindowTitles.Currency,
       decorations: false,
       focus: true,
@@ -212,7 +212,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const openListWindow = useCallback(async () => {
     const raw = JSON.stringify(item);
     const encodedItem = encodeItemForQuickList(raw);
-    const quickListLabel = 'QuickList';
+    const quickListLabel = WindowLabels.QuickList;
     const safeEncodedItem = encodeURIComponent(encodedItem);
 
     try {
