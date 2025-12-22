@@ -7,6 +7,12 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { listen } from '@/lib/browser-events';
 import { emit } from '@/lib/browser-events';
 import qs from 'qs';
+import {
+  getDeletedOffers,
+  markOfferAsDeleted,
+  purgeOldDeletedOffers,
+  unmarkOfferAsDeleted,
+} from '@/lib/deleted-offers-storage';
 
 interface WebsiteOffer {
   _id: string;
@@ -85,12 +91,15 @@ interface UseTradeOffersProps {
 interface UseTradeOffersReturn {
   incomingOffers: TradeMessageData[];
   outgoingOffers: TradeMessageData[];
+  hiddenOutgoingOffers: TradeMessageData[];
   loading: boolean;
   refresh: () => void;
   revokeOffer: (offerId: string) => Promise<void>;
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;
   unacceptOffer: (listingId: string) => Promise<void>;
+  deleteOutgoingOffer: (offerId: string) => void;
+  restoreOutgoingOffer: (offerId: string) => void;
 }
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
@@ -299,7 +308,13 @@ export const useTradeOffers = ({
 }: UseTradeOffersProps): UseTradeOffersReturn => {
   const [incomingOffers, setIncomingOffers] = useState<TradeMessageData[]>([]);
   const [outgoingOffers, setOutgoingOffers] = useState<TradeMessageData[]>([]);
+  const [hiddenOutgoingOffers, setHiddenOutgoingOffers] = useState<TradeMessageData[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Purge old deleted offers on mount
+  useEffect(() => {
+    purgeOldDeletedOffers();
+  }, []);
 
   const fetchIncomingOffers = useCallback(async () => {
     if (!authData?.user?._id || !settings?.pd2Token) {
@@ -326,14 +341,30 @@ export const useTradeOffers = ({
     setLoading(true);
     try {
       const offers = await getOutgoingOffers(settings, authData, onAuthError);
-      setOutgoingOffers(offers);
+      // Get deleted offer IDs from localStorage
+      const deletedOfferIds = getDeletedOffers();
+
+      // Only show hidden offers if they still exist in the API response
+      // This ensures we don't show offers that have been removed from the website
+      const filteredOffers = offers.filter((offer) => !deletedOfferIds.has(offer.id));
+      const hiddenOffers = offers.filter((offer) => deletedOfferIds.has(offer.id));
+
+      setOutgoingOffers(filteredOffers);
+      setHiddenOutgoingOffers(hiddenOffers);
+
+      // Clean up: Remove deleted offer IDs from localStorage if they're no longer in the API response
+      // This happens when offers are removed from the website (after 7 days or manually)
+      const offerIdsFromApi = new Set(offers.map((offer) => offer.id));
+      const deletedIdsToRemove = Array.from(deletedOfferIds).filter((id) => !offerIdsFromApi.has(id));
+      deletedIdsToRemove.forEach((id) => unmarkOfferAsDeleted(id));
     } catch (error) {
       console.error('Failed to fetch outgoing offers:', error);
       setOutgoingOffers([]);
+      setHiddenOutgoingOffers([]);
     } finally {
       setLoading(false);
     }
-  }, [authData, settings]);
+  }, [authData, settings, onAuthError]);
 
   useEffect(() => {
     if (authData?.user?._id && settings?.pd2Token) {
@@ -526,6 +557,60 @@ export const useTradeOffers = ({
     [settings, incomingOffers, onAuthError],
   );
 
+  const handleDeleteOutgoingOffer = useCallback(
+    (offerId: string) => {
+      // Find the offer to get details for toast
+      const offer = outgoingOffers.find((o) => o.id === offerId);
+
+      // Mark as deleted in localStorage
+      markOfferAsDeleted(offerId);
+
+      // Move from visible to hidden
+      if (offer) {
+        setOutgoingOffers((prev) => prev.filter((o) => o.id !== offerId));
+        setHiddenOutgoingOffers((prev) => [...prev, offer]);
+      }
+
+      // Show success toast
+      emit('toast-event', {
+        title: 'Offer Hidden',
+        description: offer
+          ? `Your offer on ${offer.itemName || 'item'} has been hidden. It will be removed after 7 days.`
+          : 'Offer has been hidden',
+        variant: 'success',
+      }).catch((err) => {
+        console.error('Failed to emit toast event:', err);
+      });
+    },
+    [outgoingOffers],
+  );
+
+  const handleRestoreOutgoingOffer = useCallback(
+    (offerId: string) => {
+      // Find the offer in hidden offers
+      const offer = hiddenOutgoingOffers.find((o) => o.id === offerId);
+
+      // Unmark as deleted in localStorage
+      unmarkOfferAsDeleted(offerId);
+
+      // Move from hidden to visible
+      if (offer) {
+        setHiddenOutgoingOffers((prev) => prev.filter((o) => o.id !== offerId));
+        setOutgoingOffers((prev) => [...prev, offer]);
+      }
+
+      // Show success toast
+      emit('toast-event', {
+        title: 'Offer Restored',
+        description: offer ? `Your offer on ${offer.itemName || 'item'} has been restored` : 'Offer has been restored',
+        variant: 'success',
+      }).catch((err) => {
+        console.error('Failed to emit toast event:', err);
+      });
+    },
+    [hiddenOutgoingOffers],
+  );
+
   // Emit offer count updates whenever offers change
   useEffect(() => {
     const totalCount = incomingOffers.length + outgoingOffers.length;
@@ -541,6 +626,7 @@ export const useTradeOffers = ({
   return {
     incomingOffers,
     outgoingOffers,
+    hiddenOutgoingOffers,
     loading,
     refresh: () => {
       fetchIncomingOffers();
@@ -550,5 +636,7 @@ export const useTradeOffers = ({
     acceptOffer: handleAcceptOffer,
     rejectOffer: handleRejectOffer,
     unacceptOffer: handleUnacceptOffer,
+    deleteOutgoingOffer: handleDeleteOutgoingOffer,
+    restoreOutgoingOffer: handleRestoreOutgoingOffer,
   };
 };

@@ -101,6 +101,7 @@ export function CurrencyValuation() {
               hatred: currency.essence.hatred,
               suffering: currency.essence.suffering,
               terror: currency.essence.terror,
+              wss: currency.wss,
             };
 
       const map = STASH_API_MAP[category];
@@ -108,7 +109,8 @@ export function CurrencyValuation() {
       items = Object.entries(source).map(([key, amount]) => {
         const item = map[key];
         const match = calculatedEconomyValues[category].find((val) => val.name === item);
-        const price = match?.price ?? 0;
+        // Worldstone Shard has a hardcoded price of 0.01 HR if not found in API
+        const price = match?.price ?? (item === 'Worldstone Shard' ? 0.01 : 0);
         const value = Math.round(amount * price * 100) / 100;
         const sampleCount = match?.numListings ?? undefined;
 

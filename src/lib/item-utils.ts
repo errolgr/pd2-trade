@@ -54,6 +54,7 @@ export const clipboardContainsValidItem = (jsonString: string): boolean => {
       }
 
       // Validate that the type exists in the base item types
+      // getTypeFromBaseType will clean the type string internally
       const baseTypeResult = getTypeFromBaseType(item.type, false);
       if (!baseTypeResult) {
         return false;

@@ -55,12 +55,15 @@ interface Pd2WebsiteContextType {
   createConversation: (participantIds: string[]) => Promise<any>;
   incomingOffers: TradeMessageData[];
   outgoingOffers: TradeMessageData[];
+  hiddenOutgoingOffers: TradeMessageData[];
   loading: boolean;
   refresh: () => void;
   revokeOffer: (offerId: string) => Promise<void>;
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;
   unacceptOffer: (listingId: string) => Promise<void>;
+  deleteOutgoingOffer: (offerId: string) => void;
+  restoreOutgoingOffer: (offerId: string) => void;
   logout: () => Promise<void>;
 }
 
@@ -203,13 +206,24 @@ export const Pd2WebsiteProvider = ({ children }) => {
   const { isConnected } = useSocket({ settings });
 
   // Trade offers
-  const { incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } =
-    useTradeOffers({
-      settings,
-      authData,
-      onAuthError: handleAuthenticationError,
-      isConnected,
-    });
+  const {
+    incomingOffers,
+    outgoingOffers,
+    hiddenOutgoingOffers,
+    loading,
+    refresh,
+    revokeOffer,
+    acceptOffer,
+    rejectOffer,
+    unacceptOffer,
+    deleteOutgoingOffer,
+    restoreOutgoingOffer,
+  } = useTradeOffers({
+    settings,
+    authData,
+    onAuthError: handleAuthenticationError,
+    isConnected,
+  });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
     const response = await tauriFetch('https://api.projectdiablo2.com/security/session', {
@@ -277,12 +291,15 @@ export const Pd2WebsiteProvider = ({ children }) => {
         createConversation,
         incomingOffers,
         outgoingOffers,
+        hiddenOutgoingOffers,
         loading,
         refresh,
         revokeOffer,
         acceptOffer,
         rejectOffer,
         unacceptOffer,
+        deleteOutgoingOffer,
+        restoreOutgoingOffer,
         logout,
       }}
     >

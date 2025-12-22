@@ -173,7 +173,7 @@ const LandingPage: React.FC = () => {
         focus: true,
         shadow: false,
         skipTaskbar: true,
-        width: 640,
+        width: 665,
         height: 870,
         alwaysOnTop: true,
       });

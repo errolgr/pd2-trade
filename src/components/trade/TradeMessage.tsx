@@ -13,6 +13,8 @@ import {
   RotateCcw,
   MessageCircle,
   Package,
+  EyeOffIcon,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,6 +61,9 @@ interface TradeMessageProps {
   onReject?: (offerId: string) => Promise<void>;
   onUnaccept?: (listingId: string) => Promise<void>;
   onDelete?: (listingId: string) => Promise<void>;
+  onDeleteOutgoing?: (offerId: string) => void;
+  onRestoreOutgoing?: (offerId: string) => void;
+  isHidden?: boolean;
 }
 
 export const TradeMessage: React.FC<TradeMessageProps> = ({
@@ -70,6 +75,9 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   onReject,
   onUnaccept,
   onDelete,
+  onDeleteOutgoing,
+  onRestoreOutgoing,
+  isHidden = false,
 }) => {
   const { authData, createConversation, sendMessage } = usePd2Website();
   const { settings } = useOptions();
@@ -360,6 +368,22 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     }
   };
 
+  const handleDeleteOutgoing = () => {
+    if (onDeleteOutgoing && trade.listingId) {
+      onDeleteOutgoing(trade.id);
+      // Close the trade message after deletion
+      onClose(trade.id);
+    }
+  };
+
+  const handleRestoreOutgoing = () => {
+    if (onRestoreOutgoing && trade.listingId) {
+      onRestoreOutgoing(trade.id);
+      // Close the trade message after restoration
+      onClose(trade.id);
+    }
+  };
+
   const handleStartChat = async () => {
     if (!trade.userId || !authData?.user?._id) {
       console.error('Missing user ID for starting chat');
@@ -387,6 +411,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
         className={cn(
           'relative w-full border-1 shadow-sm bg-neutral-800',
           trade.isIncoming ? 'border-green-500 dark:border-green-600' : 'border-red-500 dark:border-red-600',
+          isHidden && 'opacity-60',
         )}
       >
         <CardContent className="p-3">
@@ -431,6 +456,24 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
 
               <div className="flex items-center gap-1 flex-wrap justify-between">
                 <div className="flex items-center gap-1">
+                  {trade.listingId && !trade.isIncoming && onDeleteOutgoing && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleDeleteOutgoing}
+                          className="h-7 w-7 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
+                        >
+                          <EyeOffIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Hide offer</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
                   {!trade.listingId && (
                     <Tooltip>
                       <TooltipTrigger>
@@ -550,7 +593,25 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                     </Tooltip>
                   )}
 
-                  {trade.listingId && !trade.isIncoming && onRevoke && (
+                  {trade.listingId && !trade.isIncoming && isHidden && onRestoreOutgoing && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleRestoreOutgoing}
+                          className="h-7 w-7 cursor-pointer text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Restore offer</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {trade.listingId && !trade.isIncoming && !isHidden && onRevoke && (
                     <Tooltip>
                       <TooltipTrigger>
                         <Button

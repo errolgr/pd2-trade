@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TradeMessage, TradeMessageData } from './TradeMessage';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTradeMessages } from '@/hooks/useTradeMessages';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -12,13 +12,17 @@ import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 export const TradeMessagesContainer: React.FC = () => {
   const { trades, removeTrade } = useTradeMessages();
+  const [showHiddenOffers, setShowHiddenOffers] = useState(false);
   const {
     incomingOffers,
     outgoingOffers,
+    hiddenOutgoingOffers,
     revokeOffer,
     acceptOffer,
     rejectOffer,
     unacceptOffer,
+    deleteOutgoingOffer,
+    restoreOutgoingOffer,
     deleteMarketListing,
     refresh,
   } = usePd2Website();
@@ -38,6 +42,10 @@ export const TradeMessagesContainer: React.FC = () => {
   const outgoingWebsiteOffersSorted = useMemo(() => {
     return [...outgoingOffers].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [outgoingOffers]);
+
+  const hiddenOutgoingWebsiteOffersSorted = useMemo(() => {
+    return [...hiddenOutgoingOffers].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [hiddenOutgoingOffers]);
 
   return (
     <TooltipProvider>
@@ -161,17 +169,55 @@ export const TradeMessagesContainer: React.FC = () => {
 
               <TabsContent value="outgoing"
                 className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
+                <div className="flex-shrink-0 px-4 pt-2 flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHiddenOffers(!showHiddenOffers)}
+                    className="h-8 text-xs"
+                  >
+                    {showHiddenOffers ? (
+                      <>
+                        <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                        Hide Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        Show Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
-                    {outgoingWebsiteOffersSorted.length === 0 ? (
+                    {outgoingWebsiteOffersSorted.length === 0 &&
+                    (!showHiddenOffers || hiddenOutgoingWebsiteOffersSorted.length === 0) ? (
                       <div className="text-center text-neutral-400 py-8">No outgoing website offers</div>
                     ) : (
-                      outgoingWebsiteOffersSorted.map((trade) => (
-                        <TradeMessage key={trade.id}
-                          trade={trade}
-                          onClose={removeTrade}
-                          onRevoke={revokeOffer} />
-                      ))
+                      <>
+                        {outgoingWebsiteOffersSorted.map((trade) => (
+                          <TradeMessage
+                            key={trade.id}
+                            trade={trade}
+                            onClose={removeTrade}
+                            onRevoke={revokeOffer}
+                            onDeleteOutgoing={deleteOutgoingOffer}
+                          />
+                        ))}
+                        {showHiddenOffers &&
+                          hiddenOutgoingWebsiteOffersSorted.map((trade) => (
+                            <TradeMessage
+                              key={trade.id}
+                              trade={trade}
+                              onClose={removeTrade}
+                              onRevoke={revokeOffer}
+                              onDeleteOutgoing={deleteOutgoingOffer}
+                              onRestoreOutgoing={restoreOutgoingOffer}
+                              isHidden
+                            />
+                          ))}
+                      </>
                     )}
                   </div>
                 </ScrollArea>

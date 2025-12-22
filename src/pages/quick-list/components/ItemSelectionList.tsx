@@ -5,6 +5,7 @@ import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListings
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import MarketListingBadge from './MarketListingBadge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ItemSelectionListProps {
   matchingItems: GameStashItem[];
@@ -56,7 +57,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto pr-2">
+      <ScrollArea className="flex-1 min-h-0 pr-2">
         <div className="flex flex-col gap-2 pb-4">
           {matchingItems.map((stashItem, index) => (
             <div
@@ -88,7 +89,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
             </div>
           ))}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 };

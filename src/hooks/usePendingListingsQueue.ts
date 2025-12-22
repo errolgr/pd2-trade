@@ -8,6 +8,7 @@ export interface PendingListing {
   formData: ShortcutFormData;
   createdAt: number;
   lastPolled: number;
+  initialMatchingHashes?: Set<string>; // Store hashes of items found when queued (for detecting new items)
 }
 
 const STORAGE_KEY = 'pd2_pending_listings_queue';
@@ -24,7 +25,12 @@ export function usePendingListingsQueue() {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setPendingListings(parsed);
+        // Convert initialMatchingHashes arrays back to Sets
+        const restored = parsed.map((p: any) => ({
+          ...p,
+          initialMatchingHashes: p.initialMatchingHashes ? new Set(p.initialMatchingHashes) : undefined,
+        }));
+        setPendingListings(restored);
       }
     } catch (err) {
       console.error('Failed to load pending listings from storage:', err);
@@ -34,23 +40,32 @@ export function usePendingListingsQueue() {
   // Save to localStorage whenever pendingListings changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pendingListings));
+      // Convert Sets to arrays for JSON serialization
+      const serializable = pendingListings.map((p) => ({
+        ...p,
+        initialMatchingHashes: p.initialMatchingHashes ? Array.from(p.initialMatchingHashes) : undefined,
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
     } catch (err) {
       console.error('Failed to save pending listings to storage:', err);
     }
   }, [pendingListings]);
 
-  const addPendingListing = useCallback((item: PriceCheckItem, formData: ShortcutFormData) => {
-    const pendingListing: PendingListing = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      item,
-      formData,
-      createdAt: Date.now(),
-      lastPolled: Date.now(),
-    };
-    setPendingListings((prev) => [...prev, pendingListing]);
-    return pendingListing.id;
-  }, []);
+  const addPendingListing = useCallback(
+    (item: PriceCheckItem, formData: ShortcutFormData, initialMatchingHashes?: Set<string>) => {
+      const pendingListing: PendingListing = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        item,
+        formData,
+        createdAt: Date.now(),
+        lastPolled: Date.now(),
+        initialMatchingHashes,
+      };
+      setPendingListings((prev) => [...prev, pendingListing]);
+      return pendingListing.id;
+    },
+    [],
+  );
 
   const removePendingListing = useCallback((id: string) => {
     setPendingListings((prev) => prev.filter((p) => p.id !== id));

@@ -9,6 +9,7 @@ export const STASH_API_MAP = {
     hatred: 'Charged Essence of Hatred',
     suffering: 'Twisted Essence of Suffering',
     terror: 'Burning Essence of Terror',
+    wss: 'Worldstone Shard',
   },
   Ubers: {
     twss: 'Tainted Worldstone Shard',

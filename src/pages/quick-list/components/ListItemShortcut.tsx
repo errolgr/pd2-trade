@@ -22,6 +22,7 @@ import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import ListedItemsTab from './ListedItemsTab';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
@@ -66,6 +67,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [showMultipleMatchSelector, setShowMultipleMatchSelector] = useState(false);
   const [pendingMatches, setPendingMatches] = useState<GameStashItem[]>([]);
   const [pendingMatchListingId, setPendingMatchListingId] = useState<string | null>(null);
+  const [showQueueOption, setShowQueueOption] = useState(false); // Track if user explicitly revealed queue option
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingRef = useRef<Set<string>>(new Set()); // Track which items are being processed
   const pendingListingDataRef = useRef<PendingListing | null>(null);
@@ -84,6 +86,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [appWindow]);
 
   // Complete reset function for new items
+  // Note: Does not clear queuedListingIds - queued items should persist across item selections
   const resetAllState = useCallback(() => {
     setMatchingItems([]);
     setSelectedItem(null);
@@ -92,11 +95,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     setExpandedItems(new Set());
     setIsMarketListingsLoading(false);
     setSubmitLoading(false);
-    setIsQueued(false);
-    setQueuedListingIds(new Set());
     setShowMultipleMatchSelector(false);
     setPendingMatches([]);
     setPendingMatchListingId(null);
+    setShowQueueOption(false);
     isProcessingRef.current = new Set();
     pendingListingDataRef.current = null;
     form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
@@ -121,9 +123,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
+        setShowQueueOption(false); // Reset queue option visibility
         incrementMetric('list_item.auto_selected', 1);
       } else {
         setSelectedItem(null);
+        setShowQueueOption(false); // Reset queue option visibility when new search
       }
     } catch (err) {
       const duration = performance.now() - startTime;
@@ -136,15 +140,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [findMatchingItems, item, resetAllState]);
 
-  // Sync queued items from storage on mount and when item changes
+  // Sync queued items from storage on mount and when pendingListings changes
+  // This ensures queued items persist even when selecting different items
   useEffect(() => {
     if (authData) {
       // Load all pending listings from storage
       const allPendingIds = new Set(pendingListings.map((p) => p.id));
-      if (allPendingIds.size > 0) {
-        setQueuedListingIds(allPendingIds);
-        setIsQueued(true);
-      }
+      setQueuedListingIds(allPendingIds);
+      setIsQueued(allPendingIds.size > 0);
     }
   }, [authData, pendingListings]);
 
@@ -154,15 +157,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // Check if this item is already queued
       const existingQueued = pendingListings.find((p) => JSON.stringify(p.item) === JSON.stringify(item));
       if (existingQueued) {
-        console.log('[Queue] Found existing queued item:', existingQueued.id);
-        setQueuedListingIds((prev) => new Set([...prev, existingQueued.id]));
-        setIsQueued(true);
+        // Switch to queued tab if item is already queued
+        setActiveTab('queued');
       } else {
-        // Only search if item is not queued
+        // Always search for matching items - queued items are handled separately
         findMatchingItemsInStash();
       }
     } else if (!item) {
-      // If item is cleared/null, reset state
+      // If item is cleared/null, reset state (but keep queued items)
       resetAllState();
     }
     // Only depend on item and authData to avoid infinite loops
@@ -232,29 +234,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Process a queued listing once item is found
   const processQueuedListing = useCallback(
     async (pendingListing: PendingListing | undefined, stashItem: GameStashItem) => {
-      console.log('[Queue] processQueuedListing called:', {
-        hasPendingListing: !!pendingListing,
-        hasStashItem: !!stashItem,
-        stashItemName: stashItem?.name,
-        stashItemHash: stashItem?.hash,
-        isProcessing: isProcessingRef.current,
-      });
-
       if (!pendingListing) {
-        console.log('[Queue] No pending listing provided, aborting');
         return;
       }
       if (!stashItem) {
-        console.log('[Queue] No stash item provided, aborting');
         return;
       }
 
-      // Note: isProcessingRef is already set to true in pollForQueuedItem when items are found
-      // So we don't need to check or set it here - it's already protected
-      console.log('[Queue] Processing queued listing (flag already set)');
-
       const values = pendingListing.formData;
-      console.log('[Queue] Processing with form data:', values);
 
       const priceValue =
         values.price === null || values.price === undefined || values.price === ''
@@ -266,14 +253,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
 
-      console.log('[Queue] Listing details:', {
-        hasPrice,
-        numericPrice,
-        note: values.note,
-        listingType,
-        totalListingsCount,
-      });
-
       try {
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
@@ -282,7 +261,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
           // Check if user has reached the maximum number of listings (50)
           if (currentTotalCount >= 50) {
-            console.log('[Queue] Maximum listings reached, cannot list. Count:', currentTotalCount);
             const warningToast: GenericToastPayload = {
               title: 'Maximum listings reached',
               description:
@@ -294,14 +272,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           }
         }
 
-        console.log('[Queue] Calling listSpecificItem with:', {
-          stashItemName: stashItem.name,
-          stashItemHash: stashItem.hash,
-          hrPrice: hasPrice && numericPrice !== null ? numericPrice : 0,
-          note: values.note || '',
-          listingType,
-        });
-
         const listing = await listSpecificItem(
           stashItem,
           hasPrice && numericPrice !== null ? numericPrice : 0,
@@ -309,10 +279,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           listingType,
         );
 
-        console.log('[Queue] Listing created successfully:', listing._id);
-
         await fetchAllListings();
-        console.log('[Queue] Fetched all listings');
 
         incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType, source: 'queued' });
         if (hasPrice && numericPrice !== null) {
@@ -333,8 +300,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         };
 
         await emit('toast-event', toastPayload);
-        console.log('[Queue] Toast notification sent, hiding window');
-        await appWindow.hide();
       } catch (err) {
         console.error('[Queue] Failed to process queued listing:', err);
         incrementMetric('list_item.create', 1, { status: 'error', source: 'queued' });
@@ -344,9 +309,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           variant: 'error',
         };
         await emit('toast-event', errorToast);
-      } finally {
-        // Processing flag is managed by pollForAllQueuedItems
-        console.log('[Queue] Processing complete');
       }
     },
     [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, appWindow],
@@ -355,32 +317,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Poll for all queued items
   const pollForAllQueuedItems = useCallback(async () => {
     if (!authData) {
-      console.log('[Queue] Skipping poll - missing authData');
       return;
     }
 
     const currentQueuedIds = Array.from(queuedListingIds);
     if (currentQueuedIds.length === 0) {
-      console.log('[Queue] No queued items to poll');
       setIsPolling(false);
       setIsQueued(false);
       return;
     }
 
-    console.log('[Queue] Polling for queued items:', currentQueuedIds.length);
     setIsPolling(true);
 
     // Process each queued item independently
     const pollPromises = currentQueuedIds.map(async (pendingId) => {
       // Skip if already processing this item
       if (isProcessingRef.current.has(pendingId)) {
-        console.log('[Queue] Skipping poll - already processing:', pendingId);
         return;
       }
 
       const pendingListing = getPendingListing(pendingId);
       if (!pendingListing) {
-        console.log('[Queue] Pending listing not found, removing from tracked:', pendingId);
         setQueuedListingIds((prev) => {
           const next = new Set(prev);
           next.delete(pendingId);
@@ -394,7 +351,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const age = now - pendingListing.createdAt;
       const maxAge = 60 * POLL_INTERVAL; // MAX_POLL_ATTEMPTS * POLL_INTERVAL
       if (age >= maxAge) {
-        console.log('[Queue] Polling timeout reached for:', pendingId, 'Age:', age, 'Max:', maxAge);
         // Remove from queue
         removePendingListing(pendingId);
         setQueuedListingIds((prev) => {
@@ -418,12 +374,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       updateLastPolled(pendingId);
 
       try {
-        console.log('[Queue] Searching for matching items in stash for:', pendingId);
         const items = await findMatchingItems(pendingListing.item);
-        console.log('[Queue] Found matching items for', pendingId, ':', items.length);
 
-        if (items.length > 0) {
-          console.log('[Queue] Items found! Starting processing for:', pendingId);
+        // Determine which item to use based on whether we have initial matching hashes
+        let itemToUse: GameStashItem | null = null;
+
+        if (pendingListing.initialMatchingHashes && pendingListing.initialMatchingHashes.size > 0) {
+          // We queued with multiple matches - look for a NEW item (not in initial set)
+          const newItems = items.filter((item) => !pendingListing.initialMatchingHashes!.has(item.hash));
+
+          if (newItems.length > 0) {
+            // Found a new item! Use the first one (or could use the most recent if we had timestamps)
+            itemToUse = newItems[0];
+          }
+        } else {
+          // No initial matching hashes - this was queued with 0 matches, use first item found
+          if (items.length > 0) {
+            itemToUse = items[0];
+          }
+        }
+
+        if (itemToUse) {
           // Mark as processing immediately to prevent duplicates
           isProcessingRef.current.add(pendingId);
 
@@ -435,22 +406,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           });
           removePendingListing(pendingId);
 
-          if (items.length === 1) {
-            // Single match - auto list
-            console.log('[Queue] Single match found, auto-listing:', items[0].name, items[0].hash);
-            await processQueuedListing(pendingListing, items[0]);
-            isProcessingRef.current.delete(pendingId);
-          } else {
-            // Multiple matches - show selector
-            console.log('[Queue] Multiple matches found, showing selector:', items.length);
-            // Store the pending listing data and ID
-            pendingListingDataRef.current = pendingListing;
-            setPendingMatchListingId(pendingId);
-            setPendingMatches(items);
-            setShowMultipleMatchSelector(true);
-            setMatchingItems(items);
-            // Keep processing flag set until user selects
-          }
+          // Process the found item
+          await processQueuedListing(pendingListing, itemToUse);
+          isProcessingRef.current.delete(pendingId);
+        } else if (items.length > 1 && !pendingListing.initialMatchingHashes) {
+          // Multiple matches but no initial hashes (shouldn't happen, but handle gracefully)
+          // This means we queued with 0 matches but now have multiple - show selector
+          isProcessingRef.current.add(pendingId);
+          setQueuedListingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(pendingId);
+            return next;
+          });
+          removePendingListing(pendingId);
+          pendingListingDataRef.current = pendingListing;
+          setPendingMatchListingId(pendingId);
+          setPendingMatches(items);
+          setShowMultipleMatchSelector(true);
+          setMatchingItems(items);
         }
       } catch (err) {
         console.error('[Queue] Error polling for queued item:', pendingId, err);
@@ -481,36 +454,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Start polling for all queued items
   useEffect(() => {
     const hasQueuedItems = queuedListingIds.size > 0;
-    console.log('[Queue] Polling effect triggered:', {
-      queuedCount: queuedListingIds.size,
-      hasPollInterval: !!pollIntervalRef.current,
-      hasQueuedItems,
-    });
 
     // Set up polling if we have queued items and no interval is running
     if (hasQueuedItems && !pollIntervalRef.current) {
-      console.log('[Queue] Starting polling for', queuedListingIds.size, 'queued items');
-
       // Poll immediately first
       pollForAllQueuedItems();
 
       // Then set up interval
       pollIntervalRef.current = setInterval(() => {
-        console.log('[Queue] Polling interval tick');
         pollForAllQueuedItems();
       }, POLL_INTERVAL);
-
-      console.log('[Queue] Polling interval set up with interval:', POLL_INTERVAL);
     } else if (!hasQueuedItems && pollIntervalRef.current) {
       // Stop polling if no queued items
-      console.log('[Queue] No queued items, stopping polling');
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
       setIsPolling(false);
     }
 
     return () => {
-      console.log('[Queue] Cleaning up polling interval');
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -520,12 +481,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [queuedListingIds.size]);
 
   const handleSubmit = async (values: ShortcutFormData) => {
-    // If no items found and we have an item, allow queuing
-    if (!selectedItem && matchingItems.length === 0 && item) {
+    // If no item selected and we have an item, allow queuing
+    // This includes both: no items found (length === 0) and multiple items found but none selected
+    if (!selectedItem && item) {
       // Check listing count before queuing
       await fetchAllListings();
       if (totalListingsCount >= 50) {
-        console.log('[Queue] Maximum listings reached, cannot queue. Count:', totalListingsCount);
         const warningToast: GenericToastPayload = {
           title: 'Maximum listings reached',
           description:
@@ -537,27 +498,35 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         return;
       }
 
-      console.log('[Queue] Queuing item for later listing:', {
-        itemName: item.name || item.type,
-        formData: values,
-      });
+      // Store initial matching hashes if there are multiple matches
+      const initialMatchingHashes =
+        matchingItems.length > 0 ? new Set(matchingItems.map((item) => item.hash)) : undefined;
 
-      const pendingId = addPendingListing(item, values);
-      console.log('[Queue] Item queued with ID:', pendingId);
+      const pendingId = addPendingListing(item, values, initialMatchingHashes);
 
       setQueuedListingIds((prev) => new Set([...prev, pendingId]));
       setIsQueued(true);
       setSubmitLoading(false);
 
-      incrementMetric('list_item.queued', 1);
+      incrementMetric('list_item.queued', 1, {
+        has_multiple_matches: matchingItems.length > 0 ? 'true' : 'false',
+      });
       const queuedToast: GenericToastPayload = {
         title: 'Item queued',
         description:
-          "We're waiting for the server to sync your item (usually takes a few minutes). Once synced, it will be listed automatically.",
+          matchingItems.length > 0
+            ? "We're waiting for the new item to appear in your stash (usually takes a few minutes). Once it appears, it will be listed automatically."
+            : "We're waiting for the server to sync your item (usually takes a few minutes). Once synced, it will be listed automatically.",
         variant: 'default',
       };
       await emit('toast-event', queuedToast);
-      await appWindow.hide();
+
+      // Switch to queued tab to show the queued item
+      setActiveTab('queued');
+
+      // Reset form to allow queuing another item, but keep showQueueOption true
+      form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
+      // Don't hide window - allow user to queue multiple items
       return;
     }
 
@@ -708,7 +677,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const handleMultipleMatchSelection = useCallback(
     async (stashItem: GameStashItem) => {
       if (!pendingListingDataRef.current || !pendingMatchListingId) {
-        console.error('No pending listing data available for multiple match selection');
         return;
       }
 
@@ -765,59 +733,42 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [item, resetAllState]);
 
-  // Logic to determine what to render inside the "List Item" tab
-  const renderListItemContent = () => {
-    if (!item) {
+  // Render queued items view
+  const renderQueuedItemsContent = () => {
+    const queuedItems = Array.from(queuedListingIds)
+      .map((id) => getPendingListing(id))
+      .filter((p): p is PendingListing => p !== undefined);
+
+    if (queuedItems.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 h-[300px]">
+        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 h-full">
           <AlertCircle className="w-12 h-12 text-muted-foreground opacity-50" />
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">No Item Selected</h3>
-            <p className="text-sm text-muted-foreground max-w-[250px]">
-              Copy an item in-game (Ctrl+C) and reopen this window to list it, or select &quot;Manage Listings&quot; to
-              view your active trades.
-            </p>
+            <h3 className="font-semibold text-lg">No Queued Items</h3>
+            <p className="text-sm text-muted-foreground max-w-[250px]">Items you queue for listing will appear here.</p>
           </div>
         </div>
       );
     }
 
-    // 1. Loading or Error
-    if (isLoading || error) {
-      return (
-        <LoadingAndErrorStates
-          isLoading={isLoading}
-          error={error}
-          matchingItems={matchingItems}
-          onRetry={findMatchingItemsInStash}
-          embedded={true}
-        />
-      );
-    }
-
-    // 2. Queued Item View
-    if (isQueued && queuedListingIds.size > 0) {
-      const queuedItems = Array.from(queuedListingIds)
-        .map((id) => getPendingListing(id))
-        .filter((p): p is PendingListing => p !== undefined);
-
-      return (
-        <div className="flex flex-col py-4 gap-4 w-full h-full bg-background">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-            <div className="text-lg font-medium">Items queued for listing</div>
-            <div className="text-sm text-muted-foreground max-w-md">
-              We&apos;re waiting for the server to sync your items (usually takes a few minutes). Once synced, they will
-              be listed automatically.
-            </div>
-            {isPolling && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Checking stash...</span>
-              </div>
-            )}
+    return (
+      <div className="flex flex-col py-4 gap-4 w-full h-full bg-background min-h-0">
+        <div className="flex flex-col items-center gap-2 text-center flex-shrink-0">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+          <div className="text-lg font-medium">Items queued for listing</div>
+          <div className="text-sm text-muted-foreground max-w-md">
+            We&apos;re waiting for the server to sync your items (usually takes a few minutes). Once synced, they will
+            be listed automatically.
           </div>
-          <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+          {isPolling && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Checking stash...</span>
+            </div>
+          )}
+        </div>
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="flex flex-col gap-2 pb-4 pr-2">
             {queuedItems.map((pendingListing) => {
               const itemName = pendingListing.item.name || pendingListing.item.type;
               const age = Date.now() - pendingListing.createdAt;
@@ -866,7 +817,38 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               );
             })}
           </div>
+        </ScrollArea>
+      </div>
+    );
+  };
+
+  // Logic to determine what to render inside the "List Item" tab
+  const renderListItemContent = () => {
+    if (!item) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 h-[300px]">
+          <AlertCircle className="w-12 h-12 text-muted-foreground opacity-50" />
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">No Item Selected</h3>
+            <p className="text-sm text-muted-foreground max-w-[250px]">
+              Copy an item in-game (Ctrl+C) and reopen this window to list it, or select &quot;Manage Listings&quot; to
+              view your active trades.
+            </p>
+          </div>
         </div>
+      );
+    }
+
+    // 1. Loading or Error
+    if (isLoading || error) {
+      return (
+        <LoadingAndErrorStates
+          isLoading={isLoading}
+          error={error}
+          matchingItems={matchingItems}
+          onRetry={findMatchingItemsInStash}
+          embedded={true}
+        />
       );
     }
 
@@ -951,13 +933,37 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
 
             <div className="flex-shrink-0">
-              <ListingFormFields
-                form={form}
-                selectedItem={selectedItem}
-                currentListings={currentListings}
-                submitLoading={submitLoading}
-                onSubmit={handleSubmit}
-              />
+              {matchingItems.length > 0 && !selectedItem && !showQueueOption && (
+                <div className="mb-2 flex flex-col items-center gap-2">
+                  <div className="text-xs text-muted-foreground text-center">None of these match?</div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQueueOption(true)}
+                    className="text-xs"
+                  >
+                    Queue Item for Later
+                  </Button>
+                </div>
+              )}
+              {(selectedItem || (matchingItems.length > 0 && !selectedItem && showQueueOption)) && (
+                <>
+                  {matchingItems.length > 0 && !selectedItem && showQueueOption && (
+                    <div className="mb-2 text-xs text-muted-foreground text-center">
+                      Queue this item to wait for the new one to appear in your stash (usually takes a few minutes).
+                    </div>
+                  )}
+                  <ListingFormFields
+                    form={form}
+                    selectedItem={selectedItem}
+                    currentListings={currentListings}
+                    submitLoading={submitLoading}
+                    onSubmit={handleSubmit}
+                    allowQueue={matchingItems.length > 0 && !selectedItem && showQueueOption}
+                  />
+                </>
+              )}
             </div>
           </form>
         </Form>
@@ -1021,6 +1027,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                   <Badge className="font-bold text-xs rounded-full">{totalListingsCount}</Badge>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="queued"
+                className="font-bold">
+                <span className="font-bold"
+                  style={{ fontFamily: 'DiabloFont' }}>
+                  Queued
+                </span>
+                {queuedListingIds.size > 0 && (
+                  <Badge className="font-bold text-xs rounded-full">{queuedListingIds.size}</Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1046,6 +1062,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             initialTotalCount={totalListingsCount}
             onTotalCountChange={setTotalListingsCount}
           />
+        </TabsContent>
+
+        <TabsContent value="queued"
+          className="mt-4 flex-1 flex flex-col min-h-0">
+          {renderQueuedItemsContent()}
         </TabsContent>
       </Tabs>
     </div>

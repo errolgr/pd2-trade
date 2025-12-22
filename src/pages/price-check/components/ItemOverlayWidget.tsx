@@ -583,37 +583,58 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
               )}
             </div>
 
-            <div className="flex flex-row items-center gap-1">
-              {/* Ethereal Indicator */}
-              {listing.item.is_ethereal && (
-                <div
-                  className="w-4 h-4 rounded-full border border-neutral-600 bg-white flex items-center justify-center"
-                  title="Ethereal"
-                >
-                  <span className="text-black text-[10px] font-bold leading-none">E</span>
-                </div>
-              )}
+            <TooltipProvider delayDuration={0}>
+              <div className="flex flex-row items-center gap-1">
+                {/* Ethereal Indicator */}
+                {listing.item.is_ethereal && (
+                  <Tooltip disableHoverableContent={true}
+                    delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-white flex items-center justify-center">
+                        <span className="text-black text-[10px] font-bold leading-none">E</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="pointer-events-none">
+                      <p>Ethereal</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
-              {/* Corruption Indicator */}
-              {isCorrupted && (
-                <div
-                  className="w-4 h-4 rounded-full border border-neutral-600 bg-red-600 flex items-center justify-center"
-                  title="Corrupted"
-                >
-                  <span className="text-white text-[10px] font-bold leading-none">C</span>
-                </div>
-              )}
+                {/* Corruption Indicator */}
+                {isCorrupted && (
+                  <Tooltip disableHoverableContent={true}
+                    delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-red-600 flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold leading-none">C</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="pointer-events-none">
+                      <p>Corrupted</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
-              {/* Sockets Indicator */}
-              {(listing.item.socket_count || 0) > 0 && (
-                <div
-                  className="w-4 h-4 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center"
-                  title="Sockets"
-                >
-                  <span className="text-gray-200 text-[10px] font-bold leading-none">{listing.item.socket_count}</span>
-                </div>
-              )}
-            </div>
+                {/* Sockets Indicator */}
+                {(listing.item.socket_count || 0) > 0 && (
+                  <Tooltip disableHoverableContent={true}
+                    delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center">
+                        <span className="text-gray-200 text-[10px] font-bold leading-none">
+                          {listing.item.socket_count}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="pointer-events-none">
+                      <p>
+                        {listing.item.socket_count} {listing.item.socket_count === 1 ? 'Socket' : 'Sockets'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
           </td>
 
           {/* Listed Column */}
