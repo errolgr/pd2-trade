@@ -514,49 +514,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <thead>
                   <tr>
                     <th className="px-2 py-1 border-b border-neutral-700 w-full">Price</th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
-                      <HoverPopover
-                        side="top"
-                        content={
-                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
-                            Ethereal
-                          </div>
-                        }
-                      >
-                        <span className="cursor-help">E</span>
-                      </HoverPopover>
-                    </th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
-                      <HoverPopover
-                        side="top"
-                        content={
-                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
-                            Corrupted
-                          </div>
-                        }
-                      >
-                        <span className="cursor-help">C</span>
-                      </HoverPopover>
-                    </th>
-                    <th className="px-1 py-1 border-b border-neutral-700 w-[1%] whitespace-nowrap text-center">
-                      <HoverPopover
-                        side="top"
-                        content={
-                          <div className="bg-neutral-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
-                            Socket Count
-                          </div>
-                        }
-                      >
-                        <span className="cursor-help">S</span>
-                      </HoverPopover>
-                    </th>
                     <th className="px-2 py-1 border-b border-neutral-700 whitespace-nowrap w-[1%]">Listed</th>
                   </tr>
                 </thead>
                 <tbody>
                   {marketListings.length === 0 && (
                     <tr>
-                      <td colSpan={5}
+                      <td colSpan={2}
                         className="px-2 py-2 text-center text-gray-400">
                         No listings found
                       </td>
@@ -600,66 +564,55 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
           onMouseLeave={() => setOpen(false)}
         >
           {/* Price Column */}
-          <td className="px-2 py-1 flex flex-row items-center whitespace-nowrap">
-            {listing.hr_price ? (
-              `${listing.hr_price} HR`
-            ) : listing.price && listing.price.length > 40 ? (
-              <HoverPopover
-                content={
-                  <Card>
-                    <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
-                  </Card>
-                }
-              >
-                <span className="cursor-pointer underline decoration-dotted">{listing.price.slice(0, 40)}...</span>
-              </HoverPopover>
-            ) : (
-              listing.price || '-'
-            )}
-          </td>
+          <td className="px-2 py-1 flex flex-row items-center justify-between whitespace-nowrap">
+            <div className="flex-1 truncate mr-2">
+              {listing.hr_price ? (
+                `${listing.hr_price} HR`
+              ) : listing.price && listing.price.length > 40 ? (
+                <HoverPopover
+                  content={
+                    <Card>
+                      <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
+                    </Card>
+                  }
+                >
+                  <span className="cursor-pointer underline decoration-dotted">{listing.price.slice(0, 40)}...</span>
+                </HoverPopover>
+              ) : (
+                listing.price || '-'
+              )}
+            </div>
 
-          {/* Ethereal Column */}
-          <td className="px-1 py-1 text-center">
-            <div className="flex justify-center">
-              {listing.item.is_ethereal ? (
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full border border-neutral-600 bg-white"
+            <div className="flex flex-row items-center gap-1">
+              {/* Ethereal Indicator */}
+              {listing.item.is_ethereal && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-white flex items-center justify-center"
                   title="Ethereal"
-                />
-              ) : (
-                <span className="text-gray-600 text-[10px]"
-                  title="Not Ethereal">
-                  -
-                </span>
+                >
+                  <span className="text-black text-[10px] font-bold leading-none">E</span>
+                </div>
               )}
-            </div>
-          </td>
 
-          {/* Corruption Column */}
-          <td className="px-1 py-1 text-center">
-            <div className="flex justify-center">
-              {isCorrupted ? (
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full border border-neutral-600 bg-red-500"
+              {/* Corruption Indicator */}
+              {isCorrupted && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-red-600 flex items-center justify-center"
                   title="Corrupted"
-                />
-              ) : (
-                <span className="text-gray-600 text-[10px]"
-                  title="Clean">
-                  -
-                </span>
+                >
+                  <span className="text-white text-[10px] font-bold leading-none">C</span>
+                </div>
               )}
-            </div>
-          </td>
 
-          {/* Sockets Column */}
-          <td className="px-1 py-1 text-center">
-            <div className="flex flex-row justify-center gap-0.5">
-              {Array.from({ length: listing.item.socket_count || 0 }).map((_, i) => (
-                <div key={i}
-                  className="w-2.5 h-2.5 rounded-full border border-neutral-600 bg-black/40" />
-              ))}
-              {!listing.item.socket_count && <span className="text-gray-600 text-[10px]">-</span>}
+              {/* Sockets Indicator */}
+              {(listing.item.socket_count || 0) > 0 && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center"
+                  title="Sockets"
+                >
+                  <span className="text-gray-200 text-[10px] font-bold leading-none">{listing.item.socket_count}</span>
+                </div>
+              )}
             </div>
           </td>
 
