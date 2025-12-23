@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { changeLog } from '@/assets/changeLog';
 import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ChangelogPage() {
   const { settings, updateSettings } = useOptions();
@@ -26,9 +27,9 @@ export default function ChangelogPage() {
   if (!currentVersion || !entries) return null;
 
   return (
-    <Card className={'w-screen h-screen'}>
-      <div className="py-10 px-4">
-        <div className={'flex flex-row justify-between items-center mb-4'}>
+    <Card className={'w-screen h-screen flex flex-col overflow-hidden'}>
+      <div className="py-10 px-4 flex flex-col h-full min-h-0">
+        <div className={'flex flex-row justify-between items-center mb-4 flex-shrink-0'}>
           <h1 className="text-xl font-bold">What&#39;s New (v{currentVersion})</h1>
           <Button
             variant="ghost"
@@ -40,11 +41,13 @@ export default function ChangelogPage() {
           </Button>
         </div>
 
-        <ul className="list-disc space-y-2 pl-6">
-          {entries.map((entry, idx) => (
-            <li key={idx}>{entry}</li>
-          ))}
-        </ul>
+        <ScrollArea className="flex-1 min-h-0 pr-4">
+          <ul className="list-disc space-y-2 pl-6">
+            {entries.map((entry, idx) => (
+              <li key={idx}>{entry}</li>
+            ))}
+          </ul>
+        </ScrollArea>
       </div>
     </Card>
   );

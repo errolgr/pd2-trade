@@ -1,4 +1,20 @@
 export const changeLog = {
+  '0.7.0': [
+    '✨ Expanded the quick list window to include a "Queued" tab for items that are waiting to be listed',
+    '✨ Refined Item Search UI with a compact table layout, hover popovers for stats, and visual badges for Corruption, Sockets, and Ethereal status.',
+    '✨ Persistent windows - overlay locations will now persist across restarts',
+    '✨ Overlays will track the position of the Diablo II window and will be positioned relative to it',
+    '🆕 You can now queue any item, not just uniques',
+    '🆕 Hide outgoing website offers button in the trade offers window',
+    '🆕 Add infinite scrolling to the quick list window and the price check window',
+    '🆕 Allow list menu to be accessed from the price check widget',
+    '🆕 Using list menu hotkey will allow you to open the window anywhere within the application',
+    '🆕 Worldstone shards are now included in the currency valuation',
+    '🔧 Fixed an issue where catalyst shards would not be found',
+    '🔧 Fixed issue which would cuase some users to be stuck in an infinite update loop',
+    '🔧 Fixed an issue which caused the overlay to flicker when interacting with app windows.',
+    '🔧 Various linux improvements',
+  ],
   '0.6.1': [
     '🆕 Add logout/login functionality to the account settings window',
     '🔧 Fixed issue where chat window would show duplicate links',

@@ -113,10 +113,20 @@ export function AboutForm() {
           </Card>
         )}
 
-        <div className={'flex flex-col items-center gap-1'}>
-          <div className={'text-md'}>Contact me on the Offical PD2 Discord</div>
-          <div className={'text-sm text-gray-400'}>@Doreet</div>
-        </div>
+        <table className={'border-collapse'}>
+          <thead>
+            <tr>
+              <th className={'text-md px-4 pb-2'}>Developer</th>
+              <th className={'text-md px-4 pb-2'}>Contributors</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className={'text-sm text-gray-400 px-4 text-center'}>@Doreet</td>
+              <td className={'text-sm text-gray-400 px-4 text-center'}>@pandamancer</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ScrollArea>
   );
