@@ -1,4 +1,6 @@
-import { isStashItem } from '@/lib/item-utils';
+import { openWindowAtCursor } from '@/lib/window';
+import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,9 +30,11 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -193,11 +197,60 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [searchMode, item.type, matchedItemType]);
 
   const openCurrencyValuation = useCallback(async () => {
-    await emit('open-currency-valuation');
+    await openCenteredWindow(WindowLabels.Currency, '/currency', {
+      title: WindowTitles.Currency,
+      decorations: false,
+      focus: true,
+      shadow: false,
+      width: 640,
+      height: 870,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+    });
   }, []);
 
   const openListWindow = useCallback(async () => {
-    await emit('open-quick-list-for-item', item);
+    const raw = JSON.stringify(item);
+    const encodedItem = encodeItemForQuickList(raw);
+    const quickListLabel = WindowLabels.QuickList;
+    const safeEncodedItem = encodeURIComponent(encodedItem);
+
+    try {
+      // Check if window exists
+      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
+
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          await existingWin.emit('quick-list-new-item', safeEncodedItem);
+          return;
+        } catch (err) {
+          console.warn('[ItemOverlay] Failed to reuse QuickList window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openWindowAtCursor(quickListLabel, `/quick-list?item=${safeEncodedItem}`, {
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+      });
+    } catch (err) {
+      console.error('[ItemOverlay] Failed to open QuickList:', err);
+    }
   }, [item]);
 
   const fetchListings = useCallback(
