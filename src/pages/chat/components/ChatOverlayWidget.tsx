@@ -53,8 +53,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const messageListenerUnlistenRef = useRef<(() => void) | null>(null);
   const isMessageListenerSetupRef = useRef<boolean>(false);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
   // Get current user ID
   const currentUserId = authData?.user?._id;
 
@@ -848,10 +846,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   };
 
   return (
-    <Card
-      ref={containerRef}
-      className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden"
-    >
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div
         data-tauri-drag-region
