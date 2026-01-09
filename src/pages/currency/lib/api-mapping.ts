@@ -15,7 +15,6 @@ export const STASH_TO_API_MAP: Record<string, ItemApiMapping> = {
   puzzlebox: { baseCode: 'lbox', typeCode: 'lbox', itemName: "Larzuk's Puzzlebox" },
   puzzlepiece: { baseCode: 'lpp', typeCode: 'lpp', itemName: "Larzuk's Puzzlepiece" },
   catalyst: { baseCode: 'iwss', typeCode: 'iwss', itemName: 'Catalyst Shard' },
-  standard: { baseCode: 'std', typeCode: 'ques', itemName: 'Standard of Heroes' },
   destruction: { baseCode: 'fed', typeCode: 'ubr', itemName: 'Festering Essence of Destruction' },
   hatred: { baseCode: 'ceh', typeCode: 'ubr', itemName: 'Charged Essence of Hatred' },
   suffering: { baseCode: 'tes', typeCode: 'ubr', itemName: 'Twisted Essence of Suffering' },

@@ -34,7 +34,7 @@ export default function ChangelogPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => getCurrentWebviewWindow().close()}
+            onClick={() => getCurrentWebviewWindow().hide()}
             className="self-start cursor-pointer"
           >
             <X className="h-4 w-4 " />

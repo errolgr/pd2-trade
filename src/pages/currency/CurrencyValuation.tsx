@@ -96,7 +96,6 @@ export function CurrencyValuation() {
               puzzlebox: currency.puzzlebox,
               puzzlepiece: currency.puzzlepiece,
               catalyst: currency.map.catalyst,
-              standard: currency.map.standard,
               destruction: currency.essence.destruction,
               hatred: currency.essence.hatred,
               suffering: currency.essence.suffering,

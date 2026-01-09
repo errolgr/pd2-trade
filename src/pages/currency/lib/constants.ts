@@ -4,7 +4,6 @@ export const STASH_API_MAP = {
     puzzlebox: "Larzuk's Puzzlebox",
     puzzlepiece: "Larzuk's Puzzlepiece",
     catalyst: 'Catalyst Shard',
-    standard: 'Standard of Heroes',
     destruction: 'Festering Essence of Destruction',
     hatred: 'Charged Essence of Hatred',
     suffering: 'Twisted Essence of Suffering',
