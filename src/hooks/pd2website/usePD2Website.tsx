@@ -8,6 +8,7 @@ import { useSocket } from './useSocket';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
+import { reportApiError } from '@/lib/error-reporting';
 import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
@@ -317,36 +318,54 @@ export const usePd2Website = () => {
 export async function handleApiResponse(response: Response, onAuthError?: () => void | Promise<void>) {
   if (!response.ok) {
     const errorBody = await response.text();
+    let errorJson: any = null;
+
+    // Try to parse error body
+    try {
+      errorJson = JSON.parse(errorBody);
+    } catch {
+      // If parsing fails, continue with text error body
+    }
 
     // Check for 401 Unauthorized (authentication error)
+    // These are expected (JWT expiration) and should be handled silently
     if (response.status === 401) {
-      // Try to parse error body to confirm it's a JWT expiration
-      try {
-        const errorJson = JSON.parse(errorBody);
-        if (errorJson.name === 'NotAuthenticated' && errorJson.message === 'jwt expired') {
-          // Call the authentication error handler if provided
-          if (onAuthError) {
-            await onAuthError();
-          }
-          throw new AuthenticationError(`Authentication failed: ${errorJson.message}`, response.status);
-        }
-      } catch (parseError) {
-        // If parsing fails, still treat 401 as auth error
-        if (onAuthError) {
-          await onAuthError();
-        }
-        throw new AuthenticationError(`Authentication failed: ${response.statusText}`, response.status);
-      }
+      const errorMessage = errorJson?.message || response.statusText;
+      console.warn('[API] Authentication required (401):', errorMessage);
 
-      // Fallback for other 401 errors
+      // Call the authentication error handler if provided (triggers re-auth flow)
       if (onAuthError) {
         await onAuthError();
       }
-      throw new AuthenticationError(`Authentication failed: ${response.statusText}`, response.status);
+      // Return null instead of throwing - 401 errors are expected and handled via onAuthError
+      // The calling code should handle null returns gracefully
+      return null;
     }
 
-    // For other errors, throw a regular Error
-    throw new Error(`API Error: ${response.status} ${response.statusText}\n${errorBody}`);
+    // Extract endpoint from response URL if available
+    const url = new URL(response.url);
+    const endpoint = url.pathname;
+
+    // Create error with context
+    const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
+
+    // Report to Sentry (only for 5xx errors, 4xx are expected)
+    reportApiError(
+      error,
+      'pd2-api',
+      endpoint,
+      response.status,
+      errorJson
+        ? {
+            ...(errorJson.name && { errorName: errorJson.name }),
+            ...(errorJson.code !== undefined && { errorCode: errorJson.code }),
+            ...(errorJson.className && { errorClassName: errorJson.className }),
+          }
+        : undefined,
+    );
+
+    // Throw the error
+    throw error;
   }
   return response.json();
 }

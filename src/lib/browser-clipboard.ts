@@ -14,7 +14,7 @@ export async function readText(): Promise<string | null> {
     try {
       return await tauriReadText();
     } catch (error) {
-      console.error('Failed to read clipboard:', error);
+      console.warn('Failed to read clipboard:', error);
       return null;
     }
   }
@@ -26,7 +26,7 @@ export async function readText(): Promise<string | null> {
     }
     return null;
   } catch (error) {
-    console.error('Failed to read clipboard:', error);
+    console.warn('Failed to read clipboard:', error);
     return null;
   }
 }

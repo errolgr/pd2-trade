@@ -2,6 +2,8 @@
  * Service to fetch prices from the PD2 Price Crawler API
  */
 
+import { reportApiError } from '@/lib/error-reporting';
+
 const API_BASE_URL = 'https://pd2trader.com';
 
 export interface AveragePriceResponse {
@@ -57,12 +59,19 @@ export async function fetchItemPrice(
       if (response.status === 404) {
         return null; // No data found
       }
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const error = new Error(`API error: ${response.status} ${response.statusText}`);
+      reportApiError(error, 'price-api', 'item-prices/average', response.status, {
+        baseCode,
+      });
+      return null;
     }
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching price for ${baseCode}:`, error);
+    const apiError = error instanceof Error ? error : new Error(String(error));
+    reportApiError(apiError, 'price-api', 'item-prices/average', undefined, {
+      baseCode,
+    });
     return null;
   }
 }
@@ -98,7 +107,11 @@ export async function fetchItemPriceByName(
         console.log('[fetchItemPriceByName] No price data found for:', itemName);
         return null; // No data found
       }
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const error = new Error(`API error: ${response.status} ${response.statusText}`);
+      reportApiError(error, 'price-api', 'item-prices/average', response.status, {
+        itemName,
+      });
+      return null;
     }
 
     const data = await response.json();
@@ -111,7 +124,10 @@ export async function fetchItemPriceByName(
 
     return data;
   } catch (error) {
-    console.error(`[fetchItemPriceByName] Error fetching price for ${itemName}:`, error);
+    const apiError = error instanceof Error ? error : new Error(String(error));
+    reportApiError(apiError, 'price-api', 'item-prices/average', undefined, {
+      itemName,
+    });
     return null;
   }
 }
@@ -150,7 +166,9 @@ export async function fetchMultipleItemPrices(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const error = new Error(`API error: ${response.status} ${response.statusText}`);
+      reportApiError(error, 'price-api', 'item-prices/average/batch', response.status);
+      return results;
     }
 
     const batchResponse = await response.json();
@@ -162,7 +180,8 @@ export async function fetchMultipleItemPrices(
       });
     }
   } catch (error) {
-    console.error(`Error fetching batch prices:`, error);
+    const apiError = error instanceof Error ? error : new Error(String(error));
+    reportApiError(apiError, 'price-api', 'item-prices/average/batch');
     // Don't fallback to individual requests to avoid N+1 problem
     // Return empty results instead - the calling code should handle missing data
   }
@@ -222,7 +241,11 @@ export async function fetchCorruptionPrices(
         console.log('[fetchCorruptionPrices] No corruption price data found for:', itemName);
         return null;
       }
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const error = new Error(`API error: ${response.status} ${response.statusText}`);
+      reportApiError(error, 'price-api', 'item-prices/corruption-prices', response.status, {
+        itemName,
+      });
+      return null;
     }
 
     const data = await response.json();
@@ -233,7 +256,10 @@ export async function fetchCorruptionPrices(
 
     return data;
   } catch (error) {
-    console.error(`[fetchCorruptionPrices] Error fetching corruption prices for ${itemName}:`, error);
+    const apiError = error instanceof Error ? error : new Error(String(error));
+    reportApiError(apiError, 'price-api', 'item-prices/corruption-prices', undefined, {
+      itemName,
+    });
     return null;
   }
 }

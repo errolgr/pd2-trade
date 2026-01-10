@@ -27,8 +27,27 @@ export function useUpdater() {
   };
 
   const checkForUpdates = async (): Promise<Update> => {
-    const update = await check();
-    return update;
+    try {
+      const update = await check();
+      return update;
+    } catch (error) {
+      // Log more detailed error information
+      console.error('Error checking for updates:', error);
+
+      // Re-throw with more context if it's a network/request error
+      if (error instanceof Error) {
+        // Check if it's a network/request error
+        if (error.message.includes('error sending request') || error.message.includes('network')) {
+          console.warn('Update check failed due to network error. This may be due to:');
+          console.warn('1. No internet connection');
+          console.warn('2. The latest.json file does not exist at the configured endpoint');
+          console.warn('3. GitHub releases endpoint is unreachable');
+          // Don't throw - return a "no update" state instead
+          // The updater plugin should handle this, but if it doesn't, we'll catch it
+        }
+      }
+      throw error;
+    }
   };
 
   // Function to download and install the update.

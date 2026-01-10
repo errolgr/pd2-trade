@@ -4,6 +4,7 @@ import { ConversationListResponse, MessageListResponse } from '@/common/types/pd
 import { useOptions } from '../useOptions';
 import { emit } from '@/lib/browser-events';
 import { ISettings } from '../useOptions';
+import { reportApiError } from '@/lib/error-reporting';
 
 interface PendingRequest {
   resolve: (value: any) => void;
@@ -36,6 +37,11 @@ export const useSocket = (props?: UseSocketProps) => {
     // Connect to Socket.IO server
     const socket = io('wss://api.projectdiablo2.com', {
       transports: ['websocket'],
+      timeout: 20000, // 20 seconds timeout
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     socketRef.current = socket;
@@ -80,7 +86,9 @@ export const useSocket = (props?: UseSocketProps) => {
                 // Replace spaces and special chars with underscores for Tauri compatibility
                 const sanitizedEventType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
                 emit(`socket:${sanitizedEventType}`, eventData).catch((err) => {
-                  console.error('[Socket] Failed to emit push event:', err);
+                  const error = err instanceof Error ? err : new Error(String(err));
+                  console.warn('[Socket] Failed to emit push event:', error);
+                  // Don't report to Sentry - this is a local event emission issue, not a server error
                 });
                 return; // Don't process push events as request responses
               }
@@ -103,7 +111,10 @@ export const useSocket = (props?: UseSocketProps) => {
               }
             }
           } catch (err) {
-            console.error('[Socket] Failed to parse payload:', err);
+            const error = err instanceof Error ? err : new Error(String(err));
+            console.warn('[Socket] Failed to parse payload:', error);
+            // Don't report to Sentry - payload parsing errors are usually due to unexpected data format
+            // and don't indicate a server problem
           }
         }
       }
@@ -147,8 +158,21 @@ export const useSocket = (props?: UseSocketProps) => {
     });
 
     socket.on('connect_error', (err) => {
-      console.error('[Socket] Connection error:', err);
-      setError(err.message);
+      const error = err instanceof Error ? err : new Error(String(err));
+
+      // Handle timeout errors more gracefully
+      if (error.message === 'timeout' || error.message.includes('timeout')) {
+        console.warn('[Socket] Connection timeout - will retry automatically');
+      } else {
+        // Report connection errors to Sentry with proper grouping
+        // Use status code 500 to indicate a server/connection error
+        reportApiError(error, 'websocket', 'socket-connection', 500, {
+          errorType: 'connection_error',
+          socketUrl: 'wss://api.projectdiablo2.com',
+        });
+        console.warn('[Socket] Connection error:', error);
+      }
+      setError(error.message);
       setIsConnected(false);
     });
 

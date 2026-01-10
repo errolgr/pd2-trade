@@ -450,9 +450,19 @@ const LandingPage: React.FC = () => {
       try {
         const isFocused = await invoke<boolean>('is_diablo_focused');
         if (isFocused) {
-          await chatButtonWindowRef.current.show();
+          try {
+            await chatButtonWindowRef.current.show();
+          } catch (error) {
+            console.warn('[LandingPage] Window not found when showing chat button:', error);
+            chatButtonWindowRef.current = null;
+          }
         } else {
-          await chatButtonWindowRef.current.hide();
+          try {
+            await chatButtonWindowRef.current.hide();
+          } catch (error) {
+            console.warn('[LandingPage] Window not found when hiding chat button:', error);
+            chatButtonWindowRef.current = null;
+          }
         }
       } catch (error) {
         console.error('Initial focus check failed:', error);
@@ -510,13 +520,18 @@ const LandingPage: React.FC = () => {
           // Wait a bit for window to be created, then show it
           setTimeout(async () => {
             if (chatWindowRef.current) {
-              await chatWindowRef.current.show();
-              await chatWindowRef.current.setFocus();
-              // If conversationId was provided, emit event to select it
-              if (conversationId) {
-                setTimeout(() => {
-                  emit('select-chat-conversation', { conversationId, conversation });
-                }, 200); // Small delay to ensure chat widget is ready
+              try {
+                await chatWindowRef.current.show();
+                await chatWindowRef.current.setFocus();
+                // If conversationId was provided, emit event to select it
+                if (conversationId) {
+                  setTimeout(() => {
+                    emit('select-chat-conversation', { conversationId, conversation });
+                  }, 200); // Small delay to ensure chat widget is ready
+                }
+              } catch (error) {
+                console.warn('[LandingPage] Window not found when showing chat window:', error);
+                chatWindowRef.current = null;
               }
             }
           }, 100);
@@ -641,8 +656,13 @@ const LandingPage: React.FC = () => {
         // Wait a bit for window to be created, then show it
         setTimeout(async () => {
           if (tradeMessagesWindowRef.current) {
-            await tradeMessagesWindowRef.current.show();
-            await tradeMessagesWindowRef.current.setFocus();
+            try {
+              await tradeMessagesWindowRef.current.show();
+              await tradeMessagesWindowRef.current.setFocus();
+            } catch (error) {
+              console.warn('[LandingPage] Window not found when showing trade messages window:', error);
+              tradeMessagesWindowRef.current = null;
+            }
           }
         }, 100);
         return;
@@ -843,41 +863,52 @@ const LandingPage: React.FC = () => {
 
           const snapshot = visibleWindowsSnapshotRef.current;
 
+          // Helper to safely show window and clear ref on failure
+          const safeShow = async (winRef: React.MutableRefObject<any> | any, name: string) => {
+            if (!winRef) return;
+            const win = winRef.current || winRef;
+            if (!win) return;
+            try {
+              await win.show();
+            } catch (err) {
+              console.warn(`[VisibilityManager] Window not found when showing ${name}, clearing ref:`, err);
+              if (winRef.current) winRef.current = null;
+            }
+          };
+
           // 1. Chat Button
           if (settingsRef.current.chatButtonOverlayEnabled !== false) {
-            if (chatButtonWindowRef.current) {
-              await chatButtonWindowRef.current.show();
-            }
+            await safeShow(chatButtonWindowRef, 'ChatButton');
           }
 
           // 2. Chat Window
-          if (snapshot.has('chat') && chatWindowRef.current) {
-            await chatWindowRef.current.show();
+          if (snapshot.has('chat')) {
+            await safeShow(chatWindowRef, 'Chat');
           }
 
           // 3. Trade Messages Window
-          if (snapshot.has('trade') && tradeMessagesWindowRef.current) {
-            await tradeMessagesWindowRef.current.show();
+          if (snapshot.has('trade')) {
+            await safeShow(tradeMessagesWindowRef, 'TradeMessages');
           }
 
           // 4. Quick List Window
-          if (snapshot.has('quickList') && quickListWinRef.current) {
-            await (quickListWinRef.current as any).show();
+          if (snapshot.has('quickList')) {
+            await safeShow(quickListWinRef, 'QuickList');
           }
 
           // 5. Item Search Window
-          if (snapshot.has('search') && winRef.current) {
-            await (winRef.current as any).show();
+          if (snapshot.has('search')) {
+            await safeShow(winRef, 'ItemSearch');
           }
 
           // 6. Settings Window
           if (snapshot.has('settings') && settingsWindow) {
-            await settingsWindow.show();
+            await safeShow({ current: settingsWindow }, 'Settings');
           }
 
           // 7. Currency Window
-          if (snapshot.has('currency') && currencyWindowRef.current) {
-            await currencyWindowRef.current.show();
+          if (snapshot.has('currency')) {
+            await safeShow(currencyWindowRef, 'Currency');
           }
 
           // Clear snapshot after restoring - we assume we are back to normal state
@@ -899,46 +930,55 @@ const LandingPage: React.FC = () => {
             // Perform Snapshot and Hide
             const snapshot = visibleWindowsSnapshotRef.current;
 
+            // Helper to safely check visibility, hide window, and clear ref on failure
+            const safeHide = async (winRef: React.MutableRefObject<any> | any, name: string, snapshotKey: string) => {
+              if (!winRef) return;
+              const win = winRef.current || winRef;
+              if (!win) return;
+              try {
+                if (await win.isVisible()) {
+                  snapshot.add(snapshotKey);
+                  await win.hide();
+                }
+              } catch (err) {
+                console.warn(`[VisibilityManager] Window not found when hiding ${name}, clearing ref:`, err);
+                if (winRef.current) winRef.current = null;
+              }
+            };
+
             // 1. Chat Button
-            if (chatButtonWindowRef.current && (await chatButtonWindowRef.current.isVisible())) {
-              snapshot.add('chatButton');
-              await chatButtonWindowRef.current.hide();
+            if (chatButtonWindowRef.current) {
+              await safeHide(chatButtonWindowRef, 'ChatButton', 'chatButton');
             }
 
             // 2. Chat Window
-            if (chatWindowRef.current && (await chatWindowRef.current.isVisible())) {
-              snapshot.add('chat');
-              await chatWindowRef.current.hide();
+            if (chatWindowRef.current) {
+              await safeHide(chatWindowRef, 'Chat', 'chat');
             }
 
             // 3. Trade Messages Window
-            if (tradeMessagesWindowRef.current && (await tradeMessagesWindowRef.current.isVisible())) {
-              snapshot.add('trade');
-              await tradeMessagesWindowRef.current.hide();
+            if (tradeMessagesWindowRef.current) {
+              await safeHide(tradeMessagesWindowRef, 'TradeMessages', 'trade');
             }
 
             // 4. Quick List Window
-            if (quickListWinRef.current && (await (quickListWinRef.current as any).isVisible())) {
-              snapshot.add('quickList');
-              await (quickListWinRef.current as any).hide();
+            if (quickListWinRef.current) {
+              await safeHide(quickListWinRef, 'QuickList', 'quickList');
             }
 
             // 5. Item Search Window
-            if (winRef.current && (await (winRef.current as any).isVisible())) {
-              snapshot.add('search');
-              await (winRef.current as any).hide();
+            if (winRef.current) {
+              await safeHide(winRef, 'ItemSearch', 'search');
             }
 
             // 6. Settings Window
-            if (settingsWindow && (await settingsWindow.isVisible())) {
-              snapshot.add('settings');
-              await settingsWindow.hide();
+            if (settingsWindow) {
+              await safeHide({ current: settingsWindow }, 'Settings', 'settings');
             }
 
             // 7. Currency Window
-            if (currencyWindowRef.current && (await currencyWindowRef.current.isVisible())) {
-              snapshot.add('currency');
-              await currencyWindowRef.current.hide();
+            if (currencyWindowRef.current) {
+              await safeHide(currencyWindowRef, 'Currency', 'currency');
             }
 
             console.log('[VisibilityManager] Hidden windows due to focus loss. Snapshot:', Array.from(snapshot));
