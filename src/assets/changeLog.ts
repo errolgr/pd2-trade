@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.7.7': [
+    '✨ Added support for price history for paladin shields, shruken heads, pelts, quivers, bolts and barb helms.',
+    '🔧 Improved error logging.',
+  ],
   '0.7.6': ['🔧 Removed standard of heroes from the currency valuation window'],
   '0.7.5': ['🔧 Fixed an issue which causes website trade whispers to not be notified'],
   '0.7.4': [
