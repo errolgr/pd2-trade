@@ -59,13 +59,19 @@ export function reportApiError(
         scope.setContext('request_context', contextData);
       }
 
-      // Create a generic error message
+      // Create a generic error message but preserve the original error's stack trace
       const genericError = new Error(`${serviceName} ${statusCodeStr} error on ${endpoint}`);
       genericError.name = 'APIError';
+
+      // Preserve the original error's stack trace if available
+      if (error.stack) {
+        genericError.stack = error.stack;
+      }
 
       Sentry.captureException(genericError, {
         extra: {
           originalError: error.message,
+          originalStack: error.stack,
           service: serviceName,
           endpoint: endpoint,
           statusCode: statusCodeStr,
@@ -75,13 +81,16 @@ export function reportApiError(
     });
   }
 
-  // Still log to console for debugging
-  const contextStr = additionalContext
-    ? Object.entries(additionalContext)
-        .filter(([_, value]) => value !== null && value !== undefined)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ')
-    : '';
-  const contextPrefix = contextStr ? `[${contextStr}] ` : '';
-  console.error(`${contextPrefix}Error on ${endpoint}:`, error);
+  // Only log to console in non-production environments to avoid duplicate Sentry reports
+  // (Sentry's captureConsoleIntegration captures console.error in production)
+  if (process.env.NODE_ENV !== 'production') {
+    const contextStr = additionalContext
+      ? Object.entries(additionalContext)
+          .filter(([_, value]) => value !== null && value !== undefined)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ')
+      : '';
+    const contextPrefix = contextStr ? `[${contextStr}] ` : '';
+    console.error(`${contextPrefix}Error on ${endpoint}:`, error);
+  }
 }
