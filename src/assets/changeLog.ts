@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.7.8': ['✨ Added support for price history for rainbow facets, sorc orbs, circlets, and t5 maps'],
   '0.7.7': [
     '✨ Added support for price history for paladin shields, shruken heads, pelts, quivers, bolts and barb helms.',
     '🔧 Improved error logging.',

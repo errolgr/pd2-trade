@@ -36,6 +36,7 @@ import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import {
+  fetchItemPrice,
   fetchItemPriceByName,
   fetchCorruptionPrices,
   AveragePriceResponse,
@@ -97,6 +98,194 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Search mode: 0 = category (base), 1 = typeLabel
   const [searchMode, setSearchMode] = useState(0);
+
+  /**
+   * Extract Rainbow Facet data from item stats
+   */
+  const extractRainbowFacetData = useCallback(() => {
+    // Check if this is a Rainbow Facet - be robust with the name check
+    const isFacet =
+      item.name?.toLowerCase().includes('rainbow facet') ||
+      pd2Item?.key === 'Rainbow Facet' ||
+      pd2Item?.name === 'Rainbow Facet';
+
+    if (!isFacet) {
+      return null;
+    }
+
+    if (!item.stats || item.stats.length === 0) {
+      return null;
+    }
+
+    // Find damage type modifier to determine type
+    // IDs: 48 (fire), 50 (light), 54 (cold), 57 (pois)
+    const damageTypeStat = item.stats.find(
+      (s) =>
+        s.stat_id === 48 || // firemindam
+        s.stat_id === 50 || // lightmindam
+        s.stat_id === 54 || // coldmindam
+        s.stat_id === 57, // poisonmindam
+    );
+
+    if (!damageTypeStat) {
+      // Try finding by name if ID fails
+      const damageTypeStatByName = item.stats.find(
+        (s) =>
+          s.name?.toLowerCase().includes('fire damage') ||
+          s.name?.toLowerCase().includes('lightning damage') ||
+          s.name?.toLowerCase().includes('cold damage') ||
+          s.name?.toLowerCase().includes('poison damage'),
+      );
+      if (!damageTypeStatByName) return null;
+
+      // Map name back to type
+      let damageType = '';
+      let elementSuffix = '';
+      if (damageTypeStatByName.name?.toLowerCase().includes('fire')) {
+        damageType = 'fire';
+        elementSuffix = 'fire';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('lightning')) {
+        damageType = 'lightning';
+        elementSuffix = 'ltng';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('cold')) {
+        damageType = 'cold';
+        elementSuffix = 'cold';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('poison')) {
+        damageType = 'poison';
+        elementSuffix = 'pois';
+      }
+
+      if (!damageType) return null;
+
+      // Find mastery and pierce by name
+      const masteryStat = item.stats.find(
+        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
+      );
+      const pierceStat = item.stats.find(
+        (s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType),
+      );
+
+      return {
+        damageType,
+        damagePercent: masteryStat?.value ?? 0,
+        piercePercent: Math.abs(pierceStat?.value ?? 0),
+      };
+    }
+
+    const damageTypeMap: Record<number, string> = {
+      48: 'fire',
+      50: 'lightning',
+      54: 'cold',
+      57: 'poison',
+    };
+
+    const elementSuffixMap: Record<number, string> = {
+      48: 'fire',
+      50: 'ltng',
+      54: 'cold',
+      57: 'pois',
+    };
+
+    const damageType = damageTypeMap[damageTypeStat.stat_id];
+    const elementSuffix = elementSuffixMap[damageTypeStat.stat_id];
+
+    if (!damageType || !elementSuffix) return null;
+
+    // Mastery IDs: 329 (fire), 330 (ltng), 331 (cold), 332 (pois)
+    const masteryStatIdMap: Record<string, number> = {
+      fire: 329,
+      ltng: 330,
+      cold: 331,
+      pois: 332,
+    };
+    const masteryStatId = masteryStatIdMap[elementSuffix];
+
+    // Pierce IDs: 333 (fire), 334 (ltng), 335 (cold), 336 (pois)
+    const pierceStatIdMap: Record<string, number> = {
+      fire: 333,
+      ltng: 334,
+      cold: 335,
+      pois: 336,
+    };
+    const pierceStatId = pierceStatIdMap[elementSuffix];
+
+    const masteryStat =
+      item.stats.find((s) => s.stat_id === masteryStatId) ||
+      item.stats.find(
+        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
+      );
+
+    const pierceStat =
+      item.stats.find((s) => s.stat_id === pierceStatId) ||
+      item.stats.find((s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType));
+
+    const result = {
+      damageType,
+      damagePercent: masteryStat?.value ?? 0,
+      piercePercent: Math.abs(pierceStat?.value ?? 0),
+    };
+    console.log('[ItemOverlayWidget] Extracted Rainbow Facet data:', result);
+    return result;
+  }, [item.name, item.stats, pd2Item]);
+
+  /**
+   * Get the display name for the item
+   */
+  const displayTitle = useMemo(() => {
+    if (item.isRuneword) return item.runeword;
+
+    const facetData = extractRainbowFacetData();
+    if (facetData) {
+      const type = facetData.damageType.charAt(0).toUpperCase() + facetData.damageType.slice(1);
+      return `${type} Facet ${facetData.damagePercent}/${facetData.piercePercent}`;
+    }
+
+    return item.name;
+  }, [item.isRuneword, item.runeword, item.name, extractRainbowFacetData]);
+
+  /**
+   * Get the icon filename for the current item
+   */
+  const getItemIcon = useCallback(() => {
+    if (!pd2Item?.image?.invfile) return '';
+
+    const facetData = extractRainbowFacetData();
+    if (facetData) {
+      const facetIconMap: Record<string, string> = {
+        fire: 'invgswe5',
+        poison: 'invgswe4',
+        cold: 'invgswe2',
+        lightning: 'invgswe3',
+      };
+      return facetIconMap[facetData.damageType] || pd2Item.image.invfile;
+    }
+
+    return pd2Item.image.invfile;
+  }, [pd2Item, extractRainbowFacetData]);
+
+  /**
+   * Get the PD2Trader URL for the current item
+   */
+  const getPd2TraderUrl = useCallback(() => {
+    // Only for unique and set items
+    if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item?.name) {
+      return '';
+    }
+
+    const facetData = extractRainbowFacetData();
+    let baseCode = '';
+
+    if (facetData) {
+      baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+    } else if (averagePriceData?.baseCode) {
+      baseCode = averagePriceData.baseCode;
+    } else {
+      // Normalize the item name (matches server logic for unique/set items)
+      baseCode = pd2Item.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    }
+
+    return `https://pd2trader.com/item/${baseCode}`;
+  }, [item.quality, pd2Item?.name, averagePriceData, extractRainbowFacetData]);
 
   // Find the matched item type entry
   const matchedItemType = useMemo(() => {
@@ -191,16 +380,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSearchMode(0); // Reset to default mode
       setCorruptedState(0); // Reset corrupted state to default (both)
       setSelectedCorruptionNames([]); // Clear selected corruptions
-      // Clear average price data only when item changes (not on every render)
+      // Clear average price data when item or its stats change
       setAveragePriceData(null);
       setAveragePriceError(null);
       // Clear corruption prices
       setCorruptionPrices(null);
       setShowAllCorruptions(false);
     }
-    // Only depend on item, not on setter functions which may change on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.name, item?.quality]);
+  }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -218,11 +406,26 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
 
-        const priceData = await fetchItemPriceByName(pd2Item.name, {
-          isLadder,
-          isHardcore,
-          hours: 168, // 7 days
-        });
+        let priceData: AveragePriceResponse | null;
+        const facetData = extractRainbowFacetData();
+
+        if (facetData) {
+          // For Rainbow Facets, create baseCode with damage type and percentages
+          // Format: "rainbow_facet_{damageType}_{damagePercent}_{piercePercent}"
+          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+          console.log('[ItemOverlayWidget] Fetching price for Rainbow Facet baseCode:', baseCode);
+          priceData = await fetchItemPrice(baseCode, {
+            isLadder,
+            isHardcore,
+            hours: 168, // 7 days
+          });
+        } else {
+          priceData = await fetchItemPriceByName(pd2Item.name, {
+            isLadder,
+            isHardcore,
+            hours: 168, // 7 days
+          });
+        }
 
         if (priceData) {
           setAveragePriceData(priceData);
@@ -239,7 +442,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchAveragePrice();
-  }, [item.quality, pd2Item?.name, settings.ladder, settings.mode]);
+  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractRainbowFacetData]);
 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
@@ -259,11 +462,30 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
 
-        const corruptionData = await fetchCorruptionPrices(pd2Item.name, {
-          isLadder,
-          isHardcore,
-          hours: 168, // 7 days
-        });
+        let corruptionData;
+        const facetData = extractRainbowFacetData();
+
+        if (facetData) {
+          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+          console.log('[ItemOverlayWidget] Fetching corruption prices for Rainbow Facet baseCode:', baseCode);
+          corruptionData = await fetchCorruptionPrices(
+            { baseCode },
+            {
+              isLadder,
+              isHardcore,
+              hours: 168, // 7 days
+            },
+          );
+        } else {
+          corruptionData = await fetchCorruptionPrices(
+            { itemName: pd2Item.name },
+            {
+              isLadder,
+              isHardcore,
+              hours: 168, // 7 days
+            },
+          );
+        }
 
         if (corruptionData) {
           setCorruptionPrices(corruptionData);
@@ -276,7 +498,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchCorruptionData();
-  }, [item.quality, pd2Item?.name, averagePriceData, settings.ladder, settings.mode]);
+  }, [
+    item.quality,
+    item.stats,
+    pd2Item?.name,
+    averagePriceData,
+    settings.ladder,
+    settings.mode,
+    extractRainbowFacetData,
+  ]);
 
   // Helper function to format corruption name the same way the server does
   const formatCorruptionName = useCallback((corruptionNames: string[]): string => {
@@ -740,7 +970,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
               style={{ fontFamily: 'DiabloFont' }}
             >
-              {item.isRuneword ? item.runeword : item.name}
+              {displayTitle}
               {item.isRuneword && <Badge>Runeword</Badge>}
             </CardTitle>
             {item.type && (
@@ -775,13 +1005,24 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {averagePriceError && !averagePriceLoading && (
               <div className="text-xs text-red-400">{averagePriceError}</div>
             )}
-            {averagePriceData && !averagePriceLoading && pd2Item?.image?.invfile && (
+            {averagePriceData && !averagePriceLoading && getItemIcon() && (
               <div className="inline-block">
                 <HoverPopover
                   content={
                     <Card className="p-3 bg-neutral-950 border-neutral-700 w-[400px]">
                       <div className="space-y-2 text-sm">
-                        <div className="font-semibold text-white mb-2">{averagePriceData.itemName}</div>
+                        <div className="font-semibold text-white mb-2 flex items-center justify-between">
+                          <span>{displayTitle}</span>
+                          <span
+                            className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer underline flex items-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openUrl(getPd2TraderUrl());
+                            }}
+                          >
+                            View on Web
+                          </span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-gray-400">Average:</span>
@@ -898,6 +1139,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                       side="bottom"
                                       content={
                                         <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                          <div className="text-[10px] text-gray-400 mb-1 flex items-center justify-between">
+                                            <span>{displayTitle}</span>
+                                            <span
+                                              className="text-blue-400 hover:text-blue-300 cursor-pointer underline"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openUrl(getPd2TraderUrl());
+                                              }}
+                                            >
+                                              Link
+                                            </span>
+                                          </div>
                                           <div className="text-xs font-semibold text-gray-300 mb-2">
                                             {displayName} - Socket Prices
                                           </div>
@@ -1025,6 +1278,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                             side="bottom"
                                             content={
                                               <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                                <div className="text-[10px] text-gray-400 mb-1 flex items-center justify-between">
+                                                  <span>{displayTitle}</span>
+                                                  <span
+                                                    className="text-blue-400 hover:text-blue-300 cursor-pointer underline"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      openUrl(getPd2TraderUrl());
+                                                    }}
+                                                  >
+                                                    Link
+                                                  </span>
+                                                </div>
                                                 <div className="text-xs font-semibold text-gray-300 mb-2">
                                                   {corruption.corruptionName} - Socket Prices
                                                 </div>
@@ -1223,7 +1488,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 >
                   <div className="flex items-center gap-2 cursor-pointer bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 transition-colors">
                     <img
-                      src={`https://pd2trader.com/assets/items/${pd2Item.image.invfile}.png`}
+                      src={`https://pd2trader.com/assets/items/${getItemIcon()}.png`}
                       alt={item.name}
                       className="h-10"
                       onError={(e) => {
@@ -1240,7 +1505,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </div>
             )}
             {!averagePriceLoading && !averagePriceError && !averagePriceData && (
-              <div className="text-xs text-gray-500">No price data available</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">No price data available</span>
+                <span
+                  className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openUrl(getPd2TraderUrl());
+                  }}
+                >
+                  View on Web
+                </span>
+              </div>
             )}
           </div>
         )}

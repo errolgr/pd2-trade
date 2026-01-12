@@ -43,7 +43,7 @@ export function RunePricePopover({
           <ArrowRightLeft className="h-2 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[500px] max-h-[600px] overflow-y-auto">
+      <PopoverContent className="w-[500px] max-h-[1000px] overflow-y-auto">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <h4 className="font-semibold text-sm">Current Rune Prices</h4>

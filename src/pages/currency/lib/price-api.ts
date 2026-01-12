@@ -213,23 +213,24 @@ export interface CorruptionPricesResponse {
 }
 
 /**
- * Fetch corruption prices for a unique item by itemName
+ * Fetch corruption prices for a unique item by itemName or baseCode
  */
 export async function fetchCorruptionPrices(
-  itemName: string,
+  params: { itemName?: string; baseCode?: string },
   config: PriceApiConfig = {},
 ): Promise<CorruptionPricesResponse | null> {
   try {
-    const params = new URLSearchParams({
-      itemName,
+    const queryParams = new URLSearchParams({
+      ...(params.itemName && { itemName: params.itemName }),
+      ...(params.baseCode && { baseCode: params.baseCode }),
       ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
       ...(config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
-    const url = `${API_BASE_URL}/item-prices/corruption-prices?${params}`;
+    const url = `${API_BASE_URL}/item-prices/corruption-prices?${queryParams}`;
     console.log('[fetchCorruptionPrices] Fetching corruption prices:', {
-      itemName,
+      params,
       config,
       url,
     });
@@ -238,12 +239,12 @@ export async function fetchCorruptionPrices(
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log('[fetchCorruptionPrices] No corruption price data found for:', itemName);
+        console.log('[fetchCorruptionPrices] No corruption price data found for:', params);
         return null;
       }
       const error = new Error(`API error: ${response.status} ${response.statusText}`);
       reportApiError(error, 'price-api', 'item-prices/corruption-prices', response.status, {
-        itemName,
+        ...params,
       });
       return null;
     }
@@ -258,7 +259,7 @@ export async function fetchCorruptionPrices(
   } catch (error) {
     const apiError = error instanceof Error ? error : new Error(String(error));
     reportApiError(apiError, 'price-api', 'item-prices/corruption-prices', undefined, {
-      itemName,
+      ...params,
     });
     return null;
   }
