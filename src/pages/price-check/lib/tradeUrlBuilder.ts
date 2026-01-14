@@ -337,9 +337,21 @@ export function buildGetMarketListingQuery(
   return query as MarketListingQuery;
 }
 
-export function buildGetMarketListingByStashItemQuery(items: GameStashItem[], userId: string): MarketListingQuery {
+export function buildGetMarketListingByStashItemQuery(
+  items: GameStashItem[],
+  userId: string,
+): MarketListingQuery | null {
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+  // Filter out items without hash and map to hashes
+  const hashes = items.map((item) => item.hash).filter((hash): hash is string => hash != null && hash !== undefined);
+
+  // Return null early if there are no valid hashes
+  if (hashes.length === 0) {
+    return null;
+  }
+
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
@@ -349,7 +361,7 @@ export function buildGetMarketListingByStashItemQuery(items: GameStashItem[], us
     updated_at: { $gte: threeDaysAgo.toISOString() },
     $sort: { bumped_at: -1 },
     user_id: userId,
-    'item.hash': { $in: items.map((item) => item.hash) },
+    'item.hash': { $in: hashes },
   };
 
   return query as MarketListingQuery;
