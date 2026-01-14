@@ -128,7 +128,7 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError);
+      return await handleApiResponse(response, onAuthError, body);
     },
     [settings, authData, onAuthError],
   );
@@ -143,7 +143,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError);
+      return await handleApiResponse(response, onAuthError, query);
     },
     [settings, onAuthError],
   );
@@ -158,7 +158,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError);
+      return await handleApiResponse(response, onAuthError, query);
     },
     [settings, onAuthError],
   );
@@ -174,7 +174,7 @@ export function useMarketActions({
         },
         body: JSON.stringify(update),
       });
-      return await handleApiResponse(response, onAuthError);
+      return await handleApiResponse(response, onAuthError, { listingId, update });
     },
     [settings, onAuthError],
   );
@@ -188,7 +188,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      await handleApiResponse(response, onAuthError);
+      await handleApiResponse(response, onAuthError, { listingId });
     },
     [settings, onAuthError],
   );
@@ -196,16 +196,18 @@ export function useMarketActions({
   // Bump all market listings (PATCH /market/listing with user_id query param)
   const bumpAllMarketListings = useCallback(
     async (userId: string): Promise<void> => {
-      const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', { user_id: userId });
+      const query = { user_id: userId };
+      const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query);
+      const body = { bumped_at: new Date().toISOString() };
       const response = await tauriFetch(url, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${settings.pd2Token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bumped_at: new Date().toISOString() }),
+        body: JSON.stringify(body),
       });
-      await handleApiResponse(response, onAuthError);
+      await handleApiResponse(response, onAuthError, { query, body });
     },
     [settings, onAuthError],
   );

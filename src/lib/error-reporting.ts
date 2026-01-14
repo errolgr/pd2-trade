@@ -3,6 +3,7 @@
  */
 
 import * as Sentry from '@sentry/react';
+import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 
 /**
  * Report API errors to Sentry with proper grouping
@@ -21,6 +22,11 @@ export function reportApiError(
   statusCode?: number,
   additionalContext?: Record<string, string | number | boolean | null | undefined>,
 ) {
+  // Don't report AccountMismatchError to Sentry - these are expected user errors
+  if (error instanceof AccountMismatchError) {
+    return;
+  }
+
   const statusCodeStr = statusCode
     ? String(statusCode)
     : error.message.match(/API error: (\d+)/i)?.[1] || error.message.match(/API Error: (\d+)/i)?.[1];

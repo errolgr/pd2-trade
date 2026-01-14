@@ -3,11 +3,14 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown, GripVertical, Loader2, X } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
-import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { usePd2Website, AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
 import { DataTable } from './components/DataTable';
 import { createColumns } from './Columns';
+import { emit } from '@tauri-apps/api/event';
+import { isTauri } from '@tauri-apps/api/core';
+import { GenericToastPayload } from '@/common/types/Events';
 
 import {
   DropdownMenu,
@@ -42,6 +45,21 @@ export function CurrencyValuation() {
       setCurrency(curr);
     } catch (error) {
       console.error('Failed to fetch currency:', error);
+
+      // Handle account mismatch error with user-friendly message
+      if (error instanceof AccountMismatchError) {
+        if (isTauri()) {
+          const toastPayload: GenericToastPayload = {
+            title: 'Account Mismatch',
+            description:
+              error.message ||
+              'The selected account is not associated with your logged-in account. Please check your account settings.',
+            variant: 'error',
+            duration: 8000,
+          };
+          emit('toast-event', toastPayload);
+        }
+      }
     }
   }, [authData, getCurrencyTab]);
 

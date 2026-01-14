@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
+import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import LandingPage, { Providers } from './pages/landing/LandingPage';
 import ItemPage from '@/pages/price-check/ItemPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
@@ -40,6 +41,18 @@ setTimeout(() => {
         return null;
       }
       return breadcrumb;
+    },
+    // Filter out expected errors that shouldn't be reported to Sentry
+    beforeSend(event, hint) {
+      // Don't report AccountMismatchError - these are expected user errors
+      if (hint.originalException instanceof AccountMismatchError) {
+        return null;
+      }
+      // Also check by error name in case the instance check doesn't work
+      if (event.exception?.values?.[0]?.type === 'AccountMismatchError') {
+        return null;
+      }
+      return event;
     },
   });
   console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);

@@ -56,6 +56,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [totalCount, setTotalCount] = useState(initialTotalCount || 0);
   const [editingListingId, setEditingListingId] = useState<string | null>(null);
   const [bumpingListingId, setBumpingListingId] = useState<string | null>(null);
+  const [deletingListingId, setDeletingListingId] = useState<string | null>(null);
   const [isBumpingAll, setIsBumpingAll] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -63,6 +64,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [isLoadingAllListings, setIsLoadingAllListings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
+  const isDeletingRef = React.useRef(false);
 
   const { ref: loaderRef, inView } = useInView({
     threshold: 0,
@@ -235,6 +237,9 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   // Fetch listings when page changes (after initialization)
   useEffect(() => {
+    if (isDeletingRef.current) {
+      return; // Don't refetch while deleting
+    }
     if (searchQuery.trim()) {
       return; // Don't fetch paginated results when searching
     }
@@ -257,18 +262,35 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   }, [searchQuery]);
 
   // Refresh when initial data changes (e.g., after authentication)
+  // Skip this effect if we're currently deleting to prevent overwriting local state
+  // Only sync from initialListings if we're on page 0 and have no local listings (initialization case)
   useEffect(() => {
-    if (hasInitialized && initialTotalCount !== undefined && marketQuery && currentPage === 0) {
-      // If initial data changed and we're on page 0, update the listings
-      if (initialListings && initialListings.length > 0) {
-        setListings(initialListings.slice(0, ITEMS_PER_PAGE));
-      } else if (initialTotalCount === 0) {
-        // Explicitly set empty if total is 0
-        setListings([]);
-      }
-      setTotalCount(initialTotalCount);
+    if (isDeletingRef.current) {
+      return; // Don't overwrite state while deleting
     }
-  }, [initialListings, initialTotalCount, hasInitialized, currentPage, marketQuery]);
+    if (hasInitialized && initialTotalCount !== undefined && marketQuery && currentPage === 0) {
+      // Only sync from initialListings if we have no local listings (initialization)
+      // This prevents overwriting local state when parent refetches after tab switch
+      if (listings.length === 0) {
+        if (initialListings && initialListings.length > 0) {
+          setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+        } else if (initialTotalCount === 0) {
+          // Explicitly set empty if total is 0
+          setListings([]);
+        }
+        setTotalCount(initialTotalCount);
+      } else {
+        // If we have local listings, only update total count if it's different
+        // This allows the count to stay in sync without overwriting local state
+        setTotalCount((prev) => {
+          if (prev !== initialTotalCount) {
+            return initialTotalCount;
+          }
+          return prev;
+        });
+      }
+    }
+  }, [initialListings, initialTotalCount, hasInitialized, currentPage, marketQuery, listings.length]);
 
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);
@@ -329,29 +351,33 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   };
 
   const handleDelete = async (listing: MarketListingEntry) => {
+    setDeletingListingId(listing._id);
+    isDeletingRef.current = true;
     const startTime = performance.now();
     try {
       await deleteMarketListing(listing._id);
 
-      // Optimistically remove the item from local state
-      const updatedListings = listings.filter((l) => l._id !== listing._id);
-      setListings(updatedListings);
+      // Optimistically remove the item from local state using functional updates
+      setListings((prev) => {
+        const updatedListings = prev.filter((l) => l._id !== listing._id);
+        // Update parent component if callback provided
+        if (onListingsChange) {
+          onListingsChange(updatedListings);
+        }
+        return updatedListings;
+      });
+
       setAllListingsForSearch((prev) => prev.filter((l) => l._id !== listing._id));
 
       // Decrement total count
-      const newTotalCount = Math.max(0, totalCount - 1);
-      setTotalCount(newTotalCount);
-
-      // Update parent component if callbacks provided
-      if (onTotalCountChange) {
-        onTotalCountChange(newTotalCount);
-      }
-      if (onListingsChange) {
-        onListingsChange(updatedListings);
-      }
-
-      // No need to fetchListings here, we just removed it.
-      // If we dropped below threshold, infinite scroll might trigger automatically (listings.length < totalCount?? No totalCount decr too)
+      setTotalCount((prev) => {
+        const newTotalCount = Math.max(0, prev - 1);
+        // Update parent component if callback provided
+        if (onTotalCountChange) {
+          onTotalCountChange(newTotalCount);
+        }
+        return newTotalCount;
+      });
 
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.delete', 1, { status: 'success' });
@@ -366,6 +392,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       // Refresh on error to restore correct state
       setCurrentPage(0);
       await fetchListings();
+    } finally {
+      setDeletingListingId(null);
+      // Reset the flag after a short delay to allow state updates to complete
+      setTimeout(() => {
+        isDeletingRef.current = false;
+      }, 100);
     }
   };
 
@@ -723,16 +755,22 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                         </Tooltip>
                         <Tooltip delayDuration={0}>
                           <TooltipTrigger asChild>
-                            <Trash2
-                              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDelete(listing);
-                              }}
-                            />
+                            {deletingListingId === listing._id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                            ) : (
+                              <Trash2
+                                className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDelete(listing);
+                                }}
+                              />
+                            )}
                           </TooltipTrigger>
-                          <TooltipContent>Remove listing</TooltipContent>
+                          <TooltipContent>
+                            {deletingListingId === listing._id ? 'Deleting...' : 'Remove listing'}
+                          </TooltipContent>
                         </Tooltip>
                         <Tooltip delayDuration={0}>
                           <TooltipTrigger asChild>

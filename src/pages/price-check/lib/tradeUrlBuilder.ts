@@ -352,6 +352,14 @@ export function buildGetMarketListingByStashItemQuery(
     return null;
   }
 
+  // Limit to 20 hashes to avoid API errors (API has a limit on $in array size)
+  const limitedHashes = hashes.slice(0, 20);
+  if (hashes.length > 20) {
+    console.warn(
+      `[buildGetMarketListingByStashItemQuery] Found ${hashes.length} matching items, but API query is limited to 20 hashes. Only the first 20 items will be checked for existing listings.`,
+    );
+  }
+
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
@@ -361,7 +369,7 @@ export function buildGetMarketListingByStashItemQuery(
     updated_at: { $gte: threeDaysAgo.toISOString() },
     $sort: { bumped_at: -1 },
     user_id: userId,
-    'item.hash': { $in: hashes },
+    'item.hash': { $in: limitedHashes },
   };
 
   return query as MarketListingQuery;

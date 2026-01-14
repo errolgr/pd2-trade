@@ -12,8 +12,9 @@ import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/t
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@/lib/browser-events';
-import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { usePd2Website, AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
+import { isTauri } from '@tauri-apps/api/core';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
@@ -134,7 +135,26 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       incrementMetric('list_item.matching_items.search', 1, { status: 'error' });
       distributionMetric('list_item.matching_items.search_duration_ms', duration);
       console.error(err instanceof Error ? err.message : 'Failed to find items');
-      setError(err instanceof Error ? err.message : 'Failed to find items');
+
+      // Handle account mismatch error with user-friendly message
+      if (err instanceof AccountMismatchError) {
+        const errorMessage =
+          err.message ||
+          'The selected account is not associated with your logged-in account. Please check your account settings.';
+        setError(errorMessage);
+
+        if (isTauri()) {
+          const toastPayload: GenericToastPayload = {
+            title: 'Account Mismatch',
+            description: errorMessage,
+            variant: 'destructive',
+            duration: 8000,
+          };
+          emit('toast-event', toastPayload);
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to find items');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -428,6 +448,31 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       } catch (err) {
         console.error('[Queue] Error polling for queued item:', pendingId, err);
         isProcessingRef.current.delete(pendingId);
+
+        // Handle account mismatch error with user-friendly message
+        if (err instanceof AccountMismatchError) {
+          // Remove from queue since we can't process it
+          removePendingListing(pendingId);
+          setQueuedListingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(pendingId);
+            return next;
+          });
+
+          if (isTauri()) {
+            const toastPayload: GenericToastPayload = {
+              title: 'Account Mismatch',
+              description:
+                err.message ||
+                'The selected account is not associated with your logged-in account. Please check your account settings.',
+              variant: 'error',
+              duration: 8000,
+            };
+            emit('toast-event', toastPayload).catch((emitErr) => {
+              console.error('[Queue] Failed to emit account mismatch toast:', emitErr);
+            });
+          }
+        }
       }
     });
 
@@ -1072,6 +1117,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             initialListings={allListings}
             initialTotalCount={totalListingsCount}
             onTotalCountChange={setTotalListingsCount}
+            onListingsChange={setAllListings}
           />
         </TabsContent>
 

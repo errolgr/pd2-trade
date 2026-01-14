@@ -31,6 +31,19 @@ export class AuthenticationError extends Error {
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
 }
+
+// Custom error class for account mismatch errors (404 on stash endpoints)
+export class AccountMismatchError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number = 404,
+    public account?: string,
+  ) {
+    super(message);
+    this.name = 'AccountMismatchError';
+    Object.setPrototypeOf(this, AccountMismatchError.prototype);
+  }
+}
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -315,7 +328,11 @@ export const usePd2Website = () => {
   return ctx;
 };
 
-export async function handleApiResponse(response: Response, onAuthError?: () => void | Promise<void>) {
+export async function handleApiResponse(
+  response: Response,
+  onAuthError?: () => void | Promise<void>,
+  query?: Record<string, any> | string | null,
+) {
   if (!response.ok) {
     const errorBody = await response.text();
     let errorJson: any = null;
@@ -346,23 +363,47 @@ export async function handleApiResponse(response: Response, onAuthError?: () => 
     const url = new URL(response.url);
     const endpoint = url.pathname;
 
+    // Check for 404 Not Found on stash endpoints (account mismatch)
+    // This happens when the logged-in account doesn't match the in-game account
+    if (response.status === 404 && endpoint.includes('/game/stash/')) {
+      const errorMessage = errorJson?.message || 'Account not found';
+      const account = endpoint.split('/game/stash/')[1]?.split('?')[0];
+      console.warn('[API] Account mismatch (404):', errorMessage, account ? `Account: ${account}` : '');
+
+      // Throw a custom error that can be caught and handled with a user-friendly message
+      throw new AccountMismatchError(
+        `The account "${account || 'unknown'}" is not associated with your logged-in account. Please check your account settings.`,
+        404,
+        account,
+      );
+    }
+
     // Create error with context
     const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
 
+    // Prepare additional context including query
+    const additionalContext: Record<string, any> = {
+      ...(errorJson?.name && { errorName: errorJson.name }),
+      ...(errorJson?.code !== undefined && { errorCode: errorJson.code }),
+      ...(errorJson?.className && { errorClassName: errorJson.className }),
+    };
+
+    // Add query to context for debugging
+    if (query !== null && query !== undefined) {
+      if (typeof query === 'string') {
+        additionalContext.queryString = query;
+      } else if (typeof query === 'object') {
+        // Stringify the query object for logging
+        try {
+          additionalContext.query = JSON.stringify(query);
+        } catch {
+          additionalContext.query = String(query);
+        }
+      }
+    }
+
     // Report to Sentry (only for 5xx errors, 4xx are expected)
-    reportApiError(
-      error,
-      'pd2-api',
-      endpoint,
-      response.status,
-      errorJson
-        ? {
-            ...(errorJson.name && { errorName: errorJson.name }),
-            ...(errorJson.code !== undefined && { errorCode: errorJson.code }),
-            ...(errorJson.className && { errorClassName: errorJson.className }),
-          }
-        : undefined,
-    );
+    reportApiError(error, 'pd2-api', endpoint, response.status, additionalContext);
 
     // Throw the error
     throw error;
