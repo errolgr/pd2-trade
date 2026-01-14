@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.7.9': [
+    '🔧 Fixed an issue which cause listing errors when the matching amount of items was over 20 items',
+    '🔧 Fixed an issue which caused deleted listings to not be removed from the quick list window',
+    '🔧 Added better error tracking for common errors to help us improve the app',
+  ],
   '0.7.8': ['✨ Added support for price history for rainbow facets, sorc orbs, circlets, and t5 maps'],
   '0.7.7': [
     '✨ Added support for price history for paladin shields, shruken heads, pelts, quivers, bolts and barb helms.',
