@@ -9,7 +9,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GET
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{chat_watcher, commands, keyboard, system, webview, window};
+pub use modules::{chat_watcher, commands, double_shift, keyboard, system, webview, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -119,6 +119,12 @@ pub fn run() {
             // Initialize window state saving on focus/blur events
             window::initialize_window_state_saving(app.app_handle().clone());
 
+            // Start double-shift listener
+            let app_handle_shift = app.app_handle().clone();
+            if let Err(e) = commands::start_double_shift_listener(app_handle_shift) {
+                eprintln!("Failed to start double-shift listener: {}", e);
+            }
+
             #[cfg(debug_assertions)]
             main_window.open_devtools();
             Ok(())
@@ -136,6 +142,8 @@ pub fn run() {
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
             commands::auto_detect_diablo2_directory,
+            commands::start_double_shift_listener,
+            commands::stop_double_shift_listener,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -27,6 +27,7 @@ import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
+import { useDoubleShift } from '@/hooks/useDoubleShift';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useSocket } from '@/hooks/pd2website/useSocket';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
@@ -43,6 +44,7 @@ const LandingPage: React.FC = () => {
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
   const currencyWindowRef = useRef<any>(null);
+  const marketSearchWindowRef = useRef<any>(null);
   const settingsRef = useRef<any>(null);
   // const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -274,6 +276,63 @@ const LandingPage: React.FC = () => {
   const toggleChatWindow = useCallback(async () => {
     await emit('toggle-chat-window');
   }, []);
+
+  // Open market search window handler
+  const openMarketSearchWindow = useCallback(async () => {
+    const label = WindowLabels.MarketSearch;
+
+    // Check if window already exists
+    if (marketSearchWindowRef.current) {
+      try {
+        await marketSearchWindowRef.current.show();
+        await marketSearchWindowRef.current.setFocus();
+        return;
+      } catch {
+        marketSearchWindowRef.current = null;
+      }
+    }
+
+    // Check by label
+    const existing = await WebviewWindow.getByLabel(label);
+    if (existing) {
+      try {
+        await existing.show();
+        await existing.setFocus();
+        marketSearchWindowRef.current = existing;
+        existing.onCloseRequested(async () => {
+          marketSearchWindowRef.current = null;
+        });
+        return;
+      } catch (e) {
+        console.warn('Found zombie market search window, creating new one:', e);
+      }
+    }
+
+    // Create new window
+    marketSearchWindowRef.current = await openWindowCenteredOnDiablo(label, '/market-search', {
+      title: WindowTitles.MarketSearch,
+      decorations: false,
+      transparent: true,
+      focus: true,
+      shadow: false,
+      skipTaskbar: true,
+      focusable: true,
+      width: 1200,
+      height: 800,
+      resizable: true,
+      alwaysOnTop: true,
+      visible: true,
+    });
+
+    if (marketSearchWindowRef.current) {
+      marketSearchWindowRef.current.onCloseRequested(async () => {
+        marketSearchWindowRef.current = null;
+      });
+    }
+  }, []);
+
+  // Set up double-tap shift to open market search
+  useDoubleShift(openMarketSearchWindow);
 
   // Listen for request to open Quick List (Manage View) from Chat Button
   useEffect(() => {
@@ -1047,7 +1106,9 @@ export const Providers: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <DialogProvider>
       <OptionsProvider>
-        <TrayProvider>{children}</TrayProvider>
+        <Pd2WebsiteProvider>
+          <TrayProvider>{children}</TrayProvider>
+        </Pd2WebsiteProvider>
       </OptionsProvider>
     </DialogProvider>
   );

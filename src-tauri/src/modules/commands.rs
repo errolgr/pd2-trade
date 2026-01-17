@@ -1,4 +1,4 @@
-use crate::{chat_watcher, keyboard, window};
+use crate::{chat_watcher, double_shift, keyboard, window};
 use tauri::Manager;
 
 #[tauri::command]
@@ -145,4 +145,14 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 #[tauri::command]
 pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub fn start_double_shift_listener(app_handle: tauri::AppHandle) -> Result<(), String> {
+    double_shift::start_listening(app_handle)
+}
+
+#[tauri::command]
+pub fn stop_double_shift_listener() -> Result<(), String> {
+    double_shift::stop_listening()
 }
