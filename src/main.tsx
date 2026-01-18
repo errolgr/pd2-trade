@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './globals.css';
+import 'animate.css';
 import * as Sentry from '@sentry/react';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import MainWindow, { Providers } from './MainWindow';

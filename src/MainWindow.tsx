@@ -23,13 +23,14 @@ import { useSocket } from '@/hooks/pd2website/useSocket';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
-import { WindowTitles, WindowLabels } from '@/lib/window-titles';
+import { WindowTitles } from '@/lib/window-titles';
 import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import { ViewManagerProvider } from '@/contexts/ViewManagerContext';
 import { ClickThroughProvider } from '@/hooks/useClickThrough';
 import { ItemsProvider } from '@/hooks/useItems';
 import { NotificationCountsProvider } from '@/contexts/NotificationCountsContext';
 import { DiabloProvider, useDiablo } from '@/hooks/useDiablo';
+import { ChatProvider } from '@/contexts/ChatContext';
 
 const MainWindow: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
@@ -37,7 +38,6 @@ const MainWindow: React.FC = () => {
   const { read } = useClipboard();
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
-  const { settingsWindow } = useTray();
   const { isConnected } = useSocket({ settings });
   const { showView, hideView, toggleView, isVisible, updateView } = useViewManager();
   const { isDiabloFocused } = useDiablo();
@@ -249,14 +249,35 @@ const MainWindow: React.FC = () => {
 
   // Set up command menu handler
   const openCommandMenu = useCallback(() => {
+    console.log('[MainWindow] openCommandMenu called', {
+      isDiabloFocused,
+      timestamp: Date.now(),
+    });
+
     if (!isDiabloFocused) {
+      console.log('[MainWindow] openCommandMenu blocked - Diablo not focused');
       return;
     }
-    showView(VIEW_IDS.COMMAND_MENU, {
-      type: 'panel',
-      position: 'centered',
+
+    // Toggle the command menu - if it's visible, hide it; if hidden, show it
+    const isCurrentlyVisible = isVisible(VIEW_IDS.COMMAND_MENU);
+    console.log('[MainWindow] openCommandMenu - visibility check', {
+      isCurrentlyVisible,
+      timestamp: Date.now(),
     });
-  }, [showView, isDiabloFocused]);
+
+    if (isCurrentlyVisible) {
+      console.log('[MainWindow] openCommandMenu - hiding menu');
+      hideView(VIEW_IDS.COMMAND_MENU);
+    } else {
+      console.log('[MainWindow] openCommandMenu - showing menu');
+      // Ensure we show the menu even if it was just hidden
+      showView(VIEW_IDS.COMMAND_MENU, {
+        type: 'panel',
+        position: 'centered',
+      });
+    }
+  }, [showView, hideView, isVisible, isDiabloFocused]);
 
   // Register shortcuts
   useAppShortcuts(
@@ -509,11 +530,13 @@ export const Providers: React.FC<{ children: React.ReactNode }> = ({ children })
           <NotificationCountsProvider>
             <ItemsProvider>
               <Pd2WebsiteProvider>
-                <ViewManagerProvider>
-                  <TrayProvider>
-                    <ClickThroughProvider>{children}</ClickThroughProvider>
-                  </TrayProvider>
-                </ViewManagerProvider>
+                <ChatProvider>
+                  <ViewManagerProvider>
+                    <TrayProvider>
+                      <ClickThroughProvider>{children}</ClickThroughProvider>
+                    </TrayProvider>
+                  </ViewManagerProvider>
+                </ChatProvider>
               </Pd2WebsiteProvider>
             </ItemsProvider>
           </NotificationCountsProvider>

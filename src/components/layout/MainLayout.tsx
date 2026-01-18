@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import { PanelView } from './PanelView';
 import { FixedView } from './FixedView';
@@ -24,12 +24,19 @@ interface MainLayoutProps {
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { views, hideView, updateView, isVisible } = useViewManager();
-  const { diabloRect, isDiabloFocused, diabloRectRelative } = useDiablo();
+  const { views, hideView, updateView } = useViewManager();
+  const { isDiabloFocused, diabloRectRelative } = useDiablo();
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [diabloHeight, setDiabloHeight] = useState<number | null>(null);
+  const [diabloHeight] = useState<number | null>(null);
   const [toastPosition, setToastPosition] = useState<{ x: number; y: number } | null>(null);
   const lastCommandMenuPositionRef = React.useRef<{ x: number; y: number } | null>(null);
+  const renderCountRef = useRef(0);
+
+  // Track render count in effect to avoid accessing refs during render
+  useEffect(() => {
+    renderCountRef.current += 1;
+    console.log('[MainLayout] Component render #' + renderCountRef.current);
+  });
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -44,34 +51,75 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     };
   }, []);
 
+  // Get command menu visibility from views directly to avoid circular dependency
+  // Memoize the views array and hash based on actual content
+  const viewsArray = useMemo(() => {
+    return Array.from(views.entries());
+  }, [views]);
+
+  // Compute viewsHash from views directly
+  const viewsHash = useMemo(() => {
+    return viewsArray
+      .map(([id, config]) => `${id}:${config.visible}:${config.customPosition?.x}:${config.customPosition?.y}`)
+      .join('|');
+  }, [viewsArray]);
+
+  const commandMenuView = useMemo(() => {
+    return views.get(VIEW_IDS.COMMAND_MENU);
+  }, [views, viewsHash]);
+  const isCommandMenuVisible = commandMenuView?.visible ?? false;
+
+  // Memoize diabloRectRelative to prevent unnecessary object recreation
+  const stableDiabloRectRelative = useMemo(() => {
+    if (!diabloRectRelative) return null;
+    return { ...diabloRectRelative };
+  }, [diabloRectRelative]);
+
+  // Extract position values to avoid depending on the view object
+  const currentCustomPositionX = commandMenuView?.customPosition?.x;
+  const currentCustomPositionY = commandMenuView?.customPosition?.y;
+
   // Update CommandMenu position when Diablo rect changes
   useEffect(() => {
-    const isCommandMenuVisible = isVisible(VIEW_IDS.COMMAND_MENU);
-    if (!isCommandMenuVisible || !diabloRectRelative) {
+    if (!isCommandMenuVisible || !stableDiabloRectRelative) {
       lastCommandMenuPositionRef.current = null;
       return;
     }
 
     const menuSize = { width: 500, height: 400 };
     const centeredPosition = {
-      x: diabloRectRelative.x + (diabloRectRelative.width - menuSize.width) / 2,
-      y: diabloRectRelative.y + (diabloRectRelative.height - menuSize.height) / 2,
+      x: stableDiabloRectRelative.x + (stableDiabloRectRelative.width - menuSize.width) / 2,
+      y: stableDiabloRectRelative.y + (stableDiabloRectRelative.height - menuSize.height) / 2,
     };
 
-    // Only update if position actually changed
+    // Check if position actually changed by comparing with both lastPosition and current view position
     const lastPosition = lastCommandMenuPositionRef.current;
-    if (
+
+    // Only update if position actually changed significantly
+    const positionChanged =
       !lastPosition ||
       Math.abs(lastPosition.x - centeredPosition.x) > 1 ||
-      Math.abs(lastPosition.y - centeredPosition.y) > 1
-    ) {
+      Math.abs(lastPosition.y - centeredPosition.y) > 1 ||
+      (currentCustomPositionX !== undefined && Math.abs(currentCustomPositionX - centeredPosition.x) > 1) ||
+      (currentCustomPositionY !== undefined && Math.abs(currentCustomPositionY - centeredPosition.y) > 1);
+
+    if (positionChanged) {
       lastCommandMenuPositionRef.current = centeredPosition;
       updateView(VIEW_IDS.COMMAND_MENU, {
         customPosition: centeredPosition,
         position: 'custom',
       });
     }
-  }, [diabloRectRelative, isVisible, updateView]);
+  }, [
+    stableDiabloRectRelative?.x,
+    stableDiabloRectRelative?.y,
+    stableDiabloRectRelative?.width,
+    stableDiabloRectRelative?.height,
+    isCommandMenuVisible,
+    currentCustomPositionX,
+    currentCustomPositionY,
+    updateView,
+  ]);
 
   // Update toast position based on Diablo focus
   useEffect(() => {
@@ -105,7 +153,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     updateToastPosition();
   }, [isDiabloFocused, diabloRectRelative]);
 
-  const renderViewContent = (viewId: string) => {
+  const renderViewContent = useCallback((viewId: string) => {
     switch (viewId) {
       case VIEW_IDS.ITEM_SEARCH:
         return <ItemPage />;
@@ -130,7 +178,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       default:
         return null;
     }
-  };
+  }, []);
 
   return (
     <div
@@ -154,9 +202,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <ToastNotificationSystem />
 
       {/* Render all visible views */}
-      {Array.from(views.values()).map((view) => {
-        if (!view.visible) return null;
-        console.log('[MainLayout] Rendering view:', view.id, view.type, view.visible);
+      {useMemo(() => {
         // Get default size based on view ID (from original window sizes in LandingPage.tsx)
         const getDefaultSize = (viewId: string): { width: number; height: number } => {
           switch (viewId) {
@@ -186,53 +232,59 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         // Get default position - center CommandMenu on Diablo rect
         const getDefaultPosition = (viewId: string): { x: number; y: number } | undefined => {
-          if (viewId === VIEW_IDS.COMMAND_MENU && diabloRectRelative) {
+          if (viewId === VIEW_IDS.COMMAND_MENU && stableDiabloRectRelative) {
             const menuSize = getDefaultSize(VIEW_IDS.COMMAND_MENU);
             return {
-              x: diabloRectRelative.x + (diabloRectRelative.width - menuSize.width) / 2,
-              y: diabloRectRelative.y + (diabloRectRelative.height - menuSize.height) / 2,
+              x: stableDiabloRectRelative.x + (stableDiabloRectRelative.width - menuSize.width) / 2,
+              y: stableDiabloRectRelative.y + (stableDiabloRectRelative.height - menuSize.height) / 2,
             };
           }
           return undefined;
         };
 
-        if (view.type === 'panel') {
-          return (
-            <PanelView
-              key={view.id}
-              viewId={view.id}
-              defaultSize={getDefaultSize(view.id)}
-              defaultPosition={getDefaultPosition(view.id)}
-              onClose={() => hideView(view.id)}
-            >
-              {renderViewContent(view.id)}
-            </PanelView>
-          );
-        }
+         
+        const visibleViews = viewsArray.filter(([, view]) => view.visible);
 
-        if (view.type === 'fixed') {
-          return (
-            <FixedView
-              key={view.id}
-              viewId={view.id}
-              className="fixed"
-              style={{
-                zIndex: view.zIndex,
-                ...(view.customPosition
-                  ? {
-                      left: `${view.customPosition.x}px`,
-                      top: `${view.customPosition.y}px`,
-                    }
-                  : {}),
-              }}
-            >
-              {renderViewContent(view.id)}
-            </FixedView>
-          );
-        }
+        return visibleViews.map(([, view]) => {
+          console.log('[MainLayout] Rendering view:', view.id, view.type, view.visible);
+          if (view.type === 'panel') {
+            return (
+              <PanelView
+                key={view.id}
+                viewId={view.id}
+                defaultSize={getDefaultSize(view.id)}
+                defaultPosition={getDefaultPosition(view.id)}
+                onClose={() => hideView(view.id)}
+              >
+                {renderViewContent(view.id)}
+              </PanelView>
+            );
+          }
 
-        return null;
-      })}
+          if (view.type === 'fixed') {
+            return (
+              <FixedView
+                key={view.id}
+                viewId={view.id}
+                className="fixed"
+                style={{
+                  zIndex: view.zIndex,
+                  ...(view.customPosition
+                    ? {
+                        left: `${view.customPosition.x}px`,
+                        top: `${view.customPosition.y}px`,
+                      }
+                    : {}),
+                }}
+              >
+                {renderViewContent(view.id)}
+              </FixedView>
+            );
+          }
+
+          return null;
+        });
+      }, [viewsArray, viewsHash, diabloHeight, stableDiabloRectRelative, hideView, renderViewContent])}
 
       {/* Sonner toaster for toast notifications */}
       <ClickThroughToaster richColors

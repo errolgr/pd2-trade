@@ -55,6 +55,7 @@ export const useNotificationCounts = (): NotificationCounts => {
 
         // Listen for trade messages count updates (whispers)
         const unlistenTradeMessages = await listen<TradeMessagesCountEvent>('trade-messages-count-updated', (event) => {
+          console.log('[useNotificationCounts] Received trade-messages-count-updated:', event.payload.count);
           setTradeMessagesCount(event.payload.count);
         });
         unlistenTradeMessagesRef.current = unlistenTradeMessages;

@@ -41,6 +41,238 @@ import {
 } from '@/pages/currency/lib/price-api';
 import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
 import { cubeCorruptions } from '@/assets/cube-corruptions';
+import { Stat } from '../lib/interfaces';
+
+/**
+ * Item grouping rules - similar to server-side ITEM_GROUPING_RULES
+ */
+type GroupingData = Record<string, any>;
+
+interface ItemGroupingRule {
+  itemName: string | string[];
+  extractGroupingData: (stats: Stat[]) => GroupingData | null;
+  generateBaseCode: (itemName: string, data: GroupingData) => string;
+  formatLabel: (data: GroupingData) => string;
+  getIcon?: (data: GroupingData, defaultIcon: string) => string;
+}
+
+const ITEM_GROUPING_RULES: ItemGroupingRule[] = [
+  // Rainbow Facet grouping
+  {
+    itemName: 'Rainbow Facet',
+    extractGroupingData: (stats) => {
+      if (!stats || stats.length === 0) return null;
+
+      // Find damage type modifier to determine type
+      // IDs: 48 (fire), 50 (light), 54 (cold), 57 (pois)
+      const damageTypeStat = stats.find(
+        (s) =>
+          s.stat_id === 48 || // firemindam
+          s.stat_id === 50 || // lightmindam
+          s.stat_id === 54 || // coldmindam
+          s.stat_id === 57, // poisonmindam
+      );
+
+      if (!damageTypeStat) {
+        // Try finding by name if ID fails
+        const damageTypeStatByName = stats.find(
+          (s) =>
+            s.name?.toLowerCase().includes('fire damage') ||
+            s.name?.toLowerCase().includes('lightning damage') ||
+            s.name?.toLowerCase().includes('cold damage') ||
+            s.name?.toLowerCase().includes('poison damage'),
+        );
+        if (!damageTypeStatByName) return null;
+
+        // Map name back to type
+        let damageType = '';
+        let elementSuffix = '';
+        if (damageTypeStatByName.name?.toLowerCase().includes('fire')) {
+          damageType = 'fire';
+          elementSuffix = 'fire';
+        } else if (damageTypeStatByName.name?.toLowerCase().includes('lightning')) {
+          damageType = 'lightning';
+          elementSuffix = 'ltng';
+        } else if (damageTypeStatByName.name?.toLowerCase().includes('cold')) {
+          damageType = 'cold';
+          elementSuffix = 'cold';
+        } else if (damageTypeStatByName.name?.toLowerCase().includes('poison')) {
+          damageType = 'poison';
+          elementSuffix = 'pois';
+        }
+
+        if (!damageType) return null;
+
+        // Find mastery and pierce by name
+        const masteryStat = stats.find(
+          (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
+        );
+        const pierceStat = stats.find(
+          (s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType),
+        );
+
+        return {
+          damageType,
+          damagePercent: masteryStat?.value ?? 0,
+          piercePercent: Math.abs(pierceStat?.value ?? 0),
+        };
+      }
+
+      const damageTypeMap: Record<number, string> = {
+        48: 'fire',
+        50: 'lightning',
+        54: 'cold',
+        57: 'poison',
+      };
+
+      const elementSuffixMap: Record<number, string> = {
+        48: 'fire',
+        50: 'ltng',
+        54: 'cold',
+        57: 'pois',
+      };
+
+      const damageType = damageTypeMap[damageTypeStat.stat_id];
+      const elementSuffix = elementSuffixMap[damageTypeStat.stat_id];
+
+      if (!damageType || !elementSuffix) return null;
+
+      // Mastery IDs: 329 (fire), 330 (ltng), 331 (cold), 332 (pois)
+      const masteryStatIdMap: Record<string, number> = {
+        fire: 329,
+        ltng: 330,
+        cold: 331,
+        pois: 332,
+      };
+      const masteryStatId = masteryStatIdMap[elementSuffix];
+
+      // Pierce IDs: 333 (fire), 334 (ltng), 335 (cold), 336 (pois)
+      const pierceStatIdMap: Record<string, number> = {
+        fire: 333,
+        ltng: 334,
+        cold: 335,
+        pois: 336,
+      };
+      const pierceStatId = pierceStatIdMap[elementSuffix];
+
+      const masteryStat =
+        stats.find((s) => s.stat_id === masteryStatId) ||
+        stats.find((s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType));
+
+      const pierceStat =
+        stats.find((s) => s.stat_id === pierceStatId) ||
+        stats.find((s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType));
+
+      return {
+        damageType,
+        damagePercent: masteryStat?.value ?? 0,
+        piercePercent: Math.abs(pierceStat?.value ?? 0),
+      };
+    },
+    generateBaseCode: (itemName, data) => {
+      return `rainbow_facet_${data.damageType}_${data.damagePercent}_${data.piercePercent}`;
+    },
+    formatLabel: (data) => {
+      const damageType = data.damageType.charAt(0).toUpperCase() + data.damageType.slice(1);
+      return `${damageType} Facet ${data.damagePercent}/${data.piercePercent}`;
+    },
+    getIcon: (data, defaultIcon) => {
+      const facetIconMap: Record<string, string> = {
+        fire: 'invgswe5',
+        poison: 'invgswe4',
+        cold: 'invgswe2',
+        lightning: 'invgswe3',
+      };
+      return facetIconMap[data.damageType] || defaultIcon;
+    },
+  },
+
+  // Hellfire Torch grouping
+  {
+    itemName: 'Hellfire Torch',
+    extractGroupingData: (stats) => {
+      if (!stats || stats.length === 0) return null;
+
+      // Find item_addclassskills modifier (stat_id 83 or name contains "Skill Levels")
+      const classSkillStat = stats.find((s) => s.stat_id === 83 || s.name?.toLowerCase().includes('skill levels'));
+
+      if (!classSkillStat) {
+        return null;
+      }
+
+      const classMap: Record<string, string> = {
+        amazon: 'Amazon',
+        assassin: 'Assassin',
+        barbarian: 'Barbarian',
+        druid: 'Druid',
+        necromancer: 'Necromancer',
+        paladin: 'Paladin',
+        sorceress: 'Sorceress',
+      };
+
+      // First try to extract from the skill field (e.g., "Amazon Skills") - more explicit
+      if (classSkillStat.skill) {
+        const skillLower = classSkillStat.skill.toLowerCase();
+        for (const [key, value] of Object.entries(classMap)) {
+          if (skillLower.includes(key)) {
+            return { class: value };
+          }
+        }
+      }
+
+      return null;
+    },
+    generateBaseCode: (itemName, data) => {
+      return `hellfire_torch_${data.class.toLowerCase()}`;
+    },
+    formatLabel: (data) => {
+      return `Hellfire Torch (${data.class})`;
+    },
+  },
+
+  // Spirit Ward grouping
+  {
+    itemName: 'Spirit Ward',
+    extractGroupingData: (stats) => {
+      if (!stats || stats.length === 0) return null;
+
+      // Find item_addclassskills modifier (stat_id 83 or name contains "Skill Levels")
+      const classSkillStat = stats.find((s) => s.stat_id === 83 || s.name?.toLowerCase().includes('skill levels'));
+
+      if (!classSkillStat) {
+        return null;
+      }
+
+      const classMap: Record<string, string> = {
+        amazon: 'Amazon',
+        assassin: 'Assassin',
+        barbarian: 'Barbarian',
+        druid: 'Druid',
+        necromancer: 'Necromancer',
+        paladin: 'Paladin',
+        sorceress: 'Sorceress',
+      };
+
+      // First try to extract from the skill field (e.g., "Amazon Skills") - more explicit
+      if (classSkillStat.skill) {
+        const skillLower = classSkillStat.skill.toLowerCase();
+        for (const [key, value] of Object.entries(classMap)) {
+          if (skillLower.includes(key)) {
+            return { class: value };
+          }
+        }
+      }
+
+      return null;
+    },
+    generateBaseCode: (itemName, data) => {
+      return `spirit_ward_${data.class.toLowerCase()}`;
+    },
+    formatLabel: (data) => {
+      return `Spirit Ward (${data.class})`;
+    },
+  },
+];
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -98,132 +330,29 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchMode, setSearchMode] = useState(0);
 
   /**
-   * Extract Rainbow Facet data from item stats
+   * Extract grouping data for the current item using the rules array
    */
-  const extractRainbowFacetData = useCallback(() => {
-    // Check if this is a Rainbow Facet - be robust with the name check
-    const isFacet =
-      item.name?.toLowerCase().includes('rainbow facet') ||
-      pd2Item?.key === 'Rainbow Facet' ||
-      pd2Item?.name === 'Rainbow Facet';
+  const extractGroupingData = useCallback((): { rule: ItemGroupingRule; data: GroupingData } | null => {
+    if (!item.name || !item.stats) return null;
 
-    if (!isFacet) {
-      return null;
-    }
+    const itemName = item.name;
+    const pd2ItemName = pd2Item?.name || pd2Item?.key;
 
-    if (!item.stats || item.stats.length === 0) {
-      return null;
-    }
+    for (const rule of ITEM_GROUPING_RULES) {
+      const itemNames = Array.isArray(rule.itemName) ? rule.itemName : [rule.itemName];
+      const matches =
+        itemNames.some((name) => itemName.toLowerCase().includes(name.toLowerCase())) ||
+        (pd2ItemName && itemNames.some((name) => pd2ItemName.toLowerCase() === name.toLowerCase()));
 
-    // Find damage type modifier to determine type
-    // IDs: 48 (fire), 50 (light), 54 (cold), 57 (pois)
-    const damageTypeStat = item.stats.find(
-      (s) =>
-        s.stat_id === 48 || // firemindam
-        s.stat_id === 50 || // lightmindam
-        s.stat_id === 54 || // coldmindam
-        s.stat_id === 57, // poisonmindam
-    );
-
-    if (!damageTypeStat) {
-      // Try finding by name if ID fails
-      const damageTypeStatByName = item.stats.find(
-        (s) =>
-          s.name?.toLowerCase().includes('fire damage') ||
-          s.name?.toLowerCase().includes('lightning damage') ||
-          s.name?.toLowerCase().includes('cold damage') ||
-          s.name?.toLowerCase().includes('poison damage'),
-      );
-      if (!damageTypeStatByName) return null;
-
-      // Map name back to type
-      let damageType = '';
-      let elementSuffix = '';
-      if (damageTypeStatByName.name?.toLowerCase().includes('fire')) {
-        damageType = 'fire';
-        elementSuffix = 'fire';
-      } else if (damageTypeStatByName.name?.toLowerCase().includes('lightning')) {
-        damageType = 'lightning';
-        elementSuffix = 'ltng';
-      } else if (damageTypeStatByName.name?.toLowerCase().includes('cold')) {
-        damageType = 'cold';
-        elementSuffix = 'cold';
-      } else if (damageTypeStatByName.name?.toLowerCase().includes('poison')) {
-        damageType = 'poison';
-        elementSuffix = 'pois';
+      if (matches) {
+        const data = rule.extractGroupingData(item.stats);
+        if (data) {
+          return { rule, data };
+        }
       }
-
-      if (!damageType) return null;
-
-      // Find mastery and pierce by name
-      const masteryStat = item.stats.find(
-        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
-      );
-      const pierceStat = item.stats.find(
-        (s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType),
-      );
-
-      return {
-        damageType,
-        damagePercent: masteryStat?.value ?? 0,
-        piercePercent: Math.abs(pierceStat?.value ?? 0),
-      };
     }
 
-    const damageTypeMap: Record<number, string> = {
-      48: 'fire',
-      50: 'lightning',
-      54: 'cold',
-      57: 'poison',
-    };
-
-    const elementSuffixMap: Record<number, string> = {
-      48: 'fire',
-      50: 'ltng',
-      54: 'cold',
-      57: 'pois',
-    };
-
-    const damageType = damageTypeMap[damageTypeStat.stat_id];
-    const elementSuffix = elementSuffixMap[damageTypeStat.stat_id];
-
-    if (!damageType || !elementSuffix) return null;
-
-    // Mastery IDs: 329 (fire), 330 (ltng), 331 (cold), 332 (pois)
-    const masteryStatIdMap: Record<string, number> = {
-      fire: 329,
-      ltng: 330,
-      cold: 331,
-      pois: 332,
-    };
-    const masteryStatId = masteryStatIdMap[elementSuffix];
-
-    // Pierce IDs: 333 (fire), 334 (ltng), 335 (cold), 336 (pois)
-    const pierceStatIdMap: Record<string, number> = {
-      fire: 333,
-      ltng: 334,
-      cold: 335,
-      pois: 336,
-    };
-    const pierceStatId = pierceStatIdMap[elementSuffix];
-
-    const masteryStat =
-      item.stats.find((s) => s.stat_id === masteryStatId) ||
-      item.stats.find(
-        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
-      );
-
-    const pierceStat =
-      item.stats.find((s) => s.stat_id === pierceStatId) ||
-      item.stats.find((s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType));
-
-    const result = {
-      damageType,
-      damagePercent: masteryStat?.value ?? 0,
-      piercePercent: Math.abs(pierceStat?.value ?? 0),
-    };
-    console.log('[ItemOverlayWidget] Extracted Rainbow Facet data:', result);
-    return result;
+    return null;
   }, [item.name, item.stats, pd2Item]);
 
   /**
@@ -232,14 +361,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const displayTitle = useMemo(() => {
     if (item.isRuneword) return item.runeword;
 
-    const facetData = extractRainbowFacetData();
-    if (facetData) {
-      const type = facetData.damageType.charAt(0).toUpperCase() + facetData.damageType.slice(1);
-      return `${type} Facet ${facetData.damagePercent}/${facetData.piercePercent}`;
+    const grouping = extractGroupingData();
+    if (grouping) {
+      return grouping.rule.formatLabel(grouping.data);
     }
 
     return item.name;
-  }, [item.isRuneword, item.runeword, item.name, extractRainbowFacetData]);
+  }, [item.isRuneword, item.runeword, item.name, extractGroupingData]);
 
   /**
    * Get the icon filename for the current item
@@ -247,19 +375,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const getItemIcon = useCallback(() => {
     if (!pd2Item?.image?.invfile) return '';
 
-    const facetData = extractRainbowFacetData();
-    if (facetData) {
-      const facetIconMap: Record<string, string> = {
-        fire: 'invgswe5',
-        poison: 'invgswe4',
-        cold: 'invgswe2',
-        lightning: 'invgswe3',
-      };
-      return facetIconMap[facetData.damageType] || pd2Item.image.invfile;
+    const grouping = extractGroupingData();
+    if (grouping && grouping.rule.getIcon) {
+      return grouping.rule.getIcon(grouping.data, pd2Item.image.invfile);
     }
 
     return pd2Item.image.invfile;
-  }, [pd2Item, extractRainbowFacetData]);
+  }, [pd2Item, extractGroupingData]);
 
   /**
    * Get the PD2Trader URL for the current item
@@ -270,11 +392,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       return '';
     }
 
-    const facetData = extractRainbowFacetData();
+    const grouping = extractGroupingData();
     let baseCode = '';
 
-    if (facetData) {
-      baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+    if (grouping) {
+      baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
     } else if (averagePriceData?.baseCode) {
       baseCode = averagePriceData.baseCode;
     } else {
@@ -283,7 +405,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
 
     return `https://pd2trader.com/item/${baseCode}`;
-  }, [item.quality, pd2Item?.name, averagePriceData, extractRainbowFacetData]);
+  }, [item.quality, pd2Item?.name, averagePriceData, extractGroupingData]);
 
   // Find the matched item type entry
   const matchedItemType = useMemo(() => {
@@ -386,7 +508,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setShowAllCorruptions(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
+  }, [item?.name, item?.quality, item?.stats, extractGroupingData]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -405,13 +527,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isHardcore = settings.mode === 'hardcore';
 
         let priceData: AveragePriceResponse | null;
-        const facetData = extractRainbowFacetData();
+        const grouping = extractGroupingData();
 
-        if (facetData) {
-          // For Rainbow Facets, create baseCode with damage type and percentages
-          // Format: "rainbow_facet_{damageType}_{damagePercent}_{piercePercent}"
-          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
-          console.log('[ItemOverlayWidget] Fetching price for Rainbow Facet baseCode:', baseCode);
+        if (grouping) {
+          const baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
+          console.log('[ItemOverlayWidget] Fetching price for grouped item baseCode:', baseCode);
           priceData = await fetchItemPrice(baseCode, {
             isLadder,
             isHardcore,
@@ -440,7 +560,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchAveragePrice();
-  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractRainbowFacetData]);
+  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractGroupingData]);
 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
@@ -461,11 +581,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isHardcore = settings.mode === 'hardcore';
 
         let corruptionData;
-        const facetData = extractRainbowFacetData();
+        const grouping = extractGroupingData();
 
-        if (facetData) {
-          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
-          console.log('[ItemOverlayWidget] Fetching corruption prices for Rainbow Facet baseCode:', baseCode);
+        if (grouping) {
+          const baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
+          console.log('[ItemOverlayWidget] Fetching corruption prices for grouped item baseCode:', baseCode);
           corruptionData = await fetchCorruptionPrices(
             { baseCode },
             {
@@ -496,15 +616,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchCorruptionData();
-  }, [
-    item.quality,
-    item.stats,
-    pd2Item?.name,
-    averagePriceData,
-    settings.ladder,
-    settings.mode,
-    extractRainbowFacetData,
-  ]);
+  }, [item.quality, item.stats, pd2Item?.name, averagePriceData, settings.ladder, settings.mode, extractGroupingData]);
 
   // Helper function to format corruption name the same way the server does
   const formatCorruptionName = useCallback((corruptionNames: string[]): string => {

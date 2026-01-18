@@ -64,6 +64,7 @@
     "@tauri-apps/plugin-updater": "^2.9.0",
     "@tauri-apps/plugin-window-state": "^2.4.1",
     "@types/react-resizable": "^3.0.8",
+    "animate.css": "^4.1.1",
     "axios": "^1.10.0",
     "cache-manager": "^7.2.7",
     "class-variance-authority": "^0.7.1",

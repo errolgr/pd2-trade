@@ -3,10 +3,17 @@ import { ChatButton } from '@/components/custom/ChatButton';
 import { emit, listen } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import { useNotificationCountsContext } from '@/contexts/NotificationCountsContext';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 
 const ChatButtonPageContent: React.FC = () => {
-  const { updateSettings } = useOptions();
-  const { chatUnreadCount, totalTradeOffersCount } = useNotificationCountsContext();
+  const { updateSettings, settings } = useOptions();
+  const { chatUnreadCount, totalTradeOffersCount, tradeMessagesCount } = useNotificationCountsContext();
+  const { toggleView, showView } = useViewManager();
+
+  // Debug: Log when tradeMessagesCount changes
+  useEffect(() => {
+    console.log('[ChatButtonPage] tradeMessagesCount updated:', tradeMessagesCount);
+  }, [tradeMessagesCount]);
 
   useEffect(() => {
     let unlistenConfirm: (() => void) | null = null;
@@ -48,10 +55,43 @@ const ChatButtonPageContent: React.FC = () => {
     await emit('open-quick-list-manage');
   };
 
+  const handleItemSearchClick = async () => {
+    showView(VIEW_IDS.ITEM_SEARCH, {
+      type: 'panel',
+      position: 'over-diablo',
+    });
+  };
+
+  const handleQuickListClick = async () => {
+    showView(VIEW_IDS.QUICK_LIST, {
+      type: 'panel',
+      position: 'over-diablo',
+    });
+  };
+
+  const handleCurrencyValuationClick = async () => {
+    toggleView(VIEW_IDS.CURRENCY, {
+      type: 'panel',
+      position: 'centered',
+    });
+  };
+
+  const handleMarketSearchClick = async () => {
+    toggleView(VIEW_IDS.MARKET_SEARCH, {
+      type: 'panel',
+      position: 'over-diablo',
+    });
+  };
+
   const handleDisableClick = () => {
     // The actual disable logic is handled by the 'confirm-disable-overlay' listener
     // This function just needs to exist to pass to ChatButton
   };
+
+  // Don't render if overlay is disabled
+  if (settings?.chatButtonOverlayEnabled === false) {
+    return null;
+  }
 
   return (
     <div className="relative w-full h-full pointer-events-none"
@@ -62,9 +102,14 @@ const ChatButtonPageContent: React.FC = () => {
           onSettingsClick={handleSettingsClick}
           onTradeMessagesClick={handleTradeMessagesClick}
           onManageListingsClick={handleManageListingsClick}
+          onItemSearchClick={handleItemSearchClick}
+          onQuickListClick={handleQuickListClick}
+          onCurrencyValuationClick={handleCurrencyValuationClick}
+          onMarketSearchClick={handleMarketSearchClick}
           onDisableClick={handleDisableClick}
           unreadCount={chatUnreadCount}
           tradeOffersCount={totalTradeOffersCount}
+          tradeMessagesCount={tradeMessagesCount}
         />
       </div>
     </div>

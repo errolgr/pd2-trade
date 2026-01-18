@@ -42,6 +42,10 @@ export const PanelView: React.FC<PanelViewProps> = ({
   const isVisible = view?.visible ?? false;
   const zIndex = view?.zIndex ?? 1000;
 
+  // Track previous values to prevent unnecessary updates
+  const prevCustomPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const prevCustomSizeRef = useRef<{ width: number; height: number } | null>(null);
+
   useEffect(() => {
     if (!isVisible) {
       return;
@@ -50,7 +54,16 @@ export const PanelView: React.FC<PanelViewProps> = ({
     // Don't update position during drag
     if (!isDraggingState) {
       if (view?.customPosition) {
-        setPosition(view.customPosition);
+        // Only update if position actually changed
+        const posChanged =
+          !prevCustomPositionRef.current ||
+          Math.abs(prevCustomPositionRef.current.x - view.customPosition.x) > 0.1 ||
+          Math.abs(prevCustomPositionRef.current.y - view.customPosition.y) > 0.1;
+
+        if (posChanged) {
+          setPosition(view.customPosition);
+          prevCustomPositionRef.current = view.customPosition;
+        }
         setDraggablePosition({ x: 0, y: 0 });
         // Initialize references when using custom position
         if (diabloRectRelative && !initialDiabloRectRef.current) {
@@ -60,7 +73,16 @@ export const PanelView: React.FC<PanelViewProps> = ({
           initialCustomPositionRef.current = view.customPosition;
         }
       } else if (defaultPosition) {
-        setPosition(defaultPosition);
+        // Only update if position actually changed
+        const posChanged =
+          !prevCustomPositionRef.current ||
+          Math.abs(prevCustomPositionRef.current.x - defaultPosition.x) > 0.1 ||
+          Math.abs(prevCustomPositionRef.current.y - defaultPosition.y) > 0.1;
+
+        if (posChanged) {
+          setPosition(defaultPosition);
+          prevCustomPositionRef.current = defaultPosition;
+        }
         setDraggablePosition({ x: 0, y: 0 });
         // Initialize references for default positions (like over-diablo)
         if (diabloRectRelative && !initialDiabloRectRef.current) {
@@ -74,15 +96,46 @@ export const PanelView: React.FC<PanelViewProps> = ({
 
     // Initialize size from persisted customSize or defaultSize
     if (view?.customSize) {
-      // Use persisted size with minimum constraints
-      setSize({
-        width: Math.max(300, view.customSize.width),
-        height: Math.max(200, view.customSize.height),
-      });
+      // Only update if size actually changed
+      const sizeChanged =
+        !prevCustomSizeRef.current ||
+        prevCustomSizeRef.current.width !== view.customSize.width ||
+        prevCustomSizeRef.current.height !== view.customSize.height;
+
+      if (sizeChanged) {
+        // Use persisted size with minimum constraints
+        const newSize = {
+          width: Math.max(300, view.customSize.width),
+          height: Math.max(200, view.customSize.height),
+        };
+        setSize(newSize);
+        prevCustomSizeRef.current = newSize;
+      }
     } else if (defaultSize) {
-      setSize(defaultSize);
+      // Only update if size actually changed
+      const sizeChanged =
+        !prevCustomSizeRef.current ||
+        prevCustomSizeRef.current.width !== defaultSize.width ||
+        prevCustomSizeRef.current.height !== defaultSize.height;
+
+      if (sizeChanged) {
+        setSize(defaultSize);
+        prevCustomSizeRef.current = defaultSize;
+      }
     }
-  }, [isVisible, view?.customPosition, defaultPosition, defaultSize, isDraggingState]);
+  }, [
+    isVisible,
+    view?.customPosition?.x,
+    view?.customPosition?.y,
+    view?.customSize?.width,
+    view?.customSize?.height,
+    defaultPosition?.x,
+    defaultPosition?.y,
+    defaultSize?.width,
+    defaultSize?.height,
+    isDraggingState,
+    diabloRectRelative,
+  ]);
 
   const handleDragStart = () => {
     // Capture the actual rendered position at drag start
@@ -316,6 +369,9 @@ export const PanelView: React.FC<PanelViewProps> = ({
     }
   }, [isVisible, isDraggingState, diabloRectRelative, view?.customPosition]);
 
+  // Track previous diabloRectRelative to detect actual changes
+  const prevDiabloRectRelativeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+
   // Recalculate position relative to Diablo when diabloRectRelative changes (like toasts)
   useEffect(() => {
     if (!isVisible || !diabloRectRelative || isDraggingState) {
@@ -326,6 +382,19 @@ export const PanelView: React.FC<PanelViewProps> = ({
     if (view?.position === 'centered' && !view?.customPosition) {
       return;
     }
+
+    // Check if diabloRectRelative actually changed (not just reference)
+    const prev = prevDiabloRectRelativeRef.current;
+    const curr = diabloRectRelative;
+    const diabloRectChanged =
+      !prev || prev.x !== curr.x || prev.y !== curr.y || prev.width !== curr.width || prev.height !== curr.height;
+
+    if (!diabloRectChanged && prevDiabloRectRelativeRef.current) {
+      // Diablo rect didn't actually change, skip update
+      return;
+    }
+
+    prevDiabloRectRelativeRef.current = { ...diabloRectRelative };
 
     // Recalculate positions based on relative position to Diablo
     // This applies to both custom positions (dragged windows) and over-diablo positions
@@ -357,22 +426,40 @@ export const PanelView: React.FC<PanelViewProps> = ({
         y: diabloRectRelative.y + offsetY,
       };
 
-      setPosition(newPos);
+      // Only update if position actually changed
+      const positionChanged = Math.abs(position.x - newPos.x) > 0.1 || Math.abs(position.y - newPos.y) > 0.1;
 
-      // Update the saved custom position if it exists or if this is an over-diablo window
-      if (view?.customPosition || view?.position === 'custom' || view?.position === 'over-diablo') {
-        updateView(viewId, {
-          customPosition: newPos,
-        });
+      if (positionChanged) {
+        setPosition(newPos);
+
+        // Update the saved custom position if it exists or if this is an over-diablo window
+        // Only update if the custom position would actually change
+        const currentCustomPos = view?.customPosition;
+        const customPosChanged =
+          !currentCustomPos ||
+          Math.abs(currentCustomPos.x - newPos.x) > 0.1 ||
+          Math.abs(currentCustomPos.y - newPos.y) > 0.1;
+
+        if (
+          customPosChanged &&
+          (view?.customPosition || view?.position === 'custom' || view?.position === 'over-diablo')
+        ) {
+          updateView(viewId, {
+            customPosition: newPos,
+          });
+        }
       }
     }
   }, [
     isVisible,
-    diabloRectRelative,
+    diabloRectRelative?.x,
+    diabloRectRelative?.y,
+    diabloRectRelative?.width,
+    diabloRectRelative?.height,
     isDraggingState,
-    view?.customPosition,
+    view?.customPosition?.x,
+    view?.customPosition?.y,
     view?.position,
-    position,
     viewId,
     updateView,
   ]);

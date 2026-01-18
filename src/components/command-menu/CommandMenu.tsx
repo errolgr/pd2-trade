@@ -17,18 +17,27 @@ import {
 import { Search, ShoppingCart, List, DollarSign, MessageSquare, FileText, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const COMMAND_MENU_ID = 'command-menu';
 
 export const CommandMenu: React.FC = () => {
   const { settings } = useOptions();
   const { hideView, toggleView, isVisible } = useViewManager();
-  const { chatUnreadCount, tradeMessagesCount } = useNotificationCountsContext();
+  const { chatUnreadCount, tradeOffersCount } = useNotificationCountsContext();
   const { registerWindow, unregisterWindow, updateWindow } = useClickThrough();
   const containerRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isRegisteredRef = useRef(false);
   const isMenuVisible = isVisible(VIEW_IDS.COMMAND_MENU);
+
+  // Debug: Track visibility changes
+  useEffect(() => {
+    console.log('[CommandMenu] Visibility changed', {
+      isMenuVisible,
+      timestamp: Date.now(),
+    });
+  }, [isMenuVisible]);
 
   const handleSelect = useCallback(
     (viewId: string, viewType: 'panel' = 'panel', position: 'centered' | 'over-diablo' = 'over-diablo') => {
@@ -142,6 +151,39 @@ export const CommandMenu: React.FC = () => {
     };
   }, [isMenuVisible]);
 
+  // Hide menu when it loses focus (user clicks outside or presses Escape)
+  useEffect(() => {
+    if (!isMenuVisible) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      // Only hide if clicking outside the menu container
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        hideView(VIEW_IDS.COMMAND_MENU);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      // Only handle Escape, don't interfere with other keys like Shift
+      if (event.key === 'Escape' && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        hideView(VIEW_IDS.COMMAND_MENU);
+      }
+    };
+
+    // Use a small delay to avoid immediately hiding when menu opens
+    const timeout = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }, 200);
+
+    return () => {
+      clearTimeout(timeout);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMenuVisible, hideView]);
+
   return (
     <Command className="rounded-lg border shadow-md"
       ref={containerRef}>
@@ -203,11 +245,15 @@ export const CommandMenu: React.FC = () => {
               className="cursor-pointer"
             >
               <FileText className="mr-2 h-4 w-4" />
-              <span>Trade Messages</span>
-              {tradeMessagesCount > 0 && (
-                <Badge variant="destructive"
-                  className="ml-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                  {tradeMessagesCount > 99 ? '99+' : tradeMessagesCount}
+              <span>Trade Offers</span>
+              {tradeOffersCount > 0 && (
+                <Badge
+                  key={`trade-offers-${tradeOffersCount}`}
+                  className={cn(
+                    'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
+                  )}
+                >
+                  {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
                 </Badge>
               )}
               {settings?.hotkeyKeyOffers && (
@@ -225,8 +271,12 @@ export const CommandMenu: React.FC = () => {
               <MessageSquare className="mr-2 h-4 w-4" />
               <span>Chat</span>
               {chatUnreadCount > 0 && (
-                <Badge variant="destructive"
-                  className="ml-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                <Badge
+                  key={`chat-unread-${chatUnreadCount}`}
+                  className={cn(
+                    'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
+                  )}
+                >
                   {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
                 </Badge>
               )}

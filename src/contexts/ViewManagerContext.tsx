@@ -65,7 +65,13 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
           data: config?.data ?? existing?.data,
         };
 
-        console.log('[ViewManager] showView called:', id, newConfig);
+        const wasVisible = existing?.visible ?? false;
+        console.log('[ViewManager] showView called', {
+          id,
+          wasVisible,
+          nowVisible: true,
+          timestamp: Date.now(),
+        });
         newViews.set(id, newConfig);
         return newViews;
       });
@@ -74,12 +80,23 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
   );
 
   const hideView = useCallback((id: string) => {
+    console.log('[ViewManager] hideView called', {
+      id,
+      timestamp: Date.now(),
+    });
     setViews((prev) => {
       const newViews = new Map(prev);
       const existing = newViews.get(id);
+      const wasVisible = existing?.visible ?? false;
       if (existing) {
         newViews.set(id, { ...existing, visible: false });
       }
+      console.log('[ViewManager] hideView - state updated', {
+        id,
+        wasVisible,
+        nowVisible: false,
+        timestamp: Date.now(),
+      });
       return newViews;
     });
   }, []);
@@ -117,7 +134,15 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const isVisible = useCallback(
     (id: string) => {
-      return views.get(id)?.visible ?? false;
+      const visible = views.get(id)?.visible ?? false;
+      if (id === VIEW_IDS.COMMAND_MENU) {
+        console.log('[ViewManager] isVisible called', {
+          id,
+          visible,
+          timestamp: Date.now(),
+        });
+      }
+      return visible;
     },
     [views],
   );
@@ -131,11 +156,45 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const updateView = useCallback((id: string, updates: Partial<ViewConfig>) => {
     setViews((prev) => {
-      const newViews = new Map(prev);
-      const existing = newViews.get(id);
-      if (existing) {
-        newViews.set(id, { ...existing, ...updates });
+      const existing = prev.get(id);
+      if (!existing) {
+        return prev; // No change if view doesn't exist
       }
+
+      // Check if any values actually changed
+      let hasChanges = false;
+      for (const [key, value] of Object.entries(updates)) {
+        const existingValue = existing[key as keyof ViewConfig];
+
+        if (key === 'customPosition' && value && existingValue) {
+          // Deep compare customPosition objects
+          const existingPos = existingValue as { x: number; y: number } | undefined;
+          const newPos = value as { x: number; y: number };
+          if (!existingPos || Math.abs(existingPos.x - newPos.x) > 0.1 || Math.abs(existingPos.y - newPos.y) > 0.1) {
+            hasChanges = true;
+            break;
+          }
+        } else if (key === 'customSize' && value && existingValue) {
+          // Deep compare customSize objects
+          const existingSize = existingValue as { width: number; height: number } | undefined;
+          const newSize = value as { width: number; height: number };
+          if (!existingSize || existingSize.width !== newSize.width || existingSize.height !== newSize.height) {
+            hasChanges = true;
+            break;
+          }
+        } else if (existingValue !== value) {
+          hasChanges = true;
+          break;
+        }
+      }
+
+      // Only create new Map if something actually changed
+      if (!hasChanges) {
+        return prev;
+      }
+
+      const newViews = new Map(prev);
+      newViews.set(id, { ...existing, ...updates });
       return newViews;
     });
   }, []);
@@ -238,7 +297,7 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   useEffect(() => {
     const previousFocus = previousDiabloFocusRef.current;
-    const autoCloseEnabled = false;
+    const autoCloseEnabled = true;
 
     // Diablo just lost focus
     if (previousFocus === true && isDiabloFocused === false && autoCloseEnabled) {

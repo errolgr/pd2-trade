@@ -35,8 +35,23 @@ export const useDoubleShift = (handler: () => void | Promise<void>, enabled: boo
       try {
         // Listen for double-shift event from Rust backend
         unlistenRef.current = await listen('double-shift-detected', () => {
+          console.log('[useDoubleShift] double-shift-detected event received', {
+            enabled: enabledRef.current,
+            isDiabloFocused: isDiabloFocusedRef.current,
+            timestamp: Date.now(),
+          });
+
           // Disable if not enabled or Diablo is not focused
-          if (!enabledRef.current || !isDiabloFocusedRef.current) return;
+          if (!enabledRef.current) {
+            console.log('[useDoubleShift] Blocked - not enabled');
+            return;
+          }
+          if (!isDiabloFocusedRef.current) {
+            console.log('[useDoubleShift] Blocked - Diablo not focused');
+            return;
+          }
+
+          console.log('[useDoubleShift] Calling handler');
           handlerRef.current();
         });
       } catch (error) {
