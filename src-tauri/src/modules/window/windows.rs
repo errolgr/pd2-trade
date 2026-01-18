@@ -4,11 +4,13 @@ use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::{AppHandle, Emitter};
 
 use windows_sys::Win32::{
-    Foundation::{HWND, POINT, RECT},
+    Foundation::{HMODULE, HWND, LPARAM, POINT, RECT, WPARAM},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetCursorPos, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
-        SystemParametersInfoW, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
+        CallNextHookEx, FindWindowW, GetForegroundWindow, GetMessageW, GetWindowRect,
+        GetWindowThreadProcessId, SetWindowsHookExW, SystemParametersInfoW, TranslateMessage,
+        UnhookWindowsHookEx, DispatchMessageW, MSG, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA,
+        WINEVENT_OUTOFCONTEXT, WH_MOUSE_LL, WM_MOUSEMOVE, HC_ACTION, HHOOK,
     },
 };
 
@@ -89,11 +91,9 @@ pub fn get_work_area(_app: &AppHandle) -> Option<WindowRect> {
 }
 
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    if is_diablo_focused() {
-        get_diablo_rect(app)
-    } else {
-        get_work_area(app)
-    }
+    // Always use work area (full screen) - MainLayout should never be affected by Diablo
+    // DiabloFrame component will handle positioning over Diablo window
+    get_work_area(app)
 }
 
 // --- Event-driven foreground monitoring ---
@@ -184,5 +184,91 @@ pub fn cleanup_foreground_monitoring() {
             FOREGROUND_HOOK = None;
         }
         *CALLBACK.lock().unwrap() = None;
+    }
+}
+
+// --- Global mouse tracking using Windows API ---
+
+static mut MOUSE_HOOK: Option<HHOOK> = None;
+static MOUSE_CALLBACK: Mutex<Option<Box<dyn Fn(f64, f64) + Send>>> = Mutex::new(None);
+
+unsafe extern "system" fn mouse_hook_proc(
+    n_code: i32,
+    w_param: WPARAM,
+    l_param: LPARAM,
+) -> LPARAM {
+    if n_code >= HC_ACTION as i32 {
+        if w_param == WM_MOUSEMOVE as usize {
+            let ms_ll = &*(l_param as *const windows_sys::Win32::UI::WindowsAndMessaging::MSLLHOOKSTRUCT);
+            let x = ms_ll.pt.x as f64;
+            let y = ms_ll.pt.y as f64;
+            
+            if let Some(callback) = &*MOUSE_CALLBACK.lock().unwrap() {
+                callback(x, y);
+            }
+        }
+    }
+    
+    CallNextHookEx(MOUSE_HOOK.unwrap_or(0), n_code, w_param, l_param)
+}
+
+pub fn start_global_mouse_tracking<F: Fn(f64, f64) + Send + 'static>(callback: F) -> Result<(), String> {
+    unsafe {
+        // Store the callback
+        *MOUSE_CALLBACK.lock().unwrap() = Some(Box::new(callback));
+        
+        // For low-level hooks (WH_MOUSE_LL), we can pass NULL (0) as the module handle
+        // The hook procedure must be in a DLL, but for WH_MOUSE_LL it can be in the same process
+        let hook = SetWindowsHookExW(
+            WH_MOUSE_LL,
+            Some(mouse_hook_proc),
+            0 as HMODULE, // NULL - low-level hooks can use NULL
+            0,
+        );
+        
+        if hook == 0 {
+            return Err("Failed to set Windows mouse hook".to_string());
+        }
+        
+        MOUSE_HOOK = Some(hook);
+        
+        // Start a message loop in a separate thread to process hook messages
+        std::thread::spawn(move || {
+            let mut msg = MSG {
+                hwnd: 0,
+                message: 0,
+                wParam: WPARAM::default(),
+                lParam: LPARAM::default(),
+                time: 0,
+                pt: POINT { x: 0, y: 0 },
+            };
+            
+            println!("[MouseStream] Windows mouse hook message loop started");
+            
+            // Message loop - this is required for low-level hooks to work
+            loop {
+                let result = GetMessageW(&mut msg, 0, 0, 0);
+                if result == 0 || result == -1 {
+                    // WM_QUIT or error
+                    break;
+                }
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            
+            println!("[MouseStream] Windows mouse hook message loop exited");
+        });
+        
+        Ok(())
+    }
+}
+
+pub fn stop_global_mouse_tracking() {
+    unsafe {
+        if let Some(hook) = MOUSE_HOOK {
+            UnhookWindowsHookEx(hook);
+            MOUSE_HOOK = None;
+        }
+        *MOUSE_CALLBACK.lock().unwrap() = None;
     }
 }

@@ -80,7 +80,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const expandedRadius = 60 + 24 + 16; // max distance + button radius + padding
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
+    <div>
       {/* Invisible hover area that covers the expanded button positions */}
       <div
         className="absolute pointer-events-auto"
@@ -102,14 +102,13 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         {/* Drag Handle Circle */}
         {buttonPositions.find((p) => p.component === 'drag') && (
           <div
-            data-tauri-drag-region
+            data-drag-handle
             className={cn(
               'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out',
             )}
             style={getButtonStyle(225, 60, 'drag')}
           >
-            <GripVertical data-tauri-drag-region
-              className="h-4 w-4 text-neutral-400" />
+            <GripVertical className="h-4 w-4 text-neutral-400" />
           </div>
         )}
 

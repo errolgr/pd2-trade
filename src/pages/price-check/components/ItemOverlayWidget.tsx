@@ -1,6 +1,4 @@
-import { openWindowAtCursor } from '@/lib/window';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,11 +28,10 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
-import { WindowTitles, WindowLabels } from '@/lib/window-titles';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import {
   fetchItemPrice,
   fetchItemPriceByName,
@@ -49,6 +46,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const { settings } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
+  const { showView, toggleView } = useViewManager();
 
   // Use custom hooks for state management
   const { loading, calculatedRuneValues, selectedRuneBreakdown, selectedRuneCombinations, setSelectedRuneBreakdown } =
@@ -661,86 +659,24 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [searchMode, item.type, matchedItemType]);
 
   const openCurrencyValuation = useCallback(async () => {
-    const currencyLabel = WindowLabels.Currency;
-
-    try {
-      // Check if window exists
-      const existingWin = await WebviewWindow.getByLabel(currencyLabel);
-
-      if (existingWin) {
-        try {
-          await existingWin.unminimize();
-          await existingWin.show();
-          await existingWin.setFocus();
-          return;
-        } catch (err) {
-          console.warn('[ItemOverlay] Failed to reuse Currency window, attempting to recreate:', err);
-          try {
-            await existingWin.close();
-          } catch (closeErr) {
-            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
-          }
-        }
-      }
-
-      await openCenteredWindow(currencyLabel, '/currency', {
-        title: WindowTitles.Currency,
-        decorations: false,
-        focus: true,
-        shadow: false,
-        width: 640,
-        height: 870,
-        alwaysOnTop: true,
-        skipTaskbar: true,
-      });
-    } catch (err) {
-      console.error('[ItemOverlay] Failed to open Currency window:', err);
-    }
-  }, []);
+    toggleView(VIEW_IDS.CURRENCY, {
+      position: 'centered',
+    });
+  }, [toggleView]);
 
   const openListWindow = useCallback(async () => {
     const raw = JSON.stringify(item);
     const encodedItem = encodeItemForQuickList(raw);
-    const quickListLabel = WindowLabels.QuickList;
     const safeEncodedItem = encodeURIComponent(encodedItem);
 
-    try {
-      // Check if window exists
-      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
+    showView(VIEW_IDS.QUICK_LIST, {
+      position: 'at-cursor',
+      data: { encodedItem: safeEncodedItem },
+    });
 
-      if (existingWin) {
-        try {
-          await existingWin.unminimize();
-          await existingWin.show();
-          await existingWin.setFocus();
-          await existingWin.emit('quick-list-new-item', safeEncodedItem);
-          return;
-        } catch (err) {
-          console.warn('[ItemOverlay] Failed to reuse QuickList window, attempting to recreate:', err);
-          try {
-            await existingWin.close();
-          } catch (closeErr) {
-            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
-          }
-        }
-      }
-
-      await openWindowAtCursor(quickListLabel, `/quick-list?item=${safeEncodedItem}`, {
-        decorations: false,
-        transparent: true,
-        focus: false,
-        shadow: false,
-        skipTaskbar: true,
-        focusable: true,
-        width: 600,
-        height: 512,
-        resizable: true,
-        alwaysOnTop: true,
-      });
-    } catch (err) {
-      console.error('[ItemOverlay] Failed to open QuickList:', err);
-    }
-  }, [item]);
+    // Emit the event for the QuickList page to pick up
+    emit('quick-list-new-item', safeEncodedItem);
+  }, [item, showView]);
 
   const fetchListings = useCallback(
     async (isNewSearch: boolean = false) => {
@@ -921,10 +857,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
    *  Render
    *  -----------------*/
   return (
-    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
+    <Card className="w-full h-full shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
       {/* Top Bar */}
       <div
-        data-tauri-drag-region
+        data-drag-handle
         id="titlebar-drag-handle"
         className="flex items-center justify-between border-neutral-700 bg-neutral-800/50 flex-none"
       >
@@ -965,14 +901,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       {/* Header */}
       <div className={'flex flex-col gap-1 flex-none'}>
         <CardHeader className="flex flex-row items-start gap-4 justify-between">
-          <div className={'flex flex-col'}>
-            <CardTitle
-              className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
-              style={{ fontFamily: 'DiabloFont' }}
-            >
-              {displayTitle}
-              {item.isRuneword && <Badge>Runeword</Badge>}
-            </CardTitle>
+          <div className={'flex flex-col flex-1'}>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle
+                className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
+                style={{ fontFamily: 'DiabloFont' }}
+              >
+                {displayTitle}
+                {item.isRuneword && <Badge>Runeword</Badge>}
+              </CardTitle>
+            </div>
             {item.type && (
               <div
                 className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}
@@ -1008,6 +946,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {averagePriceData && !averagePriceLoading && getItemIcon() && (
               <div className="inline-block">
                 <HoverPopover
+                  side="bottom"
+                  align="start"
                   content={
                     <Card className="p-3 bg-neutral-950 border-neutral-700 w-[400px]">
                       <div className="space-y-2 text-sm">

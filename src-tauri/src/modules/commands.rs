@@ -94,34 +94,6 @@ pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), String> {
-    use tauri::{PhysicalPosition, PhysicalSize};
-
-    // Get bounds of the focused area (Diablo or work area)
-    let bounds =
-        window::get_appropriate_window_bounds(&app_handle).ok_or("Could not get window bounds")?;
-
-    // Toast window size
-    let toast_width = 400;
-    let toast_height = 200;
-    let margin = 10;
-
-    let x = bounds.x + bounds.width - toast_width - margin;
-    let y = bounds.y + bounds.height - toast_height - margin;
-
-    if let Some(toast_window) =
-        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Toast)
-    {
-        toast_window
-            .set_position(PhysicalPosition::new(x as f64, y as f64))
-            .map_err(|e| format!("Failed to set toast window position: {}", e))?;
-        toast_window
-            .set_size(PhysicalSize::new(toast_width as f64, toast_height as f64))
-            .map_err(|e| format!("Failed to set toast window size: {}", e))?;
-    }
-    Ok(())
-}
 
 #[tauri::command]
 pub fn start_chat_watcher(

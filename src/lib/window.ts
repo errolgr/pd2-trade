@@ -33,6 +33,7 @@ export async function getDiabloRectWithRetry(maxRetries = 5, delayMs = 200): Pro
 }
 
 /**
+ * @deprecated Use view manager instead. This function is kept for backwards compatibility but should not be used in new code.
  * Opens a centered window - uses Tauri in Tauri environment, browser window.open in browser
  */
 export async function openCenteredWindow(
@@ -71,6 +72,7 @@ export async function openCenteredWindow(
 }
 
 /**
+ * @deprecated Use view manager instead. This function is kept for backwards compatibility but should not be used in new code.
  * Opens a window over Diablo - uses Tauri in Tauri environment, browser window.open in browser
  */
 export async function openOverDiabloWindow(
@@ -121,6 +123,7 @@ export async function openOverDiabloWindow(
 }
 
 /**
+ * @deprecated Use view manager instead. This function is kept for backwards compatibility but should not be used in new code.
  * Opens a window at cursor - uses Tauri in Tauri environment, browser window.open in browser
  */
 export async function openWindowAtCursor(
@@ -153,6 +156,7 @@ export async function openWindowAtCursor(
 }
 
 /**
+ * @deprecated Use view manager instead. This function is kept for backwards compatibility but should not be used in new code.
  * Opens a window centered on the Diablo screen - uses Tauri in Tauri environment, browser window.open in browser
  */
 export async function openWindowCenteredOnDiablo(

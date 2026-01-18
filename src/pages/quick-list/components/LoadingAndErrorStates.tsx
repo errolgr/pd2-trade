@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Search, Loader2, GripVertical } from 'lucide-react';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 
 interface LoadingAndErrorStatesProps {
   isLoading: boolean;
@@ -18,6 +18,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   onRetry,
   embedded = false,
 }) => {
+  const { hideView } = useViewManager();
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -55,11 +56,11 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   }
 
   return (
-    <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
+    <div className="inline-block p-4 border rounded-lg bg-background shadow w-full">
       <div className="flex justify-between mb-2 items-center">
         <div className="flex items-center gap-1">
           <GripVertical
-            data-tauri-drag-region
+            data-drag-handle
             className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
           />
           <span style={{ fontFamily: 'DiabloFont' }}
@@ -69,7 +70,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
         </div>
         <Button className="h-6 w-6"
           variant="ghost"
-          onClick={() => getCurrentWebviewWindow().hide()}>
+          onClick={() => hideView(VIEW_IDS.QUICK_LIST)}>
           <X className="h-4 w-4" />
         </Button>
       </div>

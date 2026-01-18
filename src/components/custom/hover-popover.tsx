@@ -7,6 +7,7 @@ interface HoverPopoverProps {
   className?: string;
   onSelect?: () => void;
   side?: 'top' | 'bottom' | 'left' | 'right';
+  align?: 'start' | 'center' | 'end';
 }
 
 export const HoverPopover: React.FC<HoverPopoverProps> = ({
@@ -15,6 +16,7 @@ export const HoverPopover: React.FC<HoverPopoverProps> = ({
   className,
   onSelect,
   side = 'bottom',
+  align = 'center',
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -33,7 +35,7 @@ export const HoverPopover: React.FC<HoverPopoverProps> = ({
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         side={side}
-        align="center"
+        align={align}
         className={className ? className : 'p-0 bg-transparent border-0 w-auto'}
       >
         {content}

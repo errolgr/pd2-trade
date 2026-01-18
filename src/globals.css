@@ -187,3 +187,54 @@
 .text-color-unique {
     color: #dfb679
 }
+
+/* View Manager Styles */
+@layer components {
+  /* Modal Overlay Styles */
+  .modal-overlay {
+    @apply fixed inset-0 z-[1000] flex items-center justify-center;
+  }
+
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity;
+  }
+
+  .modal-content {
+    @apply relative z-[1001] bg-background border border-border rounded-lg shadow-lg;
+  }
+
+  /* Panel View Styles */
+  .panel-view {
+    @apply fixed bg-background border border-border rounded-lg shadow-lg;
+  }
+
+  .panel-resize-handle {
+    @apply absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-border hover:bg-border/80;
+  }
+
+  /* Fixed Overlay Styles */
+  .fixed-overlay {
+    @apply fixed pointer-events-auto;
+  }
+
+  /* Z-index layering */
+  .view-layer-base {
+    z-index: 1000;
+  }
+
+  .view-layer-modal {
+    z-index: 2000;
+  }
+
+  .view-layer-panel {
+    z-index: 1500;
+  }
+
+  .view-layer-fixed {
+    z-index: 500;
+  }
+
+  .view-layer-toast {
+    z-index: 9999;
+  }
+}

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { listen } from '@/lib/browser-events';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget';
-import { OptionsProvider } from '@/hooks/useOptions';
-import { ItemsProvider } from '@/hooks/useItems';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
@@ -14,22 +10,23 @@ const unescapeUnicode = (str: string): string => {
 
 const ItemWindow: React.FC = () => {
   const [item, setItem] = useState<any>(null);
-  const [searchParams] = useSearchParams();
+  const { hideView, getView } = useViewManager();
+  const view = getView(VIEW_IDS.ITEM_SEARCH);
 
   /* ---------------------------------
-   * Parse the ?text param on first load
+   * Parse the item data from view manager
    * --------------------------------- */
   useEffect(() => {
-    const param = searchParams.get('text');
-    if (!param) return;
+    if (!view?.data?.itemText && !view?.data?.encoded) return;
 
+    const encoded = view.data.itemText || view.data.encoded;
     try {
-      const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
+      const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(encoded))));
       setItem(json);
     } catch (err) {
       console.error('[ItemWindow] Failed to parse initial payload:', err);
     }
-  }, [searchParams]);
+  }, [view?.data]);
 
   /* ---------------------------------
    * Listen for new-search events
@@ -50,18 +47,14 @@ const ItemWindow: React.FC = () => {
   }, []);
 
   return (
-    <OptionsProvider>
-      <ItemsProvider>
-        <Pd2WebsiteProvider>
-          {!item ? (
-            <div className="text-center text-gray-500">No item data provided or failed to parse.</div>
-          ) : (
-            <ItemOverlayWidget item={item}
-              onClose={() => getCurrentWebviewWindow().hide()} />
-          )}
-        </Pd2WebsiteProvider>
-      </ItemsProvider>
-    </OptionsProvider>
+    <>
+      {!item ? (
+        <div className="text-center text-gray-500">No item data provided or failed to parse.</div>
+      ) : (
+        <ItemOverlayWidget item={item}
+          onClose={() => hideView(VIEW_IDS.ITEM_SEARCH)} />
+      )}
+    </>
   );
 };
 

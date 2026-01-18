@@ -76,30 +76,11 @@ pub fn run() {
             .skip_taskbar(true);
 
             let main_window = win_builder.build().unwrap();
+            // Allow cursor events since all UI is now in the main window
             let _ = main_window.set_ignore_cursor_events(true);
 
-            // Create toast window
-
-            let _toast_window = WebviewWindowBuilder::new(
-                app,
-                &modules::config::WINDOW_CONFIG.labels.Toast,
-                WebviewUrl::App("toast".into()),
-            )
-            .title(&modules::config::WINDOW_CONFIG.titles.Toast)
-            .inner_size(400.0, 200.0)
-            .decorations(false)
-            .transparent(true)
-            .visible(false)
-            .shadow(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .focusable(false)
-            .build()
-            .unwrap();
-
-            // Position the toast window initially
-            let app_handle = app.app_handle().clone();
-            let _ = commands::reposition_toast_window(app_handle.clone());
+            // Start global mouse tracking for click-through functionality
+            window::start_global_mouse_stream(main_window.clone());
 
             // Initialize Diablo focus monitoring (hotkeys & window repositioning)
             let app_handle_bounds = app.app_handle().clone();
@@ -109,7 +90,6 @@ pub fn run() {
                 Some(Box::new(move |_is_focused| {
                     // Reposition windows when Diablo focus changes
                     let _ = commands::update_window_bounds(app_handle_bounds.clone());
-                    let _ = commands::reposition_toast_window(app_handle_bounds.clone());
                 })),
             );
 
@@ -137,7 +117,6 @@ pub fn run() {
             commands::update_window_bounds,
             commands::set_window_click_through,
             commands::force_window_focus,
-            commands::reposition_toast_window,
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,

@@ -366,7 +366,7 @@ export const MarketSearchPage: React.FC = () => {
 
   if (!authData) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <p className="text-muted-foreground mb-2">Authentication required</p>
           <p className="text-sm text-muted-foreground">Please log in to use market search</p>
@@ -376,11 +376,13 @@ export const MarketSearchPage: React.FC = () => {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}
-      className="h-screen w-screen overflow-hidden flex flex-col rounded-lg">
+    <SidebarProvider
+      defaultOpen={true}
+      className="h-full w-full overflow-hidden flex flex-col rounded-lg [&>div]:min-h-0"
+    >
       <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b border-neutral-700 shrink-0">
         <div className="flex h-16 w-full items-center gap-2 px-4"
-          data-tauri-drag-region>
+          data-drag-handle>
           <SidebarTrigger />
           <Separator orientation="vertical"
             className="mr-2 h-4" />
@@ -442,30 +444,33 @@ export const MarketSearchPage: React.FC = () => {
         </div>
       </header>
       <ScrollArea className="flex-1 overflow-hidden flex min-h-0">
-        <Sidebar
-          collapsible="offcanvas"
-          className="bg-neutral-900/95 border-r border-neutral-700 rounded-b-lg overflow-hidden mt-16"
-        >
-          <SidebarContent className="overflow-hidden">
-            <MarketSearchFiltersComponent filters={filters}
-              onFiltersChange={setFilters}
-              settings={settings} />
-          </SidebarContent>
-          <SidebarRail />
-        </Sidebar>
-        <SidebarInset className="rounded-r-lg overflow-hidden flex-1 min-w-0">
-          <div className="flex flex-1 flex-col h-full">
-            {error && <div className="text-sm text-destructive p-4">{error}</div>}
-            <MarketSearchResults
-              listings={filteredListings}
-              isLoading={isLoading}
-              hasMore={hasMore}
-              onLoadMore={handleLoadMore}
-              totalCount={totalCount}
-              onModifierClick={handleModifierClick}
-            />
-          </div>
-        </SidebarInset>
+        <div className="flex-1 overflow-hidden flex min-h-0 relative"
+          style={{ clipPath: 'inset(0)' }}>
+          <Sidebar
+            collapsible="offcanvas"
+            className="bg-neutral-900/95 border-r border-neutral-700 rounded-b-lg overflow-hidden mt-16 [&>div]:!h-full [&>div>div]:!h-full"
+          >
+            <SidebarContent className="overflow-hidden">
+              <MarketSearchFiltersComponent filters={filters}
+                onFiltersChange={setFilters}
+                settings={settings} />
+            </SidebarContent>
+            <SidebarRail />
+          </Sidebar>
+          <SidebarInset className="rounded-r-lg overflow-hidden flex-1 min-w-0">
+            <div className="flex flex-1 flex-col h-full">
+              {error && <div className="text-sm text-destructive p-4">{error}</div>}
+              <MarketSearchResults
+                listings={filteredListings}
+                isLoading={isLoading}
+                hasMore={hasMore}
+                onLoadMore={handleLoadMore}
+                totalCount={totalCount}
+                onModifierClick={handleModifierClick}
+              />
+            </div>
+          </SidebarInset>
+        </div>
       </ScrollArea>
     </SidebarProvider>
   );

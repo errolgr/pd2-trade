@@ -8,9 +8,10 @@ import { GripVertical, X, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTradeMessages } from '@/hooks/useTradeMessages';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 
 export const TradeMessagesContainer: React.FC = () => {
+  const { hideView } = useViewManager();
   const { trades, removeTrade } = useTradeMessages();
   const [showHiddenOffers, setShowHiddenOffers] = useState(false);
   const {
@@ -54,7 +55,7 @@ export const TradeMessagesContainer: React.FC = () => {
           className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Drag Handle with Title and Tabs */}
           <div
-            data-tauri-drag-region
+            data-drag-handle
             className="flex items-center gap-4 px-4 py-1 border-b border-neutral-700 bg-neutral-800 cursor-move flex-shrink-0"
           >
             <GripVertical className="h-4 w-4 text-neutral-400 flex-shrink-0" />
@@ -69,7 +70,7 @@ export const TradeMessagesContainer: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => getCurrentWebviewWindow().hide()}
+              onClick={() => hideView(VIEW_IDS.TRADE_MESSAGES)}
               className="h-7 w-7 cursor-pointer flex-shrink-0"
             >
               <X className="h-4 w-4" />

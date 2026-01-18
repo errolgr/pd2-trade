@@ -18,8 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { useOptions } from '@/hooks/useOptions';
+import { useChatMessageNotifications } from '@/hooks/useChatMessageNotifications';
 
 interface ChatOverlayWidgetProps {
   onClose: () => void;
@@ -56,18 +56,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // Get current user ID
   const currentUserId = authData?.user?._id;
 
-  // Play notification sound
-  const playNotificationSound = useCallback((volume: number = 70) => {
-    try {
-      const audio = new Audio(poeWhisperSound);
-      audio.volume = volume / 100; // Convert 0-100 to 0-1
-      audio.play().catch((error) => {
-        console.error('Failed to play notification sound:', error);
-      });
-    } catch (error) {
-      console.error('Failed to create audio element:', error);
-    }
-  }, []);
+  // Handle chat message notifications
+  useChatMessageNotifications({
+    currentUserId,
+    selectedConversation,
+    settings,
+  });
 
   // Mark unread messages as read
   const markUnreadMessagesAsRead = useCallback(
@@ -461,18 +455,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
             }
           }
 
-          // Play notification sound if user is recipient and conversation is not currently open
-          const isCurrentConversationOpen =
-            currentSelectedConversation && newMessage.conversation_id === currentSelectedConversation._id;
-          if (newMessage.sender_id !== currentUserId && !isCurrentConversationOpen) {
-            // Play notification sound for new messages in other conversations if general notifications are enabled
-            const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
-            if (generalEnabled) {
-              const volume = settings?.whisperNotificationVolume ?? 70;
-              playNotificationSound(volume);
-            }
-          }
-
           // Always add the new message to the cache for its conversation (even if not currently open)
           const conversationId = newMessage.conversation_id;
           const cachedMessagesForConversation = messagesCacheRef.current.get(conversationId) || [];
@@ -576,14 +558,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         isMessageListenerSetupRef.current = false;
       }
     };
-  }, [
-    currentUserId,
-    getConversations,
-    markMessagesAsRead,
-    playNotificationSound,
-    settings?.whisperNotificationsEnabled,
-    settings?.whisperNotificationVolume,
-  ]);
+  }, [currentUserId, getConversations, markMessagesAsRead]);
 
   // Load conversations
 
@@ -846,10 +821,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   };
 
   return (
-    <Card className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
+    <Card className="w-full h-full shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div
-        data-tauri-drag-region
+        data-drag-handle
         id="titlebar-drag-handle"
         className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800 flex-shrink-0"
       >

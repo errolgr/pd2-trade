@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown, GripVertical, Loader2, X } from 'lucide-react';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import { usePd2Website, AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
@@ -26,6 +26,7 @@ import { EconomyValue } from '../price-check/lib/types';
 import { formatHr } from '@/lib/utils';
 
 export function CurrencyValuation() {
+  const { hideView } = useViewManager();
   const [currency, setCurrency] = React.useState<Currency>();
   const [selectedCategory, setSelectedCategory] = React.useState<FormattedStashCategory>('runes');
   const [data, setData] = React.useState<FormattedStashData>();
@@ -176,12 +177,12 @@ export function CurrencyValuation() {
   }, [currency, calculatedEconomyValues]);
 
   return (
-    <div className="min-h-screen w-full space-y-6 p-10 md:block bg-background">
+    <div className="min-h-full w-full space-y-6 p-10 md:block bg-background">
       <div className="flex flex-row justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1">
             <GripVertical
-              data-tauri-drag-region
+              data-drag-handle
               className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
               id="titlebar-drag-handle"
             />
@@ -200,15 +201,10 @@ export function CurrencyValuation() {
           </div>
         </div>
 
-        <Button
-          variant="ghost"
+        <Button variant="ghost"
           size="icon"
-          onClick={async () => {
-            const window = getCurrentWebviewWindow();
-            await window.hide();
-          }}
-          className="self-start"
-        >
+          onClick={() => hideView(VIEW_IDS.CURRENCY)}
+          className="self-start">
           <X className="h-4 w-4" />
         </Button>
       </div>

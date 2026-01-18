@@ -1,24 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { listen, emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
-import { Toaster } from '@/components/ui/sonner';
-import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { openUrl } from '@/lib/browser-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { resetUpdateNotification } from '@/hooks/useAppUpdates';
+import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 
-const ToastPage: React.FC = () => {
-  const closeToastWebview = async () => {
-    if (isTauri()) {
-      const win = await getCurrentWebviewWindow();
-      if (win) win.hide().catch(console.error);
-    }
-  };
-
-  // Track active toasts to manage window visibility
+const ToastNotificationSystem: React.FC = () => {
+  // Track active toasts
   const activeToastsRef = React.useRef(0);
 
   const handleToastOpen = () => {
@@ -27,31 +18,13 @@ const ToastPage: React.FC = () => {
 
   const handleToastClose = () => {
     activeToastsRef.current = Math.max(0, activeToastsRef.current - 1);
-    if (activeToastsRef.current === 0) {
-      // Small delay to allow fade out animation
-      setTimeout(() => {
-        if (activeToastsRef.current === 0) {
-          closeToastWebview();
-        }
-      }, 500);
-    }
   };
 
-  // Listen for 'toast-confirm-disable-overlay' and show confirmation toast
+  // Listen for 'toast-confirm-disable-overlay'
   useEffect(() => {
     let unlistenConfirmPromise: Promise<() => void>;
 
-    listen('toast-confirm-disable-overlay', async (event: any) => {
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
-
+    listen('toast-confirm-disable-overlay', async () => {
       handleToastOpen();
       const toastId = toast('Disable Chat Button Overlay?', {
         description: 'You can re-enable it later in Settings → Interface.',
@@ -60,7 +33,6 @@ const ToastPage: React.FC = () => {
         action: {
           label: 'Disable',
           onClick: async () => {
-            // Explicitly dismiss the toast when action is clicked
             if (toastId) {
               toast.dismiss(toastId);
             }
@@ -71,7 +43,6 @@ const ToastPage: React.FC = () => {
         cancel: {
           label: 'Cancel',
           onClick: () => {
-            // Explicitly dismiss the toast when cancel is clicked
             if (toastId) {
               toast.dismiss(toastId);
             }
@@ -92,22 +63,12 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for 'toast-confirm-delete-listing' and show confirmation toast
+  // Listen for 'toast-confirm-delete-listing'
   useEffect(() => {
     let unlistenDeletePromise: Promise<() => void>;
 
     listen('toast-confirm-delete-listing', async (event: any) => {
       const { listingId, itemName } = event.payload || {};
-
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
 
       handleToastOpen();
       const toastId = toast.warning('Delete Listing?', {
@@ -119,7 +80,6 @@ const ToastPage: React.FC = () => {
         action: {
           label: 'Delete',
           onClick: async () => {
-            // Explicitly dismiss the toast when action is clicked
             if (toastId) {
               toast.dismiss(toastId);
             }
@@ -130,7 +90,6 @@ const ToastPage: React.FC = () => {
         cancel: {
           label: 'Cancel',
           onClick: () => {
-            // Explicitly dismiss the toast when cancel is clicked
             if (toastId) {
               toast.dismiss(toastId);
             }
@@ -151,29 +110,19 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for 'toast-event' and show a toast
+  // Listen for 'toast-event'
   useEffect(() => {
     let unlistenPromise: Promise<() => void>;
 
     listen('toast-event', async (event) => {
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
-
       // event.payload can be string or object
       if (typeof event.payload === 'string') {
         toast('PD2 Trader', {
           description: event.payload,
           position: 'bottom-right',
           closeButton: true,
-          onDismiss: () => closeToastWebview(),
-          onAutoClose: () => closeToastWebview(),
+          onDismiss: () => handleToastClose(),
+          onAutoClose: () => handleToastClose(),
         });
       } else if (event.payload && typeof event.payload === 'object') {
         const payload = event.payload as CustomToastPayload | GenericToastPayload;
@@ -186,8 +135,8 @@ const ToastPage: React.FC = () => {
             description: genericPayload.description,
             duration: genericPayload.duration,
             closeButton: true,
-            onDismiss: () => closeToastWebview(),
-            onAutoClose: () => closeToastWebview(),
+            onDismiss: () => handleToastClose(),
+            onAutoClose: () => handleToastClose(),
           };
 
           // Use appropriate toast variant
@@ -215,7 +164,6 @@ const ToastPage: React.FC = () => {
                   if (listingId) {
                     const marketUrl = `https://www.projectdiablo2.com/market/listing/${listingId}`;
                     await openUrl(marketUrl);
-                    closeToastWebview();
                   }
                   break;
                 }
@@ -287,7 +235,6 @@ const ToastPage: React.FC = () => {
                 const listingId = customPayload.action.data?.listingId;
                 if (listingId) {
                   window.open(`https://www.projectdiablo2.com/market/listing/${listingId}`, '_blank');
-                  closeToastWebview();
                 }
               }
             }
@@ -301,15 +248,14 @@ const ToastPage: React.FC = () => {
             action: {
               label: customPayload.action.label,
               onClick: async () => {
-                // Explicitly dismiss the toast when action is clicked
                 if (customToastId) {
                   toast.dismiss(customToastId);
                 }
                 await handleActionClick();
               },
             },
-            onDismiss: () => closeToastWebview(),
-            onAutoClose: () => closeToastWebview(),
+            onDismiss: () => handleToastClose(),
+            onAutoClose: () => handleToastClose(),
           });
         } else {
           // Regular object toast
@@ -317,8 +263,8 @@ const ToastPage: React.FC = () => {
             position: 'bottom-right',
             description: customPayload.description,
             closeButton: true,
-            onDismiss: () => closeToastWebview(),
-            onAutoClose: () => closeToastWebview(),
+            onDismiss: () => handleToastClose(),
+            onAutoClose: () => handleToastClose(),
           });
         }
       }
@@ -333,10 +279,7 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  return <Toaster expand
-    richColors
-    closeButton
-    visibleToasts={5} />;
+  return null; // This component only handles side effects
 };
 
-export default ToastPage;
+export default ToastNotificationSystem;

@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { listen } from '@/lib/browser-events';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import ChatOverlayWidget from '@/pages/chat/components/ChatOverlayWidget';
-import { OptionsProvider } from '@/hooks/useOptions';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 
 const ChatWindow: React.FC = () => {
+  const { hideView } = useViewManager();
+
   useEffect(() => {
     // Listen for any future events if needed
     const unlistenPromise = listen('chat-update', () => {
@@ -17,13 +17,7 @@ const ChatWindow: React.FC = () => {
     };
   }, []);
 
-  return (
-    <OptionsProvider>
-      <Pd2WebsiteProvider>
-        <ChatOverlayWidget onClose={() => getCurrentWebviewWindow().hide()} />
-      </Pd2WebsiteProvider>
-    </OptionsProvider>
-  );
+  return <ChatOverlayWidget onClose={() => hideView(VIEW_IDS.CHAT)} />;
 };
 
 export default ChatWindow;

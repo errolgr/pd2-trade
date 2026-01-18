@@ -7,7 +7,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { invoke } from '@tauri-apps/api/core';
 import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { ISettings } from './useOptions';
-import poeWhisperSound from '@/assets/poe_whisper.mp3';
+import { playNotificationSound } from '@/lib/notification-sound';
 
 interface SystemNotification {
   _id: string;
@@ -36,19 +36,6 @@ interface UseSocketNotificationsProps {
   isConnected: boolean;
   settings?: ISettings;
   whisperNotificationsEnabled?: boolean;
-}
-
-// Play the notification sound from assets
-function playNotificationSound(volume: number = 70) {
-  try {
-    const audio = new Audio(poeWhisperSound);
-    audio.volume = volume / 100; // Convert 0-100 to 0-1
-    audio.play().catch((error) => {
-      console.error('Failed to play notification sound:', error);
-    });
-  } catch (error) {
-    console.error('Failed to play notification sound:', error);
-  }
 }
 
 export const useSocketNotifications = ({

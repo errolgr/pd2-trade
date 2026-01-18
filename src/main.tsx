@@ -1,22 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
-import LandingPage, { Providers } from './pages/landing/LandingPage';
-import ItemPage from '@/pages/price-check/ItemPage';
-import { SettingsPage } from '@/pages/settings/SettingsPage';
-import ChangelogPage from '@/pages/change-log/ChangeLogPage';
-import { QuickListPage } from './pages/quick-list/QuickListPage';
-import { OptionsProvider } from './hooks/useOptions';
-import ToastPage from './pages/toast/ToastPage';
-import { CurrencyPage } from './pages/currency/CurrencyPage';
-import { GlobalErrorHandler } from './components/GlobalErrorHandler';
-import ChatButtonPage from './pages/chat/ChatButtonPage';
-import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
-import ChatPage from './pages/chat/ChatPage';
-import { MarketSearchPage } from './pages/market-search/MarketSearchPage';
+import MainWindow, { Providers } from './MainWindow';
+import { MainLayout } from './components/layout/MainLayout';
 
 // Initialize Sentry asynchronously to avoid blocking application startup
 setTimeout(() => {
@@ -60,58 +48,9 @@ setTimeout(() => {
 }, 1000);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <BrowserRouter>
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <Providers>
-            <GlobalErrorHandler />
-            <LandingPage />
-          </Providers>
-        }
-      />
-
-      <Route path="/item"
-        element={<ItemPage />} />
-
-      <Route path={'/settings'}
-        element={<SettingsPage />} />
-
-      <Route path={'/quick-list'}
-        element={<QuickListPage />} />
-
-      <Route
-        path={'/change-log'}
-        element={
-          <OptionsProvider>
-            <ChangelogPage />
-          </OptionsProvider>
-        }
-      />
-      <Route path={'/toast'}
-        element={<ToastPage />} />
-
-      <Route path={'/currency'}
-        element={<CurrencyPage />} />
-
-      <Route path={'/chat'}
-        element={<ChatPage />} />
-
-      <Route path={'/chat-button'}
-        element={<ChatButtonPage />} />
-
-      <Route path={'/trade-messages'}
-        element={<TradeMessagesPage />} />
-
-      <Route
-        path={'/market-search'}
-        element={
-          <Providers>
-            <MarketSearchPage />
-          </Providers>
-        }
-      />
-    </Routes>
-  </BrowserRouter>,
+  <Providers>
+    <MainLayout>
+      <MainWindow />
+    </MainLayout>
+  </Providers>,
 );
