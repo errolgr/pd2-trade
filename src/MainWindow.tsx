@@ -315,16 +315,21 @@ const MainWindow: React.FC = () => {
   // Handle changelog
   useChangelog();
 
-  // Handle chat button overlay visibility based on settings
+  // Handle chat button overlay visibility based on settings and Diablo focus
   useEffect(() => {
     if (settings.chatButtonOverlayEnabled === false) {
       hideView(VIEW_IDS.CHAT_BUTTON);
       return;
     }
 
+    // Hide chat button when Diablo is not focused
+    if (!isDiabloFocused) {
+      hideView(VIEW_IDS.CHAT_BUTTON);
+      return;
+    }
+
     // Show chat button as fixed overlay in bottom right corner of Diablo frame
     const setupChatButton = async () => {
-      await sleep(500);
       const rect = await getDiabloRectWithRetry();
       if (!rect) {
         console.warn('[LandingPage] Diablo window rect not found after retries, cannot position chat button overlay');
@@ -364,7 +369,7 @@ const MainWindow: React.FC = () => {
     };
 
     setupChatButton();
-  }, [settings.chatButtonOverlayEnabled, showView, hideView]);
+  }, [settings.chatButtonOverlayEnabled, isDiabloFocused, showView, hideView]);
 
   // Set up chat window toggle handler
   useEffect(() => {

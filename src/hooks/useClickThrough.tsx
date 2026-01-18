@@ -121,6 +121,31 @@ export const ClickThroughProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       }
 
+      // Check if mouse is over any Sonner toast elements
+      if (!inHitbox) {
+        const toastElements = document.querySelectorAll('[data-sonner-toast]');
+        for (const toast of toastElements) {
+          const rect = toast.getBoundingClientRect();
+          // Convert viewport coordinates to screen coordinates
+          // getBoundingClientRect() returns coordinates relative to viewport
+          // We need to add the window's position on screen to get screen coordinates
+          const screenLeft = rect.left + window.screenX;
+          const screenTop = rect.top + window.screenY;
+          const screenRight = screenLeft + rect.width;
+          const screenBottom = screenTop + rect.height;
+
+          if (
+            payload.x >= screenLeft &&
+            payload.x <= screenRight &&
+            payload.y >= screenTop &&
+            payload.y <= screenBottom
+          ) {
+            inHitbox = true;
+            break;
+          }
+        }
+      }
+
       // Log when we should detect overlap but don't (helps debug)
       if (!inHitbox && windows.size > 0 && windowPos) {
         // Only log occasionally to avoid spam, but show all boxes for debugging

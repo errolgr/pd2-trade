@@ -337,10 +337,10 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
     previousDiabloFocusRef.current = isDiabloFocused;
   }, [isDiabloFocused]);
 
-  // Handle window blur/focus for ItemOverlayWidget and CommandMenu
+  // Handle window blur/focus for ItemOverlayWidget, CommandMenu, and MarketSearch
   useEffect(() => {
     const handleWindowBlur = () => {
-      // Close ItemOverlayWidget and CommandMenu when window loses focus
+      // Close ItemOverlayWidget, CommandMenu, and MarketSearch when window loses focus
       setViews((prev) => {
         const newViews = new Map(prev);
         const itemView = prev.get(VIEW_IDS.ITEM_SEARCH);
@@ -350,6 +350,10 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
         const commandMenuView = prev.get(VIEW_IDS.COMMAND_MENU);
         if (commandMenuView?.visible) {
           newViews.set(VIEW_IDS.COMMAND_MENU, { ...commandMenuView, visible: false });
+        }
+        const marketSearchView = prev.get(VIEW_IDS.MARKET_SEARCH);
+        if (marketSearchView?.visible) {
+          newViews.set(VIEW_IDS.MARKET_SEARCH, { ...marketSearchView, visible: false });
         }
         return newViews;
       });

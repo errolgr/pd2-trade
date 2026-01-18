@@ -8,6 +8,7 @@ import { MarketSearchFilters as MarketSearchFiltersComponent } from './component
 import { MarketSearchResults } from './components/MarketSearchResults';
 import { MarketSearchCommand } from './components/MarketSearchCommand';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +28,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 
@@ -36,6 +37,7 @@ const ITEMS_PER_PAGE = 20;
 export const MarketSearchPage: React.FC = () => {
   const { getMarketListings, getMarketListingsArchive, authData } = usePd2Website();
   const { settings } = useOptions();
+  const { hideView } = useViewManager();
 
   const [filters, setFilters] = useState<MarketSearchFilters>({
     ...DEFAULT_FILTERS,
@@ -441,6 +443,15 @@ export const MarketSearchPage: React.FC = () => {
               </Button>
             </div>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => hideView(VIEW_IDS.MARKET_SEARCH)}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </header>
       <ScrollArea className="flex-1 overflow-hidden flex min-h-0">
