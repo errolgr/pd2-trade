@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   DollarSign,
   FileText,
+  Command,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,11 +26,11 @@ interface ChatButtonProps {
   handleClick: () => void;
   onSettingsClick?: () => void;
   onTradeMessagesClick?: () => void;
-  onManageListingsClick?: () => void;
   onItemSearchClick?: () => void;
   onQuickListClick?: () => void;
   onCurrencyValuationClick?: () => void;
   onMarketSearchClick?: () => void;
+  onCommandMenuClick?: () => void;
   onDisableClick?: () => void;
   unreadCount?: number;
   tradeOffersCount?: number;
@@ -40,11 +41,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   handleClick,
   onSettingsClick,
   onTradeMessagesClick,
-  onManageListingsClick,
   onItemSearchClick,
   onQuickListClick,
   onCurrencyValuationClick,
   onMarketSearchClick,
+  onCommandMenuClick,
   onDisableClick,
   unreadCount = 0,
   tradeOffersCount = 0,
@@ -75,8 +76,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     onCurrencyValuationClick && 'currency',
     onMarketSearchClick && 'market-search',
     onTradeMessagesClick && 'trade-messages',
-    onManageListingsClick && 'manage',
     onSettingsClick && 'settings',
+    onCommandMenuClick && 'command-menu',
     'drag',
     onDisableClick && 'disable',
   ].filter(Boolean);
@@ -269,7 +270,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             </div>
 
             {/* Divider for Price Checking section */}
-            {(onItemSearchClick || onQuickListClick || onCurrencyValuationClick) && (
+            {(onItemSearchClick || onCurrencyValuationClick || onMarketSearchClick) && (
               <div className="px-4 py-2 border-b border-neutral-600/50">
                 <span className="text-xs font-semibold text-neutral-400 uppercase">Price Checking</span>
               </div>
@@ -292,18 +293,18 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               </button>
             )}
 
-            {/* Quick List Button */}
-            {onQuickListClick && (
+            {/* Market Search Button */}
+            {onMarketSearchClick && (
               <button
-                onClick={onQuickListClick}
+                onClick={onMarketSearchClick}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-700/50 transition-colors text-left"
-                aria-label="Quick List"
+                aria-label="Market Search"
               >
-                <List className="h-4 w-4 text-neutral-200 flex-shrink-0" />
-                <span className="text-sm text-neutral-200">Quick List</span>
-                {settings?.hotkeyKeyListItem && (
+                <ShoppingCart className="h-4 w-4 text-neutral-200 flex-shrink-0" />
+                <span className="text-sm text-neutral-200">Market Search</span>
+                {settings?.hotkeyKeyMarketSearch && (
                   <span className="ml-auto text-xs text-neutral-400">
-                    {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
+                    {formatHotkey(settings.hotkeyModifierMarketSearch || 'ctrl', settings.hotkeyKeyMarketSearch)}
                   </span>
                 )}
               </button>
@@ -327,24 +328,24 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             )}
 
             {/* Divider for Trading section */}
-            {(onMarketSearchClick || onTradeMessagesClick || onManageListingsClick) && (
+            {(onQuickListClick || onTradeMessagesClick) && (
               <div className="px-4 py-2 border-b border-neutral-600/50">
                 <span className="text-xs font-semibold text-neutral-400 uppercase">Trading</span>
               </div>
             )}
 
-            {/* Market Search Button */}
-            {onMarketSearchClick && (
+            {/* Manage Listings Button */}
+            {onQuickListClick && (
               <button
-                onClick={onMarketSearchClick}
+                onClick={onQuickListClick}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-700/50 transition-colors text-left"
-                aria-label="Market Search"
+                aria-label="Manage Listings"
               >
-                <ShoppingCart className="h-4 w-4 text-neutral-200 flex-shrink-0" />
-                <span className="text-sm text-neutral-200">Market Search</span>
-                {settings?.hotkeyKeyMarketSearch && (
+                <List className="h-4 w-4 text-neutral-200 flex-shrink-0" />
+                <span className="text-sm text-neutral-200">Manage Listings</span>
+                {settings?.hotkeyKeyListItem && (
                   <span className="ml-auto text-xs text-neutral-400">
-                    {formatHotkey(settings.hotkeyModifierMarketSearch || 'ctrl', settings.hotkeyKeyMarketSearch)}
+                    {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
                   </span>
                 )}
               </button>
@@ -381,18 +382,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               </div>
             )}
 
-            {/* Manage Listings Button */}
-            {onManageListingsClick && (
-              <button
-                onClick={onManageListingsClick}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-700/50 transition-colors text-left"
-                aria-label="Manage Listings"
-              >
-                <List className="h-4 w-4 text-neutral-200 flex-shrink-0" />
-                <span className="text-sm text-neutral-200">Manage Listings</span>
-              </button>
-            )}
-
             {/* Divider for Communication section */}
             <div className="px-4 py-2 border-b border-neutral-600/50">
               <span className="text-xs font-semibold text-neutral-400 uppercase">Communication</span>
@@ -424,7 +413,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             </button>
 
             {/* Divider for Settings section */}
-            {onSettingsClick && (
+            {(onSettingsClick || onCommandMenuClick) && (
               <div className="px-4 py-2 border-b border-neutral-600/50">
                 <span className="text-xs font-semibold text-neutral-400 uppercase">Settings</span>
               </div>
@@ -443,6 +432,26 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                   <span className="ml-auto text-xs text-neutral-400">
                     {formatHotkey(settings.hotkeyModifierSettings || 'ctrl', settings.hotkeyKeySettings)}
                   </span>
+                )}
+              </button>
+            )}
+
+            {/* Command Menu Button */}
+            {onCommandMenuClick && (
+              <button
+                onClick={onCommandMenuClick}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-700/50 transition-colors text-left"
+                aria-label="Command Menu"
+              >
+                <Command className="h-4 w-4 text-neutral-200 flex-shrink-0" />
+                <span className="text-sm text-neutral-200">Command Menu</span>
+                {settings?.hotkeyKeyCommandMenu && settings?.commandMenuUseDoubleShift === false && (
+                  <span className="ml-auto text-xs text-neutral-400">
+                    {formatHotkey(settings.hotkeyModifierCommandMenu || 'ctrl', settings.hotkeyKeyCommandMenu)}
+                  </span>
+                )}
+                {settings?.commandMenuUseDoubleShift !== false && (
+                  <span className="ml-auto text-xs text-neutral-400">Double Shift</span>
                 )}
               </button>
             )}

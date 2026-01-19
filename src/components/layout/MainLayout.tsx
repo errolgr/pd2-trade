@@ -218,7 +218,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             case VIEW_IDS.MARKET_SEARCH:
               return { width: 500, height: 600 }; // Panel over diablo (default)
             case VIEW_IDS.TRADE_MESSAGES:
-              return { width: 500, height: 600 }; // Panel over diablo (default)
+              return { width: 600, height: 350 }; // Panel over diablo (default)
             case VIEW_IDS.COMMAND_MENU:
               return { width: 420, height: 470 }; // Command menu size
             case VIEW_IDS.SETTINGS:
@@ -242,7 +242,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           return undefined;
         };
 
-         
         const visibleViews = viewsArray.filter(([, view]) => view.visible);
 
         return visibleViews.map(([, view]) => {

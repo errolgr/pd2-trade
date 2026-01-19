@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MarketSearchFilters as MarketSearchFiltersType, DEFAULT_FILTERS, SaleType } from '../lib/types';
 import { ItemQuality } from '@/common/types/Item';
 import { itemTypes } from '@/common/item-types';
-import { modifiers } from '@/assets/modifiers';
+import { getFilteredAndMergedModifiers } from '../lib/modifier-utils';
 import { ModifierCombobox } from './ModifierCombobox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '@/components/ui/sidebar';
@@ -491,13 +491,9 @@ export const MarketSearchFilters: React.FC<MarketSearchFiltersProps> = ({ filter
             <div className="space-y-2">
               {filters.modifiers && filters.modifiers.length > 0 ? (
                 filters.modifiers.map((mod, index) => {
-                  const modifierData = modifiers.find((m) => m.name === mod.name);
-                  const displayName =
-                    modifierData?.description?.label &&
-                    typeof modifierData.description.label === 'object' &&
-                    'positive' in modifierData.description.label
-                      ? modifierData.description.label.positive
-                      : mod.name;
+                  const allFilteredModifiers = getFilteredAndMergedModifiers();
+                  const modifierData = allFilteredModifiers.find((m) => m.name === mod.name);
+                  const displayName = modifierData ? modifierData.description.label.positive : mod.name;
                   return (
                     <div key={index}
                       className="flex items-center gap-2 p-2 border rounded border-border">

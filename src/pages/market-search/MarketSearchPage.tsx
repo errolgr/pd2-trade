@@ -94,11 +94,24 @@ export const MarketSearchPage: React.FC = () => {
       setError(null);
 
       try {
+        console.log('[MarketSearch] Fetching listings with query:', JSON.stringify(query, null, 2));
+
         const result = appliedFilters.searchArchived
           ? await getMarketListingsArchive(query)
           : await getMarketListings(query);
 
+        console.log('[MarketSearch] API Response:', {
+          total: result.total,
+          dataLength: result.data?.length || 0,
+          limit: result.limit,
+          skip: result.skip,
+          hasData: !!result.data,
+          firstItem: result.data?.[0] || null,
+        });
+        console.log('[MarketSearch] Full result object:', result);
+
         if (isNewSearch) {
+          console.log('[MarketSearch] Setting new listings, count:', result.data?.length || 0);
           setListings(result.data);
           setCurrentPage(0);
           setHasMore(result.data.length === ITEMS_PER_PAGE && result.data.length < result.total);
@@ -108,12 +121,21 @@ export const MarketSearchPage: React.FC = () => {
             const existingIds = new Set(prev.map((l) => l._id));
             const newItems = result.data.filter((l) => !existingIds.has(l._id));
             const updated = [...prev, ...newItems];
+            console.log(
+              '[MarketSearch] Appending listings, prev:',
+              prev.length,
+              'new:',
+              newItems.length,
+              'total:',
+              updated.length,
+            );
             setHasMore(result.data.length === ITEMS_PER_PAGE && updated.length < result.total);
             return updated;
           });
         }
 
         setTotalCount(result.total);
+        console.log('[MarketSearch] Total count set to:', result.total);
       } catch (err) {
         console.error('Failed to fetch market listings:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch listings');
@@ -227,144 +249,6 @@ export const MarketSearchPage: React.FC = () => {
   }, []);
 
   // Client-side filtering for fields not supported by API query
-  const filteredListings = useMemo(() => {
-    let filtered = listings;
-
-    // Price filtering
-    if (appliedFilters.minPrice !== undefined && appliedFilters.minPrice !== null) {
-      filtered = filtered.filter((listing) => (listing.hr_price ?? 0) >= appliedFilters.minPrice!);
-    }
-    if (appliedFilters.maxPrice !== undefined && appliedFilters.maxPrice !== null) {
-      filtered = filtered.filter((listing) => (listing.hr_price ?? 0) <= appliedFilters.maxPrice!);
-    }
-
-    // Level filtering
-    if (appliedFilters.levelMin !== undefined && appliedFilters.levelMin !== null) {
-      filtered = filtered.filter((listing) => (listing.item.requirements?.level ?? 0) >= appliedFilters.levelMin!);
-    }
-    if (appliedFilters.levelMax !== undefined && appliedFilters.levelMax !== null) {
-      filtered = filtered.filter((listing) => (listing.item.requirements?.level ?? 0) <= appliedFilters.levelMax!);
-    }
-
-    // Dexterity filtering
-    if (appliedFilters.dexterityMin !== undefined && appliedFilters.dexterityMin !== null) {
-      filtered = filtered.filter(
-        (listing) => (listing.item.requirements?.dexterity ?? 0) >= appliedFilters.dexterityMin!,
-      );
-    }
-    if (appliedFilters.dexterityMax !== undefined && appliedFilters.dexterityMax !== null) {
-      filtered = filtered.filter(
-        (listing) => (listing.item.requirements?.dexterity ?? 0) <= appliedFilters.dexterityMax!,
-      );
-    }
-
-    // Strength filtering
-    if (appliedFilters.strengthMin !== undefined && appliedFilters.strengthMin !== null) {
-      filtered = filtered.filter(
-        (listing) => (listing.item.requirements?.strength ?? 0) >= appliedFilters.strengthMin!,
-      );
-    }
-    if (appliedFilters.strengthMax !== undefined && appliedFilters.strengthMax !== null) {
-      filtered = filtered.filter(
-        (listing) => (listing.item.requirements?.strength ?? 0) <= appliedFilters.strengthMax!,
-      );
-    }
-
-    // Item level filtering
-    if (appliedFilters.itemLevelMin !== undefined && appliedFilters.itemLevelMin !== null) {
-      filtered = filtered.filter((listing) => (listing.item.item_level ?? 0) >= appliedFilters.itemLevelMin!);
-    }
-    if (appliedFilters.itemLevelMax !== undefined && appliedFilters.itemLevelMax !== null) {
-      filtered = filtered.filter((listing) => (listing.item.item_level ?? 0) <= appliedFilters.itemLevelMax!);
-    }
-
-    // Seller account filtering
-    if (appliedFilters.sellerAccount && appliedFilters.sellerAccount.trim()) {
-      const searchTerm = appliedFilters.sellerAccount.trim().toLowerCase();
-      filtered = filtered.filter((listing) => {
-        const username = listing.user?.username?.toLowerCase() || '';
-        const inGameAccount = listing.user?.in_game_account?.toLowerCase() || '';
-        const accounts = listing.user?.game?.accounts?.map((acc: string) => acc.toLowerCase()) || [];
-        return (
-          username.includes(searchTerm) ||
-          inGameAccount.includes(searchTerm) ||
-          accounts.some((acc: string) => acc.includes(searchTerm))
-        );
-      });
-    }
-
-    // Sale type filtering
-    if (appliedFilters.saleType !== 'any') {
-      filtered = filtered.filter((listing) => {
-        const hasPrice = listing.hr_price !== null && listing.hr_price !== undefined && listing.hr_price > 0;
-        const hasPriceString = listing.price && listing.price.trim() !== '';
-
-        switch (appliedFilters.saleType) {
-          case 'hr_only':
-            return hasPrice && (!hasPriceString || listing.price.trim() === String(listing.hr_price));
-          case 'price_with_note':
-            return hasPrice && hasPriceString && listing.price.trim() !== String(listing.hr_price);
-          case 'no_listed_price':
-            return !hasPrice;
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Modifier filtering
-    if (appliedFilters.modifiers && appliedFilters.modifiers.length > 0) {
-      filtered = filtered.filter((listing) => {
-        if (!listing.item.modifiers || listing.item.modifiers.length === 0) {
-          return false;
-        }
-
-        // Check if all modifier filters match
-        return appliedFilters.modifiers!.every((filterMod) => {
-          const itemMod = listing.item.modifiers.find((m) => m.name === filterMod.name);
-          if (!itemMod) {
-            return false;
-          }
-
-          // Get the actual value from the modifier (from values array)
-          const modValue = itemMod.values?.[0] ?? 0;
-
-          // Check min constraint
-          if (filterMod.min !== undefined && filterMod.min !== null) {
-            if (modValue < filterMod.min) {
-              return false;
-            }
-          }
-
-          // Check max constraint
-          if (filterMod.max !== undefined && filterMod.max !== null) {
-            if (modValue > filterMod.max) {
-              return false;
-            }
-          }
-
-          return true;
-        });
-      });
-    }
-
-    return filtered;
-  }, [
-    listings,
-    appliedFilters.minPrice,
-    appliedFilters.maxPrice,
-    appliedFilters.levelMin,
-    appliedFilters.levelMax,
-    appliedFilters.dexterityMin,
-    appliedFilters.dexterityMax,
-    appliedFilters.strengthMin,
-    appliedFilters.strengthMax,
-    appliedFilters.itemLevelMin,
-    appliedFilters.itemLevelMax,
-    appliedFilters.sellerAccount,
-    appliedFilters.saleType,
-    appliedFilters.modifiers,
-  ]);
 
   if (!authData) {
     return (
@@ -472,7 +356,7 @@ export const MarketSearchPage: React.FC = () => {
             <div className="flex flex-1 flex-col h-full">
               {error && <div className="text-sm text-destructive p-4">{error}</div>}
               <MarketSearchResults
-                listings={filteredListings}
+                listings={listings}
                 isLoading={isLoading}
                 hasMore={hasMore}
                 onLoadMore={handleLoadMore}

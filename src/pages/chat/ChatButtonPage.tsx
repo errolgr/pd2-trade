@@ -8,7 +8,7 @@ import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 const ChatButtonPageContent: React.FC = () => {
   const { updateSettings, settings } = useOptions();
   const { chatUnreadCount, totalTradeOffersCount, tradeMessagesCount } = useNotificationCountsContext();
-  const { toggleView, showView } = useViewManager();
+  const { toggleView, showView, hideView, isVisible } = useViewManager();
 
   // Debug: Log when tradeMessagesCount changes
   useEffect(() => {
@@ -50,9 +50,16 @@ const ChatButtonPageContent: React.FC = () => {
     await emit('toggle-trade-messages-window');
   };
 
-  const handleManageListingsClick = async () => {
-    console.log('[ChatButtonPage] handleManageListingsClick called, emitting open-quick-list-manage');
-    await emit('open-quick-list-manage');
+  const handleCommandMenuClick = async () => {
+    const isCurrentlyVisible = isVisible(VIEW_IDS.COMMAND_MENU);
+    if (isCurrentlyVisible) {
+      hideView(VIEW_IDS.COMMAND_MENU);
+    } else {
+      showView(VIEW_IDS.COMMAND_MENU, {
+        type: 'panel',
+        position: 'centered',
+      });
+    }
   };
 
   const handleItemSearchClick = async () => {
@@ -101,11 +108,11 @@ const ChatButtonPageContent: React.FC = () => {
           handleClick={handleClick}
           onSettingsClick={handleSettingsClick}
           onTradeMessagesClick={handleTradeMessagesClick}
-          onManageListingsClick={handleManageListingsClick}
           onItemSearchClick={handleItemSearchClick}
           onQuickListClick={handleQuickListClick}
           onCurrencyValuationClick={handleCurrencyValuationClick}
           onMarketSearchClick={handleMarketSearchClick}
+          onCommandMenuClick={handleCommandMenuClick}
           onDisableClick={handleDisableClick}
           unreadCount={chatUnreadCount}
           tradeOffersCount={totalTradeOffersCount}

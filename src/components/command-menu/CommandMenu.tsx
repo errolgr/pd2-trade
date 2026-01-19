@@ -203,14 +203,14 @@ export const CommandMenu: React.FC = () => {
               )}
             </CommandItem>
             <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.QUICK_LIST, 'panel', 'over-diablo')}
+              onSelect={() => handleSelect(VIEW_IDS.MARKET_SEARCH, 'panel', 'over-diablo')}
               className="cursor-pointer"
             >
-              <List className="mr-2 h-4 w-4" />
-              <span>Quick List</span>
-              {settings?.hotkeyKeyListItem && (
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              <span>Market Search</span>
+              {settings?.hotkeyKeyMarketSearch && (
                 <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
+                  {formatHotkey(settings.hotkeyModifierMarketSearch || 'ctrl', settings.hotkeyKeyMarketSearch)}
                 </CommandShortcut>
               )}
             </CommandItem>
@@ -229,14 +229,14 @@ export const CommandMenu: React.FC = () => {
           </CommandGroup>
           <CommandGroup heading="Trading">
             <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.MARKET_SEARCH, 'panel', 'over-diablo')}
+              onSelect={() => handleSelect(VIEW_IDS.QUICK_LIST, 'panel', 'over-diablo')}
               className="cursor-pointer"
             >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              <span>Market Search</span>
-              {settings?.hotkeyKeyMarketSearch && (
+              <List className="mr-2 h-4 w-4" />
+              <span>Manage Listings</span>
+              {settings?.hotkeyKeyListItem && (
                 <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierMarketSearch || 'ctrl', settings.hotkeyKeyMarketSearch)}
+                  {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
                 </CommandShortcut>
               )}
             </CommandItem>

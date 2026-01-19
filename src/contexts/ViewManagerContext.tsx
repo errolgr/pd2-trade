@@ -297,7 +297,7 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   useEffect(() => {
     const previousFocus = previousDiabloFocusRef.current;
-    const autoCloseEnabled = true;
+    const autoCloseEnabled = false;
 
     // Diablo just lost focus
     if (previousFocus === true && isDiabloFocused === false && autoCloseEnabled) {

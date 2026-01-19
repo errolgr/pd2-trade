@@ -1,5 +1,6 @@
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketSearchFilters } from './types';
+import { getFilteredAndMergedModifiers, MERGED_MODIFIERS } from './modifier-utils';
 
 export function buildMarketSearchQuery(
   filters: MarketSearchFilters,
@@ -95,21 +96,198 @@ export function buildMarketSearchQuery(
     } as any;
   }
 
-  // Seller account filter
-  if (filters.sellerAccount && filters.sellerAccount.trim()) {
-    // Note: This would need to query by username, which might require a different approach
-    // For now, we'll filter client-side by username
-    // If the API supports user_id lookup, we could add that here
+  // Price filtering (hr_price) - build constraints first
+  const hrPriceConstraints: any = {};
+  if (filters.minPrice !== undefined && filters.minPrice !== null) {
+    hrPriceConstraints.$gte = filters.minPrice;
+  }
+  if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
+    hrPriceConstraints.$lte = filters.maxPrice;
   }
 
-  // Note: The following filters need to be done client-side as they may not be directly queryable:
-  // - Level (item.level or item.required_level)
-  // - Dexterity (item.required_dexterity or in modifiers)
-  // - Strength (item.required_strength or in modifiers)
-  // - Item Level (item.item_level or item.ilvl)
-  // - Price filtering (hr_price)
-  // - Sale type filtering
-  // We'll filter results after fetching
+  // Level filtering (item.requirements.level)
+  if (filters.levelMin !== undefined && filters.levelMin !== null) {
+    query['item.requirements.level'] = {
+      ...(query['item.requirements.level'] || {}),
+      $gte: filters.levelMin,
+    } as any;
+  }
+  if (filters.levelMax !== undefined && filters.levelMax !== null) {
+    query['item.requirements.level'] = {
+      ...(query['item.requirements.level'] || {}),
+      $lte: filters.levelMax,
+    } as any;
+  }
+
+  // Dexterity filtering (item.requirements.dexterity)
+  if (filters.dexterityMin !== undefined && filters.dexterityMin !== null) {
+    query['item.requirements.dexterity'] = {
+      ...(query['item.requirements.dexterity'] || {}),
+      $gte: filters.dexterityMin,
+    } as any;
+  }
+  if (filters.dexterityMax !== undefined && filters.dexterityMax !== null) {
+    query['item.requirements.dexterity'] = {
+      ...(query['item.requirements.dexterity'] || {}),
+      $lte: filters.dexterityMax,
+    } as any;
+  }
+
+  // Strength filtering (item.requirements.strength)
+  if (filters.strengthMin !== undefined && filters.strengthMin !== null) {
+    query['item.requirements.strength'] = {
+      ...(query['item.requirements.strength'] || {}),
+      $gte: filters.strengthMin,
+    } as any;
+  }
+  if (filters.strengthMax !== undefined && filters.strengthMax !== null) {
+    query['item.requirements.strength'] = {
+      ...(query['item.requirements.strength'] || {}),
+      $lte: filters.strengthMax,
+    } as any;
+  }
+
+  // Item level filtering (item.item_level)
+  if (filters.itemLevelMin !== undefined && filters.itemLevelMin !== null) {
+    query['item.item_level'] = {
+      ...(query['item.item_level'] || {}),
+      $gte: filters.itemLevelMin,
+    } as any;
+  }
+  if (filters.itemLevelMax !== undefined && filters.itemLevelMax !== null) {
+    query['item.item_level'] = {
+      ...(query['item.item_level'] || {}),
+      $lte: filters.itemLevelMax,
+    } as any;
+  }
+
+  // Seller account filter
+  if (filters.sellerAccount && filters.sellerAccount.trim()) {
+    // Try to match by username or in_game_account
+    query['user.username'] = {
+      $regex: filters.sellerAccount.trim(),
+      $options: 'i',
+    } as any;
+  }
+
+  // Sale type filtering - apply after price constraints
+  if (filters.saleType && filters.saleType !== 'any') {
+    switch (filters.saleType) {
+      case 'hr_only':
+        // Has hr_price and price string matches hr_price or no price string
+        hrPriceConstraints.$exists = true;
+        hrPriceConstraints.$gt = 0;
+        // Note: Price string matching might need to be done client-side or via complex query
+        break;
+      case 'price_with_note':
+        // Has hr_price and price string that doesn't match hr_price
+        hrPriceConstraints.$exists = true;
+        hrPriceConstraints.$gt = 0;
+        query['price'] = {
+          $exists: true,
+          $ne: null,
+          $regex: '.+', // Non-empty string
+        } as any;
+        break;
+      case 'no_listed_price':
+        // No hr_price or hr_price is 0/null - this conflicts with price filters, so skip if price filters exist
+        if (Object.keys(hrPriceConstraints).length === 0) {
+          query['$or'] = [{ hr_price: { $exists: false } }, { hr_price: null }, { hr_price: 0 }] as any;
+        }
+        break;
+    }
+  }
+
+  // Apply hr_price constraints if any
+  if (Object.keys(hrPriceConstraints).length > 0) {
+    query['hr_price'] = hrPriceConstraints as any;
+  }
+
+  // Modifier filters
+  if (filters.modifiers && filters.modifiers.length > 0) {
+    // Check if we have any merged modifiers (which need special handling)
+    const hasMergedModifiers = filters.modifiers.some((filterMod) => {
+      const mergedModifier = MERGED_MODIFIERS.find((m) => m.name === filterMod.name);
+      return mergedModifier && mergedModifier.originalNames.length > 1;
+    });
+
+    if (hasMergedModifiers && filters.modifiers.length === 1) {
+      // Single merged modifier - use $elemMatch directly (without $all) - this works!
+      const filterMod = filters.modifiers[0];
+      const valuesConstraint: any = {};
+      if (filterMod.min !== undefined && filterMod.min !== null) {
+        valuesConstraint.$gte = Number(filterMod.min);
+      }
+      if (filterMod.max !== undefined && filterMod.max !== null) {
+        valuesConstraint.$lte = Number(filterMod.max);
+      }
+
+      const mergedModifier = MERGED_MODIFIERS.find((m) => m.name === filterMod.name);
+      if (mergedModifier && mergedModifier.originalNames.length > 1) {
+        const orConditions = mergedModifier.originalNames.map((originalName) => ({
+          name: originalName,
+        }));
+
+        const elemMatch: any = {
+          $or: orConditions,
+        };
+
+        if (Object.keys(valuesConstraint).length > 0) {
+          elemMatch['values.0'] = valuesConstraint;
+        }
+
+        query['item.modifiers'] = { $elemMatch: elemMatch } as any;
+      }
+    } else {
+      // Multiple modifiers or non-merged modifiers - use $all with $elemMatch
+      const modifierQueries: any[] = [];
+
+      filters.modifiers.forEach((filterMod) => {
+        // Build values constraint object if min/max are provided
+        const valuesConstraint: any = {};
+        if (filterMod.min !== undefined && filterMod.min !== null) {
+          valuesConstraint.$gte = Number(filterMod.min);
+        }
+        if (filterMod.max !== undefined && filterMod.max !== null) {
+          valuesConstraint.$lte = Number(filterMod.max);
+        }
+
+        // Check if this is a merged modifier by looking in MERGED_MODIFIERS
+        const mergedModifier = MERGED_MODIFIERS.find((m) => m.name === filterMod.name);
+
+        if (mergedModifier && mergedModifier.originalNames.length > 1) {
+          // For merged modifiers in $all context, we'll use separate $elemMatch entries
+          // (since $or inside $elemMatch doesn't work with $all)
+          mergedModifier.originalNames.forEach((originalName) => {
+            const elemMatch: any = {
+              name: originalName,
+            };
+
+            if (Object.keys(valuesConstraint).length > 0) {
+              elemMatch['values.0'] = valuesConstraint;
+            }
+
+            modifierQueries.push({ $elemMatch: elemMatch });
+          });
+        } else {
+          // Regular modifier (single name) or skill modifier with ID
+          const elemMatch: any = {
+            name: filterMod.name,
+          };
+
+          if (Object.keys(valuesConstraint).length > 0) {
+            elemMatch['values.0'] = valuesConstraint;
+          }
+
+          modifierQueries.push({ $elemMatch: elemMatch });
+        }
+      });
+
+      if (modifierQueries.length > 0) {
+        query['item.modifiers'] = { $all: modifierQueries };
+      }
+    }
+  }
 
   return query as MarketListingQuery;
 }

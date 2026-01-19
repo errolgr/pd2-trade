@@ -5,44 +5,38 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { modifiers } from '@/assets/modifiers';
+import { getFilteredAndMergedModifiers } from '../lib/modifier-utils';
 
 interface ModifierComboboxProps {
   selectedModifiers: string[];
   onSelectModifier: (modifierName: string) => void;
 }
 
+type FilteredModifier = ReturnType<typeof getFilteredAndMergedModifiers>[number];
+
 export const ModifierCombobox: React.FC<ModifierComboboxProps> = ({ selectedModifiers, onSelectModifier }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Get display name for modifier
-  const getModifierDisplayName = (modifier: (typeof modifiers)[number]): string => {
-    if (
-      modifier.description?.label &&
-      typeof modifier.description.label === 'object' &&
-      'positive' in modifier.description.label
-    ) {
-      return modifier.description.label.positive;
-    }
-    return modifier.name;
-  };
+  // Get all filtered and merged modifiers
+  const allFilteredModifiers = useMemo(() => getFilteredAndMergedModifiers(), []);
 
   // Filter modifiers based on search
   const filteredModifiers = useMemo(() => {
     if (!search.trim()) {
-      return modifiers;
+      return allFilteredModifiers;
     }
 
     const searchLower = search.toLowerCase();
-    return modifiers.filter((mod) => {
-      const displayName = getModifierDisplayName(mod).toLowerCase();
+    return allFilteredModifiers.filter((mod) => {
+      const displayName = mod.description.label.positive.toLowerCase();
       const name = mod.name.toLowerCase();
-      return displayName.includes(searchLower) || name.includes(searchLower);
+      const originalNames = mod.originalNames.join(' ').toLowerCase();
+      return displayName.includes(searchLower) || name.includes(searchLower) || originalNames.includes(searchLower);
     });
-  }, [search]);
+  }, [search, allFilteredModifiers]);
 
-  const handleSelectModifier = (modifier: (typeof modifiers)[number]) => {
+  const handleSelectModifier = (modifier: FilteredModifier) => {
     onSelectModifier(modifier.name);
     // Don't close the popover to allow multiple selections
   };
@@ -53,8 +47,8 @@ export const ModifierCombobox: React.FC<ModifierComboboxProps> = ({ selectedModi
       return 'Select modifiers...';
     }
     if (selectedModifiers.length === 1) {
-      const modifier = modifiers.find((m) => m.name === selectedModifiers[0]);
-      return modifier ? getModifierDisplayName(modifier) : selectedModifiers[0];
+      const modifier = allFilteredModifiers.find((m) => m.name === selectedModifiers[0]);
+      return modifier ? modifier.description.label.positive : selectedModifiers[0];
     }
     return `${selectedModifiers.length} modifiers selected`;
   };
@@ -87,24 +81,28 @@ export const ModifierCombobox: React.FC<ModifierComboboxProps> = ({ selectedModi
               <CommandEmpty>No modifiers found.</CommandEmpty>
 
               <CommandGroup heading="Modifiers">
-                {filteredModifiers
-                  .filter((modifier) => !!modifier.description?.function)
-                  .map((modifier) => {
-                    const displayName = getModifierDisplayName(modifier);
-                    const isSelected = selectedModifiers.includes(modifier.name);
-                    return (
-                      <CommandItem
-                        key={modifier.id}
-                        value={`${displayName} ${modifier.name}`}
-                        onSelect={() => handleSelectModifier(modifier)}
-                        className="cursor-pointer"
-                      >
-                        <CheckIcon className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
-                        <span className="font-medium flex-1">{displayName}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">({modifier.name})</span>
-                      </CommandItem>
-                    );
-                  })}
+                {filteredModifiers.map((modifier) => {
+                  const displayName = modifier.description.label.positive;
+                  const isSelected = selectedModifiers.includes(modifier.name);
+                  const isMerged = modifier.originalNames.length > 1;
+                  return (
+                    <CommandItem
+                      key={modifier.id}
+                      value={`${displayName} ${modifier.name} ${modifier.originalNames.join(' ')}`}
+                      onSelect={() => handleSelectModifier(modifier)}
+                      className="cursor-pointer"
+                    >
+                      <CheckIcon className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                      <span className="font-medium flex-1">{displayName}</span>
+                      {isMerged && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({modifier.originalNames.length} merged)
+                        </span>
+                      )}
+                      {!isMerged && <span className="ml-2 text-xs text-muted-foreground">({modifier.name})</span>}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </ScrollArea>

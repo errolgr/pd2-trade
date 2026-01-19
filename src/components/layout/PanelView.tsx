@@ -469,12 +469,7 @@ export const PanelView: React.FC<PanelViewProps> = ({
   }
 
   const content = (
-    <div
-      className={cn(
-        'bg-background border border-border rounded-none shadow-lg overflow-hidden h-full w-full',
-        className,
-      )}
-    >
+    <div className={cn('shadow-lg overflow-hidden h-full w-full', className)}>
       <div className="w-full h-full overflow-auto">{children}</div>
     </div>
   );
