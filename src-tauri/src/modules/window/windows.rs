@@ -7,10 +7,11 @@ use windows_sys::Win32::{
     Foundation::{HMODULE, HWND, LPARAM, POINT, RECT, WPARAM},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        CallNextHookEx, FindWindowW, GetForegroundWindow, GetMessageW, GetWindowRect,
-        GetWindowThreadProcessId, SetWindowsHookExW, SystemParametersInfoW, TranslateMessage,
-        UnhookWindowsHookEx, DispatchMessageW, MSG, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA,
-        WINEVENT_OUTOFCONTEXT, WH_MOUSE_LL, WM_MOUSEMOVE, HC_ACTION, HHOOK,
+        CallNextHookEx, FindWindowW, GetForegroundWindow, GetMessageW, GetSystemMetrics,
+        GetWindowRect, GetWindowThreadProcessId, SetWindowsHookExW, SystemParametersInfoW,
+        TranslateMessage, UnhookWindowsHookEx, DispatchMessageW, MSG, EVENT_SYSTEM_FOREGROUND,
+        SPI_GETWORKAREA, SM_CXSCREEN, SM_CYSCREEN, WINEVENT_OUTOFCONTEXT, WH_MOUSE_LL,
+        WM_MOUSEMOVE, HC_ACTION, HHOOK,
     },
 };
 
@@ -90,10 +91,28 @@ pub fn get_work_area(_app: &AppHandle) -> Option<WindowRect> {
     })
 }
 
+fn is_diablo_fullscreen(app: &AppHandle) -> bool {
+    if let Some(diablo_rect) = get_diablo_rect(app) {
+        let screen_width = unsafe { GetSystemMetrics(SM_CXSCREEN) };
+        let screen_height = unsafe { GetSystemMetrics(SM_CYSCREEN) };
+        
+        // Check if Diablo window dimensions match screen dimensions (with small tolerance for borders)
+        // A window is considered fullscreen if it's within 10 pixels of the screen size
+        let tolerance = 10;
+        let width_match = (diablo_rect.width as i32 - screen_width).abs() <= tolerance;
+        let height_match = (diablo_rect.height as i32 - screen_height).abs() <= tolerance;
+        
+        return width_match && height_match;
+    }
+    false
+}
+
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    // Always use work area (full screen) - MainLayout should never be affected by Diablo
-    // DiabloFrame component will handle positioning over Diablo window
-    get_work_area(app)
+    if is_diablo_focused() && is_diablo_fullscreen(app) {
+        get_diablo_rect(app)
+    } else {
+        get_work_area(app)
+    }
 }
 
 // --- Event-driven foreground monitoring ---

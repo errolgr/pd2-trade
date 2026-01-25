@@ -78,6 +78,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       setOnNewMessage(undefined);
     };
   }, [selectedConversation, setOnNewMessage]);
+
   // Load messages for a conversation
   const loadMessages = useCallback(
     async (conversationId: string) => {
@@ -468,7 +469,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   };
 
   return (
-    <Card className="w-full h-full shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
+    <Card className="w-full h-full shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-95 flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div
         data-drag-handle

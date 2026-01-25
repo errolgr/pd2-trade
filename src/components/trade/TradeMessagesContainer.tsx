@@ -50,7 +50,7 @@ export const TradeMessagesContainer: React.FC = () => {
 
   return (
     <TooltipProvider>
-      <div className="w-full h-full flex flex-col bg-neutral-900 opacity-90 rounded-md overflow-hidden">
+      <div className="w-full h-full flex flex-col bg-neutral-900 opacity-95 rounded-md overflow-hidden">
         <Tabs defaultValue="whispers"
           className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Drag Handle with Title and Tabs */}

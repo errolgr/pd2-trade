@@ -303,6 +303,20 @@ const MainWindow: React.FC = () => {
   // Handle changelog
   useChangelog();
 
+  // Helper function to constrain chat button position within viewport bounds
+  const constrainChatButtonPosition = (x: number, y: number, buttonSize: number): { x: number; y: number } => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Constrain x position: ensure button doesn't go outside left or right edges
+    const constrainedX = Math.max(0, Math.min(x, viewportWidth - buttonSize));
+
+    // Constrain y position: ensure button doesn't go outside top or bottom edges
+    const constrainedY = Math.max(0, Math.min(y, viewportHeight - buttonSize));
+
+    return { x: constrainedX, y: constrainedY };
+  };
+
   // Handle chat button overlay visibility based on settings and Diablo focus
   useEffect(() => {
     if (settings.chatButtonOverlayEnabled === false) {
@@ -348,10 +362,13 @@ const MainWindow: React.FC = () => {
       const x = diabloFrameLeft + rect.width - buttonSize - padding;
       const y = diabloFrameTop + rect.height - buttonSize - padding;
 
+      // Constrain position to stay within viewport bounds
+      const constrainedPosition = constrainChatButtonPosition(x, y, buttonSize);
+
       showView(VIEW_IDS.CHAT_BUTTON, {
         type: 'fixed',
         position: 'custom',
-        customPosition: { x, y },
+        customPosition: constrainedPosition,
       });
     };
 
@@ -486,8 +503,11 @@ const MainWindow: React.FC = () => {
             const x = diabloFrameLeft + rect.width - buttonSize - padding;
             const y = diabloFrameTop + rect.height - buttonSize - padding;
 
+            // Constrain position to stay within viewport bounds
+            const constrainedPosition = constrainChatButtonPosition(x, y, buttonSize);
+
             updateView(VIEW_IDS.CHAT_BUTTON, {
-              customPosition: { x, y },
+              customPosition: constrainedPosition,
             });
           }
         }

@@ -121,6 +121,36 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     updateView,
   ]);
 
+  // Helper function to constrain toast position within viewport bounds
+  const constrainToastPosition = (x: number, y: number): { x: number; y: number } => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Minimum expected toast size (width and height) to ensure it doesn't go off-screen
+    // Toasts can vary in size, but we use a reasonable minimum
+    const minToastWidth = 300;
+    const minToastHeight = 80;
+
+    // Minimum padding from edges
+    const minPadding = 16;
+
+    // Constrain x position: ensure toast doesn't go outside right edge
+    // Since toasts are positioned from bottom-right, x represents distance from left
+    // right = viewportWidth - x, so we need: right >= minPadding
+    // Therefore: x <= viewportWidth - minPadding
+    // Also ensure x is at least 0
+    const constrainedX = Math.max(0, Math.min(x, viewportWidth - minPadding));
+
+    // Constrain y position: ensure toast doesn't go outside bottom edge
+    // Since toasts are positioned from bottom-right, y represents distance from top
+    // bottom = viewportHeight - y, so we need: bottom >= minPadding
+    // Therefore: y <= viewportHeight - minPadding
+    // Also ensure y is at least 0
+    const constrainedY = Math.max(0, Math.min(y, viewportHeight - minPadding));
+
+    return { x: constrainedX, y: constrainedY };
+  };
+
   // Update toast position based on Diablo focus
   useEffect(() => {
     if (!isTauri()) return;
@@ -136,10 +166,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
           // Position toasts in bottom-right corner of Diablo window with padding
           const padding = 20;
-          setToastPosition({
-            x: diabloFrameRight - padding,
-            y: diabloFrameBottom - padding,
-          });
+          const x = diabloFrameRight - padding;
+          const y = diabloFrameBottom - padding;
+
+          // Constrain position to stay within viewport bounds
+          const constrainedPosition = constrainToastPosition(x, y);
+
+          setToastPosition(constrainedPosition);
         } else {
           // Diablo not focused, use default position (bottom-right of main layout)
           setToastPosition(null);
@@ -151,7 +184,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     };
 
     updateToastPosition();
-  }, [isDiabloFocused, diabloRectRelative]);
+  }, [isDiabloFocused, diabloRectRelative, dimensions]);
 
   const renderViewContent = useCallback((viewId: string) => {
     switch (viewId) {
@@ -206,7 +239,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         const getDefaultSize = (viewId: string): { width: number; height: number } => {
           switch (viewId) {
             case VIEW_IDS.ITEM_SEARCH:
-              // Use Diablo window height if available, otherwise fallback to 600
+              // Height will be adjusted based on Diablo window height in getDefaultPosition
+              if (stableDiabloRectRelative) {
+                return { width: 500, height: stableDiabloRectRelative.height };
+              }
               return { width: 500, height: diabloHeight ?? 600 };
             case VIEW_IDS.QUICK_LIST:
               return { width: 600, height: 512 }; // From openWindowAtCursor
@@ -219,7 +255,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             case VIEW_IDS.TRADE_MESSAGES:
               return { width: 600, height: 350 }; // Panel over diablo (default)
             case VIEW_IDS.COMMAND_MENU:
-              return { width: 420, height: 470 }; // Command menu size
+              return { width: 600, height: 470 }; // Command menu size
             case VIEW_IDS.SETTINGS:
               return { width: 1025, height: 700 }; // From useTray
             case VIEW_IDS.CHANGELOG:
@@ -229,13 +265,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           }
         };
 
-        // Get default position - center CommandMenu on Diablo rect
+        // Get default position - center all views on Diablo rect, except Item Search which is top-right aligned
         const getDefaultPosition = (viewId: string): { x: number; y: number } | undefined => {
-          if (viewId === VIEW_IDS.COMMAND_MENU && stableDiabloRectRelative) {
-            const menuSize = getDefaultSize(VIEW_IDS.COMMAND_MENU);
+          if (stableDiabloRectRelative) {
+            if (viewId === VIEW_IDS.ITEM_SEARCH) {
+              // Position Item Search so top-right aligns with Diablo's top-right
+              // Height is set in getDefaultSize to match Diablo window height
+              const width = 500; // Item Search width
+              return {
+                x: stableDiabloRectRelative.x + stableDiabloRectRelative.width - width,
+                y: stableDiabloRectRelative.y,
+              };
+            }
+            const viewSize = getDefaultSize(viewId);
             return {
-              x: stableDiabloRectRelative.x + (stableDiabloRectRelative.width - menuSize.width) / 2,
-              y: stableDiabloRectRelative.y + (stableDiabloRectRelative.height - menuSize.height) / 2,
+              x: stableDiabloRectRelative.x + (stableDiabloRectRelative.width - viewSize.width) / 2,
+              y: stableDiabloRectRelative.y + (stableDiabloRectRelative.height - viewSize.height) / 2,
             };
           }
           return undefined;

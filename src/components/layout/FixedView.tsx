@@ -65,6 +65,21 @@ export const FixedView: React.FC<FixedViewProps> = ({ viewId, children, classNam
       absoluteY = position.y + data.y;
     }
 
+    // Constrain position to stay within viewport bounds
+    if (nodeRef.current) {
+      const rect = nodeRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const elementWidth = rect.width;
+      const elementHeight = rect.height;
+
+      // Constrain x position: ensure element doesn't go outside left or right edges
+      absoluteX = Math.max(0, Math.min(absoluteX, viewportWidth - elementWidth));
+
+      // Constrain y position: ensure element doesn't go outside top or bottom edges
+      absoluteY = Math.max(0, Math.min(absoluteY, viewportHeight - elementHeight));
+    }
+
     // Clear the drag start position
     dragStartPositionRef.current = null;
 
