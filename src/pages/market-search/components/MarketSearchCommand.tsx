@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,6 +9,7 @@ interface MarketSearchCommandProps {
   onOpenChange: (open: boolean) => void;
   onSelectItemType: (typeValue: string | { $in: string[] }) => void;
   onSelectUniqueItem: (itemName: string, baseCode?: string) => void;
+  searchText?: string;
   children: React.ReactNode;
 }
 
@@ -19,9 +20,25 @@ export const MarketSearchCommand: React.FC<MarketSearchCommandProps> = ({
   onOpenChange,
   onSelectItemType,
   onSelectUniqueItem,
+  searchText = '',
   children,
 }) => {
-  const [search, setSearch] = useState('');
+  console.log('[MarketSearchCommand] Component render, searchText prop:', searchText);
+  const [search, setSearch] = useState(searchText);
+
+  // Sync internal search state with parent's searchText when it changes
+  useEffect(() => {
+    console.log('[MarketSearchCommand] searchText prop changed:', {
+      newSearchText: searchText,
+      currentInternalSearch: search,
+    });
+    setSearch(searchText);
+  }, [searchText]);
+
+  // Debug: Log when internal search state changes
+  useEffect(() => {
+    console.log('[MarketSearchCommand] Internal search state changed:', search);
+  }, [search]);
 
   const categorizedItems = useMemo(() => getCategorizedItems(), []);
 
@@ -33,11 +50,11 @@ export const MarketSearchCommand: React.FC<MarketSearchCommandProps> = ({
 
     const searchLower = search.toLowerCase();
     const filtered: typeof categorizedItems = {
-      Weapons: { itemTypes: [], uniqueItems: [] },
-      Armor: { itemTypes: [], uniqueItems: [] },
-      Accessories: { itemTypes: [], uniqueItems: [] },
-      'Class Specific': { itemTypes: [], uniqueItems: [] },
-      Other: { itemTypes: [], uniqueItems: [] },
+      Weapons: { itemTypes: [], uniqueItems: [], setItems: [] },
+      Armor: { itemTypes: [], uniqueItems: [], setItems: [] },
+      Accessories: { itemTypes: [], uniqueItems: [], setItems: [] },
+      'Class Specific': { itemTypes: [], uniqueItems: [], setItems: [] },
+      Other: { itemTypes: [], uniqueItems: [], setItems: [] },
     };
 
     Object.keys(categorizedItems).forEach((category) => {
@@ -61,15 +78,27 @@ export const MarketSearchCommand: React.FC<MarketSearchCommandProps> = ({
   }, [categorizedItems, search]);
 
   const handleSelectItemType = (item: CategorizedItemType) => {
+    console.log('[MarketSearchCommand] handleSelectItemType called:', {
+      typeLabel: item.typeLabel,
+      typeValue: item.typeValue,
+    });
     onSelectItemType(item.typeValue);
+    setSearch(item.typeLabel);
+    console.log('[MarketSearchCommand] Set internal search to:', item.typeLabel);
     onOpenChange(false);
-    setSearch('');
   };
 
   const handleSelectUniqueItem = (item: CategorizedUniqueItem) => {
+    console.log('[MarketSearchCommand] handleSelectUniqueItem called:', {
+      name: item.name,
+      base_code: item.base_code,
+      base: item.base,
+      id: item.id,
+    });
     onSelectUniqueItem(item.name, item.base_code);
+    setSearch(item.name);
+    console.log('[MarketSearchCommand] Set internal search to:', item.name);
     onOpenChange(false);
-    setSearch('');
   };
 
   return (

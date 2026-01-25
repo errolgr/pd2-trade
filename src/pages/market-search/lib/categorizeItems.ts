@@ -1,5 +1,5 @@
 import { itemTypes } from '@/common/item-types';
-import { uniqueItems } from '@/assets/items';
+import { uniqueItems, setItems } from '@/assets/items';
 
 export type ItemCategory = 'Weapons' | 'Armor' | 'Accessories' | 'Class Specific' | 'Other';
 
@@ -19,9 +19,22 @@ export interface CategorizedUniqueItem {
   category: ItemCategory;
 }
 
+export interface CategorizedSetItem {
+  id: number;
+  key: string;
+  name: string;
+  base_code: string;
+  base: string;
+  level: number;
+  set_code: string;
+  set: string;
+  category: ItemCategory;
+}
+
 export interface CategorizedItems {
   itemTypes: CategorizedItemType[];
   uniqueItems: CategorizedUniqueItem[];
+  setItems: CategorizedSetItem[];
 }
 
 /**
@@ -174,21 +187,42 @@ export function categorizeUniqueItems(): CategorizedUniqueItem[] {
 }
 
 /**
+ * Categorizes all set items
+ */
+export function categorizeSetItems(): CategorizedSetItem[] {
+  return setItems.map((item) => ({
+    id: item.id,
+    key: item.key,
+    name: item.name,
+    base_code: item.base_code,
+    base: item.base,
+    level: item.level,
+    set_code: item.set_code,
+    set: item.set,
+    category: categorizeUniqueItem(item.base_code), // Use same categorization logic as unique items
+  }));
+}
+
+/**
  * Gets all categorized items grouped by category
  */
 export function getCategorizedItems(): Record<
   ItemCategory,
-  { itemTypes: CategorizedItemType[]; uniqueItems: CategorizedUniqueItem[] }
+  { itemTypes: CategorizedItemType[]; uniqueItems: CategorizedUniqueItem[]; setItems: CategorizedSetItem[] }
 > {
   const categorizedTypes = categorizeItemTypes();
   const categorizedUniques = categorizeUniqueItems();
+  const categorizedSets = categorizeSetItems();
 
-  const result: Record<ItemCategory, { itemTypes: CategorizedItemType[]; uniqueItems: CategorizedUniqueItem[] }> = {
-    Weapons: { itemTypes: [], uniqueItems: [] },
-    Armor: { itemTypes: [], uniqueItems: [] },
-    Accessories: { itemTypes: [], uniqueItems: [] },
-    'Class Specific': { itemTypes: [], uniqueItems: [] },
-    Other: { itemTypes: [], uniqueItems: [] },
+  const result: Record<
+    ItemCategory,
+    { itemTypes: CategorizedItemType[]; uniqueItems: CategorizedUniqueItem[]; setItems: CategorizedSetItem[] }
+  > = {
+    Weapons: { itemTypes: [], uniqueItems: [], setItems: [] },
+    Armor: { itemTypes: [], uniqueItems: [], setItems: [] },
+    Accessories: { itemTypes: [], uniqueItems: [], setItems: [] },
+    'Class Specific': { itemTypes: [], uniqueItems: [], setItems: [] },
+    Other: { itemTypes: [], uniqueItems: [], setItems: [] },
   };
 
   categorizedTypes.forEach((item) => {
@@ -197,6 +231,10 @@ export function getCategorizedItems(): Record<
 
   categorizedUniques.forEach((item) => {
     result[item.category].uniqueItems.push(item);
+  });
+
+  categorizedSets.forEach((item) => {
+    result[item.category].setItems.push(item);
   });
 
   return result;

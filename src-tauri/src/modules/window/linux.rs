@@ -345,3 +345,94 @@ pub fn cleanup_foreground_monitoring() {
     // No-op on Linux, as the thread will die with the app
     // or we could implement a kill signal but this is acceptable for now
 }
+
+// --- Global mouse tracking using X11 ---
+
+static MOUSE_CALLBACK: Mutex<Option<Box<dyn Fn(f64, f64) + Send>>> = Mutex::new(None);
+static MOUSE_TRACKING_THREAD: Mutex<Option<std::thread::JoinHandle<()>>> = Mutex::new(None);
+
+pub fn start_global_mouse_tracking<F: Fn(f64, f64) + Send + 'static>(callback: F) -> Result<(), String> {
+    // Check if already running
+    {
+        let mut thread_guard = MOUSE_TRACKING_THREAD.lock().unwrap();
+        if thread_guard.is_some() {
+            return Err("Mouse tracking already started".to_string());
+        }
+    }
+
+    // Store the callback
+    *MOUSE_CALLBACK.lock().unwrap() = Some(Box::new(callback));
+
+    // Start tracking thread
+    let handle = std::thread::spawn(move || {
+        let (conn, screen_num) = match x11rb::connect(None) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[MouseStream] Error connecting to X11 for mouse tracking: {}", e);
+                return;
+            }
+        };
+
+        let screen = &conn.setup().roots[screen_num];
+        let root = screen.root;
+
+        println!("[MouseStream] Linux mouse tracking thread started");
+
+        let mut last_x: Option<i16> = None;
+        let mut last_y: Option<i16> = None;
+
+        loop {
+            // Query pointer position
+            match conn.query_pointer(root) {
+                Ok(cookie) => {
+                    match cookie.reply() {
+                        Ok(reply) => {
+                            let x = reply.root_x;
+                            let y = reply.root_y;
+
+                            // Only emit if position changed (avoid duplicate events)
+                            let should_emit = match (last_x, last_y) {
+                                (Some(lx), Some(ly)) => lx != x || ly != y,
+                                _ => true,
+                            };
+
+                            if should_emit {
+                                last_x = Some(x);
+                                last_y = Some(y);
+
+                                if let Some(callback) = &*MOUSE_CALLBACK.lock().unwrap() {
+                                    callback(x as f64, y as f64);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("[MouseStream] Error getting pointer reply: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[MouseStream] Error querying pointer: {}", e);
+                }
+            }
+
+            // Poll at ~20Hz (50ms) to match Windows implementation
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+    });
+
+    // Store the thread handle
+    *MOUSE_TRACKING_THREAD.lock().unwrap() = Some(handle);
+
+    Ok(())
+}
+
+pub fn stop_global_mouse_tracking() {
+    // Clear callback
+    *MOUSE_CALLBACK.lock().unwrap() = None;
+
+    // Note: We can't easily stop the thread without a flag, but clearing the callback
+    // will prevent it from emitting events. The thread will exit when the app exits.
+    // For a more robust solution, we could use an Arc<AtomicBool> flag.
+    let mut thread_guard = MOUSE_TRACKING_THREAD.lock().unwrap();
+    *thread_guard = None;
+}

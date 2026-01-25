@@ -188,7 +188,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         top: 0,
         width: `${dimensions.width}px`,
         height: `${dimensions.height}px`,
-        border: '2px solid yellow',
         zIndex: 0,
       }}
     >

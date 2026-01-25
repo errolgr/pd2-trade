@@ -269,7 +269,6 @@ export const useAppShortcuts = (
   onCurrencyValuation: ShortcutHandler,
   onChat?: ShortcutHandler,
   onOffers?: ShortcutHandler,
-  onMarketSearch?: ShortcutHandler,
   onCommandMenu?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
@@ -319,14 +318,6 @@ export const useAppShortcuts = (
       });
     }
 
-    if (settings.hotkeyKeyMarketSearch && onMarketSearch) {
-      configs.push({
-        modifier: settings.hotkeyModifierMarketSearch || 'ctrl',
-        key: settings.hotkeyKeyMarketSearch,
-        handler: onMarketSearch,
-      });
-    }
-
     if (settings.hotkeyKeyCommandMenu && onCommandMenu && !settings.commandMenuUseDoubleShift) {
       configs.push({
         modifier: settings.hotkeyModifierCommandMenu || 'ctrl',
@@ -348,8 +339,6 @@ export const useAppShortcuts = (
     settings.hotkeyKeyChat,
     settings.hotkeyModifierOffers,
     settings.hotkeyKeyOffers,
-    settings.hotkeyModifierMarketSearch,
-    settings.hotkeyKeyMarketSearch,
     settings.hotkeyModifierCommandMenu,
     settings.hotkeyKeyCommandMenu,
     settings.commandMenuUseDoubleShift,
@@ -358,7 +347,6 @@ export const useAppShortcuts = (
     onCurrencyValuation,
     onChat,
     onOffers,
-    onMarketSearch,
     onCommandMenu,
   ]);
 

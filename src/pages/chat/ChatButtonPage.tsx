@@ -83,13 +83,6 @@ const ChatButtonPageContent: React.FC = () => {
     });
   };
 
-  const handleMarketSearchClick = async () => {
-    toggleView(VIEW_IDS.MARKET_SEARCH, {
-      type: 'panel',
-      position: 'over-diablo',
-    });
-  };
-
   const handleDisableClick = () => {
     // The actual disable logic is handled by the 'confirm-disable-overlay' listener
     // This function just needs to exist to pass to ChatButton
@@ -101,24 +94,20 @@ const ChatButtonPageContent: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-full pointer-events-none"
-      style={{ width: '200px', height: '200px' }}>
-      <div className="absolute bottom-0 right-0">
-        <ChatButton
-          handleClick={handleClick}
-          onSettingsClick={handleSettingsClick}
-          onTradeMessagesClick={handleTradeMessagesClick}
-          onItemSearchClick={handleItemSearchClick}
-          onQuickListClick={handleQuickListClick}
-          onCurrencyValuationClick={handleCurrencyValuationClick}
-          onMarketSearchClick={handleMarketSearchClick}
-          onCommandMenuClick={handleCommandMenuClick}
-          onDisableClick={handleDisableClick}
-          unreadCount={chatUnreadCount}
-          tradeOffersCount={totalTradeOffersCount}
-          tradeMessagesCount={tradeMessagesCount}
-        />
-      </div>
+    <div className="pointer-events-none">
+      <ChatButton
+        handleClick={handleClick}
+        onSettingsClick={handleSettingsClick}
+        onTradeMessagesClick={handleTradeMessagesClick}
+        onItemSearchClick={handleItemSearchClick}
+        onQuickListClick={handleQuickListClick}
+        onCurrencyValuationClick={handleCurrencyValuationClick}
+        onCommandMenuClick={handleCommandMenuClick}
+        onDisableClick={handleDisableClick}
+        unreadCount={chatUnreadCount}
+        tradeOffersCount={totalTradeOffersCount}
+        tradeMessagesCount={tradeMessagesCount}
+      />
     </div>
   );
 };

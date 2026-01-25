@@ -50,13 +50,6 @@ const hotkeyFormSchema = z
       .min(1, 'Enter a key')
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierMarketSearch: z.enum(['ctrl', 'alt']).optional(),
-    hotkeyKeyMarketSearch: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number')
-      .optional(),
     hotkeyModifierCommandMenu: z.enum(['ctrl', 'alt']).optional(),
     hotkeyKeyCommandMenu: z
       .string()
@@ -92,8 +85,6 @@ export function HotkeyForm() {
       hotkeyKeyChat: 't',
       hotkeyModifierOffers: 'ctrl',
       hotkeyKeyOffers: 'b',
-      hotkeyModifierMarketSearch: 'ctrl',
-      hotkeyKeyMarketSearch: 'm',
       hotkeyModifierCommandMenu: 'ctrl',
       hotkeyKeyCommandMenu: 'k',
       commandMenuUseDoubleShift: true,
@@ -390,52 +381,6 @@ export function HotkeyForm() {
                       type="text"
                       maxLength={1}
                       value={field.value?.toUpperCase()}
-                      className="w-12 text-center"
-                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="flex items-end gap-2 mt-4">
-            <FormField
-              control={form.control}
-              name="hotkeyModifierMarketSearch"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="mb-1 block">Market Search</FormLabel>
-                  <FormControl>
-                    <Tabs defaultValue={'ctrl'}
-                      value={field.value || 'ctrl'}>
-                      <TabsList>
-                        <TabsTrigger value={'ctrl'}
-                          onClick={() => field.onChange('ctrl')}>
-                          Ctrl
-                        </TabsTrigger>
-                        <TabsTrigger value={'alt'}
-                          onClick={() => field.onChange('alt')}>
-                          Alt
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="hotkeyKeyMarketSearch"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center">
-                  <div>+</div>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      maxLength={1}
-                      value={field.value?.toUpperCase() || ''}
                       className="w-12 text-center"
                       onChange={(e) => field.onChange(e.target.value.toLowerCase())}
                     />

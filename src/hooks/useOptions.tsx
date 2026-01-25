@@ -25,8 +25,6 @@ export interface ISettings {
   hotkeyKeyChat: string;
   hotkeyModifierOffers: 'ctrl' | 'alt';
   hotkeyKeyOffers: string;
-  hotkeyModifierMarketSearch?: 'ctrl' | 'alt';
-  hotkeyKeyMarketSearch?: string;
   hotkeyModifierCommandMenu?: 'ctrl' | 'alt';
   hotkeyKeyCommandMenu?: string;
   commandMenuUseDoubleShift?: boolean;
@@ -74,8 +72,6 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeyChat: 't',
   hotkeyModifierOffers: 'ctrl',
   hotkeyKeyOffers: 'b',
-  hotkeyModifierMarketSearch: 'ctrl',
-  hotkeyKeyMarketSearch: 'm',
   hotkeyModifierCommandMenu: 'ctrl',
   hotkeyKeyCommandMenu: 'k',
   commandMenuUseDoubleShift: true,

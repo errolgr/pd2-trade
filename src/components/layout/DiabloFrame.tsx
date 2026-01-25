@@ -17,7 +17,6 @@ export const DiabloFrame: React.FC = () => {
         width: `${diabloRectRelative.width}px`,
         height: `${diabloRectRelative.height}px`,
         zIndex: 1, // Below other overlays but above main content
-        border: '2px solid blue',
       }}
     >
       {/* Diablo frame content can go here if needed */}

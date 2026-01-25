@@ -210,15 +210,6 @@ const MainWindow: React.FC = () => {
     });
   }, [toggleView]);
 
-  // Open market search window handler
-  const openMarketSearchWindow = useCallback(async () => {
-    console.log('[LandingPage] Toggling market search view:', VIEW_IDS.MARKET_SEARCH);
-    toggleView(VIEW_IDS.MARKET_SEARCH, {
-      type: 'panel',
-      position: 'over-diablo',
-    });
-  }, [toggleView]);
-
   // Listen for request to open Quick List (Manage View) from Chat Button
   useEffect(() => {
     let unlisten: (() => void) | null = null;
@@ -296,9 +287,6 @@ const MainWindow: React.FC = () => {
     async () => {
       await toggleTradeMessagesWindow();
     },
-    async () => {
-      await openMarketSearchWindow();
-    },
     // Only register command menu hotkey if double shift is disabled
     settings?.commandMenuUseDoubleShift === false ? openCommandMenu : undefined,
   );
@@ -353,13 +341,12 @@ const MainWindow: React.FC = () => {
       const diabloFrameTop = rect.y - windowOffset.y;
 
       // Position in bottom right corner of Diablo frame
-      // ChatButton container is 200x200px, button is positioned at bottom-right of container
-      // So we position the container so its bottom-right is at the Diablo frame's bottom-right
-      const containerSize = 200; // Container size for ChatButton
+      // ChatButton sizes to its content (44px button, h-11 w-11)
+      const buttonSize = 44; // Button is h-11 w-11 (44px)
       const padding = 20; // Padding from bottom right corner of Diablo frame
       // Position container so its bottom-right corner is at (diabloFrameRight - padding, diabloFrameBottom - padding)
-      const x = diabloFrameLeft + rect.width - containerSize - padding;
-      const y = diabloFrameTop + rect.height - containerSize - padding;
+      const x = diabloFrameLeft + rect.width - buttonSize - padding;
+      const y = diabloFrameTop + rect.height - buttonSize - padding;
 
       showView(VIEW_IDS.CHAT_BUTTON, {
         type: 'fixed',
@@ -493,11 +480,11 @@ const MainWindow: React.FC = () => {
             const diabloFrameTop = rect.y - windowOffset.y;
 
             // Position in bottom right corner of Diablo frame
-            // ChatButton container is 200x200px, button is positioned at bottom-right of container
-            const containerSize = 200; // Container size for ChatButton
+            // ChatButton sizes to its content (44px button, h-11 w-11)
+            const buttonSize = 44; // Button is h-11 w-11 (44px)
             const padding = 80; // Padding from bottom right corner of Diablo frame
-            const x = diabloFrameLeft + rect.width - containerSize - padding;
-            const y = diabloFrameTop + rect.height - containerSize - padding;
+            const x = diabloFrameLeft + rect.width - buttonSize - padding;
+            const y = diabloFrameTop + rect.height - buttonSize - padding;
 
             updateView(VIEW_IDS.CHAT_BUTTON, {
               customPosition: { x, y },

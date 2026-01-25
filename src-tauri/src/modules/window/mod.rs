@@ -174,24 +174,22 @@ struct MousePos {
 
 /// Starts a global mouse tracking thread that emits device-mouse-move events
 pub fn start_global_mouse_stream(window: WebviewWindow) {
-    #[cfg(not(target_os = "windows"))]
-    {
-        eprintln!("[MouseStream] Global mouse tracking not yet implemented for this platform");
-        return;
-    }
-
+    let callback = move |x: f64, y: f64| {
+        let mouse_pos = MousePos { x, y };
+        let _ = window.emit("device-mouse-move", mouse_pos);
+    };
+    
     #[cfg(target_os = "windows")]
     {
-        let callback = move |x: f64, y: f64| {
-            let mouse_pos = MousePos { x, y };
-            let _ = window.emit("device-mouse-move", mouse_pos);
-        };
-        
-        #[cfg(target_os = "windows")]
-        {
-            if let Err(e) = crate::modules::window::windows::start_global_mouse_tracking(callback) {
-                eprintln!("[MouseStream] Failed to install Windows mouse hook: {}", e);
-            }
+        if let Err(e) = crate::modules::window::windows::start_global_mouse_tracking(callback) {
+            eprintln!("[MouseStream] Failed to install Windows mouse hook: {}", e);
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Err(e) = crate::modules::window::linux::start_global_mouse_tracking(callback) {
+            eprintln!("[MouseStream] Failed to start Linux mouse tracking: {}", e);
         }
     }
 }

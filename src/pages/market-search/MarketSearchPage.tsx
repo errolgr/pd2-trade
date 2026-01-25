@@ -37,7 +37,8 @@ const ITEMS_PER_PAGE = 20;
 export const MarketSearchPage: React.FC = () => {
   const { getMarketListings, getMarketListingsArchive, authData } = usePd2Website();
   const { settings } = useOptions();
-  const { hideView } = useViewManager();
+  const { hideView, getView } = useViewManager();
+  const view = getView(VIEW_IDS.MARKET_SEARCH);
 
   const [filters, setFilters] = useState<MarketSearchFilters>({
     ...DEFAULT_FILTERS,
@@ -60,6 +61,7 @@ export const MarketSearchPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const appliedViewDataRef = React.useRef<string | null>(null);
 
   // Update filters when settings change
   useEffect(() => {
@@ -69,6 +71,91 @@ export const MarketSearchPage: React.FC = () => {
       isLadder: prev.isLadder ?? settings.ladder === 'ladder',
     }));
   }, [settings.mode, settings.ladder]);
+
+  // Debug: Log when filters.searchText changes
+  useEffect(() => {
+    console.log('[MarketSearchPage] filters.searchText changed:', filters.searchText);
+  }, [filters.searchText]);
+
+  // Handle view data from CommandMenu - apply initial filters when view opens with data
+  useEffect(() => {
+    if (!view?.visible || !view?.data) {
+      // Clear the ref when view is not visible or has no data
+      if (!view?.visible) {
+        appliedViewDataRef.current = null;
+      }
+      return;
+    }
+
+    // Create a unique key for this data to prevent re-applying
+    const dataKey = JSON.stringify(view.data);
+
+    // Skip if we've already applied this data
+    if (appliedViewDataRef.current === dataKey) {
+      return;
+    }
+
+    console.log('[MarketSearchPage] View opened with data:', view.data);
+
+    const { type, itemType, itemName, baseCode } = view.data;
+
+    if (type === 'itemType' && itemType) {
+      const typeValueStr = typeof itemType === 'string' ? itemType : JSON.stringify(itemType);
+      console.log('[MarketSearchPage] Applying item type filter:', typeValueStr);
+      setFilters((prev) => {
+        const newFilters = {
+          ...prev,
+          itemType: typeValueStr,
+          baseCode: undefined, // Clear base code when type changes
+          searchText: '', // Clear search text for item type
+        };
+        // Automatically trigger search
+        setAppliedFilters(newFilters);
+        setCurrentPage(0);
+        return newFilters;
+      });
+      appliedViewDataRef.current = dataKey;
+    } else if ((type === 'uniqueItem' || type === 'setItem') && itemName) {
+      console.log('[MarketSearchPage] Applying unique/set item filter:', { itemName, baseCode });
+
+      // Find matching item type for the base code
+      let matchingItemType: string | undefined = undefined;
+      if (baseCode) {
+        const matchingType = itemTypes.find((type) => {
+          const typeValue = typeof type.typeValue === 'string' ? type.typeValue : JSON.stringify(type.typeValue);
+
+          if (typeValue === baseCode) {
+            return true;
+          }
+
+          return type.bases.some((base) => base.value === baseCode);
+        });
+
+        if (matchingType) {
+          matchingItemType =
+            typeof matchingType.typeValue === 'string'
+              ? matchingType.typeValue
+              : JSON.stringify(matchingType.typeValue);
+        }
+      }
+
+      setFilters((prev) => {
+        const newFilters = {
+          ...prev,
+          searchText: itemName,
+          itemType: matchingItemType || prev.itemType,
+          baseCode: baseCode || prev.baseCode,
+        };
+        // Automatically trigger search
+        setAppliedFilters(newFilters);
+        setCurrentPage(0);
+        return newFilters;
+      });
+      appliedViewDataRef.current = dataKey;
+      // Keep command dropdown closed when item is passed via props
+      setCommandOpen(false);
+    }
+  }, [view?.visible, view?.data, itemTypes]);
 
   // Build base query (without pagination) using applied filters (only updated when search button is clicked)
   const baseQuery = useMemo(() => {
@@ -146,9 +233,13 @@ export const MarketSearchPage: React.FC = () => {
     [query, appliedFilters.searchArchived, getMarketListings, getMarketListingsArchive],
   );
 
+  // Only open command dropdown on mount if no view data is passed
   useEffect(() => {
-    setCommandOpen(true);
-  }, []);
+    // Check if view has data (item was passed via props)
+    // If data exists, keep dropdown closed; otherwise open it
+    const hasViewData = view?.data && view?.visible;
+    setCommandOpen(!hasViewData);
+  }, [view?.data, view?.visible]);
 
   // Handle search button click or Enter key
   const handleSearch = useCallback(() => {
@@ -221,6 +312,11 @@ export const MarketSearchPage: React.FC = () => {
 
   // Handle unique item selection from command menu
   const handleSelectUniqueItem = useCallback((itemName: string, baseCode?: string) => {
+    console.log('[MarketSearchPage] handleSelectUniqueItem called:', {
+      itemName,
+      baseCode,
+    });
+
     // Find matching item type for the base code
     let matchingItemType: string | undefined = undefined;
     if (baseCode) {
@@ -237,15 +333,26 @@ export const MarketSearchPage: React.FC = () => {
       if (matchingType) {
         matchingItemType =
           typeof matchingType.typeValue === 'string' ? matchingType.typeValue : JSON.stringify(matchingType.typeValue);
+        console.log('[MarketSearchPage] Found matching item type:', matchingItemType);
       }
     }
 
-    setFilters((prev) => ({
-      ...prev,
-      searchText: itemName,
-      itemType: matchingItemType || prev.itemType,
-      baseCode: baseCode || prev.baseCode,
-    }));
+    setFilters((prev) => {
+      const newFilters = {
+        ...prev,
+        searchText: itemName,
+        itemType: matchingItemType || prev.itemType,
+        baseCode: baseCode || prev.baseCode,
+      };
+      console.log('[MarketSearchPage] Setting filters:', {
+        previousSearchText: prev.searchText,
+        newSearchText: newFilters.searchText,
+        itemName,
+        previousFilters: prev,
+        newFilters: newFilters,
+      });
+      return newFilters;
+    });
   }, []);
 
   // Client-side filtering for fields not supported by API query
@@ -286,6 +393,7 @@ export const MarketSearchPage: React.FC = () => {
                 onOpenChange={setCommandOpen}
                 onSelectItemType={handleSelectItemType}
                 onSelectUniqueItem={handleSelectUniqueItem}
+                searchText={filters.searchText}
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
@@ -298,7 +406,13 @@ export const MarketSearchPage: React.FC = () => {
                     className="pl-9 w-full"
                     style={{ height: '41px', paddingRight: isLoading ? '2.5rem' : undefined }}
                     value={filters.searchText}
-                    onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+                    onChange={(e) => {
+                      console.log('[MarketSearchPage] Input onChange:', {
+                        newValue: e.target.value,
+                        previousValue: filters.searchText,
+                      });
+                      setFilters({ ...filters, searchText: e.target.value });
+                    }}
                     onFocus={() => setCommandOpen(true)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {

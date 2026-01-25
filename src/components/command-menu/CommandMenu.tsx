@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
 import { useOptions } from '@/hooks/useOptions';
 import { useNotificationCountsContext } from '@/contexts/NotificationCountsContext';
@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
-import { Search, ShoppingCart, List, DollarSign, MessageSquare, FileText, Settings } from 'lucide-react';
+import { Search, List, DollarSign, MessageSquare, FileText, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -23,20 +23,42 @@ const COMMAND_MENU_ID = 'command-menu';
 
 export const CommandMenu: React.FC = () => {
   const { settings } = useOptions();
-  const { hideView, toggleView, isVisible } = useViewManager();
+  const { hideView, toggleView, getView } = useViewManager();
   const { chatUnreadCount, tradeOffersCount } = useNotificationCountsContext();
   const { registerWindow, unregisterWindow, updateWindow } = useClickThrough();
   const containerRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isRegisteredRef = useRef(false);
-  const isMenuVisible = isVisible(VIEW_IDS.COMMAND_MENU);
 
-  // Debug: Track visibility changes
+  // Get view and track previous visibility to prevent unnecessary re-renders
+  const view = getView(VIEW_IDS.COMMAND_MENU);
+  const prevVisibilityRef = useRef<boolean | null>(null);
+  const isMenuVisible = view?.visible ?? false;
+
+  const [search, setSearch] = useState('');
+
+  // Track visibility changes and clear search when menu closes
+  // Only run when visibility actually changes
   useEffect(() => {
+    const prevVisibility = prevVisibilityRef.current;
+    const visibilityChanged = prevVisibility !== isMenuVisible;
+
+    if (!visibilityChanged) {
+      return;
+    }
+
+    // Update ref after checking
+    prevVisibilityRef.current = isMenuVisible;
+
     console.log('[CommandMenu] Visibility changed', {
       isMenuVisible,
+      prevVisibility,
       timestamp: Date.now(),
     });
+
+    if (!isMenuVisible) {
+      setSearch(''); // Clear search when menu closes
+    }
   }, [isMenuVisible]);
 
   const handleSelect = useCallback(
@@ -46,6 +68,7 @@ export const CommandMenu: React.FC = () => {
         type: viewType,
         position,
       });
+      setSearch(''); // Clear search when selecting a command
     },
     [hideView, toggleView],
   );
@@ -184,121 +207,138 @@ export const CommandMenu: React.FC = () => {
     };
   }, [isMenuVisible, hideView]);
 
+  // Filter commands based on search - show commands if search is empty or matches command names
+  const shouldShowCommands =
+    !search.trim() ||
+    'item search'.toLowerCase().includes(search.toLowerCase()) ||
+    'currency valuation'.toLowerCase().includes(search.toLowerCase()) ||
+    'manage listings'.toLowerCase().includes(search.toLowerCase()) ||
+    'trade offers'.toLowerCase().includes(search.toLowerCase()) ||
+    'chat'.toLowerCase().includes(search.toLowerCase()) ||
+    'settings'.toLowerCase().includes(search.toLowerCase());
+
   return (
-    <Command className="rounded-lg border shadow-md"
-      ref={containerRef}>
-      <CommandInput placeholder="Search commands..." />
+    <Command
+      className="rounded-lg border shadow-md"
+      ref={containerRef}
+      filter={(value, search) => {
+        // Custom filter that allows both command and item search
+        if (!search) return 1;
+        const valueLower = value.toLowerCase();
+        const searchLower = search.toLowerCase();
+        return valueLower.includes(searchLower) ? 1 : 0;
+      }}
+    >
+      <CommandInput placeholder="Search commands..."
+        value={search}
+        onValueChange={setSearch} />
       <ScrollArea className="h-[400px]">
         <CommandList className="!max-h-none !overflow-hidden">
           <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Price Checking">
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.ITEM_SEARCH, 'panel', 'over-diablo')}
-              className="cursor-pointer"
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span>Item Search</span>
-              {settings?.hotkeyKey && (
-                <CommandShortcut>{formatHotkey(settings.hotkeyModifier, settings.hotkeyKey)}</CommandShortcut>
-              )}
-            </CommandItem>
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.MARKET_SEARCH, 'panel', 'over-diablo')}
-              className="cursor-pointer"
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              <span>Market Search</span>
-              {settings?.hotkeyKeyMarketSearch && (
-                <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierMarketSearch || 'ctrl', settings.hotkeyKeyMarketSearch)}
-                </CommandShortcut>
-              )}
-            </CommandItem>
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.CURRENCY, 'panel', 'centered')}
-              className="cursor-pointer"
-            >
-              <DollarSign className="mr-2 h-4 w-4" />
-              <span>Currency Valuation</span>
-              {settings?.hotkeyKeyCurrencyValuation && (
-                <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierCurrencyValuation, settings.hotkeyKeyCurrencyValuation)}
-                </CommandShortcut>
-              )}
-            </CommandItem>
-          </CommandGroup>
-          <CommandGroup heading="Trading">
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.QUICK_LIST, 'panel', 'over-diablo')}
-              className="cursor-pointer"
-            >
-              <List className="mr-2 h-4 w-4" />
-              <span>Manage Listings</span>
-              {settings?.hotkeyKeyListItem && (
-                <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
-                </CommandShortcut>
-              )}
-            </CommandItem>
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.TRADE_MESSAGES, 'panel', 'over-diablo')}
-              className="cursor-pointer"
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Trade Offers</span>
-              {tradeOffersCount > 0 && (
-                <Badge
-                  key={`trade-offers-${tradeOffersCount}`}
-                  className={cn(
-                    'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
-                  )}
+
+          {/* Commands - only show when no search or search matches commands */}
+          {shouldShowCommands && (
+            <>
+              <CommandGroup heading="Price Checking">
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.ITEM_SEARCH, 'panel', 'over-diablo')}
+                  className="cursor-pointer"
                 >
-                  {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
-                </Badge>
-              )}
-              {settings?.hotkeyKeyOffers && (
-                <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierOffers, settings.hotkeyKeyOffers)}
-                </CommandShortcut>
-              )}
-            </CommandItem>
-          </CommandGroup>
-          <CommandGroup heading="Communication">
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.CHAT, 'panel', 'over-diablo')}
-              className="cursor-pointer"
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              <span>Chat</span>
-              {chatUnreadCount > 0 && (
-                <Badge
-                  key={`chat-unread-${chatUnreadCount}`}
-                  className={cn(
-                    'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
+                  <Search className="mr-2 h-4 w-4" />
+                  <span>Item Search</span>
+                  {settings?.hotkeyKey && (
+                    <CommandShortcut>{formatHotkey(settings.hotkeyModifier, settings.hotkeyKey)}</CommandShortcut>
                   )}
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.CURRENCY, 'panel', 'centered')}
+                  className="cursor-pointer"
                 >
-                  {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
-                </Badge>
-              )}
-              {settings?.hotkeyKeyChat && (
-                <CommandShortcut>{formatHotkey(settings.hotkeyModifierChat, settings.hotkeyKeyChat)}</CommandShortcut>
-              )}
-            </CommandItem>
-          </CommandGroup>
-          <CommandGroup heading="Settings">
-            <CommandItem
-              onSelect={() => handleSelect(VIEW_IDS.SETTINGS, 'panel', 'centered')}
-              className="cursor-pointer"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-              {settings?.hotkeyKeySettings && (
-                <CommandShortcut>
-                  {formatHotkey(settings.hotkeyModifierSettings || 'ctrl', settings.hotkeyKeySettings)}
-                </CommandShortcut>
-              )}
-            </CommandItem>
-          </CommandGroup>
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  <span>Currency Valuation</span>
+                  {settings?.hotkeyKeyCurrencyValuation && (
+                    <CommandShortcut>
+                      {formatHotkey(settings.hotkeyModifierCurrencyValuation, settings.hotkeyKeyCurrencyValuation)}
+                    </CommandShortcut>
+                  )}
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup heading="Trading">
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.QUICK_LIST, 'panel', 'over-diablo')}
+                  className="cursor-pointer"
+                >
+                  <List className="mr-2 h-4 w-4" />
+                  <span>Manage Listings</span>
+                  {settings?.hotkeyKeyListItem && (
+                    <CommandShortcut>
+                      {formatHotkey(settings.hotkeyModifierListItem, settings.hotkeyKeyListItem)}
+                    </CommandShortcut>
+                  )}
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.TRADE_MESSAGES, 'panel', 'over-diablo')}
+                  className="cursor-pointer"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Trade Offers</span>
+                  {tradeOffersCount > 0 && (
+                    <Badge
+                      key={`trade-offers-${tradeOffersCount}`}
+                      className={cn(
+                        'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
+                      )}
+                    >
+                      {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
+                    </Badge>
+                  )}
+                  {settings?.hotkeyKeyOffers && (
+                    <CommandShortcut>
+                      {formatHotkey(settings.hotkeyModifierOffers, settings.hotkeyKeyOffers)}
+                    </CommandShortcut>
+                  )}
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup heading="Communication">
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.CHAT, 'panel', 'over-diablo')}
+                  className="cursor-pointer"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Chat</span>
+                  {chatUnreadCount > 0 && (
+                    <Badge
+                      key={`chat-unread-${chatUnreadCount}`}
+                      className={cn(
+                        'ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none animate__animated animate__wobble',
+                      )}
+                    >
+                      {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                    </Badge>
+                  )}
+                  {settings?.hotkeyKeyChat && (
+                    <CommandShortcut>
+                      {formatHotkey(settings.hotkeyModifierChat, settings.hotkeyKeyChat)}
+                    </CommandShortcut>
+                  )}
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup heading="Settings">
+                <CommandItem
+                  onSelect={() => handleSelect(VIEW_IDS.SETTINGS, 'panel', 'centered')}
+                  className="cursor-pointer"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                  {settings?.hotkeyKeySettings && (
+                    <CommandShortcut>
+                      {formatHotkey(settings.hotkeyModifierSettings || 'ctrl', settings.hotkeyKeySettings)}
+                    </CommandShortcut>
+                  )}
+                </CommandItem>
+              </CommandGroup>
+            </>
+          )}
         </CommandList>
       </ScrollArea>
     </Command>
