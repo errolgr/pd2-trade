@@ -1699,6 +1699,160 @@ export const itemTypes = [
     ],
   },
   {
+    typeLabel: 'Rainbow Facet',
+    typeValue: 'jew',
+    bases: [
+      {
+        label: 'Any',
+        value: 'Any',
+      },
+      {
+        label: 'Lightning 3/3',
+        value: 'rainbow_facet_lightning_3_3',
+      },
+      {
+        label: 'Lightning 3/4',
+        value: 'rainbow_facet_lightning_3_4',
+      },
+      {
+        label: 'Lightning 3/5',
+        value: 'rainbow_facet_lightning_3_5',
+      },
+      {
+        label: 'Lightning 4/3',
+        value: 'rainbow_facet_lightning_4_3',
+      },
+      {
+        label: 'Lightning 4/4',
+        value: 'rainbow_facet_lightning_4_4',
+      },
+      {
+        label: 'Lightning 4/5',
+        value: 'rainbow_facet_lightning_4_5',
+      },
+      {
+        label: 'Lightning 5/3',
+        value: 'rainbow_facet_lightning_5_3',
+      },
+      {
+        label: 'Lightning 5/4',
+        value: 'rainbow_facet_lightning_5_4',
+      },
+      {
+        label: 'Lightning 5/5',
+        value: 'rainbow_facet_lightning_5_5',
+      },
+      {
+        label: 'Cold 3/3',
+        value: 'rainbow_facet_cold_3_3',
+      },
+      {
+        label: 'Cold 3/4',
+        value: 'rainbow_facet_cold_3_4',
+      },
+      {
+        label: 'Cold 3/5',
+        value: 'rainbow_facet_cold_3_5',
+      },
+      {
+        label: 'Cold 4/3',
+        value: 'rainbow_facet_cold_4_3',
+      },
+      {
+        label: 'Cold 4/4',
+        value: 'rainbow_facet_cold_4_4',
+      },
+      {
+        label: 'Cold 4/5',
+        value: 'rainbow_facet_cold_4_5',
+      },
+      {
+        label: 'Cold 5/3',
+        value: 'rainbow_facet_cold_5_3',
+      },
+      {
+        label: 'Cold 5/4',
+        value: 'rainbow_facet_cold_5_4',
+      },
+      {
+        label: 'Cold 5/5',
+        value: 'rainbow_facet_cold_5_5',
+      },
+      {
+        label: 'Fire 3/3',
+        value: 'rainbow_facet_fire_3_3',
+      },
+      {
+        label: 'Fire 3/4',
+        value: 'rainbow_facet_fire_3_4',
+      },
+      {
+        label: 'Fire 3/5',
+        value: 'rainbow_facet_fire_3_5',
+      },
+      {
+        label: 'Fire 4/3',
+        value: 'rainbow_facet_fire_4_3',
+      },
+      {
+        label: 'Fire 4/4',
+        value: 'rainbow_facet_fire_4_4',
+      },
+      {
+        label: 'Fire 4/5',
+        value: 'rainbow_facet_fire_4_5',
+      },
+      {
+        label: 'Fire 5/3',
+        value: 'rainbow_facet_fire_5_3',
+      },
+      {
+        label: 'Fire 5/4',
+        value: 'rainbow_facet_fire_5_4',
+      },
+      {
+        label: 'Fire 5/5',
+        value: 'rainbow_facet_fire_5_5',
+      },
+      {
+        label: 'Poison 3/3',
+        value: 'rainbow_facet_poison_3_3',
+      },
+      {
+        label: 'Poison 3/4',
+        value: 'rainbow_facet_poison_3_4',
+      },
+      {
+        label: 'Poison 3/5',
+        value: 'rainbow_facet_poison_3_5',
+      },
+      {
+        label: 'Poison 4/3',
+        value: 'rainbow_facet_poison_4_3',
+      },
+      {
+        label: 'Poison 4/4',
+        value: 'rainbow_facet_poison_4_4',
+      },
+      {
+        label: 'Poison 4/5',
+        value: 'rainbow_facet_poison_4_5',
+      },
+      {
+        label: 'Poison 5/3',
+        value: 'rainbow_facet_poison_5_3',
+      },
+      {
+        label: 'Poison 5/4',
+        value: 'rainbow_facet_poison_5_4',
+      },
+      {
+        label: 'Poison 5/5',
+        value: 'rainbow_facet_poison_5_5',
+      },
+    ],
+  },
+  {
     typeLabel: 'Jewel Fragments',
     typeValue: 'jewf',
     bases: [

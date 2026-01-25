@@ -1,4 +1,12 @@
 export const changeLog = {
+  '0.8.1': [
+    '🔧Re-enabled Sentry for error logging.',
+    '⬇️⬇️⬇️ EVERYTHING ELSE FROM 0.8.1 ⬇️⬇️⬇️',
+    '✨ All PD2 Trader windows now launch within a single frame instead of having separate processes for each window - you should notice performance increases',
+    '✨ Remade the chat button UI with improved design and functionality',
+    '🆕 Added a new command menu for quick access to features and navigation (default: shift shift)',
+    '🔧 Cleaned up whisper sound',
+  ],
   '0.8.0': [
     '✨ All PD2 Trader windows now launch within a single frame instead of having separate processes for each window - you should notice performance increases',
     '✨ Remade the chat button UI with improved design and functionality',
