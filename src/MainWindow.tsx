@@ -40,7 +40,7 @@ const MainWindow: React.FC = () => {
   const { settings, isLoading } = useOptions();
   const { isConnected } = useSocket({ settings });
   const { showView, hideView, toggleView, isVisible, updateView } = useViewManager();
-  const { isDiabloFocused } = useDiablo();
+  const { isDiabloFocused, diabloRectRelative } = useDiablo();
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
   useSocketNotifications({ isConnected, settings, whisperNotificationsEnabled: true });
@@ -331,49 +331,28 @@ const MainWindow: React.FC = () => {
     }
 
     // Show chat button as fixed overlay in bottom right corner of Diablo frame
-    const setupChatButton = async () => {
-      const rect = await getDiabloRectWithRetry();
-      if (!rect) {
-        console.warn('[LandingPage] Diablo window rect not found after retries, cannot position chat button overlay');
-        return;
-      }
+    // Use diabloRectRelative which is already calculated relative to main window viewport
+    if (!diabloRectRelative) {
+      return;
+    }
 
-      // Get main window position to calculate relative position
-      let windowOffset = { x: 0, y: 0 };
-      if (isTauri()) {
-        try {
-          const window = WebviewWindow.getCurrent();
-          const position = await window.outerPosition();
-          windowOffset = { x: position.x, y: position.y };
-        } catch (error) {
-          console.error('[LandingPage] Failed to get window position for chat button:', error);
-        }
-      }
+    // Position in bottom right corner of Diablo frame
+    // ChatButton sizes to its content (44px button, h-11 w-11)
+    const buttonSize = 44; // Button is h-11 w-11 (44px)
+    const padding = 20; // Padding from bottom right corner of Diablo frame
+    // Position container so its bottom-right corner is at (diabloFrameRight - padding, diabloFrameBottom - padding)
+    const x = diabloRectRelative.x + diabloRectRelative.width - buttonSize - padding;
+    const y = diabloRectRelative.y + diabloRectRelative.height - buttonSize - padding;
 
-      // Calculate position relative to main window viewport (same as DiabloFrame)
-      const diabloFrameLeft = rect.x - windowOffset.x;
-      const diabloFrameTop = rect.y - windowOffset.y;
+    // Constrain position to stay within viewport bounds
+    const constrainedPosition = constrainChatButtonPosition(x, y, buttonSize);
 
-      // Position in bottom right corner of Diablo frame
-      // ChatButton sizes to its content (44px button, h-11 w-11)
-      const buttonSize = 44; // Button is h-11 w-11 (44px)
-      const padding = 20; // Padding from bottom right corner of Diablo frame
-      // Position container so its bottom-right corner is at (diabloFrameRight - padding, diabloFrameBottom - padding)
-      const x = diabloFrameLeft + rect.width - buttonSize - padding;
-      const y = diabloFrameTop + rect.height - buttonSize - padding;
-
-      // Constrain position to stay within viewport bounds
-      const constrainedPosition = constrainChatButtonPosition(x, y, buttonSize);
-
-      showView(VIEW_IDS.CHAT_BUTTON, {
-        type: 'fixed',
-        position: 'custom',
-        customPosition: constrainedPosition,
-      });
-    };
-
-    setupChatButton();
-  }, [settings.chatButtonOverlayEnabled, isDiabloFocused, showView, hideView]);
+    showView(VIEW_IDS.CHAT_BUTTON, {
+      type: 'fixed',
+      position: 'custom',
+      customPosition: constrainedPosition,
+    });
+  }, [settings.chatButtonOverlayEnabled, isDiabloFocused, diabloRectRelative, showView, hideView]);
 
   // Set up chat window toggle handler
   useEffect(() => {
@@ -476,41 +455,9 @@ const MainWindow: React.FC = () => {
         // Update Main Window (Overlay) - Always Snap to D2 Size/Pos
         await updateMainWindowBounds();
 
-        // Update chat button position if enabled (bottom right of Diablo frame)
-        if (settings.chatButtonOverlayEnabled !== false) {
-          const rect = await getDiabloRectWithRetry();
-          if (rect) {
-            // Get main window position to calculate relative position
-            let windowOffset = { x: 0, y: 0 };
-            if (isTauri()) {
-              try {
-                const window = WebviewWindow.getCurrent();
-                const position = await window.outerPosition();
-                windowOffset = { x: position.x, y: position.y };
-              } catch (error) {
-                console.error('[LandingPage] Failed to get window position for chat button update:', error);
-              }
-            }
-
-            // Calculate position relative to main window viewport (same as DiabloFrame)
-            const diabloFrameLeft = rect.x - windowOffset.x;
-            const diabloFrameTop = rect.y - windowOffset.y;
-
-            // Position in bottom right corner of Diablo frame
-            // ChatButton sizes to its content (44px button, h-11 w-11)
-            const buttonSize = 44; // Button is h-11 w-11 (44px)
-            const padding = 80; // Padding from bottom right corner of Diablo frame
-            const x = diabloFrameLeft + rect.width - buttonSize - padding;
-            const y = diabloFrameTop + rect.height - buttonSize - padding;
-
-            // Constrain position to stay within viewport bounds
-            const constrainedPosition = constrainChatButtonPosition(x, y, buttonSize);
-
-            updateView(VIEW_IDS.CHAT_BUTTON, {
-              customPosition: constrainedPosition,
-            });
-          }
-        }
+        // Chat button position will be updated automatically by the useEffect above
+        // that depends on diabloRectRelative, which is updated by the DiabloProvider
+        // when the window moves. No need to manually update here.
       });
     };
 
@@ -519,7 +466,7 @@ const MainWindow: React.FC = () => {
     return () => {
       if (unlisten) unlisten();
     };
-  }, [settings.windowTrackingEnabled, settings.chatButtonOverlayEnabled, updateView]);
+  }, [settings.windowTrackingEnabled]);
 
   return (
     <div>
