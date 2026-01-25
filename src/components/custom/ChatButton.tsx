@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { GripVertical, Settings, X, List, Search, DollarSign, FileText, Command, MessageSquare } from 'lucide-react';
+import { Settings, X, List, Search, DollarSign, FileText, Command, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -56,7 +56,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     onTradeMessagesClick && 'trade-messages',
     onSettingsClick && 'settings',
     onCommandMenuClick && 'command-menu',
-    'drag',
     onDisableClick && 'disable',
   ].filter(Boolean);
 
@@ -96,14 +95,15 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     <Popover open={isMenuOpen}
       onOpenChange={setIsMenuOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
+        <div className="relative select-none">
           <Button
             ref={buttonRef}
             onMouseDown={handleButtonMouseDown}
             onClick={handleButtonClick}
-            className="h-11 w-11 rounded-lg shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-colors duration-200 ease-out cursor-pointer p-0"
+            className="h-11 w-11 rounded-lg shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-colors duration-200 ease-out cursor-pointer p-0 select-none"
             size="icon"
             aria-label="Open PD2 Chat Menu"
+            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
           >
             <img src="/logo2.png"
               alt="PD2 Trade Logo"
@@ -147,15 +147,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           }}
           className="overflow-hidden"
         >
-          {/* Drag Handle */}
-          <div
-            data-drag-handle
-            className="flex items-center gap-3 px-4 py-3 hover:bg-neutral-700/50 cursor-move transition-colors"
-          >
-            <GripVertical className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-            <span className="text-sm text-neutral-200">Drag to move</span>
-          </div>
-
           {/* Divider for Price Checking section */}
           {(onItemSearchClick || onCurrencyValuationClick) && (
             <div className="px-4 py-2 border-b border-neutral-600/50">
