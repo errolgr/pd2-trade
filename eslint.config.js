@@ -9,9 +9,6 @@ import prettierConfig from "eslint-config-prettier";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: ["src/components/ui/**"]
-  },
-  {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]
   },
   {

@@ -18,28 +18,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { useOptions } from '@/hooks/useOptions';
-import { useChatContext } from '@/contexts/ChatContext';
 
 interface ChatOverlayWidgetProps {
   onClose: () => void;
 }
 
 export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
-  const { authData, deleteConversation: deleteConversationApi, sendMessage: sendMessageApi } = usePd2Website();
+  const {
+    authData,
+    deleteConversation: deleteConversationApi,
+    getConversations,
+    getMessages,
+    sendMessage: sendMessageApi,
+    markMessagesAsRead,
+  } = usePd2Website();
   const { isConnected } = useSocket();
   const { settings } = useOptions();
-  const {
-    conversations,
-    selectedConversation,
-    setSelectedConversation,
-    messagesCache,
-    markUnreadMessagesAsRead: markUnreadMessagesAsReadContext,
-    loadMessages: loadMessagesContext,
-    loadConversations,
-    updateConversations,
-    setOnNewMessage,
-  } = useChatContext();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -47,37 +45,125 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
   const messagesRef = useRef<Message[]>([]);
   const selectedConversationRef = useRef<Conversation | null>(null);
   const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
+  const processedMessagesRef = useRef<Set<string>>(new Set());
+  const messageListenerUnlistenRef = useRef<(() => void) | null>(null);
+  const isMessageListenerSetupRef = useRef<boolean>(false);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
 
-  // Keep ref in sync with context state
-  useEffect(() => {
-    selectedConversationRef.current = selectedConversation;
-  }, [selectedConversation]);
+  // Play notification sound
+  const playNotificationSound = useCallback((volume: number = 70) => {
+    try {
+      const audio = new Audio(poeWhisperSound);
+      audio.volume = volume / 100; // Convert 0-100 to 0-1
+      audio.play().catch((error) => {
+        console.error('Failed to play notification sound:', error);
+      });
+    } catch (error) {
+      console.error('Failed to create audio element:', error);
+    }
+  }, []);
 
-  // Set up callback to receive new messages from context
-  useEffect(() => {
-    setOnNewMessage((newMessage: Message) => {
-      // Only update local messages state if this message is for the currently open conversation
-      if (selectedConversation?._id === newMessage.conversation_id) {
-        setMessages((prev) => {
-          // Check if message already exists in state (defensive check)
-          if (prev.some((m) => m._id === newMessage._id)) {
-            return prev; // Return previous state to avoid re-render
-          }
-          return [...prev, newMessage]; // Only add the new message
-        });
+  // Mark unread messages as read
+  const markUnreadMessagesAsRead = useCallback(
+    async (messages: Message[]) => {
+      if (!currentUserId) return;
+
+      // Use ref to get the latest selected conversation
+      const currentSelectedConversation = selectedConversationRef.current;
+      if (!currentSelectedConversation) return;
+
+      // Find messages that:
+      // 1. Are sent by the other participant (user is recipient)
+      // 2. Haven't been read by the current user yet
+      const unreadMessageIds = messages
+        .filter((message) => {
+          // User is recipient if they didn't send the message
+          const isRecipient = message.sender_id !== currentUserId;
+          // Check if message hasn't been read by current user
+          const isUnread = !message.reader_ids?.includes(currentUserId);
+          return isRecipient && isUnread;
+        })
+        .map((message) => message._id);
+
+      console.log('[ChatOverlayWidget] Found unread messages:', {
+        unreadMessageIds,
+        count: unreadMessageIds.length,
+        messages: messages.map((m) => ({
+          id: m._id,
+          sender_id: m.sender_id,
+          reader_ids: m.reader_ids,
+          isRecipient: m.sender_id !== currentUserId,
+          isUnread: !m.reader_ids?.includes(currentUserId),
+        })),
+      });
+
+      if (unreadMessageIds.length > 0) {
+        try {
+          await markMessagesAsRead(unreadMessageIds, currentUserId);
+
+          // Update the messages in cache and state to reflect read status
+          const updatedMessages = messages.map((message) => {
+            if (unreadMessageIds.includes(message._id)) {
+              return {
+                ...message,
+                reader_ids: [...(message.reader_ids || []), currentUserId],
+              };
+            }
+            return message;
+          });
+
+          // Update cache
+          messagesCacheRef.current.set(currentSelectedConversation._id, updatedMessages);
+
+          // Update state
+          setMessages(updatedMessages);
+
+          // Update conversation unread_count
+          setConversations((prev) => {
+            const updated = prev.map((conv) => {
+              if (conv._id === currentSelectedConversation._id) {
+                const oldUnreadCount = conv.unread_count || 0;
+                const newUnreadCount = Math.max(0, oldUnreadCount - unreadMessageIds.length);
+                console.log('[ChatOverlayWidget] Updating conversation unread_count:', {
+                  conversationId: conv._id,
+                  oldUnreadCount,
+                  newUnreadCount,
+                  decrementBy: unreadMessageIds.length,
+                });
+                const updatedConv = {
+                  ...conv,
+                  unread_count: newUnreadCount,
+                };
+                // Also update the selected conversation state
+                setSelectedConversation(updatedConv);
+                return updatedConv;
+              }
+              return conv;
+            });
+            console.log(
+              '[ChatOverlayWidget] Updated conversations list:',
+              updated.map((c) => ({
+                id: c._id,
+                unread_count: c.unread_count,
+              })),
+            );
+            return updated;
+          });
+        } catch (error) {
+          console.error('Failed to mark messages as read:', error);
+        }
+      } else {
+        console.log('[ChatOverlayWidget] No unread messages to mark as read');
       }
-    });
-
-    return () => {
-      setOnNewMessage(undefined);
-    };
-  }, [selectedConversation, setOnNewMessage]);
+    },
+    [currentUserId, markMessagesAsRead],
+  );
 
   // Load messages for a conversation
   const loadMessages = useCallback(
@@ -86,14 +172,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       setLoadingMessages(true);
 
       // Check cache first - show cached messages immediately for better UX
-      const cachedMessages = messagesCache.current.get(conversationId);
+      const cachedMessages = messagesCacheRef.current.get(conversationId);
       if (cachedMessages && cachedMessages.length > 0) {
         // Use setTimeout to ensure loading state is visible briefly
         setTimeout(() => {
           setMessages(cachedMessages);
           setLoadingMessages(false);
           // Mark unread messages as read
-          markUnreadMessagesAsReadContext(cachedMessages, conversationId);
+          markUnreadMessagesAsRead(cachedMessages);
           // Scroll to bottom after messages load
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -101,14 +187,43 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         }, 50);
       }
 
-      // Load messages from context (which handles API fetch and cache merge)
+      // Always fetch from API to ensure we have the latest messages, then merge with cache
       try {
-        const mergedMessages = await loadMessagesContext(conversationId);
+        const response = await getMessages(conversationId);
+        const apiMessages = response.data || [];
+
+        // Merge API messages with cached messages (API messages take precedence, but keep any newer cached messages)
+        const messageMap = new Map<string, Message>();
+
+        // First, add all API messages
+        apiMessages.forEach((msg) => {
+          messageMap.set(msg._id, msg);
+        });
+
+        // Then, add any cached messages that aren't in the API response (newer messages from socket)
+        if (cachedMessages) {
+          cachedMessages.forEach((msg) => {
+            if (!messageMap.has(msg._id)) {
+              messageMap.set(msg._id, msg);
+            }
+          });
+        }
+
+        // Sort by created_at
+        const mergedMessages = Array.from(messageMap.values()).sort((a, b) => {
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+
+        // Update cache with merged messages
+        messagesCacheRef.current.set(conversationId, mergedMessages);
 
         // Update state (only if we didn't already show cached messages, or if merged is different)
         if (!cachedMessages || cachedMessages.length === 0 || mergedMessages.length !== cachedMessages.length) {
           setMessages(mergedMessages);
           setLoadingMessages(false);
+
+          // Mark unread messages as read
+          markUnreadMessagesAsRead(mergedMessages);
 
           // Scroll to bottom after messages load
           setTimeout(() => {
@@ -116,32 +231,52 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
           }, 100);
         }
       } catch (error) {
-        console.error('[ChatOverlayWidget] Failed to load messages:', error);
+        console.error('Failed to load messages:', error);
         // If we have cached messages, keep showing them even if API fails
         if (!cachedMessages || cachedMessages.length === 0) {
           setLoadingMessages(false);
         }
       }
     },
-    [loadMessagesContext, markUnreadMessagesAsReadContext],
+    [getMessages, markUnreadMessagesAsRead],
   );
 
-  // Wrapper for loadConversations that also sets loading state
-  const loadConversationsWithLoading = useCallback(async () => {
+  // Load conversations
+  const loadConversations = useCallback(async () => {
+    if (!currentUserId) return;
+
     setLoadingConversations(true);
     try {
-      await loadConversations();
+      const response = await getConversations(currentUserId);
+      // Filter out conversations without a latest message
+      const conversationsWithMessages = (response.data || []).filter((conv) => conv.latest_message);
+
+      setConversations(conversationsWithMessages);
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
     } finally {
       setLoadingConversations(false);
     }
-  }, [loadConversations]);
+  }, [currentUserId, getConversations]);
+
+  // Calculate total unread count
+  const totalUnreadCount = React.useMemo(() => {
+    const total = conversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);
+
+    return total;
+  }, [conversations]);
+
+  // Emit unread count update whenever it changes
+  useEffect(() => {
+    emit('chat-unread-count-updated', { count: totalUnreadCount });
+  }, [totalUnreadCount]);
 
   // Fetch conversations on mount and when user is available
   useEffect(() => {
     if (currentUserId) {
-      loadConversationsWithLoading();
+      loadConversations();
     }
-  }, [currentUserId, loadConversationsWithLoading]);
+  }, [currentUserId, loadConversations]);
 
   // Listen for conversation selection event
   useEffect(() => {
@@ -169,7 +304,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               };
 
               // Check if conversation already exists in the list
-              updateConversations((prev) => {
+              setConversations((prev) => {
                 const exists = prev.some((c) => c._id === conversationId);
                 if (exists) {
                   // Update existing conversation
@@ -188,11 +323,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
             // If no new conversation object provided, try to find existing one
             if (!newConversation) {
               // Wait for conversations to be loaded
-              updateConversations((prev) => {
+              setConversations((prev) => {
                 if (prev.length === 0) {
                   // If conversations aren't loaded yet, wait a bit and try again
                   setTimeout(() => {
-                    updateConversations((current) => {
+                    setConversations((current) => {
                       const conversation = current.find((c) => c._id === conversationId);
                       if (conversation) {
                         setSelectedConversation(conversation);
@@ -212,7 +347,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                   if (loadConversationsRef.current) {
                     loadConversationsRef.current().then(() => {
                       setTimeout(() => {
-                        updateConversations((current) => {
+                        setConversations((current) => {
                           const foundConversation = current.find((c) => c._id === conversationId);
                           if (foundConversation) {
                             setSelectedConversation(foundConversation);
@@ -241,6 +376,214 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       }
     };
   }, [currentUserId]);
+
+  // Listen for new messages from socket
+  useEffect(() => {
+    if (!currentUserId) {
+      // Clean up listener if no user ID
+      if (messageListenerUnlistenRef.current) {
+        messageListenerUnlistenRef.current();
+        messageListenerUnlistenRef.current = null;
+        isMessageListenerSetupRef.current = false;
+      }
+      return;
+    }
+
+    // Prevent multiple listeners from being set up
+    if (isMessageListenerSetupRef.current) {
+      return;
+    }
+
+    const setupListener = async () => {
+      // Double-check after async gap
+      if (isMessageListenerSetupRef.current) {
+        return;
+      }
+
+      try {
+        // Clean up any existing listener first
+        if (messageListenerUnlistenRef.current) {
+          messageListenerUnlistenRef.current();
+          messageListenerUnlistenRef.current = null;
+        }
+
+        const unlistenFn = await listen<Message>('socket:social/message_pushed', async (event) => {
+          const newMessage = event.payload;
+
+          // Atomic de-duping check: prevent duplicate processing
+          // Check if this message has already been processed
+          if (processedMessagesRef.current.has(newMessage._id)) {
+            return;
+          }
+
+          // Mark as processed immediately to prevent duplicate processing
+          processedMessagesRef.current.add(newMessage._id);
+
+          // Clean up old message IDs (keep only last 500)
+          if (processedMessagesRef.current.size > 500) {
+            const idsArray = Array.from(processedMessagesRef.current);
+            processedMessagesRef.current = new Set(idsArray.slice(-500));
+          }
+
+          // Get current selected conversation before updating conversations list
+          const currentSelectedConversation = selectedConversationRef.current;
+          const currentSelectedConversationId = currentSelectedConversation?._id;
+
+          // Update conversations list (but only update what changed to avoid flickering)
+          if (currentUserId) {
+            try {
+              const response = await getConversations(currentUserId);
+              const conversationsWithMessages = (response.data || []).filter((conv) => conv.latest_message);
+
+              // Only update conversations list if something actually changed
+              setConversations((prev) => {
+                // Check if the list actually changed
+                const hasChanges =
+                  conversationsWithMessages.length !== prev.length ||
+                  conversationsWithMessages.some((newConv) => {
+                    const oldConv = prev.find((c) => c._id === newConv._id);
+                    if (!oldConv) return true; // New conversation
+                    // Check if unread_count or latest_message changed
+                    return (
+                      oldConv.unread_count !== newConv.unread_count ||
+                      oldConv.latest_message?._id !== newConv.latest_message?._id
+                    );
+                  });
+
+                if (!hasChanges) {
+                  return prev;
+                }
+
+                return conversationsWithMessages;
+              });
+            } catch (error) {
+              console.error('Failed to refresh conversations:', error);
+            }
+          }
+
+          // Play notification sound if user is recipient and conversation is not currently open
+          const isCurrentConversationOpen =
+            currentSelectedConversation && newMessage.conversation_id === currentSelectedConversation._id;
+          if (newMessage.sender_id !== currentUserId && !isCurrentConversationOpen) {
+            // Play notification sound for new messages in other conversations if general notifications are enabled
+            const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
+            if (generalEnabled) {
+              const volume = settings?.whisperNotificationVolume ?? 70;
+              playNotificationSound(volume);
+            }
+          }
+
+          // Always add the new message to the cache for its conversation (even if not currently open)
+          const conversationId = newMessage.conversation_id;
+          const cachedMessagesForConversation = messagesCacheRef.current.get(conversationId) || [];
+          const messageExistsInCache = cachedMessagesForConversation.some((m) => m._id === newMessage._id);
+
+          if (!messageExistsInCache) {
+            // Add message to cache
+            const updatedCachedMessages = [...cachedMessagesForConversation, newMessage];
+            messagesCacheRef.current.set(conversationId, updatedCachedMessages);
+
+            // If this conversation is currently open, also update the state
+            if (isCurrentConversationOpen) {
+              // Use functional update to only add the new message, avoiding full re-render
+              setMessages((prev) => {
+                // Check if message already exists in state (defensive check)
+                if (prev.some((m) => m._id === newMessage._id)) {
+                  return prev; // Return previous state to avoid re-render
+                }
+                return [...prev, newMessage]; // Only add the new message
+              });
+
+              // Mark as read if user is recipient
+              if (newMessage.sender_id !== currentUserId) {
+                markMessagesAsRead([newMessage._id], currentUserId)
+                  .then(() => {
+                    // Update message with read status in cache
+                    const readUpdatedMessages = updatedCachedMessages.map((m) => {
+                      if (m._id === newMessage._id) {
+                        return {
+                          ...m,
+                          reader_ids: [...(m.reader_ids || []), currentUserId],
+                        };
+                      }
+                      return m;
+                    });
+                    messagesCacheRef.current.set(conversationId, readUpdatedMessages);
+
+                    // Update state only if message read status changed
+                    setMessages((prev) =>
+                      prev.map((m) => {
+                        if (m._id === newMessage._id && !m.reader_ids?.includes(currentUserId)) {
+                          return {
+                            ...m,
+                            reader_ids: [...(m.reader_ids || []), currentUserId],
+                          };
+                        }
+                        return m;
+                      }),
+                    );
+
+                    // Update conversation unread_count (only update the specific conversation)
+                    // Use functional update to avoid unnecessary re-renders
+                    setConversations((prev) =>
+                      prev.map((conv) => {
+                        if (conv._id === conversationId && conv.unread_count > 0) {
+                          const newUnreadCount = Math.max(0, conv.unread_count - 1);
+                          const updatedConv = {
+                            ...conv,
+                            unread_count: newUnreadCount,
+                          };
+                          // Also update the selected conversation state if it matches (defer to avoid render during state update)
+                          if (currentSelectedConversationId === conversationId) {
+                            setTimeout(() => {
+                              setSelectedConversation((prevSelected) => {
+                                if (prevSelected?._id === conversationId) {
+                                  return { ...prevSelected, unread_count: newUnreadCount };
+                                }
+                                return prevSelected;
+                              });
+                            }, 0);
+                          }
+                          return updatedConv;
+                        }
+                        return conv;
+                      }),
+                    );
+                  })
+                  .catch((error) => {
+                    console.error('Failed to mark new message as read:', error);
+                  });
+              }
+            }
+          }
+        });
+
+        messageListenerUnlistenRef.current = unlistenFn;
+        isMessageListenerSetupRef.current = true;
+      } catch (error) {
+        console.error('Failed to set up socket message listener:', error);
+        isMessageListenerSetupRef.current = false;
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      // Cleanup: unlisten when component unmounts or dependencies change
+      if (messageListenerUnlistenRef.current) {
+        messageListenerUnlistenRef.current();
+        messageListenerUnlistenRef.current = null;
+        isMessageListenerSetupRef.current = false;
+      }
+    };
+  }, [
+    currentUserId,
+    getConversations,
+    markMessagesAsRead,
+    playNotificationSound,
+    settings?.whisperNotificationsEnabled,
+    settings?.whisperNotificationVolume,
+  ]);
 
   // Load conversations
 
@@ -313,18 +656,49 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     });
 
     // Mark all new unread messages as read in a single batch
-    if (newUnreadMessages.length > 0 && selectedConversation) {
-      markUnreadMessagesAsReadContext(newUnreadMessages, selectedConversation._id).then(() => {
-        // Update local messages state to reflect read status
-        const updatedMessages = messages.map((message) => {
-          const cachedMessages = messagesCache.current.get(selectedConversation._id);
-          const cachedMessage = cachedMessages?.find((m) => m._id === message._id);
-          return cachedMessage || message;
+    if (newUnreadMessages.length > 0) {
+      const unreadMessageIds = newUnreadMessages.map((m) => m._id);
+      markMessagesAsRead(unreadMessageIds, currentUserId)
+        .then(() => {
+          // Update the messages in cache and state to reflect read status
+          const updatedMessages = messages.map((message) => {
+            if (unreadMessageIds.includes(message._id)) {
+              return {
+                ...message,
+                reader_ids: [...(message.reader_ids || []), currentUserId],
+              };
+            }
+            return message;
+          });
+
+          // Update cache
+          messagesCacheRef.current.set(selectedConversation._id, updatedMessages);
+
+          // Update state
+          setMessages(updatedMessages);
+
+          // Update conversation unread_count
+          setConversations((prev) =>
+            prev.map((conv) => {
+              if (conv._id === selectedConversation._id) {
+                const newUnreadCount = Math.max(0, (conv.unread_count || 0) - unreadMessageIds.length);
+                const updatedConv = {
+                  ...conv,
+                  unread_count: newUnreadCount,
+                };
+                // Also update the selected conversation state
+                setSelectedConversation(updatedConv);
+                return updatedConv;
+              }
+              return conv;
+            }),
+          );
+        })
+        .catch((error) => {
+          console.error('Failed to mark new messages as read:', error);
         });
-        setMessages(updatedMessages);
-      });
     }
-  }, [messages, selectedConversation, currentUserId, markUnreadMessagesAsReadContext]);
+  }, [messages, selectedConversation, currentUserId, markMessagesAsRead]);
 
   // Get the other participant in a conversation
   const getOtherParticipant = useCallback(
@@ -392,14 +766,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       const newMessage = await sendMessageApi(conversationId, content, currentUserId);
 
       // Add message to cache
-      const cachedMessages = messagesCache.current.get(conversationId) || [];
-      messagesCache.current.set(conversationId, [...cachedMessages, newMessage]);
+      const cachedMessages = messagesCacheRef.current.get(conversationId) || [];
+      messagesCacheRef.current.set(conversationId, [...cachedMessages, newMessage]);
 
       // Update messages state
       setMessages((prev) => [...prev, newMessage]);
 
       // Update conversation's latest_message in the conversations list
-      updateConversations((prev) => {
+      setConversations((prev) => {
         const updated = prev.map((conv) => {
           if (conv._id === conversationId) {
             return {
@@ -420,13 +794,16 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       });
 
       // Update selected conversation state
-      if (selectedConversation && selectedConversation._id === conversationId) {
-        setSelectedConversation({
-          ...selectedConversation,
-          latest_message: newMessage,
-          updated_at: newMessage.created_at,
-        });
-      }
+      setSelectedConversation((prev) => {
+        if (prev && prev._id === conversationId) {
+          return {
+            ...prev,
+            latest_message: newMessage,
+            updated_at: newMessage.created_at,
+          };
+        }
+        return prev;
+      });
 
       // Scroll to bottom after sending
       setTimeout(() => {
@@ -453,10 +830,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       await deleteConversationApi(conversationId);
 
       // Remove conversation from list
-      updateConversations((prev) => prev.filter((conv) => conv._id !== conversationId));
+      setConversations((prev) => prev.filter((conv) => conv._id !== conversationId));
 
       // Clear messages from cache
-      messagesCache.current.delete(conversationId);
+      messagesCacheRef.current.delete(conversationId);
 
       // If the deleted conversation was selected, clear selection
       if (selectedConversation?._id === conversationId) {
@@ -469,10 +846,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   };
 
   return (
-    <Card className="w-full h-full shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-95 flex flex-col overflow-hidden">
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900 border-neutral-700 rounded-sm relative z-10 opacity-90 flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div
-        data-drag-handle
+        data-tauri-drag-region
         id="titlebar-drag-handle"
         className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800 flex-shrink-0"
       >

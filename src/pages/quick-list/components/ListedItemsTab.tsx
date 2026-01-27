@@ -616,7 +616,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
         </div>
       )}
-      <div className="flex-1 overflow-y-scroll scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="flex-1 overflow-y-scroll pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
         <div className="flex flex-col gap-2">
           {displayListings.length === 0 && searchQuery.trim() && !isLoadingAllListings && (
             <div className="text-center text-sm text-muted-foreground p-4">

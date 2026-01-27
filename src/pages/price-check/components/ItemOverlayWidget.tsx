@@ -1,4 +1,6 @@
+import { openWindowAtCursor } from '@/lib/window';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,10 +30,11 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import {
   fetchItemPrice,
   fetchItemPriceByName,
@@ -41,244 +44,11 @@ import {
 } from '@/pages/currency/lib/price-api';
 import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
 import { cubeCorruptions } from '@/assets/cube-corruptions';
-import { Stat } from '../lib/interfaces';
-
-/**
- * Item grouping rules - similar to server-side ITEM_GROUPING_RULES
- */
-type GroupingData = Record<string, any>;
-
-interface ItemGroupingRule {
-  itemName: string | string[];
-  extractGroupingData: (stats: Stat[]) => GroupingData | null;
-  generateBaseCode: (itemName: string, data: GroupingData) => string;
-  formatLabel: (data: GroupingData) => string;
-  getIcon?: (data: GroupingData, defaultIcon: string) => string;
-}
-
-const ITEM_GROUPING_RULES: ItemGroupingRule[] = [
-  // Rainbow Facet grouping
-  {
-    itemName: 'Rainbow Facet',
-    extractGroupingData: (stats) => {
-      if (!stats || stats.length === 0) return null;
-
-      // Find damage type modifier to determine type
-      // IDs: 48 (fire), 50 (light), 54 (cold), 57 (pois)
-      const damageTypeStat = stats.find(
-        (s) =>
-          s.stat_id === 48 || // firemindam
-          s.stat_id === 50 || // lightmindam
-          s.stat_id === 54 || // coldmindam
-          s.stat_id === 57, // poisonmindam
-      );
-
-      if (!damageTypeStat) {
-        // Try finding by name if ID fails
-        const damageTypeStatByName = stats.find(
-          (s) =>
-            s.name?.toLowerCase().includes('fire damage') ||
-            s.name?.toLowerCase().includes('lightning damage') ||
-            s.name?.toLowerCase().includes('cold damage') ||
-            s.name?.toLowerCase().includes('poison damage'),
-        );
-        if (!damageTypeStatByName) return null;
-
-        // Map name back to type
-        let damageType = '';
-        let elementSuffix = '';
-        if (damageTypeStatByName.name?.toLowerCase().includes('fire')) {
-          damageType = 'fire';
-          elementSuffix = 'fire';
-        } else if (damageTypeStatByName.name?.toLowerCase().includes('lightning')) {
-          damageType = 'lightning';
-          elementSuffix = 'ltng';
-        } else if (damageTypeStatByName.name?.toLowerCase().includes('cold')) {
-          damageType = 'cold';
-          elementSuffix = 'cold';
-        } else if (damageTypeStatByName.name?.toLowerCase().includes('poison')) {
-          damageType = 'poison';
-          elementSuffix = 'pois';
-        }
-
-        if (!damageType) return null;
-
-        // Find mastery and pierce by name
-        const masteryStat = stats.find(
-          (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
-        );
-        const pierceStat = stats.find(
-          (s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType),
-        );
-
-        return {
-          damageType,
-          damagePercent: masteryStat?.value ?? 0,
-          piercePercent: Math.abs(pierceStat?.value ?? 0),
-        };
-      }
-
-      const damageTypeMap: Record<number, string> = {
-        48: 'fire',
-        50: 'lightning',
-        54: 'cold',
-        57: 'poison',
-      };
-
-      const elementSuffixMap: Record<number, string> = {
-        48: 'fire',
-        50: 'ltng',
-        54: 'cold',
-        57: 'pois',
-      };
-
-      const damageType = damageTypeMap[damageTypeStat.stat_id];
-      const elementSuffix = elementSuffixMap[damageTypeStat.stat_id];
-
-      if (!damageType || !elementSuffix) return null;
-
-      // Mastery IDs: 329 (fire), 330 (ltng), 331 (cold), 332 (pois)
-      const masteryStatIdMap: Record<string, number> = {
-        fire: 329,
-        ltng: 330,
-        cold: 331,
-        pois: 332,
-      };
-      const masteryStatId = masteryStatIdMap[elementSuffix];
-
-      // Pierce IDs: 333 (fire), 334 (ltng), 335 (cold), 336 (pois)
-      const pierceStatIdMap: Record<string, number> = {
-        fire: 333,
-        ltng: 334,
-        cold: 335,
-        pois: 336,
-      };
-      const pierceStatId = pierceStatIdMap[elementSuffix];
-
-      const masteryStat =
-        stats.find((s) => s.stat_id === masteryStatId) ||
-        stats.find((s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType));
-
-      const pierceStat =
-        stats.find((s) => s.stat_id === pierceStatId) ||
-        stats.find((s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType));
-
-      return {
-        damageType,
-        damagePercent: masteryStat?.value ?? 0,
-        piercePercent: Math.abs(pierceStat?.value ?? 0),
-      };
-    },
-    generateBaseCode: (itemName, data) => {
-      return `rainbow_facet_${data.damageType}_${data.damagePercent}_${data.piercePercent}`;
-    },
-    formatLabel: (data) => {
-      const damageType = data.damageType.charAt(0).toUpperCase() + data.damageType.slice(1);
-      return `${damageType} Facet ${data.damagePercent}/${data.piercePercent}`;
-    },
-    getIcon: (data, defaultIcon) => {
-      const facetIconMap: Record<string, string> = {
-        fire: 'invgswe5',
-        poison: 'invgswe4',
-        cold: 'invgswe2',
-        lightning: 'invgswe3',
-      };
-      return facetIconMap[data.damageType] || defaultIcon;
-    },
-  },
-
-  // Hellfire Torch grouping
-  {
-    itemName: 'Hellfire Torch',
-    extractGroupingData: (stats) => {
-      if (!stats || stats.length === 0) return null;
-
-      // Find item_addclassskills modifier (stat_id 83 or name contains "Skill Levels")
-      const classSkillStat = stats.find((s) => s.stat_id === 83 || s.name?.toLowerCase().includes('skill levels'));
-
-      if (!classSkillStat) {
-        return null;
-      }
-
-      const classMap: Record<string, string> = {
-        amazon: 'Amazon',
-        assassin: 'Assassin',
-        barbarian: 'Barbarian',
-        druid: 'Druid',
-        necromancer: 'Necromancer',
-        paladin: 'Paladin',
-        sorceress: 'Sorceress',
-      };
-
-      // First try to extract from the skill field (e.g., "Amazon Skills") - more explicit
-      if (classSkillStat.skill) {
-        const skillLower = classSkillStat.skill.toLowerCase();
-        for (const [key, value] of Object.entries(classMap)) {
-          if (skillLower.includes(key)) {
-            return { class: value };
-          }
-        }
-      }
-
-      return null;
-    },
-    generateBaseCode: (itemName, data) => {
-      return `hellfire_torch_${data.class.toLowerCase()}`;
-    },
-    formatLabel: (data) => {
-      return `Hellfire Torch (${data.class})`;
-    },
-  },
-
-  // Spirit Ward grouping
-  {
-    itemName: 'Spirit Ward',
-    extractGroupingData: (stats) => {
-      if (!stats || stats.length === 0) return null;
-
-      // Find item_addclassskills modifier (stat_id 83 or name contains "Skill Levels")
-      const classSkillStat = stats.find((s) => s.stat_id === 83 || s.name?.toLowerCase().includes('skill levels'));
-
-      if (!classSkillStat) {
-        return null;
-      }
-
-      const classMap: Record<string, string> = {
-        amazon: 'Amazon',
-        assassin: 'Assassin',
-        barbarian: 'Barbarian',
-        druid: 'Druid',
-        necromancer: 'Necromancer',
-        paladin: 'Paladin',
-        sorceress: 'Sorceress',
-      };
-
-      // First try to extract from the skill field (e.g., "Amazon Skills") - more explicit
-      if (classSkillStat.skill) {
-        const skillLower = classSkillStat.skill.toLowerCase();
-        for (const [key, value] of Object.entries(classMap)) {
-          if (skillLower.includes(key)) {
-            return { class: value };
-          }
-        }
-      }
-
-      return null;
-    },
-    generateBaseCode: (itemName, data) => {
-      return `spirit_ward_${data.class.toLowerCase()}`;
-    },
-    formatLabel: (data) => {
-      return `Spirit Ward (${data.class})`;
-    },
-  },
-];
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
-  const { showView, toggleView } = useViewManager();
 
   // Use custom hooks for state management
   const { loading, calculatedRuneValues, selectedRuneBreakdown, selectedRuneCombinations, setSelectedRuneBreakdown } =
@@ -330,29 +100,132 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchMode, setSearchMode] = useState(0);
 
   /**
-   * Extract grouping data for the current item using the rules array
+   * Extract Rainbow Facet data from item stats
    */
-  const extractGroupingData = useCallback((): { rule: ItemGroupingRule; data: GroupingData } | null => {
-    if (!item.name || !item.stats) return null;
+  const extractRainbowFacetData = useCallback(() => {
+    // Check if this is a Rainbow Facet - be robust with the name check
+    const isFacet =
+      item.name?.toLowerCase().includes('rainbow facet') ||
+      pd2Item?.key === 'Rainbow Facet' ||
+      pd2Item?.name === 'Rainbow Facet';
 
-    const itemName = item.name;
-    const pd2ItemName = pd2Item?.name || pd2Item?.key;
-
-    for (const rule of ITEM_GROUPING_RULES) {
-      const itemNames = Array.isArray(rule.itemName) ? rule.itemName : [rule.itemName];
-      const matches =
-        itemNames.some((name) => itemName.toLowerCase().includes(name.toLowerCase())) ||
-        (pd2ItemName && itemNames.some((name) => pd2ItemName.toLowerCase() === name.toLowerCase()));
-
-      if (matches) {
-        const data = rule.extractGroupingData(item.stats);
-        if (data) {
-          return { rule, data };
-        }
-      }
+    if (!isFacet) {
+      return null;
     }
 
-    return null;
+    if (!item.stats || item.stats.length === 0) {
+      return null;
+    }
+
+    // Find damage type modifier to determine type
+    // IDs: 48 (fire), 50 (light), 54 (cold), 57 (pois)
+    const damageTypeStat = item.stats.find(
+      (s) =>
+        s.stat_id === 48 || // firemindam
+        s.stat_id === 50 || // lightmindam
+        s.stat_id === 54 || // coldmindam
+        s.stat_id === 57, // poisonmindam
+    );
+
+    if (!damageTypeStat) {
+      // Try finding by name if ID fails
+      const damageTypeStatByName = item.stats.find(
+        (s) =>
+          s.name?.toLowerCase().includes('fire damage') ||
+          s.name?.toLowerCase().includes('lightning damage') ||
+          s.name?.toLowerCase().includes('cold damage') ||
+          s.name?.toLowerCase().includes('poison damage'),
+      );
+      if (!damageTypeStatByName) return null;
+
+      // Map name back to type
+      let damageType = '';
+      let elementSuffix = '';
+      if (damageTypeStatByName.name?.toLowerCase().includes('fire')) {
+        damageType = 'fire';
+        elementSuffix = 'fire';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('lightning')) {
+        damageType = 'lightning';
+        elementSuffix = 'ltng';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('cold')) {
+        damageType = 'cold';
+        elementSuffix = 'cold';
+      } else if (damageTypeStatByName.name?.toLowerCase().includes('poison')) {
+        damageType = 'poison';
+        elementSuffix = 'pois';
+      }
+
+      if (!damageType) return null;
+
+      // Find mastery and pierce by name
+      const masteryStat = item.stats.find(
+        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
+      );
+      const pierceStat = item.stats.find(
+        (s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType),
+      );
+
+      return {
+        damageType,
+        damagePercent: masteryStat?.value ?? 0,
+        piercePercent: Math.abs(pierceStat?.value ?? 0),
+      };
+    }
+
+    const damageTypeMap: Record<number, string> = {
+      48: 'fire',
+      50: 'lightning',
+      54: 'cold',
+      57: 'poison',
+    };
+
+    const elementSuffixMap: Record<number, string> = {
+      48: 'fire',
+      50: 'ltng',
+      54: 'cold',
+      57: 'pois',
+    };
+
+    const damageType = damageTypeMap[damageTypeStat.stat_id];
+    const elementSuffix = elementSuffixMap[damageTypeStat.stat_id];
+
+    if (!damageType || !elementSuffix) return null;
+
+    // Mastery IDs: 329 (fire), 330 (ltng), 331 (cold), 332 (pois)
+    const masteryStatIdMap: Record<string, number> = {
+      fire: 329,
+      ltng: 330,
+      cold: 331,
+      pois: 332,
+    };
+    const masteryStatId = masteryStatIdMap[elementSuffix];
+
+    // Pierce IDs: 333 (fire), 334 (ltng), 335 (cold), 336 (pois)
+    const pierceStatIdMap: Record<string, number> = {
+      fire: 333,
+      ltng: 334,
+      cold: 335,
+      pois: 336,
+    };
+    const pierceStatId = pierceStatIdMap[elementSuffix];
+
+    const masteryStat =
+      item.stats.find((s) => s.stat_id === masteryStatId) ||
+      item.stats.find(
+        (s) => s.name?.toLowerCase().includes('skill damage') && s.name?.toLowerCase().includes(damageType),
+      );
+
+    const pierceStat =
+      item.stats.find((s) => s.stat_id === pierceStatId) ||
+      item.stats.find((s) => s.name?.toLowerCase().includes('enemy') && s.name?.toLowerCase().includes(damageType));
+
+    const result = {
+      damageType,
+      damagePercent: masteryStat?.value ?? 0,
+      piercePercent: Math.abs(pierceStat?.value ?? 0),
+    };
+    console.log('[ItemOverlayWidget] Extracted Rainbow Facet data:', result);
+    return result;
   }, [item.name, item.stats, pd2Item]);
 
   /**
@@ -361,13 +234,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const displayTitle = useMemo(() => {
     if (item.isRuneword) return item.runeword;
 
-    const grouping = extractGroupingData();
-    if (grouping) {
-      return grouping.rule.formatLabel(grouping.data);
+    const facetData = extractRainbowFacetData();
+    if (facetData) {
+      const type = facetData.damageType.charAt(0).toUpperCase() + facetData.damageType.slice(1);
+      return `${type} Facet ${facetData.damagePercent}/${facetData.piercePercent}`;
     }
 
     return item.name;
-  }, [item.isRuneword, item.runeword, item.name, extractGroupingData]);
+  }, [item.isRuneword, item.runeword, item.name, extractRainbowFacetData]);
 
   /**
    * Get the icon filename for the current item
@@ -375,13 +249,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const getItemIcon = useCallback(() => {
     if (!pd2Item?.image?.invfile) return '';
 
-    const grouping = extractGroupingData();
-    if (grouping && grouping.rule.getIcon) {
-      return grouping.rule.getIcon(grouping.data, pd2Item.image.invfile);
+    const facetData = extractRainbowFacetData();
+    if (facetData) {
+      const facetIconMap: Record<string, string> = {
+        fire: 'invgswe5',
+        poison: 'invgswe4',
+        cold: 'invgswe2',
+        lightning: 'invgswe3',
+      };
+      return facetIconMap[facetData.damageType] || pd2Item.image.invfile;
     }
 
     return pd2Item.image.invfile;
-  }, [pd2Item, extractGroupingData]);
+  }, [pd2Item, extractRainbowFacetData]);
 
   /**
    * Get the PD2Trader URL for the current item
@@ -392,11 +272,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       return '';
     }
 
-    const grouping = extractGroupingData();
+    const facetData = extractRainbowFacetData();
     let baseCode = '';
 
-    if (grouping) {
-      baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
+    if (facetData) {
+      baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
     } else if (averagePriceData?.baseCode) {
       baseCode = averagePriceData.baseCode;
     } else {
@@ -405,7 +285,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
 
     return `https://pd2trader.com/item/${baseCode}`;
-  }, [item.quality, pd2Item?.name, averagePriceData, extractGroupingData]);
+  }, [item.quality, pd2Item?.name, averagePriceData, extractRainbowFacetData]);
 
   // Find the matched item type entry
   const matchedItemType = useMemo(() => {
@@ -508,7 +388,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setShowAllCorruptions(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.name, item?.quality, item?.stats, extractGroupingData]);
+  }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -527,11 +407,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isHardcore = settings.mode === 'hardcore';
 
         let priceData: AveragePriceResponse | null;
-        const grouping = extractGroupingData();
+        const facetData = extractRainbowFacetData();
 
-        if (grouping) {
-          const baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
-          console.log('[ItemOverlayWidget] Fetching price for grouped item baseCode:', baseCode);
+        if (facetData) {
+          // For Rainbow Facets, create baseCode with damage type and percentages
+          // Format: "rainbow_facet_{damageType}_{damagePercent}_{piercePercent}"
+          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+          console.log('[ItemOverlayWidget] Fetching price for Rainbow Facet baseCode:', baseCode);
           priceData = await fetchItemPrice(baseCode, {
             isLadder,
             isHardcore,
@@ -560,7 +442,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchAveragePrice();
-  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractGroupingData]);
+  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractRainbowFacetData]);
 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
@@ -581,11 +463,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isHardcore = settings.mode === 'hardcore';
 
         let corruptionData;
-        const grouping = extractGroupingData();
+        const facetData = extractRainbowFacetData();
 
-        if (grouping) {
-          const baseCode = grouping.rule.generateBaseCode(pd2Item.name, grouping.data);
-          console.log('[ItemOverlayWidget] Fetching corruption prices for grouped item baseCode:', baseCode);
+        if (facetData) {
+          const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
+          console.log('[ItemOverlayWidget] Fetching corruption prices for Rainbow Facet baseCode:', baseCode);
           corruptionData = await fetchCorruptionPrices(
             { baseCode },
             {
@@ -616,7 +498,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchCorruptionData();
-  }, [item.quality, item.stats, pd2Item?.name, averagePriceData, settings.ladder, settings.mode, extractGroupingData]);
+  }, [
+    item.quality,
+    item.stats,
+    pd2Item?.name,
+    averagePriceData,
+    settings.ladder,
+    settings.mode,
+    extractRainbowFacetData,
+  ]);
 
   // Helper function to format corruption name the same way the server does
   const formatCorruptionName = useCallback((corruptionNames: string[]): string => {
@@ -771,24 +661,86 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [searchMode, item.type, matchedItemType]);
 
   const openCurrencyValuation = useCallback(async () => {
-    toggleView(VIEW_IDS.CURRENCY, {
-      position: 'centered',
-    });
-  }, [toggleView]);
+    const currencyLabel = WindowLabels.Currency;
+
+    try {
+      // Check if window exists
+      const existingWin = await WebviewWindow.getByLabel(currencyLabel);
+
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          return;
+        } catch (err) {
+          console.warn('[ItemOverlay] Failed to reuse Currency window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openCenteredWindow(currencyLabel, '/currency', {
+        title: WindowTitles.Currency,
+        decorations: false,
+        focus: true,
+        shadow: false,
+        width: 640,
+        height: 870,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+      });
+    } catch (err) {
+      console.error('[ItemOverlay] Failed to open Currency window:', err);
+    }
+  }, []);
 
   const openListWindow = useCallback(async () => {
     const raw = JSON.stringify(item);
     const encodedItem = encodeItemForQuickList(raw);
+    const quickListLabel = WindowLabels.QuickList;
     const safeEncodedItem = encodeURIComponent(encodedItem);
 
-    showView(VIEW_IDS.QUICK_LIST, {
-      position: 'at-cursor',
-      data: { encodedItem: safeEncodedItem },
-    });
+    try {
+      // Check if window exists
+      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
 
-    // Emit the event for the QuickList page to pick up
-    emit('quick-list-new-item', safeEncodedItem);
-  }, [item, showView]);
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          await existingWin.emit('quick-list-new-item', safeEncodedItem);
+          return;
+        } catch (err) {
+          console.warn('[ItemOverlay] Failed to reuse QuickList window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openWindowAtCursor(quickListLabel, `/quick-list?item=${safeEncodedItem}`, {
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+      });
+    } catch (err) {
+      console.error('[ItemOverlay] Failed to open QuickList:', err);
+    }
+  }, [item]);
 
   const fetchListings = useCallback(
     async (isNewSearch: boolean = false) => {
@@ -969,10 +921,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
    *  Render
    *  -----------------*/
   return (
-    <Card className="w-full h-full shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
       {/* Top Bar */}
       <div
-        data-drag-handle
+        data-tauri-drag-region
         id="titlebar-drag-handle"
         className="flex items-center justify-between border-neutral-700 bg-neutral-800/50 flex-none"
       >
@@ -1013,16 +965,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       {/* Header */}
       <div className={'flex flex-col gap-1 flex-none'}>
         <CardHeader className="flex flex-row items-start gap-4 justify-between">
-          <div className={'flex flex-col flex-1'}>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle
-                className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
-                style={{ fontFamily: 'DiabloFont' }}
-              >
-                {displayTitle}
-                {item.isRuneword && <Badge>Runeword</Badge>}
-              </CardTitle>
-            </div>
+          <div className={'flex flex-col'}>
+            <CardTitle
+              className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
+              style={{ fontFamily: 'DiabloFont' }}
+            >
+              {displayTitle}
+              {item.isRuneword && <Badge>Runeword</Badge>}
+            </CardTitle>
             {item.type && (
               <div
                 className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}
@@ -1058,8 +1008,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {averagePriceData && !averagePriceLoading && getItemIcon() && (
               <div className="inline-block">
                 <HoverPopover
-                  side="bottom"
-                  align="start"
                   content={
                     <Card className="p-3 bg-neutral-950 border-neutral-700 w-[400px]">
                       <div className="space-y-2 text-sm">

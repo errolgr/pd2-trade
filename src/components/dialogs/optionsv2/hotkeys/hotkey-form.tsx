@@ -1,12 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useOptions } from '@/hooks/useOptions';
 import { emit } from '@/lib/browser-events';
 import { Loader2 } from 'lucide-react';
@@ -50,14 +49,6 @@ const hotkeyFormSchema = z
       .min(1, 'Enter a key')
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierCommandMenu: z.enum(['ctrl', 'alt']).optional(),
-    hotkeyKeyCommandMenu: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number')
-      .optional(),
-    commandMenuUseDoubleShift: z.boolean().optional(),
   })
   .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
@@ -85,9 +76,6 @@ export function HotkeyForm() {
       hotkeyKeyChat: 't',
       hotkeyModifierOffers: 'ctrl',
       hotkeyKeyOffers: 'b',
-      hotkeyModifierCommandMenu: 'ctrl',
-      hotkeyKeyCommandMenu: 'k',
-      commandMenuUseDoubleShift: true,
     },
   });
 
@@ -389,74 +377,6 @@ export function HotkeyForm() {
                 </FormItem>
               )}
             />
-          </div>
-          <div className="flex flex-col gap-2 mt-4">
-            <FormField
-              control={form.control}
-              name="commandMenuUseDoubleShift"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox checked={field.value ?? true}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Use Shift+Shift for Command Menu</FormLabel>
-                    <FormDescription>
-                      When enabled, double-pressing Shift will open the command menu (only when Diablo is focused)
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-            {!form.watch('commandMenuUseDoubleShift') && (
-              <div className="flex items-end gap-2">
-                <FormField
-                  control={form.control}
-                  name="hotkeyModifierCommandMenu"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="mb-1 block">Command Menu</FormLabel>
-                      <FormControl>
-                        <Tabs defaultValue={'ctrl'}
-                          value={field.value || 'ctrl'}>
-                          <TabsList>
-                            <TabsTrigger value={'ctrl'}
-                              onClick={() => field.onChange('ctrl')}>
-                              Ctrl
-                            </TabsTrigger>
-                            <TabsTrigger value={'alt'}
-                              onClick={() => field.onChange('alt')}>
-                              Alt
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="hotkeyKeyCommandMenu"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center">
-                      <div>+</div>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          maxLength={1}
-                          value={field.value?.toUpperCase() || ''}
-                          className="w-12 text-center"
-                          onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
           </div>
         </form>
       </ScrollArea>

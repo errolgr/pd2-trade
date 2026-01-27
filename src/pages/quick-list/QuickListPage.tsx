@@ -1,27 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import ListItemShortcutForm from './components/ListItemShortcut';
+import { useSearchParams } from 'react-router-dom';
 import { Item as PriceCheckItem } from '../price-check/lib/interfaces';
+import { OptionsProvider } from '@/hooks/useOptions';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { listen } from '@/lib/browser-events';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { ItemsProvider } from '@/hooks/useItems';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
   return decodeURIComponent(escape(str));
 };
 
+// ...
+
 export const QuickListPage: React.FC<any> = () => {
   const [item, setItem] = useState<PriceCheckItem>(null);
-  const { getView } = useViewManager();
-  const view = getView(VIEW_IDS.QUICK_LIST);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Get initial data from view manager
-    if (view?.data?.error === 'not_shared_stash') {
+    const param = searchParams.get('item');
+    const errorParam = searchParams.get('error');
+
+    if (errorParam === 'not_shared_stash') {
       setItem(null);
-    } else if (view?.data?.encodedItem) {
+    } else if (param) {
       try {
-        const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(view.data.encodedItem))));
+        const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
         setItem(json);
       } catch (err) {
         console.error('[QuickListPage] Failed to parse initial payload:', err);
@@ -58,9 +65,24 @@ export const QuickListPage: React.FC<any> = () => {
       const unlistenGlobal = await listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
       const unlistenErrorGlobal = await listen<string>('quick-list-error', ({ payload }) => errorHandler(payload));
 
+      // Window-specific listener (for when emitted directly to this window)
+      let unlistenWindow: (() => void) | undefined;
+      let unlistenWindowError: (() => void) | undefined;
+      try {
+        const appWindow = getCurrentWebviewWindow();
+        unlistenWindow = await appWindow.listen<string>('quick-list-new-item', ({ payload }) => handler(payload));
+        unlistenWindowError = await appWindow.listen<string>('quick-list-error', ({ payload }) =>
+          errorHandler(payload),
+        );
+      } catch {
+        // Ignore if not in Tauri or fails
+      }
+
       return () => {
         unlistenGlobal();
         unlistenErrorGlobal();
+        if (unlistenWindow) unlistenWindow();
+        if (unlistenWindowError) unlistenWindowError();
       };
     };
 
@@ -69,13 +91,19 @@ export const QuickListPage: React.FC<any> = () => {
     return () => {
       cleanupPromise.then((cleanup) => cleanup());
     };
-  }, [view?.data]);
+  }, [searchParams]);
 
   return (
     <TooltipProvider>
-      <div className="h-full w-full overflow-hidden bg-transparent">
-        <ListItemShortcutForm item={item} />
-      </div>
+      <OptionsProvider>
+        <ItemsProvider>
+          <Pd2WebsiteProvider>
+            <div className="h-screen w-screen overflow-hidden bg-transparent">
+              <ListItemShortcutForm item={item} />
+            </div>
+          </Pd2WebsiteProvider>
+        </ItemsProvider>
+      </OptionsProvider>
     </TooltipProvider>
   );
 };

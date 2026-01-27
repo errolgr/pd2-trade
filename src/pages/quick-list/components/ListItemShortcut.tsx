@@ -7,7 +7,7 @@ import { X, GripVertical, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -78,12 +78,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  const { hideView } = useViewManager();
+  // Get the current window reference
+  const appWindow = getCurrentWebviewWindow();
 
   // Window control handler
-  const handleClose = useCallback(() => {
-    hideView(VIEW_IDS.QUICK_LIST);
-  }, [hideView]);
+  const handleClose = useCallback(async () => {
+    await appWindow.hide();
+  }, [appWindow]);
 
   // Complete reset function for new items
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
@@ -330,7 +331,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await emit('toast-event', errorToast);
       }
     },
-    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, hideView],
+    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, appWindow],
   );
 
   // Poll for all queued items
@@ -617,7 +618,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           distributionMetric('list_item.update_price_hr', numericPrice);
         }
 
-        hideView(VIEW_IDS.QUICK_LIST);
+        await appWindow.hide();
       } else {
         // Check if user has reached the maximum number of listings (50)
         if (totalListingsCount >= 50) {
@@ -661,7 +662,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         await emit('toast-event', toastPayload);
         await fetchAllListings(); // Refresh all listings
-        hideView(VIEW_IDS.QUICK_LIST);
+        await appWindow.hide();
       }
     } catch (err) {
       const duration = performance.now() - startTime;
@@ -1036,7 +1037,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   return (
-    <div className="flex flex-col p-4 border rounded-lg bg-background shadow w-full h-full overflow-hidden">
+    <div className="flex flex-col p-4 border rounded-lg bg-background shadow w-screen h-screen overflow-hidden">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -1046,7 +1047,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           id="titlebar">
           <div className="flex items-center gap-1">
             <GripVertical
-              data-drag-handle
+              data-tauri-drag-region
               className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
               id="titlebar-drag-handle"
             />

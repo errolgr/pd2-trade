@@ -333,10 +333,8 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  return <Toaster expand
-    richColors
-    closeButton
-    visibleToasts={5} />;
+  return <Toaster richColors
+    closeButton />;
 };
 
 export default ToastPage;

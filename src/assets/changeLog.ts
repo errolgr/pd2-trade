@@ -1,18 +1,4 @@
 export const changeLog = {
-  '0.8.1': [
-    '🔧Re-enabled Sentry for error logging.',
-    '⬇️⬇️⬇️ EVERYTHING ELSE FROM 0.8.0 ⬇️⬇️⬇️',
-    '✨ All PD2 Trader windows now launch within a single frame instead of having separate processes for each window - you should notice performance increases',
-    '✨ Remade the chat button UI with improved design and functionality',
-    '🆕 Added a new command menu for quick access to features and navigation (default: shift shift)',
-    '🔧 Cleaned up whisper sound',
-  ],
-  '0.8.0': [
-    '✨ All PD2 Trader windows now launch within a single frame instead of having separate processes for each window - you should notice performance increases',
-    '✨ Remade the chat button UI with improved design and functionality',
-    '🆕 Added a new command menu for quick access to features and navigation (default: shift shift)',
-    '🔧 Cleaned up whisper sound',
-  ],
   '0.7.9': [
     '🔧 Fixed an issue which cause listing errors when the matching amount of items was over 20 items',
     '🔧 Fixed an issue which caused deleted listings to not be removed from the quick list window',

@@ -25,9 +25,6 @@ export interface ISettings {
   hotkeyKeyChat: string;
   hotkeyModifierOffers: 'ctrl' | 'alt';
   hotkeyKeyOffers: string;
-  hotkeyModifierCommandMenu?: 'ctrl' | 'alt';
-  hotkeyKeyCommandMenu?: string;
-  commandMenuUseDoubleShift?: boolean;
   fillStatValue?: number;
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
@@ -42,10 +39,6 @@ export interface ISettings {
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   windowTrackingEnabled?: boolean; // Dynamically track D2 window position/size
-  viewStates?: Record<
-    string,
-    { customPosition?: { x: number; y: number }; customSize?: { width: number; height: number } }
-  >;
 }
 
 interface OptionsContextProps {
@@ -72,9 +65,6 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeyChat: 't',
   hotkeyModifierOffers: 'ctrl',
   hotkeyKeyOffers: 'b',
-  hotkeyModifierCommandMenu: 'ctrl',
-  hotkeyKeyCommandMenu: 'k',
-  commandMenuUseDoubleShift: true,
   fillStatValue: 5,
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,
@@ -85,7 +75,6 @@ const DEFAULT_SETTINGS: ISettings = {
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
   windowTrackingEnabled: true,
-  viewStates: {},
 };
 
 const SETTINGS_FILENAME = 'settings.json';

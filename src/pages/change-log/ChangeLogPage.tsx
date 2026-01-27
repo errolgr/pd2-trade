@@ -1,6 +1,7 @@
 import { useOptions } from '@/hooks/useOptions';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
@@ -9,7 +10,6 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ChangelogPage() {
-  const { hideView } = useViewManager();
   const { settings, updateSettings } = useOptions();
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
 
@@ -27,14 +27,14 @@ export default function ChangelogPage() {
   if (!currentVersion || !entries) return null;
 
   return (
-    <Card className={'w-full h-full flex flex-col overflow-hidden'}>
+    <Card className={'w-screen h-screen flex flex-col overflow-hidden'}>
       <div className="py-10 px-4 flex flex-col h-full min-h-0">
         <div className={'flex flex-row justify-between items-center mb-4 flex-shrink-0'}>
           <h1 className="text-xl font-bold">What&#39;s New (v{currentVersion})</h1>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => hideView(VIEW_IDS.CHANGELOG)}
+            onClick={() => getCurrentWebviewWindow().hide()}
             className="self-start cursor-pointer"
           >
             <X className="h-4 w-4 " />

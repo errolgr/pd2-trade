@@ -8,7 +8,7 @@ import moment from 'moment';
 import { emit } from '@/lib/browser-events';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 interface MarketListingBadgeProps {
   stashItem: GameStashItem;
@@ -25,7 +25,6 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   deleteMarketListing,
   onRefresh,
 }) => {
-  const { hideView } = useViewManager();
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
   const [bumping, setBumping] = useState<string | null>(null);
@@ -135,7 +134,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
               await deleteMarketListing(listing._id);
               await onRefresh();
               await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
-              hideView(VIEW_IDS.QUICK_LIST);
+              const win = await getCurrentWebviewWindow();
+              if (win) await win.hide();
             }}
           />
         </TooltipTrigger>

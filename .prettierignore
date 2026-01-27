@@ -11,4 +11,3 @@ Cargo.lock
 target
 *.min.js
 *.min.css
-src/components/ui

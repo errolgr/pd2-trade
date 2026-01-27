@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
+import { openCenteredWindow, attachWindowCloseHandler } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
@@ -9,7 +10,7 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { WindowTitles } from '@/lib/window-titles';
 
 type TrayContextValue = {
   tray: any | null;
@@ -24,7 +25,6 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const [tray, setTray] = useState<any | null>(null);
   const [settingsWindow, setSettingsWindow] = useState<any | null>(null);
   const { settings } = useOptions();
-  const { showView, toggleView } = useViewManager();
   const trayRef = useRef<any | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
   const settingsWinRef = useRef<any | null>(null);
@@ -37,10 +37,29 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   }, [isSettingsOpen]);
 
   const showSettingsWindow = async () => {
-    toggleView(VIEW_IDS.SETTINGS, {
-      position: 'centered',
-    });
-    setIsSettingsOpen(true);
+    if (!settingsWinRef.current) {
+      settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
+        title: WindowTitles.Settings,
+        decorations: false,
+        skipTaskbar: true,
+        transparent: true,
+        alwaysOnTop: true,
+        focus: true,
+        shadow: false,
+        width: 1025,
+        height: 700,
+      });
+      setSettingsWindow(settingsWinRef.current);
+      setIsSettingsOpen(true);
+      attachWindowCloseHandler(settingsWinRef.current, () => {
+        settingsWinRef.current = null;
+        setSettingsWindow(null);
+        setIsSettingsOpen(false);
+      });
+    } else {
+      await settingsWinRef.current.show();
+      setIsSettingsOpen(true);
+    }
   };
 
   // Listen for open-settings event

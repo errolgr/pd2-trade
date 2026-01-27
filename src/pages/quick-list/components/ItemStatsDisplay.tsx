@@ -8,16 +8,9 @@ interface ItemStatsDisplayProps {
   isExpanded: boolean;
   onToggleExpanded: (itemHash: string) => void;
   hideToggle?: boolean;
-  onModifierClick?: (modifierName: string, min?: number, max?: number) => void;
 }
 
-const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
-  stashItem,
-  isExpanded,
-  onToggleExpanded,
-  hideToggle,
-  onModifierClick,
-}) => {
+const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpanded, onToggleExpanded, hideToggle }) => {
   const hasModifiers = stashItem.modifiers && stashItem.modifiers.length > 0;
 
   const filteredModifiers = stashItem.modifiers.filter((mod) => {
@@ -70,21 +63,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
                 })}
               >
                 {mod.label}
-                {mod?.min && mod?.max && (
-                  <span
-                    className={cn('cursor-pointer hover:text-blue-400 transition-colors', {
-                      'cursor-default hover:text-inherit': !onModifierClick,
-                    })}
-                    onClick={(e) => {
-                      if (onModifierClick) {
-                        e.stopPropagation();
-                        onModifierClick(mod.name, mod.min, mod.max);
-                      }
-                    }}
-                  >
-                    {`: [${mod.min} - ${mod.max}]`}
-                  </span>
-                )}
+                {mod?.min && mod?.max && `: [${mod.min} - ${mod.max}]`}
               </div>
             ))
           ) : (
@@ -98,21 +77,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({
                   })}
                 >
                   {mod.label}
-                  {mod?.min && mod?.max && (
-                    <span
-                      className={cn('cursor-pointer hover:text-blue-400 transition-colors', {
-                        'cursor-default hover:text-inherit': !onModifierClick,
-                      })}
-                      onClick={(e) => {
-                        if (onModifierClick) {
-                          e.stopPropagation();
-                          onModifierClick(mod.name, mod.min, mod.max);
-                        }
-                      }}
-                    >
-                      {`: [${mod.min} - ${mod.max}]`}
-                    </span>
-                  )}
+                  {mod?.min && mod?.max && `: [${mod.min} - ${mod.max}]`}
                 </div>
               ))}
               {sortedModifiers.length > 3 && !hideToggle && (

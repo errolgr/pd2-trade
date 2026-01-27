@@ -1,29 +1,54 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatButton } from '@/components/custom/ChatButton';
 import { emit, listen } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
-import { useNotificationCountsContext } from '@/contexts/NotificationCountsContext';
-import { useViewManager, VIEW_IDS } from '@/hooks/useViewManager';
+import { OptionsProvider } from '@/hooks/useOptions';
+import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ItemsProvider } from '@/hooks/useItems';
+
+interface UnreadCountEvent {
+  count: number;
+}
 
 const ChatButtonPageContent: React.FC = () => {
-  const { updateSettings, settings } = useOptions();
-  const { chatUnreadCount, totalTradeOffersCount, tradeMessagesCount } = useNotificationCountsContext();
-  const { toggleView, showView, hideView, isVisible } = useViewManager();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [whispersCount, setWhispersCount] = useState(0);
+  const [websiteOffersCount, setWebsiteOffersCount] = useState(0);
+  const { updateSettings } = useOptions();
 
-  // Debug: Log when tradeMessagesCount changes
-  useEffect(() => {
-    console.log('[ChatButtonPage] tradeMessagesCount updated:', tradeMessagesCount);
-  }, [tradeMessagesCount]);
+  // Calculate total trade offers count (website offers + whispers)
+  const tradeOffersCount = whispersCount + websiteOffersCount;
 
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
     let unlistenConfirm: (() => void) | null = null;
+    let unlistenTradeMessagesCount: (() => void) | null = null;
+    let unlistenTradeOffersCount: (() => void) | null = null;
 
     const setupListener = async () => {
       try {
+        unlisten = await listen<UnreadCountEvent>('chat-unread-count-updated', (event) => {
+          console.log('[ChatButtonPage] Received unread count update:', event.payload.count);
+          setUnreadCount(event.payload.count);
+        });
+
         unlistenConfirm = await listen('confirm-disable-overlay', async () => {
           await updateSettings({ chatButtonOverlayEnabled: false });
           await emit('toast-event', 'Chat button overlay disabled. Re-enable in Settings → Interface.');
         });
+
+        // Listen for trade messages count updates (whispers)
+        unlistenTradeMessagesCount = await listen<{ count: number }>('trade-messages-count-updated', (event) => {
+          setWhispersCount(event.payload.count);
+        });
+
+        // Listen for trade offers count updates (website offers)
+        unlistenTradeOffersCount = await listen<{ incomingCount: number; outgoingCount: number; totalCount: number }>(
+          'trade-offers-count-updated',
+          (event) => {
+            setWebsiteOffersCount(event.payload.totalCount);
+          },
+        );
       } catch (error) {
         console.error('Failed to set up listeners:', error);
       }
@@ -32,8 +57,17 @@ const ChatButtonPageContent: React.FC = () => {
     setupListener();
 
     return () => {
+      if (unlisten) {
+        unlisten();
+      }
       if (unlistenConfirm) {
         unlistenConfirm();
+      }
+      if (unlistenTradeMessagesCount) {
+        unlistenTradeMessagesCount();
+      }
+      if (unlistenTradeOffersCount) {
+        unlistenTradeOffersCount();
       }
     };
   }, [updateSettings]);
@@ -50,37 +84,9 @@ const ChatButtonPageContent: React.FC = () => {
     await emit('toggle-trade-messages-window');
   };
 
-  const handleCommandMenuClick = async () => {
-    const isCurrentlyVisible = isVisible(VIEW_IDS.COMMAND_MENU);
-    if (isCurrentlyVisible) {
-      hideView(VIEW_IDS.COMMAND_MENU);
-    } else {
-      showView(VIEW_IDS.COMMAND_MENU, {
-        type: 'panel',
-        position: 'centered',
-      });
-    }
-  };
-
-  const handleItemSearchClick = async () => {
-    showView(VIEW_IDS.ITEM_SEARCH, {
-      type: 'panel',
-      position: 'over-diablo',
-    });
-  };
-
-  const handleQuickListClick = async () => {
-    showView(VIEW_IDS.QUICK_LIST, {
-      type: 'panel',
-      position: 'over-diablo',
-    });
-  };
-
-  const handleCurrencyValuationClick = async () => {
-    toggleView(VIEW_IDS.CURRENCY, {
-      type: 'panel',
-      position: 'centered',
-    });
+  const handleManageListingsClick = async () => {
+    console.log('[ChatButtonPage] handleManageListingsClick called, emitting open-quick-list-manage');
+    await emit('open-quick-list-manage');
   };
 
   const handleDisableClick = () => {
@@ -88,32 +94,31 @@ const ChatButtonPageContent: React.FC = () => {
     // This function just needs to exist to pass to ChatButton
   };
 
-  // Don't render if overlay is disabled
-  if (settings?.chatButtonOverlayEnabled === false) {
-    return null;
-  }
-
   return (
-    <div className="pointer-events-none">
+    <div className="w-screen h-screen pointer-events-none">
       <ChatButton
         handleClick={handleClick}
         onSettingsClick={handleSettingsClick}
         onTradeMessagesClick={handleTradeMessagesClick}
-        onItemSearchClick={handleItemSearchClick}
-        onQuickListClick={handleQuickListClick}
-        onCurrencyValuationClick={handleCurrencyValuationClick}
-        onCommandMenuClick={handleCommandMenuClick}
+        onManageListingsClick={handleManageListingsClick}
         onDisableClick={handleDisableClick}
-        unreadCount={chatUnreadCount}
-        tradeOffersCount={totalTradeOffersCount}
-        tradeMessagesCount={tradeMessagesCount}
+        unreadCount={unreadCount}
+        tradeOffersCount={tradeOffersCount}
       />
     </div>
   );
 };
 
 const ChatButtonPage: React.FC = () => {
-  return <ChatButtonPageContent />;
+  return (
+    <OptionsProvider>
+      <ItemsProvider>
+        <Pd2WebsiteProvider>
+          <ChatButtonPageContent />
+        </Pd2WebsiteProvider>
+      </ItemsProvider>
+    </OptionsProvider>
+  );
 };
 
 export default ChatButtonPage;

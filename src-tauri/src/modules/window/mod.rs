@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[derive(Serialize, Clone, Copy, Debug)]
@@ -164,32 +164,4 @@ pub fn start_tracking_thread(app: AppHandle) {
             std::thread::sleep(std::time::Duration::from_millis(50));
         }
     });
-}
-
-#[derive(Serialize, Clone, Copy, Debug)]
-struct MousePos {
-    x: f64,
-    y: f64,
-}
-
-/// Starts a global mouse tracking thread that emits device-mouse-move events
-pub fn start_global_mouse_stream(window: WebviewWindow) {
-    let callback = move |x: f64, y: f64| {
-        let mouse_pos = MousePos { x, y };
-        let _ = window.emit("device-mouse-move", mouse_pos);
-    };
-    
-    #[cfg(target_os = "windows")]
-    {
-        if let Err(e) = crate::modules::window::windows::start_global_mouse_tracking(callback) {
-            eprintln!("[MouseStream] Failed to install Windows mouse hook: {}", e);
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        if let Err(e) = crate::modules::window::linux::start_global_mouse_tracking(callback) {
-            eprintln!("[MouseStream] Failed to start Linux mouse tracking: {}", e);
-        }
-    }
 }
