@@ -1,0 +1,20 @@
+export const PD2_SCOPES = [
+  'openid',
+  'profile',
+  'listing:read',
+  'listing:create',
+  'listing:update',
+  'listing:delete',
+  'offer:read',
+  'offer:update',
+  'conversation:read',
+  'conversation:create',
+  'conversation:delete',
+  'message:read',
+  'message:create',
+  'message:update',
+  'account:read',
+  'character:read',
+  'stash:read',
+];
+export const BACKEND_URL = 'https://pd2trader.com';
