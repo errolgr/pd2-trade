@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.9.0': [
+    '✨ Reworked authentication - worked with the PD2 team to bring OAuth support, you can now sign in with your PD2 account directly in-app',
+    '✨ Your login session now automatically refreshes in the background - you will no longer need to re-authenticate as frequently',
+  ],
   '0.8.2': ['🔧Revert back to commit 0.7.9 due to issues with the new window implementation'],
   '0.8.1': [
     '🔧Re-enabled Sentry for error logging.',
