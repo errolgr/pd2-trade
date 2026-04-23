@@ -28,9 +28,7 @@ export const SignInDialog: React.FC = () => {
           resizable: false,
           decorations: false,
           transparent: true,
-          alwaysOnTop: true,
           center: true,
-          skipTaskbar: true,
           focus: true,
         });
       });
