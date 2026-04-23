@@ -9,7 +9,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GET
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{chat_watcher, commands, keyboard, system, webview, window};
+pub use modules::{chat_watcher, commands, keyboard, system, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -127,7 +127,6 @@ pub fn run() {
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,
-            commands::open_project_diablo2_webview,
             commands::update_window_bounds,
             commands::set_window_click_through,
             commands::force_window_focus,

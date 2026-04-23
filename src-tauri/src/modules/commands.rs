@@ -23,15 +23,6 @@ pub fn is_diablo_focused() -> bool {
 }
 
 #[tauri::command]
-pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Result<(), String> {
-    // Spawn a new thread to avoid deadlocks on Windows
-    std::thread::spawn(move || {
-        let _ = crate::webview::open_project_diablo2_webview(app_handle);
-    });
-    Ok(())
-}
-
-#[tauri::command]
 pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) {
         if let Some(main_window) =
