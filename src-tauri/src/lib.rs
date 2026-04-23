@@ -31,7 +31,7 @@ pub fn run() {
             tauri_plugin_window_state::Builder::default()
                 .with_filename("window-state.json")
                 .with_state_flags(tauri_plugin_window_state::StateFlags::all())
-                .with_denylist(&[])
+                .with_denylist(&["SignIn"])
                 .build(),
         )
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {

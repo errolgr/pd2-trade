@@ -3,6 +3,7 @@ import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { useOAuth } from '@/hooks/useOAuth';
 import { OptionsProvider } from '@/hooks/useOptions';
 import pd2Logo from '@/assets/pd2_logo.png';
+import { X } from 'lucide-react';
 
 function SignInContent() {
   const { startOAuthFlow } = useOAuth();
@@ -23,7 +24,17 @@ function SignInContent() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground select-none gap-6 px-8">
+    <div
+      className="relative flex flex-col items-center justify-center h-screen bg-background text-foreground select-none gap-6 px-8 rounded-lg border border-border shadow-2xl"
+      data-tauri-drag-region
+    >
+      <button
+        onClick={handleLater}
+        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Close"
+      >
+        <X className="w-4 h-4" />
+      </button>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-xl font-semibold">Sign in to PD2 Trader</h1>
         <p className="text-sm text-muted-foreground">
