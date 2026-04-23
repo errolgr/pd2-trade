@@ -3,7 +3,7 @@ import { listen } from '@/lib/browser-events';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import ChatOverlayWidget from '@/pages/chat/components/ChatOverlayWidget';
 import { OptionsProvider } from '@/hooks/useOptions';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 
 const ChatWindow: React.FC = () => {
   useEffect(() => {
@@ -19,9 +19,9 @@ const ChatWindow: React.FC = () => {
 
   return (
     <OptionsProvider>
-      <Pd2WebsiteProvider>
+      <ChildPd2WebsiteProvider>
         <ChatOverlayWidget onClose={() => getCurrentWebviewWindow().hide()} />
-      </Pd2WebsiteProvider>
+      </ChildPd2WebsiteProvider>
     </OptionsProvider>
   );
 };

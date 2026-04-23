@@ -5,7 +5,7 @@ import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget';
 import { OptionsProvider } from '@/hooks/useOptions';
 import { ItemsProvider } from '@/hooks/useItems';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
@@ -52,14 +52,14 @@ const ItemWindow: React.FC = () => {
   return (
     <OptionsProvider>
       <ItemsProvider>
-        <Pd2WebsiteProvider>
+        <ChildPd2WebsiteProvider>
           {!item ? (
             <div className="text-center text-gray-500">No item data provided or failed to parse.</div>
           ) : (
             <ItemOverlayWidget item={item}
               onClose={() => getCurrentWebviewWindow().hide()} />
           )}
-        </Pd2WebsiteProvider>
+        </ChildPd2WebsiteProvider>
       </ItemsProvider>
     </OptionsProvider>
   );

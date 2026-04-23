@@ -5,7 +5,7 @@ import { X, Search, Check, CheckCheck, MoreVertical, Trash2, Loader2 } from 'luc
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useSocket } from '@/hooks/pd2website/useSocket';
+import { useChatApi } from '@/hooks/pd2website/useChatApi';
 import { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import { listen, emit } from '@/lib/browser-events';
 import { Badge } from '@/components/ui/badge';
@@ -26,16 +26,15 @@ interface ChatOverlayWidgetProps {
 }
 
 export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
+  const { authData } = usePd2Website();
+  const { settings } = useOptions();
   const {
-    authData,
     deleteConversation: deleteConversationApi,
     getConversations,
     getMessages,
     sendMessage: sendMessageApi,
     markMessagesAsRead,
-  } = usePd2Website();
-  const { isConnected } = useSocket();
-  const { settings } = useOptions();
+  } = useChatApi(authData?.accessToken);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -272,11 +271,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   }, [totalUnreadCount]);
 
   // Fetch conversations on mount and when user is available
+  // Guard on authData.accessToken to ensure we have a token before making API calls
   useEffect(() => {
-    if (currentUserId) {
+    console.log(
+      '[ChatOverlay] Load conversations effect, currentUserId:',
+      currentUserId,
+      'hasAccessToken:',
+      !!authData?.accessToken,
+    );
+    if (currentUserId && authData?.accessToken) {
       loadConversations();
     }
-  }, [currentUserId, loadConversations]);
+  }, [currentUserId, authData?.accessToken, loadConversations]);
 
   // Listen for conversation selection event
   useEffect(() => {
@@ -604,27 +610,24 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // Track the last loaded conversation ID to avoid reloading on push message updates
   const lastLoadedConversationIdRef = useRef<string | null>(null);
 
+  // Track conversation ID separately to avoid re-fetching on object reference changes
+  const selectedConversationId = selectedConversation?._id ?? null;
+
   // Load messages when a conversation is selected
   useEffect(() => {
-    if (selectedConversation) {
-      const conversationId = selectedConversation._id;
-
-      // Only reload if it's a different conversation (not just an update to the same one)
-      if (lastLoadedConversationIdRef.current !== conversationId) {
-        lastLoadedConversationIdRef.current = conversationId;
+    if (selectedConversationId) {
+      if (lastLoadedConversationIdRef.current !== selectedConversationId) {
+        lastLoadedConversationIdRef.current = selectedConversationId;
         // Clear messages immediately when switching conversations to show loading state
         setMessages([]);
-        loadMessages(conversationId);
-      } else {
-        // Same conversation, just an update (e.g., unread_count changed from push message)
-        // Don't reload messages, just update the ref
       }
+      loadMessages(selectedConversationId);
     } else {
       // Clear messages when no conversation is selected
       lastLoadedConversationIdRef.current = null;
       setMessages([]);
     }
-  }, [selectedConversation, loadMessages]);
+  }, [selectedConversationId, loadMessages]);
 
   // Load messages for a conversation
 
@@ -853,10 +856,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         id="titlebar-drag-handle"
         className="flex items-center justify-end border-b border-neutral-700 bg-neutral-800 flex-shrink-0"
       >
-        {!isConnected && (
+        {!authData?.accessToken && (
           <Badge variant="destructive"
             className="text-xs mr-2">
-            Disconnected
+            Not authenticated
           </Badge>
         )}
         <Button variant="ghost"

@@ -3,7 +3,7 @@ import { ChatButton } from '@/components/custom/ChatButton';
 import { emit, listen } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import { OptionsProvider } from '@/hooks/useOptions';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 
 interface UnreadCountEvent {
@@ -113,9 +113,9 @@ const ChatButtonPage: React.FC = () => {
   return (
     <OptionsProvider>
       <ItemsProvider>
-        <Pd2WebsiteProvider>
+        <ChildPd2WebsiteProvider>
           <ChatButtonPageContent />
-        </Pd2WebsiteProvider>
+        </ChildPd2WebsiteProvider>
       </ItemsProvider>
     </OptionsProvider>
   );

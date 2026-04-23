@@ -1,5 +1,6 @@
 use crate::{chat_watcher, keyboard, window};
 use tauri::Manager;
+use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -145,4 +146,16 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 #[tauri::command]
 pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub async fn open_oauth_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
+    if !url.starts_with("https://") && !url.starts_with("http://") {
+        return Err("Invalid URL scheme: only HTTP(S) is allowed".to_string());
+    }
+
+    app_handle
+        .opener()
+        .open_url(&url, None::<&str>)
+        .map_err(|e| format!("Failed to open URL: {}", e))
 }

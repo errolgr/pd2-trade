@@ -16,6 +16,8 @@ export interface ISettings {
   hotkeyKeyListItem: string;
   lastSeenVersion?: string;
   pd2Token?: string;
+  pd2RefreshToken?: string;
+  pd2TokenExpiry?: number;
   account?: string;
   hotkeyModifierSettings?: 'ctrl' | 'alt';
   hotkeyKeySettings?: string;

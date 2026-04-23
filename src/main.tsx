@@ -16,6 +16,7 @@ import { GlobalErrorHandler } from './components/GlobalErrorHandler';
 import ChatButtonPage from './pages/chat/ChatButtonPage';
 import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
 import ChatPage from './pages/chat/ChatPage';
+import SignInPage from './pages/sign-in/SignInPage';
 
 // Initialize Sentry asynchronously to avoid blocking application startup
 setTimeout(() => {
@@ -102,6 +103,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route path={'/trade-messages'}
         element={<TradeMessagesPage />} />
+
+      <Route path={'/sign-in'}
+        element={<SignInPage />} />
     </Routes>
   </BrowserRouter>,
 );

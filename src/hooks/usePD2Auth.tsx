@@ -1,98 +1,54 @@
-import { useEffect } from 'react';
-import { isTauri, invoke } from '@tauri-apps/api/core';
-import { emit, listen } from '@/lib/browser-events';
-import { jwtDecode } from 'jwt-decode';
+import { useEffect, useRef } from 'react';
 import { useOptions } from './useOptions';
-import { GenericToastPayload } from '@/common/types/Events';
-
-const openAuthWebview = async () => {
-  if (!isTauri()) {
-    // In browser, open auth URL in new window
-    window.open('https://projectdiablo2.com/auth', '_blank', 'noopener,noreferrer');
-    return;
-  }
-  try {
-    await invoke('open_project_diablo2_webview');
-  } catch (error) {
-    console.error('Failed to open Project Diablo 2 webview:', error);
-  }
-};
-
-const isTokenExpiringSoon = (token: string): boolean => {
-  try {
-    const payload: { exp?: number } = jwtDecode(token);
-    if (!payload.exp) return true;
-
-    const now = Math.floor(Date.now() / 1000);
-    const fiveHours = 5 * 60 * 60;
-    return payload.exp < now + fiveHours;
-  } catch {
-    return true;
-  }
-};
+import { useOAuth } from './useOAuth';
+import { emit } from '@/lib/browser-events';
+import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
 
 export const usePD2Auth = () => {
-  const { settings, isLoading, updateSettings } = useOptions();
+  const { settings, isLoading } = useOptions();
+  const { refreshTokens } = useOAuth();
+  const refreshAttemptedRef = useRef(false);
 
-  // Listen for token updates
-  useEffect(() => {
-    let unlistenPromise: Promise<() => void>;
-
-    listen<string>('pd2-token-found', (event) => {
-      updateSettings({ pd2Token: event.payload });
-      const successToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Authentication successful!',
-      };
-      emit('toast-event', successToastPayload);
-    }).then((off) => {
-      unlistenPromise = Promise.resolve(off);
-    });
-
-    return () => {
-      if (unlistenPromise) {
-        unlistenPromise.then((off) => off());
-      }
-    };
-  }, [updateSettings]);
-
-  // Check token validity and prompt for auth if needed
+  // Auto-refresh token when expiring within 5 minutes, or prompt sign-in if no token
   useEffect(() => {
     if (isLoading) return;
 
     if (!settings?.pd2Token) {
-      if (isTauri()) {
-        // In Tauri, open webview for authentication
-        const authRequiredToastPayload: GenericToastPayload = {
-          title: 'PD2 Trader',
-          description: 'PD2 website authentication required!',
-        };
-        emit('toast-event', authRequiredToastPayload);
-        openAuthWebview();
-      } else {
-        // In browser, show instructions to enter token manually
-        const authRequiredToastPayload: GenericToastPayload = {
-          title: 'PD2 Trader - Authentication Required',
-          description:
-            'Please enter your PD2 token in Settings > Account. Get your token from projectdiablo2.com after logging in.',
-          variant: 'warning',
-        };
-        emit('toast-event', authRequiredToastPayload);
-      }
+      emit(SIGN_IN_DIALOG_EVENT);
       return;
     }
 
-    if (isTokenExpiringSoon(settings.pd2Token)) {
-      if (isTauri()) {
-        openAuthWebview();
-      } else {
-        const tokenExpiringToastPayload: GenericToastPayload = {
-          title: 'PD2 Trader - Token Expiring',
-          description: 'Your token is expiring soon. Please update it in Settings > Account.',
-          variant: 'warning',
-        };
-        emit('toast-event', tokenExpiringToastPayload);
-      }
+    const expiresAt = settings.pd2TokenExpiry;
+    if (!expiresAt) return;
+
+    const fiveMinutes = 5 * 60 * 1000;
+    const timeUntilRefresh = expiresAt - Date.now() - fiveMinutes;
+
+    if (timeUntilRefresh <= 0 && settings.pd2RefreshToken && !refreshAttemptedRef.current) {
+      // Token expiring soon or already expired, try refresh
+      refreshAttemptedRef.current = true;
+      refreshTokens(settings.pd2RefreshToken).then((success) => {
+        if (!success) {
+          emit(SIGN_IN_DIALOG_EVENT);
+        }
+        refreshAttemptedRef.current = false;
+      });
+      return;
     }
-  }, [settings?.pd2Token, isLoading]);
+
+    if (timeUntilRefresh > 0 && settings.pd2RefreshToken) {
+      // Schedule refresh before expiry
+      const timer = setTimeout(() => {
+        if (settings.pd2RefreshToken) {
+          refreshTokens(settings.pd2RefreshToken).then((success) => {
+            if (!success) {
+              emit(SIGN_IN_DIALOG_EVENT);
+            }
+          });
+        }
+      }, timeUntilRefresh);
+
+      return () => clearTimeout(timer);
+    }
+  }, [settings?.pd2Token, settings?.pd2TokenExpiry, settings?.pd2RefreshToken, isLoading, refreshTokens]);
 };

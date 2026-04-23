@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { OptionsProvider } from '@/hooks/useOptions';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { DialogProvider } from '@/hooks/useDialog';
 import { ItemsProvider } from '@/hooks/useItems';
 
@@ -10,9 +10,9 @@ export const SettingsPage: React.FC = () => {
     <DialogProvider>
       <OptionsProvider>
         <ItemsProvider>
-          <Pd2WebsiteProvider>
+          <ChildPd2WebsiteProvider>
             <SettingsLayout />
-          </Pd2WebsiteProvider>
+          </ChildPd2WebsiteProvider>
         </ItemsProvider>
       </OptionsProvider>
     </DialogProvider>

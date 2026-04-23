@@ -8,7 +8,8 @@
     "ItemSearch": "ItemSearch",
     "Settings": "Settings",
     "Currency": "Currency",
-    "Toast": "Toast"
+    "Toast": "Toast",
+    "SignIn": "SignIn"
   },
   "titles": {
     "Main": "PD2Trader",
@@ -20,6 +21,7 @@
     "Settings": "PD2Trader: Settings",
     "Currency": "PD2Trader: Currency",
     "Toast": "PD2Trader: Toast",
+    "SignIn": "PD2Trader: Sign In",
     "PREFIX": "PD2Trader"
   }
 }

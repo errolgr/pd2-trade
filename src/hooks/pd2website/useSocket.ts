@@ -135,7 +135,7 @@ export const useSocket = (props?: UseSocketProps) => {
             'create',
             'security/session',
             {
-              strategy: 'jwt',
+              strategy: 'oauth',
               accessToken: settings.pd2Token,
             },
           ]),

@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../pd2-trader-server"
+		}
+	],
+	"settings": {
+	}
+}

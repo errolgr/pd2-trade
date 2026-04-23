@@ -12,7 +12,7 @@ import { emit } from '@/lib/browser-events';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExternalLink, LogOut, LogIn, AlertCircle } from 'lucide-react';
-import { isTauri, invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@tauri-apps/api/core';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const accountFormSchema = z.object({
@@ -24,7 +24,7 @@ type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 export function AccountForm() {
   const { settings, updateSettings } = useOptions();
-  const { authData, logout } = usePd2Website();
+  const { authData, logout, startOAuthFlow } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -68,13 +68,9 @@ export function AccountForm() {
   const handleLogin = async () => {
     setLoggingIn(true);
     try {
-      if (isTauri()) {
-        await invoke('open_project_diablo2_webview');
-      } else {
-        window.open('https://projectdiablo2.com/auth', '_blank', 'noopener,noreferrer');
-      }
+      await startOAuthFlow();
     } catch (error) {
-      console.error('Failed to open authentication:', error);
+      console.error('Failed to start OAuth flow:', error);
     } finally {
       setLoggingIn(false);
     }

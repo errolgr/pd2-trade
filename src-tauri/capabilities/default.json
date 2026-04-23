@@ -104,6 +104,12 @@
         },
         {
           "url": "https://pd2trader.com/**"
+        },
+        {
+          "url": "http://localhost:3000/**"
+        },
+        {
+          "url": "https://caritive-zoila-unhumorously.ngrok-free.dev/**"
         }
       ]
     },

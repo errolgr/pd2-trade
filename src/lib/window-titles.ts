@@ -10,6 +10,7 @@ export const WindowLabels = config.labels as {
   readonly Settings: 'Settings';
   readonly Currency: 'Currency';
   readonly Toast: 'Toast';
+  readonly SignIn: 'SignIn';
 };
 
 export const WindowTitles = config.titles as {
@@ -22,5 +23,6 @@ export const WindowTitles = config.titles as {
   readonly Settings: 'PD2Trader: Settings';
   readonly Currency: 'PD2Trader: Currency';
   readonly Toast: 'PD2Trader: Toast';
+  readonly SignIn: 'PD2Trader: Sign In';
   readonly PREFIX: 'PD2Trader';
 };

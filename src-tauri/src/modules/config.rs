@@ -13,6 +13,7 @@ pub struct WindowLabels {
     pub Settings: String,
     pub Currency: String,
     pub Toast: String,
+    pub SignIn: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -27,6 +28,7 @@ pub struct WindowTitles {
     pub Settings: String,
     pub Currency: String,
     pub Toast: String,
+    pub SignIn: String,
     pub PREFIX: String,
 }
 

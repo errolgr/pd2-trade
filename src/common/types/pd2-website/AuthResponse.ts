@@ -5,7 +5,7 @@ export interface AuthData {
 
 export interface User {
   _id: string;
-  email: string;
+  email?: string;
   username: string;
   game: GamePrefs;
   created_at: string; // ISO 8601 timestamp
@@ -14,6 +14,7 @@ export interface User {
 export interface GamePrefs {
   accounts: string[];
   preferences: Preferences;
+  beta_accounts?: string[];
 }
 
 export interface Preferences {
@@ -24,4 +25,5 @@ export interface Preferences {
   is_ladder: boolean;
   notifications_chat: boolean;
   notifications_market: boolean;
+  discord_market?: boolean;
 }

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Item as PriceCheckItem } from '../price-check/lib/interfaces';
 import { OptionsProvider } from '@/hooks/useOptions';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { listen } from '@/lib/browser-events';
 import { ItemsProvider } from '@/hooks/useItems';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -97,11 +97,11 @@ export const QuickListPage: React.FC<any> = () => {
     <TooltipProvider>
       <OptionsProvider>
         <ItemsProvider>
-          <Pd2WebsiteProvider>
+          <ChildPd2WebsiteProvider>
             <div className="h-screen w-screen overflow-hidden bg-transparent">
               <ListItemShortcutForm item={item} />
             </div>
-          </Pd2WebsiteProvider>
+          </ChildPd2WebsiteProvider>
         </ItemsProvider>
       </OptionsProvider>
     </TooltipProvider>

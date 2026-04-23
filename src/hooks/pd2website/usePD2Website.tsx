@@ -16,9 +16,42 @@ import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-webs
 import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
 import { TradeMessageData } from '@/components/trade/TradeMessage';
 import { emit } from '@tauri-apps/api/event';
-import { isTauri } from '@tauri-apps/api/core';
-import { invoke } from '@tauri-apps/api/core';
+import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
+import { BACKEND_URL } from '@/lib/pkce';
+import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-events';
+import { SignInDialog, SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
+
+interface Pd2WebsiteProviderProps {
+  children: React.ReactNode;
+  suppressSessionExpiredToast?: boolean;
+}
+
+interface Pd2WebsiteRpcRequest {
+  requestId: string;
+  method: string;
+  args: any[];
+}
+
+interface Pd2WebsiteRpcResponse {
+  requestId: string;
+  ok: boolean;
+  result?: any;
+  error?: string;
+}
+
+interface Pd2WebsiteSnapshot {
+  authData: AuthData;
+  incomingOffers: TradeMessageData[];
+  outgoingOffers: TradeMessageData[];
+  hiddenOutgoingOffers: TradeMessageData[];
+  loading: boolean;
+}
+
+const PD2WEBSITE_SNAPSHOT_EVENT = 'pd2website:snapshot';
+const PD2WEBSITE_REQUEST_SNAPSHOT_EVENT = 'pd2website:request-snapshot';
+const PD2WEBSITE_RPC_REQUEST_EVENT = 'pd2website:rpc-request';
+const PD2WEBSITE_RPC_RESPONSE_EVENT = 'pd2website:rpc-response';
 
 // Custom error class for authentication errors
 export class AuthenticationError extends Error {
@@ -79,16 +112,24 @@ interface Pd2WebsiteContextType {
   deleteOutgoingOffer: (offerId: string) => void;
   restoreOutgoingOffer: (offerId: string) => void;
   logout: () => Promise<void>;
+  startOAuthFlow: () => Promise<boolean>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
 
-export const Pd2WebsiteProvider = ({ children }) => {
+export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = false }: Pd2WebsiteProviderProps) => {
   const { updateSettings, settings, isLoading } = useOptions();
+  const { startOAuthFlow, refreshTokens } = useOAuth();
   const [authData, setAuthData] = useState<AuthData>(null);
   const isHandlingAuthError = useRef(false);
   const clearStashCacheRef = useRef<(() => void) | null>(null);
   const handleAuthErrorRef = useRef<(() => void | Promise<void>) | null>(null);
+  const refreshTokenValueRef = useRef<string | undefined>(settings?.pd2RefreshToken);
+
+  // Keep refresh token ref up to date
+  useEffect(() => {
+    refreshTokenValueRef.current = settings?.pd2RefreshToken;
+  }, [settings?.pd2RefreshToken]);
 
   // Stash cache and fetch (RESTful)
   const { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache } =
@@ -116,32 +157,21 @@ export const Pd2WebsiteProvider = ({ children }) => {
         clearStashCacheRef.current();
       }
 
-      // Show toast notification
-      if (isTauri()) {
-        const toastPayload: GenericToastPayload = {
-          title: 'PD2 Trader',
-          description: 'Your session has expired. Please reauthenticate.',
-          variant: 'warning',
-          duration: 5000,
-        };
-        emit('toast-event', toastPayload);
+      // Try silent token refresh first
+      if (refreshTokenValueRef.current) {
+        const success = await refreshTokens(refreshTokenValueRef.current);
+        if (success) return;
       }
 
-      // Open auth webview
-      if (isTauri()) {
-        try {
-          await invoke('open_project_diablo2_webview');
-        } catch (error) {
-          console.error('Failed to open Project Diablo 2 webview:', error);
-        }
-      }
+      // Refresh failed or unavailable — show sign-in dialog to user
+      await emitAppEvent(SIGN_IN_DIALOG_EVENT);
     } finally {
       // Reset flag after a short delay to allow for retry
       setTimeout(() => {
         isHandlingAuthError.current = false;
       }, 2000);
     }
-  }, []);
+  }, [refreshTokens, startOAuthFlow]);
 
   // Logout function to manually trigger re-authentication
   const logout = useCallback(async () => {
@@ -153,35 +183,22 @@ export const Pd2WebsiteProvider = ({ children }) => {
       clearStashCacheRef.current();
     }
 
-    // Show toast notification
-    if (isTauri()) {
-      const toastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Logged out. Please reauthenticate.',
-        variant: 'default',
-        duration: 3000,
-      };
-      emit('toast-event', toastPayload);
-    }
+    // Clear all auth tokens
+    await updateSettings({
+      pd2Token: undefined,
+      pd2RefreshToken: undefined,
+      pd2TokenExpiry: undefined,
+    });
 
-    // Open auth webview
-    if (isTauri()) {
-      try {
-        await invoke('open_project_diablo2_webview');
-      } catch (error) {
-        console.error('Failed to open Project Diablo 2 webview:', error);
-      }
-    } else {
-      // In browser, show instructions
-      const toastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Logged out. Please enter your PD2 token in Settings > Account.',
-        variant: 'default',
-        duration: 5000,
-      };
-      emit('toast-event', toastPayload);
-    }
-  }, []);
+    // Show toast notification
+    const toastPayload: GenericToastPayload = {
+      title: 'PD2 Trader',
+      description: 'Logged out successfully.',
+      variant: 'default',
+      duration: 3000,
+    };
+    emit('toast-event', toastPayload);
+  }, [updateSettings]);
 
   // Update the ref so useStashCache can use the handler
   useEffect(() => {
@@ -240,13 +257,15 @@ export const Pd2WebsiteProvider = ({ children }) => {
   });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
-    const response = await tauriFetch('https://api.projectdiablo2.com/security/session', {
-      method: 'POST',
+    const token = settings?.pd2Token;
+    if (!token) {
+      throw new AuthenticationError('Missing token', 401);
+    }
+    const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/me`, {
+      method: 'GET',
       headers: {
-        Authorization: `Bearer ${settings.pd2Token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token }),
     });
     return await handleApiResponse(response, handleAuthenticationError);
   }, [settings, handleAuthenticationError]);
@@ -283,6 +302,143 @@ export const Pd2WebsiteProvider = ({ children }) => {
     }
   }, [authData, settings.account]);
 
+  // Publish serializable snapshot so child windows can consume parent-owned PD2 state.
+  const publishSnapshot = useCallback(async () => {
+    const snapshot: Pd2WebsiteSnapshot = {
+      authData,
+      incomingOffers,
+      outgoingOffers,
+      hiddenOutgoingOffers,
+      loading,
+    };
+    await emitAppEvent(PD2WEBSITE_SNAPSHOT_EVENT, snapshot);
+  }, [authData, incomingOffers, outgoingOffers, hiddenOutgoingOffers, loading]);
+
+  useEffect(() => {
+    publishSnapshot().catch((error) => {
+      console.warn('[Pd2WebsiteProvider] Failed to publish snapshot:', error);
+    });
+  }, [publishSnapshot]);
+
+  // Serve snapshot on demand for newly-opened child windows.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    const setup = async () => {
+      unlisten = await listenAppEvent(PD2WEBSITE_REQUEST_SNAPSHOT_EVENT, () => {
+        publishSnapshot().catch((error) => {
+          console.warn('[Pd2WebsiteProvider] Failed to publish requested snapshot:', error);
+        });
+      });
+    };
+
+    setup();
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [publishSnapshot]);
+
+  // RPC bridge: child windows proxy all PD2 actions to this parent-owned provider.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    const handlers: Record<string, (...args: any[]) => Promise<any> | any> = {
+      findMatchingItems,
+      listSpecificItem,
+      getMarketListings,
+      getMarketListingsArchive,
+      deleteMarketListing,
+      bumpAllMarketListings,
+      updateMarketListing,
+      updateItemByHash,
+      getCurrencyTab,
+      deleteConversation,
+      getConversations,
+      getMessages,
+      sendMessage,
+      markMessagesAsRead,
+      createConversation,
+      refresh,
+      revokeOffer,
+      acceptOffer,
+      rejectOffer,
+      unacceptOffer,
+      deleteOutgoingOffer,
+      restoreOutgoingOffer,
+      logout,
+      startOAuthFlow,
+    };
+
+    const setup = async () => {
+      unlisten = await listenAppEvent<Pd2WebsiteRpcRequest>(PD2WEBSITE_RPC_REQUEST_EVENT, async (event) => {
+        const payload = event.payload;
+        if (!payload?.requestId || !payload?.method) {
+          return;
+        }
+
+        const handler = handlers[payload.method];
+        if (!handler) {
+          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
+            requestId: payload.requestId,
+            ok: false,
+            error: `Unknown method: ${payload.method}`,
+          } as Pd2WebsiteRpcResponse);
+          return;
+        }
+
+        try {
+          const result = await handler(...(payload.args ?? []));
+          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
+            requestId: payload.requestId,
+            ok: true,
+            result,
+          } as Pd2WebsiteRpcResponse);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
+            requestId: payload.requestId,
+            ok: false,
+            error: message,
+          } as Pd2WebsiteRpcResponse);
+        }
+      });
+    };
+
+    setup();
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [
+    findMatchingItems,
+    listSpecificItem,
+    getMarketListings,
+    getMarketListingsArchive,
+    deleteMarketListing,
+    bumpAllMarketListings,
+    updateMarketListing,
+    updateItemByHash,
+    getCurrencyTab,
+    deleteConversation,
+    getConversations,
+    getMessages,
+    sendMessage,
+    markMessagesAsRead,
+    createConversation,
+    refresh,
+    revokeOffer,
+    acceptOffer,
+    rejectOffer,
+    unacceptOffer,
+    deleteOutgoingOffer,
+    restoreOutgoingOffer,
+    logout,
+    startOAuthFlow,
+  ]);
+
   return (
     <Pd2WebsiteContext.Provider
       value={{
@@ -315,11 +471,158 @@ export const Pd2WebsiteProvider = ({ children }) => {
         deleteOutgoingOffer,
         restoreOutgoingOffer,
         logout,
+        startOAuthFlow,
       }}
     >
       {children}
+      <SignInDialog />
     </Pd2WebsiteContext.Provider>
   );
+};
+
+export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [snapshot, setSnapshot] = useState<Pd2WebsiteSnapshot>({
+    authData: null,
+    incomingOffers: [],
+    outgoingOffers: [],
+    hiddenOutgoingOffers: [],
+    loading: false,
+  });
+
+  const pendingRequestsRef = useRef<
+    Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout }>
+  >(new Map());
+
+  const normalizeOffers = (offers: TradeMessageData[] | undefined): TradeMessageData[] => {
+    if (!offers) return [];
+    return offers.map((offer) => ({
+      ...offer,
+      timestamp: offer.timestamp instanceof Date ? offer.timestamp : new Date(offer.timestamp as unknown as string),
+    }));
+  };
+
+  useEffect(() => {
+    let unlistenSnapshot: (() => void) | null = null;
+    let unlistenRpcResponse: (() => void) | null = null;
+
+    const setup = async () => {
+      unlistenSnapshot = await listenAppEvent<Pd2WebsiteSnapshot>(PD2WEBSITE_SNAPSHOT_EVENT, (event) => {
+        const payload = event.payload;
+        if (!payload) return;
+        setSnapshot({
+          authData: payload.authData ?? null,
+          incomingOffers: normalizeOffers(payload.incomingOffers),
+          outgoingOffers: normalizeOffers(payload.outgoingOffers),
+          hiddenOutgoingOffers: normalizeOffers(payload.hiddenOutgoingOffers),
+          loading: payload.loading ?? false,
+        });
+      });
+
+      unlistenRpcResponse = await listenAppEvent<Pd2WebsiteRpcResponse>(PD2WEBSITE_RPC_RESPONSE_EVENT, (event) => {
+        const payload = event.payload;
+        if (!payload?.requestId) return;
+        const pending = pendingRequestsRef.current.get(payload.requestId);
+        if (!pending) return;
+
+        clearTimeout(pending.timeout);
+        pendingRequestsRef.current.delete(payload.requestId);
+
+        if (payload.ok) {
+          pending.resolve(payload.result);
+        } else {
+          pending.reject(new Error(payload.error || 'PD2 RPC request failed'));
+        }
+      });
+
+      await emitAppEvent(PD2WEBSITE_REQUEST_SNAPSHOT_EVENT, {});
+    };
+
+    setup();
+    return () => {
+      if (unlistenSnapshot) {
+        unlistenSnapshot();
+      }
+      if (unlistenRpcResponse) {
+        unlistenRpcResponse();
+      }
+
+      pendingRequestsRef.current.forEach((pending) => {
+        clearTimeout(pending.timeout);
+        pending.reject(new Error('ChildPd2WebsiteProvider unmounted'));
+      });
+      pendingRequestsRef.current.clear();
+    };
+  }, []);
+
+  const rpcCall = useCallback(<T,>(method: string, ...args: any[]): Promise<T> => {
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise<T>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        pendingRequestsRef.current.delete(requestId);
+        reject(new Error(`PD2 RPC timeout for ${method}`));
+      }, 20000);
+
+      pendingRequestsRef.current.set(requestId, { resolve, reject, timeout });
+
+      emitAppEvent(PD2WEBSITE_RPC_REQUEST_EVENT, {
+        requestId,
+        method,
+        args,
+      } as Pd2WebsiteRpcRequest).catch((error) => {
+        clearTimeout(timeout);
+        pendingRequestsRef.current.delete(requestId);
+        reject(error);
+      });
+    });
+  }, []);
+
+  const contextValue: Pd2WebsiteContextType = {
+    open,
+    findMatchingItems: (item) => rpcCall('findMatchingItems', item),
+    listSpecificItem: (stashItem, hrPrice, note, type) => rpcCall('listSpecificItem', stashItem, hrPrice, note, type),
+    getMarketListings: (query) => rpcCall('getMarketListings', query),
+    getMarketListingsArchive: (query) => rpcCall('getMarketListingsArchive', query),
+    deleteMarketListing: (listingId) => rpcCall('deleteMarketListing', listingId),
+    bumpAllMarketListings: (userId) => rpcCall('bumpAllMarketListings', userId),
+    authData: snapshot.authData,
+    updateMarketListing: (hash, update) => rpcCall('updateMarketListing', hash, update),
+    updateItemByHash: (hash, update) => {
+      rpcCall('updateItemByHash', hash, update).catch((error) => {
+        console.warn('[ChildPd2WebsiteProvider] Failed to update item by hash:', error);
+      });
+      return false;
+    },
+    getCurrencyTab: () => rpcCall('getCurrencyTab'),
+    deleteConversation: (conversationId) => rpcCall('deleteConversation', conversationId),
+    getConversations: (participantId) => rpcCall('getConversations', participantId),
+    getMessages: (conversationId) => rpcCall('getMessages', conversationId),
+    sendMessage: (conversationId, content, senderId) => rpcCall('sendMessage', conversationId, content, senderId),
+    markMessagesAsRead: (messageIds, readerId) => rpcCall('markMessagesAsRead', messageIds, readerId),
+    createConversation: (participantIds) => rpcCall('createConversation', participantIds),
+    incomingOffers: snapshot.incomingOffers,
+    outgoingOffers: snapshot.outgoingOffers,
+    hiddenOutgoingOffers: snapshot.hiddenOutgoingOffers,
+    loading: snapshot.loading,
+    refresh: () => rpcCall('refresh'),
+    revokeOffer: (offerId) => rpcCall('revokeOffer', offerId),
+    acceptOffer: (listingId, offerId) => rpcCall('acceptOffer', listingId, offerId),
+    rejectOffer: (offerId) => rpcCall('rejectOffer', offerId),
+    unacceptOffer: (listingId) => rpcCall('unacceptOffer', listingId),
+    deleteOutgoingOffer: (offerId) => {
+      rpcCall('deleteOutgoingOffer', offerId).catch((error) => {
+        console.warn('[ChildPd2WebsiteProvider] Failed to delete outgoing offer:', error);
+      });
+    },
+    restoreOutgoingOffer: (offerId) => {
+      rpcCall('restoreOutgoingOffer', offerId).catch((error) => {
+        console.warn('[ChildPd2WebsiteProvider] Failed to restore outgoing offer:', error);
+      });
+    },
+    logout: () => rpcCall('logout'),
+    startOAuthFlow: () => rpcCall('startOAuthFlow'),
+  };
+
+  return <Pd2WebsiteContext.Provider value={contextValue}>{children}</Pd2WebsiteContext.Provider>;
 };
 
 export const usePd2Website = () => {
@@ -345,7 +648,7 @@ export async function handleApiResponse(
     }
 
     // Check for 401 Unauthorized (authentication error)
-    // These are expected (JWT expiration) and should be handled silently
+    // These are expected (token expiration / invalid token) and should be handled silently
     if (response.status === 401) {
       const errorMessage = errorJson?.message || response.statusText;
       console.warn('[API] Authentication required (401):', errorMessage);
