@@ -407,7 +407,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
         const seasonConfig = getSeasonDateConfig(settings.selectedSeasonId);
-        const priceConfig = { isLadder, isHardcore, ...seasonConfig };
+        const priceConfig = {
+          isLadder,
+          isHardcore,
+          ...seasonConfig,
+          ...(!seasonConfig.startDate && !seasonConfig.endDate ? { hours: 168 } : {}),
+        };
 
         let priceData: AveragePriceResponse | null;
         const facetData = extractRainbowFacetData();
@@ -465,7 +470,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
         const seasonConfig = getSeasonDateConfig(settings.selectedSeasonId);
-        const priceConfig = { isLadder, isHardcore, ...seasonConfig };
+        const priceConfig = {
+          isLadder,
+          isHardcore,
+          ...seasonConfig,
+          ...(!seasonConfig.startDate && !seasonConfig.endDate ? { hours: 168 } : {}),
+        };
 
         let corruptionData;
         const facetData = extractRainbowFacetData();

@@ -22,10 +22,12 @@ export function getSeasonById(id: string): Season | undefined {
 
 /**
  * Returns startDate/endDate config for price API calls based on the selected season.
- * For 'current', uses the season start date so all current-season data is included.
+ * Returns an empty object for 'current' so the caller uses its default rolling 7-day window.
+ * Past seasons return explicit start/end dates.
  */
 export function getSeasonDateConfig(selectedSeasonId?: string): { startDate?: string; endDate?: string } {
   const id = selectedSeasonId || 'current';
+  if (id === 'current') return {};
   const season = getSeasonById(id);
   if (!season) return {};
   return {

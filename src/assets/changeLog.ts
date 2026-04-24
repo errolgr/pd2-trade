@@ -1,7 +1,7 @@
 export const changeLog = {
   '0.9.1': [
     '🆕 Added a global Season selector - filter all prices by season (S5–S13) in Options > General',
-    '🔧 Price data now defaults to the current season date range instead of a rolling 7-day window',
+    '🔧 Past season prices now filter by exact date range - current season continues to use a rolling 7-day window',
     '🔧 Chat button overlay is now hidden until you are signed in',
     '⬇️⬇️⬇️ EVERYTHING ELSE FROM 0.9.0 ⬇️⬇️⬇️',
     '✨ Reworked authentication - worked with the PD2 team to bring OAuth support, you can now sign in with your PD2 account directly in-app',

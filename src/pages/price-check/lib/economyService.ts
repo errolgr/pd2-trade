@@ -13,8 +13,7 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
   const effectiveConfig: PriceApiConfig = {
     isLadder: config.isLadder ?? true,
     isHardcore: config.isHardcore ?? false,
-    ...(config.startDate ? { startDate: config.startDate } : {}),
-    ...(config.endDate ? { endDate: config.endDate } : {}),
+    ...(config.startDate || config.endDate ? { startDate: config.startDate, endDate: config.endDate } : { hours: 168 }),
   };
 
   const results: {
