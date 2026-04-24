@@ -324,6 +324,12 @@ const MainWindow: React.FC = () => {
       return;
     }
 
+    // Hide chat button when not logged in
+    if (!settings.pd2Token) {
+      hideView(VIEW_IDS.CHAT_BUTTON);
+      return;
+    }
+
     // Hide chat button when Diablo is not focused
     if (!isDiabloFocused) {
       hideView(VIEW_IDS.CHAT_BUTTON);
@@ -352,7 +358,7 @@ const MainWindow: React.FC = () => {
       position: 'custom',
       customPosition: constrainedPosition,
     });
-  }, [settings.chatButtonOverlayEnabled, isDiabloFocused, diabloRectRelative, showView, hideView]);
+  }, [settings.chatButtonOverlayEnabled, settings.pd2Token, isDiabloFocused, diabloRectRelative, showView, hideView]);
 
   // Set up chat window toggle handler
   useEffect(() => {

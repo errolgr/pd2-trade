@@ -7,8 +7,11 @@ import {
   calculateEconomyValues,
 } from '../lib/economyService';
 import { EconomyData } from '../lib/types';
+import { useOptions } from '@/hooks/useOptions';
+import { getSeasonDateConfig } from '@/lib/seasons';
 
 export function useEconomyData() {
+  const { settings } = useOptions();
   const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {}, Currency: {}, Ubers: {} });
   const [loading, setLoading] = useState(false);
   const [selectedRuneBreakdown, setSelectedRuneBreakdown] = useState<string | null>(null);
@@ -17,7 +20,12 @@ export function useEconomyData() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const data = await fetchEconomyData();
+        const seasonConfig = getSeasonDateConfig(settings?.selectedSeasonId);
+        const data = await fetchEconomyData({
+          isLadder: settings?.ladder === 'ladder',
+          isHardcore: settings?.mode === 'hardcore',
+          ...seasonConfig,
+        });
         setEconomyData(data);
       } catch (error) {
         console.error('Failed to fetch economy data:', error);
@@ -27,7 +35,7 @@ export function useEconomyData() {
     };
 
     loadData();
-  }, []);
+  }, [settings?.selectedSeasonId, settings?.ladder, settings?.mode]);
 
   const sortedRunes = useMemo(() => {
     return sortItemsByPrice(economyData.Runes);

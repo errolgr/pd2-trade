@@ -36,6 +36,8 @@ export interface PriceApiConfig {
   isLadder?: boolean;
   isHardcore?: boolean;
   hours?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 /**
@@ -50,7 +52,9 @@ export async function fetchItemPrice(
       baseCode,
       ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
-      ...(config.hours !== undefined && { hours: config.hours.toString() }),
+      ...(config.startDate !== undefined && { startDate: config.startDate }),
+      ...(config.endDate !== undefined && { endDate: config.endDate }),
+      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const response = await fetch(`${API_BASE_URL}/item-prices/average?${params}`);
@@ -88,7 +92,9 @@ export async function fetchItemPriceByName(
       itemName,
       ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
-      ...(config.hours !== undefined && { hours: config.hours.toString() }),
+      ...(config.startDate !== undefined && { startDate: config.startDate }),
+      ...(config.endDate !== undefined && { endDate: config.endDate }),
+      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const url = `${API_BASE_URL}/item-prices/average?${params}`;
@@ -154,7 +160,9 @@ export async function fetchMultipleItemPrices(
       baseCodes,
       ...(config.isLadder !== undefined && { isLadder: config.isLadder }),
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore }),
-      ...(config.hours !== undefined && { hours: config.hours }),
+      ...(config.startDate !== undefined && { startDate: config.startDate }),
+      ...(config.endDate !== undefined && { endDate: config.endDate }),
+      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours }),
     };
 
     const response = await fetch(`${API_BASE_URL}/item-prices/average/batch`, {
@@ -225,7 +233,9 @@ export async function fetchCorruptionPrices(
       ...(params.baseCode && { baseCode: params.baseCode }),
       ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
-      ...(config.hours !== undefined && { hours: config.hours.toString() }),
+      ...(config.startDate !== undefined && { startDate: config.startDate }),
+      ...(config.endDate !== undefined && { endDate: config.endDate }),
+      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const url = `${API_BASE_URL}/item-prices/corruption-prices?${queryParams}`;

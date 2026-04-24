@@ -11,6 +11,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SEASONS } from '@/lib/seasons';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -129,6 +130,30 @@ export function GeneralForm() {
               </FormItem>
             )}
           />
+          <FormItem>
+            <FormLabel>Season</FormLabel>
+            <FormControl>
+              <Select
+                value={settings.selectedSeasonId ?? 'current'}
+                onValueChange={(value) => updateSettings({ selectedSeasonId: value })}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEASONS.map((season) => (
+                    <SelectItem key={season.id}
+                      value={season.id}>
+                      {season.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormDescription>
+              Filter price data by season. Past seasons require historical data to be available.
+            </FormDescription>
+          </FormItem>
           <FormField
             control={form.control}
             name="fillStatValue"

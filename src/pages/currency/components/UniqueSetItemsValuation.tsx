@@ -3,6 +3,7 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { usePd2Website, handleApiResponse } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { fetchItemPriceByName, AveragePriceResponse } from '../lib/price-api';
+import { getSeasonDateConfig } from '@/lib/seasons';
 import { DataTable } from './DataTable';
 import { createUniqueSetColumns, PricedItem } from '../Columns';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -103,6 +104,8 @@ export function UniqueSetItemsValuation() {
       // Fetch prices for all items
       const isLadder = settings.ladder === 'ladder';
       const isHardcore = settings.mode === 'hardcore';
+      const seasonConfig = getSeasonDateConfig(settings.selectedSeasonId);
+      const priceConfig = { isLadder, isHardcore, ...seasonConfig };
 
       const stashTabsData: StashTabData[] = [];
       let processed = 0;
@@ -116,10 +119,7 @@ export function UniqueSetItemsValuation() {
 
           if (item.name) {
             try {
-              priceData = await fetchItemPriceByName(item.name, {
-                isLadder,
-                isHardcore,
-              });
+              priceData = await fetchItemPriceByName(item.name, priceConfig);
             } catch (error) {
               console.error(`Error fetching price for ${item.name}:`, error);
             }

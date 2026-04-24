@@ -41,6 +41,7 @@ export interface ISettings {
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   windowTrackingEnabled?: boolean; // Dynamically track D2 window position/size
+  selectedSeasonId?: string; // Selected season for price filtering
 }
 
 interface OptionsContextProps {

@@ -1,21 +1,20 @@
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { ECONOMY_API_MAP, FIXED_RUNE_PRICES, ALL_RUNE_HR_VALUES } from './constants';
 import { EconomyData, EconomyValue, ItemData, ItemValue, RuneCombination } from './types';
-import { fetchItemPrice, fetchMultipleItemPrices } from '../../currency/lib/price-api';
+import { fetchItemPrice, fetchMultipleItemPrices, PriceApiConfig } from '../../currency/lib/price-api';
 import { STASH_TO_API_MAP, RUNE_NAME_TO_BASE_CODE } from '../../currency/lib/api-mapping';
 import { STASH_API_MAP } from '../../currency/lib/constants';
 
-export async function fetchEconomyData(): Promise<{
+export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
   Runes: Record<string, ItemData>;
   Currency: Record<string, ItemData>;
   Ubers: Record<string, ItemData>;
 }> {
-  // Fetch from our own PD2 Price Crawler API
-  // Default to ladder, non-hardcore, last 24 hours
-  const config = {
-    isLadder: true,
-    isHardcore: false,
-    hours: 168,
+  const effectiveConfig: PriceApiConfig = {
+    isLadder: config.isLadder ?? true,
+    isHardcore: config.isHardcore ?? false,
+    ...(config.startDate ? { startDate: config.startDate } : {}),
+    ...(config.endDate ? { endDate: config.endDate } : {}),
   };
 
   const results: {
@@ -34,7 +33,7 @@ export async function fetchEconomyData(): Promise<{
       .filter((baseCode): baseCode is string => !!baseCode)
       .map((baseCode) => ({ baseCode }));
 
-    const runePrices = await fetchMultipleItemPrices(runeItems, config);
+    const runePrices = await fetchMultipleItemPrices(runeItems, effectiveConfig);
 
     runePrices.forEach((price, baseCode) => {
       const runeName = price.itemName;
@@ -61,7 +60,7 @@ export async function fetchEconomyData(): Promise<{
       .filter((baseCode): baseCode is string => !!baseCode)
       .map((baseCode) => ({ baseCode }));
 
-    const currencyPrices = await fetchMultipleItemPrices(currencyItems, config);
+    const currencyPrices = await fetchMultipleItemPrices(currencyItems, effectiveConfig);
 
     currencyPrices.forEach((price) => {
       const itemName = price.itemName;
@@ -88,7 +87,7 @@ export async function fetchEconomyData(): Promise<{
       .filter((baseCode): baseCode is string => !!baseCode)
       .map((baseCode) => ({ baseCode }));
 
-    const uberPrices = await fetchMultipleItemPrices(uberItems, config);
+    const uberPrices = await fetchMultipleItemPrices(uberItems, effectiveConfig);
 
     uberPrices.forEach((price) => {
       const itemName = price.itemName;

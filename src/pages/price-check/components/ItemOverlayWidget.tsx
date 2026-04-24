@@ -28,6 +28,7 @@ import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
+import { getSeasonDateConfig } from '@/lib/seasons';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { openCenteredWindow } from '@/lib/window';
@@ -405,6 +406,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         // Convert settings to API format
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
+        const seasonConfig = getSeasonDateConfig(settings.selectedSeasonId);
+        const priceConfig = { isLadder, isHardcore, ...seasonConfig };
 
         let priceData: AveragePriceResponse | null;
         const facetData = extractRainbowFacetData();
@@ -414,17 +417,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           // Format: "rainbow_facet_{damageType}_{damagePercent}_{piercePercent}"
           const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
           console.log('[ItemOverlayWidget] Fetching price for Rainbow Facet baseCode:', baseCode);
-          priceData = await fetchItemPrice(baseCode, {
-            isLadder,
-            isHardcore,
-            hours: 168, // 7 days
-          });
+          priceData = await fetchItemPrice(baseCode, priceConfig);
         } else {
-          priceData = await fetchItemPriceByName(pd2Item.name, {
-            isLadder,
-            isHardcore,
-            hours: 168, // 7 days
-          });
+          priceData = await fetchItemPriceByName(pd2Item.name, priceConfig);
         }
 
         if (priceData) {
@@ -442,7 +437,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     };
 
     fetchAveragePrice();
-  }, [item.quality, item.stats, pd2Item?.name, settings.ladder, settings.mode, extractRainbowFacetData]);
+  }, [
+    item.quality,
+    item.stats,
+    pd2Item?.name,
+    settings.ladder,
+    settings.mode,
+    settings.selectedSeasonId,
+    extractRainbowFacetData,
+  ]);
 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
@@ -461,6 +464,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       try {
         const isLadder = settings.ladder === 'ladder';
         const isHardcore = settings.mode === 'hardcore';
+        const seasonConfig = getSeasonDateConfig(settings.selectedSeasonId);
+        const priceConfig = { isLadder, isHardcore, ...seasonConfig };
 
         let corruptionData;
         const facetData = extractRainbowFacetData();
@@ -468,23 +473,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         if (facetData) {
           const baseCode = `rainbow_facet_${facetData.damageType}_${facetData.damagePercent}_${facetData.piercePercent}`;
           console.log('[ItemOverlayWidget] Fetching corruption prices for Rainbow Facet baseCode:', baseCode);
-          corruptionData = await fetchCorruptionPrices(
-            { baseCode },
-            {
-              isLadder,
-              isHardcore,
-              hours: 168, // 7 days
-            },
-          );
+          corruptionData = await fetchCorruptionPrices({ baseCode }, priceConfig);
         } else {
-          corruptionData = await fetchCorruptionPrices(
-            { itemName: pd2Item.name },
-            {
-              isLadder,
-              isHardcore,
-              hours: 168, // 7 days
-            },
-          );
+          corruptionData = await fetchCorruptionPrices({ itemName: pd2Item.name }, priceConfig);
         }
 
         if (corruptionData) {
