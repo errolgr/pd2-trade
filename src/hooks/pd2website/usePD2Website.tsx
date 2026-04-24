@@ -273,7 +273,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
   // Authenticate when pd2Token changes
   useEffect(() => {
     if (settings?.pd2Token) {
-      console.log('fetching new pd2 token and calling authentication');
       authenticate().then((data) => {
         setAuthData(data);
       });
@@ -340,11 +339,10 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     };
   }, [publishSnapshot]);
 
-  // RPC bridge: child windows proxy all PD2 actions to this parent-owned provider.
+  // Keep latest handlers in a ref so the RPC listener never needs to re-register.
+  const rpcHandlersRef = useRef<Record<string, (...args: any[]) => Promise<any> | any>>({});
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
-
-    const handlers: Record<string, (...args: any[]) => Promise<any> | any> = {
+    rpcHandlersRef.current = {
       findMatchingItems,
       listSpecificItem,
       getMarketListings,
@@ -370,6 +368,36 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       logout,
       startOAuthFlow,
     };
+  }, [
+    findMatchingItems,
+    listSpecificItem,
+    getMarketListings,
+    getMarketListingsArchive,
+    deleteMarketListing,
+    bumpAllMarketListings,
+    updateMarketListing,
+    updateItemByHash,
+    getCurrencyTab,
+    deleteConversation,
+    getConversations,
+    getMessages,
+    sendMessage,
+    markMessagesAsRead,
+    createConversation,
+    refresh,
+    revokeOffer,
+    acceptOffer,
+    rejectOffer,
+    unacceptOffer,
+    deleteOutgoingOffer,
+    restoreOutgoingOffer,
+    logout,
+    startOAuthFlow,
+  ]);
+
+  // RPC bridge: registered once — reads latest handlers from ref so it never re-registers.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
 
     const setup = async () => {
       unlisten = await listenAppEvent<Pd2WebsiteRpcRequest>(PD2WEBSITE_RPC_REQUEST_EVENT, async (event) => {
@@ -378,7 +406,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
           return;
         }
 
-        const handler = handlers[payload.method];
+        const handler = rpcHandlersRef.current[payload.method];
         if (!handler) {
           await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
             requestId: payload.requestId,
@@ -412,32 +440,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
         unlisten();
       }
     };
-  }, [
-    findMatchingItems,
-    listSpecificItem,
-    getMarketListings,
-    getMarketListingsArchive,
-    deleteMarketListing,
-    bumpAllMarketListings,
-    updateMarketListing,
-    updateItemByHash,
-    getCurrencyTab,
-    deleteConversation,
-    getConversations,
-    getMessages,
-    sendMessage,
-    markMessagesAsRead,
-    createConversation,
-    refresh,
-    revokeOffer,
-    acceptOffer,
-    rejectOffer,
-    unacceptOffer,
-    deleteOutgoingOffer,
-    restoreOutgoingOffer,
-    logout,
-    startOAuthFlow,
-  ]);
+  }, []);
 
   return (
     <Pd2WebsiteContext.Provider

@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.9.2': ['🔧 Fixed authentication issue that caused unexpected logouts'],
   '0.9.1': [
     '🆕 Added a global Season selector - filter all prices by season (S5–S13) in Options > General',
     '🔧 Past season prices now filter by exact date range - current season continues to use a rolling 7-day window',

@@ -47,7 +47,7 @@ import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
-  const { settings } = useOptions();
+  const { settings, isLoading: settingsLoading } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
 
@@ -745,12 +745,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const fetchListings = useCallback(
     async (isNewSearch: boolean = false) => {
+      if (settingsLoading) return;
       setMarketError(null);
       setMarketLoading(true);
       const startTime = performance.now();
 
       try {
-        console.log('[ItemOverlayWidget] API Query:', JSON.stringify(pd2MarketQuery, null, 2));
         const result = searchArchived
           ? await getMarketListingsArchive(pd2MarketQuery)
           : await getMarketListings(pd2MarketQuery);
@@ -797,7 +797,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         setMarketLoading(false);
       }
     },
-    [pd2MarketQuery, getMarketListings, getMarketListingsArchive, searchArchived, searchMode, shouldUseToggle, page],
+    [
+      pd2MarketQuery,
+      getMarketListings,
+      getMarketListingsArchive,
+      searchArchived,
+      searchMode,
+      shouldUseToggle,
+      page,
+      settingsLoading,
+    ],
   );
 
   // Initial Search / Reset
