@@ -27,7 +27,6 @@ export function getSeasonById(id: string): Season | undefined {
  */
 export function getSeasonDateConfig(selectedSeasonId?: string): { startDate?: string; endDate?: string } {
   const id = selectedSeasonId || 'current';
-  if (id === 'current') return {};
   const season = getSeasonById(id);
   if (!season) return {};
   return {
