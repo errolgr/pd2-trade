@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.9.3': [
+    '🔧 Fixed season filtering for item prices - prices now correctly reflect the selected season instead of all-time data',
+  ],
   '0.9.2': ['🔧 Fixed authentication issue that caused unexpected logouts'],
   '0.9.1': [
     '🆕 Added a global Season selector - filter all prices by season (S5–S13) in Options > General',
