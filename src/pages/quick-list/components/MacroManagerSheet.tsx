@@ -124,7 +124,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                     value={editLabel}
                     onChange={(e) => setEditLabel(e.target.value)}
                     className="h-7 text-xs"
-                    placeholder="Short name"
+                    placeholder="Macro name"
                   />
                   <Input
                     value={editText}
@@ -201,7 +201,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
       <div className="flex flex-col gap-2 pt-2 border-t">
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Input
-          placeholder="Short name"
+          placeholder="Macro name"
           value={newLabel}
           onChange={(e) => {
             setNewLabel(e.target.value);
