@@ -1,4 +1,11 @@
 export const changeLog = {
+  '0.9.4': [
+    '🆕 Added listing note macros — create quick-fill presets for the note field with customizable templates',
+    '🆕 Macro templating — use {itemName}, {sockets}, or any custom placeholder that prompts for a value on use',
+    '🆕 Macro management — edit, reorder, and delete macros from the listing window',
+    '🔧 Fixed duplicate listings when queuing items due to overlapping poll cycles',
+    '🔧 Fixed note field text appearing grey when no matching items found',
+  ],
   '0.9.3': [
     '🔧 Fixed season filtering for indexed item prices - prices now correctly reflect the selected season instead of all-time data',
   ],

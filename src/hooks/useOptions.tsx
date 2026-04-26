@@ -42,6 +42,7 @@ export interface ISettings {
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   windowTrackingEnabled?: boolean; // Dynamically track D2 window position/size
   selectedSeasonId?: string; // Selected season for price filtering
+  listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
 }
 
 interface OptionsContextProps {

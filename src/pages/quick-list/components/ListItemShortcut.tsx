@@ -70,6 +70,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [pendingMatchListingId, setPendingMatchListingId] = useState<string | null>(null);
   const [showQueueOption, setShowQueueOption] = useState(false); // Track if user explicitly revealed queue option
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isPollRunningRef = useRef(false); // Prevent overlapping poll cycles
   const isProcessingRef = useRef<Set<string>>(new Set()); // Track which items are being processed
   const pendingListingDataRef = useRef<PendingListing | null>(null);
 
@@ -340,6 +341,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       return;
     }
 
+    // Prevent overlapping poll cycles
+    if (isPollRunningRef.current) {
+      return;
+    }
+
     const currentQueuedIds = Array.from(queuedListingIds);
     if (currentQueuedIds.length === 0) {
       setIsPolling(false);
@@ -347,6 +353,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       return;
     }
 
+    isPollRunningRef.current = true;
     setIsPolling(true);
 
     // Process each queued item independently
@@ -477,6 +484,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     });
 
     await Promise.all(pollPromises);
+    isPollRunningRef.current = false;
 
     // Update isQueued state based on remaining queued items
     setQueuedListingIds((prev) => {
@@ -918,8 +926,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     // 4. No Items Found (with Queue option)
     if (matchingItems.length === 0 && !isLoading && !error && item) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-500 gap-4">
-          <div className="flex flex-col items-center gap-2 text-center">
+        <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
             <div className="flex items-center gap-2">
               <span>No items found matching &quot;{item.name || item.type}&quot;</span>
               <Tooltip delayDuration={0}>
