@@ -49,6 +49,12 @@ const hotkeyFormSchema = z
       .min(1, 'Enter a key')
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierDelist: z.enum(['ctrl', 'alt']),
+    hotkeyKeyDelist: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
   })
   .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
@@ -76,6 +82,8 @@ export function HotkeyForm() {
       hotkeyKeyChat: 't',
       hotkeyModifierOffers: 'ctrl',
       hotkeyKeyOffers: 'b',
+      hotkeyModifierDelist: 'ctrl',
+      hotkeyKeyDelist: 'u',
     },
   });
 
@@ -361,6 +369,52 @@ export function HotkeyForm() {
             <FormField
               control={form.control}
               name="hotkeyKeyOffers"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center">
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierDelist"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Delist Item</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeyDelist"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center">
                   <div>+</div>

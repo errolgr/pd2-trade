@@ -1,6 +1,8 @@
 export const changeLog = {
+  '0.9.6': [
+    '🆕 Delist items directly from in-game — press Ctrl+U while hovering an item to quickly remove its listing (was accidentally not included in 0.9.5)',
+  ],
   '0.9.5': [
-    '🆕 Delist items directly from in-game — press Ctrl+U while hovering an item to quickly remove its listing',
     '🆕 Quality toggle for price check — click the quality label next to base type to cycle between Normal/Magic/Rare/Crafted when searching',
   ],
   '0.9.4': [

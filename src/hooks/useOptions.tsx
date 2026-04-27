@@ -27,6 +27,8 @@ export interface ISettings {
   hotkeyKeyChat: string;
   hotkeyModifierOffers: 'ctrl' | 'alt';
   hotkeyKeyOffers: string;
+  hotkeyModifierDelist: 'ctrl' | 'alt';
+  hotkeyKeyDelist: string;
   fillStatValue?: number;
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
@@ -69,6 +71,8 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeyChat: 't',
   hotkeyModifierOffers: 'ctrl',
   hotkeyKeyOffers: 'b',
+  hotkeyModifierDelist: 'ctrl',
+  hotkeyKeyDelist: 'u',
   fillStatValue: 5,
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,

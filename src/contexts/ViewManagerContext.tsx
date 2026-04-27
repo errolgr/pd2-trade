@@ -355,6 +355,10 @@ export const ViewManagerProvider: React.FC<{ children: ReactNode }> = ({ childre
         if (marketSearchView?.visible) {
           newViews.set(VIEW_IDS.MARKET_SEARCH, { ...marketSearchView, visible: false });
         }
+        const delistPopupView = prev.get(VIEW_IDS.DELIST_POPUP);
+        if (delistPopupView?.visible) {
+          newViews.set(VIEW_IDS.DELIST_POPUP, { ...delistPopupView, visible: false });
+        }
         return newViews;
       });
     };

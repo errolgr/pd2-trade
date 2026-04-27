@@ -11,6 +11,7 @@ export const WindowLabels = config.labels as {
   readonly Currency: 'Currency';
   readonly Toast: 'Toast';
   readonly SignIn: 'SignIn';
+  readonly Delist: 'Delist';
 };
 
 export const WindowTitles = config.titles as {
@@ -24,5 +25,6 @@ export const WindowTitles = config.titles as {
   readonly Currency: 'PD2Trader: Currency';
   readonly Toast: 'PD2Trader: Toast';
   readonly SignIn: 'PD2Trader: Sign In';
+  readonly Delist: 'PD2Trader: Delist';
   readonly PREFIX: 'PD2Trader';
 };

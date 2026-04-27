@@ -10,7 +10,9 @@ import { TrayProvider, useTray } from '@/hooks/useTray';
 import { OptionsProvider, useOptions } from '@/hooks/useOptions';
 import { useKeySender } from '@/hooks/useKeySender';
 import { DialogProvider } from '@/hooks/useDialog';
-import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { Pd2WebsiteProvider, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { getDiabloRectWithRetry, updateMainWindowBounds } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -41,6 +43,8 @@ const MainWindow: React.FC = () => {
   const { isConnected } = useSocket({ settings });
   const { showView, hideView, toggleView, isVisible, updateView } = useViewManager();
   const { isDiabloFocused, diabloRectRelative } = useDiablo();
+  const { findMatchingItems, getMarketListings, deleteMarketListing, authData } = usePd2Website();
+  const isDelistingRef = useRef(false);
 
   // Set up socket notifications listener (offers and whispers - only one instance in LandingPage)
   useSocketNotifications({ isConnected, settings, whisperNotificationsEnabled: true });
@@ -270,6 +274,96 @@ const MainWindow: React.FC = () => {
     }
   }, [showView, hideView, isVisible, isDiabloFocused]);
 
+  // Delist item handler
+  const handleDelistItem = useCallback(async () => {
+    console.log('[Delist] handleDelistItem called');
+    if (isDelistingRef.current) return;
+    if (!(await checkDiabloFocus())) return;
+
+    if (!authData) {
+      emit('toast-event', {
+        title: 'Delist',
+        description: 'You must be logged in to delist items.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    isDelistingRef.current = true;
+    try {
+      const raw = await copyAndValidateItem();
+      if (!raw) {
+        emit('toast-event', {
+          title: 'Delist',
+          description: 'No valid item found under cursor.',
+          variant: 'error',
+        });
+        return;
+      }
+
+      const item: PriceCheckItem = JSON.parse(raw);
+      const matchingStashItems = await findMatchingItems(item);
+
+      if (matchingStashItems.length === 0) {
+        emit('toast-event', {
+          title: 'Delist',
+          description: 'Item not found in stash.',
+          variant: 'error',
+        });
+        return;
+      }
+
+      const query = buildGetMarketListingByStashItemQuery(matchingStashItems, authData.user._id);
+      if (!query) {
+        emit('toast-event', {
+          title: 'Delist',
+          description: 'No active listings match this item.',
+          variant: 'info',
+        });
+        return;
+      }
+
+      const result = await getMarketListings(query);
+      const listings = result.data;
+
+      if (listings.length === 0) {
+        emit('toast-event', {
+          title: 'Delist',
+          description: 'No active listings found for this item.',
+          variant: 'info',
+        });
+      } else if (listings.length === 1) {
+        await deleteMarketListing(listings[0]._id);
+        emit('toast-event', {
+          title: 'Delist',
+          description: `Removed ${listings[0].item.name} listing.`,
+        });
+      } else {
+        showView(VIEW_IDS.DELIST_POPUP, {
+          position: 'at-cursor',
+          data: { listings },
+        });
+      }
+    } catch (err) {
+      console.error('[Delist] Error:', err);
+      emit('toast-event', {
+        title: 'Delist',
+        description: 'Failed to delist item.',
+        variant: 'error',
+      });
+    } finally {
+      isDelistingRef.current = false;
+    }
+  }, [
+    checkDiabloFocus,
+    copyAndValidateItem,
+    findMatchingItems,
+    getMarketListings,
+    deleteMarketListing,
+    authData,
+    showView,
+  ]);
+
   // Register shortcuts
   useAppShortcuts(
     async () => {
@@ -287,8 +381,9 @@ const MainWindow: React.FC = () => {
     async () => {
       await toggleTradeMessagesWindow();
     },
-    // Only register command menu hotkey if double shift is disabled
-    settings?.commandMenuUseDoubleShift === false ? openCommandMenu : undefined,
+    async () => {
+      await handleDelistItem();
+    },
   );
 
   // Use double-shift if enabled in settings (default: true)

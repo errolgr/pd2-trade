@@ -34,6 +34,7 @@ import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
 import { ItemsProvider } from '@/hooks/useItems';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
+import DelistHandler from '@/pages/delist/DelistHandler';
 
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
@@ -43,6 +44,7 @@ const LandingPage: React.FC = () => {
   const chatButtonWindowRef = useRef<any>(null);
   const tradeMessagesWindowRef = useRef<any>(null);
   const currencyWindowRef = useRef<any>(null);
+  const delistWinRef = useRef<BrowserWindow | null>(null);
   const settingsRef = useRef<any>(null);
   // const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -355,7 +357,24 @@ const LandingPage: React.FC = () => {
     await emit('toggle-trade-messages-window');
   }, []);
 
-  // Register shortcuts
+  // Delist item handler - reads clipboard and emits event for DelistHandler inside Pd2WebsiteProvider
+  const handleDelistItem = useCallback(async () => {
+    console.log('[LandingPage] handleDelistItem called');
+    if (!(await checkDiabloFocus())) return;
+
+    const raw = await copyAndValidateItem();
+    if (!raw) {
+      emit('toast-event', {
+        title: 'Delist',
+        description: 'No valid item found under cursor.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    emit('delist-item', raw);
+  }, [checkDiabloFocus, copyAndValidateItem]);
+
   // Register shortcuts
   useAppShortcuts(
     async () => {
@@ -373,7 +392,53 @@ const LandingPage: React.FC = () => {
     async () => {
       await toggleTradeMessagesWindow();
     },
+    async () => {
+      await handleDelistItem();
+    },
   );
+
+  // Listen for delist-show-popup event to open delist window with multiple matches
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    listen<any[]>('delist-show-popup', async ({ payload: listings }) => {
+      console.log('[LandingPage] delist-show-popup received, listings:', listings.length);
+      const encoded = encodeURIComponent(btoa(JSON.stringify(listings)));
+      const url = `/delist?data=${encoded}`;
+
+      if (!delistWinRef.current) {
+        delistWinRef.current = await openWindowAtCursor(WindowLabels.Delist as any, url, {
+          title: WindowTitles.Delist as any,
+          decorations: false,
+          transparent: true,
+          focus: true,
+          shadow: false,
+          skipTaskbar: true,
+          focusable: true,
+          width: 420,
+          height: 320,
+          resizable: true,
+          alwaysOnTop: true,
+        });
+        delistWinRef.current.onCloseRequested(async () => {
+          delistWinRef.current = null;
+        });
+      } else {
+        try {
+          await delistWinRef.current.show();
+          await delistWinRef.current.setFocus();
+          // Navigate to new URL with updated listings
+          await (delistWinRef.current as any).navigate(url);
+        } catch {
+          delistWinRef.current = null;
+        }
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // Handle updates
   useAppUpdates();
@@ -1029,6 +1094,7 @@ const LandingPage: React.FC = () => {
   return (
     <ItemsProvider>
       <Pd2WebsiteProvider>
+        <DelistHandler />
         <div>
           {showTitle && (
             <div className="fixed inset-0 flex items-center justify-center z-50">

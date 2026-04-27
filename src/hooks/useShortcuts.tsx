@@ -134,6 +134,7 @@ export const useAppShortcuts = (
   onCurrencyValuation: ShortcutHandler,
   onChat?: ShortcutHandler,
   onOffers?: ShortcutHandler,
+  onDelist?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -182,6 +183,24 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeyDelist && onDelist) {
+      console.log(
+        '[useShortcuts] Registering delist shortcut:',
+        settings.hotkeyModifierDelist,
+        settings.hotkeyKeyDelist,
+      );
+      configs.push({
+        modifier: settings.hotkeyModifierDelist,
+        key: settings.hotkeyKeyDelist,
+        handler: onDelist,
+      });
+    } else {
+      console.log('[useShortcuts] Delist shortcut NOT registered:', {
+        key: settings.hotkeyKeyDelist,
+        hasHandler: !!onDelist,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -195,11 +214,14 @@ export const useAppShortcuts = (
     settings.hotkeyKeyChat,
     settings.hotkeyModifierOffers,
     settings.hotkeyKeyOffers,
+    settings.hotkeyModifierDelist,
+    settings.hotkeyKeyDelist,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
     onChat,
     onOffers,
+    onDelist,
   ]);
 
   useShortcuts(shortcuts);

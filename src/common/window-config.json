@@ -9,7 +9,8 @@
     "Settings": "Settings",
     "Currency": "Currency",
     "Toast": "Toast",
-    "SignIn": "SignIn"
+    "SignIn": "SignIn",
+    "Delist": "Delist"
   },
   "titles": {
     "Main": "PD2Trader",
@@ -22,6 +23,7 @@
     "Currency": "PD2Trader: Currency",
     "Toast": "PD2Trader: Toast",
     "SignIn": "PD2Trader: Sign In",
+    "Delist": "PD2Trader: Delist",
     "PREFIX": "PD2Trader"
   }
 }

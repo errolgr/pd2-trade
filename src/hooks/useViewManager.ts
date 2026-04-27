@@ -14,4 +14,5 @@ export const VIEW_IDS = {
   SETTINGS: 'settings',
   CHANGELOG: 'changelog',
   COMMAND_MENU: 'command-menu',
+  DELIST_POPUP: 'delist-popup',
 } as const;
