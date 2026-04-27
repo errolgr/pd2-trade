@@ -99,6 +99,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Search mode: 0 = category (base), 1 = typeLabel
   const [searchMode, setSearchMode] = useState(0);
+  // Quality override: null = use item's original quality
+  const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -305,6 +307,25 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     );
   }, [item.quality]);
 
+  const availableQualities = useMemo(() => {
+    if (!shouldUseToggle) return [];
+    return [ItemQuality.Normal, ItemQuality.Superior, ItemQuality.Magic, ItemQuality.Rare, ItemQuality.Crafted].filter(
+      (q) => q !== item.quality,
+    );
+  }, [item.quality, shouldUseToggle]);
+
+  const cycleQuality = useCallback(() => {
+    if (availableQualities.length === 0) return;
+    setQualityOverride((prev) => {
+      if (prev === null) return availableQualities[0];
+      const idx = availableQualities.indexOf(prev);
+      if (idx === -1 || idx === availableQualities.length - 1) return null;
+      return availableQualities[idx + 1];
+    });
+  }, [availableQualities]);
+
+  const effectiveQuality = qualityOverride ?? item.quality;
+
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
     // Only use searchMode for items that support toggle, otherwise use default (0)
@@ -320,6 +341,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       searchArchived,
       corruptedState,
+      shouldUseToggle ? effectiveQuality : undefined,
     );
   }, [
     selected,
@@ -333,6 +355,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     shouldUseToggle,
     searchArchived,
     corruptedState,
+    effectiveQuality,
   ]);
 
   const pd2MarketQuery = useMemo(() => {
@@ -352,6 +375,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       ITEMS_PER_PAGE,
       page * ITEMS_PER_PAGE,
       selectedCorruptionNames.length > 0 ? selectedCorruptionNames : undefined,
+      shouldUseToggle ? effectiveQuality : undefined,
     );
   }, [
     selected,
@@ -367,6 +391,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     corruptedState,
     page,
     selectedCorruptionNames,
+    effectiveQuality,
   ]);
 
   useEffect(() => {
@@ -379,6 +404,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSelected(new Set());
       setFilters({});
       setSearchMode(0); // Reset to default mode
+      setQualityOverride(null); // Reset quality override
       setCorruptedState(0); // Reset corrupted state to default (both)
       setSelectedCorruptionNames([]); // Clear selected corruptions
       // Clear average price data when item or its stats change
@@ -984,13 +1010,29 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               {item.isRuneword && <Badge>Runeword</Badge>}
             </CardTitle>
             {item.type && (
-              <div
-                className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}
-                style={{ fontFamily: 'DiabloFont', marginTop: '-5px' }}
-                onClick={shouldUseToggle ? toggleSearchMode : undefined}
-                title={shouldUseToggle ? 'Click to toggle search mode' : undefined}
-              >
-                {shouldUseToggle ? getSearchModeDisplay() : `Base: ${item.type}`}
+              <div className="flex items-center gap-2"
+                style={{ marginTop: '-5px' }}>
+                <div
+                  className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}
+                  style={{ fontFamily: 'DiabloFont' }}
+                  onClick={shouldUseToggle ? toggleSearchMode : undefined}
+                  title={shouldUseToggle ? 'Click to toggle search mode' : undefined}
+                >
+                  {shouldUseToggle ? getSearchModeDisplay() : `Base: ${item.type}`}
+                </div>
+                {shouldUseToggle && (
+                  <>
+                    <span className="text-lg text-gray-500">|</span>
+                    <span
+                      className={`text-lg cursor-pointer hover:opacity-80 transition-opacity ${qualityColor(effectiveQuality)}`}
+                      style={{ fontFamily: 'DiabloFont' }}
+                      onClick={cycleQuality}
+                      title="Click to cycle quality"
+                    >
+                      {effectiveQuality}
+                    </span>
+                  </>
+                )}
               </div>
             )}
 

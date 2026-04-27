@@ -537,6 +537,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     // If no item selected and we have an item, allow queuing
     // This includes both: no items found (length === 0) and multiple items found but none selected
     if (!selectedItem && item) {
+      setSubmitLoading(true);
       // Check listing count before queuing
       await fetchAllListings();
       if (totalListingsCount >= 50) {

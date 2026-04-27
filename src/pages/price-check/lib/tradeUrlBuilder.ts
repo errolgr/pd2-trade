@@ -19,6 +19,7 @@ export function buildTradeUrl(
   matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
   isArchive: boolean = false,
   corruptedState: number = 0,
+  qualityOverride?: string,
 ): string {
   const searchParams = new URLSearchParams();
 
@@ -85,7 +86,7 @@ export function buildTradeUrl(
   });
 
   // Basic item meta
-  searchParams.set('quality', item.quality);
+  searchParams.set('quality', qualityOverride ?? item.quality);
 
   // Handle search mode: 0 = category (base), 1 = typeLabel
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
@@ -159,6 +160,7 @@ export function buildGetMarketListingQuery(
   limit: number = 10,
   offset: number = 0,
   corruptionNames?: string[],
+  qualityOverride?: string,
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -173,7 +175,7 @@ export function buildGetMarketListingQuery(
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',
-    'item.quality.name': item.quality,
+    'item.quality.name': qualityOverride ?? item.quality,
   };
 
   const sortedStats = getSortedStats(item);

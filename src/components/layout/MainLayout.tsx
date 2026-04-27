@@ -15,6 +15,7 @@ import ChatButtonPage from '@/pages/chat/ChatButtonPage';
 import ChangeLogPage from '@/pages/change-log/ChangeLogPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { CommandMenu } from '@/components/command-menu/CommandMenu';
+import DelistPopup from '@/pages/delist/DelistPopup';
 import { useDiablo } from '@/hooks/useDiablo';
 import { currentMonitor } from '@tauri-apps/api/window';
 import { isTauri } from '@tauri-apps/api/core';
@@ -208,6 +209,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         return <SettingsPage />;
       case VIEW_IDS.COMMAND_MENU:
         return <CommandMenu />;
+      case VIEW_IDS.DELIST_POPUP:
+        return <DelistPopup />;
       default:
         return null;
     }
@@ -260,6 +263,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               return { width: 1025, height: 700 }; // From useTray
             case VIEW_IDS.CHANGELOG:
               return { width: 600, height: 600 }; // Default changelog size
+            case VIEW_IDS.DELIST_POPUP:
+              return { width: 600, height: 512 };
             default:
               return { width: 600, height: 400 };
           }
