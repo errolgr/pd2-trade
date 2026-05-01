@@ -6,8 +6,9 @@ import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { isTauri } from '@tauri-apps/api/core';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { openCenteredWindow } from '@/lib/window';
 
 export function AboutForm() {
   const { settings, isLoading, updateSettings } = useOptions();
@@ -64,7 +65,7 @@ export function AboutForm() {
 
   return (
     <ScrollArea className="pr-2">
-      <div className={'flex flex-col gap-4 flex flex-col items-center max-h-[330px]'}>
+      <div className={'flex flex-col gap-4 flex flex-col items-center '}>
         <div className={'flex flex-col gap-1 items-center'}>
           <img src={imgPath}
             style={{ width: 50 }} />
@@ -112,6 +113,24 @@ export function AboutForm() {
             </div>
           </Card>
         )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            openCenteredWindow('ChangeLog', '/change-log', {
+              decorations: false,
+              transparent: true,
+              focus: true,
+              shadow: false,
+              skipTaskbar: true,
+            })
+          }
+          className="w-60"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          View Changelog
+        </Button>
 
         <table className={'border-collapse'}>
           <thead>

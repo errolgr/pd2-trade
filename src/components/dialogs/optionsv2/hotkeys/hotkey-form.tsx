@@ -7,8 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
-import { emit } from '@/lib/browser-events';
-import { Loader2 } from 'lucide-react';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const hotkeyFormSchema = z
@@ -65,7 +64,6 @@ type HotkeyFormValues = z.infer<typeof hotkeyFormSchema>;
 
 export function HotkeyForm() {
   const { settings, isLoading, updateSettings } = useOptions();
-  const [saving, setSaving] = React.useState(false);
 
   const form = useForm<HotkeyFormValues>({
     resolver: zodResolver(hotkeyFormSchema),
@@ -89,27 +87,30 @@ export function HotkeyForm() {
 
   React.useEffect(() => {
     if (settings) {
-      form.reset(settings);
+      form.reset(settings, { keepDirty: false });
     }
   }, [settings]);
+
+  // Auto-save on any change
+  const settingsRef = React.useRef(settings);
+  settingsRef.current = settings;
+  React.useEffect(() => {
+    const subscription = form.watch((values) => {
+      const current = settingsRef.current;
+      const changed = Object.entries(values).some(([key, val]) => current?.[key as keyof typeof current] !== val);
+      if (changed) updateSettings(values);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, updateSettings]);
 
   if (isLoading || !settings) {
     return null;
   }
 
-  const onSubmit = async (values: HotkeyFormValues) => {
-    setSaving(true);
-    await updateSettings(values);
-    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
-    setSaving(false);
-    emit('toast-event', 'Hotkey preferences saved!');
-  };
-
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-y-2 max-h-[330px]">
+        <div className="flex flex-col gap-y-2 ">
           <div className="flex items-end gap-2">
             <FormField
               control={form.control}
@@ -432,17 +433,8 @@ export function HotkeyForm() {
               )}
             />
           </div>
-        </form>
+        </div>
       </ScrollArea>
-      <Button
-        type="submit"
-        className={'self-start cursor-pointer mt-2'}
-        disabled={saving}
-        onClick={form.handleSubmit(onSubmit)}
-      >
-        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-        {saving ? 'Saving...' : 'Update hotkey preferences'}
-      </Button>
     </Form>
   );
 }

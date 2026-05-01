@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { emit } from '@/lib/browser-events';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExternalLink, LogOut, LogIn, AlertCircle } from 'lucide-react';
@@ -26,7 +25,6 @@ export function AccountForm() {
   const { settings, updateSettings } = useOptions();
   const { authData, logout, startOAuthFlow } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -38,15 +36,34 @@ export function AccountForm() {
     },
   });
 
-  // Update form when settings change
+  // Update form when settings change externally
   useEffect(() => {
     if (settings) {
-      form.reset({
-        account: settings.account || '',
-        pd2Token: settings.pd2Token || '',
-      });
+      form.reset(
+        {
+          account: settings.account || '',
+          pd2Token: settings.pd2Token || '',
+        },
+        { keepDirty: false },
+      );
     }
   }, [settings, form]);
+
+  // Auto-save on any change
+  const settingsRef = React.useRef(settings);
+  settingsRef.current = settings;
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      const current = settingsRef.current;
+      if (values.account === current?.account && values.pd2Token === current?.pd2Token) return;
+      const updates: any = { account: values.account };
+      if (values.pd2Token && values.pd2Token !== current?.pd2Token) {
+        updates.pd2Token = values.pd2Token;
+      }
+      updateSettings(updates);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, updateSettings]);
 
   useEffect(() => {
     if (authData?.user?.game?.accounts) {
@@ -76,26 +93,10 @@ export function AccountForm() {
     }
   };
 
-  const onSubmit = async (values: AccountFormValues) => {
-    setSaving(true);
-    const updates: any = { account: values.account };
-
-    // Only update token if it was changed
-    if (values.pd2Token && values.pd2Token !== settings?.pd2Token) {
-      updates.pd2Token = values.pd2Token;
-    }
-
-    await updateSettings(updates);
-    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
-    setSaving(false);
-    await emit('toast-event', { title: 'PD2 Trader', description: 'Account updated!' });
-  };
-
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-y-4 max-h-[330px]">
+        <div className="flex flex-col gap-y-4 ">
           {accounts.length === 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -192,17 +193,8 @@ export function AccountForm() {
               </FormItem>
             )}
           />
-        </form>
+        </div>
       </ScrollArea>
-      <Button
-        type="submit"
-        className="self-start cursor-pointer mt-2"
-        disabled={saving}
-        onClick={form.handleSubmit(onSubmit)}
-      >
-        {saving ? <span className="animate-spin mr-2">⏳</span> : null}
-        {saving ? 'Saving...' : 'Update account'}
-      </Button>
     </Form>
   );
 }

@@ -112,7 +112,7 @@ interface Pd2WebsiteContextType {
   deleteOutgoingOffer: (offerId: string) => void;
   restoreOutgoingOffer: (offerId: string) => void;
   logout: () => Promise<void>;
-  startOAuthFlow: () => Promise<boolean>;
+  startOAuthFlow: () => Promise<string | false>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -276,6 +276,8 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       authenticate().then((data) => {
         setAuthData(data);
       });
+    } else {
+      setAuthData(null);
     }
   }, [settings?.pd2Token]);
 
@@ -297,7 +299,11 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
   // Update settings when authData changes and account is missing
   useEffect(() => {
     if (!isLoading && !settings.account && authData?.user?.game?.accounts) {
-      updateSettings({ account: authData.user.game.accounts[0] });
+      const accounts = authData.user.game.accounts;
+      if (accounts.length === 1) {
+        updateSettings({ account: accounts[0] });
+      }
+      // Multiple accounts are handled by the sign-in page account selector
     }
   }, [authData, settings.account]);
 

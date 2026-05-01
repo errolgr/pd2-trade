@@ -16,6 +16,7 @@ import {
   EyeOffIcon,
   Eye,
 } from 'lucide-react';
+import moment from 'moment';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,11 +94,11 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   const historyCardRef = React.useRef<HTMLDivElement>(null);
   const { copy } = useClipboard();
 
-  // Update timer every second
+  // Update timer to refresh "time ago" display
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -132,18 +133,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   }, [historyPopoverOpen]);
 
   const formatTimeAgo = (date: Date): string => {
-    const totalSeconds = Math.floor((currentTime.getTime() - date.getTime()) / 1000);
-    if (totalSeconds < 3600) {
-      // Show MM:SS for times under an hour (matching the image)
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    } else {
-      // Show HH:MM for times over an hour
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
+    return moment(date).fromNow();
   };
 
   const handleStop = () => {

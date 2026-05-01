@@ -56,6 +56,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [selectedItem, setSelectedItem] = useState<GameStashItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAccountMismatch, setIsAccountMismatch] = useState(false);
   const [currentListings, setCurrentListings] = useState<MarketListingEntry[]>([]);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
@@ -93,6 +94,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     setMatchingItems([]);
     setSelectedItem(null);
     setError(null);
+    setIsAccountMismatch(false);
     setCurrentListings([]);
     setExpandedItems(new Set());
     setIsMarketListingsLoading(false);
@@ -143,6 +145,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           err.message ||
           'The selected account is not associated with your logged-in account. Please check your account settings.';
         setError(errorMessage);
+        setIsAccountMismatch(true);
 
         if (isTauri()) {
           const toastPayload: GenericToastPayload = {
@@ -902,6 +905,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           matchingItems={matchingItems}
           onRetry={findMatchingItemsInStash}
           embedded={true}
+          isAccountMismatch={isAccountMismatch}
         />
       );
     }

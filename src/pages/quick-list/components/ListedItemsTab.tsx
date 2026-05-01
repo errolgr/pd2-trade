@@ -788,21 +788,24 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                     )}
                   </div>
                 </div>
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleExpandedStats(itemHash)}
-                    className="text-xs text-blue-500 hover:text-blue-700 underline"
-                  >
-                    {expandedItems.has(itemHash) ? 'Show Less' : 'Show Stats'}
-                  </button>
-                  {expandedItems.has(itemHash) && (
-                    <ItemStatsDisplay
-                      stashItem={listing.item as any}
-                      isExpanded={true}
-                      onToggleExpanded={toggleExpandedStats}
-                    />
-                  )}
+                <div className="mt-2 flex justify-between items-end">
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandedStats(itemHash)}
+                      className="text-xs text-blue-500 hover:text-blue-700 underline"
+                    >
+                      {expandedItems.has(itemHash) ? 'Show Less' : 'Show Stats'}
+                    </button>
+                    {expandedItems.has(itemHash) && (
+                      <ItemStatsDisplay
+                        stashItem={listing.item as any}
+                        isExpanded={true}
+                        onToggleExpanded={toggleExpandedStats}
+                      />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0">{moment(listing.created_at).fromNow()}</span>
                 </div>
               </div>
             );

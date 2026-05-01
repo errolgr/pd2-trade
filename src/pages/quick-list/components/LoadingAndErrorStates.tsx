@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Search, Loader2, GripVertical } from 'lucide-react';
+import { X, Search, Loader2, GripVertical, AlertTriangle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 interface LoadingAndErrorStatesProps {
@@ -9,6 +10,7 @@ interface LoadingAndErrorStatesProps {
   matchingItems: any[];
   onRetry: () => void;
   embedded?: boolean;
+  isAccountMismatch?: boolean;
 }
 
 const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
@@ -17,6 +19,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   matchingItems,
   onRetry,
   embedded = false,
+  isAccountMismatch = false,
 }) => {
   const renderContent = () => {
     if (isLoading) {
@@ -31,7 +34,26 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
     if (error) {
       return (
         <div className="w-full">
-          <div className="text-red-500 mb-4 text-center">{error}</div>
+          {isAccountMismatch ? (
+            <Alert variant="destructive"
+              className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Wrong account detected</AlertTitle>
+              <AlertDescription className="text-xs mt-1 space-y-2">
+                <p>
+                  You&apos;re likely signed in with your in-game account instead of your web account. You&apos;ll need
+                  to log out and sign in again with the correct account.
+                </p>
+                <p>
+                  <strong>Important:</strong> Before logging in again, clear your browser cookies for{' '}
+                  <span className="font-mono">api.projectdiablo2.com</span> — otherwise you&apos;ll be logged into the
+                  same session automatically.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="text-red-500 mb-4 text-center">{error}</div>
+          )}
           <Button onClick={onRetry}
             className="w-full">
             <Search className="h-4 w-4 mr-2" />

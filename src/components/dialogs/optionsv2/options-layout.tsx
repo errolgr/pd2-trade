@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GripVertical, X } from 'lucide-react';
@@ -51,9 +52,9 @@ export default function SettingsLayout() {
   const [selectedItem, setSelectedItem] = useState<INavItem>(sidebarNavItems[0]);
 
   return (
-    <Card className="min-h-screen w-full overflow-hidden p-0 bg-background">
-      <div className="hidden space-y-6 p-10 md:block">
-        <div className="flex justify-between">
+    <Card className="h-screen w-full overflow-hidden p-0 bg-background flex flex-col">
+      <div className="hidden md:flex flex-col flex-1 min-h-0 p-10">
+        <div className="flex justify-between flex-shrink-0">
           <div className={'flex flex-row justify-between'}>
             <div className="space-y-0.5">
               <div className="flex items-center gap-1">
@@ -77,8 +78,8 @@ export default function SettingsLayout() {
         </div>
 
         <Separator className="my-6" />
-        <div className="flex flex-col space-y-8 lg:flex-row lg:gap-x-12 lg:gap-y-0">
-          <aside className="-mx-1 lg:w-1/5">
+        <div className="flex flex-1 min-h-0 lg:gap-x-12">
+          <aside className="-mx-1 lg:w-1/5 flex-shrink-0">
             <div className={'flex gap-x-2 lg:flex-col lg:gap-x-0 lg:gap-y-1'}>
               {sidebarNavItems.map((item) => (
                 <Button
@@ -92,7 +93,7 @@ export default function SettingsLayout() {
               ))}
             </div>
           </aside>
-          <div className="flex-1 lg:max-w-2x">{selectedItem.content}</div>
+          <ScrollArea className="flex-1 min-h-0">{selectedItem.content}</ScrollArea>
         </div>
       </div>
     </Card>

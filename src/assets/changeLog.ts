@@ -1,4 +1,12 @@
 export const changeLog = {
+  '0.9.7': [
+    '✨ Settings now auto-save — no more clicking "Update preferences" buttons',
+    '🆕 Account selector on sign-in — if multiple accounts are linked, you now choose which one to use',
+    '🆕 Manage listings now shows when each item was listed',
+    '🆕 Account mismatch warning — helpful instructions when signed in with the wrong PD2 account',
+    '🔧 Fixed logout not clearing auth state across all components',
+    '🔧 Removed Dynamic Window Tracking — not worth the complexity and caused more issues than it resolves',
+  ],
   '0.9.6': [
     '🆕 Delist items directly from in-game — press Ctrl+U while hovering an item to quickly remove its listing (was accidentally not included in 0.9.5)',
   ],

@@ -42,7 +42,6 @@ export interface ISettings {
   acceptOfferMessageTemplate?: string; // Custom message template for accepting offers (without /w *{accountName})
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
-  windowTrackingEnabled?: boolean; // Dynamically track D2 window position/size
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
 }
@@ -82,7 +81,6 @@ const DEFAULT_SETTINGS: ISettings = {
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
-  windowTrackingEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -97,6 +95,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = React.useState(true);
   const [settings, setSettings] = React.useState<ISettings>(DEFAULT_SETTINGS);
 
+  const settingsJsonRef = React.useRef('');
+
   const updateSettings = useCallback(async (newSettings: Partial<ISettings>) => {
     try {
       await navigator.locks.request('settings-file', async () => {
@@ -110,11 +110,16 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         const updated = { ...currentSettings, ...newSettings };
+        const updatedJson = JSON.stringify(updated, null, 2);
 
-        await writeTextFile(SETTINGS_FILENAME, JSON.stringify(updated, null, 2), {
+        // Skip if nothing actually changed
+        if (updatedJson === settingsJsonRef.current) return;
+
+        await writeTextFile(SETTINGS_FILENAME, updatedJson, {
           baseDir: SETTINGS_DIR,
         });
 
+        settingsJsonRef.current = updatedJson;
         setSettings(updated);
         await emit('settings-updated', updated); // Notify other parts of the app
       });
@@ -146,14 +151,20 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Deep merge parsed into a copy of the defaults
         const merged = merge({}, DEFAULT_SETTINGS, parsed);
 
+        const mergedJson = JSON.stringify(merged, null, 2);
+
         // Write merged settings back to disk if anything was missing
         if (JSON.stringify(parsed) !== JSON.stringify(merged)) {
-          await writeTextFile(SETTINGS_FILENAME, JSON.stringify(merged, null, 2), {
+          await writeTextFile(SETTINGS_FILENAME, mergedJson, {
             baseDir: SETTINGS_DIR,
           });
         }
 
-        setSettings(merged);
+        // Only update state if settings actually changed
+        if (mergedJson !== settingsJsonRef.current) {
+          settingsJsonRef.current = mergedJson;
+          setSettings(merged);
+        }
       });
     } catch (error) {
       console.warn('Error fetching settings', error);
@@ -168,7 +179,6 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     let unlistenPromise: Promise<() => void>;
     listen<ISettings>('settings-updated', () => {
-      console.log('[OptionsProvider] Settings update detected, reloading...');
       fetchSettings();
     }).then((unlisten) => {
       unlistenPromise = Promise.resolve(unlisten);

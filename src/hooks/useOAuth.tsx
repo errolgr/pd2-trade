@@ -38,7 +38,7 @@ async function pollForTokens(
 export function useOAuth() {
   const { updateSettings } = useOptions();
 
-  const startOAuthFlow = useCallback(async (): Promise<boolean> => {
+  const startOAuthFlow = useCallback(async (): Promise<string | false> => {
     if (flowInProgress) return false;
     flowInProgress = true;
 
@@ -87,7 +87,7 @@ export function useOAuth() {
         description: 'Authentication successful!',
       };
       emit('toast-event', successToast);
-      return true;
+      return tokens.accessToken;
     } catch (error) {
       console.error('[OAuth] Flow failed:', error);
       const errorToast: GenericToastPayload = {

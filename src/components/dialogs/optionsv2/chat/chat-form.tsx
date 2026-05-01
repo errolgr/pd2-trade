@@ -3,13 +3,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { Loader2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { emit } from '@tauri-apps/api/event';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
@@ -31,8 +30,8 @@ type ChatFormValues = z.infer<typeof chatFormSchema>;
 
 export function ChatForm() {
   const { settings, isLoading, updateSettings } = useOptions();
-  const [saving, setSaving] = React.useState(false);
   const [newIgnorePlayer, setNewIgnorePlayer] = React.useState('');
+  const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const form = useForm<ChatFormValues>({
     resolver: zodResolver(chatFormSchema),
@@ -51,24 +50,47 @@ export function ChatForm() {
     },
   });
 
-  // Reset form when settings change
+  // Reset form when settings change externally
   React.useEffect(() => {
     if (settings) {
-      form.reset({
-        whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
-        tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
-        whisperIgnoreList: settings.whisperIgnoreList || [],
-        whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
-        whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
-        whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
-        whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
-        acceptOfferMessageTemplate:
-          settings.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
-        rejectOfferMessageTemplate: settings.rejectOfferMessageTemplate || 'Your offer has been rejected.',
-        soldOfferMessageTemplate: settings.soldOfferMessageTemplate || 'The item has been sold.',
-      });
+      form.reset(
+        {
+          whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
+          tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
+          whisperIgnoreList: settings.whisperIgnoreList || [],
+          whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
+          whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
+          whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
+          whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
+          acceptOfferMessageTemplate:
+            settings.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
+          rejectOfferMessageTemplate: settings.rejectOfferMessageTemplate || 'Your offer has been rejected.',
+          soldOfferMessageTemplate: settings.soldOfferMessageTemplate || 'The item has been sold.',
+        },
+        { keepDirty: false },
+      );
     }
   }, [settings, form]);
+
+  // Auto-save on any change (debounced for text inputs)
+  const settingsRef = React.useRef(settings);
+  settingsRef.current = settings;
+  React.useEffect(() => {
+    const subscription = form.watch((values) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const current = settingsRef.current;
+        const changed = Object.entries(values).some(
+          ([key, val]) => JSON.stringify(current?.[key as keyof typeof current]) !== JSON.stringify(val),
+        );
+        if (changed) updateSettings(values);
+      }, 500);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [form, updateSettings]);
 
   const ignoreList = form.watch('whisperIgnoreList') || [];
   const notificationTiming = form.watch('whisperNotificationTiming') || 'both';
@@ -92,19 +114,10 @@ export function ChatForm() {
     return null;
   }
 
-  const onSubmit = async (values: ChatFormValues) => {
-    setSaving(true);
-    await updateSettings(values);
-    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
-    setSaving(false);
-    emit('toast-event', 'Chat preferences saved!');
-  };
-
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-y-4 max-h-[330px]">
+        <div className="flex flex-col gap-y-4 ">
           <FormField
             control={form.control}
             name="whisperNotificationTiming"
@@ -350,17 +363,8 @@ export function ChatForm() {
               </FormItem>
             )}
           />
-        </form>
+        </div>
       </ScrollArea>
-      <Button
-        type="submit"
-        className={'self-start cursor-pointer mt-2'}
-        disabled={saving}
-        onClick={form.handleSubmit(onSubmit)}
-      >
-        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-        {saving ? 'Saving...' : 'Update chat preferences'}
-      </Button>
     </Form>
   );
 }

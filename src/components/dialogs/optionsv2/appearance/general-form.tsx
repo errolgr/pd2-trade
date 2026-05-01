@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -28,8 +27,8 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
 export function GeneralForm() {
   const { settings, isLoading, updateSettings } = useOptions();
-  const [saving, setSaving] = React.useState(false);
   const [detectedDirectory, setDetectedDirectory] = React.useState<string | null>(null);
+  const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Always call hooks at the top level
   const form = useForm<AppearanceFormValues>({
@@ -42,17 +41,40 @@ export function GeneralForm() {
     },
   });
 
-  // Reset form when settings change
+  // Reset form when settings change externally
   React.useEffect(() => {
     if (settings) {
-      form.reset({
-        mode: settings.mode || 'softcore',
-        ladder: settings.ladder || 'non-ladder',
-        fillStatValue: settings.fillStatValue ?? 5,
-        diablo2Directory: settings.diablo2Directory || '',
-      });
+      form.reset(
+        {
+          mode: settings.mode || 'softcore',
+          ladder: settings.ladder || 'non-ladder',
+          fillStatValue: settings.fillStatValue ?? 5,
+          diablo2Directory: settings.diablo2Directory || '',
+        },
+        { keepDirty: false },
+      );
     }
   }, [settings, form]);
+
+  // Auto-save on any change (debounced for text inputs)
+  const settingsRef = React.useRef(settings);
+  settingsRef.current = settings;
+  React.useEffect(() => {
+    const subscription = form.watch((values) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const current = settingsRef.current;
+        const changed = Object.entries(values).some(
+          ([key, val]) => JSON.stringify(current?.[key as keyof typeof current]) !== JSON.stringify(val),
+        );
+        if (changed) updateSettings(values);
+      }, 500);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [form, updateSettings]);
 
   // Auto-detect directory on mount
   React.useEffect(() => {
@@ -71,19 +93,10 @@ export function GeneralForm() {
     return null;
   }
 
-  const onSubmit = async (values: AppearanceFormValues) => {
-    setSaving(true);
-    await updateSettings(values);
-    await new Promise((resolve) => setTimeout(resolve, 200)); // artificial delay
-    setSaving(false);
-    await emit('toast-event', { title: 'PD2 Trader', description: 'Preferences saved!' });
-  };
-
   return (
     <Form {...form}>
       <ScrollArea className="pr-2">
-        <form onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-y-4 max-h-[330px]">
+        <div className="flex flex-col gap-y-4 ">
           <FormField
             control={form.control}
             name="ladder"
@@ -235,17 +248,8 @@ export function GeneralForm() {
               </FormItem>
             )}
           />
-        </form>
+        </div>
       </ScrollArea>
-      <Button
-        type="submit"
-        className={'self-start cursor-pointer mt-2'}
-        disabled={saving}
-        onClick={form.handleSubmit(onSubmit)}
-      >
-        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-        {saving ? 'Saving...' : 'Update preferences'}
-      </Button>
     </Form>
   );
 }

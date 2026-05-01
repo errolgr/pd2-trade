@@ -131,6 +131,17 @@ export const useTradeMessages = () => {
                 whisperFromNormalized === tradePlayerNormalized;
 
               if (matches) {
+                // Skip if this is the same message that was already added when the trade was created
+                const lastEntry = trade.history?.[trade.history.length - 1];
+                if (
+                  lastEntry &&
+                  lastEntry.isIncoming === whisper.isIncoming &&
+                  lastEntry.message === whisper.message &&
+                  Date.now() - lastEntry.timestamp.getTime() < 2000
+                ) {
+                  return trade;
+                }
+
                 // Add whisper to history (both trade and non-trade whispers)
                 const historyEntry: TradeMessageHistoryEntry = {
                   id: `${Date.now()}-${Math.random()}`,
