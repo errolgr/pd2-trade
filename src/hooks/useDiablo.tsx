@@ -89,36 +89,6 @@ export const DiabloProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     isInitializedRef.current = true;
   }, []);
 
-  // Listen for Diablo window movement
-  useEffect(() => {
-    if (!isTauri()) return;
-
-    let unlisten: (() => void) | undefined;
-
-    const setupListener = async () => {
-      try {
-        unlisten = await tauriListen<{ rect: DiabloRect; delta: { dx: number; dy: number } }>(
-          'diablo-window-moved',
-          (event) => {
-            if (event.payload.rect) {
-              setDiabloRect(event.payload.rect);
-            }
-          },
-        );
-      } catch (error) {
-        console.error('[DiabloProvider] Failed to set up diablo-window-moved listener:', error);
-      }
-    };
-
-    setupListener();
-
-    return () => {
-      if (unlisten) {
-        unlisten();
-      }
-    };
-  }, []);
-
   // Listen for Diablo focus changes
   useEffect(() => {
     if (!isTauri()) return;
@@ -129,6 +99,12 @@ export const DiabloProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       try {
         unlisten = await tauriListen<boolean>('diablo-focus-changed', (event) => {
           setIsDiabloFocused(event.payload);
+
+          // Clear diabloRect when Diablo loses focus to prevent stale rect
+          // from causing position drift in panel views
+          if (!event.payload) {
+            setDiabloRect(null);
+          }
         });
       } catch (error) {
         console.error('[DiabloProvider] Failed to set up diablo-focus-changed listener:', error);

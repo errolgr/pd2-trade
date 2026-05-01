@@ -18,8 +18,6 @@ import {
   openWindowAtCursor,
   openWindowCenteredOnDiablo,
   getDiabloRectWithRetry,
-  updateMainWindowBounds,
-  moveWindowBy,
   attachWindowCloseHandler,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
@@ -793,107 +791,6 @@ const LandingPage: React.FC = () => {
       }
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
-  // Dynamic Window Tracking
-  // Consolidated Dynamic Window Tracking & Focus Event Listener
-  useEffect(() => {
-    if (!isTauri()) return;
-
-    // Position Tracking (Event Driven)
-    let unlisten: (() => void) | null = null;
-
-    // We retain the logic to handle chat button lazy creation and movement
-    const setupListener = async () => {
-      unlisten = await tauriListen<any>('diablo-window-moved', async (event) => {
-        if (settings.windowTrackingEnabled === false) return;
-
-        const { rect, delta } = event.payload;
-        const { dx, dy } = delta;
-
-        // 2. Update Main Window (Overlay) - Always Snap to D2 Size/Pos
-        // Always update main bounds on event to ensure sync
-        await updateMainWindowBounds();
-
-        // Parallelize updates for smoother tracking
-        const updatePromises: Promise<void>[] = [];
-
-        // Helper to safely move window and clear ref on failure
-        const safeMove = async (winRef: React.MutableRefObject<any>, name: string) => {
-          if (!winRef.current) return;
-          try {
-            await moveWindowBy(winRef.current, dx, dy);
-          } catch (err) {
-            console.warn(`[Tracking] Failed to move ${name} window, clearing ref:`, err);
-            winRef.current = null;
-          }
-        };
-
-        if (dx !== 0 || dy !== 0) {
-          // 3. Update Chat Window (Floating)
-          updatePromises.push(safeMove(chatWindowRef, 'Chat'));
-
-          // 4. Update Trade Messages Window (Floating)
-          updatePromises.push(safeMove(tradeMessagesWindowRef, 'TradeMessages'));
-
-          // 5. Update Quick List / Item Search (Floating)
-          updatePromises.push(safeMove(winRef, 'ItemSearch'));
-          updatePromises.push(safeMove(quickListWinRef, 'QuickList'));
-
-          // 6. Update Settings Window (Floating)
-          // Settings isn't a RefObject, it's from useTray hook...
-          // complex to fix generically, let's just wrap it manually or skip for now if it's not the cause.
-          // The user reported "window not found" which matches the QuickList behavior.
-          // Let's wrap settings manually if needed.
-          if (settingsWindow) {
-            updatePromises.push(
-              moveWindowBy(settingsWindow, dx, dy).catch((e) => console.warn('Failed to move settings:', e)),
-            );
-          }
-
-          // 7. Update Currency Window (Floating)
-          updatePromises.push(safeMove(currencyWindowRef, 'Currency'));
-
-          // 8. Chat Button Overlay
-          if (settings.chatButtonOverlayEnabled !== false) {
-            updatePromises.push(safeMove(chatButtonWindowRef, 'ChatButton'));
-          }
-        }
-
-        // Handle Chat Button Lazy Creation if needed (outside parallel block since it's async check/create)
-        if (settings.chatButtonOverlayEnabled !== false) {
-          if (!chatButtonWindowRef.current) {
-            // Lazy Creation
-            const buttonSize = 240;
-            const x = rect.x + rect.width - buttonSize - 20;
-            const y = rect.y + rect.height - buttonSize - 10;
-
-            chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
-              url: '/chat-button',
-              x,
-              y,
-              width: buttonSize,
-              height: buttonSize,
-              decorations: false,
-              transparent: true,
-              skipTaskbar: true,
-              alwaysOnTop: true,
-              shadow: false,
-              focus: false,
-              focusable: false,
-              visible: true,
-            });
-          }
-        }
-
-        await Promise.all(updatePromises);
-      });
-    };
-
-    setupListener();
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [settings.windowTrackingEnabled, settingsWindow, settings.chatButtonOverlayEnabled]);
 
   // Persistent snapshot of which windows were open - persists across re-renders
   const visibleWindowsSnapshotRef = useRef<Set<string>>(new Set());

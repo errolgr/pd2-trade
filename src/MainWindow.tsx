@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { listen as tauriListen } from '@tauri-apps/api/event';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Item } from './pages/price-check/lib/interfaces';
 import { LogicalSize } from '@tauri-apps/api/dpi';
@@ -13,7 +12,7 @@ import { DialogProvider } from '@/hooks/useDialog';
 import { Pd2WebsiteProvider, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { getDiabloRectWithRetry, updateMainWindowBounds } from '@/lib/window';
+import { getDiabloRectWithRetry } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
@@ -543,31 +542,6 @@ const MainWindow: React.FC = () => {
       }
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
-
-  // Update main window bounds when Diablo window moves
-  useEffect(() => {
-    if (!isTauri()) return;
-
-    let unlisten: (() => void) | null = null;
-
-    const setupListener = async () => {
-      unlisten = await tauriListen<any>('diablo-window-moved', async () => {
-        if (settings.windowTrackingEnabled === false) return;
-        // Update Main Window (Overlay) - Always Snap to D2 Size/Pos
-        await updateMainWindowBounds();
-
-        // Chat button position will be updated automatically by the useEffect above
-        // that depends on diabloRectRelative, which is updated by the DiabloProvider
-        // when the window moves. No need to manually update here.
-      });
-    };
-
-    setupListener();
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [settings.windowTrackingEnabled]);
 
   return (
     <div>
