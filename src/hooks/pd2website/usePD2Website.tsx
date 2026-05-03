@@ -175,7 +175,27 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
 
   // Logout function to manually trigger re-authentication
   const logout = useCallback(async () => {
+    console.log('[Pd2WebsiteProvider] Logout initiated');
+
+    // End the OAuth session on the server (best-effort, don't block logout on failure)
+    const idToken = settings?.pd2IdToken;
+    if (idToken) {
+      const url = `https://api.projectdiablo2.com/oauth/session/end?id_token_hint=${encodeURIComponent(idToken)}`;
+      console.log('[Pd2WebsiteProvider] Calling session end endpoint:', url);
+      try {
+        const response = await tauriFetch(url, {
+          method: 'GET',
+        });
+        console.log('[Pd2WebsiteProvider] Session end response:', response.status, response.statusText);
+      } catch (e) {
+        console.warn('[Pd2WebsiteProvider] Failed to end OAuth session:', e);
+      }
+    } else {
+      console.log('[Pd2WebsiteProvider] No id_token found, skipping session end call');
+    }
+
     // Clear auth data
+    console.log('[Pd2WebsiteProvider] Clearing auth data and stash cache');
     setAuthData(null);
 
     // Clear stash cache using ref
@@ -184,9 +204,11 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     }
 
     // Clear all auth tokens
+    console.log('[Pd2WebsiteProvider] Clearing stored tokens');
     await updateSettings({
       pd2Token: undefined,
       pd2RefreshToken: undefined,
+      pd2IdToken: undefined,
       pd2TokenExpiry: undefined,
     });
 
@@ -198,7 +220,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       duration: 3000,
     };
     emit('toast-event', toastPayload);
-  }, [updateSettings]);
+  }, [updateSettings, settings?.pd2IdToken]);
 
   // Update the ref so useStashCache can use the handler
   useEffect(() => {

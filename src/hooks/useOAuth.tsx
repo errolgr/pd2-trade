@@ -12,7 +12,7 @@ async function pollForTokens(
   state: string,
   intervalMs = 2000,
   timeoutMs = 10 * 60 * 1000,
-): Promise<{ accessToken: string; refreshToken?: string; expiresIn: number } | null> {
+): Promise<{ accessToken: string; refreshToken?: string; idToken?: string; expiresIn: number } | null> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
@@ -79,6 +79,7 @@ export function useOAuth() {
       await updateSettings({
         pd2Token: tokens.accessToken,
         pd2RefreshToken: tokens.refreshToken,
+        pd2IdToken: tokens.idToken,
         pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
       });
 
@@ -119,6 +120,7 @@ export function useOAuth() {
         await updateSettings({
           pd2Token: tokens.accessToken,
           pd2RefreshToken: tokens.refreshToken || refreshToken,
+          ...(tokens.idToken && { pd2IdToken: tokens.idToken }),
           pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
         });
 
