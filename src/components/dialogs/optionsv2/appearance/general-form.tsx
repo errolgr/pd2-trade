@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { SEASONS } from '@/lib/seasons';
 
 const appearanceFormSchema = z.object({
@@ -248,6 +249,18 @@ export function GeneralForm() {
               </FormItem>
             )}
           />
+          <FormItem>
+            <div className="flex flex-row items-center gap-2">
+              <FormLabel>Debug Logging</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={settings.debugLoggingEnabled ?? false}
+                  onCheckedChange={(checked) => updateSettings({ debugLoggingEnabled: checked })}
+                />
+              </FormControl>
+            </div>
+            <FormDescription>Write console output to a log file for troubleshooting.</FormDescription>
+          </FormItem>
         </div>
       </ScrollArea>
     </Form>

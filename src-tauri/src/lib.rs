@@ -9,7 +9,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GET
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{chat_watcher, commands, keyboard, system, window};
+pub use modules::{chat_watcher, commands, debug_logger, keyboard, system, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -43,6 +43,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_app_exit::init())
         .setup(|app| {
+            // Initialize debug logger with app config directory
+            if let Ok(config_dir) = app.path().app_config_dir() {
+                debug_logger::init(config_dir);
+            }
+
             let _handle = app.app_handle();
 
             let (x, y, width, height) =
@@ -133,6 +138,7 @@ pub fn run() {
             commands::get_diablo2_directory,
             commands::auto_detect_diablo2_directory,
             commands::open_oauth_url,
+            commands::write_debug_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

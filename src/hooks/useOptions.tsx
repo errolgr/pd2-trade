@@ -17,7 +17,6 @@ export interface ISettings {
   lastSeenVersion?: string;
   pd2Token?: string;
   pd2RefreshToken?: string;
-  pd2IdToken?: string;
   pd2TokenExpiry?: number;
   account?: string;
   hotkeyModifierSettings?: 'ctrl' | 'alt';
@@ -45,6 +44,7 @@ export interface ISettings {
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
+  debugLoggingEnabled?: boolean;
 }
 
 interface OptionsContextProps {

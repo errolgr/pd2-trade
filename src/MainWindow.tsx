@@ -36,7 +36,7 @@ import { ChatProvider } from '@/contexts/ChatContext';
 const MainWindow: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
   const settingsRef = useRef<any>(null);
-  const { read } = useClipboard();
+  const { read, copy } = useClipboard();
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
   const { isConnected } = useSocket({ settings });
@@ -106,21 +106,46 @@ const MainWindow: React.FC = () => {
 
   // Copy item from clipboard and validate
   const copyAndValidateItem = useCallback(async (): Promise<string | null> => {
+    // Save current clipboard before overwriting
+    const savedClipboard = await read();
+
     await keyPress('ctrl+c');
     await sleep(250);
     const raw = await read();
+
+    // Restore clipboard after reading item text
+    try {
+      if (savedClipboard != null) await copy(savedClipboard);
+    } catch {
+      /* clipboard restore is best-effort */
+    }
+
     return clipboardContainsValidItem(raw) ? raw : null;
-  }, [read, keyPress]);
+  }, [read, copy, keyPress]);
 
   // Open item search window
   const fireSearch = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
+
+    // Save current clipboard before overwriting
+    const savedClipboard = await read();
 
     if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
       await keyPress('ctrl+c');
     }
     await sleep(250);
     const raw = await read();
+
+    // Restore clipboard after reading item text
+    try {
+      if (savedClipboard != null) {
+        await sleep(100);
+        await copy(savedClipboard);
+      }
+    } catch (e) {
+      console.error('[fireSearch] restore failed:', e);
+    }
+
     if (!clipboardContainsValidItem(raw)) {
       const errorToastPayload: GenericToastPayload = {
         title: 'PD2 Trader',
@@ -138,7 +163,7 @@ const MainWindow: React.FC = () => {
       data: { encoded, itemText: encoded },
     });
     emit('new-search', encoded);
-  }, [checkDiabloFocus, read, keyPress, settings, showView]);
+  }, [checkDiabloFocus, read, copy, keyPress, settings, showView]);
 
   // Open currency valuation window
   const openCurrencyValuation = useCallback(async () => {

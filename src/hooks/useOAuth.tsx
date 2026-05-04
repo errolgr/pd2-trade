@@ -79,7 +79,6 @@ export function useOAuth() {
       await updateSettings({
         pd2Token: tokens.accessToken,
         pd2RefreshToken: tokens.refreshToken,
-        pd2IdToken: tokens.idToken,
         pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
       });
 
@@ -120,7 +119,6 @@ export function useOAuth() {
         await updateSettings({
           pd2Token: tokens.accessToken,
           pd2RefreshToken: tokens.refreshToken || refreshToken,
-          ...(tokens.idToken && { pd2IdToken: tokens.idToken }),
           pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
         });
 

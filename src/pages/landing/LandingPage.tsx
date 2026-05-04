@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Item } from '../price-check/lib/interfaces';
-import { LogicalSize } from '@tauri-apps/api/dpi';
 import { emit } from '@/lib/browser-events';
 import type { BrowserWindow } from '@/lib/window';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -29,13 +28,11 @@ import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useSocket } from '@/hooks/pd2website/useSocket';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
-import iconPath from '@/assets/img_1.png';
 import { ItemsProvider } from '@/hooks/useItems';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import DelistHandler from '@/pages/delist/DelistHandler';
 
 const LandingPage: React.FC = () => {
-  const [showTitle, setShowTitle] = useState(true);
   const winRef = useRef<BrowserWindow | null>(null);
   const quickListWinRef = useRef<BrowserWindow | null>(null);
   const chatWindowRef = useRef<any>(null);
@@ -46,7 +43,7 @@ const LandingPage: React.FC = () => {
   const settingsRef = useRef<any>(null);
   // const prevRectRef = useRef<{ x: number; y: number } | null>(null);
   const focusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const { read } = useClipboard();
+  const { read, copy } = useClipboard();
   const keyPress = useKeySender();
   const { settings, isLoading } = useOptions();
   const { settingsWindow } = useTray();
@@ -66,31 +63,13 @@ const LandingPage: React.FC = () => {
     }
   }, []);
 
-  // Hide launch title after 2 seconds
+  // Emit launch toast
   useEffect(() => {
     const timer = setTimeout(async () => {
-      setShowTitle(false);
-
-      // Give React/Browser a moment to paint the removal of the image (which creates the ghost)
-      await sleep(50);
-
       try {
-        // Linux/AppImage Compositor Fix: "Kick" the window to force a repaint
-        // Transparent windows can sometimes leave "ghost" images if the compositor
-        // doesn't realize the surface needs updating after a DOM change.
-        if (isTauri()) {
-          const win = WebviewWindow.getCurrent();
-          const size = await win.innerSize();
-          await win.setSize(new LogicalSize(size.width + 1, size.height));
-          // Small delay to ensure the compositor processes the new size frame
-          await sleep(50);
-          await win.setSize(new LogicalSize(size.width, size.height));
-        }
-
-        console.log('[LandingPage] Hiding launch title and emitting toast...');
         await emit('toast-event', 'is now running in the background...');
       } catch (error) {
-        console.error('[LandingPage] Failed to emit launch toast or kick compositor:', error);
+        console.error('[LandingPage] Failed to emit launch toast:', error);
       }
     }, 2000);
     return () => clearTimeout(timer);
@@ -113,21 +92,43 @@ const LandingPage: React.FC = () => {
 
   // Copy item from clipboard and validate
   const copyAndValidateItem = useCallback(async (): Promise<string | null> => {
+    // Save current clipboard before overwriting
+    const savedClipboard = await read();
+
     await keyPress('ctrl+c');
     await sleep(250);
     const raw = await read();
+
+    // Restore clipboard after reading item text
+    try {
+      if (savedClipboard != null) await copy(savedClipboard);
+    } catch {
+      /* clipboard restore is best-effort */
+    }
+
     return clipboardContainsValidItem(raw) ? raw : null;
-  }, [read, keyPress]);
+  }, [read, copy, keyPress]);
 
   // Open item search window
   const fireSearch = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
+
+    // Save current clipboard before overwriting
+    const savedClipboard = await read();
 
     if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
       await keyPress('ctrl+c');
     }
     await sleep(250);
     const raw = await read();
+
+    // Restore clipboard after reading item text
+    try {
+      if (savedClipboard != null) await copy(savedClipboard);
+    } catch {
+      /* clipboard restore is best-effort */
+    }
+
     if (!clipboardContainsValidItem(raw)) {
       const errorToastPayload: GenericToastPayload = {
         title: 'PD2 Trader',
@@ -161,7 +162,7 @@ const LandingPage: React.FC = () => {
       await sleep(100);
       await winRef.current.show();
     }
-  }, [checkDiabloFocus, read, keyPress, settings]);
+  }, [checkDiabloFocus, read, copy, keyPress, settings]);
 
   // Open currency valuation window
   const openCurrencyValuation = useCallback(async () => {
@@ -992,15 +993,7 @@ const LandingPage: React.FC = () => {
     <ItemsProvider>
       <Pd2WebsiteProvider>
         <DelistHandler />
-        <div>
-          {showTitle && (
-            <div className="fixed inset-0 flex items-center justify-center z-50">
-              <img src={iconPath}
-                style={{ width: 400 }}
-                alt="PD2 Trader" />
-            </div>
-          )}
-        </div>
+        <div />
       </Pd2WebsiteProvider>
     </ItemsProvider>
   );

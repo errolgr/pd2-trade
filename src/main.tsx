@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
+import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import LandingPage, { Providers } from './pages/landing/LandingPage';
 import ItemPage from '@/pages/price-check/ItemPage';
@@ -18,6 +19,9 @@ import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
 import ChatPage from './pages/chat/ChatPage';
 import SignInPage from './pages/sign-in/SignInPage';
 import { DelistPage } from './pages/delist/DelistPage';
+
+// Initialize debug logging if enabled in settings
+initDebugLoggingFromSettings();
 
 // Initialize Sentry asynchronously to avoid blocking application startup
 setTimeout(() => {

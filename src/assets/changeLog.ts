@@ -1,4 +1,11 @@
 export const changeLog = {
+  '0.9.8': [
+    '✨ Clipboard is now preserved during price check and quick list — your copied text is restored after the item is read',
+    '🆕 Added debug logging — enable in Settings > General to write console output to a log file for troubleshooting',
+    '🔧 Reduced stored auth data — id_token is no longer cached in settings',
+    '🔧 Logout now properly ends the OAuth session — re-login will always prompt for fresh credentials',
+    '🔧 Removed PD2 logo splash screen on launch',
+  ],
   '0.9.7': [
     '✨ Settings now auto-save — no more clicking "Update preferences" buttons',
     '🆕 Account selector on sign-in — if multiple accounts are linked, you now choose which one to use',

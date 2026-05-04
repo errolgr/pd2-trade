@@ -1,4 +1,4 @@
-use crate::{chat_watcher, keyboard, window};
+use crate::{chat_watcher, debug_logger, keyboard, window};
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 
@@ -137,6 +137,11 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 #[tauri::command]
 pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub fn write_debug_logs(entries: String) -> Result<(), String> {
+    debug_logger::write_logs(&entries)
 }
 
 #[tauri::command]
