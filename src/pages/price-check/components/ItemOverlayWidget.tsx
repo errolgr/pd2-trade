@@ -1710,9 +1710,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   );
 }
 
+const ONLINE_THRESHOLD_MS = 7 * 60 * 1000;
+
+const isUserOnline = (userLastIngame?: string): boolean => {
+  if (!userLastIngame) return false;
+  const ts = new Date(userLastIngame).getTime();
+  if (!Number.isFinite(ts) || ts <= 0) return false;
+  return Date.now() - ts < ONLINE_THRESHOLD_MS;
+};
+
 const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
   const [open, setOpen] = useState(false);
   const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
+  const online = isUserOnline(listing.user_last_ingame);
 
   // Clean corruptions similar to logic used elsewhere if needed, but for now we rely on the list
 
@@ -1747,6 +1757,19 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
 
             <TooltipProvider delayDuration={0}>
               <div className="flex flex-row items-center gap-1">
+                {/* Online Indicator */}
+                {online && (
+                  <Tooltip disableHoverableContent={true}
+                    delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
+                    </TooltipTrigger>
+                    <TooltipContent className="pointer-events-none">
+                      <p>Online (in-game within 7 min)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
                 {/* Ethereal Indicator */}
                 {listing.item.is_ethereal && (
                   <Tooltip disableHoverableContent={true}
