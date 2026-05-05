@@ -1765,7 +1765,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
                     </TooltipTrigger>
                     <TooltipContent className="pointer-events-none">
-                      <p>Online (in-game within 5 min)</p>
+                      <p>Online in-game</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
