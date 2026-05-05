@@ -1710,7 +1710,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   );
 }
 
-const ONLINE_THRESHOLD_MS = 7 * 60 * 1000;
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
 
 const isUserOnline = (userLastIngame?: string): boolean => {
   if (!userLastIngame) return false;
@@ -1765,7 +1765,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
                     </TooltipTrigger>
                     <TooltipContent className="pointer-events-none">
-                      <p>Online (in-game within 7 min)</p>
+                      <p>Online (in-game within 5 min)</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
