@@ -1715,6 +1715,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
+  const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
   const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
 
@@ -1769,8 +1770,12 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
               <div className="flex flex-row items-center gap-1">
                 {/* Online Indicator */}
                 {online && (
-                  <Tooltip disableHoverableContent={true}
-                    delayDuration={0}>
+                  <Tooltip
+                    disableHoverableContent={true}
+                    delayDuration={0}
+                    open={whisperCopied || onlineTooltipHover}
+                    onOpenChange={setOnlineTooltipHover}
+                  >
                     <TooltipTrigger asChild>
                       <button
                         type="button"
