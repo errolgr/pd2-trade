@@ -11,6 +11,7 @@ import { useInView } from 'react-intersection-observer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import { cn } from '@/lib/utils';
+import { isUserOnlineIngame } from '@/lib/user-online-status';
 
 interface MarketSearchResultsProps {
   listings: MarketListingEntry[];
@@ -125,7 +126,17 @@ export const MarketSearchResults: React.FC<MarketSearchResultsProps> = ({
                     )}
                     <div className="text-sm font-medium text-foreground mb-1">{formatPrice(listing)}</div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Seller: {listing.user.username}</span>
+                      <span className="flex items-center gap-1.5">
+                        Seller: {listing.user.username}
+                        {isUserOnlineIngame(listing.user_last_ingame) && (
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
+                            </TooltipTrigger>
+                            <TooltipContent>Online in-game</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </span>
                       <span>•</span>
                       <span>Listed {formatTimeAgo(listing.created_at)}</span>
                       {listing.bumped_at && (

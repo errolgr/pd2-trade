@@ -18,15 +18,6 @@ pub fn run() {
         system::restart_as_admin();
     }
 
-    // In debug builds, kill any orphaned elevated instances of ourselves
-    // before continuing. The auto-elevation above detaches the elevated
-    // process from `tauri dev`'s process tree, so on rebuild dev can't
-    // kill it; without this, every restart leaves a tray icon behind and
-    // single-instance's IPC can't reliably bridge across UAC integrity
-    // levels to deduplicate.
-    #[cfg(all(target_os = "windows", debug_assertions))]
-    system::kill_other_instances();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
