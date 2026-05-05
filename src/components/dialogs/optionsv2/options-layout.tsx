@@ -11,6 +11,7 @@ import SettingsAbout from './about/layout';
 import SettingsAccount from './account/layout';
 import SettingsChat from './chat/layout';
 import SettingsInterface from './interface/layout';
+import SettingsStats from './stats/layout';
 
 export const metadata = {
   title: 'Forms',
@@ -37,6 +38,10 @@ const sidebarNavItems: INavItem[] = [
   {
     title: 'Interface',
     content: <SettingsInterface />,
+  },
+  {
+    title: 'Price Check',
+    content: <SettingsStats />,
   },
   {
     title: 'Hotkeys',

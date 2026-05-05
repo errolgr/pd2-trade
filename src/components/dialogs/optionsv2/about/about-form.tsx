@@ -6,6 +6,7 @@ import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { isTauri } from '@tauri-apps/api/core';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Loader2, RefreshCw, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { openCenteredWindow } from '@/lib/window';
@@ -117,15 +118,24 @@ export function AboutForm() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
+          onClick={async () => {
+            // Try to show existing hidden window first
+            if (isTauri()) {
+              const existing = await WebviewWindow.getByLabel('ChangeLog');
+              if (existing) {
+                await existing.show();
+                await existing.setFocus();
+                return;
+              }
+            }
             openCenteredWindow('ChangeLog', '/change-log', {
               decorations: false,
               transparent: true,
               focus: true,
               shadow: false,
               skipTaskbar: true,
-            })
-          }
+            });
+          }}
           className="w-60"
         >
           <FileText className="h-4 w-4 mr-2" />

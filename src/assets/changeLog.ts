@@ -1,4 +1,10 @@
 export const changeLog = {
+  '0.9.9': [
+    '🆕 Online status indicator on price-check and market-search listings — seller is considered online if active in the last 5 minutes',
+    '🆕 Click the online dot on a price-check listing to copy a whisper for that seller',
+    '🆕 Seller account name now shown in the price-check listing popover alongside online status',
+    '🆕 New Price Check settings section — moved Fill Stat Value here and added: leave min empty, leave max empty, percent vs flat margin unit, and a default corrupted filter',
+  ],
   '0.9.8': [
     '✨ Clipboard is now preserved during price check and quick list — your copied text is restored after the item is read',
     '🆕 Added debug logging — enable in Settings > General to write console output to a log file for troubleshooting',

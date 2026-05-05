@@ -30,6 +30,10 @@ export interface ISettings {
   hotkeyModifierDelist: 'ctrl' | 'alt';
   hotkeyKeyDelist: string;
   fillStatValue?: number;
+  statFillMarginUnit?: 'percent' | 'flat';
+  statFillLeaveMinEmpty?: boolean;
+  statFillLeaveMaxEmpty?: boolean;
+  statDefaultCorruptedFilter?: 'both' | 'corrupted' | 'non-corrupted';
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
   chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
@@ -74,6 +78,10 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierDelist: 'ctrl',
   hotkeyKeyDelist: 'u',
   fillStatValue: 5,
+  statFillMarginUnit: 'percent',
+  statFillLeaveMinEmpty: false,
+  statFillLeaveMaxEmpty: false,
+  statDefaultCorruptedFilter: 'both',
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',

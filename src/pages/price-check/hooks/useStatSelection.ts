@@ -93,11 +93,15 @@ function isItemCorruptable(item: any): boolean {
   return false;
 }
 
+type MarginFn = (value: number) => number;
+
+const defaultMarginFn: MarginFn = (value) => Math.ceil(value * 0.05);
+
 /**
  * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
  * into a single "Enhanced Damage" stat (stat_id 998)
  */
-function combineEnhancedDamageStats(stats: Stat[], itemType?: string, rangeMargin: number = 0.05): Stat[] {
+function combineEnhancedDamageStats(stats: Stat[], itemType?: string, getMargin: MarginFn = defaultMarginFn): Stat[] {
   const minDamageStat = stats.find((s) => s.stat_id === 18); // item_mindamage_percent
   const maxDamageStat = stats.find((s) => s.stat_id === 17); // item_maxdamage_percent
   const existingEnhancedDamageStat = stats.find((s) => s.stat_id === 998);
@@ -108,7 +112,7 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string, rangeMargi
   // Helper function to apply range margin
   const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
     if (!value) return range;
-    const margin = Math.ceil(value * rangeMargin);
+    const margin = getMargin(value);
     return {
       min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
       max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
@@ -182,7 +186,7 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string, rangeMargi
  * Combines fire, lightning, cold, and poison resist stats (stat_ids 39, 41, 43, 45)
  * into a single "All Resistances" stat (stat_id 999) when they all have the same value
  */
-function combineResistanceStats(stats: Stat[], rangeMargin: number = 0.05): Stat[] {
+function combineResistanceStats(stats: Stat[], getMargin: MarginFn = defaultMarginFn): Stat[] {
   const fireResist = stats.find((s) => s.stat_id === 39); // fireresist
   const lightResist = stats.find((s) => s.stat_id === 41); // lightresist
   const coldResist = stats.find((s) => s.stat_id === 43); // coldresist
@@ -200,7 +204,7 @@ function combineResistanceStats(stats: Stat[], rangeMargin: number = 0.05): Stat
   // Helper function to apply range margin
   const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
     if (!value) return range;
-    const margin = Math.ceil(value * rangeMargin);
+    const margin = getMargin(value);
     return {
       min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
       max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
@@ -256,7 +260,7 @@ function combineResistanceStats(stats: Stat[], rangeMargin: number = 0.05): Stat
  * Combines strength, energy, dexterity, and vitality stats (stat_ids 0, 1, 2, 3)
  * into a single "All Attributes" stat (stat_id 1002) when they all have the same value
  */
-function combineAttributeStats(stats: Stat[], rangeMargin: number = 0.05): Stat[] {
+function combineAttributeStats(stats: Stat[], getMargin: MarginFn = defaultMarginFn): Stat[] {
   const strengthStat = stats.find((s) => s.stat_id === 0); // strength
   const energyStat = stats.find((s) => s.stat_id === 1); // energy
   const dexterityStat = stats.find((s) => s.stat_id === 2); // dexterity
@@ -274,7 +278,7 @@ function combineAttributeStats(stats: Stat[], rangeMargin: number = 0.05): Stat[
   // Helper function to apply range margin
   const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
     if (!value) return range;
-    const margin = Math.ceil(value * rangeMargin);
+    const margin = getMargin(value);
     return {
       min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
       max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
@@ -327,19 +331,32 @@ function combineAttributeStats(stats: Stat[], rangeMargin: number = 0.05): Stat[
   return stats;
 }
 
+const corruptedFilterToState = (filter: string | undefined): number =>
+  filter === 'corrupted' ? 1 : filter === 'non-corrupted' ? 2 : 0;
+
 export function useStatSelection(item: any) {
   const { settings } = useOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<Record<string, { value?: string; min?: string; max?: string }>>({});
-  // Corrupted state: 0 = both, 1 = corrupted only, 2 = non-corrupted only
-  const [corruptedState, setCorruptedState] = useState<number>(0);
+  // Corrupted state: 0 = both, 1 = corrupted only, 2 = non-corrupted only.
+  // Initial value uses the user's saved default; ItemOverlayWidget keeps it in sync
+  // on every item change so each new price-check starts from the saved filter.
+  const [corruptedState, setCorruptedState] = useState<number>(() =>
+    corruptedFilterToState(settings?.statDefaultCorruptedFilter),
+  );
 
-  // Get range margin from settings (convert percentage 0-100 to decimal 0-1)
-  // Default to 5% (0.05) if not set
-  const rangeMargin = useMemo(() => {
+  const leaveMinEmpty = settings?.statFillLeaveMinEmpty ?? false;
+  const leaveMaxEmpty = settings?.statFillLeaveMaxEmpty ?? false;
+
+  // Get margin function from settings — supports percent or flat units.
+  const getMargin = useMemo<MarginFn>(() => {
     const fillStatValue = settings?.fillStatValue ?? 5;
-    return fillStatValue / 100;
-  }, [settings?.fillStatValue]);
+    const unit = settings?.statFillMarginUnit ?? 'percent';
+    if (unit === 'flat') {
+      return () => fillStatValue;
+    }
+    return (value: number) => Math.ceil(value * (fillStatValue / 100));
+  }, [settings?.fillStatValue, settings?.statFillMarginUnit]);
 
   // Sort stats once with useMemo so it's cheap
   const sortedStats = useMemo(() => {
@@ -383,11 +400,11 @@ export function useStatSelection(item: any) {
     }
 
     // Combine enhanced damage stats before processing
-    combinedStats = combineEnhancedDamageStats(combinedStats, item.type, rangeMargin);
+    combinedStats = combineEnhancedDamageStats(combinedStats, item.type, getMargin);
     // Combine attribute stats if applicable
-    combinedStats = combineAttributeStats(combinedStats, rangeMargin);
+    combinedStats = combineAttributeStats(combinedStats, getMargin);
     // Combine resistance stats if applicable
-    combinedStats = combineResistanceStats(combinedStats, rangeMargin);
+    combinedStats = combineResistanceStats(combinedStats, getMargin);
 
     return [...combinedStats, ...baseStats]
       .sort((a: Stat, b: Stat) => {
@@ -418,7 +435,7 @@ export function useStatSelection(item: any) {
         if (stat.name && stat.name.toLowerCase().includes('an evil force')) return false;
         return true;
       });
-  }, [item.stats, item.sockets, item.type, item.isEthereal, rangeMargin]);
+  }, [item.stats, item.sockets, item.type, item.isEthereal, getMargin]);
 
   const updateFilter = (key: string, field: 'value' | 'min' | 'max', val: string) =>
     setFilters((f) => ({
@@ -464,25 +481,25 @@ export function useStatSelection(item: any) {
         setFilters((f) => {
           const v = stat.value ?? 0;
 
+          let minStr = '';
+          let maxStr = '';
+
           if (stat.range) {
-            const margin = Math.ceil(v * rangeMargin);
+            const margin = getMargin(v);
             const min = Math.max(v - margin, stat.range.min);
             const max = Math.min(v + margin, stat.range.max);
-
-            return {
-              ...f,
-              [key]: {
-                min: String(min),
-                max: String(max),
-              },
-            };
+            minStr = String(min);
+            maxStr = String(max);
+          } else {
+            minStr = String(v);
+            maxStr = String(v);
           }
 
           return {
             ...f,
             [key]: {
-              min: String(v),
-              max: String(v),
+              min: leaveMinEmpty ? '' : minStr,
+              max: leaveMaxEmpty ? '' : maxStr,
             },
           };
         });

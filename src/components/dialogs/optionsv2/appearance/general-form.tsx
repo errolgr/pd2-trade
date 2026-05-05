@@ -20,7 +20,6 @@ const appearanceFormSchema = z.object({
   ladder: z.enum(['non-ladder', 'ladder'], {
     required_error: 'Please select a ladder.',
   }),
-  fillStatValue: z.number().int().min(0).max(100).optional(),
   diablo2Directory: z.string().optional(),
 });
 
@@ -37,7 +36,6 @@ export function GeneralForm() {
     defaultValues: {
       mode: settings?.mode || 'softcore',
       ladder: settings?.ladder || 'non-ladder',
-      fillStatValue: settings?.fillStatValue ?? 5,
       diablo2Directory: settings?.diablo2Directory || '',
     },
   });
@@ -49,7 +47,6 @@ export function GeneralForm() {
         {
           mode: settings.mode || 'softcore',
           ladder: settings.ladder || 'non-ladder',
-          fillStatValue: settings.fillStatValue ?? 5,
           diablo2Directory: settings.diablo2Directory || '',
         },
         { keepDirty: false },
@@ -168,34 +165,6 @@ export function GeneralForm() {
               Filter price data by season. Past seasons require historical data to be available.
             </FormDescription>
           </FormItem>
-          <FormField
-            control={form.control}
-            name="fillStatValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fill Stat Value (%)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="5"
-                    className="w-[200px]"
-                    value={field.value ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? undefined : parseInt(value, 10));
-                    }}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Percentage used to automatically populate stat value ranges when selecting stats with ranges.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="diablo2Directory"
