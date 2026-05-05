@@ -46,6 +46,7 @@ import {
 import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
+import { writeText } from '@/lib/browser-clipboard';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -1713,8 +1714,25 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
 const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
   const [open, setOpen] = useState(false);
+  const [whisperCopied, setWhisperCopied] = useState(false);
   const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
+
+  const copyWhisper = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const account = listing.user?.in_game_account || listing.user?.game?.accounts?.[0] || listing.user?.username || '';
+    const itemName = listing.item?.name || listing.item?.base?.name || 'item';
+    const priceStr = listing.hr_price ? `${listing.hr_price} HR` : listing.price || '';
+    const message = `/w *${account} Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`;
+    try {
+      await writeText(message);
+      setWhisperCopied(true);
+      setTimeout(() => setWhisperCopied(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy whisper:', err);
+    }
+  };
 
   // Clean corruptions similar to logic used elsewhere if needed, but for now we rely on the list
 
@@ -1754,10 +1772,15 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                   <Tooltip disableHoverableContent={true}
                     delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
+                      <button
+                        type="button"
+                        onClick={copyWhisper}
+                        className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)] cursor-pointer hover:scale-125 transition-transform"
+                        aria-label="Copy whisper"
+                      />
                     </TooltipTrigger>
                     <TooltipContent className="pointer-events-none">
-                      <p>Online in-game</p>
+                      <p>{whisperCopied ? 'Copied whisper, right click to paste' : 'Online in-game'}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
