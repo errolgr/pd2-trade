@@ -1762,7 +1762,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                   <Tooltip disableHoverableContent={true}
                     delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
+                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]" />
                     </TooltipTrigger>
                     <TooltipContent className="pointer-events-none">
                       <p>Online in-game</p>
