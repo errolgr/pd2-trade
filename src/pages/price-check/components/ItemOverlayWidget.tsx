@@ -1837,6 +1837,17 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             onToggleExpanded={() => {}}
             hideToggle={true}
           />
+          {listing.user?.username && (
+            <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-1.5 text-xs text-gray-400">
+              <span>Seller: {listing.user.username}</span>
+              {online && (
+                <div
+                  className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]"
+                  title="Online in-game"
+                />
+              )}
+            </div>
+          )}
         </Card>
       </PopoverContent>
     </Popover>
