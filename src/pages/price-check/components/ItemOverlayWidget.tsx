@@ -407,14 +407,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setFilters({});
       setSearchMode(0); // Reset to default mode
       setQualityOverride(null); // Reset quality override
-      // Reset corrupted state to the user's saved default
-      setCorruptedState(
-        settings?.statDefaultCorruptedFilter === 'corrupted'
-          ? 1
-          : settings?.statDefaultCorruptedFilter === 'non-corrupted'
-            ? 2
-            : 0,
-      );
+      // Corrupted state is reset to the saved default by useStatSelection when the
+      // item changes, gated by whether the item is actually corruptable.
       setSelectedCorruptionNames([]); // Clear selected corruptions
       // Clear average price data when item or its stats change
       setAveragePriceData(null);

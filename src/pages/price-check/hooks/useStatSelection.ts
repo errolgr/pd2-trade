@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Stat } from '../lib/interfaces';
 import { StatId, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from '../lib/stat-mappings';
 import { getStatKey, getTypeFromBaseType } from '../lib/utils';
@@ -338,12 +338,22 @@ export function useStatSelection(item: any) {
   const { settings } = useOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<Record<string, { value?: string; min?: string; max?: string }>>({});
+
+  // The corrupted checkbox is only shown when isItemCorruptable() is true (the same
+  // gate that injects the Corrupted stat row); applying a corrupted filter to a
+  // non-corruptable item (rune, gem, charm, map orb) would yield zero results.
+  const itemIsCorruptable = useMemo(() => isItemCorruptable(item), [item]);
+
   // Corrupted state: 0 = both, 1 = corrupted only, 2 = non-corrupted only.
-  // Initial value uses the user's saved default; ItemOverlayWidget keeps it in sync
-  // on every item change so each new price-check starts from the saved filter.
   const [corruptedState, setCorruptedState] = useState<number>(() =>
-    corruptedFilterToState(settings?.statDefaultCorruptedFilter),
+    itemIsCorruptable ? corruptedFilterToState(settings?.statDefaultCorruptedFilter) : 0,
   );
+
+  // Reset to the saved default whenever the item changes. Skipped for non-corruptable
+  // items so we don't apply a filter the user has no UI to undo.
+  useEffect(() => {
+    setCorruptedState(itemIsCorruptable ? corruptedFilterToState(settings?.statDefaultCorruptedFilter) : 0);
+  }, [item, itemIsCorruptable, settings?.statDefaultCorruptedFilter]);
 
   const leaveMinEmpty = settings?.statFillLeaveMinEmpty ?? false;
   const leaveMaxEmpty = settings?.statFillLeaveMaxEmpty ?? false;
