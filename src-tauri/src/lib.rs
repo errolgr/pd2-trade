@@ -13,7 +13,7 @@ pub use modules::{chat_watcher, commands, debug_logger, keyboard, system, window
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
     if !system::is_elevated() {
         system::restart_as_admin();
     }
