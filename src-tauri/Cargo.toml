@@ -41,6 +41,7 @@ winreg = "0.10"
 windows-sys = { version = "0.48.0", features = [
     "Win32_Foundation",
     "Win32_System_Threading",
+    "Win32_System_Diagnostics_ToolHelp",
     "Win32_Security",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",

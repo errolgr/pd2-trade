@@ -31,6 +31,62 @@ pub fn is_elevated() -> bool {
     }
 }
 
+pub fn kill_other_instances() {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+        TH32CS_SNAPPROCESS,
+    };
+    use windows_sys::Win32::System::Threading::{
+        OpenProcess, TerminateProcess, PROCESS_TERMINATE,
+    };
+
+    let our_exe = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+    let our_name = match our_exe.file_name().and_then(|s| s.to_str()) {
+        Some(n) => n.to_ascii_lowercase(),
+        None => return,
+    };
+    let our_pid = std::process::id();
+
+    unsafe {
+        let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if snapshot == windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE {
+            return;
+        }
+
+        let mut entry: PROCESSENTRY32W = std::mem::zeroed();
+        entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+
+        if Process32FirstW(snapshot, &mut entry) != 0 {
+            loop {
+                let len = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(0);
+                let name = OsString::from_wide(&entry.szExeFile[..len])
+                    .to_string_lossy()
+                    .to_ascii_lowercase();
+
+                if name == our_name && entry.th32ProcessID != our_pid {
+                    let handle = OpenProcess(PROCESS_TERMINATE, 0, entry.th32ProcessID);
+                    if handle != 0 {
+                        let _ = TerminateProcess(handle, 0);
+                        CloseHandle(handle);
+                    }
+                }
+
+                if Process32NextW(snapshot, &mut entry) == 0 {
+                    break;
+                }
+            }
+        }
+
+        CloseHandle(snapshot);
+    }
+}
+
 pub fn restart_as_admin() {
     use std::{ffi::OsStr, os::windows::ffi::OsStrExt, process::exit};
     use windows_sys::Win32::UI::Shell::ShellExecuteW;

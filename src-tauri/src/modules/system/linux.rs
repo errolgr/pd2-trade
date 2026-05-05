@@ -11,6 +11,11 @@ pub fn restart_as_admin() {
     eprintln!("Elevation requested but not implemented for Linux");
 }
 
+pub fn kill_other_instances() {
+    // No-op on non-Windows; only used to clean up orphaned elevated dev
+    // instances on Windows.
+}
+
 pub fn find_diablo2_install_path() -> Option<PathBuf> {
     let home = std::env::var("HOME").unwrap_or_default();
     let home_path = PathBuf::from(home);
