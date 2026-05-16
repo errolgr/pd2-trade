@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.9.10': [
+    '✨ Updated items database to include season 13 items',
+    '🔧 Fixed chat window not showing new messages reliably in the conversation list',
+    '🔧 Fixed chat conversation list sorting — conversations now sort by most recent message',
+  ],
   '0.9.9': [
     '🆕 Online status indicator on price-check and market-search listings — seller is considered online if active in the last 5 minutes',
     '🆕 Click the online dot on a price-check listing to copy a whisper for that seller',

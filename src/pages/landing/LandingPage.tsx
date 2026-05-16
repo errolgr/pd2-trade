@@ -536,12 +536,6 @@ const LandingPage: React.FC = () => {
     setupChatButton();
 
     return () => {
-      // Cleanup handled by ref nulling in logic context if needed, but here just clearing timeout if we had one
-    };
-
-    setupChatButton();
-
-    return () => {
       if (focusCheckIntervalRef.current) {
         clearInterval(focusCheckIntervalRef.current);
         focusCheckIntervalRef.current = null;
@@ -841,7 +835,37 @@ const LandingPage: React.FC = () => {
 
           // 1. Chat Button
           if (settingsRef.current.chatButtonOverlayEnabled !== false) {
-            await safeShow(chatButtonWindowRef, 'ChatButton');
+            if (chatButtonWindowRef.current) {
+              await safeShow(chatButtonWindowRef, 'ChatButton');
+            } else {
+              // Window was never created (e.g. Diablo wasn't running on startup) - create it now
+              try {
+                const rect = await getDiabloRectWithRetry();
+                if (rect) {
+                  const buttonSize = 240;
+                  const x = rect.x + rect.width - buttonSize - 20;
+                  const y = rect.y + rect.height - buttonSize - 10;
+                  chatButtonWindowRef.current = new WebviewWindow(WindowLabels.ChatButton, {
+                    url: '/chat-button',
+                    title: WindowTitles.ChatButton,
+                    x,
+                    y,
+                    width: buttonSize,
+                    height: buttonSize,
+                    decorations: false,
+                    transparent: true,
+                    skipTaskbar: true,
+                    alwaysOnTop: true,
+                    shadow: false,
+                    focus: false,
+                    focusable: false,
+                    visible: true,
+                  });
+                }
+              } catch (err) {
+                console.warn('[VisibilityManager] Failed to create chat button window on focus gain:', err);
+              }
+            }
           }
 
           // 2. Chat Window

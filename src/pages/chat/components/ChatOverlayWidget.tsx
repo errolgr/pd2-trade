@@ -435,37 +435,31 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
           const currentSelectedConversation = selectedConversationRef.current;
           const currentSelectedConversationId = currentSelectedConversation?._id;
 
-          // Update conversations list (but only update what changed to avoid flickering)
-          if (currentUserId) {
-            try {
-              const response = await getConversations(currentUserId);
-              const conversationsWithMessages = (response.data || []).filter((conv) => conv.latest_message);
-
-              // Only update conversations list if something actually changed
-              setConversations((prev) => {
-                // Check if the list actually changed
-                const hasChanges =
-                  conversationsWithMessages.length !== prev.length ||
-                  conversationsWithMessages.some((newConv) => {
-                    const oldConv = prev.find((c) => c._id === newConv._id);
-                    if (!oldConv) return true; // New conversation
-                    // Check if unread_count or latest_message changed
-                    return (
-                      oldConv.unread_count !== newConv.unread_count ||
-                      oldConv.latest_message?._id !== newConv.latest_message?._id
-                    );
-                  });
-
-                if (!hasChanges) {
-                  return prev;
+          // Update conversations list locally (avoid server call which can race with FIFO socket)
+          const isFromOtherUser = newMessage.sender_id !== currentUserId;
+          setConversations((prev) => {
+            const existingConv = prev.find((c) => c._id === newMessage.conversation_id);
+            if (existingConv) {
+              const shouldIncrementUnread =
+                isFromOtherUser && newMessage.conversation_id !== currentSelectedConversation?._id;
+              return prev.map((conv) => {
+                if (conv._id === newMessage.conversation_id) {
+                  return {
+                    ...conv,
+                    latest_message: newMessage,
+                    unread_count: shouldIncrementUnread ? (conv.unread_count || 0) + 1 : conv.unread_count,
+                  };
                 }
-
-                return conversationsWithMessages;
+                return conv;
               });
-            } catch (error) {
-              console.error('Failed to refresh conversations:', error);
+            } else if (isFromOtherUser) {
+              // New conversation - reload from server
+              if (loadConversationsRef.current) {
+                loadConversationsRef.current();
+              }
             }
-          }
+            return prev;
+          });
 
           // Play notification sound if user is recipient and conversation is not currently open
           const isCurrentConversationOpen =
@@ -582,14 +576,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         isMessageListenerSetupRef.current = false;
       }
     };
-  }, [
-    currentUserId,
-    getConversations,
-    markMessagesAsRead,
-    playNotificationSound,
-    settings?.whisperNotificationsEnabled,
-    settings?.whisperNotificationVolume,
-  ]);
+  }, [currentUserId, markMessagesAsRead, settings?.whisperNotificationsEnabled, settings?.whisperNotificationVolume]);
 
   // Load conversations
 
@@ -714,24 +701,31 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Filter conversations based on search query
   const filteredConversations = React.useMemo(() => {
-    if (!searchQuery.trim()) {
-      return conversations;
+    let result = conversations;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+
+      result = result.filter((conversation) => {
+        // Search by participant name
+        const otherParticipant = getOtherParticipant(conversation);
+        const displayName = otherParticipant?.display_name || '';
+        const username = otherParticipant?.username || '';
+        const nameMatch = displayName.toLowerCase().includes(query) || username.toLowerCase().includes(query);
+
+        // Search by latest message content
+        const latestMessage = conversation.latest_message;
+        const messageMatch = latestMessage?.content?.toLowerCase().includes(query) || false;
+
+        return nameMatch || messageMatch;
+      });
     }
 
-    const query = searchQuery.toLowerCase().trim();
-
-    return conversations.filter((conversation) => {
-      // Search by participant name
-      const otherParticipant = getOtherParticipant(conversation);
-      const displayName = otherParticipant?.display_name || '';
-      const username = otherParticipant?.username || '';
-      const nameMatch = displayName.toLowerCase().includes(query) || username.toLowerCase().includes(query);
-
-      // Search by latest message content
-      const latestMessage = conversation.latest_message;
-      const messageMatch = latestMessage?.content?.toLowerCase().includes(query) || false;
-
-      return nameMatch || messageMatch;
+    // Sort by latest message time (most recent first)
+    return [...result].sort((a, b) => {
+      const timeA = a.latest_message?.created_at ? new Date(a.latest_message.created_at).getTime() : 0;
+      const timeB = b.latest_message?.created_at ? new Date(b.latest_message.created_at).getTime() : 0;
+      return timeB - timeA;
     });
   }, [conversations, searchQuery, getOtherParticipant]);
 
@@ -891,7 +885,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
           </div>
 
           {/* Conversations */}
-          <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block">
             <div className="h-full">
               {loadingConversations && conversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -919,16 +913,32 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                           isSelected ? 'bg-neutral-800' : 'hover:bg-neutral-800',
                         )}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-semibold text-sm text-white truncate">{displayName}</span>
-                              {latestMessage && (
-                                <span className="text-xs text-neutral-400 ml-2 shrink-0">
-                                  {formatConversationTime(latestMessage.created_at)}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                {conversation.unread_count > 0 && (
+                                  <span
+                                    className="inline-flex items-center justify-center rounded-full text-[10px] font-medium"
+                                    style={{
+                                      backgroundColor: '#22c55e',
+                                      color: '#fff',
+                                      minWidth: '16px',
+                                      height: '16px',
+                                      padding: '0 4px',
+                                    }}
+                                  >
+                                    {conversation.unread_count}
+                                  </span>
+                                )}
+                                {latestMessage && (
+                                  <span className="text-xs text-neutral-400">
+                                    {formatConversationTime(latestMessage.created_at)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             {latestMessage && (
                               <div className="flex items-center gap-1">
@@ -970,13 +980,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                               </div>
                             )}
                           </div>
-
-                          {/* Unread Badge */}
-                          {conversation.unread_count > 0 && (
-                            <div className="flex items-center justify-center h-5 w-5 rounded-full bg-green-500 text-white text-xs font-medium shrink-0">
-                              {conversation.unread_count}
-                            </div>
-                          )}
                         </div>
                       </button>
                     );

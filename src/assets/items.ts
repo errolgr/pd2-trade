@@ -1848,68 +1848,6 @@ export const uniqueItems = [
     base: 'Falchion',
   },
   {
-    id: 29,
-    kind: 'item.unique',
-    key: 'Azurewrath',
-    base_code: 'crs',
-    name: 'Azurewrath',
-    level: 18,
-    modifiers: [
-      {
-        key: 'deadly',
-        param_id: 1,
-        min: 50,
-        max: 50,
-      },
-      {
-        key: 'mag%',
-        param_id: 2,
-        min: 10,
-        max: 10,
-      },
-      {
-        key: 'dmg-cold',
-        param_id: 3,
-        param: 100,
-        min: 3,
-        max: 6,
-      },
-      {
-        key: 'dmg%',
-        param_id: 4,
-        min: 100,
-        max: 100,
-      },
-      {
-        key: 'dur',
-        param_id: 5,
-        min: 25,
-        max: 25,
-      },
-      {
-        key: 'dmg-mag',
-        param_id: 6,
-        min: 5,
-        max: 10,
-      },
-      {
-        key: 'splash',
-        param_id: 12,
-        param: 358,
-        min: 100,
-        max: 1,
-      },
-    ],
-    requirements: {
-      level: 13,
-    },
-    image: {
-      invfile: 'invcrsu',
-      invtransform: '',
-    },
-    base: 'Crystal Sword',
-  },
-  {
     id: 30,
     kind: 'item.unique',
     key: 'Griswolds Edge',
@@ -2447,8 +2385,8 @@ export const uniqueItems = [
       {
         key: 'dmg%',
         param_id: 5,
-        min: 260,
-        max: 290,
+        min: 230,
+        max: 260,
       },
       {
         key: 'str',
@@ -2459,8 +2397,8 @@ export const uniqueItems = [
       {
         key: 'swing2',
         param_id: 7,
-        min: -20,
-        max: -20,
+        min: -40,
+        max: -40,
       },
       {
         key: 'splash',
@@ -4895,18 +4833,18 @@ export const uniqueItems = [
         max: 100,
       },
       {
-        key: 'skill',
+        key: 'oskill',
         param_id: 7,
         param: 69,
-        min: 2,
-        max: 3,
+        min: 6,
+        max: 8,
       },
       {
-        key: 'skill',
+        key: 'oskill',
         param_id: 8,
         param: 70,
-        min: 2,
-        max: 3,
+        min: 6,
+        max: 8,
       },
     ],
     requirements: {
@@ -8622,7 +8560,7 @@ export const uniqueItems = [
       {
         key: 'regen',
         param_id: 3,
-        min: 14,
+        min: 24,
         max: 32,
       },
       {
@@ -8640,7 +8578,7 @@ export const uniqueItems = [
       {
         key: 'skill',
         param_id: 6,
-        param: 80,
+        param: 89,
         min: 2,
         max: 3,
       },
@@ -8648,20 +8586,13 @@ export const uniqueItems = [
         key: 'skill',
         param_id: 7,
         param: 69,
-        min: 3,
-        max: 4,
+        min: 2,
+        max: 3,
       },
       {
         key: 'skill',
         param_id: 8,
         param: 70,
-        min: 3,
-        max: 4,
-      },
-      {
-        key: 'skill',
-        param_id: 9,
-        param: 89,
         min: 2,
         max: 3,
       },
@@ -9344,7 +9275,7 @@ export const uniqueItems = [
     level: 51,
     modifiers: [
       {
-        key: 'hit-skill',
+        key: 'kill-skill',
         param_id: 1,
         param: 234,
         min: 14,
@@ -9372,7 +9303,7 @@ export const uniqueItems = [
         key: 'skilltab',
         param_id: 5,
         param: 17,
-        min: 2,
+        min: 3,
         max: 4,
       },
       {
@@ -9446,7 +9377,7 @@ export const uniqueItems = [
       {
         key: 'skill',
         param_id: 6,
-        param: 128,
+        param: 134,
         min: 3,
         max: 3,
       },
@@ -9535,7 +9466,7 @@ export const uniqueItems = [
       {
         key: 'curse-effectiveness',
         param_id: 8,
-        min: 10,
+        min: 20,
         max: 20,
       },
       {
@@ -10005,7 +9936,7 @@ export const uniqueItems = [
         key: 'skill',
         param_id: 6,
         param: 238,
-        min: 3,
+        min: 4,
         max: 5,
       },
       {
@@ -10115,8 +10046,8 @@ export const uniqueItems = [
       {
         key: 'slow',
         param_id: 1,
-        min: 15,
-        max: 15,
+        min: 25,
+        max: 25,
       },
       {
         key: 'dmg-ac',
@@ -11586,7 +11517,7 @@ export const uniqueItems = [
         max: 50,
       },
       {
-        key: 'grims-extra-skele-mage',
+        key: 'extra-skele-mage',
         param_id: 8,
         min: 6,
         max: 6,
@@ -11716,8 +11647,8 @@ export const uniqueItems = [
       {
         key: 'crush-efficiency',
         param_id: 5,
-        min: 10,
-        max: 25,
+        min: 30,
+        max: 40,
       },
       {
         key: 'ac%',
@@ -12185,7 +12116,6 @@ export const uniqueItems = [
       {
         key: 'hit-skill',
         param_id: 3,
-        param: 59,
         min: 6,
         max: 24,
       },
@@ -12558,8 +12488,8 @@ export const uniqueItems = [
         key: 'dmg-pois',
         param_id: 1,
         param: 100,
-        min: 384,
-        max: 384,
+        min: 768,
+        max: 768,
       },
       {
         key: 'hit-skill',
@@ -12607,8 +12537,8 @@ export const uniqueItems = [
       {
         key: 'heal-hit',
         param_id: 9,
-        min: 20,
-        max: 25,
+        min: 5,
+        max: 8,
       },
     ],
     requirements: {
@@ -12710,7 +12640,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 3,
         min: 10,
-        max: 16,
+        max: 12,
       },
       {
         key: 'explosivearrow',
@@ -13076,8 +13006,8 @@ export const uniqueItems = [
       {
         key: 'lifesteal',
         param_id: 2,
-        min: 5,
-        max: 10,
+        min: 9,
+        max: 12,
       },
       {
         key: 'hp',
@@ -13279,16 +13209,10 @@ export const uniqueItems = [
         max: 150,
       },
       {
-        key: 'cast2',
-        param_id: 6,
-        min: 30,
-        max: 30,
-      },
-      {
         key: 'curse-effectiveness',
-        param_id: 7,
-        min: 10,
-        max: 10,
+        param_id: 6,
+        min: 20,
+        max: 30,
       },
     ],
     requirements: {
@@ -13559,8 +13483,8 @@ export const uniqueItems = [
       {
         key: 'Deep-Wounds',
         param_id: 4,
-        min: 70,
-        max: 70,
+        min: 140,
+        max: 140,
       },
       {
         key: 'swing2',
@@ -13792,7 +13716,7 @@ export const uniqueItems = [
         key: 'allskills',
         param_id: 2,
         min: 1,
-        max: 1,
+        max: 2,
       },
       {
         key: 'ac%',
@@ -13815,7 +13739,7 @@ export const uniqueItems = [
       {
         key: 'att-dem/lvl',
         param_id: 6,
-        param: 28,
+        param: 14,
       },
       {
         key: 'res-fire-max',
@@ -14139,8 +14063,8 @@ export const uniqueItems = [
       {
         key: 'mana-kill',
         param_id: 2,
-        min: 6,
-        max: 9,
+        min: 8,
+        max: 12,
       },
       {
         key: 'red-mag',
@@ -14603,13 +14527,13 @@ export const uniqueItems = [
         key: 'allskills',
         param_id: 2,
         min: 1,
-        max: 2,
+        max: 1,
       },
       {
         key: 'cast2',
         param_id: 3,
-        min: 20,
-        max: 20,
+        min: 40,
+        max: 40,
       },
       {
         key: 'mana-kill',
@@ -14683,10 +14607,10 @@ export const uniqueItems = [
         max: 35,
       },
       {
-        key: 'block2',
+        key: 'deadly-strike-multiplier',
         param_id: 6,
-        min: 50,
-        max: 50,
+        min: 25,
+        max: 25,
       },
       {
         key: 'dex',
@@ -14978,7 +14902,7 @@ export const uniqueItems = [
         max: 34,
       },
       {
-        key: 'hit-skill',
+        key: 'att-skill',
         param_id: 5,
         param: 229,
         min: 8,
@@ -15795,8 +15719,8 @@ export const uniqueItems = [
       {
         key: 'red-mag',
         param_id: 2,
-        min: 15,
-        max: 25,
+        min: 10,
+        max: 20,
       },
       {
         key: 'red-dmg',
@@ -15829,10 +15753,10 @@ export const uniqueItems = [
         max: 40,
       },
       {
-        key: 'oskill',
+        key: 'crit-strike-chance',
         param_id: 8,
-        min: 2,
-        max: 2,
+        min: 12,
+        max: 16,
       },
       {
         key: 'nofreeze',
@@ -16646,8 +16570,8 @@ export const uniqueItems = [
       {
         key: 'dmg%',
         param_id: 9,
-        min: 180,
-        max: 240,
+        min: 200,
+        max: 275,
       },
       {
         key: 'skill',
@@ -17266,8 +17190,8 @@ export const uniqueItems = [
       {
         key: 'all-stats',
         param_id: 3,
-        min: 5,
-        max: 8,
+        min: 4,
+        max: 6,
       },
     ],
     requirements: {
@@ -17628,7 +17552,7 @@ export const uniqueItems = [
         key: 'res-all',
         param_id: 9,
         min: 20,
-        max: 20,
+        max: 30,
       },
     ],
     requirements: {
@@ -18472,6 +18396,12 @@ export const uniqueItems = [
         max: 7,
       },
       {
+        key: 'crit-strike-multiplier',
+        param_id: 11,
+        min: 15,
+        max: 15,
+      },
+      {
         key: 'splash',
         param_id: 12,
         param: 358,
@@ -18505,8 +18435,8 @@ export const uniqueItems = [
       {
         key: 'pierce',
         param_id: 2,
-        min: 75,
-        max: 75,
+        min: 50,
+        max: 50,
       },
       {
         key: 'swing2',
@@ -18523,8 +18453,14 @@ export const uniqueItems = [
       {
         key: 'hit-skill',
         param_id: 5,
-        min: 40,
-        max: 35,
+        min: 18,
+        max: 40,
+      },
+      {
+        key: 'deadly-strike-multiplier',
+        param_id: 6,
+        min: 25,
+        max: 25,
       },
       {
         key: 'splash',
@@ -19197,11 +19133,10 @@ export const uniqueItems = [
         max: 50,
       },
       {
-        key: 'oskill',
+        key: 'deadly-strike-multiplier',
         param_id: 3,
-        param: 252,
-        min: 4,
-        max: 5,
+        min: 25,
+        max: 25,
       },
       {
         key: 'crush',
@@ -19298,14 +19233,14 @@ export const uniqueItems = [
       {
         key: 'cold-min',
         param_id: 6,
-        min: 400,
-        max: 400,
+        min: 600,
+        max: 600,
       },
       {
         key: 'cold-max',
         param_id: 7,
-        min: 500,
-        max: 500,
+        min: 900,
+        max: 900,
       },
       {
         key: 'demon-heal',
@@ -19442,6 +19377,18 @@ export const uniqueItems = [
         param_id: 5,
         min: -75,
         max: -75,
+      },
+      {
+        key: 'dmg-min',
+        param_id: 6,
+        min: 10,
+        max: 10,
+      },
+      {
+        key: 'dmg-max',
+        param_id: 7,
+        min: 30,
+        max: 30,
       },
       {
         key: 'splash',
@@ -19772,8 +19719,8 @@ export const uniqueItems = [
       {
         key: 'pierce-phys',
         param_id: 6,
-        min: 4,
-        max: 5,
+        min: 3,
+        max: 4,
       },
     ],
     requirements: {
@@ -19863,8 +19810,8 @@ export const uniqueItems = [
       {
         key: 'deadly',
         param_id: 2,
-        min: 60,
-        max: 60,
+        min: 40,
+        max: 40,
       },
       {
         key: 'reduce-ac',
@@ -19891,10 +19838,10 @@ export const uniqueItems = [
         max: 30,
       },
       {
-        key: 'max-deadly',
+        key: 'deadly-strike-multiplier',
         param_id: 7,
-        min: 15,
-        max: 15,
+        min: 50,
+        max: 50,
       },
       {
         key: 'splash',
@@ -20148,7 +20095,7 @@ export const uniqueItems = [
         key: 'charged',
         param_id: 5,
         min: 11,
-        max: 7,
+        max: 2,
       },
     ],
     requirements: {
@@ -20281,25 +20228,25 @@ export const uniqueItems = [
       {
         key: 'allskills',
         param_id: 1,
-        min: 6,
-        max: 6,
+        min: 5,
+        max: 5,
       },
       {
         key: 'pierce-fire',
         param_id: 2,
-        min: 10,
+        min: 12,
         max: 20,
       },
       {
         key: 'pierce-ltng',
         param_id: 3,
-        min: 10,
+        min: 12,
         max: 20,
       },
       {
         key: 'pierce-cold',
         param_id: 4,
-        min: 10,
+        min: 12,
         max: 20,
       },
       {
@@ -20311,8 +20258,8 @@ export const uniqueItems = [
       {
         key: 'cast2',
         param_id: 6,
-        min: 85,
-        max: 85,
+        min: 75,
+        max: 75,
       },
       {
         key: 'cast-skill',
@@ -20529,10 +20476,11 @@ export const uniqueItems = [
         max: 3,
       },
       {
-        key: 'swing2',
+        key: 'skill',
         param_id: 7,
-        min: 20,
-        max: 20,
+        param: 368,
+        min: 2,
+        max: 2,
       },
     ],
     requirements: {
@@ -20644,33 +20592,27 @@ export const uniqueItems = [
         max: 30,
       },
       {
-        key: 'abs-cold%',
-        param_id: 5,
-        min: 4,
-        max: 5,
-      },
-      {
         key: 'res-pois-max',
-        param_id: 6,
+        param_id: 5,
         min: 5,
         max: 8,
       },
       {
         key: 'dru',
-        param_id: 7,
+        param_id: 6,
         min: 2,
         max: 2,
       },
       {
         key: 'skill-rand',
-        param_id: 8,
+        param_id: 7,
         param: 2,
         min: 221,
         max: 250,
       },
       {
         key: 'extra-spirits',
-        param_id: 9,
+        param_id: 8,
         min: 1,
         max: 1,
       },
@@ -21509,7 +21451,7 @@ export const uniqueItems = [
         key: 'nec',
         param_id: 4,
         min: 2,
-        max: 3,
+        max: 2,
       },
       {
         key: 'res-all',
@@ -22216,7 +22158,7 @@ export const uniqueItems = [
         key: 'aura',
         param_id: 8,
         param: 102,
-        min: 24,
+        min: 26,
         max: 28,
       },
       {
@@ -22266,19 +22208,19 @@ export const uniqueItems = [
         key: 'res-fire',
         param_id: 4,
         min: 25,
-        max: 40,
+        max: 35,
       },
       {
         key: 'res-ltng',
         param_id: 5,
         min: 25,
-        max: 40,
+        max: 35,
       },
       {
         key: 'heal-kill',
         param_id: 6,
-        min: 2,
-        max: 5,
+        min: 3,
+        max: 6,
       },
     ],
     requirements: {
@@ -22434,7 +22376,7 @@ export const uniqueItems = [
         max: 40,
       },
       {
-        key: 'nofreeze',
+        key: 'half-freeze',
         param_id: 3,
         min: 1,
         max: 1,
@@ -22520,7 +22462,7 @@ export const uniqueItems = [
       {
         key: 'sorc-skill-rand-ctc',
         param_id: 7,
-        param: 3,
+        param: 2,
         min: 12,
         max: 26,
       },
@@ -22715,17 +22657,67 @@ export const uniqueItems = [
     id: 363,
     kind: 'item.unique',
     key: "Warriv's Warder",
-    base_code: '',
+    base_code: 'ula',
     name: "Warriv's Warder",
-    level: null,
-    modifiers: [],
+    level: 49,
+    modifiers: [
+      {
+        key: 'ac',
+        param_id: 1,
+        min: 100,
+        max: 150,
+      },
+      {
+        key: 'oskill',
+        param_id: 2,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'hp%',
+        param_id: 3,
+        min: -10,
+        max: -10,
+      },
+      {
+        key: 'move2',
+        param_id: 4,
+        min: 20,
+        max: 30,
+      },
+      {
+        key: 'noheal',
+        param_id: 5,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'regen-stam',
+        param_id: 6,
+        min: 50,
+        max: 75,
+      },
+      {
+        key: 'gold%',
+        param_id: 7,
+        min: 45,
+        max: 45,
+      },
+      {
+        key: 'red-dmg%',
+        param_id: 8,
+        min: -10,
+        max: -10,
+      },
+    ],
     requirements: {
-      level: '',
+      level: 41,
     },
     image: {
-      invfile: '',
-      invtransform: '',
+      invfile: 'invhla',
+      invtransform: 'lgld',
     },
+    base: 'Scarab Husk',
   },
   {
     id: 364,
@@ -23015,15 +23007,16 @@ export const uniqueItems = [
         max: 30,
       },
       {
-        key: 'pierce-fire',
+        key: 'cast-skill',
         param_id: 6,
-        min: 5,
-        max: 5,
+        min: 18,
+        max: 25,
       },
       {
-        key: 'pierce-ltng',
+        key: 'skill',
         param_id: 7,
-        min: 5,
+        param: 54,
+        min: 4,
         max: 5,
       },
     ],
@@ -23120,8 +23113,8 @@ export const uniqueItems = [
       {
         key: 'move2',
         param_id: 2,
-        min: 20,
-        max: 20,
+        min: 30,
+        max: 30,
       },
       {
         key: 'balance2',
@@ -23397,7 +23390,7 @@ export const uniqueItems = [
         key: 'cast2',
         param_id: 2,
         min: 10,
-        max: 20,
+        max: 10,
       },
       {
         key: 'charged',
@@ -24280,8 +24273,8 @@ export const uniqueItems = [
       {
         key: 'curse-effectiveness',
         param_id: 7,
-        min: 10,
-        max: 20,
+        min: 30,
+        max: 40,
       },
       {
         key: 'splash',
@@ -24323,8 +24316,8 @@ export const uniqueItems = [
       {
         key: 'allskills',
         param_id: 3,
-        min: 3,
-        max: 4,
+        min: 4,
+        max: 5,
       },
       {
         key: 'ac',
@@ -24551,8 +24544,8 @@ export const uniqueItems = [
       {
         key: 'crush-efficiency',
         param_id: 5,
-        min: 5,
-        max: 10,
+        min: 10,
+        max: 20,
       },
       {
         key: 'splash',
@@ -25016,7 +25009,7 @@ export const uniqueItems = [
     id: 403,
     kind: 'item.unique',
     key: 'Overlords Helm',
-    base_code: 'uhl',
+    base_code: 'uh9',
     name: "Overlord's Helm",
     level: 131,
     modifiers: [
@@ -25070,7 +25063,7 @@ export const uniqueItems = [
       invfile: 'dclonehelm',
       invtransform: '',
     },
-    base: 'Giant Conch',
+    base: 'Bone Visage',
   },
   {
     id: 404,
@@ -25694,114 +25687,6 @@ export const uniqueItems = [
     base: 'Glowing Orb',
   },
   {
-    id: 414,
-    kind: 'item.unique',
-    key: 'Dclone Trophy',
-    base_code: 'cm1',
-    name: 'Diablo Clone Trophy Season 4 Enlightenment',
-    level: 130,
-    modifiers: [
-      {
-        key: 'hp',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'state',
-        param_id: 2,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'dclone-clout',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-    ],
-    requirements: {
-      level: 1,
-    },
-    image: {
-      invfile: 'invflag',
-      invtransform: '',
-    },
-    base: 'Small Charm',
-  },
-  {
-    id: 415,
-    kind: 'item.unique',
-    key: 'Maxlevel Trophy',
-    base_code: 'cm1',
-    name: 'Level 99 Trophy Season 4 Enlightenment',
-    level: 130,
-    modifiers: [
-      {
-        key: 'hp',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'state',
-        param_id: 2,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'maxlevel-clout',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-    ],
-    requirements: {
-      level: 1,
-    },
-    image: {
-      invfile: 'invflag',
-      invtransform: '',
-    },
-    base: 'Small Charm',
-  },
-  {
-    id: 416,
-    kind: 'item.unique',
-    key: 'Dev Charm',
-    base_code: 'cm1',
-    name: 'Developers Bag Of Tricks',
-    level: 130,
-    modifiers: [
-      {
-        key: 'hp',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'state',
-        param_id: 2,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'dev-clout',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-    ],
-    requirements: {
-      level: 1,
-    },
-    image: {
-      invfile: 'devcharm',
-      invtransform: '',
-    },
-    base: 'Small Charm',
-  },
-  {
     id: 417,
     kind: 'item.unique',
     key: 'Band of Skulls',
@@ -25959,211 +25844,6 @@ export const uniqueItems = [
       invfile: 'invamu',
       invtransform: 'oran',
     },
-  },
-  {
-    id: 420,
-    kind: 'item.unique',
-    key: 'Magefist',
-    base_code: 'tgl',
-    name: 'Magefist',
-    level: 31,
-    modifiers: [
-      {
-        key: 'cast3',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'regen-mana',
-        param_id: 2,
-        min: 10,
-        max: 25,
-      },
-      {
-        key: 'poisskill',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'dmg-pois',
-        param_id: 4,
-        param: 75,
-        min: 204,
-        max: 204,
-      },
-      {
-        key: 'ac',
-        param_id: 5,
-        min: 10,
-        max: 10,
-      },
-      {
-        key: 'ac%',
-        param_id: 6,
-        min: 20,
-        max: 30,
-      },
-    ],
-    requirements: {
-      level: 23,
-    },
-    image: {
-      invfile: 'invtgl',
-      invtransform: 'lgry',
-    },
-    base: 'Light Gauntlets',
-  },
-  {
-    id: 421,
-    kind: 'item.unique',
-    key: 'Magefist',
-    base_code: 'tgl',
-    name: 'Magefist',
-    level: 31,
-    modifiers: [
-      {
-        key: 'cast3',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'regen-mana',
-        param_id: 2,
-        min: 10,
-        max: 25,
-      },
-      {
-        key: 'ltngskill',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'dmg-ltng',
-        param_id: 4,
-        min: 1,
-        max: 45,
-      },
-      {
-        key: 'ac',
-        param_id: 5,
-        min: 10,
-        max: 10,
-      },
-      {
-        key: 'ac%',
-        param_id: 6,
-        min: 20,
-        max: 30,
-      },
-    ],
-    requirements: {
-      level: 23,
-    },
-    image: {
-      invfile: 'invtgl',
-      invtransform: 'lgry',
-    },
-    base: 'Light Gauntlets',
-  },
-  {
-    id: 422,
-    kind: 'item.unique',
-    key: 'Magefist',
-    base_code: 'tgl',
-    name: 'Magefist',
-    level: 31,
-    modifiers: [
-      {
-        key: 'cast3',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'regen-mana',
-        param_id: 2,
-        min: 10,
-        max: 25,
-      },
-      {
-        key: 'coldskill',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'dmg-cold',
-        param_id: 4,
-        min: 10,
-        max: 18,
-      },
-      {
-        key: 'ac',
-        param_id: 5,
-        min: 10,
-        max: 10,
-      },
-      {
-        key: 'ac%',
-        param_id: 6,
-        min: 20,
-        max: 30,
-      },
-    ],
-    requirements: {
-      level: 23,
-    },
-    image: {
-      invfile: 'invtgl',
-      invtransform: 'lgry',
-    },
-    base: 'Light Gauntlets',
-  },
-  {
-    id: 423,
-    kind: 'item.unique',
-    key: 'Rathma Trophy',
-    base_code: 'cm1',
-    name: 'Rathma Trophy Season 4 Enlightenment',
-    level: 130,
-    modifiers: [
-      {
-        key: 'hp',
-        param_id: 1,
-        min: 20,
-        max: 20,
-      },
-      {
-        key: 'state',
-        param_id: 2,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'rathma-clout',
-        param_id: 3,
-        min: 1,
-        max: 1,
-      },
-      {
-        key: 'state',
-        param_id: 4,
-        min: 1,
-        max: 1,
-      },
-    ],
-    requirements: {
-      level: 1,
-    },
-    image: {
-      invfile: 'invflag',
-      invtransform: '',
-    },
-    base: 'Small Charm',
   },
   {
     id: 424,
@@ -26412,7 +26092,7 @@ export const uniqueItems = [
         key: 'cast-skill',
         param_id: 7,
         param: 112,
-        min: 25,
+        min: 28,
         max: 35,
       },
       {
@@ -26831,8 +26511,8 @@ export const uniqueItems = [
       {
         key: 'map-play-regen',
         param_id: 8,
-        min: -100,
-        max: -50,
+        min: -40,
+        max: -30,
       },
       {
         key: 'map-play-balance1',
@@ -26845,6 +26525,12 @@ export const uniqueItems = [
         param_id: 10,
         min: 1,
         max: 1,
+      },
+      {
+        key: 'map-glob-arealevel',
+        param_id: 11,
+        min: 2,
+        max: 2,
       },
     ],
     requirements: {
@@ -26983,7 +26669,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 7,
         param: 112,
-        min: 25,
+        min: 28,
         max: 35,
       },
       {
@@ -27093,7 +26779,7 @@ export const uniqueItems = [
       {
         key: 'map-mon-hp%',
         param_id: 5,
-        min: 10,
+        min: 20,
         max: 30,
       },
       {
@@ -27117,6 +26803,18 @@ export const uniqueItems = [
       {
         key: 'map-glob-boss-dropfacet',
         param_id: 9,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'map-mon-splash',
+        param_id: 10,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'map-mon-cannotbefrozen',
+        param_id: 11,
         min: 1,
         max: 1,
       },
@@ -27242,7 +26940,7 @@ export const uniqueItems = [
         max: 20,
       },
       {
-        key: 'joust-reduction',
+        key: 'joust-reduction-leorics',
         param_id: 4,
         min: 19,
         max: 19,
@@ -27392,6 +27090,12 @@ export const uniqueItems = [
         min: 4,
         max: 6,
       },
+      {
+        key: 'deadly-strike-multiplier',
+        param_id: 7,
+        min: 25,
+        max: 25,
+      },
     ],
     requirements: {
       level: 53,
@@ -27492,7 +27196,7 @@ export const uniqueItems = [
         key: 'kill-skill',
         param_id: 5,
         min: 16,
-        max: 28,
+        max: 32,
       },
       {
         key: 'freeze',
@@ -28224,8 +27928,8 @@ export const uniqueItems = [
       {
         key: 'map-play-addxp',
         param_id: 2,
-        min: 10,
-        max: 20,
+        min: 8,
+        max: 10,
       },
       {
         key: 'map-play-mag-gold%',
@@ -29139,86 +28843,6 @@ export const uniqueItems = [
     base: 'War Bolts',
   },
   {
-    id: 467,
-    kind: 'item.unique',
-    key: 'unused',
-    base_code: '',
-    name: 'an evil force',
-    level: null,
-    modifiers: [],
-    requirements: {
-      level: '',
-    },
-    image: {
-      invfile: '',
-      invtransform: '',
-    },
-  },
-  {
-    id: 468,
-    kind: 'item.unique',
-    key: 'unused',
-    base_code: '',
-    name: 'an evil force',
-    level: null,
-    modifiers: [],
-    requirements: {
-      level: '',
-    },
-    image: {
-      invfile: '',
-      invtransform: '',
-    },
-  },
-  {
-    id: 469,
-    kind: 'item.unique',
-    key: 'unused',
-    base_code: '',
-    name: 'an evil force',
-    level: null,
-    modifiers: [],
-    requirements: {
-      level: '',
-    },
-    image: {
-      invfile: '',
-      invtransform: '',
-    },
-  },
-  {
-    id: 470,
-    kind: 'item.unique',
-    key: 'unused',
-    base_code: '',
-    name: 'an evil force',
-    level: null,
-    modifiers: [],
-    requirements: {
-      level: '',
-    },
-    image: {
-      invfile: '',
-      invtransform: '',
-    },
-  },
-  {
-    id: 471,
-    kind: 'item.unique',
-    key: 'unused',
-    base_code: '',
-    name: 'an evil force',
-    level: null,
-    modifiers: [],
-    requirements: {
-      level: '',
-    },
-    image: {
-      invfile: '',
-      invtransform: '',
-    },
-  },
-  {
     id: 472,
     kind: 'item.unique',
     key: 'Crackleshot',
@@ -29242,7 +28866,7 @@ export const uniqueItems = [
         key: 'dmg-ltng',
         param_id: 3,
         min: 100,
-        max: 450,
+        max: 600,
       },
       {
         key: 'mana-kill',
@@ -29327,32 +28951,38 @@ export const uniqueItems = [
       {
         key: 'map-mon-att-cast-speed',
         param_id: 6,
-        min: 80,
-        max: 120,
-      },
-      {
-        key: 'map-glob-monsterrarity',
-        param_id: 7,
-        min: 10,
-        max: 20,
+        min: 40,
+        max: 60,
       },
       {
         key: 'map-mon-phys-as-extra-cold',
-        param_id: 8,
+        param_id: 7,
         min: 40,
         max: 50,
       },
       {
-        key: 'map-play-ac%',
-        param_id: 9,
-        min: -60,
-        max: -45,
+        key: 'map-mon-balance1',
+        param_id: 8,
+        min: 80,
+        max: 100,
       },
       {
         key: 'map-mon-lifesteal-hp%',
-        param_id: 10,
+        param_id: 9,
         min: 15,
         max: 25,
+      },
+      {
+        key: 'map-mon-dropweapons',
+        param_id: 10,
+        min: 10,
+        max: 15,
+      },
+      {
+        key: 'map-mon-droparmor',
+        param_id: 11,
+        min: 10,
+        max: 15,
       },
     ],
     requirements: {
@@ -29364,7 +28994,632 @@ export const uniqueItems = [
     },
     base: 'Map',
   },
-];
+  {
+    id: 474,
+    kind: 'item.unique',
+    key: 'Arm of King Leoric',
+    base_code: '9bw',
+    name: 'Arm of King Leoric',
+    level: 44,
+    modifiers: [
+      {
+        key: 'nec',
+        param_id: 1,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'mana/lvl',
+        param_id: 2,
+        param: 10,
+      },
+      {
+        key: 'regen',
+        param_id: 3,
+        min: 24,
+        max: 32,
+      },
+      {
+        key: 'cast1',
+        param_id: 4,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'extra-skele-archer',
+        param_id: 5,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'skill',
+        param_id: 6,
+        param: 89,
+        min: 2,
+        max: 3,
+      },
+      {
+        key: 'skill',
+        param_id: 7,
+        param: 69,
+        min: 2,
+        max: 3,
+      },
+      {
+        key: 'skill',
+        param_id: 8,
+        param: 70,
+        min: 2,
+        max: 3,
+      },
+    ],
+    requirements: {
+      level: 36,
+    },
+    image: {
+      invfile: 'invbwnu',
+      invtransform: '',
+    },
+    base: 'Tomb Wand',
+  },
+  {
+    id: 475,
+    kind: 'item.unique',
+    key: 'Nethercrux',
+    base_code: '7yw',
+    name: 'Nethercrux',
+    level: 60,
+    modifiers: [
+      {
+        key: 'move2',
+        param_id: 1,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'extra-skele-mage',
+        param_id: 2,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'skill',
+        param_id: 3,
+        param: 80,
+        min: 2,
+        max: 3,
+      },
+      {
+        key: 'skill',
+        param_id: 4,
+        param: 95,
+        min: 3,
+        max: 4,
+      },
+      {
+        key: 'skill',
+        param_id: 5,
+        param: 69,
+        min: 3,
+        max: 4,
+      },
+      {
+        key: 'res-pois',
+        param_id: 6,
+        min: 40,
+        max: 50,
+      },
+      {
+        key: 'res-pois-len',
+        param_id: 7,
+        min: 75,
+        max: 75,
+      },
+      {
+        key: 'nec',
+        param_id: 8,
+        min: 2,
+        max: 2,
+      },
+    ],
+    requirements: {
+      level: 52,
+    },
+    image: {
+      invfile: 'inv_nethercrux',
+      invtransform: '',
+    },
+    base: 'Ghost Wand',
+  },
+  {
+    id: 476,
+    kind: 'item.unique',
+    key: 'Embersworn',
+    base_code: 'obd',
+    name: 'Embersworn',
+    level: 74,
+    modifiers: [
+      {
+        key: 'fireskill',
+        param_id: 1,
+        min: 4,
+        max: 4,
+      },
+      {
+        key: 'cast2',
+        param_id: 2,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'skill',
+        param_id: 3,
+        param: 47,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'skill',
+        param_id: 4,
+        param: 37,
+        min: 2,
+        max: 3,
+      },
+      {
+        key: 'skill',
+        param_id: 5,
+        param: 58,
+        min: 4,
+        max: 5,
+      },
+      {
+        key: 'mana%',
+        param_id: 6,
+        min: 20,
+        max: 30,
+      },
+      {
+        key: 'nofreeze',
+        param_id: 7,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'res-cold',
+        param_id: 8,
+        min: 45,
+        max: 45,
+      },
+    ],
+    requirements: {
+      level: 66,
+    },
+    image: {
+      invfile: 'inv_embersworn',
+      invtransform: '',
+    },
+    base: 'Demon Heart',
+  },
+  {
+    id: 477,
+    kind: 'item.unique',
+    key: 'Skyfall',
+    base_code: 'obe',
+    name: 'Skyfall',
+    level: 76,
+    modifiers: [
+      {
+        key: 'ltngskill',
+        param_id: 1,
+        min: 3,
+        max: 3,
+      },
+      {
+        key: 'cast2',
+        param_id: 2,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'skill',
+        param_id: 3,
+        param: 42,
+        min: 2,
+        max: 3,
+      },
+      {
+        key: 'pierce-ltng',
+        param_id: 4,
+        min: 10,
+        max: 20,
+      },
+      {
+        key: 'equipped-skill',
+        param_id: 5,
+        min: 25,
+        max: 25,
+      },
+      {
+        key: 'gold%',
+        param_id: 6,
+        min: 30,
+        max: 50,
+      },
+      {
+        key: 'dex',
+        param_id: 7,
+        min: 15,
+        max: 25,
+      },
+    ],
+    requirements: {
+      level: 68,
+    },
+    image: {
+      invfile: 'inv_skyfall',
+      invtransform: '',
+    },
+    base: 'Vortex Orb',
+  },
+  {
+    id: 478,
+    kind: 'item.unique',
+    key: "Sage's Defiance",
+    base_code: 'uhl',
+    name: "Sage's Defiance",
+    level: 66,
+    modifiers: [
+      {
+        key: 'cast2',
+        param_id: 1,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'red-dmg%',
+        param_id: 2,
+        min: 12,
+        max: 20,
+      },
+      {
+        key: 'ac%',
+        param_id: 3,
+        min: 125,
+        max: 175,
+      },
+      {
+        key: 'heal-kill',
+        param_id: 4,
+        min: 3,
+        max: 5,
+      },
+      {
+        key: 'dmg-to-mana',
+        param_id: 5,
+        min: 45,
+        max: 45,
+      },
+      {
+        key: 'light',
+        param_id: 6,
+        min: -6,
+        max: -6,
+      },
+    ],
+    requirements: {
+      level: 58,
+    },
+    image: {
+      invfile: 'inv_sagedefiance',
+      invtransform: '',
+    },
+    base: 'Giant Conch',
+  },
+  {
+    id: 479,
+    kind: 'item.unique',
+    key: 'Djinns Domain Map',
+    base_code: 't57',
+    name: "Djinn's Domain",
+    level: 80,
+    modifiers: [
+      {
+        key: 'map-glob-density',
+        param_id: 1,
+        min: 80,
+        max: 120,
+      },
+      {
+        key: 'map-play-addxp',
+        param_id: 2,
+        min: 10,
+        max: 15,
+      },
+      {
+        key: 'map-play-mag-gold%',
+        param_id: 3,
+        min: 200,
+        max: 250,
+      },
+      {
+        key: 'map-mon-phys-as-extra-ltng',
+        param_id: 4,
+        min: 40,
+        max: 50,
+      },
+      {
+        key: 'map-play-block',
+        param_id: 5,
+        min: -10,
+        max: -5,
+      },
+      {
+        key: 'map-mon-lifesteal-hp%',
+        param_id: 6,
+        min: 20,
+        max: 30,
+      },
+      {
+        key: 'map-play-ac%',
+        param_id: 7,
+        min: -40,
+        max: -50,
+      },
+      {
+        key: 'map-glob-monsterrarity',
+        param_id: 8,
+        min: 20,
+        max: 30,
+      },
+      {
+        key: 'map-glob-dropbonus',
+        param_id: 9,
+        min: 50,
+        max: 50,
+      },
+      {
+        key: 'map-glob-bossdropstreasure',
+        param_id: 10,
+        min: 1,
+        max: 1,
+      },
+    ],
+    requirements: {
+      level: 80,
+    },
+    image: {
+      invfile: 'invmap_djinnsdomain',
+      invtransform: '',
+    },
+    base: 'Map',
+  },
+  {
+    id: 480,
+    kind: 'item.unique',
+    key: 'Giant Maimer',
+    base_code: '7vo',
+    name: 'Giant Maimer',
+    level: 87,
+    modifiers: [
+      {
+        key: 'dmg%',
+        param_id: 1,
+        min: 175,
+        max: 225,
+      },
+      {
+        key: 'dmg-min',
+        param_id: 2,
+        min: 120,
+        max: 160,
+      },
+      {
+        key: 'crush',
+        param_id: 3,
+        min: 20,
+        max: 20,
+      },
+      {
+        key: 'crush-efficiency',
+        param_id: 4,
+        min: 40,
+        max: 50,
+      },
+      {
+        key: 'skill',
+        param_id: 5,
+        param: 146,
+        min: 3,
+        max: 4,
+      },
+      {
+        key: 'bar',
+        param_id: 6,
+        min: 4,
+        max: 4,
+      },
+      {
+        key: 'hit-skill',
+        param_id: 7,
+        min: 25,
+        max: 32,
+      },
+      {
+        key: 'ease',
+        param_id: 8,
+        min: 35,
+        max: 35,
+      },
+      {
+        key: 'splash',
+        param_id: 12,
+        param: 358,
+        min: 100,
+        max: 1,
+      },
+    ],
+    requirements: {
+      level: 75,
+    },
+    image: {
+      invfile: 'inv_giantmaimer',
+      invtransform: '',
+    },
+    base: 'Colossus Voulge',
+  },
+  {
+    id: 481,
+    kind: 'item.unique',
+    key: 'Ephemeral',
+    base_code: 'pab',
+    name: 'Ephemeral',
+    level: 85,
+    modifiers: [
+      {
+        key: 'ac%',
+        param_id: 1,
+        min: 150,
+        max: 250,
+      },
+      {
+        key: 'block',
+        param_id: 2,
+        min: 40,
+        max: 40,
+      },
+      {
+        key: 'skilltab',
+        param_id: 3,
+        param: 9,
+        min: 3,
+        max: 4,
+      },
+      {
+        key: 'skill',
+        param_id: 4,
+        param: 117,
+        min: 2,
+        max: 2,
+      },
+      {
+        key: 'half-freeze',
+        param_id: 5,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'all-stats',
+        param_id: 6,
+        min: 12,
+        max: 18,
+      },
+      {
+        key: 'block-skill',
+        param_id: 7,
+        min: 12,
+        max: 16,
+      },
+      {
+        key: 'cast2',
+        param_id: 8,
+        min: 20,
+        max: 20,
+      },
+    ],
+    requirements: {
+      level: 72,
+    },
+    image: {
+      invfile: 'invephemeral',
+      invtransform: '',
+    },
+    base: 'Sacred Targe',
+  },
+  {
+    id: 483,
+    kind: 'item.unique',
+    key: "Na-Krul's Abyss Map",
+    base_code: 't58',
+    name: "Na-Krul's Abyss",
+    level: 80,
+    modifiers: [
+      {
+        key: 'map-glob-density',
+        param_id: 1,
+        min: 80,
+        max: 120,
+      },
+      {
+        key: 'map-play-addxp',
+        param_id: 2,
+        min: 20,
+        max: 30,
+      },
+      {
+        key: 'map-play-mag-gold%',
+        param_id: 3,
+        min: 120,
+        max: 150,
+      },
+      {
+        key: 'map-mon-openwounds',
+        param_id: 4,
+        min: 15,
+        max: 25,
+      },
+      {
+        key: 'map-mon-phys-as-extra-fire',
+        param_id: 5,
+        min: 30,
+        max: 40,
+      },
+      {
+        key: 'map-mon-dropweapons',
+        param_id: 6,
+        min: 8,
+        max: 12,
+      },
+      {
+        key: 'map-mon-droparmor',
+        param_id: 7,
+        min: 8,
+        max: 12,
+      },
+      {
+        key: 'map-play-balance1',
+        param_id: 8,
+        min: -30,
+        max: -20,
+      },
+      {
+        key: 'map-mon-curseresist-hp%',
+        param_id: 9,
+        min: 30,
+        max: 40,
+      },
+      {
+        key: 'map-mon-hp%',
+        param_id: 10,
+        min: 30,
+        max: 40,
+      },
+      {
+        key: 'map-glob-dropethereal',
+        param_id: 11,
+        min: 100,
+        max: 100,
+      },
+    ],
+    requirements: {
+      level: 80,
+    },
+    image: {
+      invfile: 'invmap_nakrul',
+      invtransform: '',
+    },
+    base: 'Map',
+  },
+] as const;
 
 export const setItems = [
   {
@@ -33235,8 +33490,8 @@ export const setItems = [
       {
         key: 'crush',
         param_id: 5,
-        min: 35,
-        max: 40,
+        min: 20,
+        max: 30,
       },
       {
         key: 'dmg%',
@@ -36400,7 +36655,7 @@ export const setItems = [
     base: 'Bone Wand',
     set: "Sander's Folly",
   },
-];
+] as const;
 
 export const runeWords = [
   {
