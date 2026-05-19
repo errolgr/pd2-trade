@@ -13,7 +13,9 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
   const effectiveConfig: PriceApiConfig = {
     isLadder: config.isLadder ?? true,
     isHardcore: config.isHardcore ?? false,
-    ...(config.startDate || config.endDate ? { startDate: config.startDate, endDate: config.endDate } : { hours: 168 }),
+    hours: 168,
+    ...(config.startDate && { startDate: config.startDate }),
+    ...(config.endDate && { endDate: config.endDate }),
   };
 
   const results: {
@@ -45,7 +47,7 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
               date: price.timeRange.end,
               trueDate: price.timeRange.end,
               numListings: price.sampleCount,
-              price: price.medianPrice,
+              price: price.movingAverage7Days ?? price.medianPrice,
             },
           ],
         };
@@ -72,7 +74,7 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
               date: price.timeRange.end,
               trueDate: price.timeRange.end,
               numListings: price.sampleCount,
-              price: price.medianPrice,
+              price: price.movingAverage7Days ?? price.medianPrice,
             },
           ],
         };
@@ -99,7 +101,7 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<{
               date: price.timeRange.end,
               trueDate: price.timeRange.end,
               numListings: price.sampleCount,
-              price: price.medianPrice,
+              price: price.movingAverage7Days ?? price.medianPrice,
             },
           ],
         };

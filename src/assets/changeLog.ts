@@ -1,4 +1,12 @@
 export const changeLog = {
+  '0.9.11': [
+    '🆕 Toast popup notifications for whispers when tabbed out of Diablo',
+    '🆕 Configurable toast popups — master toggle with per-type controls for Whispers, Trade, Joins, and Offers in Chat settings',
+    '🔧 Fixed rune prices and currency valuation showing all-season averages instead of last 7 days',
+    '🔧 Fixed rune/currency prices not matching pd2trader.com — now uses 7-day moving average instead of raw median',
+    '🔧 Fixed outdated item affix mappings causing invalid URLs for some items like Frozen Sorrow (thanks trevorm4)',
+    '🆕 Toast popup for trade site chat messages — click to open the conversation in the chat overlay',
+  ],
   '0.9.10': [
     '✨ Updated items database to include season 13 items',
     '🔧 Fixed chat window not showing new messages reliably in the conversation list',

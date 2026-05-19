@@ -15,6 +15,8 @@ import { Slider } from '@/components/ui/slider';
 
 const chatFormSchema = z.object({
   whisperNotificationsEnabled: z.boolean().optional(),
+  toastPopupsEnabled: z.boolean().optional(),
+  toastPopupTypes: z.array(z.string()).optional(),
   tradeNotificationsEnabled: z.boolean().optional(),
   whisperIgnoreList: z.array(z.string()).optional(),
   whisperAnnouncementsEnabled: z.boolean().optional(),
@@ -37,6 +39,8 @@ export function ChatForm() {
     resolver: zodResolver(chatFormSchema),
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
+      toastPopupsEnabled: settings?.toastPopupsEnabled ?? true,
+      toastPopupTypes: settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'],
       tradeNotificationsEnabled: settings?.tradeNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
@@ -56,6 +60,8 @@ export function ChatForm() {
       form.reset(
         {
           whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
+          toastPopupsEnabled: settings.toastPopupsEnabled ?? true,
+          toastPopupTypes: settings.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'],
           tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
           whisperIgnoreList: settings.whisperIgnoreList || [],
           whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
@@ -165,6 +171,65 @@ export function ChatForm() {
                   Play a notification sound when you receive non-trade whispers from players or new messages in the
                   website chat.
                 </FormDescription>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="toastPopupsEnabled"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex flex-row items-center gap-2">
+                  <FormLabel>Toast Popups</FormLabel>
+                  <FormControl>
+                    <Switch checked={field.value ?? true}
+                      onCheckedChange={field.onChange}
+                      disabled={isDisabled} />
+                  </FormControl>
+                </div>
+                <FormDescription>Show toast popup notifications when you are tabbed out of Diablo.</FormDescription>
+                {(field.value ?? true) && !isDisabled && (
+                  <FormField
+                    control={form.control}
+                    name="toastPopupTypes"
+                    render={({ field: typesField }) => {
+                      const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers'];
+                      const allTypes = [
+                        { id: 'whispers', label: 'Whispers' },
+                        { id: 'trade', label: 'Trade' },
+                        { id: 'joins', label: 'Joins' },
+                        { id: 'offers', label: 'Offers' },
+                      ];
+                      const toggleType = (typeId: string) => {
+                        const updated = types.includes(typeId)
+                          ? types.filter((t: string) => t !== typeId)
+                          : [...types, typeId];
+                        typesField.onChange(updated);
+                      };
+                      return (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {allTypes.map((type) => {
+                            const isActive = types.includes(type.id);
+                            return (
+                              <button
+                                key={type.id}
+                                type="button"
+                                onClick={() => toggleType(type.id)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                                  isActive
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                                }`}
+                              >
+                                {type.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    }}
+                  />
+                )}
               </FormItem>
             )}
           />

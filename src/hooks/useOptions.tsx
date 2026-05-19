@@ -48,6 +48,8 @@ export interface ISettings {
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
+  toastPopupsEnabled?: boolean; // Master toggle for toast popups
+  toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
   debugLoggingEnabled?: boolean;
 }
 
@@ -86,6 +88,8 @@ const DEFAULT_SETTINGS: ISettings = {
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
+  toastPopupsEnabled: true,
+  toastPopupTypes: ['whispers', 'trade', 'joins', 'offers'],
   chatButtonOverlayEnabled: true,
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',

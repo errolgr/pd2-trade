@@ -51,6 +51,12 @@ function playNotificationSound(volume: number = 70) {
   }
 }
 
+function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
+  if (!(settings?.toastPopupsEnabled ?? true)) return false;
+  const types = settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'];
+  return types.includes(type);
+}
+
 export const useSocketNotifications = ({
   isConnected,
   settings,
@@ -123,17 +129,19 @@ export const useSocketNotifications = ({
               }
 
               // Show toast notification with link to listing
-              await emit('toast-event', {
-                title: 'New Offer',
-                description: offerMessage,
-                action: {
-                  label: 'View Listing',
-                  type: ToastActionType.OPEN_MARKET_LISTING,
-                  data: {
-                    listingId: listingId,
+              if (isToastEnabled(settings, 'offers')) {
+                await emit('toast-event', {
+                  title: 'New Offer',
+                  description: offerMessage,
+                  action: {
+                    label: 'View Listing',
+                    type: ToastActionType.OPEN_MARKET_LISTING,
+                    data: {
+                      listingId: listingId,
+                    },
                   },
-                },
-              });
+                });
+              }
 
               // Emit event to refresh offers (this will be handled by useTradeOffers)
               await emit('refresh-offers');
@@ -159,7 +167,13 @@ export const useSocketNotifications = ({
         isListenerSetupRef.current = false;
       }
     };
-  }, [isConnected, settings?.whisperNotificationVolume, settings?.tradeNotificationsEnabled]);
+  }, [
+    isConnected,
+    settings?.whisperNotificationVolume,
+    settings?.tradeNotificationsEnabled,
+    settings?.toastPopupsEnabled,
+    settings?.toastPopupTypes,
+  ]);
 
   // Listen for whisper notifications (Tauri only)
   useEffect(() => {
@@ -188,13 +202,15 @@ export const useSocketNotifications = ({
               const volume = settings?.whisperNotificationVolume ?? 70;
               playNotificationSound(volume);
 
-              const toastPayload: GenericToastPayload = {
-                title: 'Player Joined',
-                description: `${whisper.from} joined the game`,
-                duration: 5000,
-                variant: 'default',
-              };
-              emitTauri('toast-event', toastPayload);
+              if (isToastEnabled(settings, 'joins')) {
+                const toastPayload: GenericToastPayload = {
+                  title: 'Player Joined',
+                  description: `${whisper.from} joined the game`,
+                  duration: 5000,
+                  variant: 'default',
+                };
+                emitTauri('toast-event', toastPayload);
+              }
             }
             return; // Don't process join messages as regular whispers
           }
@@ -246,7 +262,7 @@ export const useSocketNotifications = ({
               playNotificationSound(volume);
 
               // Show toast with item name only if Diablo is not focused
-              if (whisper.itemName && !isDiabloFocused) {
+              if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
                 const toastPayload: GenericToastPayload = {
                   title: 'Trade Whisper',
                   description: `${whisper.from}: ${whisper.itemName}`,
@@ -265,6 +281,17 @@ export const useSocketNotifications = ({
             // Play notification sound
             const volume = settings?.whisperNotificationVolume ?? 70;
             playNotificationSound(volume);
+
+            // Show toast when tabbed out of Diablo
+            if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
+              const toastPayload: GenericToastPayload = {
+                title: `Whisper from ${whisper.from}`,
+                description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
+                duration: 5000,
+                variant: 'default',
+              };
+              emitTauri('toast-event', toastPayload);
+            }
           }
         });
 
@@ -291,5 +318,66 @@ export const useSocketNotifications = ({
     settings?.tradeNotificationsEnabled,
     settings?.whisperNotificationTiming,
     settings?.whisperNotificationVolume,
+    settings?.toastPopupsEnabled,
+    settings?.toastPopupTypes,
   ]);
+
+  // Listen for chat message notifications via socket (show toast popup)
+  useEffect(() => {
+    if (!isConnected) {
+      return;
+    }
+
+    let unlisten: (() => void) | undefined;
+
+    const setupListener = async () => {
+      try {
+        const unlistenFn = await listenBrowser<{
+          _id: string;
+          sender_id: string;
+          conversation_id: string;
+          content: string;
+          sender?: { _id?: string; display_name?: string; username?: string };
+        }>('socket:social/message_pushed', async (event) => {
+          const msg = event.payload;
+          if (!msg._id || !msg.sender_id || !msg.conversation_id) return;
+
+          // Dedup — prevent duplicate toasts from multiple hook instances
+          if (processedNotificationsRef.current.has(msg._id)) return;
+          processedNotificationsRef.current.add(msg._id);
+          if (processedNotificationsRef.current.size > 100) {
+            const idsArray = Array.from(processedNotificationsRef.current);
+            processedNotificationsRef.current = new Set(idsArray.slice(-100));
+          }
+
+          if (!isToastEnabled(settings, 'whispers')) return;
+
+          const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
+
+          await emit('toast-event', {
+            title: 'New Chat Message',
+            description: messagePreview,
+            action: {
+              label: 'Open Chat',
+              type: ToastActionType.OPEN_CHAT_CONVERSATION,
+              data: { conversationId: msg.conversation_id },
+            },
+          });
+        });
+
+        unlisten = unlistenFn;
+      } catch (error) {
+        console.error('Failed to set up chat message toast listener:', error);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+        unlisten = undefined;
+      }
+    };
+  }, [isConnected, settings?.toastPopupsEnabled, settings?.toastPopupTypes]);
 };

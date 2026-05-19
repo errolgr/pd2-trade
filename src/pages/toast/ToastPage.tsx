@@ -219,6 +219,14 @@ const ToastPage: React.FC = () => {
                   }
                   break;
                 }
+                case ToastActionType.OPEN_CHAT_CONVERSATION: {
+                  const conversationId = customPayload.action.data?.conversationId;
+                  if (conversationId) {
+                    await emit('toggle-chat-window', { conversationId });
+                    closeToastWebview();
+                  }
+                  break;
+                }
                 case ToastActionType.UPDATE_AVAILABLE:
                   if (isTauri()) {
                     try {

@@ -74,6 +74,7 @@ export interface UpdateStashItemByHashResultPayload extends EventProps {
 export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
+  OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
 }
 
 export interface CustomToastPayload {

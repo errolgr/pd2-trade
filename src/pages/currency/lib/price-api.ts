@@ -54,7 +54,7 @@ export async function fetchItemPrice(
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
       ...(config.startDate !== undefined && { startDate: config.startDate }),
       ...(config.endDate !== undefined && { endDate: config.endDate }),
-      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
+      ...(config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const response = await fetch(`${API_BASE_URL}/item-prices/average?${params}`);
@@ -162,7 +162,7 @@ export async function fetchMultipleItemPrices(
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore }),
       ...(config.startDate !== undefined && { startDate: config.startDate }),
       ...(config.endDate !== undefined && { endDate: config.endDate }),
-      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours }),
+      ...(config.hours !== undefined && { hours: config.hours }),
     };
 
     const response = await fetch(`${API_BASE_URL}/item-prices/average/batch`, {
