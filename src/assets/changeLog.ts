@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.9.12': [
+    '🔧 Fixed rings and amulets not showing as corruptable in price check',
+    '🔧 Fixed delist popup failing when multiple matching charms are listed',
+  ],
   '0.9.11': [
     '🆕 Toast popup notifications for whispers when tabbed out of Diablo',
     '🆕 Configurable toast popups — master toggle with per-type controls for Whispers, Trade, Joins, and Offers in Chat settings',

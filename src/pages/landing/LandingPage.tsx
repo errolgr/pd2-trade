@@ -418,18 +418,13 @@ const LandingPage: React.FC = () => {
           resizable: true,
           alwaysOnTop: true,
         });
-        delistWinRef.current.onCloseRequested(async () => {
+        attachWindowCloseHandler(delistWinRef.current, () => {
           delistWinRef.current = null;
         });
       } else {
-        try {
-          await delistWinRef.current.show();
-          await delistWinRef.current.setFocus();
-          // Navigate to new URL with updated listings
-          await (delistWinRef.current as any).navigate(url);
-        } catch {
-          delistWinRef.current = null;
-        }
+        await delistWinRef.current.emit('delist-update', listings);
+        await delistWinRef.current.show();
+        await delistWinRef.current.setFocus();
       }
     }).then((fn) => {
       unlisten = fn;

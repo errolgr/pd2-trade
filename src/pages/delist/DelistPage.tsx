@@ -6,7 +6,7 @@ import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListings
 import { OptionsProvider } from '@/hooks/useOptions';
 import { ItemsProvider } from '@/hooks/useItems';
 import { ChildPd2WebsiteProvider, usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit } from '@/lib/browser-events';
+import { emit, listen } from '@/lib/browser-events';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { useSearchParams } from 'react-router-dom';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
@@ -29,6 +29,20 @@ const DelistContent: React.FC = () => {
       }
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    listen<MarketListingEntry[]>('delist-update', ({ payload }) => {
+      setListings(payload);
+      setDeletingId(null);
+      setExpandedItems(new Set());
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   const handleDelete = useCallback(
     async (listing: MarketListingEntry) => {

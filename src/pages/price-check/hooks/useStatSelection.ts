@@ -56,6 +56,8 @@ const CORRUPTABLE_TYPE_CODES = new Set([
   'taxe',
   'tkni',
   'wand',
+  'rin',
+  'amu',
 ]);
 
 /**
