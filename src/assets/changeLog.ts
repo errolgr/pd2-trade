@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.9.13': [
+    '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',
+  ],
   '0.9.12': [
     '🔧 Fixed rings and amulets not showing as corruptable in price check',
     '🔧 Fixed delist popup failing when multiple matching charms are listed',

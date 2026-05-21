@@ -503,8 +503,9 @@ export function useStatSelection(item: any) {
             minStr = String(min);
             maxStr = String(max);
           } else {
-            minStr = String(v);
-            maxStr = String(v);
+            const margin = getMargin(v);
+            minStr = String(v - margin);
+            maxStr = String(v + margin);
           }
 
           return {
