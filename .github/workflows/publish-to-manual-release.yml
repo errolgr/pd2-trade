@@ -68,6 +68,8 @@ jobs:
             args: ''
           - platform: 'ubuntu-22.04'
             args: ''
+          - platform: 'arch'
+            args: ''
           # Add more platforms as needed...
     runs-on: ${{ matrix.platform }}
     steps:
@@ -93,6 +95,16 @@ jobs:
           libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev 
           libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev 
           xdg-utils librsvg2-dev patchelf file
+
+      - name: Install dependencies (arch only)
+        if: matrix.platform == 'arch'
+        run: >
+          sudo pacman -S base-devel pkgconf xdg-utils file patchelf librsvg libsoup3 
+          gdk-pixbuf2 glib2-devel libxtst libxi libx11 libnotify webkit2gtk-4.1 
+          libayatana-appindicator
+
+      - name: Prepared linuxdeploy GTK plugin in Tauri cache
+        run: node scripts/prepare_tauri_linuxdeploy_plugin_gtk.mjs
 
       - name: Install frontend dependencies
         run: npm install

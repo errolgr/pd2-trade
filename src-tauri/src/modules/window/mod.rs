@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[derive(Serialize, Clone, Copy, Debug)]
