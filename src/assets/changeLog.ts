@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.9.14': ['🔧 Disabled the browser right-click menu on overlay windows'],
   '0.9.13': [
     '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',
   ],

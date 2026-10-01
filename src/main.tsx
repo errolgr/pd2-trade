@@ -64,6 +64,9 @@ setTimeout(() => {
   console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);
 }, 1000);
 
+// Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <BrowserRouter>
     <Routes>
