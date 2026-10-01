@@ -6,7 +6,7 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { handleApiResponse } from './usePD2Website';
+import { AuthenticationError, handleApiResponse } from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
@@ -52,7 +52,9 @@ export function useStashCache(
       },
     });
     const onAuthError = onAuthErrorRef?.current || undefined;
-    const stashData = await handleApiResponse(response, onAuthError);
+    const stashData: GameData | null = await handleApiResponse(response, onAuthError);
+    // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
+    if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
     stashCache.current = { data: stashData, timestamp: Date.now() };
     return stashData;
   }, [settings, authData, onAuthErrorRef]);

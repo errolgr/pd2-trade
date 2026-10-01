@@ -38,6 +38,10 @@ interface Pd2WebsiteRpcResponse {
   ok: boolean;
   result?: any;
   error?: string;
+  // Typed-error metadata so the child window can rebuild AuthenticationError / AccountMismatchError
+  errorName?: string;
+  errorStatusCode?: number;
+  errorAccount?: string;
 }
 
 interface Pd2WebsiteSnapshot {
@@ -77,6 +81,20 @@ export class AccountMismatchError extends Error {
     Object.setPrototypeOf(this, AccountMismatchError.prototype);
   }
 }
+
+// RPC responses cross a Tauri event boundary as JSON; restore the error class so
+// instanceof checks and Sentry's beforeSend filters work in child windows.
+function rebuildRpcError(payload: Pd2WebsiteRpcResponse): Error {
+  const message = payload.error || 'PD2 RPC request failed';
+  if (payload.errorName === 'AuthenticationError') {
+    return new AuthenticationError(message, payload.errorStatusCode);
+  }
+  if (payload.errorName === 'AccountMismatchError') {
+    return new AccountMismatchError(message, payload.errorStatusCode, payload.errorAccount);
+  }
+  return new Error(message);
+}
+
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -439,6 +457,12 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
             requestId: payload.requestId,
             ok: false,
             error: message,
+            errorName: error instanceof Error ? error.name : undefined,
+            errorStatusCode:
+              error instanceof AuthenticationError || error instanceof AccountMismatchError
+                ? error.statusCode
+                : undefined,
+            errorAccount: error instanceof AccountMismatchError ? error.account : undefined,
           } as Pd2WebsiteRpcResponse);
         }
       });
@@ -543,7 +567,7 @@ export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = 
         if (payload.ok) {
           pending.resolve(payload.result);
         } else {
-          pending.reject(new Error(payload.error || 'PD2 RPC request failed'));
+          pending.reject(rebuildRpcError(payload));
         }
       });
 

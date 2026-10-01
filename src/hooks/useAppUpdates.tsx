@@ -32,10 +32,18 @@ export const useAppUpdates = () => {
       try {
         isProcessingRef.current = true;
         hasAutoDownloadedRef.current = true;
-        const update = await checkForUpdates();
+        let update;
+        try {
+          update = await checkForUpdates();
+        } catch (error) {
+          // GitHub unreachable / bad release JSON is a network condition, not an app bug
+          console.warn('Error checking for updates:', error);
+          hasAutoDownloadedRef.current = false;
+          return;
+        }
 
         if (update?.available) {
-          // Auto-download on startup
+          // Auto-download on startup; download/install/relaunch failures are real bugs, keep reporting them
           await downloadUpdate(update);
         }
       } catch (error) {
@@ -95,7 +103,7 @@ export const useAppUpdates = () => {
           notifiedVersion = null;
         }
       } catch (error) {
-        console.error('Error checking for updates:', error);
+        console.warn('Error checking for updates:', error);
       } finally {
         isProcessingRef.current = false;
       }

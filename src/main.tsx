@@ -54,8 +54,15 @@ setTimeout(() => {
       if (hint.originalException instanceof AccountMismatchError) {
         return null;
       }
+      const firstException = event.exception?.values?.[0];
       // Also check by error name in case the instance check doesn't work
-      if (event.exception?.values?.[0]?.type === 'AccountMismatchError') {
+      if (firstException?.type === 'AccountMismatchError' || firstException?.type === 'AuthenticationError') {
+        return null;
+      }
+      // captureConsoleIntegration reports console.error(msg) as a message event with no exception;
+      // catch account-mismatch text there too so each username doesn't become its own issue.
+      const text = event.message ?? firstException?.value ?? '';
+      if (text.includes('is not associated with your logged-in account')) {
         return null;
       }
       return event;

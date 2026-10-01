@@ -12,7 +12,7 @@ import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/t
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@/lib/browser-events';
-import { usePd2Website, AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
+import { usePd2Website, AccountMismatchError, AuthenticationError } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { isTauri } from '@tauri-apps/api/core';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
@@ -137,7 +137,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const duration = performance.now() - startTime;
       incrementMetric('list_item.matching_items.search', 1, { status: 'error' });
       distributionMetric('list_item.matching_items.search_duration_ms', duration);
-      console.error(err instanceof Error ? err.message : 'Failed to find items');
+      // AccountMismatchError / AuthenticationError are expected user-state conditions, not app bugs
+      if (!(err instanceof AccountMismatchError) && !(err instanceof AuthenticationError)) {
+        console.error(err instanceof Error ? err.message : 'Failed to find items');
+      }
 
       // Handle account mismatch error with user-friendly message
       if (err instanceof AccountMismatchError) {

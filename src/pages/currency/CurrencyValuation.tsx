@@ -44,10 +44,9 @@ export function CurrencyValuation() {
       const curr = await getCurrencyTab();
       setCurrency(curr);
     } catch (error) {
-      console.error('Failed to fetch currency:', error);
-
       // Handle account mismatch error with user-friendly message
       if (error instanceof AccountMismatchError) {
+        // Expected user-config error: surfaced via toast, not reported to Sentry
         if (isTauri()) {
           const toastPayload: GenericToastPayload = {
             title: 'Account Mismatch',
@@ -59,7 +58,9 @@ export function CurrencyValuation() {
           };
           emit('toast-event', toastPayload);
         }
+        return;
       }
+      console.error('Failed to fetch currency:', error);
     }
   }, [authData, getCurrencyTab]);
 
