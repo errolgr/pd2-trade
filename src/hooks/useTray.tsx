@@ -124,10 +124,12 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         }
         lastShortcutRef.current = shortcut;
       } catch (err) {
-        // isRegistered/register is not atomic; the plugin's "already registered" error means
-        // our shortcut is live, so treat it as success rather than an error.
-        const msg = err ? String(err).toLowerCase() : '';
-        if (msg.includes('already registered')) {
+        // Cross-run races (old cleanup vs new effect) can still surface "already registered".
+        // Only treat it as success if the plugin confirms we own it; otherwise another app holds the chord.
+        if (
+          String(err).toLowerCase().includes('already registered') &&
+          (await isRegistered(shortcut).catch(() => false))
+        ) {
           lastShortcutRef.current = shortcut;
           return;
         }
