@@ -4,7 +4,6 @@ import { ConversationListResponse, MessageListResponse } from '@/common/types/pd
 import { useOptions } from '../useOptions';
 import { emit } from '@/lib/browser-events';
 import { ISettings } from '../useOptions';
-import { reportApiError } from '@/lib/error-reporting';
 
 interface PendingRequest {
   resolve: (value: any) => void;
@@ -159,19 +158,9 @@ export const useSocket = (props?: UseSocketProps) => {
 
     socket.on('connect_error', (err) => {
       const error = err instanceof Error ? err : new Error(String(err));
-
-      // Handle timeout errors more gracefully
-      if (error.message === 'timeout' || error.message.includes('timeout')) {
-        console.warn('[Socket] Connection timeout - will retry automatically');
-      } else {
-        // Report connection errors to Sentry with proper grouping
-        // Use status code 500 to indicate a server/connection error
-        reportApiError(error, 'websocket', 'socket-connection', 500, {
-          errorType: 'connection_error',
-          socketUrl: 'wss://api.projectdiablo2.com',
-        });
-        console.warn('[Socket] Connection error:', error);
-      }
+      // Transport-level failures (timeout, "websocket error") are network/upstream conditions and
+      // socket.io retries automatically; they are not app bugs, so don't report them to Sentry.
+      console.warn('[Socket] Connection error - will retry automatically:', error.message);
       setError(error.message);
       setIsConnected(false);
     });

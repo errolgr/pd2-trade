@@ -37,7 +37,19 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   }, [isSettingsOpen]);
 
   const showSettingsWindow = async () => {
-    if (!settingsWinRef.current) {
+    if (settingsWinRef.current) {
+      try {
+        await settingsWinRef.current.show();
+        setIsSettingsOpen(true);
+        return;
+      } catch (err) {
+        // Window was closed out from under us ("window not found"); drop the stale handle and recreate
+        console.warn('[Tray] Stale settings window handle, recreating:', err);
+        settingsWinRef.current = null;
+        setSettingsWindow(null);
+      }
+    }
+    try {
       settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
         title: WindowTitles.Settings,
         decorations: false,
@@ -49,17 +61,17 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         width: 1025,
         height: 700,
       });
-      setSettingsWindow(settingsWinRef.current);
-      setIsSettingsOpen(true);
-      attachWindowCloseHandler(settingsWinRef.current, () => {
-        settingsWinRef.current = null;
-        setSettingsWindow(null);
-        setIsSettingsOpen(false);
-      });
-    } else {
-      await settingsWinRef.current.show();
-      setIsSettingsOpen(true);
+    } catch (err) {
+      console.error('[Tray] Failed to open settings window:', err);
+      return;
     }
+    setSettingsWindow(settingsWinRef.current);
+    setIsSettingsOpen(true);
+    attachWindowCloseHandler(settingsWinRef.current, () => {
+      settingsWinRef.current = null;
+      setSettingsWindow(null);
+      setIsSettingsOpen(false);
+    });
   };
 
   // Listen for open-settings event
@@ -109,40 +121,58 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               showSettingsWindow();
             }
           });
-          lastShortcutRef.current = shortcut;
         }
+        lastShortcutRef.current = shortcut;
       } catch (err) {
+        // isRegistered/register is not atomic; the plugin's "already registered" error means
+        // our shortcut is live, so treat it as success rather than an error.
+        const msg = err ? String(err).toLowerCase() : '';
+        if (msg.includes('already registered')) {
+          lastShortcutRef.current = shortcut;
+          return;
+        }
         console.error('Failed to register settings shortcut:', err);
       }
     };
 
+    // Focus events arrive in rapid bursts (alt-tab); serialize register/unregister so two
+    // concurrent registerShortcut calls cannot both pass the isRegistered check.
+    let chain: Promise<void> = Promise.resolve();
+    const schedule = (op: () => Promise<void>) => {
+      chain = chain.then(op).catch((err) => console.warn('Settings shortcut operation failed:', err));
+    };
+
     // Listen for Diablo focus changes to register/unregister hotkey
     let unlisten: (() => void) | null = null;
+    let cancelled = false;
 
-    listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
-      if (isFocused) {
-        // Diablo gained focus - register hotkey
-        await registerShortcut();
-      } else {
-        // Diablo lost focus - unregister hotkey
-        await unregisterShortcut();
-      }
+    listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
+      schedule(isFocused ? registerShortcut : unregisterShortcut);
     })
       .then((off) => {
-        unlisten = off;
+        if (cancelled) {
+          Promise.resolve()
+            .then(off)
+            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
+        } else {
+          unlisten = off;
+        }
       })
       .catch((error) => {
         console.error('Failed to listen for diablo-focus-changed event:', error);
       });
 
     return () => {
-      if (unlisten) {
-        unlisten();
+      cancelled = true;
+      const off = unlisten;
+      unlisten = null;
+      if (off) {
+        Promise.resolve()
+          .then(off)
+          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
       }
       // Unregister shortcut on cleanup
-      if (isTauri() && lastShortcutRef.current) {
-        unregisterShortcut().catch(console.error);
-      }
+      schedule(unregisterShortcut);
     };
   }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
 

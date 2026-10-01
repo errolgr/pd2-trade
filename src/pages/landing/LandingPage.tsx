@@ -281,69 +281,77 @@ const LandingPage: React.FC = () => {
     let unlisten: (() => void) | null = null;
 
     const setupListener = async () => {
-      unlisten = await listen<void>('open-quick-list-manage', async () => {
-        if (!(await checkDiabloFocus())) return;
+      unlisten = await listen<void>('open-quick-list-manage', () => {
+        openQuickListManage().catch((e) => console.warn('[LandingPage] open-quick-list-manage failed:', e));
+      });
+    };
 
-        const label = WindowLabels.QuickList;
+    const openQuickListManage = async () => {
+      if (!(await checkDiabloFocus())) return;
 
-        // 1. Check existing ref
-        if (quickListWinRef.current) {
-          try {
-            await quickListWinRef.current.show();
-            await quickListWinRef.current.setFocus();
-            return;
-          } catch {
-            quickListWinRef.current = null;
-          }
-        }
+      const label = WindowLabels.QuickList;
 
-        // 2. Check by label
-        const existing = await WebviewWindow.getByLabel(label);
-        if (existing) {
-          console.log('[LandingPage] Found existing QuickList by label, attaching.');
-          try {
-            // Try to interact with it to verify it's alive
-            await existing.show();
-            await existing.setFocus();
-
-            quickListWinRef.current = existing;
-            // Attach close listener
-            existing.onCloseRequested(async () => {
-              quickListWinRef.current = null;
-            });
-            return;
-          } catch (e) {
-            console.warn('Found zombie window by label, ignoring:', e);
-            // Do NOT return here, fall through to create new
-          }
-        }
-
-        // 3. Create new
-        console.log('[LandingPage] Creating new QuickList window (Manage Mode).');
-        quickListWinRef.current = await openWindowCenteredOnDiablo(label, '/quick-list', {
-          title: WindowTitles.QuickList,
-          decorations: false,
-          transparent: true,
-          focus: false,
-          shadow: false,
-          skipTaskbar: true,
-          focusable: true,
-          width: 600,
-          height: 512,
-          resizable: true,
-          alwaysOnTop: true,
-          visible: true, // Keep explicit visible
-        });
-
-        if (quickListWinRef.current) {
-          // Explicitly show to be safe
+      // 1. Check existing ref
+      if (quickListWinRef.current) {
+        try {
           await quickListWinRef.current.show();
+          await quickListWinRef.current.setFocus();
+          return;
+        } catch {
+          quickListWinRef.current = null;
+        }
+      }
 
-          quickListWinRef.current.onCloseRequested(async () => {
+      // 2. Check by label
+      const existing = await WebviewWindow.getByLabel(label);
+      if (existing) {
+        console.log('[LandingPage] Found existing QuickList by label, attaching.');
+        try {
+          // Try to interact with it to verify it's alive
+          await existing.show();
+          await existing.setFocus();
+
+          quickListWinRef.current = existing;
+          // Attach close listener
+          existing.onCloseRequested(async () => {
             quickListWinRef.current = null;
           });
+          return;
+        } catch (e) {
+          console.warn('Found zombie window by label, ignoring:', e);
+          // Do NOT return here, fall through to create new
         }
+      }
+
+      // 3. Create new
+      console.log('[LandingPage] Creating new QuickList window (Manage Mode).');
+      quickListWinRef.current = await openWindowCenteredOnDiablo(label, '/quick-list', {
+        title: WindowTitles.QuickList,
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+        visible: true, // Keep explicit visible
       });
+
+      if (quickListWinRef.current) {
+        quickListWinRef.current.onCloseRequested(async () => {
+          quickListWinRef.current = null;
+        });
+        // Explicitly show to be safe; the user may close it before this resolves
+        try {
+          await quickListWinRef.current.show();
+        } catch (e) {
+          console.warn('[LandingPage] QuickList window vanished before show:', e);
+          quickListWinRef.current = null;
+        }
+      }
     };
     setupListener();
     return () => {
@@ -606,7 +614,9 @@ const LandingPage: React.FC = () => {
             }
           }
         } catch (error) {
-          console.error('Error toggling chat window:', error);
+          // Window closed out from under us ("window not found"); drop the handle so the next toggle recreates it
+          console.warn('[LandingPage] Chat window handle stale, clearing:', error);
+          chatWindowRef.current = null;
         }
       };
 
