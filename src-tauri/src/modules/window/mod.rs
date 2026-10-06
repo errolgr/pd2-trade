@@ -20,10 +20,15 @@ pub struct PopupRect {
     pub bottom: f64,
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 mod linux;
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub use linux::*;
+
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "macos")]
+pub use macos::*;
 
 #[cfg(target_os = "windows")]
 mod windows;
