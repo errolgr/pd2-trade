@@ -137,7 +137,7 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
   };
 
   return (
-    <div className="text-sm whitespace-pre-wrap break-words">
+    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
       {segments.map((segment, index) => {
         if (segment.type === 'link') {
           return (
@@ -146,17 +146,18 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
               href={segment.url}
               onClick={(e) => handleLinkClick(e, segment.url!)}
               className={cn(
-                'inline-flex items-center gap-1 px-2 py-1 rounded-md font-medium transition-colors',
-                'hover:underline',
+                'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 align-middle font-medium',
+                'transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out',
+                'hover:underline active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
                 isOwnMessage
-                  ? 'bg-blue-600 text-blue-100 hover:bg-blue-700'
-                  : 'bg-blue-700 text-blue-200 hover:bg-blue-600',
+                  ? 'border-info/40 bg-info/20 text-info hover:bg-info/30'
+                  : 'border-info/30 bg-info/10 text-info hover:bg-info/20',
               )}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <ExternalLink className="h-3 w-3" />
-              {segment.content}
+              <ExternalLink className="size-3 shrink-0" />
+              <span className="truncate">{segment.content}</span>
             </a>
           );
         }

@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { TradeMessage, TradeMessageData } from './TradeMessage';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { TradeMessage } from './TradeMessage';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { GripVertical, X, Eye, EyeOff } from 'lucide-react';
+import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, Inbox, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { fadeIn, fadeInUp } from '@/lib/motion';
 import { useTradeMessages } from '@/hooks/useTradeMessages';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
@@ -47,109 +50,110 @@ export const TradeMessagesContainer: React.FC = () => {
     return [...hiddenOutgoingOffers].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [hiddenOutgoingOffers]);
 
+  const whispersTotal = incomingWhispers.length + outgoingWhispers.length;
+  const websiteTotal = incomingWebsiteOffersSorted.length + outgoingWebsiteOffersSorted.length;
+
   return (
-    <TooltipProvider>
-      <div className="w-full h-full flex flex-col bg-neutral-900 opacity-90 rounded-md overflow-hidden">
-        <Tabs defaultValue="whispers"
-          className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Drag Handle with Title and Tabs */}
-          <div
-            data-tauri-drag-region
-            className="flex items-center gap-4 px-4 py-1 border-b border-neutral-700 bg-neutral-800 cursor-move flex-shrink-0"
-          >
-            <GripVertical className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-white flex-shrink-0">Offers</h2>
-            <TabsList className="flex-shrink-0">
-              <TabsTrigger value="whispers">Whispers ({incomingWhispers.length + outgoingWhispers.length})</TabsTrigger>
-              <TabsTrigger value="website">
-                Website ({incomingWebsiteOffersSorted.length + outgoingWebsiteOffersSorted.length})
-              </TabsTrigger>
-            </TabsList>
-            <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => getCurrentWebviewWindow().hide()}
-              className="h-7 w-7 cursor-pointer flex-shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+    <TooltipProvider delayDuration={250}>
+      <MotionConfig reducedMotion="user">
+        <WindowPanel animate
+          className="h-full w-full">
+          <Tabs defaultValue="whispers"
+            className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+            {/* Drag Handle with Title and Tabs */}
+            <WindowChrome
+              title={
+                <span className="flex items-center gap-3">
+                  <span data-tauri-drag-region>Offers</span>
+                  <TabsList className="h-8">
+                    <TabsTrigger value="whispers"
+                      className="gap-1.5 px-2.5 text-xs">
+                      Whispers <CountPill count={whispersTotal} />
+                    </TabsTrigger>
+                    <TabsTrigger value="website"
+                      className="gap-1.5 px-2.5 text-xs">
+                      Website <CountPill count={websiteTotal} />
+                    </TabsTrigger>
+                  </TabsList>
+                </span>
+              }
+              titleClassName="overflow-visible"
+              onClose={() => getCurrentWebviewWindow().hide()}
+              closeLabel="Hide offers"
+            />
 
-          {/* Whispers Tab */}
-          <TabsContent value="whispers"
-            className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col">
-            <Tabs defaultValue="incoming"
-              className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-shrink-0 px-4 pt-2">
-                <TabsList>
-                  <TabsTrigger value="incoming">Incoming ({incomingWhispers.length})</TabsTrigger>
-                  <TabsTrigger value="outgoing">Outgoing ({outgoingWhispers.length})</TabsTrigger>
-                </TabsList>
-              </div>
+            {/* Whispers Tab */}
+            <TabsContent value="whispers"
+              className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <Tabs defaultValue="incoming"
+                className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+                <SubTabs incoming={incomingWhispers.length}
+                  outgoing={outgoingWhispers.length} />
 
-              <TabsContent
-                value="incoming"
-                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900"
-              >
-                <ScrollArea className="h-full px-4">
-                  <div className="flex flex-col gap-2 pb-4">
-                    {incomingWhispers.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">No incoming whispers</div>
-                    ) : (
-                      incomingWhispers.map((trade) => (
-                        <TradeMessage key={trade.id}
-                          trade={trade}
+                <TabsContent value="incoming"
+                  className="m-0 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <OfferList
+                    empty={
+                      <EmptyOffers
+                        icon={<Inbox />}
+                        title="No incoming whispers"
+                        hint="Trade whispers from the game show up here."
+                      />
+                    }
+                  >
+                    {incomingWhispers.map((trade) => (
+                      <OfferItem key={trade.id}>
+                        <TradeMessage trade={trade}
                           onClose={removeTrade} />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
+                      </OfferItem>
+                    ))}
+                  </OfferList>
+                </TabsContent>
 
-              <TabsContent
-                value="outgoing"
-                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900"
-              >
-                <ScrollArea className="h-full px-4">
-                  <div className="flex flex-col gap-2 pb-4">
-                    {outgoingWhispers.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">No outgoing whispers</div>
-                    ) : (
-                      outgoingWhispers.map((trade) => (
-                        <TradeMessage key={trade.id}
-                          trade={trade}
+                <TabsContent value="outgoing"
+                  className="m-0 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <OfferList
+                    empty={
+                      <EmptyOffers
+                        icon={<Send />}
+                        title="No outgoing whispers"
+                        hint="Whispers you send to sellers show up here."
+                      />
+                    }
+                  >
+                    {outgoingWhispers.map((trade) => (
+                      <OfferItem key={trade.id}>
+                        <TradeMessage trade={trade}
                           onClose={removeTrade} />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+                      </OfferItem>
+                    ))}
+                  </OfferList>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
 
-          {/* Website Offers Tab */}
-          <TabsContent value="website"
-            className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col">
-            <Tabs defaultValue="incoming"
-              className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-shrink-0 px-4 pt-2">
-                <TabsList>
-                  <TabsTrigger value="incoming">Incoming ({incomingWebsiteOffersSorted.length})</TabsTrigger>
-                  <TabsTrigger value="outgoing">Outgoing ({outgoingWebsiteOffersSorted.length})</TabsTrigger>
-                </TabsList>
-              </div>
+            {/* Website Offers Tab */}
+            <TabsContent value="website"
+              className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <Tabs defaultValue="incoming"
+                className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+                <SubTabs incoming={incomingWebsiteOffersSorted.length}
+                  outgoing={outgoingWebsiteOffersSorted.length} />
 
-              <TabsContent value="incoming"
-                className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
-                <ScrollArea className="h-full px-4">
-                  <div className="flex flex-col gap-2 pb-4">
-                    {incomingWebsiteOffersSorted.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">No incoming website offers</div>
-                    ) : (
-                      incomingWebsiteOffersSorted.map((trade) => (
+                <TabsContent value="incoming"
+                  className="m-0 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <OfferList
+                    empty={
+                      <EmptyOffers
+                        icon={<Inbox />}
+                        title="No incoming website offers"
+                        hint="Offers on your projectdiablo2.com listings show up here."
+                      />
+                    }
+                  >
+                    {incomingWebsiteOffersSorted.map((trade) => (
+                      <OfferItem key={trade.id}>
                         <TradeMessage
-                          key={trade.id}
                           trade={trade}
                           onClose={removeTrade}
                           onAccept={acceptOffer}
@@ -161,71 +165,142 @@ export const TradeMessagesContainer: React.FC = () => {
                             refresh();
                           }}
                         />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
+                      </OfferItem>
+                    ))}
+                  </OfferList>
+                </TabsContent>
 
-              <TabsContent value="outgoing"
-                className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
-                <div className="flex-shrink-0 px-4 pt-2 flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHiddenOffers(!showHiddenOffers)}
-                    className="h-8 text-xs"
+                <TabsContent value="outgoing"
+                  className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="flex flex-shrink-0 items-center justify-between px-4 pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowHiddenOffers(!showHiddenOffers)}
+                      aria-pressed={showHiddenOffers}
+                      className={cn('h-8 text-xs text-muted-foreground', showHiddenOffers && 'bg-accent text-accent-foreground')}
+                    >
+                      {showHiddenOffers ? (
+                        <>
+                          <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+                          Hide Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" />
+                          Show Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <OfferList
+                    empty={
+                      <EmptyOffers
+                        icon={<Send />}
+                        title="No outgoing website offers"
+                        hint={
+                          hiddenOutgoingWebsiteOffersSorted.length > 0 && !showHiddenOffers
+                            ? `${hiddenOutgoingWebsiteOffersSorted.length} hidden offer(s) not shown.`
+                            : 'Offers you make on the website show up here.'
+                        }
+                      />
+                    }
                   >
-                    {showHiddenOffers ? (
-                      <>
-                        <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-                        Hide Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-3.5 w-3.5 mr-1.5" />
-                        Show Hidden Offers ({hiddenOutgoingWebsiteOffersSorted.length})
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <ScrollArea className="h-full px-4">
-                  <div className="flex flex-col gap-2 pb-4">
-                    {outgoingWebsiteOffersSorted.length === 0 &&
-                    (!showHiddenOffers || hiddenOutgoingWebsiteOffersSorted.length === 0) ? (
-                      <div className="text-center text-neutral-400 py-8">No outgoing website offers</div>
-                    ) : (
-                      <>
-                        {outgoingWebsiteOffersSorted.map((trade) => (
+                    {outgoingWebsiteOffersSorted.map((trade) => (
+                      <OfferItem key={trade.id}>
+                        <TradeMessage
+                          trade={trade}
+                          onClose={removeTrade}
+                          onRevoke={revokeOffer}
+                          onDeleteOutgoing={deleteOutgoingOffer}
+                        />
+                      </OfferItem>
+                    ))}
+                    {showHiddenOffers &&
+                      hiddenOutgoingWebsiteOffersSorted.map((trade) => (
+                        <OfferItem key={trade.id}>
                           <TradeMessage
-                            key={trade.id}
                             trade={trade}
                             onClose={removeTrade}
                             onRevoke={revokeOffer}
                             onDeleteOutgoing={deleteOutgoingOffer}
+                            onRestoreOutgoing={restoreOutgoingOffer}
+                            isHidden
                           />
-                        ))}
-                        {showHiddenOffers &&
-                          hiddenOutgoingWebsiteOffersSorted.map((trade) => (
-                            <TradeMessage
-                              key={trade.id}
-                              trade={trade}
-                              onClose={removeTrade}
-                              onRevoke={revokeOffer}
-                              onDeleteOutgoing={deleteOutgoingOffer}
-                              onRestoreOutgoing={restoreOutgoingOffer}
-                              isHidden
-                            />
-                          ))}
-                      </>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-        </Tabs>
-      </div>
+                        </OfferItem>
+                      ))}
+                  </OfferList>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+          </Tabs>
+        </WindowPanel>
+      </MotionConfig>
     </TooltipProvider>
   );
 };
+
+const CountPill: React.FC<{ count: number }> = ({ count }) => (
+  <span
+    className={cn(
+      'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums transition-colors duration-(--dur-fast)',
+      count > 0 ? 'bg-primary/15 text-foreground' : 'bg-muted text-muted-foreground',
+    )}
+  >
+    {count}
+  </span>
+);
+
+const SubTabs: React.FC<{ incoming: number; outgoing: number }> = ({ incoming, outgoing }) => (
+  <div className="flex-shrink-0 px-4 pt-2.5">
+    <TabsList className="h-8">
+      <TabsTrigger value="incoming"
+        className="gap-1.5 px-2.5 text-xs">
+        <ArrowDownLeft className="size-3.5 text-success" />
+        Incoming <CountPill count={incoming} />
+      </TabsTrigger>
+      <TabsTrigger value="outgoing"
+        className="gap-1.5 px-2.5 text-xs">
+        <ArrowUpRight className="size-3.5 text-destructive" />
+        Outgoing <CountPill count={outgoing} />
+      </TabsTrigger>
+    </TabsList>
+  </div>
+);
+
+/** Scrollable offer list; shows `empty` when it has no children. Items animate in/out. */
+const OfferList: React.FC<{ empty: React.ReactNode; children: React.ReactNode }> = ({ empty, children }) => {
+  const hasItems = React.Children.toArray(children).some(Boolean);
+  return (
+    <ScrollArea className="h-full px-4">
+      <div className="flex flex-col gap-2 pb-4">
+        <AnimatePresence initial={false}>
+          {hasItems ? children : <motion.div key="empty"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible">{empty}</motion.div>}
+        </AnimatePresence>
+      </div>
+    </ScrollArea>
+  );
+};
+
+const OfferItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <motion.div layout="position"
+    variants={fadeInUp}
+    initial="hidden"
+    animate="visible"
+    exit="exit">
+    {children}
+  </motion.div>
+);
+
+const EmptyOffers: React.FC<{ icon: React.ReactNode; title: string; hint: string }> = ({ icon, title, hint }) => (
+  <div className="flex flex-col items-center gap-2 py-10 text-center">
+    <span className="mb-1 flex size-10 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground [&_svg]:size-5">
+      {icon}
+    </span>
+    <p className="text-sm font-medium text-foreground/90">{title}</p>
+    <p className="max-w-60 text-xs text-muted-foreground">{hint}</p>
+  </div>
+);

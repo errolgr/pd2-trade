@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { listen, emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
@@ -341,8 +342,61 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  return <Toaster richColors
-    closeButton />;
+  return (
+    <Toaster
+      richColors
+      closeButton
+      gap={10}
+      style={TOAST_THEME_VARS}
+      icons={{ loading: <Loader2 className="size-4 animate-spin text-muted-foreground" /> }}
+      toastOptions={{
+        classNames: {
+          toast:
+            'group toast !rounded-lg !border backdrop-blur-md !gap-3 !py-3.5 !pl-4 !pr-4 ' +
+            '!shadow-[inset_3px_0_0_var(--toast-accent,var(--glow)),var(--shadow-panel)]',
+          // sonner always applies `default` too, so the neutral accent is the var() fallback instead
+          success: '[--toast-accent:var(--success)]',
+          error: '[--toast-accent:var(--destructive)]',
+          warning: '[--toast-accent:var(--warning)]',
+          info: '[--toast-accent:var(--info)]',
+          loading: '[--toast-accent:var(--muted-foreground)]',
+          title: '!text-sm !font-semibold !leading-tight tracking-tight',
+          description: '!text-[13px] !leading-snug !text-popover-foreground/80',
+          icon: '!size-4 text-[var(--toast-accent,var(--glow))] [&>svg]:!size-4',
+          actionButton:
+            '!h-7 !rounded-md !bg-primary !px-2.5 !text-xs !font-semibold !text-primary-foreground transition-[filter,scale] duration-(--dur-fast) hover:brightness-110 active:scale-95',
+          cancelButton:
+            '!h-7 !rounded-md !bg-muted !px-2.5 !text-xs !font-medium !text-muted-foreground transition-[color,scale] duration-(--dur-fast) hover:!text-foreground active:scale-95',
+          closeButton:
+            '!border-border !bg-popover !text-muted-foreground transition-colors duration-(--dur-fast) hover:!bg-accent hover:!text-accent-foreground',
+        },
+      }}
+    />
+  );
 };
+
+/**
+ * Map sonner's palette variables onto the active theme tokens, so plain and richColors toasts
+ * follow all 20 themes instead of sonner's fixed light/dark palette. Inline styles on the
+ * toaster beat sonner's `[data-sonner-theme]` rules.
+ */
+const tint = (token: string, amount: number) => `color-mix(in oklab, var(${token}) ${amount}%, var(--popover))`;
+const TOAST_THEME_VARS = {
+  '--normal-bg': 'color-mix(in oklab, var(--popover) 94%, transparent)',
+  '--normal-border': 'var(--border)',
+  '--normal-text': 'var(--popover-foreground)',
+  '--success-bg': tint('--success', 12),
+  '--success-border': tint('--success', 40),
+  '--success-text': 'var(--popover-foreground)',
+  '--error-bg': tint('--destructive', 12),
+  '--error-border': tint('--destructive', 40),
+  '--error-text': 'var(--popover-foreground)',
+  '--warning-bg': tint('--warning', 12),
+  '--warning-border': tint('--warning', 40),
+  '--warning-text': 'var(--popover-foreground)',
+  '--info-bg': tint('--info', 12),
+  '--info-border': tint('--info', 40),
+  '--info-text': 'var(--popover-foreground)',
+} as React.CSSProperties;
 
 export default ToastPage;
