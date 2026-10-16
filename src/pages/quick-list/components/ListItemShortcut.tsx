@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { X, GripVertical, Loader2, AlertCircle, Clock } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { X, GripVertical, Loader2, AlertCircle, Clock, Hourglass, ListChecks, PackageSearch, SearchX } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -22,12 +23,16 @@ import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import ListedItemsTab from './ListedItemsTab';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
+import EmptyState from './EmptyState';
+import { countChip, itemCard } from './styles';
+import { WindowPanel } from '@/components/custom/window-chrome';
+import { cn } from '@/lib/utils';
+import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -801,82 +806,131 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
     if (queuedItems.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 h-full">
-          <AlertCircle className="w-12 h-12 text-muted-foreground opacity-50" />
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">No Queued Items</h3>
-            <p className="text-sm text-muted-foreground max-w-[250px]">Items you queue for listing will appear here.</p>
-          </div>
-        </div>
+        <EmptyState icon={<ListChecks />}
+          title="No Queued Items"
+          className="h-full">
+          Items you queue for listing will appear here.
+        </EmptyState>
       );
     }
 
     return (
-      <div className="flex flex-col py-4 gap-4 w-full h-full bg-background min-h-0">
-        <div className="flex flex-col items-center gap-2 text-center flex-shrink-0">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <div className="text-lg font-medium">Items queued for listing</div>
-          <div className="text-sm text-muted-foreground max-w-md">
+      <div className="flex flex-col gap-4 w-full h-full min-h-0">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col items-center gap-2 text-center flex-shrink-0 pt-2"
+        >
+          <span className="relative flex size-12 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/25">
+            <Hourglass className="size-5" />
+            <Loader2 className="absolute inset-0 size-12 animate-spin text-primary/50 [animation-duration:2.4s]"
+              strokeWidth={1} />
+          </span>
+          <div className="text-base font-semibold tracking-tight">Items queued for listing</div>
+          <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
             We&apos;re waiting for the server to sync your items (usually takes a few minutes). Once synced, they will
             be listed automatically.
           </div>
-          {isPolling && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Checking stash...</span>
-            </div>
-          )}
-        </div>
+          <AnimatePresence>
+            {isPolling && (
+              <motion.div
+                initial={{ opacity: 0, y: -2 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs text-muted-foreground"
+                role="status"
+              >
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Checking stash...</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
         <ScrollArea className="flex-1 min-h-0">
-          <div className="flex flex-col gap-2 pb-4 pr-2">
-            {queuedItems.map((pendingListing) => {
-              const itemName = pendingListing.item.name || pendingListing.item.type;
-              const age = Date.now() - pendingListing.createdAt;
-              const maxAge = 60 * POLL_INTERVAL;
-              const timeRemaining = Math.max(0, maxAge - age);
-              const minutesRemaining = Math.floor(timeRemaining / 60000);
+          <motion.div className="flex flex-col gap-2 p-px pb-2 pr-2"
+            variants={listStagger}
+            initial="hidden"
+            animate="visible">
+            <AnimatePresence initial={false}>
+              {queuedItems.map((pendingListing) => {
+                const itemName = pendingListing.item.name || pendingListing.item.type;
+                const age = Date.now() - pendingListing.createdAt;
+                const maxAge = 60 * POLL_INTERVAL;
+                const timeRemaining = Math.max(0, maxAge - age);
+                const minutesRemaining = Math.floor(timeRemaining / 60000);
+                const elapsedPct = Math.min(100, Math.max(0, (age / maxAge) * 100));
+                const { note, price } = pendingListing.formData;
 
-              return (
-                <div key={pendingListing.id}
-                  className="p-3 border rounded-lg flex justify-between items-center">
-                  <div className="flex-1">
-                    <div className="font-medium">{itemName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {pendingListing.formData.note && `Note: ${pendingListing.formData.note}`}
-                      {pendingListing.formData.price && `Price: ${pendingListing.formData.price} HR`}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Time remaining: ~{minutesRemaining} minutes
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      removePendingListing(pendingListing.id);
-                      setQueuedListingIds((prev) => {
-                        const next = new Set(prev);
-                        next.delete(pendingListing.id);
-                        if (next.size === 0) {
-                          setIsQueued(false);
-                          if (pollIntervalRef.current) {
-                            clearInterval(pollIntervalRef.current);
-                            pollIntervalRef.current = null;
-                          }
-                          if (item) {
-                            findMatchingItemsInStash();
-                          }
-                        }
-                        return next;
-                      });
-                    }}
+                return (
+                  <motion.div
+                    layout
+                    variants={listItem}
+                    exit={{ opacity: 0, x: -12, transition: { duration: DUR.fast } }}
+                    key={pendingListing.id}
+                    className={itemCard({ className: 'flex items-center justify-between gap-3' })}
                   >
-                    Cancel
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium">{itemName}</div>
+                      {(note || price) && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                          {price && (
+                            <span className="rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
+                              {`Price: ${price} HR`}
+                            </span>
+                          )}
+                          {note && <span className="truncate">{`Note: ${note}`}</span>}
+                        </div>
+                      )}
+                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="size-3 shrink-0" />
+                        <span className="shrink-0">Time remaining: ~{minutesRemaining} minutes</span>
+                        <div
+                          className="h-1 flex-1 overflow-hidden rounded-full bg-muted"
+                          role="progressbar"
+                          aria-label="Queue timeout"
+                          aria-valuenow={Math.round(elapsedPct)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full rounded-full bg-primary/70 transition-[width] duration-(--dur-slow) ease-out"
+                            style={{ width: `${elapsedPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        removePendingListing(pendingListing.id);
+                        setQueuedListingIds((prev) => {
+                          const next = new Set(prev);
+                          next.delete(pendingListing.id);
+                          if (next.size === 0) {
+                            setIsQueued(false);
+                            if (pollIntervalRef.current) {
+                              clearInterval(pollIntervalRef.current);
+                              pollIntervalRef.current = null;
+                            }
+                            if (item) {
+                              findMatchingItemsInStash();
+                            }
+                          }
+                          return next;
+                        });
+                      }}
+                    >
+                      <X className="size-3.5" />
+                      Cancel
+                    </Button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         </ScrollArea>
       </div>
     );
@@ -886,16 +940,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const renderListItemContent = () => {
     if (!item) {
       return (
-        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 h-[300px]">
-          <AlertCircle className="w-12 h-12 text-muted-foreground opacity-50" />
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">No Item Selected</h3>
-            <p className="text-sm text-muted-foreground max-w-[250px]">
-              Copy an item in-game (Ctrl+C) and reopen this window to list it, or select &quot;Manage Listings&quot; to
-              view your active trades.
-            </p>
-          </div>
-        </div>
+        <EmptyState icon={<PackageSearch />}
+          title="No Item Selected"
+          className="h-[300px]">
+          Copy an item in-game (Ctrl+C) and reopen this window to list it, or select &quot;Manage Listings&quot; to view
+          your active trades.
+        </EmptyState>
       );
     }
 
@@ -934,15 +984,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     // 4. No Items Found (with Queue option)
     if (matchingItems.length === 0 && !isLoading && !error && item) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 gap-4">
-          <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-            <div className="flex items-center gap-2">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col items-center justify-center py-6 gap-4"
+        >
+          <span className="flex size-12 items-center justify-center rounded-full bg-warning/12 text-warning ring-1 ring-warning/25">
+            <SearchX className="size-6" />
+          </span>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
               <span>No items found matching &quot;{item.name || item.type}&quot;</span>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <span>
-                    <AlertCircle className="text-yellow-500 w-4 h-4 cursor-pointer" />
-                  </span>
+                  <button
+                    type="button"
+                    aria-label="Why wasn't my item found?"
+                    className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs text-center">
                   An item won&apos;t be found unless it is placed in your shared stash (not personal stash) and you have
@@ -950,14 +1012,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="text-sm text-muted-foreground max-w-md mt-2">
+            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
               You can queue this item to be listed automatically. We&apos;ll wait for the server to sync it from your
               stash (usually takes a few minutes).
             </div>
           </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)}
-              className="w-full max-w-md">
+              className="w-full max-w-lg">
               <ListingFormFields
                 form={form}
                 selectedItem={null}
@@ -968,12 +1030,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               />
             </form>
           </Form>
-        </div>
+        </motion.div>
       );
     }
 
     // 5. Default: Item Selection Form
     if (item) {
+      const queueMode = matchingItems.length > 0 && !selectedItem && showQueueOption;
       return (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}
@@ -996,10 +1059,18 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               onRefresh={handleRefresh}
             />
 
-            <div className="flex-shrink-0">
-              {!showQueueOption && (
-                <div className="p-2 border border-dashed border-neutral-500/50 rounded bg-neutral-900/10 mb-2">
-                  <div className="flex items-center justify-between gap-2">
+            <div className="flex-shrink-0 space-y-2">
+              <AnimatePresence initial={false}
+                mode="popLayout">
+                {!showQueueOption && (
+                  <motion.div
+                    key="queue-cta"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5"
+                  >
                     <div className="flex items-center gap-2">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">None of these match?</span>
@@ -1016,15 +1087,21 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                     >
                       Queue Item
                     </Button>
-                  </div>
-                </div>
-              )}
-              {(selectedItem || (matchingItems.length > 0 && !selectedItem && showQueueOption)) && (
-                <>
-                  {matchingItems.length > 0 && !selectedItem && showQueueOption && (
-                    <div className="mb-2 text-xs text-muted-foreground text-center">
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {(selectedItem || queueMode) && (
+                <motion.div layout="position"
+                  className="space-y-2">
+                  {queueMode && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground"
+                    >
+                      <Hourglass className="size-3.5 shrink-0 text-primary" />
                       Queue this item to wait for the new one to appear in your stash (usually takes a few minutes).
-                    </div>
+                    </motion.div>
                   )}
                   <ListingFormFields
                     form={form}
@@ -1032,9 +1109,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                     currentListings={currentListings}
                     submitLoading={submitLoading}
                     onSubmit={handleSubmit}
-                    allowQueue={matchingItems.length > 0 && !selectedItem && showQueueOption}
+                    allowQueue={queueMode}
                   />
-                </>
+                </motion.div>
               )}
             </div>
           </form>
@@ -1044,7 +1121,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
     // 6. Fallback (No item provided manually)
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
         <p className="text-center">
           No item selected. Use the shortcut or navigate with an item parameter to list items.
         </p>
@@ -1052,97 +1129,116 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     );
   };
 
+  const tabLabel = (label: string, count: number) => (
+    <>
+      <span className="font-bold"
+        style={{ fontFamily: 'DiabloFont' }}>
+        {label}
+      </span>
+      <AnimatePresence initial={false}>
+        {count > 0 && (
+          <motion.span
+            key={count}
+            variants={popIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className={cn(countChip, 'h-[18px] min-w-[18px] text-[11px]')}
+          >
+            {count}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </>
+  );
+
   return (
-    <div className="flex flex-col p-4 border rounded-lg bg-background shadow w-screen h-screen overflow-hidden">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full flex-1 flex flex-col h-full overflow-hidden"
-      >
-        <div className="flex justify-between mb-2 items-center"
-          id="titlebar">
-          <div className="flex items-center gap-1">
-            <GripVertical
-              data-tauri-drag-region
-              className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-              id="titlebar-drag-handle"
-            />
-            <TabsList>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span tabIndex={-1}>
-                      <TabsTrigger
-                        value="list-item"
-                        className="font-bold"
-                        style={{ fontFamily: 'DiabloFont' }}
-                        disabled={item ? !isStashItem(item) : false}
-                      >
-                        List Item
-                      </TabsTrigger>
-                    </span>
-                  </TooltipTrigger>
-                  {item && !isStashItem(item) && (
-                    <TooltipContent>
-                      <p>Item must be in your shared stash to list.</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-              <TabsTrigger value="listed-items"
-                className="font-bold">
-                <span className="font-bold"
-                  style={{ fontFamily: 'DiabloFont' }}>
-                  Manage
-                </span>
-                {totalListingsCount > 0 && (
-                  <Badge className="font-bold text-xs rounded-full">{totalListingsCount}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="queued"
-                className="font-bold">
-                <span className="font-bold"
-                  style={{ fontFamily: 'DiabloFont' }}>
-                  Queued
-                </span>
-                {queuedListingIds.size > 0 && (
-                  <Badge className="font-bold text-xs rounded-full">{queuedListingIds.size}</Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
+    <MotionConfig reducedMotion="user">
+      <WindowPanel animate
+        className="w-screen h-screen">
+        <Tabs value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full flex-1 flex flex-col h-full gap-0 overflow-hidden">
+          <div
+            className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5"
+            id="titlebar"
+            data-tauri-drag-region
+          >
+            <div className="flex items-center gap-1.5">
+              <GripVertical
+                data-tauri-drag-region
+                className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground transition-colors duration-(--dur-fast) hover:text-foreground"
+                id="titlebar-drag-handle"
+              />
+              <TabsList className="h-8">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={-1}>
+                        <TabsTrigger
+                          value="list-item"
+                          className="font-bold px-2.5"
+                          style={{ fontFamily: 'DiabloFont' }}
+                          disabled={item ? !isStashItem(item) : false}
+                        >
+                          List Item
+                        </TabsTrigger>
+                      </span>
+                    </TooltipTrigger>
+                    {item && !isStashItem(item) && (
+                      <TooltipContent>
+                        <p>Item must be in your shared stash to list.</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+                <TabsTrigger value="listed-items"
+                  className="font-bold px-2.5">
+                  {tabLabel('Manage', totalListingsCount)}
+                </TabsTrigger>
+                <TabsTrigger value="queued"
+                  className="font-bold px-2.5">
+                  {tabLabel('Queued', queuedListingIds.size)}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <Button
+              type="button"
+              id="titlebar-close"
+              aria-label="Close"
+              size="icon"
+              className="size-7 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+              variant="ghost"
+              onClick={handleClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
-          <Button type="button"
-            id="titlebar-close"
-            className="h-6 w-6"
-            variant="ghost"
-            onClick={handleClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+          <TabsContent value="list-item"
+            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
+            {renderListItemContent()}
+          </TabsContent>
 
-        <TabsContent value="list-item"
-          className="mt-4 flex-1 flex flex-col min-h-0">
-          {renderListItemContent()}
-        </TabsContent>
+          <TabsContent value="listed-items"
+            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
+            <ListedItemsTab
+              onClose={handleClose}
+              initialListings={allListings}
+              initialTotalCount={totalListingsCount}
+              onTotalCountChange={setTotalListingsCount}
+              onListingsChange={setAllListings}
+            />
+          </TabsContent>
 
-        <TabsContent value="listed-items"
-          className="mt-4 flex-1 flex flex-col min-h-0">
-          <ListedItemsTab
-            onClose={handleClose}
-            initialListings={allListings}
-            initialTotalCount={totalListingsCount}
-            onTotalCountChange={setTotalListingsCount}
-            onListingsChange={setAllListings}
-          />
-        </TabsContent>
-
-        <TabsContent value="queued"
-          className="mt-4 flex-1 flex flex-col min-h-0">
-          {renderQueuedItemsContent()}
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="queued"
+            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
+            {renderQueuedItemsContent()}
+          </TabsContent>
+        </Tabs>
+      </WindowPanel>
+    </MotionConfig>
   );
 };
 
