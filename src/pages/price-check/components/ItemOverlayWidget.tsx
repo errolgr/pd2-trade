@@ -1340,7 +1340,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 </div>
                 <ScrollArea className="flex-none pr-2"
                   viewportClassName="max-h-[30vh]">
-                  <div className="space-y-0.5">
+                  <div className="divide-y divide-border/70">
                     {sortedStats.map((s) => (
                       <StatRow
                         toggle={toggle}
