@@ -1,16 +1,16 @@
 export const qualityColor = (quality: string): string => {
   switch (quality) {
     case 'Unique':
-      return 'text-color-unique';
+      return 'text-q-unique';
     case 'Set':
-      return 'text-green-400';
+      return 'text-q-set';
     case 'Rare':
-      return 'text-yellow-400';
+      return 'text-q-rare';
     case 'Crafted':
-      return 'text-yellow-600';
+      return 'text-q-crafted';
     case 'Magic':
-      return 'text-blue-400';
+      return 'text-q-magic';
     default:
-      return 'text-gray-100';
+      return 'text-q-normal';
   }
 };
