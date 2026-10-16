@@ -1104,16 +1104,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 style={{ fontFamily: 'DiabloFont' }}
               >
                 <span className="min-w-0 truncate">{displayTitle}</span>
-                {item.isRuneword && (
-                  <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>
-                )}
+                {item.isRuneword && <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>}
               </h1>
               {item.type && (
                 <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">
                   {shouldUseToggle ? (
-                    <HeaderToggle onClick={toggleSearchMode}
+                    <HeaderToggle
+                      onClick={toggleSearchMode}
                       title="Click to toggle search mode"
-                      className="text-muted-foreground">
+                      className="text-muted-foreground"
+                    >
                       {getSearchModeDisplay()}
                     </HeaderToggle>
                   ) : (
@@ -1126,9 +1126,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     <>
                       <span aria-hidden
                         className="h-4 w-px bg-border" />
-                      <HeaderToggle onClick={cycleQuality}
+                      <HeaderToggle
+                        onClick={cycleQuality}
                         title="Click to cycle quality"
-                        className={qualityColor(effectiveQuality)}>
+                        className={qualityColor(effectiveQuality)}
+                      >
                         {effectiveQuality}
                       </HeaderToggle>
                     </>
@@ -1138,8 +1140,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             </div>
 
             {item.defense && (
-              <Badge variant="outline"
-                className="gap-1.5 rounded-md border-border bg-background/40 px-2 py-0.5 text-xs text-muted-foreground">
+              <Badge
+                variant="outline"
+                className="gap-1.5 rounded-md border-border bg-background/40 px-2 py-0.5 text-xs text-muted-foreground"
+              >
                 <ShieldIcon className="text-muted-foreground" />
                 Defense: <span className="font-semibold tabular-nums text-foreground">{item.defense}</span>
               </Badge>
@@ -1149,8 +1153,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {isUniqueOrSet && (
               <div className="pt-0.5">
                 {averagePriceLoading && (
-                  <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
-                    aria-busy="true">
+                  <div
+                    className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
+                    aria-busy="true"
+                  >
                     <Skeleton className="size-10 rounded-md bg-muted-foreground/15" />
                     <div className="flex flex-col gap-1.5">
                       <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
@@ -1184,10 +1190,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           </div>
                           <div className="grid grid-cols-2 gap-1.5">
                             <PriceStat label="Average"
-                              value={averagePriceData.movingAverage7Days} />
-                            <PriceStat label="Median"
-                              value={averagePriceData.medianPrice}
+                              value={averagePriceData.movingAverage7Days}
                               emphasis />
+                            <PriceStat label="Median"
+                              value={averagePriceData.medianPrice} />
                             <PriceStat label="Min"
                               value={averagePriceData.minPrice} />
                             <PriceStat label="Max"
@@ -1201,8 +1207,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             {averagePriceData.priceChange7Days && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">7d Change:</span>
-                                <ChangeLabel change={averagePriceData.priceChange7Days.change}
-                                  percent={averagePriceData.priceChange7Days.changePercent} />
+                                <ChangeLabel
+                                  change={averagePriceData.priceChange7Days.change}
+                                  percent={averagePriceData.priceChange7Days.changePercent}
+                                />
                               </div>
                             )}
                           </div>
@@ -1400,8 +1408,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     setSearchArchived(checked);
                   }}
                 />
-                <Label htmlFor="archived-toggle"
-                  className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground">
+                <Label
+                  htmlFor="archived-toggle"
+                  className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   Show Expired
                 </Label>
               </div>
@@ -1437,9 +1447,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </div>
                   <div className="space-y-1.5 pr-3">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i}
+                      <div
+                        key={i}
                         className="flex items-center justify-between rounded-md px-2 py-1.5"
-                        style={{ opacity: 1 - i * 0.13 }}>
+                        style={{ opacity: 1 - i * 0.13 }}
+                      >
                         <Skeleton className="h-4 w-20 bg-muted-foreground/15" />
                         <Skeleton className="h-3 w-14 bg-muted-foreground/15" />
                       </div>
@@ -1460,10 +1472,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     <div className="font-medium">Couldn&apos;t load listings</div>
                     <div className="text-xs break-words opacity-90">{marketError}</div>
                   </div>
-                  <Button variant="ghost"
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="h-7 shrink-0 text-destructive hover:bg-destructive/15 hover:text-destructive"
-                    onClick={handleSearch}>
+                    onClick={handleSearch}
+                  >
                     <RotateCw />
                     Retry
                   </Button>
@@ -1507,8 +1521,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </table>
                   {/* Load more trigger */}
                   {hasMore && (
-                    <div ref={loaderRef}
-                      className="flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground">
+                    <div
+                      ref={loaderRef}
+                      className="flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground"
+                    >
                       {marketLoading && <Loader2 className="size-3 animate-spin" />}
                       {marketLoading ? 'Loading more...' : 'Load more'}
                     </div>
@@ -1586,10 +1602,8 @@ function HeaderToggle({
           {children}
         </motion.span>
       </AnimatePresence>
-      <Repeat2
-        aria-hidden
-        className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90"
-      />
+      <Repeat2 aria-hidden
+        className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
     </button>
   );
 }
@@ -1716,7 +1730,16 @@ interface CorruptionRowProps {
   onOpenWeb: () => void;
 }
 
-function CorruptionRow({ name, variant, price, selected, itemTitle, onSelect, onSocketSelect, onOpenWeb }: CorruptionRowProps) {
+function CorruptionRow({
+  name,
+  variant,
+  price,
+  selected,
+  itemTitle,
+  onSelect,
+  onSocketSelect,
+  onOpenWeb,
+}: CorruptionRowProps) {
   const isTruncated = name.length > 40;
   const socketPrices = price?.socketPrices ?? [];
   const hasSocketPrices = socketPrices.length > 0;
@@ -1933,7 +1956,9 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                   <TooltipContent className="pointer-events-none">
                     <p className="flex items-center gap-1.5">
                       {whisperCopied && <Check className="size-3 text-success" />}
-                      {whisperCopied ? 'Copied whisper, right click to paste' : 'Online in-game · click to copy whisper'}
+                      {whisperCopied
+                        ? 'Copied whisper, right click to paste'
+                        : 'Online in-game · click to copy whisper'}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -1948,9 +1973,11 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
 
               {/* Corruption Indicator */}
               {isCorrupted && (
-                <ListingBadge label="C"
+                <ListingBadge
+                  label="C"
                   tooltip="Corrupted"
-                  className="border-destructive/60 bg-destructive text-destructive-foreground" />
+                  className="border-destructive/60 bg-destructive text-destructive-foreground"
+                />
               )}
 
               {/* Sockets Indicator */}

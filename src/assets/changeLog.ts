@@ -1,7 +1,7 @@
 export const changeLog = {
   '0.11.0': [
     '✨ Fresh new look for every window: price check, quick list, delist, chat, offers, toasts, stash value, net worth ticker and panel, settings, changelog and sign-in',
-    '🆕 Themes: pick from 20 color themes (10 dark, 10 light) in Settings → General — Sanctuary (default) keeps the classic look',
+    '🆕 Themes: pick from 20 color themes (10 dark, 10 light) in Settings → Interface — Sanctuary (default) keeps the classic look',
     '✨ Smoother animations everywhere, with consistent title bars, panels that stay readable over the game, and reduced-motion support',
     '✨ Bump All now sends a green flash down your listings so you can see each one get bumped',
     '🆕 Price check: 7-day average and change on the price chip, Enter in min/max runs the search, "Clear" for selected stats, Retry on errors and a "No listings found" message',

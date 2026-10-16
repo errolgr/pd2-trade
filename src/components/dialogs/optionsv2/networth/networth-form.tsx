@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { PublicProfileGroup } from './public-profile';
 
 const AUTO_SNAPSHOT_OPTIONS = [
   { value: '0', label: 'Off' },
@@ -148,6 +149,8 @@ export function NetWorthForm() {
           />
         </SettingsGroup>
 
+        <PublicProfileGroup />
+
         <SettingsGroup title="Ticker overlay">
           <FormField
             control={form.control}
@@ -244,8 +247,8 @@ export function NetWorthForm() {
                 label="Snapshot toast threshold (HR)"
                 description={
                   <>
-                    Show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth toast
-                    type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
+                    Show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth
+                    toast type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
                   </>
                 }
                 control={

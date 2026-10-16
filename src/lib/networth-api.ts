@@ -226,3 +226,25 @@ export function deleteHistory(
 export function getSeasons(): Promise<{ seasons: Season[]; currentId: string }> {
   return request('/api/seasons', null);
 }
+
+/** Leaderboard / public profile settings (per PD2 login). */
+export interface ProfileSettings {
+  optedIn: boolean;
+  displayName: string | null;
+  slug: string | null;
+  showHoldings: boolean;
+  /** Game account names the login may appear as. */
+  displayNameOptions: string[];
+}
+
+/** 404 until the server enables leaderboards (LEADERBOARD_PUBLIC). */
+export function getProfileSettings(token: string): Promise<ProfileSettings> {
+  return request('/api/networth/profile', token);
+}
+
+export function updateProfileSettings(
+  token: string,
+  update: { optedIn: boolean; showHoldings?: boolean; displayName?: string },
+): Promise<ProfileSettings> {
+  return request('/api/networth/profile', token, { method: 'PUT', body: JSON.stringify(update) });
+}

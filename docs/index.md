@@ -108,4 +108,4 @@ Easily compare and trade runes with up-to-date exchange rates.
 
 #### Themes
 
-Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → General, applied instantly to every window.
+Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → Interface, applied instantly to every window.

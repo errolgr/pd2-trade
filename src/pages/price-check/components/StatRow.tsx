@@ -23,8 +23,9 @@ interface StatRowProps {
   onSubmit?: () => void;
 }
 
+// h-6 keeps the row at its min-h-8 (py-1 + 24px) so selecting a stat doesn't change the row height.
 const numberInputClass =
-  'h-7 w-16 rounded-md border border-input bg-background/60 px-2 text-xs tabular-nums text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-(--dur-fast) placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/30';
+  'h-6 w-16 rounded-md border border-input bg-background/60 px-2 text-xs tabular-nums text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-(--dur-fast) placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/30';
 
 const CORRUPTED_STATE_HINT: Record<number, string> = {
   1: 'only',
