@@ -51,9 +51,9 @@ function playNotificationSound(volume: number = 70) {
   }
 }
 
-function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
+export function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
   if (!(settings?.toastPopupsEnabled ?? true)) return false;
-  const types = settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'];
+  const types = settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
   return types.includes(type);
 }
 

@@ -19,6 +19,8 @@ import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
 import ChatPage from './pages/chat/ChatPage';
 import SignInPage from './pages/sign-in/SignInPage';
 import { DelistPage } from './pages/delist/DelistPage';
+import NetWorthTickerPage from './pages/net-worth/NetWorthTickerPage';
+import NetWorthPanelPage from './pages/net-worth/NetWorthPanelPage';
 
 // Initialize debug logging if enabled in settings
 initDebugLoggingFromSettings();
@@ -121,6 +123,12 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route path={'/delist'}
         element={<DelistPage />} />
+
+      <Route path={'/net-worth-ticker'}
+        element={<NetWorthTickerPage />} />
+
+      <Route path={'/net-worth-panel'}
+        element={<NetWorthPanelPage />} />
     </Routes>
   </BrowserRouter>,
 );

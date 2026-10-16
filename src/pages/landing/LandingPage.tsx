@@ -31,6 +31,8 @@ import { GenericToastPayload } from '@/common/types/Events';
 import { ItemsProvider } from '@/hooks/useItems';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import DelistHandler from '@/pages/delist/DelistHandler';
+import NetWorthOverlayHost from '@/pages/net-worth/NetWorthOverlayHost';
+import { NetWorthProvider, NETWORTH_OPEN_EVENT, requestNetWorthSnapshot, type NetWorthTab } from '@/hooks/useNetWorth';
 
 const LandingPage: React.FC = () => {
   const winRef = useRef<BrowserWindow | null>(null);
@@ -164,21 +166,23 @@ const LandingPage: React.FC = () => {
     }
   }, [checkDiabloFocus, read, copy, keyPress, settings]);
 
-  // Open currency valuation window
-  const openCurrencyValuation = useCallback(async () => {
-    if (!(await checkDiabloFocus())) return;
-
+  // Open (or focus) the Stash Value window; `tab` deep-links a fresh window, an open one switches via NETWORTH_OPEN_EVENT
+  const showCurrencyWindow = useCallback(async (tab?: NetWorthTab) => {
     if (!currencyWindowRef.current) {
-      currencyWindowRef.current = await openCenteredWindow(WindowLabels.Currency, '/currency', {
-        title: WindowTitles.Currency,
-        decorations: false,
-        focus: true,
-        shadow: false,
-        skipTaskbar: true,
-        width: 665,
-        height: 870,
-        alwaysOnTop: true,
-      });
+      currencyWindowRef.current = await openCenteredWindow(
+        WindowLabels.Currency,
+        tab ? `/currency?tab=${tab}` : '/currency',
+        {
+          title: WindowTitles.Currency,
+          decorations: false,
+          focus: true,
+          shadow: false,
+          skipTaskbar: true,
+          width: 760,
+          height: 870,
+          alwaysOnTop: true,
+        },
+      );
 
       if (currencyWindowRef.current) {
         currencyWindowRef.current.onCloseRequested(async () => {
@@ -192,11 +196,25 @@ const LandingPage: React.FC = () => {
       } catch (err) {
         console.error('[LandingPage] Failed to focus existing currency window:', err);
         currencyWindowRef.current = null;
-        // Retry open? No, let user click again or recursive call?
-        // Simple retry logic could be added but usually nulling ref is enough for next click
       }
     }
-  }, [checkDiabloFocus]);
+  }, []);
+
+  // Open currency valuation window (hotkey)
+  const openCurrencyValuation = useCallback(async () => {
+    if (!(await checkDiabloFocus())) return;
+    await showCurrencyWindow();
+  }, [checkDiabloFocus, showCurrencyWindow]);
+
+  // Net worth surfaces (ticker, panel, toasts) ask for the Stash Value window via an app event
+  useEffect(() => {
+    const unlisten = listen<{ tab?: NetWorthTab }>(NETWORTH_OPEN_EVENT, ({ payload }) => {
+      showCurrencyWindow(payload?.tab);
+    });
+    return () => {
+      unlisten.then((off) => off());
+    };
+  }, [showCurrencyWindow]);
 
   // Open quick list window
   const openQuickListWindow = useCallback(
@@ -401,6 +419,9 @@ const LandingPage: React.FC = () => {
     },
     async () => {
       await handleDelistItem();
+    },
+    async () => {
+      await requestNetWorthSnapshot('manual');
     },
   );
 
@@ -1021,8 +1042,11 @@ const LandingPage: React.FC = () => {
   return (
     <ItemsProvider>
       <Pd2WebsiteProvider>
-        <DelistHandler />
-        <div />
+        <NetWorthProvider>
+          <DelistHandler />
+          <NetWorthOverlayHost />
+          <div />
+        </NetWorthProvider>
       </Pd2WebsiteProvider>
     </ItemsProvider>
   );

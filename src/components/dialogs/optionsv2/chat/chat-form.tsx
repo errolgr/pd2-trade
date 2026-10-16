@@ -40,7 +40,7 @@ export function ChatForm() {
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
       toastPopupsEnabled: settings?.toastPopupsEnabled ?? true,
-      toastPopupTypes: settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'],
+      toastPopupTypes: settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
       tradeNotificationsEnabled: settings?.tradeNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
@@ -61,7 +61,7 @@ export function ChatForm() {
         {
           whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
           toastPopupsEnabled: settings.toastPopupsEnabled ?? true,
-          toastPopupTypes: settings.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers'],
+          toastPopupTypes: settings.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
           tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
           whisperIgnoreList: settings.whisperIgnoreList || [],
           whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
@@ -193,12 +193,13 @@ export function ChatForm() {
                     control={form.control}
                     name="toastPopupTypes"
                     render={({ field: typesField }) => {
-                      const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers'];
+                      const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
                       const allTypes = [
                         { id: 'whispers', label: 'Whispers' },
                         { id: 'trade', label: 'Trade' },
                         { id: 'joins', label: 'Joins' },
                         { id: 'offers', label: 'Offers' },
+                        { id: 'networth', label: 'Net Worth' },
                       ];
                       const toggleType = (typeId: string) => {
                         const updated = types.includes(typeId)

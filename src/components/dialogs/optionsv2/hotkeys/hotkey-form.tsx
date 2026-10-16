@@ -54,6 +54,11 @@ const hotkeyFormSchema = z
       .min(1, 'Enter a key')
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierSnapshot: z.enum(['ctrl', 'alt']),
+    hotkeyKeySnapshot: z
+      .string()
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
   })
   .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
@@ -82,6 +87,8 @@ export function HotkeyForm() {
       hotkeyKeyOffers: 'b',
       hotkeyModifierDelist: 'ctrl',
       hotkeyKeyDelist: 'u',
+      hotkeyModifierSnapshot: 'ctrl',
+      hotkeyKeySnapshot: '',
     },
   });
 
@@ -433,6 +440,54 @@ export function HotkeyForm() {
               )}
             />
           </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierSnapshot"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Net Worth Snapshot</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeySnapshot"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center">
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      placeholder="-"
+                      value={field.value?.toUpperCase() ?? ''}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Leave the snapshot key empty to keep it unbound.</p>
         </div>
       </ScrollArea>
     </Form>

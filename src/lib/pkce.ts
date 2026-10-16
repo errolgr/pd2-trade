@@ -17,4 +17,4 @@ export const PD2_SCOPES = [
   'character:read',
   'stash:read',
 ];
-export const BACKEND_URL = 'https://pd2trader.com';
+export const BACKEND_URL: string = import.meta.env.VITE_BACKEND_URL || 'https://pd2trader.com';

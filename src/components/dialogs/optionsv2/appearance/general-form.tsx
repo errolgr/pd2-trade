@@ -11,7 +11,7 @@ import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { SEASONS } from '@/lib/seasons';
+import { getSeasonSettingOptions } from '@/lib/seasons';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -152,10 +152,10 @@ export function GeneralForm() {
                   <SelectValue placeholder="Season" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SEASONS.map((season) => (
-                    <SelectItem key={season.id}
-                      value={season.id}>
-                      {season.label}
+                  {getSeasonSettingOptions().map((option) => (
+                    <SelectItem key={option.value}
+                      value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

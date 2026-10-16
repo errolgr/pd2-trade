@@ -12,6 +12,8 @@ export const WindowLabels = config.labels as {
   readonly Toast: 'Toast';
   readonly SignIn: 'SignIn';
   readonly Delist: 'Delist';
+  readonly NetWorthTicker: 'NetWorthTicker';
+  readonly NetWorthPanel: 'NetWorthPanel';
 };
 
 export const WindowTitles = config.titles as {
@@ -26,5 +28,7 @@ export const WindowTitles = config.titles as {
   readonly Toast: 'PD2Trader: Toast';
   readonly SignIn: 'PD2Trader: Sign In';
   readonly Delist: 'PD2Trader: Delist';
+  readonly NetWorthTicker: 'PD2Trader: Net Worth Ticker';
+  readonly NetWorthPanel: 'PD2Trader: Net Worth';
   readonly PREFIX: 'PD2Trader';
 };

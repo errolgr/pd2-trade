@@ -152,6 +152,7 @@ export const useAppShortcuts = (
   onChat?: ShortcutHandler,
   onOffers?: ShortcutHandler,
   onDelist?: ShortcutHandler,
+  onNetWorthSnapshot?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -218,6 +219,14 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeySnapshot && onNetWorthSnapshot) {
+      configs.push({
+        modifier: settings.hotkeyModifierSnapshot ?? 'ctrl',
+        key: settings.hotkeyKeySnapshot,
+        handler: onNetWorthSnapshot,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -233,12 +242,15 @@ export const useAppShortcuts = (
     settings.hotkeyKeyOffers,
     settings.hotkeyModifierDelist,
     settings.hotkeyKeyDelist,
+    settings.hotkeyModifierSnapshot,
+    settings.hotkeyKeySnapshot,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
     onChat,
     onOffers,
     onDelist,
+    onNetWorthSnapshot,
   ]);
 
   useShortcuts(shortcuts);

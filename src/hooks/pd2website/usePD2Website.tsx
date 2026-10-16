@@ -9,7 +9,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { reportApiError } from '@/lib/error-reporting';
-import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -111,7 +111,6 @@ interface Pd2WebsiteContextType {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
-  getCurrencyTab: () => Promise<Currency>;
   deleteConversation: (conversationId: string) => Promise<void>;
   getConversations: (participantId: string) => Promise<ConversationListResponse>;
   getMessages: (conversationId: string) => Promise<MessageListResponse>;
@@ -236,7 +235,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
-    getCurrencyTab,
   } = useMarketActions({
     settings,
     authData,
@@ -379,7 +377,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       bumpAllMarketListings,
       updateMarketListing,
       updateItemByHash,
-      getCurrencyTab,
       deleteConversation,
       getConversations,
       getMessages,
@@ -405,7 +402,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     bumpAllMarketListings,
     updateMarketListing,
     updateItemByHash,
-    getCurrencyTab,
     deleteConversation,
     getConversations,
     getMessages,
@@ -489,7 +485,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
         authData,
         updateMarketListing,
         updateItemByHash,
-        getCurrencyTab,
         deleteConversation,
         getConversations,
         getMessages,
@@ -629,7 +624,6 @@ export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = 
       });
       return false;
     },
-    getCurrencyTab: () => rpcCall('getCurrencyTab'),
     deleteConversation: (conversationId) => rpcCall('deleteConversation', conversationId),
     getConversations: (participantId) => rpcCall('getConversations', participantId),
     getMessages: (conversationId) => rpcCall('getMessages', conversationId),

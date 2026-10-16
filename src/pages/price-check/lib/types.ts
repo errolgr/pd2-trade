@@ -35,14 +35,6 @@ export interface RuneCombination {
 
 export type EconomyData = {
   Runes: Record<string, ItemData>;
-  Currency: Record<string, ItemData>;
-  Ubers: Record<string, ItemData>;
-};
-
-export type EconomyValue = {
-  Currency: ItemValue[];
-  Runes: ItemValue[];
-  Ubers: ItemValue[];
 };
 
 // RANGE_MARGIN has been replaced by fillStatValue setting (0-100%)
