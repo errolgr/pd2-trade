@@ -4,6 +4,7 @@ export const changeLog = {
     '🆕 Themes: pick from 20 color themes (10 dark, 10 light) in Settings → Interface — Sanctuary (default) keeps the classic look',
     '✨ Smoother animations everywhere, with consistent title bars, panels that stay readable over the game, and reduced-motion support',
     '✨ Bump All now sends a green flash down your listings so you can see each one get bumped',
+    '🆕 Net Worth settings: choose whether your profile is public on the pd2trader.com leaderboards (off by default; available from Season 14)',
     '🆕 Price check: 7-day average and change on the price chip, Enter in min/max runs the search, "Clear" for selected stats, Retry on errors and a "No listings found" message',
     '🆕 Quick list: keyboard-selectable item cards, macro count on the note macros button, empty states and a timeout bar for queued items',
     '🆕 Chat: day dividers, total unread count, search clear button (Esc clears) and a "No messages yet" state',
