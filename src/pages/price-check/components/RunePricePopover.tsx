@@ -103,8 +103,8 @@ export function RunePricePopover({
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i}
                   className="flex items-center justify-between py-1">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24 bg-muted-foreground/15" />
+                  <Skeleton className="h-4 w-32 bg-muted-foreground/15" />
                 </div>
               ))}
               <p className="pt-1 text-center text-xs text-muted-foreground">Loading rune data...</p>

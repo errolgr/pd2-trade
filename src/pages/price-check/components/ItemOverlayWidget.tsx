@@ -1151,9 +1151,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 {averagePriceLoading && (
                   <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
                     aria-busy="true">
-                    <Skeleton className="size-10 rounded-md" />
+                    <Skeleton className="size-10 rounded-md bg-muted-foreground/15" />
                     <div className="flex flex-col gap-1.5">
-                      <Skeleton className="h-3.5 w-16" />
+                      <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Loader2 className="size-3 animate-spin" />
                         Loading price data...
@@ -1439,8 +1439,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       <div key={i}
                         className="flex items-center justify-between rounded-md px-2 py-1.5"
                         style={{ opacity: 1 - i * 0.13 }}>
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-3 w-14" />
+                        <Skeleton className="h-4 w-20 bg-muted-foreground/15" />
+                        <Skeleton className="h-3 w-14 bg-muted-foreground/15" />
                       </div>
                     ))}
                   </div>
