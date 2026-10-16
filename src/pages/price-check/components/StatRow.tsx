@@ -90,17 +90,15 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    <div
-      data-active={isActive || undefined}
-      className={cn(
-        'rounded-md transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
-        isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
-      )}
-    >
+    // py-0.5 on the wrapper leaves a gap between the highlight and the divider lines.
+    <div data-active={isActive || undefined}
+      className="py-0.5">
       <label
         key={statKey}
         className={cn(
-          'flex min-h-9 flex-row items-center justify-between gap-2 px-2 py-1',
+          'flex min-h-9 flex-row items-center justify-between gap-2 rounded-md px-2 py-1',
+          'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
+          isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
           nested && 'pl-8',
           isUnknown && 'cursor-not-allowed',
         )}
