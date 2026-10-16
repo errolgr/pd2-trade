@@ -9,7 +9,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { reportApiError } from '@/lib/error-reporting';
-import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -38,6 +38,10 @@ interface Pd2WebsiteRpcResponse {
   ok: boolean;
   result?: any;
   error?: string;
+  // Typed-error metadata so the child window can rebuild AuthenticationError / AccountMismatchError
+  errorName?: string;
+  errorStatusCode?: number;
+  errorAccount?: string;
 }
 
 interface Pd2WebsiteSnapshot {
@@ -77,6 +81,20 @@ export class AccountMismatchError extends Error {
     Object.setPrototypeOf(this, AccountMismatchError.prototype);
   }
 }
+
+// RPC responses cross a Tauri event boundary as JSON; restore the error class so
+// instanceof checks and Sentry's beforeSend filters work in child windows.
+function rebuildRpcError(payload: Pd2WebsiteRpcResponse): Error {
+  const message = payload.error || 'PD2 RPC request failed';
+  if (payload.errorName === 'AuthenticationError') {
+    return new AuthenticationError(message, payload.errorStatusCode);
+  }
+  if (payload.errorName === 'AccountMismatchError') {
+    return new AccountMismatchError(message, payload.errorStatusCode, payload.errorAccount);
+  }
+  return new Error(message);
+}
+
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -93,7 +111,6 @@ interface Pd2WebsiteContextType {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
-  getCurrencyTab: () => Promise<Currency>;
   deleteConversation: (conversationId: string) => Promise<void>;
   getConversations: (participantId: string) => Promise<ConversationListResponse>;
   getMessages: (conversationId: string) => Promise<MessageListResponse>;
@@ -218,7 +235,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
-    getCurrencyTab,
   } = useMarketActions({
     settings,
     authData,
@@ -361,7 +377,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       bumpAllMarketListings,
       updateMarketListing,
       updateItemByHash,
-      getCurrencyTab,
       deleteConversation,
       getConversations,
       getMessages,
@@ -387,7 +402,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     bumpAllMarketListings,
     updateMarketListing,
     updateItemByHash,
-    getCurrencyTab,
     deleteConversation,
     getConversations,
     getMessages,
@@ -439,6 +453,12 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
             requestId: payload.requestId,
             ok: false,
             error: message,
+            errorName: error instanceof Error ? error.name : undefined,
+            errorStatusCode:
+              error instanceof AuthenticationError || error instanceof AccountMismatchError
+                ? error.statusCode
+                : undefined,
+            errorAccount: error instanceof AccountMismatchError ? error.account : undefined,
           } as Pd2WebsiteRpcResponse);
         }
       });
@@ -465,7 +485,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
         authData,
         updateMarketListing,
         updateItemByHash,
-        getCurrencyTab,
         deleteConversation,
         getConversations,
         getMessages,
@@ -543,7 +562,7 @@ export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = 
         if (payload.ok) {
           pending.resolve(payload.result);
         } else {
-          pending.reject(new Error(payload.error || 'PD2 RPC request failed'));
+          pending.reject(rebuildRpcError(payload));
         }
       });
 
@@ -605,7 +624,6 @@ export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = 
       });
       return false;
     },
-    getCurrencyTab: () => rpcCall('getCurrencyTab'),
     deleteConversation: (conversationId) => rpcCall('deleteConversation', conversationId),
     getConversations: (participantId) => rpcCall('getConversations', participantId),
     getMessages: (conversationId) => rpcCall('getMessages', conversationId),

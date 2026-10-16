@@ -77,6 +77,8 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
       }
     };
 
+    let cancelled = false;
+
     const setup = async () => {
       try {
         // OP REQ: Always initialize assuming D2 is focused
@@ -100,7 +102,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         });
 
         // 2. Listen for changes
-        unlistenRef.current = await listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+        const unlisten = await listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
           scheduleOperation(async () => {
             if (lastFocusState.current === isFocused) return;
             lastFocusState.current = isFocused;
@@ -109,6 +111,15 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
             else await unregisterAllShortcuts();
           });
         });
+        // Effect was cleaned up while listen() was pending: release the listener now instead of
+        // storing it, so a later cleanup can never call an already-released Tauri listener.
+        if (cancelled) {
+          Promise.resolve()
+            .then(unlisten)
+            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
+        } else {
+          unlistenRef.current = unlisten;
+        }
       } catch (error) {
         console.error('Failed to setup shortcut listener:', error);
       }
@@ -117,8 +128,14 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
     setup();
 
     return () => {
-      if (unlistenRef.current) {
-        unlistenRef.current();
+      cancelled = true;
+      const unlisten = unlistenRef.current;
+      unlistenRef.current = null;
+      if (unlisten) {
+        // Tauri's unlisten is async; a failure is a rejection, not a sync throw
+        Promise.resolve()
+          .then(unlisten)
+          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
       }
       // Cleanup: Unregister
       scheduleOperation(async () => {
@@ -135,6 +152,7 @@ export const useAppShortcuts = (
   onChat?: ShortcutHandler,
   onOffers?: ShortcutHandler,
   onDelist?: ShortcutHandler,
+  onNetWorthSnapshot?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -201,6 +219,14 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeySnapshot && onNetWorthSnapshot) {
+      configs.push({
+        modifier: settings.hotkeyModifierSnapshot ?? 'ctrl',
+        key: settings.hotkeyKeySnapshot,
+        handler: onNetWorthSnapshot,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -216,12 +242,15 @@ export const useAppShortcuts = (
     settings.hotkeyKeyOffers,
     settings.hotkeyModifierDelist,
     settings.hotkeyKeyDelist,
+    settings.hotkeyModifierSnapshot,
+    settings.hotkeyKeySnapshot,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
     onChat,
     onOffers,
     onDelist,
+    onNetWorthSnapshot,
   ]);
 
   useShortcuts(shortcuts);

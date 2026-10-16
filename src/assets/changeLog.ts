@@ -1,4 +1,21 @@
 export const changeLog = {
+  '0.10.0': [
+    '🆕 Stash Value (Ctrl+X) redesigned as Net Worth: real tabs for Overview, Runes, Currency, Uber Mats, Gems & Mats, Uniques & Sets and History',
+    '🆕 Valuation now comes from pd2trader.com and covers all 33 runes, essences, uber mats, gems, mats, uniques and sets — with % of total, 7-day price change and a price-confidence badge per row',
+    '🆕 Overview shows category shares, top 10 holdings, value per stash tab, unpriced items, low-confidence value and gold',
+    '🆕 Optional net worth history (you are asked once): chart by 24h / 7d / season / all, stacked by category, sessions with farmed HR/hour, and an item diff between any two snapshots',
+    '🆕 Auto-snapshot on start-up and every 15 minutes while Diablo is focused (configurable); delete your history at any time',
+    '🆕 Net Worth ticker over the game: total HR, change this session and HR/hour with a freshness dot — position (top-left / top-center / top-right / above chat button) and opacity in Settings → Net Worth',
+    '🆕 Click the ticker for a mini panel: session chart, last 5 snapshot changes, Snapshot now, Start/Stop session and Open full view',
+    '🆕 Snapshot toast when your net worth changes by at least 0.5 HR (configurable), e.g. "+1.2 HR · Ber, 2× Ist" — new "Net Worth" toast type in Chat settings',
+    '🆕 Optional net worth snapshot hotkey (unbound by default) in Settings → Hotkeys',
+    '🔧 Rune Exchange popover now loads only rune prices',
+    '🔧 Expired PD2 sessions now refresh silently (or prompt sign-in) instead of failing quietly',
+    '🔧 Fixed duplicate event listeners and hotkey re-registration races that could cause double actions',
+    '🔧 Fixed "window not found" and account-mismatch errors being reported repeatedly',
+    '🔧 Update installs and hotkey conflicts are now reported correctly',
+    '🔧 Reduced background error noise from network and socket hiccups',
+  ],
   '0.9.14': ['🔧 Disabled the browser right-click menu on overlay windows'],
   '0.9.13': [
     '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',

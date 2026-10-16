@@ -31,6 +31,8 @@ import { GenericToastPayload } from '@/common/types/Events';
 import { ItemsProvider } from '@/hooks/useItems';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import DelistHandler from '@/pages/delist/DelistHandler';
+import NetWorthOverlayHost from '@/pages/net-worth/NetWorthOverlayHost';
+import { NetWorthProvider, NETWORTH_OPEN_EVENT, requestNetWorthSnapshot, type NetWorthTab } from '@/hooks/useNetWorth';
 
 const LandingPage: React.FC = () => {
   const winRef = useRef<BrowserWindow | null>(null);
@@ -164,21 +166,23 @@ const LandingPage: React.FC = () => {
     }
   }, [checkDiabloFocus, read, copy, keyPress, settings]);
 
-  // Open currency valuation window
-  const openCurrencyValuation = useCallback(async () => {
-    if (!(await checkDiabloFocus())) return;
-
+  // Open (or focus) the Stash Value window; `tab` deep-links a fresh window, an open one switches via NETWORTH_OPEN_EVENT
+  const showCurrencyWindow = useCallback(async (tab?: NetWorthTab) => {
     if (!currencyWindowRef.current) {
-      currencyWindowRef.current = await openCenteredWindow(WindowLabels.Currency, '/currency', {
-        title: WindowTitles.Currency,
-        decorations: false,
-        focus: true,
-        shadow: false,
-        skipTaskbar: true,
-        width: 665,
-        height: 870,
-        alwaysOnTop: true,
-      });
+      currencyWindowRef.current = await openCenteredWindow(
+        WindowLabels.Currency,
+        tab ? `/currency?tab=${tab}` : '/currency',
+        {
+          title: WindowTitles.Currency,
+          decorations: false,
+          focus: true,
+          shadow: false,
+          skipTaskbar: true,
+          width: 760,
+          height: 870,
+          alwaysOnTop: true,
+        },
+      );
 
       if (currencyWindowRef.current) {
         currencyWindowRef.current.onCloseRequested(async () => {
@@ -192,11 +196,25 @@ const LandingPage: React.FC = () => {
       } catch (err) {
         console.error('[LandingPage] Failed to focus existing currency window:', err);
         currencyWindowRef.current = null;
-        // Retry open? No, let user click again or recursive call?
-        // Simple retry logic could be added but usually nulling ref is enough for next click
       }
     }
-  }, [checkDiabloFocus]);
+  }, []);
+
+  // Open currency valuation window (hotkey)
+  const openCurrencyValuation = useCallback(async () => {
+    if (!(await checkDiabloFocus())) return;
+    await showCurrencyWindow();
+  }, [checkDiabloFocus, showCurrencyWindow]);
+
+  // Net worth surfaces (ticker, panel, toasts) ask for the Stash Value window via an app event
+  useEffect(() => {
+    const unlisten = listen<{ tab?: NetWorthTab }>(NETWORTH_OPEN_EVENT, ({ payload }) => {
+      showCurrencyWindow(payload?.tab);
+    });
+    return () => {
+      unlisten.then((off) => off());
+    };
+  }, [showCurrencyWindow]);
 
   // Open quick list window
   const openQuickListWindow = useCallback(
@@ -281,69 +299,77 @@ const LandingPage: React.FC = () => {
     let unlisten: (() => void) | null = null;
 
     const setupListener = async () => {
-      unlisten = await listen<void>('open-quick-list-manage', async () => {
-        if (!(await checkDiabloFocus())) return;
+      unlisten = await listen<void>('open-quick-list-manage', () => {
+        openQuickListManage().catch((e) => console.warn('[LandingPage] open-quick-list-manage failed:', e));
+      });
+    };
 
-        const label = WindowLabels.QuickList;
+    const openQuickListManage = async () => {
+      if (!(await checkDiabloFocus())) return;
 
-        // 1. Check existing ref
-        if (quickListWinRef.current) {
-          try {
-            await quickListWinRef.current.show();
-            await quickListWinRef.current.setFocus();
-            return;
-          } catch {
-            quickListWinRef.current = null;
-          }
-        }
+      const label = WindowLabels.QuickList;
 
-        // 2. Check by label
-        const existing = await WebviewWindow.getByLabel(label);
-        if (existing) {
-          console.log('[LandingPage] Found existing QuickList by label, attaching.');
-          try {
-            // Try to interact with it to verify it's alive
-            await existing.show();
-            await existing.setFocus();
-
-            quickListWinRef.current = existing;
-            // Attach close listener
-            existing.onCloseRequested(async () => {
-              quickListWinRef.current = null;
-            });
-            return;
-          } catch (e) {
-            console.warn('Found zombie window by label, ignoring:', e);
-            // Do NOT return here, fall through to create new
-          }
-        }
-
-        // 3. Create new
-        console.log('[LandingPage] Creating new QuickList window (Manage Mode).');
-        quickListWinRef.current = await openWindowCenteredOnDiablo(label, '/quick-list', {
-          title: WindowTitles.QuickList,
-          decorations: false,
-          transparent: true,
-          focus: false,
-          shadow: false,
-          skipTaskbar: true,
-          focusable: true,
-          width: 600,
-          height: 512,
-          resizable: true,
-          alwaysOnTop: true,
-          visible: true, // Keep explicit visible
-        });
-
-        if (quickListWinRef.current) {
-          // Explicitly show to be safe
+      // 1. Check existing ref
+      if (quickListWinRef.current) {
+        try {
           await quickListWinRef.current.show();
+          await quickListWinRef.current.setFocus();
+          return;
+        } catch {
+          quickListWinRef.current = null;
+        }
+      }
 
-          quickListWinRef.current.onCloseRequested(async () => {
+      // 2. Check by label
+      const existing = await WebviewWindow.getByLabel(label);
+      if (existing) {
+        console.log('[LandingPage] Found existing QuickList by label, attaching.');
+        try {
+          // Try to interact with it to verify it's alive
+          await existing.show();
+          await existing.setFocus();
+
+          quickListWinRef.current = existing;
+          // Attach close listener
+          existing.onCloseRequested(async () => {
             quickListWinRef.current = null;
           });
+          return;
+        } catch (e) {
+          console.warn('Found zombie window by label, ignoring:', e);
+          // Do NOT return here, fall through to create new
         }
+      }
+
+      // 3. Create new
+      console.log('[LandingPage] Creating new QuickList window (Manage Mode).');
+      quickListWinRef.current = await openWindowCenteredOnDiablo(label, '/quick-list', {
+        title: WindowTitles.QuickList,
+        decorations: false,
+        transparent: true,
+        focus: false,
+        shadow: false,
+        skipTaskbar: true,
+        focusable: true,
+        width: 600,
+        height: 512,
+        resizable: true,
+        alwaysOnTop: true,
+        visible: true, // Keep explicit visible
       });
+
+      if (quickListWinRef.current) {
+        quickListWinRef.current.onCloseRequested(async () => {
+          quickListWinRef.current = null;
+        });
+        // Explicitly show to be safe; the user may close it before this resolves
+        try {
+          await quickListWinRef.current.show();
+        } catch (e) {
+          console.warn('[LandingPage] QuickList window vanished before show:', e);
+          quickListWinRef.current = null;
+        }
+      }
     };
     setupListener();
     return () => {
@@ -393,6 +419,9 @@ const LandingPage: React.FC = () => {
     },
     async () => {
       await handleDelistItem();
+    },
+    async () => {
+      await requestNetWorthSnapshot('manual');
     },
   );
 
@@ -606,7 +635,9 @@ const LandingPage: React.FC = () => {
             }
           }
         } catch (error) {
-          console.error('Error toggling chat window:', error);
+          // Window closed out from under us ("window not found"); drop the handle so the next toggle recreates it
+          console.warn('[LandingPage] Chat window handle stale, clearing:', error);
+          chatWindowRef.current = null;
         }
       };
 
@@ -1011,8 +1042,11 @@ const LandingPage: React.FC = () => {
   return (
     <ItemsProvider>
       <Pd2WebsiteProvider>
-        <DelistHandler />
-        <div />
+        <NetWorthProvider>
+          <DelistHandler />
+          <NetWorthOverlayHost />
+          <div />
+        </NetWorthProvider>
       </Pd2WebsiteProvider>
     </ItemsProvider>
   );

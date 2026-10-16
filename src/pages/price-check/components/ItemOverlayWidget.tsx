@@ -718,7 +718,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         decorations: false,
         focus: true,
         shadow: false,
-        width: 640,
+        width: 760,
         height: 870,
         alwaysOnTop: true,
         skipTaskbar: true,

@@ -1,18 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-  fetchEconomyData,
-  sortItemsByPrice,
-  calculateRuneValues,
-  getRuneBreakdown,
-  calculateEconomyValues,
-} from '../lib/economyService';
+import { fetchEconomyData, sortItemsByPrice, calculateRuneValues, getRuneBreakdown } from '../lib/economyService';
 import { EconomyData } from '../lib/types';
 import { useOptions } from '@/hooks/useOptions';
 import { getSeasonDateConfig } from '@/lib/seasons';
 
 export function useEconomyData() {
   const { settings } = useOptions();
-  const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {}, Currency: {}, Ubers: {} });
+  const [economyData, setEconomyData] = useState<EconomyData>({ Runes: {} });
   const [loading, setLoading] = useState(false);
   const [selectedRuneBreakdown, setSelectedRuneBreakdown] = useState<string | null>(null);
 
@@ -50,15 +44,10 @@ export function useEconomyData() {
     return getRuneBreakdown(selectedRuneBreakdown, calculatedRuneValues);
   }, [selectedRuneBreakdown, calculatedRuneValues]);
 
-  const calculatedEconomyValues = useMemo(() => {
-    return calculateEconomyValues(economyData);
-  }, [economyData]);
-
   return {
     economyData,
     loading,
     calculatedRuneValues,
-    calculatedEconomyValues,
     selectedRuneBreakdown,
     selectedRuneCombinations,
     setSelectedRuneBreakdown,

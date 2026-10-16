@@ -19,6 +19,8 @@ import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
 import ChatPage from './pages/chat/ChatPage';
 import SignInPage from './pages/sign-in/SignInPage';
 import { DelistPage } from './pages/delist/DelistPage';
+import NetWorthTickerPage from './pages/net-worth/NetWorthTickerPage';
+import NetWorthPanelPage from './pages/net-worth/NetWorthPanelPage';
 
 // Initialize debug logging if enabled in settings
 initDebugLoggingFromSettings();
@@ -54,8 +56,15 @@ setTimeout(() => {
       if (hint.originalException instanceof AccountMismatchError) {
         return null;
       }
+      const firstException = event.exception?.values?.[0];
       // Also check by error name in case the instance check doesn't work
-      if (event.exception?.values?.[0]?.type === 'AccountMismatchError') {
+      if (firstException?.type === 'AccountMismatchError' || firstException?.type === 'AuthenticationError') {
+        return null;
+      }
+      // captureConsoleIntegration reports console.error(msg) as a message event with no exception;
+      // catch account-mismatch text there too so each username doesn't become its own issue.
+      const text = event.message ?? firstException?.value ?? '';
+      if (text.includes('is not associated with your logged-in account')) {
         return null;
       }
       return event;
@@ -117,6 +126,12 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route path={'/delist'}
         element={<DelistPage />} />
+
+      <Route path={'/net-worth-ticker'}
+        element={<NetWorthTickerPage />} />
+
+      <Route path={'/net-worth-panel'}
+        element={<NetWorthPanelPage />} />
     </Routes>
   </BrowserRouter>,
 );

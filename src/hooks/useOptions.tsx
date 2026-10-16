@@ -51,6 +51,14 @@ export interface ISettings {
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
   toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
   debugLoggingEnabled?: boolean;
+  netWorthTrackingEnabled?: boolean; // undefined = not yet asked; prompt once before storing history
+  netWorthTickerEnabled?: boolean;
+  netWorthTickerAnchor?: 'top-left' | 'top-center' | 'top-right' | 'above-chat';
+  netWorthTickerOpacity?: number; // 0-100
+  netWorthAutoSnapshotMinutes?: number; // 0 = off, otherwise >= 5
+  netWorthToastThresholdHr?: number;
+  hotkeyModifierSnapshot?: 'ctrl' | 'alt';
+  hotkeyKeySnapshot?: string; // '' = unbound
 }
 
 interface OptionsContextProps {
@@ -89,11 +97,18 @@ const DEFAULT_SETTINGS: ISettings = {
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
   toastPopupsEnabled: true,
-  toastPopupTypes: ['whispers', 'trade', 'joins', 'offers'],
+  toastPopupTypes: ['whispers', 'trade', 'joins', 'offers', 'networth'],
   chatButtonOverlayEnabled: true,
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
+  netWorthTickerEnabled: true,
+  netWorthTickerAnchor: 'top-center',
+  netWorthTickerOpacity: 90,
+  netWorthAutoSnapshotMinutes: 15,
+  netWorthToastThresholdHr: 0.5,
+  hotkeyModifierSnapshot: 'ctrl',
+  hotkeyKeySnapshot: '',
 };
 
 const SETTINGS_FILENAME = 'settings.json';

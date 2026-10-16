@@ -3,8 +3,8 @@
 layout: home
 
 hero:
-  name: "PD2 Trader"
-  text: "A powerful tool for Project Diablo 2 players: price check, quick list, and more!"
+  name: 'PD2 Trader'
+  text: 'A powerful tool for Project Diablo 2 players: price check, quick list, and more!'
   tagline: Effortlessly check item prices, manage your trades, and optimize your PD2 experience.
   image:
     src: https://i.imgur.com/tGkknQX.png
@@ -39,7 +39,6 @@ features:
   - title: Rune Exchange
     details: Easily compare and trade runes with up-to-date exchange rates.
     image: https://i.imgur.com/YvGC9Du.png
-
 ---
 
 <script setup>
@@ -66,36 +65,43 @@ const { theme } = useData()
   </a>
 </div>
 
-
 ### 🚀 Main Features
+
 #### Item Price Check
+
 Instantly check the value of your items in-game with a single hotkey.
 <a href="https://i.imgur.com/8vSvw6F.png" target="_blank" rel="noopener noreferrer">
-  <img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
 
 #### Quick List
+
 List your items for trade quickly and efficiently.
 <a href="https://i.imgur.com/jN3Tc4O.jpeg" target="_blank" rel="noopener noreferrer">
-  <img src="https://i.imgur.com/jN3Tc4O.jpeg" alt="Quick List" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/jN3Tc4O.jpeg" alt="Quick List" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
 
 #### Manage Listings
+
 Easily manage, update, and view all your items currently listed on the PD2 marketplace from a dedicated tab.
 <a href="https://i.imgur.com/VQ8gNuf.jpeg" target="_blank" rel="noopener noreferrer">
-  <img src="https://i.imgur.com/VQ8gNuf.jpeg" alt="Manage Listings" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/VQ8gNuf.jpeg" alt="Manage Listings" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
 
 #### Stash Value
+
 Instantly calculate the total value of your stash so you always know how much your runes are worth.
 <a href="https://i.imgur.com/wCqiZpj.png" target="_blank" rel="noopener noreferrer">
-  <img src="https://i.imgur.com/wCqiZpj.png" alt="Stash Value" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/wCqiZpj.png" alt="Stash Value" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
+
+#### Net Worth Overlay
+
+Track your stash value while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Configure it under Settings → Net Worth.
 
 #### Rune Exchange
+
 Easily compare and trade runes with up-to-date exchange rates.
 <a href="https://i.imgur.com/YvGC9Du.png" target="_blank" rel="noopener noreferrer">
-  <img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
-
-
