@@ -1,20 +1,15 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Stat } from '@/pages/price-check/lib/interfaces';
-import { Input } from '@/components/ui/input';
 import { statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { fuzzyMatchCharacterSkill, skillNameToIdMap } from '@/assets/character-skills';
-import {
-  classSkillNameToIdMap,
-  classSubSkillNameToIdMap,
-  fuzzyClassSkillByName,
-  fuzzyClassSubSkillByName,
-} from '@/assets/class-skills';
+import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
+import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info } from 'lucide-react';
+import { DUR, EASE_OUT } from '@/lib/motion';
 
 interface StatRowProps {
   stat: Stat;
@@ -24,10 +19,17 @@ interface StatRowProps {
   selected: Set<string>;
   toggle: (stat: Stat) => void;
   corruptedState?: number; // 0 = both, 1 = corrupted only, 2 = non-corrupted only
+  /** Called when Enter is pressed inside the min/max inputs. */
+  onSubmit?: () => void;
 }
 
 const numberInputClass =
-  'w-20 bg-neutral-800 border border-neutral-700 rounded text-sm px-1 focus:outline-none focus:ring-1 focus:ring-blue-400';
+  'h-7 w-16 rounded-md border border-input bg-background/60 px-2 text-xs tabular-nums text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-(--dur-fast) placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/30';
+
+const CORRUPTED_STATE_HINT: Record<number, string> = {
+  1: 'only',
+  2: 'excluded',
+};
 
 export const StatRow: React.FC<StatRowProps> = ({
   stat,
@@ -37,6 +39,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   selected,
   toggle,
   corruptedState = 0,
+  onSubmit,
 }) => {
   const statKey = 'skill' in stat && stat.skill ? `skill:${stat.skill.toLowerCase()}` : `id:${stat.stat_id}`;
   const isSocket = stat.stat_id === StatId.Socket;
@@ -53,27 +56,67 @@ export const StatRow: React.FC<StatRowProps> = ({
   // For corrupted stat, determine checkbox state
   const corruptedChecked = isCorrupted && corruptedState === 1;
   const corruptedIndeterminate = isCorrupted && corruptedState === 2;
-  const corruptedUnchecked = isCorrupted && corruptedState === 0;
 
   // Check if corrupted stat is injected (not actually on the item)
-  const isInjectedCorrupted = isCorrupted && (stat as any)._injected === true;
+  const isInjectedCorrupted = isCorrupted && '_injected' in stat && stat._injected === true;
+
+  const isSelected = selected.has(statKey);
+  const isActive = isCorrupted ? corruptedState !== 0 : isSelected;
+  const showRangeInputs = !isCorrupted && !isEthereal && isSelected;
+  const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onSubmit) {
+      e.preventDefault();
+      onSubmit();
+    }
+  };
+
+  const valueParts = (showCorruptedValue: boolean) => (
+    <>
+      {showCorruptedValue && stat.value !== undefined && (
+        <>
+          <span className="text-muted-foreground">: </span>
+          <span className="font-semibold tabular-nums">{stat.value}</span>
+        </>
+      )}
+      {!isSocket && showCorruptedValue && stat.range && stat.value !== undefined && (
+        <span className="ml-1 text-xs tabular-nums text-muted-foreground">
+          ({stat.range.min}-{stat.range.max})
+        </span>
+      )}
+    </>
+  );
 
   return (
-    <div className="border-b border-neutral-800 pb-2">
-      <label key={statKey}
-        className={cn(`flex flex-row gap-1 ${nested ? 'pl-6' : ''} justify-between`)}>
-        <div className="flex items-center gap-2 cursor-pointer select-none">
+    <div
+      data-active={isActive || undefined}
+      className={cn(
+        'rounded-md transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
+        isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
+      )}
+    >
+      <label
+        key={statKey}
+        className={cn(
+          'flex min-h-8 flex-row items-center justify-between gap-2 px-2 py-1',
+          nested && 'pl-8',
+          isUnknown && 'cursor-not-allowed',
+        )}
+      >
+        <div className="flex min-w-0 cursor-pointer select-none items-center gap-2.5">
           {isCorrupted ? (
             <div
               className={cn(
-                'peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center cursor-pointer',
-                corruptedChecked && 'bg-primary text-primary-foreground border-primary',
-                corruptedIndeterminate && 'bg-destructive text-destructive-foreground border-destructive',
-                !corruptedChecked && !corruptedIndeterminate && 'dark:bg-input/30',
+                'peer flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-[background-color,border-color,box-shadow] duration-(--dur-fast) focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60',
+                corruptedChecked && 'border-primary bg-primary text-primary-foreground',
+                corruptedIndeterminate && 'border-destructive bg-destructive text-destructive-foreground',
+                !corruptedChecked && !corruptedIndeterminate && 'hover:border-ring/60 dark:bg-input/30',
               )}
               onClick={() => toggle(stat)}
               role="checkbox"
               aria-checked={corruptedChecked ? 'true' : corruptedIndeterminate ? 'mixed' : 'false'}
+              aria-label="Corrupted filter"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -82,88 +125,117 @@ export const StatRow: React.FC<StatRowProps> = ({
                 }
               }}
             >
-              {corruptedChecked && <Check className="size-3.5" />}
-              {corruptedIndeterminate && <X className="size-3.5" />}
+              {corruptedChecked && <Check className="size-3.5 motion-safe:animate-in motion-safe:zoom-in-50" />}
+              {corruptedIndeterminate && <X className="size-3.5 motion-safe:animate-in motion-safe:zoom-in-50" />}
             </div>
           ) : (
-            <Checkbox checked={selected.has(statKey)}
+            <Checkbox checked={isSelected}
               onCheckedChange={() => toggle(stat)}
               disabled={isUnknown} />
           )}
 
-          <div className={'flex flex-row items-center'}>
+          <div className="flex min-w-0 flex-row items-center">
             {isUnknown && (
-              <div className={'flex flex-row gap-2 items-center'}>
-                <span className={cn('flex-1 text-sm text-gray-500')}>
+              <div className="flex min-w-0 flex-row items-center gap-2">
+                <span className="min-w-0 flex-1 text-sm text-muted-foreground">
                   {stat.name}
-                  {stat.value !== undefined && `: ${stat.value}`}
-                  {!isSocket && stat.range && stat.value !== undefined && ` (${stat.range.min}-${stat.range.max})`}
+                  {valueParts(true)}
                 </span>
-                <Badge variant={'destructive'}>Unknown</Badge>
+                <Badge variant="destructive"
+                  className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
+                  Unknown
+                </Badge>
               </div>
             )}
 
             {!isUnknown && (
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <span
                   className={cn(
-                    'text-sm',
-                    { 'text-gray-500 line-through': isUnknown },
-                    { 'text-red-500': isCorrupted && !isInjectedCorrupted },
-                    { 'text-gray-400': isInjectedCorrupted },
-                    { 'text-gray-100': !isCorrupted && !isUnknown },
-                    { 'cursor-pointer': isCorrupted },
+                    'text-sm leading-snug transition-colors duration-(--dur-fast)',
+                    isCorrupted && !isInjectedCorrupted && 'text-q-corrupted',
+                    isInjectedCorrupted && 'text-muted-foreground',
+                    !isCorrupted && 'text-foreground',
+                    isCorrupted && 'cursor-pointer',
                   )}
                   onClick={isCorrupted ? () => toggle(stat) : undefined}
                 >
                   {stat.name}
-                  {!isCorrupted && stat.value !== undefined && `: ${stat.value}`}
-                  {!isSocket &&
-                    !isCorrupted &&
-                    stat.range &&
-                    stat.value !== undefined &&
-                    ` (${stat.range.min}-${stat.range.max})`}
+                  {valueParts(!isCorrupted)}
                 </span>
+                <AnimatePresence initial={false}>
+                  {corruptedHint && (
+                    <motion.span
+                      key={corruptedHint}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                      className={cn(
+                        'rounded-full border px-1.5 py-px text-[10px] font-medium uppercase leading-none tracking-wide',
+                        corruptedState === 1
+                          ? 'border-q-corrupted/40 text-q-corrupted'
+                          : 'border-border text-muted-foreground line-through decoration-q-corrupted/70',
+                      )}
+                    >
+                      {corruptedHint}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
                 {isInjectedCorrupted && (
                   <HoverPopover
                     content={
-                      <Card>
-                        <div className="text-xs p-2 max-w-xs">
-                          This item can be corrupted. Use this filter to search for corrupted or non-corrupted versions.
-                        </div>
-                      </Card>
+                      <div className="max-w-xs rounded-lg border border-border bg-popover p-2.5 text-xs leading-relaxed text-popover-foreground shadow-panel">
+                        This item can be corrupted. Use this filter to search for corrupted or non-corrupted versions.
+                      </div>
                     }
                   >
-                    <Info className="h-3.5 w-3.5 text-gray-500 hover:text-gray-400 cursor-help" />
+                    <Info className="size-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                   </HoverPopover>
                 )}
-                {stat.corrupted && <span className={'text-red-500'}>*</span>}
+                {stat.corrupted && (
+                  <span className="text-q-corrupted"
+                    title="Corrupted stat">
+                    *
+                  </span>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {!isCorrupted && !isEthereal && selected.has(statKey) && (
-          <div className="flex items-center gap-2 pl-8">
-            <>
+        <AnimatePresence initial={false}>
+          {showRangeInputs && (
+            <motion.div
+              key="range"
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              transition={{ duration: DUR.med, ease: EASE_OUT }}
+              className="flex shrink-0 items-center gap-1.5 pl-4"
+            >
               <input
                 type="number"
                 className={numberInputClass}
                 placeholder="min"
+                aria-label={`${stat.name} minimum`}
                 value={filters[statKey]?.min ?? ''}
                 onChange={(e) => updateFilter(statKey, 'min', e.target.value)}
+                onKeyDown={handleInputKeyDown}
               />
-              <span>-</span>
+              <span className="text-xs text-muted-foreground">–</span>
               <input
                 type="number"
                 className={numberInputClass}
                 placeholder="max"
+                aria-label={`${stat.name} maximum`}
                 value={filters[statKey]?.max ?? ''}
                 onChange={(e) => updateFilter(statKey, 'max', e.target.value)}
+                onKeyDown={handleInputKeyDown}
               />
-            </>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </label>
     </div>
   );
