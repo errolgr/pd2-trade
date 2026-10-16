@@ -12,7 +12,7 @@ import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { EASE_OUT, listItem, listStagger } from '@/lib/motion';
+import { EASE_OUT, listItem, listStagger, useReducedMotionSafe } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber } from '@/pages/currency/components/AnimatedNumber';
 import { deltaPillClass } from '@/pages/currency/lib/networth-format';
@@ -24,6 +24,7 @@ const SPARK_HEIGHT = 56;
 
 const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
   const gradientId = useId();
+  const reduce = useReducedMotionSafe();
   if (values.length < 2) {
     return (
       <div className="flex h-14 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
@@ -45,7 +46,7 @@ const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
   return (
     <motion.div
       className={cn('relative h-14 w-full', rising ? 'text-success' : 'text-destructive')}
-      initial={{ clipPath: 'inset(0 100% 0 0)' }}
+      initial={reduce ? false : { clipPath: 'inset(0 100% 0 0)' }}
       animate={{ clipPath: 'inset(0 0% 0 0)' }}
       transition={{ duration: 0.6, ease: EASE_OUT }}
     >
