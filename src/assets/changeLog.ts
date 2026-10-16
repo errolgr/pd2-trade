@@ -10,6 +10,11 @@ export const changeLog = {
     '🆕 Snapshot toast when your net worth changes by at least 0.5 HR (configurable), e.g. "+1.2 HR · Ber, 2× Ist" — new "Net Worth" toast type in Chat settings',
     '🆕 Optional net worth snapshot hotkey (unbound by default) in Settings → Hotkeys',
     '🔧 Rune Exchange popover now loads only rune prices',
+    '🔧 Expired PD2 sessions now refresh silently (or prompt sign-in) instead of failing quietly',
+    '🔧 Fixed duplicate event listeners and hotkey re-registration races that could cause double actions',
+    '🔧 Fixed "window not found" and account-mismatch errors being reported repeatedly',
+    '🔧 Update installs and hotkey conflicts are now reported correctly',
+    '🔧 Reduced background error noise from network and socket hiccups',
   ],
   '0.9.13': [
     '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',
