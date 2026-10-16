@@ -1,21 +1,33 @@
 import React, { useState } from 'react';
-
+import { motion } from 'framer-motion';
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  RowData,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EASE_OUT } from '@/lib/motion';
+import { cn } from '@/lib/utils';
+
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /** Right-align header and cells (numeric columns). */
+    align?: 'right';
+  }
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   initialSorting?: SortingState;
   emptyMessage?: string;
+  emptyIcon?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -23,6 +35,7 @@ export function DataTable<TData, TValue>({
   data,
   initialSorting = [],
   emptyMessage = 'No results.',
+  emptyIcon,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const table = useReactTable({
@@ -35,36 +48,62 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="rounded-md border">
+    <div className="overflow-hidden rounded-lg border border-border bg-card/40">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-muted/30">
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
+            <TableRow key={headerGroup.id}
+              className="hover:bg-transparent">
+              {headerGroup.headers.map((header) => {
+                const sorted = header.column.getIsSorted();
+                return (
+                  <TableHead
+                    key={header.id}
+                    aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
+                    className={cn('h-9 first:pl-3 last:pr-3', header.column.columnDef.meta?.align === 'right' && 'text-right')}
+                  >
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           ))}
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <motion.tr
+                key={row.id}
+                layout="position"
+                transition={{ duration: 0.22, ease: EASE_OUT }}
+                data-slot="table-row"
+                className="border-b border-border/60 transition-colors duration-(--dur-fast) hover:bg-muted/40"
+              >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}
-                    className="py-1.5">
+                  <TableCell
+                    key={cell.id}
+                    className={cn(
+                      'py-1.5 first:pl-3 last:pr-3',
+                      cell.column.columnDef.meta?.align === 'right' && 'text-right',
+                    )}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
-              </TableRow>
+              </motion.tr>
             ))
           ) : (
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableCell colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground">
-                {emptyMessage}
+                className="h-28 text-center text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  {emptyIcon && (
+                    <span className="flex size-9 items-center justify-center rounded-full bg-muted/60 [&_svg]:size-4">
+                      {emptyIcon}
+                    </span>
+                  )}
+                  <span className="text-sm">{emptyMessage}</span>
+                </div>
               </TableCell>
             </TableRow>
           )}

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { FolderSearch, Wand2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
+import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -88,69 +89,78 @@ export function GeneralForm() {
   }, [detectedDirectory]);
 
   if (isLoading || !settings) {
-    return null;
+    return <SettingsSkeleton rows={4} />;
   }
 
   return (
     <Form {...form}>
-      <ScrollArea className="pr-2">
-        <div className="flex flex-col gap-y-4 ">
+      <div className="flex flex-col gap-y-6">
+        <SettingsGroup title="Game">
           <FormField
             control={form.control}
             name="ladder"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ladder</FormLabel>
-                <FormControl>
+              <SettingsRow
+                label="Ladder"
+                control={
                   <Select value={field.value}
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Ladder" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Ladder" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       <SelectItem value="ladder">Ladder</SelectItem>
                       <SelectItem value="non-ladder">Non-Ladder</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="mode"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mode</FormLabel>
-                <FormControl>
+              <SettingsRow
+                label="Mode"
+                control={
                   <Select value={field.value}
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Mode" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Mode" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       <SelectItem value="softcore">Softcore</SelectItem>
                       <SelectItem value="hardcore">Hardcore</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
-          <FormItem>
-            <FormLabel>Season</FormLabel>
-            <FormControl>
+          <SettingsRow
+            label="Season"
+            description="Filter price data by season. Past seasons require historical data to be available."
+            control={
               <Select
                 value={settings.selectedSeasonId ?? 'current'}
                 onValueChange={(value) => updateSettings({ selectedSeasonId: value })}
               >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Season" />
-                </SelectTrigger>
+                <FormControl>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="Season" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   {getSeasonSettingOptions().map((option) => (
                     <SelectItem key={option.value}
@@ -160,28 +170,42 @@ export function GeneralForm() {
                   ))}
                 </SelectContent>
               </Select>
-            </FormControl>
-            <FormDescription>
-              Filter price data by season. Past seasons require historical data to be available.
-            </FormDescription>
-          </FormItem>
+            }
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Diablo II">
           <FormField
             control={form.control}
             name="diablo2Directory"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Diablo II Directory</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="C:\Diablo II"
-                      className="flex-1"
-                      value={field.value || ''}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
+              <SettingsRow
+                layout="stacked"
+                label="Diablo II Directory"
+                description={
+                  detectedDirectory && !field.value ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <FolderSearch className="size-3.5 text-success" />
+                      {`Detected: ${detectedDirectory}`}
+                    </span>
+                  ) : (
+                    'Path to your Diablo II installation directory. Leave empty to auto-detect.'
+                  )
+                }
+                control={
+                  <>
+                    <FormControl>
+                      <Input
+                        placeholder="C:\Diablo II"
+                        className="flex-1 font-mono text-[13px]"
+                        spellCheck={false}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
                     <Button
                       type="button"
                       variant="outline"
@@ -205,33 +229,33 @@ export function GeneralForm() {
                         }
                       }}
                     >
+                      <Wand2 />
                       Auto-Detect
                     </Button>
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  {detectedDirectory && !field.value
-                    ? `Detected: ${detectedDirectory}`
-                    : 'Path to your Diablo II installation directory. Leave empty to auto-detect.'}
-                </FormDescription>
+                  </>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
-          <FormItem>
-            <div className="flex flex-row items-center gap-2">
-              <FormLabel>Debug Logging</FormLabel>
+        </SettingsGroup>
+
+        <SettingsGroup title="Troubleshooting">
+          <SettingsRow
+            label="Debug Logging"
+            description="Write console output to a log file for troubleshooting."
+            control={
               <FormControl>
                 <Switch
                   checked={settings.debugLoggingEnabled ?? false}
                   onCheckedChange={(checked) => updateSettings({ debugLoggingEnabled: checked })}
                 />
               </FormControl>
-            </div>
-            <FormDescription>Write console output to a log file for troubleshooting.</FormDescription>
-          </FormItem>
-        </div>
-      </ScrollArea>
+            }
+          />
+        </SettingsGroup>
+      </div>
     </Form>
   );
 }

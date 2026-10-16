@@ -6,6 +6,7 @@ import merge from 'lodash.merge';
 import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
+import { applyTheme, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -59,6 +60,7 @@ export interface ISettings {
   netWorthToastThresholdHr?: number;
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
+  themeId?: string; // Color theme id from src/lib/themes.ts
 }
 
 interface OptionsContextProps {
@@ -109,6 +111,7 @@ const DEFAULT_SETTINGS: ISettings = {
   netWorthToastThresholdHr: 0.5,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
+  themeId: DEFAULT_THEME_ID,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -244,6 +247,14 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
   }, [isLoading, settings?.pd2Token, updateSettings]);
+
+  // ApplyTheme: apply the selected theme in this window once settings are loaded
+  // (before that, main.tsx already applied the cached theme). Other windows pick up
+  // changes through the 'settings-updated' event → fetchSettings above.
+  useEffect(() => {
+    if (isLoading) return;
+    applyTheme(getTheme(settings.themeId));
+  }, [isLoading, settings.themeId]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

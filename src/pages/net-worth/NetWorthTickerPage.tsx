@@ -7,7 +7,9 @@ import { ItemsProvider } from '@/hooks/useItems';
 import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ChildNetWorthProvider, useNetWorth } from '@/hooks/useNetWorth';
 import { emit, listen } from '@/lib/browser-events';
+import { MotionConfig } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
 import { formatHr, formatSignedHr, NETWORTH_TOGGLE_PANEL_EVENT } from './overlay';
 
 type TickerAnchor = NonNullable<ISettings['netWorthTickerAnchor']>;
@@ -89,44 +91,81 @@ const NetWorthTicker: React.FC = () => {
 
   const intervalMinutes = settings.netWorthAutoSnapshotMinutes || 15;
   const isFresh = lastSnapshotAt !== null && now - lastSnapshotAt < (intervalMinutes + 1) * 60_000;
-  const dotClass =
-    status === 'error' || status === 'signed-out' ? 'bg-red-500' : isFresh ? 'bg-emerald-500' : 'bg-amber-400';
-  const dotTitle =
-    status === 'error' || status === 'signed-out'
-      ? 'Snapshot failed'
-      : lastSnapshotAt
-        ? `Last snapshot ${new Date(lastSnapshotAt).toLocaleTimeString()}`
-        : 'No snapshot yet';
+  const failed = status === 'error' || status === 'signed-out';
+  const dotClass = failed
+    ? 'bg-destructive ring-destructive/25'
+    : isFresh
+      ? 'bg-success ring-success/25'
+      : 'bg-warning ring-warning/25';
+  const dotTitle = failed
+    ? 'Snapshot failed'
+    : lastSnapshotAt
+      ? `Last snapshot ${new Date(lastSnapshotAt).toLocaleTimeString()}`
+      : 'No snapshot yet';
 
+  const total = latest?.valuation.totalHr ?? null;
+  const flash = useChangeFlash(total);
   const sessionDelta = currentSession?.isOpen ? currentSession.endHr - currentSession.startHr : null;
 
   return (
-    <div className="inline-block">
-      <button
-        ref={pillRef}
-        type="button"
-        onClick={() => emit(NETWORTH_TOGGLE_PANEL_EVENT)}
-        style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
-        className="flex items-center gap-3 whitespace-nowrap rounded-full border border-neutral-700 bg-neutral-900/90 px-3 py-1 text-xs font-medium text-neutral-100 shadow-md hover:bg-neutral-800 cursor-pointer select-none"
-        title="Net worth — click for details"
-      >
-        <span className="text-sm font-semibold tabular-nums">
-          {latest ? formatHr(latest.valuation.totalHr) : status === 'loading' ? '…' : '—'} HR
-        </span>
-        {sessionDelta !== null && (
-          <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-            {sessionDelta >= 0 ? '▲' : '▼'} {formatSignedHr(sessionDelta)} session
+    <MotionConfig reducedMotion="user">
+      <div className="inline-block">
+        {/* No transforms/shadows here: the window is sized to this pill's box, so it must not grow on hover. */}
+        <button
+          ref={pillRef}
+          type="button"
+          onClick={() => emit(NETWORTH_TOGGLE_PANEL_EVENT)}
+          style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
+          className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
+          title="Net worth — click for details"
+        >
+          <span
+            className={cn(
+              'text-sm font-semibold tabular-nums transition-colors duration-(--dur-slow)',
+              flash === 'up' && 'text-success',
+              flash === 'down' && 'text-destructive',
+            )}
+          >
+            {total !== null ? (
+              <AnimatedNumber value={total}
+                format={formatHr} />
+            ) : status === 'loading' ? (
+              '…'
+            ) : (
+              '—'
+            )}{' '}
+            <span className="text-[11px] font-medium text-muted-foreground">HR</span>
           </span>
-        )}
-        {currentSession?.isOpen && (
-          <span className="tabular-nums text-neutral-300">{formatHr(currentSession.hrPerHour)} HR/h</span>
-        )}
-        <span
-          className={cn('h-2 w-2 rounded-full', dotClass, status === 'loading' && 'animate-pulse')}
-          title={dotTitle}
-        />
-      </button>
-    </div>
+          {sessionDelta !== null && (
+            <>
+              <span aria-hidden
+                className="h-3 w-px bg-border" />
+              <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-success' : 'text-destructive')}>
+                <span className="text-[10px]">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
+                <span className="font-normal opacity-80">session</span>
+              </span>
+            </>
+          )}
+          {currentSession?.isOpen && (
+            <>
+              <span aria-hidden
+                className="h-3 w-px bg-border" />
+              <span className="tabular-nums text-muted-foreground">
+                <span className="text-surface-foreground/90">{formatHr(currentSession.hrPerHour)}</span> HR/h
+              </span>
+            </>
+          )}
+          <span
+            className={cn(
+              'ml-0.5 size-2 shrink-0 rounded-full ring-[3px] transition-colors duration-(--dur-med)',
+              dotClass,
+              status === 'loading' && 'motion-safe:animate-pulse',
+            )}
+            title={dotTitle}
+          />
+        </button>
+      </div>
+    </MotionConfig>
   );
 };
 

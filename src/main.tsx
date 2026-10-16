@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
+import { initTheme } from '@/lib/themes';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import LandingPage, { Providers } from './pages/landing/LandingPage';
 import ItemPage from '@/pages/price-check/ItemPage';
@@ -21,6 +22,10 @@ import SignInPage from './pages/sign-in/SignInPage';
 import { DelistPage } from './pages/delist/DelistPage';
 import NetWorthTickerPage from './pages/net-worth/NetWorthTickerPage';
 import NetWorthPanelPage from './pages/net-worth/NetWorthPanelPage';
+import PrimitivesGallery from './pages/dev/PrimitivesGallery';
+
+// Apply the cached theme before the first render (no flash of the default theme)
+initTheme();
 
 // Initialize debug logging if enabled in settings
 initDebugLoggingFromSettings();
@@ -132,6 +137,16 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
       <Route path={'/net-worth-panel'}
         element={<NetWorthPanelPage />} />
+      {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
+      {process.env.NODE_ENV !== 'production' && (
+        <Route path="/dev/gallery"
+          element={
+            <OptionsProvider>
+              <PrimitivesGallery />
+            </OptionsProvider>
+          }
+        />
+      )}
     </Routes>
   </BrowserRouter>,
 );

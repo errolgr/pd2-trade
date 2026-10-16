@@ -47,10 +47,14 @@ const DelistPopup: React.FC = () => {
           <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
           <span className="text-sm font-medium">Select listing to remove</span>
         </div>
-        <X
-          className="w-4 h-4 cursor-pointer hover:opacity-70 transition-opacity text-muted-foreground"
+        <button
+          type="button"
+          aria-label="Close"
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
           onClick={() => hideView(VIEW_IDS.DELIST_POPUP)}
-        />
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
       <ScrollArea className="flex-1 min-h-0 p-2">
         <div className="space-y-1">
@@ -71,12 +75,16 @@ const DelistPopup: React.FC = () => {
               </div>
               <div className="flex items-center ml-2">
                 {deletingId === listing._id ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-destructive" />
                 ) : (
-                  <Trash2
-                    className="w-4 h-4 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
+                  <button
+                    type="button"
+                    aria-label="Remove listing"
+                    className="inline-flex size-7 items-center justify-center rounded-md text-destructive/80 outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
                     onClick={() => handleDelete(listing)}
-                  />
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             </div>

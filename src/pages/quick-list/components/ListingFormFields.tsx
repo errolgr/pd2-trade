@@ -3,13 +3,21 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, NotebookPen, Settings2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, Loader2, NotebookPen } from 'lucide-react';
+import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useOptions } from '@/hooks/useOptions';
 import { ShortcutFormData } from './types';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import MacroManagerSheet, { isValidMacro, applyMacroTemplate, getPlaceholders, NoteMacro } from './MacroManagerSheet';
+import MacroManagerSheet, {
+  isValidMacro,
+  applyMacroTemplate,
+  getPlaceholders,
+  NoteMacro,
+  MacroTemplate,
+} from './MacroManagerSheet';
 
 interface ListingFormFieldsProps {
   form: UseFormReturn<ShortcutFormData>;
@@ -62,8 +70,10 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   const hasPrice = !!price && (typeof price === 'number' ? price > 0 : Number(price) > 0);
   const isFormValid = hasNote || hasPrice;
 
+  const submitLabel = isAlreadyListed ? 'Update' : allowQueue && !selectedItem ? 'Queue Item' : 'Post';
+
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card/50 p-1.5 shadow-xs transition-colors duration-(--dur-fast) focus-within:border-ring/50">
       {/* Macros Sheet */}
       <Sheet
         open={sheetOpen}
@@ -73,59 +83,96 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
         }}
       >
         <SheetTrigger asChild>
-          <Button type="button"
+          <Button
+            type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
-            title="Note macros">
+            className="relative h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            title="Note macros"
+            aria-label="Note macros"
+          >
             <NotebookPen className="h-4 w-4" />
+            {macros.length > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card">
+                {macros.length}
+              </span>
+            )}
           </Button>
         </SheetTrigger>
-        <SheetContent side="left">
+        <SheetContent side="left"
+          className="gap-0">
           <SheetHeader>
-            <SheetTitle>Note Macros</SheetTitle>
+            <SheetTitle className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-md bg-primary/12 text-primary">
+                <NotebookPen className="size-4" />
+              </span>
+              Note Macros
+            </SheetTitle>
             <SheetDescription>Click a macro to fill the note field, or manage your macros below.</SheetDescription>
           </SheetHeader>
-          {pendingMacro ? (
-            <div className="flex flex-col gap-3 px-4">
-              <p className="text-sm text-muted-foreground">
-                Fill in the values for <span className="font-medium text-foreground">{pendingMacro.label}</span>:
-              </p>
-              <p className="text-xs text-muted-foreground border rounded-md px-2 py-1 bg-secondary">
-                {pendingMacro.text}
-              </p>
-              {pendingPlaceholders.map((name, i) => (
-                <Input
-                  key={name}
-                  placeholder={name}
-                  value={placeholderValues[name] || ''}
-                  onChange={(e) => setPlaceholderValues((prev) => ({ ...prev, [name]: e.target.value }))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      applyMacro(pendingMacro, placeholderValues);
-                    }
-                  }}
-                  autoFocus={i === 0}
-                />
-              ))}
-              <div className="flex gap-2">
-                <Button type="button"
-                  size="sm"
-                  onClick={() => applyMacro(pendingMacro, placeholderValues)}>
-                  Apply
-                </Button>
-                <Button type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPendingMacro(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <MacroManagerSheet onApply={handleMacroClick} />
-          )}
+          <AnimatePresence mode="wait"
+            initial={false}>
+            {pendingMacro ? (
+              <motion.div
+                key="fill"
+                variants={slideInRight}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="flex flex-col gap-3 px-4"
+              >
+                <p className="text-sm text-muted-foreground">
+                  Fill in the values for <span className="font-semibold text-foreground">{pendingMacro.label}</span>:
+                </p>
+                <div className="rounded-lg border border-border bg-secondary/60 px-3 py-2 text-xs text-secondary-foreground">
+                  <MacroTemplate text={pendingMacro.text} />
+                </div>
+                {pendingPlaceholders.map((name, i) => (
+                  <label key={name}
+                    className="flex flex-col gap-1">
+                    <span className="font-mono text-[11px] text-muted-foreground">{`{${name}}`}</span>
+                    <Input
+                      placeholder={name}
+                      value={placeholderValues[name] || ''}
+                      onChange={(e) => setPlaceholderValues((prev) => ({ ...prev, [name]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          applyMacro(pendingMacro, placeholderValues);
+                        }
+                      }}
+                      autoFocus={i === 0}
+                    />
+                  </label>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <Button type="button"
+                    size="sm"
+                    onClick={() => applyMacro(pendingMacro, placeholderValues)}>
+                    <Check className="size-4" />
+                    Apply
+                  </Button>
+                  <Button type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPendingMacro(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="list"
+                variants={fadeIn}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="flex min-h-0 flex-1 flex-col"
+              >
+                <MacroManagerSheet onApply={handleMacroClick} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </SheetContent>
       </Sheet>
 
@@ -155,12 +202,15 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           <FormItem className="m-0 p-0 min-w-0 w-20">
             <FormLabel className="sr-only">HR</FormLabel>
             <FormControl>
-              <Input type="number"
+              <Input
+                type="number"
                 min={0}
                 step={0.01}
                 placeholder="HR"
+                className="tabular-nums"
                 {...field}
-                value={field.value || ''} />
+                value={field.value || ''}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -168,25 +218,30 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
       />
 
       {/* Submit Button */}
-      {isAlreadyListed ? (
-        <Button
-          type="submit"
-          style={{ fontFamily: 'DiabloFont', fontWeight: 600 }}
-          disabled={submitLoading || !isFormValid}
-        >
-          {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
-          Update
-        </Button>
-      ) : (
-        <Button
-          type="submit"
-          disabled={(!selectedItem && !allowQueue) || submitLoading || !isFormValid}
-          style={{ fontFamily: 'DiabloFont', fontWeight: 600 }}
-        >
-          {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
-          {allowQueue && !selectedItem ? 'Queue Item' : 'Post'}
-        </Button>
-      )}
+      <Button
+        type="submit"
+        className="min-w-20"
+        style={{ fontFamily: 'DiabloFont', fontWeight: 600 }}
+        disabled={
+          isAlreadyListed
+            ? submitLoading || !isFormValid
+            : (!selectedItem && !allowQueue) || submitLoading || !isFormValid
+        }
+      >
+        {submitLoading ? <Loader2 className="animate-spin h-4 w-4 inline" /> : null}
+        <AnimatePresence mode="wait"
+          initial={false}>
+          <motion.span
+            key={submitLabel}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: DUR.fast, ease: EASE_OUT }}
+          >
+            {submitLabel}
+          </motion.span>
+        </AnimatePresence>
+      </Button>
     </div>
   );
 };

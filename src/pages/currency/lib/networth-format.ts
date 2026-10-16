@@ -11,15 +11,23 @@ export const CATEGORY_LABELS: Record<NetWorthCategory, string> = {
   other: 'Other',
 };
 
+/** Theme tokens (usable in CSS and SVG fill/stroke), so every theme gets matching category colours. */
 export const CATEGORY_COLORS: Record<NetWorthCategory, string> = {
   runes: 'var(--chart-1)',
   currency: 'var(--chart-2)',
   ubers: 'var(--chart-3)',
   gems: 'var(--chart-4)',
   mats: 'var(--chart-5)',
-  uniques: 'hsl(45 85% 55%)',
-  sets: 'hsl(120 50% 45%)',
-  other: 'hsl(220 9% 46%)',
+  uniques: 'var(--q-unique)',
+  sets: 'var(--q-set)',
+  other: 'var(--muted-foreground)',
+};
+
+/** D2 item-quality text colour for a holding name (uniques gold, sets green, runes orange). */
+export const CATEGORY_NAME_CLASS: Partial<Record<NetWorthCategory, string>> = {
+  uniques: 'text-q-unique',
+  sets: 'text-q-set',
+  runes: 'text-q-rune',
 };
 
 /** HR with sign, e.g. "+1.20 HR" / "−0.40 HR". */
@@ -41,5 +49,11 @@ export function formatDuration(minutes: number): string {
 
 export function deltaClass(value: number | null | undefined): string {
   if (!value) return 'text-muted-foreground';
-  return value > 0 ? 'text-emerald-400' : 'text-red-400';
+  return value > 0 ? 'text-success' : 'text-destructive';
+}
+
+/** Tinted pill classes for a signed change (gain / loss / flat). */
+export function deltaPillClass(value: number | null | undefined): string {
+  if (!value) return 'bg-muted/60 text-muted-foreground';
+  return value > 0 ? 'bg-success/12 text-success' : 'bg-destructive/12 text-destructive';
 }
