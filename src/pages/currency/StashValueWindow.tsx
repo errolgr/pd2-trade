@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
-import { AlertTriangle, GripVertical, History, LogIn, RefreshCw, X } from 'lucide-react';
+import { AnimatePresence, MotionConfig } from 'framer-motion';
+import { AlertTriangle, Clock, Coins, Gem, History, LogIn, PackageOpen, RefreshCw, Tag, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { WindowChrome } from '@/components/custom/window-chrome';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-events';
 import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
@@ -24,7 +25,9 @@ import { RunePricePopover } from '../price-check/components/RunePricePopover';
 import { HoldingsTable } from './components/HoldingsTable';
 import { OverviewTab } from './components/OverviewTab';
 import { HistoryTab } from './components/HistoryTab';
-import { deltaClass, formatSignedHr } from './lib/networth-format';
+import { AnimatedNumber } from './components/AnimatedNumber';
+import { Banner, EmptyState } from './components/StatePanel';
+import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
 
 type WindowTab = 'overview' | 'runes' | 'currency' | 'ubers' | 'gems-mats' | 'uniques-sets' | 'other' | 'history';
@@ -40,6 +43,8 @@ const HOLDING_TABS: { value: WindowTab; label: string; categories: NetWorthCateg
 
 /** Re-value on open/focus when the latest snapshot is older than this. */
 const STALE_ON_OPEN_MS = 2 * 60 * 1000;
+
+const TRIGGER_CLASS = 'px-2.5 text-xs';
 
 function initialTab(): WindowTab {
   return new URLSearchParams(window.location.search).get('tab') === 'history' ? 'history' : 'overview';
@@ -95,136 +100,168 @@ export function StashValueWindow() {
   const valuation = latest?.valuation ?? null;
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen w-full space-y-4 bg-background p-6">
-        <WindowTitle
-          owner={owner}
-          seasonLabel={netWorth.seasons.find((s) => s.id === (valuation?.seasonId ?? netWorth.currentSeasonId))?.label}
-        />
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider delayDuration={300}>
+        <div className="min-h-screen w-full bg-background text-foreground">
+          <WindowTitle
+            owner={owner}
+            seasonLabel={netWorth.seasons.find((s) => s.id === (valuation?.seasonId ?? netWorth.currentSeasonId))?.label}
+          />
 
-        {status === 'signed-out' ? (
-          <SignedOut hasToken={!!token} />
-        ) : (
-          <>
-            {(valuation || status !== 'error') && (
-              <Header
-                valuation={valuation}
-                sincePrevious={latest?.delta.sincePrevious ?? null}
-                seasonPoints={seasonPoints.data}
-                loading={status === 'loading'}
-                onRefresh={() => takeSnapshot('manual')}
-              />
-            )}
-
-            {needsConsent && <ConsentPrompt onAnswer={netWorth.setTrackingEnabled} />}
-
-            {status === 'error' && error && (
-              <div className="flex items-center justify-between gap-3 rounded-md border border-red-900 bg-red-950/40 px-3 py-2 text-sm">
-                <span className="flex items-center gap-2 text-red-300">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  {error}
-                </span>
-                <Button size="sm"
-                  variant="outline"
-                  onClick={() => takeSnapshot('manual')}>
-                  Retry
-                </Button>
-              </div>
-            )}
-
-            <Separator />
-
-            <Tabs value={tab}
-              onValueChange={(v) => setTab(v as WindowTab)}>
-              <TabsList className="w-full">
-                <TabsTrigger value="overview"
-                  className="text-xs">
-                  Overview
-                </TabsTrigger>
-                {HOLDING_TABS.map((t) => (
-                  <TabsTrigger key={t.value}
-                    value={t.value}
-                    className="text-xs">
-                    {t.label}
-                  </TabsTrigger>
-                ))}
-                <TabsTrigger value="history"
-                  className="text-xs">
-                  History
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview"
-                className="pt-2">
-                {valuation ? <OverviewTab valuation={valuation} /> : <TabSkeleton failed={status === 'error'} />}
-              </TabsContent>
-
-              {HOLDING_TABS.map((t) => (
-                <TabsContent key={t.value}
-                  value={t.value}
-                  className="pt-2">
-                  {valuation ? (
-                    <HoldingsTable
-                      lines={valuation.lines.filter((line) => t.categories.includes(line.category))}
-                      totalHr={valuation.totalHr}
-                      showTab={t.showTab}
-                      toolbar={t.value === 'runes' ? <RuneExchange /> : undefined}
-                    />
-                  ) : (
-                    <TabSkeleton failed={status === 'error'} />
-                  )}
-                </TabsContent>
-              ))}
-
-              <TabsContent value="history"
-                className="pt-2">
-                {!trackingEnabled ? (
-                  <TrackingDisabled onEnable={() => netWorth.setTrackingEnabled(true)} />
-                ) : token && owner ? (
-                  <HistoryTab
-                    token={token}
-                    owner={owner}
-                    seasons={netWorth.seasons}
-                    currentSeasonId={netWorth.currentSeasonId}
+          <div className="space-y-4 px-6 pb-6 pt-4">
+            {status === 'signed-out' ? (
+              <SignedOut hasToken={!!token} />
+            ) : (
+              <>
+                {(valuation || status !== 'error') && (
+                  <Header
+                    valuation={valuation}
+                    sincePrevious={latest?.delta.sincePrevious ?? null}
                     seasonPoints={seasonPoints.data}
-                    refreshKey={latest?.valuation.takenAt ?? null}
-                    onHistoryChanged={seasonPoints.reload}
+                    loading={status === 'loading'}
+                    onRefresh={() => takeSnapshot('manual')}
                   />
-                ) : (
-                  <TabSkeleton failed={false} />
                 )}
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
-      </div>
-    </TooltipProvider>
+
+                <AnimatePresence initial={false}>
+                  {needsConsent && <ConsentPrompt key="consent"
+                    onAnswer={netWorth.setTrackingEnabled} />}
+
+                  {status === 'error' && error && (
+                    <Banner
+                      key="error"
+                      tone="destructive"
+                      role="alert"
+                      icon={<AlertTriangle />}
+                      actions={
+                        <Button size="sm"
+                          variant="outline"
+                          onClick={() => takeSnapshot('manual')}>
+                          <RefreshCw className="size-3.5" />
+                          Retry
+                        </Button>
+                      }
+                    >
+                      <span className="text-destructive">{error}</span>
+                    </Banner>
+                  )}
+                </AnimatePresence>
+
+                <Tabs value={tab}
+                  onValueChange={(v) => setTab(v as WindowTab)}
+                  className="gap-3">
+                  <TabsList className="h-10 w-full">
+                    <TabsTrigger value="overview"
+                      className={TRIGGER_CLASS}>
+                      Overview
+                    </TabsTrigger>
+                    {HOLDING_TABS.map((t) => (
+                      <TabsTrigger key={t.value}
+                        value={t.value}
+                        className={TRIGGER_CLASS}>
+                        {t.label}
+                      </TabsTrigger>
+                    ))}
+                    <TabsTrigger value="history"
+                      className={cn(TRIGGER_CLASS, 'gap-1')}>
+                      <History className="size-3.5" />
+                      History
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="overview"
+                    className="pt-1">
+                    {valuation ? <OverviewTab valuation={valuation} /> : <TabSkeleton failed={status === 'error'} />}
+                  </TabsContent>
+
+                  {HOLDING_TABS.map((t) => (
+                    <TabsContent key={t.value}
+                      value={t.value}
+                      className="pt-1">
+                      {valuation ? (
+                        <HoldingsTable
+                          lines={valuation.lines.filter((line) => t.categories.includes(line.category))}
+                          totalHr={valuation.totalHr}
+                          showTab={t.showTab}
+                          toolbar={t.value === 'runes' ? <RuneExchange /> : undefined}
+                        />
+                      ) : (
+                        <TabSkeleton failed={status === 'error'} />
+                      )}
+                    </TabsContent>
+                  ))}
+
+                  <TabsContent value="history"
+                    className="pt-1">
+                    {!trackingEnabled ? (
+                      <TrackingDisabled onEnable={() => netWorth.setTrackingEnabled(true)} />
+                    ) : token && owner ? (
+                      <HistoryTab
+                        token={token}
+                        owner={owner}
+                        seasons={netWorth.seasons}
+                        currentSeasonId={netWorth.currentSeasonId}
+                        seasonPoints={seasonPoints.data}
+                        refreshKey={latest?.valuation.takenAt ?? null}
+                        onHistoryChanged={seasonPoints.reload}
+                      />
+                    ) : (
+                      <TabSkeleton failed={false} />
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
+          </div>
+        </div>
+      </TooltipProvider>
+    </MotionConfig>
   );
 }
 
 function WindowTitle({ owner, seasonLabel }: { owner: NetWorthOwner | null; seasonLabel?: string }) {
   return (
-    <div className="flex items-start justify-between">
-      <div className="flex items-center gap-1">
-        <GripVertical
-          data-tauri-drag-region
-          className="h-5 w-5 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
-          id="titlebar-drag-handle"
-        />
-        <h2 className="text-xl font-bold">Stash Value</h2>
-        {owner && (
-          <span className="ml-2 text-xs text-muted-foreground">
-            {owner.account} · {owner.isLadder ? 'Ladder' : 'Non-ladder'} {owner.isHardcore ? 'HC' : 'SC'}
-            {seasonLabel ? ` · ${seasonLabel}` : ''}
+    <WindowChrome
+      className="sticky top-0 z-30 h-12 border-border/70 bg-background/85 px-4 backdrop-blur-md"
+      titleClassName="flex items-center gap-2.5 overflow-hidden text-base"
+      icon={<Gem className="text-q-unique" />}
+      onClose={() => getCurrentWebviewWindow().hide()}
+      title={
+        <>
+          <span data-tauri-drag-region
+            className="shrink-0">
+            Stash Value
           </span>
-        )}
-      </div>
-      <Button variant="ghost"
-        size="icon"
-        onClick={() => getCurrentWebviewWindow().hide()}>
-        <X className="h-4 w-4" />
-      </Button>
-    </div>
+          {owner && (
+            <span data-tauri-drag-region
+              className="flex min-w-0 items-center gap-1.5 text-xs font-normal">
+              <span data-tauri-drag-region
+                className="flex min-w-0 items-center gap-1 text-muted-foreground">
+                <UserRound className="size-3 shrink-0" />
+                <span data-tauri-drag-region
+                  className="truncate font-medium text-foreground/90">
+                  {owner.account}
+                </span>
+              </span>
+              <span
+                data-tauri-drag-region
+                className="shrink-0 rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground"
+              >
+                {owner.isLadder ? 'Ladder' : 'Non-ladder'} {owner.isHardcore ? 'HC' : 'SC'}
+              </span>
+              {seasonLabel && (
+                <span
+                  data-tauri-drag-region
+                  className="truncate rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground"
+                >
+                  {seasonLabel}
+                </span>
+              )}
+            </span>
+          )}
+        </>
+      }
+    />
   );
 }
 
@@ -256,39 +293,84 @@ function Header({
 
   if (!valuation) {
     return (
-      <div className="space-y-2">
-        <Skeleton className="h-9 w-48" />
+      <div className="space-y-3 rounded-xl border border-border bg-card/50 p-4"
+        aria-busy="true">
+        <Skeleton className="h-3 w-20" />
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-44" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
         <Skeleton className="h-4 w-72" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-1">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="text-3xl font-semibold tabular-nums">{valuation.totalHr.toFixed(2)} HR</span>
-        {deltas.map((d) => (
-          <span key={d.label}
-            className={cn('text-sm tabular-nums', deltaClass(d.value))}>
-            {d.value === null ? '—' : formatSignedHr(d.value)}{' '}
-            <span className="text-muted-foreground">({d.label})</span>
-          </span>
-        ))}
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card/50 p-4 shadow-sm">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-glow/10 blur-3xl"
+      />
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Net worth</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-4xl font-semibold leading-none tracking-tight">
+              <AnimatedNumber value={valuation.totalHr}
+                format={(v) => v.toFixed(2)} />{' '}
+              <span className="text-2xl font-medium text-muted-foreground">HR</span>
+            </span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              {deltas.map((d) => (
+                <span
+                  key={d.label}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
+                    deltaPillClass(d.value),
+                  )}
+                >
+                  {d.value === null ? '—' : formatSignedHr(d.value)}{' '}
+                  <span className="font-normal opacity-75">({d.label})</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        </div>
+        <Tooltip>
+          {/* Span trigger: Button has no forwardRef (React 18); also keeps the tooltip working while disabled */}
+          <TooltipTrigger asChild>
+            <span className="inline-flex shrink-0">
+              <Button size="sm"
+                variant="outline"
+                disabled={loading}
+                onClick={onRefresh}>
+                <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} /> {loading ? 'Refreshing' : 'Refresh'}
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>Re-value your stash now</TooltipContent>
+        </Tooltip>
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          as of {moment(valuation.takenAt).format('HH:mm')} · prices {valuation.priceDay} ·{' '}
+      <div className="relative mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <Clock className="size-3" />
+          as of {moment(valuation.takenAt).format('HH:mm')}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Tag className="size-3" />
+          prices {valuation.priceDay}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Coins className="size-3 text-q-gold" />
           {valuation.gold.toLocaleString()} gold
-          {valuation.priceSource === 'ladder-fallback' && (
-            <span className="ml-1 text-amber-300">· valued with ladder prices (no non-ladder market data)</span>
-          )}
-        </p>
-        <Button size="sm"
-          variant="outline"
-          disabled={loading}
-          onClick={onRefresh}>
-          <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} /> Refresh
-        </Button>
+        </span>
+        {valuation.priceSource === 'ladder-fallback' && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-warning/12 px-2 py-0.5 text-warning">
+            <AlertTriangle className="size-3" />
+            valued with ladder prices (no non-ladder market data)
+          </span>
+        )}
       </div>
     </div>
   );
@@ -296,70 +378,87 @@ function Header({
 
 function ConsentPrompt({ onAnswer }: { onAnswer: (enabled: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-sky-900 bg-sky-950/30 px-3 py-2 text-sm">
-      <span className="flex items-center gap-2">
-        <History className="h-4 w-4 shrink-0 text-sky-300" />
-        Track net worth over time? Snapshots are stored on pd2trader.com.
-      </span>
-      <span className="flex shrink-0 gap-2">
-        <Button size="sm"
-          variant="ghost"
-          onClick={() => onAnswer(false)}>
-          No thanks
-        </Button>
-        <Button size="sm"
-          onClick={() => onAnswer(true)}>
-          Track history
-        </Button>
-      </span>
-    </div>
+    <Banner
+      tone="info"
+      role="status"
+      icon={<History />}
+      actions={
+        <>
+          <Button size="sm"
+            variant="ghost"
+            onClick={() => onAnswer(false)}>
+            No thanks
+          </Button>
+          <Button size="sm"
+            onClick={() => onAnswer(true)}>
+            Track history
+          </Button>
+        </>
+      }
+    >
+      Track net worth over time? Snapshots are stored on pd2trader.com.
+    </Banner>
   );
 }
 
 function TrackingDisabled({ onEnable }: { onEnable: () => void }) {
   return (
-    <div className="space-y-3 rounded-md border p-6 text-center">
-      <History className="mx-auto h-8 w-8 text-muted-foreground" />
-      <p className="text-sm">History is off.</p>
-      <p className="mx-auto max-w-md text-xs text-muted-foreground">
-        Turn on tracking to store a snapshot of your stash value on pd2trader.com each time it is refreshed (on
-        start-up, every few minutes while Diablo is focused, and on demand). You get a chart, sessions with HR/hour, and
-        item diffs between any two snapshots. History is private to your PD2 login and can be deleted at any time.
-      </p>
-      <Button size="sm"
-        onClick={onEnable}>
-        Enable tracking
-      </Button>
-    </div>
+    <EmptyState
+      icon={<History />}
+      title="History is off."
+      description="Turn on tracking to store a snapshot of your stash value on pd2trader.com each time it is refreshed (on start-up, every few minutes while Diablo is focused, and on demand). You get a chart, sessions with HR/hour, and item diffs between any two snapshots. History is private to your PD2 login and can be deleted at any time."
+      action={
+        <Button size="sm"
+          onClick={onEnable}>
+          Enable tracking
+        </Button>
+      }
+    />
   );
 }
 
 function SignedOut({ hasToken }: { hasToken: boolean }) {
-  return (
-    <div className="space-y-3 rounded-md border p-8 text-center">
-      <LogIn className="mx-auto h-8 w-8 text-muted-foreground" />
-      {hasToken ? (
-        <p className="text-sm">Choose your PD2 account in Settings to value your stash.</p>
-      ) : (
-        <>
-          <p className="text-sm">Sign in with your PD2 account to value your stash.</p>
-          <Button size="sm"
-            onClick={() => emitAppEvent(SIGN_IN_DIALOG_EVENT)}>
-            Sign in
-          </Button>
-        </>
-      )}
-    </div>
+  return hasToken ? (
+    <EmptyState className="mt-6"
+      icon={<UserRound />}
+      title="Choose your PD2 account in Settings to value your stash." />
+  ) : (
+    <EmptyState
+      className="mt-6"
+      icon={<LogIn />}
+      title="Sign in with your PD2 account to value your stash."
+      action={
+        <Button size="sm"
+          onClick={() => emitAppEvent(SIGN_IN_DIALOG_EVENT)}>
+          <LogIn className="size-3.5" />
+          Sign in
+        </Button>
+      }
+    />
   );
 }
 
 function TabSkeleton({ failed }: { failed: boolean }) {
-  if (failed) return <p className="py-8 text-center text-sm text-muted-foreground">No valuation yet.</p>;
+  if (failed) {
+    return (
+      <EmptyState
+        compact
+        className="py-10"
+        icon={<PackageOpen />}
+        title="No valuation yet."
+        description="Your stash couldn't be valued. Use Retry above once PD2 is reachable."
+      />
+    );
+  }
   return (
-    <div className="space-y-2">
+    <div className="space-y-2"
+      aria-busy="true">
+      <Skeleton className="h-2.5 w-full rounded-full" />
+      <Skeleton className="mb-4 h-3 w-2/3" />
       {Array.from({ length: 6 }, (_, i) => (
         <Skeleton key={i}
-          className="h-8 w-full" />
+          className="h-9 w-full"
+          style={{ opacity: 1 - i * 0.12 }} />
       ))}
     </div>
   );
