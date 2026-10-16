@@ -1360,7 +1360,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             )}
 
             {/* Search actions */}
-            <div className="flex flex-none flex-wrap items-center gap-2 border-t border-border pt-3">
+            <div className="flex flex-none flex-wrap items-center gap-2 pt-2">
               <ButtonGroup>
                 <Button className="min-w-24 cursor-pointer"
                   onClick={handleSearch}>
