@@ -4,15 +4,17 @@ import imgPath from '../../../../assets/img.png';
 import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { isTauri } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { Loader2, RefreshCw, FileText } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
+import { fadeInUp, springSoft } from '@/lib/motion';
 import { openCenteredWindow } from '@/lib/window';
+import { SettingsSkeleton } from '../settings-ui';
 
 export function AboutForm() {
-  const { settings, isLoading, updateSettings } = useOptions();
+  const { settings, isLoading } = useOptions();
   const [version, setVersion] = React.useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [isChecking, setIsChecking] = useState(false);
@@ -25,7 +27,7 @@ export function AboutForm() {
 
   // Show a loading indicator until settings have loaded.
   if (isLoading || !settings) {
-    return null;
+    return <SettingsSkeleton rows={2} />;
   }
 
   const handleCheckForUpdates = async () => {
@@ -64,33 +66,96 @@ export function AboutForm() {
     }
   };
 
+  const openChangelog = async () => {
+    // Try to show existing hidden window first
+    if (isTauri()) {
+      const existing = await WebviewWindow.getByLabel('ChangeLog');
+      if (existing) {
+        await existing.show();
+        await existing.setFocus();
+        return;
+      }
+    }
+    openCenteredWindow('ChangeLog', '/change-log', {
+      decorations: false,
+      transparent: true,
+      focus: true,
+      shadow: false,
+      skipTaskbar: true,
+    });
+  };
+
   return (
-    <ScrollArea className="pr-2">
-      <div className={'flex flex-col gap-4 flex flex-col items-center '}>
-        <div className={'flex flex-col gap-1 items-center'}>
-          <img src={imgPath}
-            style={{ width: 50 }} />
-          <span style={{ fontFamily: 'DiabloFont', fontSize: '24px', fontWeight: 'bold' }}>PD2 Trader</span>
-          <span className={'text-md'}>Version: {version}</span>
+    <div className="flex flex-col gap-y-6">
+      <div className="relative flex flex-col items-center gap-3 overflow-hidden rounded-lg border border-border/70 bg-card/50 px-6 py-8 text-center shadow-xs">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-48 w-72 rounded-full bg-primary/15 blur-3xl"
+        />
+        <motion.img
+          src={imgPath}
+          alt="PD2 Trader logo"
+          width={56}
+          height={56}
+          className="relative drop-shadow-lg"
+          initial={{ opacity: 0, scale: 0.85, rotate: -8 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          transition={springSoft}
+        />
+        <div className="relative flex flex-col items-center gap-1.5">
+          <span className="text-2xl font-bold text-foreground"
+            style={{ fontFamily: 'DiabloFont' }}>
+            PD2 Trader
+          </span>
+          {version ? (
+            <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 font-mono text-xs text-muted-foreground">
+              Version: {version}
+            </span>
+          ) : (
+            <Skeleton className="h-5 w-28 rounded-full" />
+          )}
         </div>
+        <div className="relative mt-2 flex w-full max-w-xs flex-col gap-2">
+          {isTauri() && (
+            <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/50 p-4">
+              <AnimatePresence mode="wait"
+                initial={false}>
+                {updateInfo?.available ? (
+                  <motion.div key="available"
+                    variants={fadeInUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="flex flex-col gap-2">
+                    <div className="flex items-center justify-center gap-2 font-medium text-success">
+                      <ArrowUpCircle className="size-4" />
+                      Update Available (v{updateInfo.version})
+                    </div>
+                    <Button onClick={handleUpdateNow}
+                      className="w-full"
+                      variant="default">
+                      <Download />
+                      Update Now (v{updateInfo.version})
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div key="latest"
+                    variants={fadeInUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="flex items-center justify-center gap-2 font-medium text-foreground">
+                    <CheckCircle2 className="size-4 text-success" />
+                    You have the latest version
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-        {isTauri() && (
-          <Card className="p-4 border-2 border-dashed w-60">
-            <div className="flex flex-col gap-3">
-              {updateInfo?.available ? (
-                <div className="flex flex-col gap-2">
-                  <div className="text-center font-medium text-green-600">Update Available (v{updateInfo.version})</div>
-                  <Button onClick={handleUpdateNow}
-                    className="w-full"
-                    variant="default">
-                    Update Now (v{updateInfo.version})
-                  </Button>
+              {lastChecked && (
+                <div className="text-center text-xs text-muted-foreground">
+                  Last checked: {formatTimeAgo(lastChecked)}
                 </div>
-              ) : (
-                <div className="text-center font-medium">You have the latest version</div>
               )}
-
-              {lastChecked && <div className="text-center text-sm">Last checked: {formatTimeAgo(lastChecked)}</div>}
 
               <Button
                 onClick={handleCheckForUpdates}
@@ -101,62 +166,49 @@ export function AboutForm() {
               >
                 {isChecking ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Checking...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4" />
                     Check for Updates
                   </>
                 )}
               </Button>
             </div>
-          </Card>
-        )}
+          )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            // Try to show existing hidden window first
-            if (isTauri()) {
-              const existing = await WebviewWindow.getByLabel('ChangeLog');
-              if (existing) {
-                await existing.show();
-                await existing.setFocus();
-                return;
-              }
-            }
-            openCenteredWindow('ChangeLog', '/change-log', {
-              decorations: false,
-              transparent: true,
-              focus: true,
-              shadow: false,
-              skipTaskbar: true,
-            });
-          }}
-          className="w-60"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          View Changelog
-        </Button>
-
-        <table className={'border-collapse'}>
-          <thead>
-            <tr>
-              <th className={'text-md px-4 pb-2'}>Developer</th>
-              <th className={'text-md px-4 pb-2'}>Contributors</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className={'text-sm text-gray-400 px-4 text-center'}>@Doreet</td>
-              <td className={'text-sm text-gray-400 px-4 text-center'}>@pandamancer</td>
-            </tr>
-          </tbody>
-        </table>
+          <Button variant="outline"
+            size="sm"
+            onClick={openChangelog}
+            className="w-full">
+            <FileText className="h-4 w-4" />
+            View Changelog
+          </Button>
+        </div>
       </div>
-    </ScrollArea>
+
+      <div className="grid grid-cols-2 gap-3">
+        <CreditTile role="Developer"
+          names={['@Doreet']} />
+        <CreditTile role="Contributors"
+          names={['@pandamancer']} />
+      </div>
+    </div>
+  );
+}
+
+function CreditTile({ role, names }: { role: string; names: string[] }) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-lg border border-border/70 bg-card/50 px-4 py-3 text-center shadow-xs">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{role}</span>
+      {names.map((name) => (
+        <span key={name}
+          className="text-sm font-medium text-foreground">
+          {name}
+        </span>
+      ))}
+    </div>
   );
 }

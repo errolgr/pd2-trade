@@ -1,14 +1,14 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { ISettings, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 const AUTO_SNAPSHOT_OPTIONS = [
   { value: '0', label: 'Off' },
@@ -91,45 +91,46 @@ export function NetWorthForm() {
   }, [form, updateSettings]);
 
   if (isLoading || !settings) {
-    return null;
+    return <SettingsSkeleton rows={6} />;
   }
 
   return (
     <Form {...form}>
-      <ScrollArea className="pr-2">
-        <div className="flex flex-col gap-y-6">
+      <div className="flex flex-col gap-y-6">
+        <SettingsGroup title="History">
           <FormField
             control={form.control}
             name="netWorthTrackingEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Save net worth history</FormLabel>
+              <SettingsRow
+                label="Save net worth history"
+                description="Store snapshots of your stash value on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
+                control={
                   <FormControl>
                     <Switch checked={field.value === true}
                       onCheckedChange={field.onChange} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Store snapshots of your stash value on pd2trader.com so you can see history and sessions. When off,
-                  values are still calculated but nothing is saved.
-                </FormDescription>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="netWorthAutoSnapshotMinutes"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Automatic snapshots</FormLabel>
-                <FormControl>
+              <SettingsRow
+                label="Automatic snapshots"
+                description="Take a snapshot on this interval while Diablo II is focused."
+                control={
                   <Select value={String(field.value)}
                     onValueChange={(value) => field.onChange(Number(value))}>
-                    <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Interval" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Interval" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {AUTO_SNAPSHOT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
@@ -139,43 +140,47 @@ export function NetWorthForm() {
                       ))}
                     </SelectContent>
                   </Select>
-                </FormControl>
-                <FormDescription>Take a snapshot on this interval while Diablo II is focused.</FormDescription>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title="Ticker overlay">
           <FormField
             control={form.control}
             name="netWorthTickerEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Net worth ticker</FormLabel>
+              <SettingsRow
+                label="Net worth ticker"
+                description="Show your stash value, session change and HR per hour over the game. Click it for details."
+                control={
                   <FormControl>
                     <Switch checked={field.value}
                       onCheckedChange={field.onChange} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Show your stash value, session change and HR per hour over the game. Click it for details.
-                </FormDescription>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="netWorthTickerAnchor"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ticker position</FormLabel>
-                <FormControl>
+              <SettingsRow
+                label="Ticker position"
+                control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
-                    <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Position" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Position" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {ANCHOR_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
@@ -185,58 +190,90 @@ export function NetWorthForm() {
                       ))}
                     </SelectContent>
                   </Select>
-                </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="netWorthTickerOpacity"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ticker opacity: {field.value}%</FormLabel>
-                <FormControl>
-                  <Slider
-                    className="w-[220px]"
-                    min={30}
-                    max={100}
-                    step={5}
-                    value={[field.value]}
-                    onValueChange={(value) => field.onChange(value[0])}
-                  />
-                </FormControl>
+              <SettingsRow
+                label={
+                  <>
+                    Ticker opacity: <span className="tabular-nums">{field.value}%</span>
+                  </>
+                }
+                control={
+                  <div className="flex w-[220px] items-center gap-3">
+                    <FormControl>
+                      <Slider
+                        className="flex-1"
+                        min={30}
+                        max={100}
+                        step={5}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                    <span
+                      aria-hidden
+                      title="Preview"
+                      style={{ opacity: field.value / 100 }}
+                      className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
+                    >
+                      <span className="text-q-gold">HR</span>
+                    </span>
+                  </div>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title="Notifications">
           <FormField
             control={form.control}
             name="netWorthToastThresholdHr"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Snapshot toast threshold (HR)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.1}
-                    className="w-[120px]"
-                    value={Number.isFinite(field.value) ? field.value : ''}
-                    onChange={(e) => field.onChange(e.target.value === '' ? NaN : Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth toast
-                  type under Chat settings.
-                </FormDescription>
+              <SettingsRow
+                label="Snapshot toast threshold (HR)"
+                description={
+                  <>
+                    Show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth toast
+                    type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
+                  </>
+                }
+                control={
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        className="w-[120px] tabular-nums"
+                        value={Number.isFinite(field.value) ? field.value : ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? NaN : Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <span className="text-xs font-medium text-muted-foreground">HR</span>
+                  </div>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
-          <p className="text-sm text-muted-foreground">The snapshot hotkey is configured under Hotkeys.</p>
-        </div>
-      </ScrollArea>
+        </SettingsGroup>
+
+        <SettingsHint>
+          The snapshot hotkey is configured under <SettingsLink to="Hotkeys">Hotkeys</SettingsLink>.
+        </SettingsHint>
+      </div>
     </Form>
   );
 }

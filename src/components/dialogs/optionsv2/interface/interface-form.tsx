@@ -1,10 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 const interfaceFormSchema = z.object({
   chatButtonOverlayEnabled: z.boolean().optional(),
@@ -47,32 +48,31 @@ export function InterfaceForm() {
   }, [form, updateSettings]);
 
   if (isLoading || !settings) {
-    return null;
+    return <SettingsSkeleton rows={1} />;
   }
 
   return (
     <Form {...form}>
-      <div className="space-y-6">
+      <SettingsGroup title="Overlays">
         <FormField
           control={form.control}
           name="chatButtonOverlayEnabled"
           render={({ field }) => (
-            <FormItem>
-              <div className="flex flex-row items-center gap-2">
-                <FormLabel>Chat Button Overlay</FormLabel>
+            <SettingsRow
+              label="Chat Button Overlay"
+              description="Show the floating chat button overlay in the bottom-right corner of the screen."
+              control={
                 <FormControl>
                   <Switch checked={field.value ?? true}
                     onCheckedChange={field.onChange} />
                 </FormControl>
-              </div>
-              <FormDescription>
-                Show the floating chat button overlay in the bottom-right corner of the screen.
-              </FormDescription>
+              }
+            >
               <FormMessage />
-            </FormItem>
+            </SettingsRow>
           )}
         />
-      </div>
+      </SettingsGroup>
     </Form>
   );
 }
