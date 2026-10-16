@@ -90,9 +90,12 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    // py-0.5 on the wrapper leaves a gap between the highlight and the divider lines.
-    <div data-active={isActive || undefined}
-      className="py-0.5">
+    // py-0.5 leaves a gap between the highlight and the divider; the divider is inset by the highlight's
+    // corner radius (rounded-md = 6px) so its ends line up with the highlight's straight edges.
+    <div
+      data-active={isActive || undefined}
+      className="relative py-0.5 not-first:before:absolute not-first:before:inset-x-1.5 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border/70"
+    >
       <label
         key={statKey}
         className={cn(
