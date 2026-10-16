@@ -1905,7 +1905,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
           onMouseLeave={() => setOpen(false)}
         >
           {/* Price Column */}
-          <td className="flex flex-row items-center justify-between whitespace-nowrap rounded-l-md px-2 py-1.5">
+          <td className="flex flex-row items-center justify-between whitespace-nowrap rounded-l-md px-2 py-1">
             <div className="mr-2 flex-1 truncate">
               {listing.hr_price ? (
                 <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
@@ -1992,7 +1992,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
           </td>
 
           {/* Listed Column */}
-          <td className="whitespace-nowrap rounded-r-md px-2 py-1.5 text-right text-xs tabular-nums text-muted-foreground">
+          <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
             {listing.bumped_at ? moment(listing.bumped_at).fromNow(true) : '-'}
           </td>
         </tr>
