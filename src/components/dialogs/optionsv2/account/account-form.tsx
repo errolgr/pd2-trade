@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormField, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
-import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink, LogOut, LogIn, AlertCircle } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ExternalLink, LogOut, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { isTauri } from '@tauri-apps/api/core';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { fadeInUp } from '@/lib/motion';
+import { cn } from '@/lib/utils';
+import { SettingsGroup, SettingsRow } from '../settings-ui';
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -93,48 +95,82 @@ export function AccountForm() {
     }
   };
 
+  const username = authData?.user?.username;
+
   return (
     <Form {...form}>
-      <ScrollArea className="pr-2">
-        <div className="flex flex-col gap-y-4 ">
+      <div className="flex flex-col gap-y-6">
+        <AnimatePresence initial={false}>
           {accounts.length === 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>No accounts available</AlertTitle>
-              <AlertDescription>
-                If you don&apos;t have the right account selected, you may receive 404 errors when listing items. Please
-                authenticate to load your accounts.
-              </AlertDescription>
-            </Alert>
+            <motion.div key="no-accounts"
+              variants={fadeInUp}
+              initial="hidden"
+              animate="visible"
+              exit="exit">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No accounts available</AlertTitle>
+                <AlertDescription>
+                  If you don&apos;t have the right account selected, you may receive 404 errors when listing items.
+                  Please authenticate to load your accounts.
+                </AlertDescription>
+              </Alert>
+            </motion.div>
           )}
+        </AnimatePresence>
+
+        <SettingsGroup
+          title="PD2 account"
+          aside={
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 text-xs font-medium',
+                authData ? 'text-success' : 'text-muted-foreground',
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn('size-1.5 rounded-full', authData ? 'bg-success shadow-glow' : 'bg-muted-foreground/50')}
+              />
+              {authData ? (username ? `Signed in as ${username}` : 'Signed in') : 'Signed out'}
+            </span>
+          }
+        >
           {!isTauri() && (
             <FormField
               control={form.control}
               name="pd2Token"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PD2 Token</FormLabel>
-                  <FormControl>
-                    <Input type="password"
-                      placeholder="Enter your PD2 token"
-                      className="w-full"
-                      {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Get your token from{' '}
-                    <a
-                      href="https://projectdiablo2.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline inline-flex items-center gap-1"
-                    >
-                      projectdiablo2.com
-                      <ExternalLink className="w-3 h-3" />
-                    </a>{' '}
-                    after logging in. Check your browser&apos;s localStorage for &apos;pd2-token&apos;.
-                  </FormDescription>
+                <SettingsRow
+                  layout="stacked"
+                  label="PD2 Token"
+                  description={
+                    <>
+                      Get your token from{' '}
+                      <a
+                        href="https://projectdiablo2.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                      >
+                        projectdiablo2.com
+                        <ExternalLink className="w-3 h-3" />
+                      </a>{' '}
+                      after logging in. Check your browser&apos;s localStorage for &apos;pd2-token&apos;.
+                    </>
+                  }
+                  control={
+                    <FormControl>
+                      <Input type="password"
+                        placeholder="Enter your PD2 token"
+                        className="w-full"
+                        autoComplete="off"
+                        {...field} />
+                    </FormControl>
+                  }
+                >
                   <FormMessage />
-                </FormItem>
+                </SettingsRow>
               )}
             />
           )}
@@ -142,19 +178,26 @@ export function AccountForm() {
             control={form.control}
             name="account"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Account</FormLabel>
-                <FormControl>
-                  <div className="flex items-center gap-2">
+              <SettingsRow
+                label="Account"
+                description={
+                  accounts.length > 0
+                    ? `${accounts.length} linked game account${accounts.length === 1 ? '' : 's'}. Used for listings and offers.`
+                    : 'Sign in to load the game accounts linked to your PD2 profile.'
+                }
+                control={
+                  <>
                     <Select
                       value={field.value}
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       disabled={accounts.length === 0}
                     >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'} />
-                      </SelectTrigger>
+                      <FormControl>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'} />
+                        </SelectTrigger>
+                      </FormControl>
                       <SelectContent>
                         {accounts.map((acc: string) => (
                           <SelectItem key={acc}
@@ -170,31 +213,29 @@ export function AccountForm() {
                         variant="outline"
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="gap-2"
+                        className="min-w-28"
                       >
-                        <LogOut className="h-3 w-3" />
+                        {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
                         {loggingOut ? 'Logging out...' : 'Log out'}
                       </Button>
                     ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
+                      <Button type="button"
                         onClick={handleLogin}
                         disabled={loggingIn}
-                        className="gap-2"
-                      >
-                        <LogIn className="h-3 w-3" />
+                        className="min-w-28">
+                        {loggingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
                         {loggingIn ? 'Logging in...' : 'Log in'}
                       </Button>
                     )}
-                  </div>
-                </FormControl>
+                  </>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
-        </div>
-      </ScrollArea>
+        </SettingsGroup>
+      </div>
     </Form>
   );
 }

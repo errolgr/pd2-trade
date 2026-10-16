@@ -1,17 +1,30 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BellOff, Check, Plus, UserX, Volume1, Volume2, VolumeX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
+import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
+import { cn } from '@/lib/utils';
+import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+
+const TOAST_TYPES = [
+  { id: 'whispers', label: 'Whispers' },
+  { id: 'trade', label: 'Trade' },
+  { id: 'joins', label: 'Joins' },
+  { id: 'offers', label: 'Offers' },
+  { id: 'networth', label: 'Net Worth' },
+];
+
+const COMMON_TOKENS = ['{accountName}', '{characterName}', '{itemName}', '{price}'];
 
 const chatFormSchema = z.object({
   whisperNotificationsEnabled: z.boolean().optional(),
@@ -117,24 +130,25 @@ export function ChatForm() {
   };
 
   if (isLoading || !settings) {
-    return null;
+    return <SettingsSkeleton rows={6} />;
   }
 
   return (
     <Form {...form}>
-      <ScrollArea className="pr-2">
-        <div className="flex flex-col gap-y-4 ">
+      <div className="flex flex-col gap-y-6">
+        <SettingsGroup title="Notifications">
           <FormField
             control={form.control}
             name="whisperNotificationTiming"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Notify when:</FormLabel>
+              <SettingsRow
+                label="Notify when:"
+                description="Control when whisper notifications are played based on Diablo focus state."
+                control={
                   <Select onValueChange={field.onChange}
                     value={field.value || 'both'}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-[220px]">
                         <SelectValue placeholder="Select when to notify" />
                       </SelectTrigger>
                     </FormControl>
@@ -145,162 +159,193 @@ export function ChatForm() {
                       <SelectItem value="never">Never</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <FormDescription>
-                  Control when whisper notifications are played based on Diablo focus state.
-                </FormDescription>
+                }
+              >
+                <AnimatePresence initial={false}>
+                  {isDisabled && (
+                    <motion.p
+                      key="muted"
+                      variants={fadeIn}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning"
+                    >
+                      <BellOff className="size-3.5 shrink-0" />
+                      Notifications are off. Pick another option to edit the settings below.
+                    </motion.p>
+                  )}
+                </AnimatePresence>
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="whisperNotificationsEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>General Notifications</FormLabel>
+              <SettingsRow
+                disabled={isDisabled}
+                label="General Notifications"
+                description="Play a notification sound when you receive non-trade whispers from players or new messages in the website chat."
+                control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
                       onCheckedChange={field.onChange}
                       disabled={isDisabled} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Play a notification sound when you receive non-trade whispers from players or new messages in the
-                  website chat.
-                </FormDescription>
-              </FormItem>
+                }
+              />
             )}
           />
           <FormField
             control={form.control}
             name="toastPopupsEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Toast Popups</FormLabel>
+              <SettingsRow
+                disabled={isDisabled}
+                label="Toast Popups"
+                description="Show toast popup notifications when you are tabbed out of Diablo."
+                control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
                       onCheckedChange={field.onChange}
                       disabled={isDisabled} />
                   </FormControl>
-                </div>
-                <FormDescription>Show toast popup notifications when you are tabbed out of Diablo.</FormDescription>
-                {(field.value ?? true) && !isDisabled && (
-                  <FormField
-                    control={form.control}
-                    name="toastPopupTypes"
-                    render={({ field: typesField }) => {
-                      const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
-                      const allTypes = [
-                        { id: 'whispers', label: 'Whispers' },
-                        { id: 'trade', label: 'Trade' },
-                        { id: 'joins', label: 'Joins' },
-                        { id: 'offers', label: 'Offers' },
-                        { id: 'networth', label: 'Net Worth' },
-                      ];
-                      const toggleType = (typeId: string) => {
-                        const updated = types.includes(typeId)
-                          ? types.filter((t: string) => t !== typeId)
-                          : [...types, typeId];
-                        typesField.onChange(updated);
-                      };
-                      return (
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {allTypes.map((type) => {
-                            const isActive = types.includes(type.id);
-                            return (
-                              <button
-                                key={type.id}
-                                type="button"
-                                onClick={() => toggleType(type.id)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-                                  isActive
-                                    ? 'bg-primary text-primary-foreground border-primary'
-                                    : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
-                                }`}
-                              >
-                                {type.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      );
-                    }}
-                  />
-                )}
-              </FormItem>
+                }
+              >
+                <AnimatePresence initial={false}>
+                  {(field.value ?? true) && !isDisabled && (
+                    <motion.div
+                      key="toast-types"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1, transition: { duration: DUR.med, ease: EASE_OUT } }}
+                      exit={{ height: 0, opacity: 0, transition: { duration: DUR.fast, ease: EASE_OUT } }}
+                      className="-m-1 overflow-hidden p-1"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="toastPopupTypes"
+                        render={({ field: typesField }) => {
+                          const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
+                          const toggleType = (typeId: string) => {
+                            const updated = types.includes(typeId)
+                              ? types.filter((t: string) => t !== typeId)
+                              : [...types, typeId];
+                            typesField.onChange(updated);
+                          };
+                          return (
+                            <div role="group"
+                              aria-label="Toast popup types"
+                              className="flex flex-wrap gap-2">
+                              {TOAST_TYPES.map((type) => {
+                                const isActive = types.includes(type.id);
+                                return (
+                                  <button
+                                    key={type.id}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    onClick={() => toggleType(type.id)}
+                                    className={cn(
+                                      'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none',
+                                      'transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out',
+                                      'focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95',
+                                      isActive
+                                        ? 'border-primary bg-primary text-primary-foreground shadow-xs hover:bg-primary/90'
+                                        : 'border-border bg-muted/60 text-muted-foreground hover:border-ring/50 hover:bg-muted hover:text-foreground',
+                                    )}
+                                  >
+                                    {isActive ? <Check className="size-3" /> : <Plus className="size-3" />}
+                                    {type.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="tradeNotificationsEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Trade Notifications</FormLabel>
+              <SettingsRow
+                disabled={isDisabled}
+                label="Trade Notifications"
+                description="Play a notification sound when you receive trade whispers or trade offers from the website."
+                control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
                       onCheckedChange={field.onChange}
                       disabled={isDisabled} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Play a notification sound when you receive trade whispers or trade offers from the website.
-                </FormDescription>
-              </FormItem>
+                }
+              />
             )}
           />
           <FormField
             control={form.control}
             name="whisperAnnouncementsEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Announcement Notifications</FormLabel>
+              <SettingsRow
+                disabled={isDisabled}
+                label="Announcement Notifications"
+                description="Enable notifications for messages from *announcements. By default, announcements are ignored."
+                control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
                       onCheckedChange={field.onChange}
                       disabled={isDisabled} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Enable notifications for messages from *announcements. By default, announcements are ignored.
-                </FormDescription>
-              </FormItem>
+                }
+              />
             )}
           />
           <FormField
             control={form.control}
             name="whisperJoinNotificationsEnabled"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-row items-center gap-2">
-                  <FormLabel>Join Notifications</FormLabel>
+              <SettingsRow
+                disabled={isDisabled}
+                label="Join Notifications"
+                description="Show a notification popup when a player joins the game (only when Diablo is not focused). By default, join notifications are disabled."
+                control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
                       onCheckedChange={field.onChange}
                       disabled={isDisabled} />
                   </FormControl>
-                </div>
-                <FormDescription>
-                  Show a notification popup when a player joins the game (only when Diablo is not focused). By default,
-                  join notifications are disabled.
-                </FormDescription>
-              </FormItem>
+                }
+              />
             )}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title="Ignore list"
+          aside={
+            ignoreList.length > 0 && (
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {ignoreList.length} player{ignoreList.length === 1 ? '' : 's'}
+              </span>
+            )
+          }>
           <FormField
             control={form.control}
             name="whisperIgnoreList"
             render={() => (
-              <FormItem>
-                <FormLabel>Ignore List</FormLabel>
-                <FormControl>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
+              <SettingsRow
+                layout="stacked"
+                disabled={isDisabled}
+                label="Ignore List"
+                description="Players in this list will not trigger whisper notifications."
+                control={
+                  <>
+                    <FormControl>
                       <Input
                         placeholder="Enter player name to ignore"
                         value={newIgnorePlayer}
@@ -312,125 +357,213 @@ export function ChatForm() {
                           }
                         }}
                         disabled={isDisabled}
+                        className="flex-1"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addToIgnoreList}
-                        disabled={!newIgnorePlayer.trim() || isDisabled}
-                      >
-                        Add
-                      </Button>
-                    </div>
-                    {ignoreList.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[60px]">
-                        {ignoreList.map((playerName) => (
-                          <Badge key={playerName}
-                            variant="secondary"
-                            className="flex items-center gap-1 px-2 py-1">
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addToIgnoreList}
+                      disabled={!newIgnorePlayer.trim() || isDisabled}
+                    >
+                      <UserX />
+                      Add
+                    </Button>
+                  </>
+                }
+              >
+                {ignoreList.length > 0 ? (
+                  <div className="flex min-h-[44px] flex-wrap gap-2 rounded-md border border-border/70 bg-background/40 p-2">
+                    <AnimatePresence initial={false}>
+                      {ignoreList.map((playerName) => (
+                        <motion.div key={playerName}
+                          layout
+                          variants={popIn}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit">
+                          <Badge variant="secondary"
+                            className="flex items-center gap-1 py-1 pr-1 pl-2.5">
                             {playerName}
                             <button
                               type="button"
+                              aria-label={`Remove ${playerName}`}
                               onClick={() => removeFromIgnoreList(playerName)}
-                              className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                              className="ml-0.5 rounded-full p-0.5 text-muted-foreground outline-none transition-colors hover:bg-destructive/20 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none"
                               disabled={isDisabled}
                             >
                               <X className="h-3 w-3" />
                             </button>
                           </Badge>
-                        ))}
-                      </div>
-                    )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
-                </FormControl>
-                <FormDescription>Players in this list will not trigger whisper notifications.</FormDescription>
+                ) : (
+                  <p className="rounded-md border border-dashed border-border/70 px-3 py-2.5 text-center text-xs text-muted-foreground">
+                    No ignored players yet.
+                  </p>
+                )}
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title="Sound">
           <FormField
             control={form.control}
             name="whisperNotificationVolume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notification Volume: {field.value ?? 70}%</FormLabel>
-                <FormControl>
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[field.value ?? 70]}
-                    onValueChange={(value) => field.onChange(value[0])}
-                    disabled={isDisabled}
-                    className="w-1/2"
-                  />
-                </FormControl>
-                <FormDescription>Adjust the volume for whisper notification sounds (0-100%).</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const volume = field.value ?? 70;
+              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
+              return (
+                <SettingsRow
+                  disabled={isDisabled}
+                  label={
+                    <>
+                      Notification Volume: <span className="tabular-nums">{volume}%</span>
+                    </>
+                  }
+                  description="Adjust the volume for whisper notification sounds (0-100%)."
+                  control={
+                    <div className="flex w-[240px] items-center gap-3">
+                      <VolumeIcon aria-hidden
+                        className="size-4 shrink-0 text-muted-foreground" />
+                      <FormControl>
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={[volume]}
+                          onValueChange={(value) => field.onChange(value[0])}
+                          disabled={isDisabled}
+                          className="flex-1"
+                        />
+                      </FormControl>
+                    </div>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              );
+            }}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title="Offer message templates">
           <FormField
             control={form.control}
             name="acceptOfferMessageTemplate"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Accept Offer Message Template</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Your offer has been accepted. Game: {gameInfo}"
-                    className="font-mono text-sm"
+              <SettingsRow
+                layout="stacked"
+                label="Accept Offer Message Template"
+                description={
+                  <PlaceholderHint
+                    action="accepting an offer"
+                    tokens={['{gameInfo}', ...COMMON_TOKENS]}
+                    onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
                   />
-                </FormControl>
-                <FormDescription>
-                  Customize the message copied when accepting an offer. Available placeholders: {'{gameInfo}'},{' '}
-                  {'{accountName}'}, {'{characterName}'}, {'{itemName}'}, {'{price}'}.
-                </FormDescription>
+                }
+                control={
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Your offer has been accepted. Game: {gameInfo}"
+                      className="font-mono text-sm"
+                    />
+                  </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="rejectOfferMessageTemplate"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reject Offer Message Template</FormLabel>
-                <FormControl>
-                  <Input {...field}
-                    placeholder="Your offer has been rejected."
-                    className="font-mono text-sm" />
-                </FormControl>
-                <FormDescription>
-                  Customize the message copied when rejecting an offer. Available placeholders: {'{accountName}'},{' '}
-                  {'{characterName}'}, {'{itemName}'}, {'{price}'}.
-                </FormDescription>
+              <SettingsRow
+                layout="stacked"
+                label="Reject Offer Message Template"
+                description={
+                  <PlaceholderHint
+                    action="rejecting an offer"
+                    tokens={COMMON_TOKENS}
+                    onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
+                  />
+                }
+                control={
+                  <FormControl>
+                    <Input {...field}
+                      placeholder="Your offer has been rejected."
+                      className="font-mono text-sm" />
+                  </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
           <FormField
             control={form.control}
             name="soldOfferMessageTemplate"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sold Item Message Template</FormLabel>
-                <FormControl>
-                  <Input {...field}
-                    placeholder="The item has been sold."
-                    className="font-mono text-sm" />
-                </FormControl>
-                <FormDescription>
-                  Customize the message copied when marking an item as sold. Available placeholders: {'{accountName}'},{' '}
-                  {'{characterName}'}, {'{itemName}'}, {'{price}'}.
-                </FormDescription>
+              <SettingsRow
+                layout="stacked"
+                label="Sold Item Message Template"
+                description={
+                  <PlaceholderHint
+                    action="marking an item as sold"
+                    tokens={COMMON_TOKENS}
+                    onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
+                  />
+                }
+                control={
+                  <FormControl>
+                    <Input {...field}
+                      placeholder="The item has been sold."
+                      className="font-mono text-sm" />
+                  </FormControl>
+                }
+              >
                 <FormMessage />
-              </FormItem>
+              </SettingsRow>
             )}
           />
-        </div>
-      </ScrollArea>
+        </SettingsGroup>
+      </div>
     </Form>
+  );
+}
+
+/** "Customize the message copied when …" with clickable placeholder chips that append the token. */
+function PlaceholderHint({
+  action,
+  tokens,
+  onInsert,
+}: {
+  action: string;
+  tokens: string[];
+  onInsert: (token: string) => void;
+}) {
+  return (
+    <span className="flex flex-col gap-1.5">
+      <span>Customize the message copied when {action}. Available placeholders:</span>
+      <span className="flex flex-wrap gap-1.5">
+        {tokens.map((token) => (
+          <button
+            key={token}
+            type="button"
+            title={`Insert ${token}`}
+            onClick={() => onInsert(token)}
+            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+          >
+            {token}
+          </button>
+        ))}
+      </span>
+    </span>
   );
 }
