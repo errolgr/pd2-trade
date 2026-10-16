@@ -10,7 +10,7 @@ function ScrollArea({ className, children, ...props }: React.ComponentProps<type
       {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1"
+        className="size-full rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/60"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
@@ -40,7 +40,7 @@ function ScrollBar({
     >
       <ScrollAreaPrimitive.ScrollAreaThumb
         data-slot="scroll-area-thumb"
-        className="bg-neutral-600 relative flex-1 rounded-full"
+        className="bg-border hover:bg-muted-foreground/50 relative flex-1 rounded-full transition-colors duration-(--dur-fast)"
       />
     </ScrollAreaPrimitive.ScrollAreaScrollbar>
   );
