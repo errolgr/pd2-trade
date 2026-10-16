@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import {
   Check,
-  GripVertical,
   Info,
   Keyboard,
   LayoutPanelTop,
@@ -134,14 +133,7 @@ export default function SettingsLayout() {
               </span>
             </span>
           }
-          showGrip={false}
-          icon={
-            <GripVertical
-              data-tauri-drag-region
-              id="titlebar-drag-handle"
-              className="cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
-            />
-          }
+          gripId="titlebar-drag-handle"
           onClose={() => getCurrentWebviewWindow().hide()}
           closeLabel="Close settings"
           className="h-12 px-4"

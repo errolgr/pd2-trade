@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertCircle,
@@ -1220,7 +1220,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <div className="border-t border-border pt-2">
                               <div className="mb-1.5 text-xs font-semibold">Top Corruptions</div>
                               {showAllCorruptions ? (
-                                <ScrollArea className="w-full overflow-x-hidden [&>[data-slot=scroll-area-viewport]]:max-h-[200px]">
+                                <ScrollArea className="w-full overflow-x-hidden"
+                                  viewportClassName="max-h-[200px]">
                                   <div className="w-full space-y-0.5 overflow-x-hidden px-1.5 pr-3">
                                     {visibleCorruptions.map((corruption, idx) =>
                                       renderCorruptionRow(corruption, corruption, 'top', idx),
@@ -1329,7 +1330,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     )}
                   </AnimatePresence>
                 </div>
-                <ScrollArea className="flex-none pr-2 [&>[data-slot=scroll-area-viewport]]:max-h-[30vh]">
+                <ScrollArea className="flex-none pr-2"
+                  viewportClassName="max-h-[30vh]">
                   <div className="space-y-0.5">
                     {sortedStats.map((s) => (
                       <StatRow
@@ -1359,14 +1361,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
                       aria-label="Open search on projectdiablo2.com"
-                      className={cn(buttonVariants(), 'cursor-pointer border-l border-primary-foreground/15 px-3')}
+                      className="cursor-pointer border-l border-primary-foreground/15 px-3"
                       onClick={openTradeUrl}
                     >
                       <SquareArrowOutUpRight />
-                    </button>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Open this search on projectdiablo2.com</TooltipContent>
                 </Tooltip>
@@ -1535,18 +1536,15 @@ function ToolbarButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        {/* Native button: the shared Button doesn't forward refs (React 18), which Radix anchors need. */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           aria-label={label}
           onClick={onClick}
-          className={cn(
-            buttonVariants({ variant: 'ghost', size: 'icon' }),
-            'size-7 text-muted-foreground hover:text-foreground',
-          )}
+          className="size-7 text-muted-foreground hover:text-foreground"
         >
           {children}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom">{label}</TooltipContent>
     </Tooltip>
@@ -1896,7 +1894,12 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                     </div>
                   }
                 >
-                  <span className="cursor-pointer text-foreground/90 underline decoration-muted-foreground decoration-dotted underline-offset-2">
+                  {/* The full-note popover replaces the row's stats popover while the note is hovered. */}
+                  <span
+                    className="cursor-pointer text-foreground/90 underline decoration-muted-foreground decoration-dotted underline-offset-2"
+                    onMouseEnter={() => setOpen(false)}
+                    onMouseLeave={() => setOpen(true)}
+                  >
                     {listing.price.slice(0, 40)}...
                   </span>
                 </HoverPopover>

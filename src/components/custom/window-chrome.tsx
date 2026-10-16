@@ -19,6 +19,8 @@ interface WindowChromeProps {
   dragRegion?: boolean;
   /** Show the grip affordance on the left. Default true when dragRegion. */
   showGrip?: boolean;
+  /** DOM id for the grip (e.g. `titlebar-drag-handle`). */
+  gripId?: string;
   closeLabel?: string;
 }
 
@@ -32,6 +34,7 @@ function WindowChrome({
   diabloFont = false,
   dragRegion = true,
   showGrip,
+  gripId,
   closeLabel = 'Close',
 }: WindowChromeProps) {
   const drag = dragRegion ? { 'data-tauri-drag-region': true } : {};
@@ -49,6 +52,7 @@ function WindowChrome({
     >
       {grip && (
         <GripVertical {...drag}
+          id={gripId}
           aria-hidden
           className="size-4 shrink-0 text-muted-foreground" />
       )}

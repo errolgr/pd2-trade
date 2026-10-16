@@ -3,14 +3,25 @@ import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 
 import { cn } from '@/lib/utils';
 
-function ScrollArea({ className, children, ...props }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+function ScrollArea({
+  className,
+  viewportClassName,
+  children,
+  ...props
+}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+  /** Classes for the scrolling viewport; put a max height here (e.g. `max-h-[30vh]`) to make an auto-height area scroll. */
+  viewportClassName?: string;
+}) {
   return (
     <ScrollAreaPrimitive.Root data-slot="scroll-area"
       className={cn('relative', className)}
       {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/60"
+        className={cn(
+          'size-full rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/60',
+          viewportClassName,
+        )}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

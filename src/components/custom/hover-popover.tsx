@@ -32,6 +32,8 @@ export const HoverPopover: React.FC<HoverPopoverProps> = ({
       <PopoverContent
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
+        // Hover-opened: don't move focus into the content (avoids a stray focus-visible ring).
+        onOpenAutoFocus={(e) => e.preventDefault()}
         side={side}
         align="center"
         className={className ? className : 'p-0 bg-transparent border-0 w-auto'}

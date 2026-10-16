@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRightLeft, ChevronDown, ChevronRight, ChevronUp, ExternalLink, Info } from 'lucide-react';
@@ -49,17 +49,14 @@ export function RunePricePopover({
         <Tooltip delayDuration={400}>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>
-              {/* Native button: the shared Button doesn't forward refs (React 18), which Radix anchors need. */}
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label="Rune prices"
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'icon' }),
-                  'size-7 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground',
-                )}
+                className="size-7 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
               >
                 <ArrowRightLeft className="size-4" />
-              </button>
+              </Button>
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom">Rune prices</TooltipContent>
