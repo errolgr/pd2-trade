@@ -2,14 +2,41 @@ import { openWindowAtCursor } from '@/lib/window';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
-import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeftRight,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  ExternalLink,
+  ListPlus,
+  Loader2,
+  LuggageIcon,
+  Repeat2,
+  RotateCw,
+  SearchIcon,
+  SearchX,
+  SettingsIcon,
+  ShieldIcon,
+  SquareArrowOutUpRight,
+  TrendingDown,
+  TrendingUp,
+  UserIcon,
+} from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { cn } from '@/lib/utils';
+import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
+import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '../lib/qualityColor';
 import { StatRow } from './StatRow';
 import { useOptions } from '@/hooks/useOptions';
@@ -41,6 +68,7 @@ import {
   fetchItemPriceByName,
   fetchCorruptionPrices,
   AveragePriceResponse,
+  CorruptionPrice,
   CorruptionPricesResponse,
 } from '@/pages/currency/lib/price-api';
 import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
@@ -79,6 +107,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchArchived, setSearchArchived] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  // True once a new search has completed for the current item (drives the "no listings" empty state)
+  const [searched, setSearched] = useState(false);
   const [triggerCorruptionSearch, setTriggerCorruptionSearch] = useState(false);
   const [triggerSocketSearch, setTriggerSocketSearch] = useState(false);
   const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
@@ -403,6 +433,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setTotalCount(0);
       setPage(0);
       setHasMore(false);
+      setSearched(false);
       setSelected(new Set());
       setFilters({});
       setSearchMode(0); // Reset to default mode
@@ -790,6 +821,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           setMarketListings(result.data);
           setTotalCount(result.total);
           setPage(0);
+          setSearched(true);
         } else {
           setMarketListings((prev) => {
             // Filter duplicates
@@ -956,760 +988,858 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     await emit('open-settings', undefined);
   }, []);
 
+  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`)
+  const clearSelectedStats = useCallback(() => {
+    setSelected(new Set());
+    setFilters({});
+    setCorruptedState(0);
+  }, [setSelected, setFilters, setCorruptedState]);
+
+  const openTradeUrl = () => {
+    if (tradeUrl) {
+      incrementMetric('item_overlay.trade_url_opened', 1, {
+        archived: searchArchived.toString(),
+        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+      });
+      openUrl(tradeUrl);
+    }
+  };
+
+  const openPd2Trader = () => openUrl(getPd2TraderUrl());
+
+  const isUniqueOrSet = item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set;
+  const canList = isStashItem(item);
+  const itemIcon = getItemIcon();
+
+  // Top corruptions exclude the item's own corruption (shown in its own section)
+  const otherCorruptions = useMemo(
+    () =>
+      corruptionPrices?.corruptionPrices.filter(
+        (corruption) => !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName,
+      ) ?? [],
+    [corruptionPrices, itemCorruptions],
+  );
+  const visibleCorruptions = showAllCorruptions ? otherCorruptions : otherCorruptions.slice(0, 5);
+
+  const renderCorruptionRow = (
+    corruption: { corruptionName: string; corruptionKey: string[] },
+    price: CorruptionPrice | null,
+    variant: 'item' | 'top',
+    key?: React.Key,
+  ) => (
+    <CorruptionRow
+      key={key}
+      name={price?.corruptionName || corruption.corruptionName}
+      variant={variant}
+      price={price}
+      selected={
+        selectedCorruptionNames.length > 0 && areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames)
+      }
+      itemTitle={displayTitle}
+      onSelect={() => handleCorruptionClick(corruption.corruptionKey)}
+      onSocketSelect={(socketCount) => handleSocketClick(socketCount, corruption.corruptionKey)}
+      onOpenWeb={openPd2Trader}
+    />
+  );
+
+  const showIdleHint = !searched && !marketLoading && !marketError && marketListings.length === 0;
+  const showNoResults = searched && !marketLoading && !marketError && marketListings.length === 0;
+
   /** -------------------
    *  Render
    *  -----------------*/
   return (
-    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
-      {/* Top Bar */}
-      <div
-        data-tauri-drag-region
-        id="titlebar-drag-handle"
-        className="flex items-center justify-between border-neutral-700 bg-neutral-800/50 flex-none"
-      >
-        {/* Rune Information Popover */}
-        <div className="flex flex-row items-center">
-          <RunePricePopover
-            loading={loading}
-            calculatedRuneValues={calculatedRuneValues}
-            selectedRuneBreakdown={selectedRuneBreakdown}
-            selectedRuneCombinations={selectedRuneCombinations}
-            onRuneBreakdownSelect={setSelectedRuneBreakdown}
-          />
-          <Button variant="ghost"
-            size="icon"
-            onClick={openCurrencyValuation}
-            className="self-start h-7 w-7">
-            <LuggageIcon className="h-4 w-4" />
-          </Button>
-        </div>
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider delayDuration={300}>
+        <WindowPanel className="h-screen w-screen">
+          {/* Top Bar */}
+          <div id="titlebar-drag-handle"
+            data-tauri-drag-region
+            className="flex-none bg-muted/30">
+            <WindowChrome
+              title="Price Check"
+              titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
+              showGrip={false}
+              icon={
+                // Rune Information Popover + stash value
+                <span className="flex items-center gap-0.5 text-muted-foreground">
+                  <RunePricePopover
+                    loading={loading}
+                    calculatedRuneValues={calculatedRuneValues}
+                    selectedRuneBreakdown={selectedRuneBreakdown}
+                    selectedRuneCombinations={selectedRuneCombinations}
+                    onRuneBreakdownSelect={setSelectedRuneBreakdown}
+                  />
+                  <ToolbarButton label="Stash value"
+                    onClick={openCurrencyValuation}>
+                    <LuggageIcon />
+                  </ToolbarButton>
+                </span>
+              }
+              actions={
+                <ToolbarButton label="Settings"
+                  onClick={openSettingsPage}>
+                  <SettingsIcon />
+                </ToolbarButton>
+              }
+              onClose={onClose}
+              closeLabel="Close"
+            />
+          </div>
 
-        <div className="flex flex-row items-center">
-          <Button variant="ghost"
-            size="icon"
-            onClick={openSettingsPage}
-            className="self-start h-7 w-7">
-            <SettingsIcon className="h-2 w-2" />
-          </Button>
-
-          <Button variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="self-start h-7 w-7">
-            <X className="h-2 w-2" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className={'flex flex-col gap-1 flex-none'}>
-        <CardHeader className="flex flex-row items-start gap-4 justify-between">
-          <div className={'flex flex-col'}>
-            <CardTitle
-              className={`flex-1 text-xl font-bold flex items-center gap-2 ${qualityColor(item.quality)}`}
-              style={{ fontFamily: 'DiabloFont' }}
-            >
-              {displayTitle}
-              {item.isRuneword && <Badge>Runeword</Badge>}
-            </CardTitle>
-            {item.type && (
-              <div className="flex items-center gap-2"
-                style={{ marginTop: '-5px' }}>
-                <div
-                  className={`text-lg text-gray-300 ${shouldUseToggle ? 'cursor-pointer hover:text-gray-100 transition-colors' : ''}`}
-                  style={{ fontFamily: 'DiabloFont' }}
-                  onClick={shouldUseToggle ? toggleSearchMode : undefined}
-                  title={shouldUseToggle ? 'Click to toggle search mode' : undefined}
-                >
-                  {shouldUseToggle ? getSearchModeDisplay() : `Base: ${item.type}`}
-                </div>
-                {shouldUseToggle && (
-                  <>
-                    <span className="text-lg text-gray-500">|</span>
-                    <span
-                      className={`text-lg cursor-pointer hover:opacity-80 transition-opacity ${qualityColor(effectiveQuality)}`}
-                      style={{ fontFamily: 'DiabloFont' }}
-                      onClick={cycleQuality}
-                      title="Click to cycle quality"
-                    >
-                      {effectiveQuality}
-                    </span>
-                  </>
+          {/* Header */}
+          <motion.header
+            key={`${item.name}|${item.quality}|${displayTitle}`}
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-none flex-col gap-2 px-5 pt-4 pb-3"
+          >
+            <div className="flex min-w-0 flex-col">
+              <h1
+                className={cn(
+                  'flex items-center gap-2 text-xl leading-tight font-bold tracking-wide drop-shadow-[0_1px_0_rgb(0_0_0/0.25)]',
+                  qualityColor(item.quality),
                 )}
-              </div>
-            )}
+                style={{ fontFamily: 'DiabloFont' }}
+              >
+                <span className="min-w-0 truncate">{displayTitle}</span>
+                {item.isRuneword && (
+                  <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>
+                )}
+              </h1>
+              {item.type && (
+                <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">
+                  {shouldUseToggle ? (
+                    <HeaderToggle onClick={toggleSearchMode}
+                      title="Click to toggle search mode"
+                      className="text-muted-foreground">
+                      {getSearchModeDisplay()}
+                    </HeaderToggle>
+                  ) : (
+                    <div className="px-1.5 text-muted-foreground"
+                      style={{ fontFamily: 'DiabloFont' }}>
+                      Base: {item.type}
+                    </div>
+                  )}
+                  {shouldUseToggle && (
+                    <>
+                      <span aria-hidden
+                        className="h-4 w-px bg-border" />
+                      <HeaderToggle onClick={cycleQuality}
+                        title="Click to cycle quality"
+                        className={qualityColor(effectiveQuality)}>
+                        {effectiveQuality}
+                      </HeaderToggle>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {item.defense && (
               <Badge variant="outline"
-                className={'text-sm border-gray-300 text-gray-300 rounded-lg mt-1'}>
-                Defense: {item.defense}{' '}
+                className="gap-1.5 rounded-md border-border bg-background/40 px-2 py-0.5 text-xs text-muted-foreground">
+                <ShieldIcon className="text-muted-foreground" />
+                Defense: <span className="font-semibold tabular-nums text-foreground">{item.defense}</span>
               </Badge>
             )}
-          </div>
-        </CardHeader>
 
-        {/* Average Price Information for Unique Items - Compact */}
-        {(item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set) && (
-          <div className="px-6 pb-4 -mt-4">
-            {averagePriceLoading && (
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading price data...</span>
-              </div>
-            )}
-            {averagePriceError && !averagePriceLoading && (
-              <div className="text-xs text-red-400">{averagePriceError}</div>
-            )}
-            {averagePriceData && !averagePriceLoading && getItemIcon() && (
-              <div className="inline-block">
-                <HoverPopover
-                  content={
-                    <Card className="p-3 bg-neutral-950 border-neutral-700 w-[400px]">
-                      <div className="space-y-2 text-sm">
-                        <div className="font-semibold text-white mb-2 flex items-center justify-between">
-                          <span>{displayTitle}</span>
-                          <span
-                            className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer underline flex items-center gap-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openUrl(getPd2TraderUrl());
-                            }}
-                          >
-                            View on Web
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-gray-400">Average:</span>
-                            <span className="ml-2 text-white">{averagePriceData.movingAverage7Days.toFixed(2)} HR</span>
+            {/* Average Price Information for Unique Items - Compact */}
+            {isUniqueOrSet && (
+              <div className="pt-0.5">
+                {averagePriceLoading && (
+                  <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
+                    aria-busy="true">
+                    <Skeleton className="size-10 rounded-md" />
+                    <div className="flex flex-col gap-1.5">
+                      <Skeleton className="h-3.5 w-16" />
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Loader2 className="size-3 animate-spin" />
+                        Loading price data...
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {averagePriceError && !averagePriceLoading && (
+                  <div className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
+                    <AlertCircle className="size-3.5" />
+                    {averagePriceError}
+                  </div>
+                )}
+                {averagePriceData && !averagePriceLoading && itemIcon && (
+                  <motion.div className="inline-block"
+                    variants={scaleIn}
+                    initial="hidden"
+                    animate="visible">
+                    <HoverPopover
+                      content={
+                        <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="truncate font-semibold">{displayTitle}</span>
+                            <WebLink onClick={openPd2Trader}
+                              inPopover>
+                              View on Web
+                            </WebLink>
                           </div>
-                          <div>
-                            <span className="text-gray-400">Median:</span>
-                            <span className="ml-2 font-semibold text-white">
-                              {averagePriceData.medianPrice.toFixed(2)} HR
-                            </span>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <PriceStat label="Average"
+                              value={averagePriceData.movingAverage7Days} />
+                            <PriceStat label="Median"
+                              value={averagePriceData.medianPrice}
+                              emphasis />
+                            <PriceStat label="Min"
+                              value={averagePriceData.minPrice} />
+                            <PriceStat label="Max"
+                              value={averagePriceData.maxPrice} />
                           </div>
-                          <div>
-                            <span className="text-gray-400">Min:</span>
-                            <span className="ml-2 text-white">{averagePriceData.minPrice.toFixed(2)} HR</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Max:</span>
-                            <span className="ml-2 text-white">{averagePriceData.maxPrice.toFixed(2)} HR</span>
-                          </div>
-                        </div>
-                        <div className="pt-2 border-t border-neutral-700 space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Samples:</span>
-                            <span className="text-white">{averagePriceData.sampleCount}</span>
-                          </div>
-                          {averagePriceData.priceChange7Days && (
+                          <div className="space-y-1 border-t border-border pt-2 text-xs">
                             <div className="flex justify-between">
-                              <span className="text-gray-400">7d Change:</span>
-                              <span
-                                className={
-                                  averagePriceData.priceChange7Days.change >= 0 ? 'text-green-400' : 'text-red-400'
-                                }
-                              >
-                                {averagePriceData.priceChange7Days.change >= 0 ? '+' : ''}
-                                {averagePriceData.priceChange7Days.changePercent.toFixed(1)}%
-                              </span>
+                              <span className="text-muted-foreground">Samples:</span>
+                              <span className="tabular-nums">{averagePriceData.sampleCount}</span>
+                            </div>
+                            {averagePriceData.priceChange7Days && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">7d Change:</span>
+                                <ChangeLabel change={averagePriceData.priceChange7Days.change}
+                                  percent={averagePriceData.priceChange7Days.changePercent} />
+                              </div>
+                            )}
+                          </div>
+                          {/* Item's Corruption Price - Display separately if matched */}
+                          {itemCorruptions && (
+                            <div className="border-t border-border pt-2">
+                              <div className="mb-1.5 text-xs font-semibold text-q-corrupted">
+                                This Item&apos;s Corruption
+                              </div>
+                              {renderCorruptionRow(itemCorruptions, itemCorruptions.priceData, 'item')}
+                            </div>
+                          )}
+                          {/* Corruption Prices */}
+                          {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
+                            <div className="border-t border-border pt-2">
+                              <div className="mb-1.5 text-xs font-semibold">Top Corruptions</div>
+                              {showAllCorruptions ? (
+                                <ScrollArea className="w-full overflow-x-hidden [&>[data-slot=scroll-area-viewport]]:max-h-[200px]">
+                                  <div className="w-full space-y-0.5 overflow-x-hidden px-1.5 pr-3">
+                                    {visibleCorruptions.map((corruption, idx) =>
+                                      renderCorruptionRow(corruption, corruption, 'top', idx),
+                                    )}
+                                  </div>
+                                </ScrollArea>
+                              ) : (
+                                <div className="w-full space-y-0.5 overflow-x-hidden px-1.5">
+                                  {visibleCorruptions.map((corruption, idx) =>
+                                    renderCorruptionRow(corruption, corruption, 'top', idx),
+                                  )}
+                                </div>
+                              )}
+                              {otherCorruptions.length > 5 && (
+                                <button
+                                  type="button"
+                                  tabIndex={-1}
+                                  onClick={() => setShowAllCorruptions(!showAllCorruptions)}
+                                  className="mt-1.5 inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                                >
+                                  {showAllCorruptions ? (
+                                    <>
+                                      <ChevronUp className="size-3" />
+                                      Show Less
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronDown className="size-3" />
+                                      {`Show More (${otherCorruptions.length - 5} more)`}
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {corruptionPricesLoading && (
+                            <div className="flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
+                              <Loader2 className="size-3 animate-spin" />
+                              Loading corruption prices...
                             </div>
                           )}
                         </div>
-                        {/* Item's Corruption Price - Display separately if matched */}
-                        {itemCorruptions && (
-                          <div className="pt-2 border-t border-neutral-700">
-                            <div className="text-xs font-semibold text-red-400 mb-2">This Item&apos;s Corruption</div>
-                            <div className="space-y-1">
-                              {(() => {
-                                const corruption = itemCorruptions;
-                                const priceData = corruption.priceData;
-                                const hasSocketPrices = priceData?.socketPrices && priceData.socketPrices.length > 0;
-                                // Use the actual corruptionName from the API if available, otherwise use the formatted name
-                                const displayName = priceData?.corruptionName || corruption.corruptionName;
-                                const isTruncated = displayName.length > 40;
-                                const truncatedName = isTruncated ? displayName.substring(0, 40) : displayName;
-
-                                const corruptionNameElement = isTruncated ? (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-red-300 pr-2 cursor-help border-b border-dotted border-red-500 truncate block max-w-[250px]">
-                                          {truncatedName}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="text-xs">{displayName}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ) : (
-                                  <span className="text-red-300 pr-2 truncate block max-w-[250px]">
-                                    {truncatedName}
-                                  </span>
-                                );
-
-                                const corruptionRow = (
-                                  <div className="flex justify-between items-center text-xs w-full min-w-0">
-                                    <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
-                                    {priceData ? (
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-gray-500 text-[10px]">({priceData.sampleCount})</span>
-                                        <span className="font-semibold">{priceData.medianPrice.toFixed(2)} HR</span>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-gray-500 text-[10px]">No price data</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-
-                                // Check if this corruption is currently selected
-                                const isSelected =
-                                  selectedCorruptionNames.length > 0 &&
-                                  areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
-
-                                const clickableWrapper = (
-                                  <div
-                                    className={`cursor-pointer rounded px-1 -mx-1 ${
-                                      isSelected
-                                        ? 'bg-blue-600/30 border border-blue-500/50'
-                                        : 'hover:bg-neutral-800/30'
-                                    }`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCorruptionClick(corruption.corruptionKey);
-                                    }}
-                                    title="Click to search for items with this corruption"
-                                  >
-                                    {corruptionRow}
-                                  </div>
-                                );
-
-                                if (hasSocketPrices && priceData) {
-                                  return (
-                                    <HoverPopover
-                                      side="bottom"
-                                      content={
-                                        <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
-                                          <div className="text-[10px] text-gray-400 mb-1 flex items-center justify-between">
-                                            <span>{displayTitle}</span>
-                                            <span
-                                              className="text-blue-400 hover:text-blue-300 cursor-pointer underline"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                openUrl(getPd2TraderUrl());
-                                              }}
-                                            >
-                                              Link
-                                            </span>
-                                          </div>
-                                          <div className="text-xs font-semibold text-gray-300 mb-2">
-                                            {displayName} - Socket Prices
-                                          </div>
-                                          <div className="space-y-1">
-                                            {priceData.socketPrices!.map((socketPrice, socketIdx) => (
-                                              <div
-                                                key={socketIdx}
-                                                className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleSocketClick(socketPrice.socketCount, corruption.corruptionKey);
-                                                }}
-                                                title="Click to filter by this socket count"
-                                              >
-                                                <span className="text-gray-400">
-                                                  {socketPrice.socketCount} Socket
-                                                  {socketPrice.socketCount !== 1 ? 's' : ''}
-                                                </span>
-                                                <div className="flex items-center gap-2 flex-shrink-0">
-                                                  <span className="text-gray-500 text-[10px]">
-                                                    ({socketPrice.sampleCount})
-                                                  </span>
-                                                  <span className="text-white font-semibold">
-                                                    {socketPrice.medianPrice.toFixed(2)} HR
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </Card>
-                                      }
-                                    >
-                                      {clickableWrapper}
-                                    </HoverPopover>
-                                  );
-                                }
-
-                                return clickableWrapper;
-                              })()}
-                            </div>
-                          </div>
-                        )}
-                        {/* Corruption Prices */}
-                        {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
-                          <div className="pt-2 border-t border-neutral-700">
-                            <div className="text-xs font-semibold text-gray-300 mb-2">Top Corruptions</div>
-                            {showAllCorruptions ? (
-                              <ScrollArea className="h-[200px] w-full overflow-x-hidden">
-                                <div className="space-y-1 w-full overflow-x-hidden">
-                                  {corruptionPrices.corruptionPrices
-                                    .filter((corruption) => {
-                                      // Filter out the item's corruption if it matches
-                                      return (
-                                        !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName
-                                      );
-                                    })
-                                    .map((corruption, idx) => {
-                                      const hasSocketPrices =
-                                        corruption.socketPrices && corruption.socketPrices.length > 0;
-                                      const isTruncated = corruption.corruptionName.length > 40;
-                                      const truncatedName = isTruncated
-                                        ? corruption.corruptionName.substring(0, 40)
-                                        : corruption.corruptionName;
-
-                                      const corruptionNameElement = isTruncated ? (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[250px]">
-                                                {truncatedName}
-                                              </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p className="text-xs">{corruption.corruptionName}</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ) : (
-                                        <span className="text-gray-400 pr-2 truncate block max-w-[250px]">
-                                          {truncatedName}
-                                        </span>
-                                      );
-
-                                      const corruptionRow = (
-                                        <div className="flex justify-between items-center text-xs w-full min-w-0">
-                                          <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
-                                          <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className="text-gray-500 text-[10px]">
-                                              ({corruption.sampleCount})
-                                            </span>
-                                            <span className="text-white font-semibold">
-                                              {corruption.medianPrice.toFixed(2)} HR
-                                            </span>
-                                          </div>
-                                        </div>
-                                      );
-
-                                      // Check if this corruption is currently selected
-                                      const isSelected =
-                                        selectedCorruptionNames.length > 0 &&
-                                        areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
-
-                                      const clickableWrapper = (
-                                        <div
-                                          key={idx}
-                                          className={`cursor-pointer rounded px-1 -mx-1 ${
-                                            isSelected
-                                              ? 'bg-blue-600/30 border border-blue-500/50'
-                                              : 'hover:bg-neutral-800/30'
-                                          }`}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleCorruptionClick(corruption.corruptionKey);
-                                          }}
-                                          title="Click to search for items with this corruption"
-                                        >
-                                          {corruptionRow}
-                                        </div>
-                                      );
-
-                                      if (hasSocketPrices) {
-                                        return (
-                                          <HoverPopover
-                                            key={idx}
-                                            side="bottom"
-                                            content={
-                                              <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
-                                                <div className="text-[10px] text-gray-400 mb-1 flex items-center justify-between">
-                                                  <span>{displayTitle}</span>
-                                                  <span
-                                                    className="text-blue-400 hover:text-blue-300 cursor-pointer underline"
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      openUrl(getPd2TraderUrl());
-                                                    }}
-                                                  >
-                                                    Link
-                                                  </span>
-                                                </div>
-                                                <div className="text-xs font-semibold text-gray-300 mb-2">
-                                                  {corruption.corruptionName} - Socket Prices
-                                                </div>
-                                                <div className="space-y-1">
-                                                  {corruption.socketPrices!.map((socketPrice, socketIdx) => (
-                                                    <div
-                                                      key={socketIdx}
-                                                      className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleSocketClick(
-                                                          socketPrice.socketCount,
-                                                          corruption.corruptionKey,
-                                                        );
-                                                      }}
-                                                      title="Click to filter by this socket count"
-                                                    >
-                                                      <span className="text-gray-400">
-                                                        {socketPrice.socketCount} Socket
-                                                        {socketPrice.socketCount !== 1 ? 's' : ''}
-                                                      </span>
-                                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                                        <span className="text-gray-500 text-[10px]">
-                                                          ({socketPrice.sampleCount})
-                                                        </span>
-                                                        <span className="text-white font-semibold">
-                                                          {socketPrice.medianPrice.toFixed(2)} HR
-                                                        </span>
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </Card>
-                                            }
-                                          >
-                                            {clickableWrapper}
-                                          </HoverPopover>
-                                        );
-                                      }
-
-                                      return clickableWrapper;
-                                    })}
-                                </div>
-                              </ScrollArea>
-                            ) : (
-                              <div className="space-y-1 w-full overflow-x-hidden">
-                                {corruptionPrices.corruptionPrices
-                                  .filter((corruption) => {
-                                    // Filter out the item's corruption if it matches
-                                    return (
-                                      !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName
-                                    );
-                                  })
-                                  .slice(0, 5)
-                                  .map((corruption, idx) => {
-                                    const hasSocketPrices =
-                                      corruption.socketPrices && corruption.socketPrices.length > 0;
-                                    const isTruncated = corruption.corruptionName.length > 40;
-                                    const truncatedName = isTruncated
-                                      ? corruption.corruptionName.substring(0, 40)
-                                      : corruption.corruptionName;
-
-                                    const corruptionNameElement = isTruncated ? (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[150px]">
-                                              {truncatedName}
-                                            </span>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p className="text-xs">{corruption.corruptionName}</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    ) : (
-                                      <span className="text-gray-400 pr-2 truncate block max-w-[250px]">
-                                        {truncatedName}
-                                      </span>
-                                    );
-
-                                    const corruptionRow = (
-                                      <div className="flex justify-between items-center text-xs w-full min-w-0">
-                                        <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                          <span className="text-gray-500 text-[10px]">({corruption.sampleCount})</span>
-                                          <span className="text-white font-semibold">
-                                            {corruption.medianPrice.toFixed(2)} HR
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-
-                                    // Check if this corruption is currently selected
-                                    const isSelected =
-                                      selectedCorruptionNames.length > 0 &&
-                                      areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
-
-                                    const clickableWrapper = (
-                                      <div
-                                        key={idx}
-                                        className={`cursor-pointer rounded px-1 -mx-1 ${
-                                          isSelected
-                                            ? 'bg-blue-600/30 border border-blue-500/50'
-                                            : 'hover:bg-neutral-800/30'
-                                        }`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCorruptionClick(corruption.corruptionKey);
-                                        }}
-                                        title="Click to search for items with this corruption"
-                                      >
-                                        {corruptionRow}
-                                      </div>
-                                    );
-
-                                    if (hasSocketPrices) {
-                                      return (
-                                        <HoverPopover
-                                          key={idx}
-                                          side="bottom"
-                                          content={
-                                            <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
-                                              <div className="text-xs font-semibold text-gray-300 mb-2">
-                                                {corruption.corruptionName} - Socket Prices
-                                              </div>
-                                              <div className="space-y-1">
-                                                {corruption.socketPrices!.map((socketPrice, socketIdx) => (
-                                                  <div
-                                                    key={socketIdx}
-                                                    className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleSocketClick(
-                                                        socketPrice.socketCount,
-                                                        corruption.corruptionKey,
-                                                      );
-                                                    }}
-                                                    title="Click to filter by this socket count"
-                                                  >
-                                                    <span className="text-gray-400">
-                                                      {socketPrice.socketCount} Socket
-                                                      {socketPrice.socketCount !== 1 ? 's' : ''}
-                                                    </span>
-                                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                                      <span className="text-gray-500 text-[10px]">
-                                                        ({socketPrice.sampleCount})
-                                                      </span>
-                                                      <span className="text-white font-semibold">
-                                                        {socketPrice.medianPrice.toFixed(2)} HR
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </Card>
-                                          }
-                                        >
-                                          {clickableWrapper}
-                                        </HoverPopover>
-                                      );
-                                    }
-
-                                    return clickableWrapper;
-                                  })}
-                              </div>
-                            )}
-                            {(() => {
-                              const filteredCorruptions = corruptionPrices.corruptionPrices.filter((corruption) => {
-                                return !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName;
-                              });
-                              const remainingCount = filteredCorruptions.length;
-                              const showCount = showAllCorruptions ? remainingCount : Math.min(5, remainingCount);
-
-                              return (
-                                remainingCount > showCount && (
-                                  <button
-                                    onClick={() => setShowAllCorruptions(!showAllCorruptions)}
-                                    className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline focus:outline-none focus-visible:outline-none focus:ring-0"
-                                  >
-                                    {showAllCorruptions ? 'Show Less' : `Show More (${remainingCount - 5} more)`}
-                                  </button>
-                                )
-                              );
-                            })()}
-                          </div>
-                        )}
-                        {corruptionPricesLoading && (
-                          <div className="pt-2 border-t border-neutral-700 text-xs text-gray-400">
-                            Loading corruption prices...
-                          </div>
+                      }
+                    >
+                      <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow">
+                        <img
+                          src={`https://pd2trader.com/assets/items/${itemIcon}.png`}
+                          alt={item.name}
+                          className="h-10 drop-shadow-[0_2px_4px_rgb(0_0_0/0.35)] transition-transform duration-(--dur-med) ease-out group-hover:scale-105"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                        <ArrowLeftRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-sm font-semibold tabular-nums text-foreground">
+                            <AnimatedNumber value={averagePriceData.movingAverage7Days} /> HR
+                          </span>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7d average</span>
+                        </div>
+                        {averagePriceData.priceChange7Days && (
+                          <ChangeLabel
+                            change={averagePriceData.priceChange7Days.change}
+                            percent={averagePriceData.priceChange7Days.changePercent}
+                            pill
+                          />
                         )}
                       </div>
-                    </Card>
-                  }
-                >
-                  <div className="flex items-center gap-2 cursor-pointer bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 transition-colors">
-                    <img
-                      src={`https://pd2trader.com/assets/items/${getItemIcon()}.png`}
-                      alt={item.name}
-                      className="h-10"
-                      onError={(e) => {
-                        // Fallback if image fails to load
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                    <ArrowLeftRight className="w-4 h-4 text-gray-400" />
-                    <span className="font-semibold text-white text-sm">
-                      {averagePriceData.movingAverage7Days.toFixed(2)} HR
-                    </span>
+                    </HoverPopover>
+                  </motion.div>
+                )}
+                {!averagePriceLoading && !averagePriceError && !averagePriceData && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">No price data available</span>
+                    <WebLink onClick={openPd2Trader}>View on Web</WebLink>
                   </div>
-                </HoverPopover>
+                )}
               </div>
             )}
-            {!averagePriceLoading && !averagePriceError && !averagePriceData && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">No price data available</span>
-                <span
-                  className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer underline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openUrl(getPd2TraderUrl());
-                  }}
-                >
-                  View on Web
-                </span>
-              </div>
+          </motion.header>
+
+          {/* Body */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4">
+            {sortedStats.length > 0 && (
+              <section className="flex flex-none flex-col gap-1">
+                <div className="flex h-5 items-center justify-between px-2">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Stats
+                  </span>
+                  <AnimatePresence initial={false}>
+                    {(selected.size > 0 || corruptedState !== 0) && (
+                      <motion.button
+                        type="button"
+                        initial={{ opacity: 0, x: 6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 6 }}
+                        transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                        onClick={clearSelectedStats}
+                        className="inline-flex items-center gap-1 rounded-sm text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                      >
+                        <span className="tabular-nums">{selected.size} selected</span>
+                        <span aria-hidden>·</span>
+                        <span className="underline-offset-2 hover:underline">Clear</span>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <ScrollArea className="flex-none pr-2 [&>[data-slot=scroll-area-viewport]]:max-h-[30vh]">
+                  <div className="space-y-0.5">
+                    {sortedStats.map((s) => (
+                      <StatRow
+                        toggle={toggle}
+                        key={getStatKey(s)}
+                        stat={s}
+                        nested={false}
+                        updateFilter={updateFilter}
+                        filters={filters}
+                        selected={selected}
+                        corruptedState={corruptedState}
+                        onSubmit={handleSearch}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </section>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* Body */}
-      <CardContent className="flex-1 flex flex-col min-h-0 space-y-4 overflow-hidden">
-        <ScrollArea className="pr-2 flex-none max-h-[30vh]">
-          <div className="space-y-2">
-            {sortedStats.map((s) => (
-              <StatRow
-                toggle={toggle}
-                key={getStatKey(s)}
-                stat={s}
-                nested={false}
-                updateFilter={updateFilter}
-                filters={filters}
-                selected={selected}
-                corruptedState={corruptedState}
-              />
-            ))}
-          </div>
-        </ScrollArea>
-        {/* Search button */}
-        <div className="flex flex-col gap-2 flex-none">
-          <div className="flex flex-row gap-2 w-full mt-2">
-            <ButtonGroup>
-              <Button variant="secondary"
-                className="cursor-pointer"
-                onClick={handleSearch}>
-                Search
-              </Button>
-              <Button
-                variant="secondary"
-                className="flex flex-row justify-center gap-2 px-3 cursor-pointer"
-                onClick={() => {
-                  if (tradeUrl) {
-                    incrementMetric('item_overlay.trade_url_opened', 1, {
-                      archived: searchArchived.toString(),
-                      search_mode: shouldUseToggle ? searchMode.toString() : '0',
-                    });
-                    openUrl(tradeUrl);
-                  }
-                }}
-              >
-                <SquareArrowOutUpRight className="w-4 h-4" />
-              </Button>
-            </ButtonGroup>
+            {/* Search actions */}
+            <div className="flex flex-none flex-wrap items-center gap-2 border-t border-border pt-3">
+              <ButtonGroup>
+                <Button className="min-w-24 cursor-pointer"
+                  onClick={handleSearch}>
+                  {marketLoading ? <Loader2 className="animate-spin" /> : <SearchIcon />}
+                  Search
+                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Open search on projectdiablo2.com"
+                      className={cn(buttonVariants(), 'cursor-pointer border-l border-primary-foreground/15 px-3')}
+                      onClick={openTradeUrl}
+                    >
+                      <SquareArrowOutUpRight />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Open this search on projectdiablo2.com</TooltipContent>
+                </Tooltip>
+              </ButtonGroup>
 
-            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
-                    <Button
-                      variant="secondary"
-                      className="flex flex-row justify-center gap-2 cursor-pointer"
+                    <Button variant="secondary"
+                      className="cursor-pointer"
                       onClick={openListWindow}
-                      disabled={!isStashItem(item)}
-                    >
+                      disabled={!canList}>
+                      <ListPlus />
                       List
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {!isStashItem(item) && (
+                {!canList && (
                   <TooltipContent side="top">
                     <p>Item must be in your shared stash to list.</p>
                   </TooltipContent>
                 )}
               </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="flex flex-row items-center gap-2 mt-1">
-            <Switch
-              id="archived-toggle"
-              checked={searchArchived}
-              onCheckedChange={(checked) => {
-                setSearchArchived(checked);
-              }}
-            />
-            <Label htmlFor="archived-toggle"
-              className="text-sm text-gray-300">
-              Show Expired
-            </Label>
-          </div>
-        </div>
 
-        {marketListings.length > 0 && (
-          <div className="mb-2 text-xs text-gray-400 pl-2 mt-2 flex items-center gap-2">
-            <span>Matches: {totalCount}</span>
-            {marketLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-          </div>
-        )}
-
-        <ScrollArea className="flex-1 min-h-0">
-          {marketLoading && marketListings.length === 0 && (
-            <div className="text-center text-sm text-gray-400 p-4 flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading market listings...</span>
+              <div className="ml-auto flex items-center gap-2">
+                <Switch
+                  id="archived-toggle"
+                  checked={searchArchived}
+                  onCheckedChange={(checked) => {
+                    setSearchArchived(checked);
+                  }}
+                />
+                <Label htmlFor="archived-toggle"
+                  className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  Show Expired
+                </Label>
+              </div>
             </div>
-          )}
-          {marketError && <div className="text-center text-sm text-red-400 p-4">{marketError}</div>}
-          {marketListings.length > 0 && (
-            <div className="mt-2 pr-3">
-              <table className="min-w-full text-sm text-left">
-                <thead>
-                  <tr>
-                    <th className="px-2 py-1 border-b border-neutral-700 w-full">Price</th>
-                    <th className="px-2 py-1 border-b border-neutral-700 whitespace-nowrap w-[1%]">Listed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {marketListings.length === 0 && (
-                    <tr>
-                      <td colSpan={2}
-                        className="px-2 py-2 text-center text-gray-400">
-                        No listings found
-                      </td>
-                    </tr>
+
+            {/* Results */}
+            <AnimatePresence initial={false}>
+              {marketListings.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: DUR.med, ease: EASE_OUT }}
+                  className="-mb-1 flex flex-none items-center gap-2 px-2 text-xs text-muted-foreground"
+                >
+                  <span>
+                    Matches: <span className="font-semibold tabular-nums text-foreground">{totalCount}</span>
+                  </span>
+                  {marketListings.length < totalCount && (
+                    <span className="tabular-nums">· showing {marketListings.length}</span>
                   )}
-                  {marketListings.map((listing: MarketListingEntry, idx: number) => (
-                    <ListingRow key={listing._id || idx}
-                      listing={listing}
-                      idx={idx} />
-                  ))}
-                </tbody>
-              </table>
-              {/* Load more trigger */}
-              {hasMore && (
-                <div ref={loaderRef}
-                  className="py-2 text-center text-xs text-gray-500">
-                  {marketLoading ? 'Loading more...' : 'Load more'}
+                  {marketLoading && <Loader2 className="size-3 animate-spin" />}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <ScrollArea className="min-h-0 flex-1">
+              {marketLoading && marketListings.length === 0 && (
+                <div aria-busy="true">
+                  <div className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" />
+                    <span>Loading market listings...</span>
+                  </div>
+                  <div className="space-y-1.5 pr-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i}
+                        className="flex items-center justify-between rounded-md px-2 py-1.5"
+                        style={{ opacity: 1 - i * 0.13 }}>
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-3 w-14" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
+              {marketError && (
+                <motion.div
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  role="alert"
+                  className="mx-auto mt-2 mr-3 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                >
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">Couldn&apos;t load listings</div>
+                    <div className="text-xs break-words opacity-90">{marketError}</div>
+                  </div>
+                  <Button variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 text-destructive hover:bg-destructive/15 hover:text-destructive"
+                    onClick={handleSearch}>
+                    <RotateCw />
+                    Retry
+                  </Button>
+                </motion.div>
+              )}
+              {showNoResults && (
+                <EmptyState icon={<SearchX />}
+                  title="No listings found">
+                  {searchArchived
+                    ? 'Try loosening your stat filters.'
+                    : 'Try loosening your stat filters or turn on Show Expired.'}
+                </EmptyState>
+              )}
+              {showIdleHint && (
+                <EmptyState icon={<SearchIcon />}
+                  title="Ready to search"
+                  subtle>
+                  Pick the stats that matter, then hit Search or press Enter in a min/max field.
+                </EmptyState>
+              )}
+              {marketListings.length > 0 && (
+                <div className="mt-1 pr-3">
+                  <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+                    <thead>
+                      <tr>
+                        <th className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          Price
+                        </th>
+                        <th className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1.5 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          Listed
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {marketListings.map((listing: MarketListingEntry, idx: number) => (
+                        <ListingRow key={listing._id || idx}
+                          listing={listing}
+                          idx={idx} />
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Load more trigger */}
+                  {hasMore && (
+                    <div ref={loaderRef}
+                      className="flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground">
+                      {marketLoading && <Loader2 className="size-3 animate-spin" />}
+                      {marketLoading ? 'Loading more...' : 'Load more'}
+                    </div>
+                  )}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </WindowPanel>
+      </TooltipProvider>
+    </MotionConfig>
+  );
+}
+
+/** Icon button for the title bar, with a tooltip label. */
+function ToolbarButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* Native button: the shared Button doesn't forward refs (React 18), which Radix anchors need. */}
+        <button
+          type="button"
+          aria-label={label}
+          onClick={onClick}
+          className={cn(
+            buttonVariants({ variant: 'ghost', size: 'icon' }),
+            'size-7 text-muted-foreground hover:text-foreground',
           )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Clickable header text (search mode / quality cycling) with a swap animation. */
+function HeaderToggle({
+  onClick,
+  title,
+  className,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
+        className,
+      )}
+      style={{ fontFamily: 'DiabloFont' }}
+    >
+      <AnimatePresence mode="popLayout"
+        initial={false}>
+        <motion.span
+          key={String(children)}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: DUR.med, ease: EASE_OUT }}
+        >
+          {children}
+        </motion.span>
+      </AnimatePresence>
+      <Repeat2
+        aria-hidden
+        className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90"
+      />
+    </button>
+  );
+}
+
+// Rows/links below live in hover-only popovers (not keyboard reachable). They're kept out of the tab
+// order so the popover's open auto-focus doesn't paint a focus ring on the first one.
+function WebLink({
+  onClick,
+  children,
+  inPopover,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  inPopover?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      tabIndex={inPopover ? -1 : undefined}
+      className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-sm text-[11px] font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      {children}
+      <ExternalLink className="size-3" />
+    </button>
+  );
+}
+
+function PriceStat({ label, value, emphasis }: { label: string; value: number; emphasis?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-md border px-2.5 py-1.5',
+        emphasis ? 'border-glow/40 bg-glow/10' : 'border-border/60 bg-muted/40',
+      )}
+    >
+      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={cn('text-sm tabular-nums', emphasis ? 'font-bold text-foreground' : 'font-medium')}>
+        {value.toFixed(2)} HR
+      </div>
+    </div>
+  );
+}
+
+function ChangeLabel({ change, percent, pill }: { change: number; percent: number; pill?: boolean }) {
+  const up = change >= 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 tabular-nums',
+        up ? 'text-success' : 'text-destructive',
+        pill && cn('rounded-full px-1.5 py-0.5 text-[11px] font-semibold', up ? 'bg-success/12' : 'bg-destructive/12'),
+      )}
+    >
+      <Icon className="size-3" />
+      {up ? '+' : ''}
+      {percent.toFixed(1)}%
+    </span>
+  );
+}
+
+/** Counts up to the value on mount and tweens between values (reduced motion: no tween). */
+function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: number }) {
+  const reduce = useReducedMotionSafe();
+  const [display, setDisplay] = useState(0);
+  // Last rendered value, so an interrupted tween continues from where it is.
+  const from = useRef(0);
+
+  useEffect(() => {
+    if (reduce) return;
+    const controls = animate(from.current, value, {
+      duration: 0.45,
+      ease: EASE_OUT,
+      onUpdate: (v) => {
+        from.current = v;
+        setDisplay(v);
+      },
+    });
+    return () => controls.stop();
+  }, [value, reduce]);
+
+  return <>{(reduce ? value : display).toFixed(decimals)}</>;
+}
+
+function EmptyState({
+  icon,
+  title,
+  subtle,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtle?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className={cn('flex flex-col items-center gap-1.5 px-6 py-8 text-center', subtle && 'opacity-80')}
+    >
+      <div className="mb-1 flex size-10 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground [&_svg]:size-5">
+        {icon}
+      </div>
+      <div className="text-sm font-medium text-foreground">{title}</div>
+      <p className="max-w-[260px] text-xs leading-relaxed text-muted-foreground">{children}</p>
+    </motion.div>
+  );
+}
+
+interface CorruptionRowProps {
+  name: string;
+  variant: 'item' | 'top';
+  price: CorruptionPrice | null;
+  selected: boolean;
+  itemTitle: string;
+  onSelect: () => void;
+  onSocketSelect: (socketCount: number) => void;
+  onOpenWeb: () => void;
+}
+
+function CorruptionRow({ name, variant, price, selected, itemTitle, onSelect, onSocketSelect, onOpenWeb }: CorruptionRowProps) {
+  const isTruncated = name.length > 40;
+  const socketPrices = price?.socketPrices ?? [];
+  const hasSocketPrices = socketPrices.length > 0;
+
+  const nameElement = (
+    <span
+      className={cn(
+        'block truncate pr-2 transition-colors',
+        variant === 'item' ? 'text-q-corrupted' : 'text-muted-foreground group-hover/corr:text-foreground',
+        isTruncated && 'cursor-help underline decoration-dotted underline-offset-2',
+      )}
+    >
+      {name}
+    </span>
+  );
+
+  const row = (
+    <div
+      role="button"
+      tabIndex={-1}
+      className={cn(
+        'group/corr -mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+        selected ? 'bg-glow/12 ring-1 ring-inset ring-glow/50' : 'hover:bg-accent/60',
+      )}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      title="Click to search for items with this corruption"
+    >
+      <div className="min-w-0 flex-1 overflow-hidden">
+        {isTruncated ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{nameElement}</TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">{name}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          nameElement
+        )}
+      </div>
+      {price ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
+          <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
+          {hasSocketPrices && <ChevronRight aria-hidden
+            className="-mr-0.5 size-3 text-muted-foreground" />}
+        </div>
+      ) : (
+        <span className="shrink-0 text-[10px] text-muted-foreground">No price data</span>
+      )}
+    </div>
+  );
+
+  if (!price || !hasSocketPrices) return row;
+
+  return (
+    <HoverPopover
+      side="bottom"
+      content={
+        <div className="min-w-[220px] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
+          <div className="mb-1 flex items-center justify-between gap-3 text-[10px] text-muted-foreground">
+            <span className="truncate">{itemTitle}</span>
+            <WebLink onClick={onOpenWeb}
+              inPopover>
+              Link
+            </WebLink>
+          </div>
+          <div className="mb-2 text-xs font-semibold">{name} - Socket Prices</div>
+          <div className="space-y-0.5">
+            {socketPrices.map((socketPrice, socketIdx) => (
+              <div
+                key={socketIdx}
+                role="button"
+                tabIndex={-1}
+                className="-mx-2 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSocketSelect(socketPrice.socketCount);
+                }}
+                title="Click to filter by this socket count"
+              >
+                <span className="text-muted-foreground">
+                  {socketPrice.socketCount} Socket
+                  {socketPrice.socketCount !== 1 ? 's' : ''}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
+                  <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      }
+    >
+      {row}
+    </HoverPopover>
+  );
+}
+
+/** Small round indicator in a listing row (ethereal / corrupted / sockets). */
+function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; tooltip: string; className: string }) {
+  return (
+    <Tooltip disableHoverableContent={true}
+      delayDuration={0}>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            'flex size-4 items-center justify-center rounded-full border text-[10px] font-bold leading-none tabular-nums shadow-xs',
+            className,
+          )}
+        >
+          {label}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent className="pointer-events-none">
+        <p>{tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -1736,115 +1866,103 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
     }
   };
 
-  // Clean corruptions similar to logic used elsewhere if needed, but for now we rely on the list
+  // Market listing items carry the stash item fields ItemStatsDisplay reads (modifiers, corruptions, flags).
+  const statsItem = listing.item as unknown as GameStashItem;
 
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <tr
-          className={`cursor-help ${idx % 2 === 0 ? 'bg-neutral-800' : ''} hover:bg-neutral-700 transition-colors`}
+          className={cn(
+            'group/row cursor-help transition-colors duration-(--dur-fast) hover:bg-accent/70 data-[state=open]:bg-accent/70',
+            idx % 2 === 0 && 'bg-muted/40',
+            'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both motion-safe:duration-200',
+          )}
+          style={{ animationDelay: `${Math.min(idx % 20, 12) * 18}ms` }}
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >
           {/* Price Column */}
-          <td className="px-2 py-1 flex flex-row items-center justify-between whitespace-nowrap">
-            <div className="flex-1 truncate mr-2">
+          <td className="flex flex-row items-center justify-between whitespace-nowrap rounded-l-md px-2 py-1.5">
+            <div className="mr-2 flex-1 truncate">
               {listing.hr_price ? (
-                `${listing.hr_price} HR`
+                <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
               ) : listing.price && listing.price.length > 40 ? (
                 <HoverPopover
                   content={
-                    <Card>
-                      <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
-                    </Card>
+                    <div className="max-w-xs break-words rounded-lg border border-border bg-popover p-2.5 text-sm text-popover-foreground shadow-panel">
+                      {listing.price}
+                    </div>
                   }
                 >
-                  <span className="cursor-pointer underline decoration-dotted">{listing.price.slice(0, 40)}...</span>
+                  <span className="cursor-pointer text-foreground/90 underline decoration-muted-foreground decoration-dotted underline-offset-2">
+                    {listing.price.slice(0, 40)}...
+                  </span>
                 </HoverPopover>
               ) : (
-                listing.price || '-'
+                <span className={listing.price ? 'text-foreground/90' : 'text-muted-foreground'}>
+                  {listing.price || '-'}
+                </span>
               )}
             </div>
 
-            <TooltipProvider delayDuration={0}>
-              <div className="flex flex-row items-center gap-1">
-                {/* Online Indicator */}
-                {online && (
-                  <Tooltip
-                    disableHoverableContent={true}
-                    delayDuration={0}
-                    open={whisperCopied || onlineTooltipHover}
-                    onOpenChange={setOnlineTooltipHover}
-                  >
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={copyWhisper}
-                        className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)] cursor-pointer hover:scale-125 transition-transform"
-                        aria-label="Copy whisper"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent className="pointer-events-none">
-                      <p>{whisperCopied ? 'Copied whisper, right click to paste' : 'Online in-game'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+            <div className="flex flex-row items-center gap-1">
+              {/* Online Indicator */}
+              {online && (
+                <Tooltip
+                  disableHoverableContent={true}
+                  delayDuration={0}
+                  open={whisperCopied || onlineTooltipHover}
+                  onOpenChange={setOnlineTooltipHover}
+                >
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={copyWhisper}
+                      className={cn(
+                        'mx-0.5 size-2.5 cursor-pointer rounded-full bg-success ring-2 ring-success/25 outline-none transition-[transform,box-shadow] duration-(--dur-fast) hover:scale-125 hover:ring-success/45 focus-visible:ring-ring/60',
+                        whisperCopied && 'scale-125 ring-4 ring-success/40',
+                      )}
+                      aria-label="Copy whisper"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent className="pointer-events-none">
+                    <p className="flex items-center gap-1.5">
+                      {whisperCopied && <Check className="size-3 text-success" />}
+                      {whisperCopied ? 'Copied whisper, right click to paste' : 'Online in-game · click to copy whisper'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
-                {/* Ethereal Indicator */}
-                {listing.item.is_ethereal && (
-                  <Tooltip disableHoverableContent={true}
-                    delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-white flex items-center justify-center">
-                        <span className="text-black text-[10px] font-bold leading-none">E</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="pointer-events-none">
-                      <p>Ethereal</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              {/* Ethereal Indicator */}
+              {listing.item.is_ethereal && (
+                <ListingBadge label="E"
+                  tooltip="Ethereal"
+                  className="border-border bg-foreground text-background" />
+              )}
 
-                {/* Corruption Indicator */}
-                {isCorrupted && (
-                  <Tooltip disableHoverableContent={true}
-                    delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-red-600 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold leading-none">C</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="pointer-events-none">
-                      <p>Corrupted</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              {/* Corruption Indicator */}
+              {isCorrupted && (
+                <ListingBadge label="C"
+                  tooltip="Corrupted"
+                  className="border-destructive/60 bg-destructive text-destructive-foreground" />
+              )}
 
-                {/* Sockets Indicator */}
-                {(listing.item.socket_count || 0) > 0 && (
-                  <Tooltip disableHoverableContent={true}
-                    delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <div className="w-4 h-4 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center">
-                        <span className="text-gray-200 text-[10px] font-bold leading-none">
-                          {listing.item.socket_count}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="pointer-events-none">
-                      <p>
-                        {listing.item.socket_count} {listing.item.socket_count === 1 ? 'Socket' : 'Sockets'}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </TooltipProvider>
+              {/* Sockets Indicator */}
+              {(listing.item.socket_count || 0) > 0 && (
+                <ListingBadge
+                  label={listing.item.socket_count}
+                  tooltip={`${listing.item.socket_count} ${listing.item.socket_count === 1 ? 'Socket' : 'Sockets'}`}
+                  className="border-border bg-secondary text-secondary-foreground"
+                />
+              )}
+            </div>
           </td>
 
           {/* Listed Column */}
-          <td className="px-2 py-1 whitespace-nowrap text-right text-xs text-gray-400">
+          <td className="whitespace-nowrap rounded-r-md px-2 py-1.5 text-right text-xs tabular-nums text-muted-foreground">
             {listing.bumped_at ? moment(listing.bumped_at).fromNow(true) : '-'}
           </td>
         </tr>
@@ -1857,27 +1975,26 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
         side="bottom"
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        className="p-0 bg-transparent border-0 w-auto pointer-events-none"
+        className="pointer-events-none w-auto border-0 bg-transparent p-0 shadow-none"
       >
-        <Card className="p-2 bg-neutral-950 border-neutral-700 max-w-sm">
-          <ItemStatsDisplay
-            stashItem={listing.item as any}
+        <div className="max-w-sm rounded-lg border border-border bg-popover p-2.5 text-popover-foreground shadow-panel">
+          <ItemStatsDisplay stashItem={statsItem}
             isExpanded={true}
             onToggleExpanded={() => {}}
-            hideToggle={true}
-          />
+            hideToggle={true} />
           {listing.user?.username && (
-            <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-1.5 text-xs text-gray-400">
-              <span>Seller: {listing.user.username}</span>
+            <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
+              <UserIcon className="size-3" />
+              <span>
+                Seller: <span className="text-foreground">{listing.user.username}</span>
+              </span>
               {online && (
-                <div
-                  className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.8)]"
-                  title="Online in-game"
-                />
+                <div className="size-2 rounded-full bg-success ring-2 ring-success/25"
+                  title="Online in-game" />
               )}
             </div>
           )}
-        </Card>
+        </div>
       </PopoverContent>
     </Popover>
   );
