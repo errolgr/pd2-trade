@@ -2,7 +2,24 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, SquareArrowOutUpRight, Trash2, Search, X as XIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ArrowUp,
+  Check,
+  ChevronDown,
+  ChevronsUp,
+  CircleAlert,
+  Clock,
+  Loader2,
+  Pencil,
+  RotateCw,
+  SquareArrowOutUpRight,
+  Store,
+  Trash2,
+  Search,
+  SearchX,
+  X as XIcon,
+} from 'lucide-react';
 import Fuse from 'fuse.js';
 import { useInView } from 'react-intersection-observer';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -22,6 +39,12 @@ import { Input } from '@/components/ui/input';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { cn } from '@/lib/utils';
+import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
+import EmptyState from './EmptyState';
+import { countChip, itemCard } from './styles';
 
 interface ListedItemsTabProps {
   onClose: () => void;
@@ -32,6 +55,9 @@ interface ListedItemsTabProps {
 }
 
 const ITEMS_PER_PAGE = 5;
+
+const iconButton =
+  'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none [&_svg]:size-4';
 
 const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   onClose: _onClose,
@@ -528,38 +554,68 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   if (isLoading && listings.length === 0 && !searchQuery.trim()) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Loading listings...</span>
+      <div className="flex flex-col gap-2"
+        aria-busy>
+        <div className="flex items-center gap-2 pb-1 text-sm text-muted-foreground"
+          role="status">
+          <Loader2 className="size-4 animate-spin text-primary" />
+          <span>Loading listings...</span>
+        </div>
+        {[0, 1, 2].map((i) => (
+          <div key={i}
+            className="rounded-lg border border-border bg-card/40 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="flex gap-1.5">
+                <Skeleton className="h-7 w-16" />
+                <Skeleton className="h-7 w-14" />
+                <Skeleton className="size-7" />
+              </div>
+            </div>
+            <div className="mt-3 flex justify-between">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   if (error && listings.length === 0 && !searchQuery.trim()) {
     return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-red-500 mb-4">{error}</p>
+      <EmptyState icon={<CircleAlert />}
+        title="Couldn't load listings">
+        <p className="mb-4 text-destructive">{error}</p>
         <Button
           onClick={() => {
             setCurrentPage(0);
             fetchListings();
           }}
         >
+          <RotateCw className="size-4" />
           Retry
         </Button>
-      </div>
+      </EmptyState>
     );
   }
 
+  const isSearching = !!searchQuery.trim();
+  const showEmpty = !isSearching && !isLoading && displayListings.length === 0 && totalCount === 0;
+
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full">
-      <div className="flex items-center justify-between mb-2 gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search item by name..."
+              aria-label="Search listings"
               value={searchQuery}
               onChange={(e) => {
                 const newQuery = e.target.value;
@@ -570,21 +626,37 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                   distributionMetric('listed_items.search_query_length', newQuery.length);
                 }
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && searchQuery) {
+                  e.preventDefault();
+                  setSearchQuery('');
+                }
+              }}
               className="pl-8 pr-8 h-8 text-sm"
             />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                }}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <XIcon className="h-4 w-4" />
-              </button>
-            )}
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.button
+                  type="button"
+                  aria-label="Clear search"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: DUR.fast }}
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                  className="absolute right-1.5 top-1/2 -mt-2.5 inline-flex size-5 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
-          <span className="text-xs font-medium">
-            Listed Items ({searchQuery.trim() ? filteredListings.length : totalCount})
+          <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            Listed Items
+            <span className={countChip}>{isSearching ? filteredListings.length : totalCount}</span>
+            <span className="sr-only">({isSearching ? filteredListings.length : totalCount})</span>
           </span>
         </div>
         <Tooltip delayDuration={0}>
@@ -592,17 +664,20 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs mr-2"
+              className="h-8 text-xs"
               onClick={handleBumpAll}
               disabled={isBumpingAll || isLoading || isLoadingAllListings || totalCount === 0}
             >
               {isBumpingAll ? (
                 <>
-                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  <Loader2 className="h-3 w-3 animate-spin" />
                   Bumping...
                 </>
               ) : (
-                'Bump All'
+                <>
+                  <ChevronsUp className="h-3.5 w-3.5" />
+                  Bump All
+                </>
               )}
             </Button>
           </TooltipTrigger>
@@ -610,215 +685,309 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         </Tooltip>
       </div>
 
-      {isLoadingAllListings && searchQuery.trim() && (
-        <div className="flex items-center justify-center p-4">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
-        </div>
-      )}
-      <div className="flex-1 overflow-y-scroll pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
-        <div className="flex flex-col gap-2">
-          {displayListings.length === 0 && searchQuery.trim() && !isLoadingAllListings && (
-            <div className="text-center text-sm text-muted-foreground p-4">
-              No items found matching &quot;{searchQuery}&quot;
+      <AnimatePresence>
+        {isLoadingAllListings && isSearching && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center justify-center overflow-hidden"
+            role="status"
+          >
+            <div className="flex items-center gap-2 p-3">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Searching...</span>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+        <motion.div className="flex flex-col gap-2 p-px"
+          variants={listStagger}
+          initial="hidden"
+          animate="visible">
+          {displayListings.length === 0 && isSearching && !isLoadingAllListings && (
+            <EmptyState icon={<SearchX />}
+              title="No matches"
+              className="p-6">
+              No items found matching &quot;{searchQuery}&quot;
+            </EmptyState>
           )}
-          {displayListings.map((listing) => {
-            const isEditing = editingListingId === listing._id;
-            const itemHash = listing.item.hash;
+          {showEmpty && (
+            <EmptyState icon={<Store />}
+              title={authData ? 'No active listings' : 'Not signed in'}>
+              {authData
+                ? 'Items you list from your shared stash will show up here.'
+                : 'Sign in to your PD2 account to manage your listings.'}
+            </EmptyState>
+          )}
+          <AnimatePresence initial={false}>
+            {displayListings.map((listing) => {
+              const isEditing = editingListingId === listing._id;
+              const isDeleting = deletingListingId === listing._id;
+              const itemHash = listing.item.hash;
+              const statsOpen = expandedItems.has(itemHash);
 
-            return (
-              <div key={listing._id}
-                className="p-3 border rounded border-neutral-600">
-                <div className="flex justify-between items-start gap-2 mb-2">
-                  <div className="flex-1">
-                    <div className={qualityColor(listing.item.quality.name)}
-                      style={{ fontFamily: 'DiabloFont' }}>
-                      {listing.item.name}
+              return (
+                <motion.div
+                  layout="position"
+                  variants={listItem}
+                  exit={{ opacity: 0, x: -16, transition: { duration: DUR.med } }}
+                  key={listing._id}
+                  className={itemCard({ className: isDeleting ? 'border-destructive/40 bg-destructive/5' : undefined })}
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className={cn('truncate', qualityColor(listing.item.quality.name))}
+                        style={{ fontFamily: 'DiabloFont' }}>
+                        {listing.item.name}
+                      </div>
+                      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        {listing.hr_price ? (
+                          <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
+                            {`${listing.hr_price} HR`}
+                          </span>
+                        ) : null}
+                        {listing.price && <span className="truncate">{listing.price}</span>}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {listing.hr_price ? `${listing.hr_price} HR` : ''} {listing.price}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isEditing ? (
-                      <Form {...editForm}>
-                        <form
-                          onSubmit={editForm.handleSubmit((values) => handleSaveEdit(values, listing))}
-                          className="flex items-end gap-1"
-                        >
-                          <FormField
-                            control={editForm.control}
-                            name="note"
-                            render={({ field }) => (
-                              <FormItem className="m-0 p-0 min-w-0 flex-1">
-                                <FormControl>
-                                  <Input
-                                    placeholder="Note..."
-                                    {...field}
-                                    className="h-8 text-xs"
-                                    autoComplete="off"
-                                    value={editForm.getValues('note') || ''}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={editForm.control}
-                            name="price"
-                            render={({ field }) => (
-                              <FormItem className="m-0 p-0 min-w-0 w-20">
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    step={0.01}
-                                    placeholder="HR"
-                                    {...field}
-                                    className="h-8 text-xs"
-                                    value={editForm.getValues('price') || ''}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <ButtonGroup>
-                            <Button
-                              type="submit"
-                              size="sm"
-                              className="h-8 text-xs"
-                              disabled={isEditing && !isEditFormValid}
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 text-xs"
-                              onClick={() => setEditingListingId(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </ButtonGroup>
-                        </form>
-                      </Form>
-                    ) : (
-                      <>
-                        {canBump(listing) ? (
-                          <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs"
-                                onClick={() => handleBump(listing)}
-                                disabled={bumpingListingId === listing._id}
-                              >
-                                {bumpingListingId === listing._id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  'Bump'
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Bump listing to top</TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                              <span>
-                                <Button size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs cursor-not-allowed"
-                                  disabled>
-                                  Bump
-                                </Button>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>You can bump this item {timeUntilBump(listing)}</TooltipContent>
-                          </Tooltip>
-                        )}
-                        <Tooltip delayDuration={0}>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs"
-                              onClick={() => handleEdit(listing)}
-                            >
-                              Edit
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit price</TooltipContent>
-                        </Tooltip>
-                        <Tooltip delayDuration={0}>
-                          <TooltipTrigger asChild>
-                            {deletingListingId === listing._id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                            ) : (
-                              <Trash2
-                                className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleDelete(listing);
+                    <div className="flex items-center gap-1.5">
+                      <AnimatePresence mode="wait"
+                        initial={false}>
+                        {isEditing ? (
+                          <motion.div
+                            key="edit"
+                            initial={{ opacity: 0, x: 8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 8 }}
+                            transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                          >
+                            <Form {...editForm}>
+                              <form
+                                onSubmit={editForm.handleSubmit((values) => handleSaveEdit(values, listing))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    setEditingListingId(null);
+                                  }
                                 }}
-                              />
+                                className="flex items-end gap-1"
+                              >
+                                <FormField
+                                  control={editForm.control}
+                                  name="note"
+                                  render={({ field }) => (
+                                    <FormItem className="m-0 p-0 min-w-0 flex-1">
+                                      <FormControl>
+                                        <Input
+                                          placeholder="Note..."
+                                          aria-label="Note"
+                                          {...field}
+                                          className="h-8 text-xs"
+                                          autoComplete="off"
+                                          autoFocus
+                                          value={editForm.getValues('note') || ''}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={editForm.control}
+                                  name="price"
+                                  render={({ field }) => (
+                                    <FormItem className="m-0 p-0 min-w-0 w-20">
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min={0}
+                                          step={0.01}
+                                          placeholder="HR"
+                                          aria-label="HR price"
+                                          {...field}
+                                          className="h-8 text-xs tabular-nums"
+                                          value={editForm.getValues('price') || ''}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <ButtonGroup>
+                                  <Button
+                                    type="submit"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={isEditing && !isEditFormValid}
+                                  >
+                                    <Check className="size-3.5" />
+                                    Save
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 text-xs"
+                                    onClick={() => setEditingListingId(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </ButtonGroup>
+                              </form>
+                            </Form>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="actions"
+                            className="flex items-center gap-1"
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -8 }}
+                            transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                          >
+                            {canBump(listing) ? (
+                              <Tooltip delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 gap-1 px-2.5 text-xs"
+                                    onClick={() => handleBump(listing)}
+                                    disabled={bumpingListingId === listing._id}
+                                  >
+                                    {bumpingListingId === listing._id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <ArrowUp className="size-3.5" />
+                                        Bump
+                                      </>
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Bump listing to top</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-not-allowed">
+                                    <Button size="sm"
+                                      variant="outline"
+                                      className="h-7 gap-1 px-2.5 text-xs"
+                                      disabled>
+                                      <Clock className="size-3.5" />
+                                      Bump
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>You can bump this item {timeUntilBump(listing)}</TooltipContent>
+                              </Tooltip>
                             )}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {deletingListingId === listing._id ? 'Deleting...' : 'Remove listing'}
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip delayDuration={0}>
-                          <TooltipTrigger asChild>
-                            <SquareArrowOutUpRight
-                              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
-                              onClick={() => {
-                                incrementMetric('listed_items.open_trade_url', 1);
-                                openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
-                              }}
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 gap-1 px-2.5 text-xs"
+                                  onClick={() => handleEdit(listing)}
+                                >
+                                  <Pencil className="size-3" />
+                                  Edit
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit price</TooltipContent>
+                            </Tooltip>
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={isDeleting ? 'Deleting...' : 'Remove listing'}
+                                  disabled={isDeleting}
+                                  className={cn(iconButton, 'text-destructive/80 hover:bg-destructive/15 hover:text-destructive')}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDelete(listing);
+                                  }}
+                                >
+                                  {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>{isDeleting ? 'Deleting...' : 'Remove listing'}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label="Go to trade website"
+                                  className={cn(iconButton, 'hover:bg-accent hover:text-accent-foreground')}
+                                  onClick={() => {
+                                    incrementMetric('listed_items.open_trade_url', 1);
+                                    openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+                                  }}
+                                >
+                                  <SquareArrowOutUpRight />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Go to trade website</TooltipContent>
+                            </Tooltip>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between items-end gap-2">
+                    <div className="min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandedStats(itemHash)}
+                        aria-expanded={statsOpen}
+                        className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring/60"
+                      >
+                        {statsOpen ? 'Show Less' : 'Show Stats'}
+                        <ChevronDown
+                          className={cn('size-3 transition-transform duration-(--dur-fast)', statsOpen && 'rotate-180')}
+                        />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {statsOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: DUR.med, ease: EASE_OUT }}
+                            className="overflow-hidden"
+                          >
+                            <ItemStatsDisplay
+                              // Listing ItemDetail is a superset-compatible view of the stash item for display purposes.
+                              stashItem={listing.item as unknown as GameStashItem}
+                              isExpanded={true}
+                              onToggleExpanded={toggleExpandedStats}
                             />
-                          </TooltipTrigger>
-                          <TooltipContent>Go to trade website</TooltipContent>
-                        </Tooltip>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-2 flex justify-between items-end">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleExpandedStats(itemHash)}
-                      className="text-xs text-blue-500 hover:text-blue-700 underline"
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <span
+                      className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
+                      title={moment(listing.created_at).format('LLL')}
                     >
-                      {expandedItems.has(itemHash) ? 'Show Less' : 'Show Stats'}
-                    </button>
-                    {expandedItems.has(itemHash) && (
-                      <ItemStatsDisplay
-                        stashItem={listing.item as any}
-                        isExpanded={true}
-                        onToggleExpanded={toggleExpandedStats}
-                      />
-                    )}
+                      <Clock className="size-3" />
+                      {moment(listing.created_at).fromNow()}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{moment(listing.created_at).fromNow()}</span>
-                </div>
-              </div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
           {/* Infinite Scroll Trigger */}
-          {!searchQuery.trim() && listings.length < totalCount && (
+          {!isSearching && listings.length < totalCount && (
             <div ref={loaderRef}
               className="py-4 flex justify-center w-full">
               {isLoading && <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
