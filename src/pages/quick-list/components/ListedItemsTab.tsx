@@ -55,6 +55,10 @@ interface ListedItemsTabProps {
 }
 
 const ITEMS_PER_PAGE = 5;
+// "Bump All" success flash (mirrors the pd2trader.com/overlay demo): keep in sync with --animate-bump-flash.
+const BUMP_FLASH_STAGGER_MS = 210;
+const BUMP_FLASH_SPREAD_MS = 2500;
+const BUMP_FLASH_DURATION_MS = 1050;
 
 const iconButton =
   'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none [&_svg]:size-4';
@@ -84,6 +88,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [bumpingListingId, setBumpingListingId] = useState<string | null>(null);
   const [deletingListingId, setDeletingListingId] = useState<string | null>(null);
   const [isBumpingAll, setIsBumpingAll] = useState(false);
+  // Timestamp of the last successful "Bump All": drives the staggered green flash across rows.
+  const [bumpWave, setBumpWave] = useState(0);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [allListingsForSearch, setAllListingsForSearch] = useState<MarketListingEntry[]>([]);
@@ -360,6 +366,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       // Update all local items
       setListings((prev) => prev.map((l) => ({ ...l, bumped_at: new Date().toISOString() })));
+      const wave = Date.now();
+      setBumpWave(wave);
+      // Drop the flash overlays once the last row has finished.
+      setTimeout(() => setBumpWave((w) => (w === wave ? 0 : w)), BUMP_FLASH_SPREAD_MS + BUMP_FLASH_DURATION_MS);
 
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.bump_all', 1, { status: 'success' });
@@ -605,6 +615,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const isSearching = !!searchQuery.trim();
   const showEmpty = !isSearching && !isLoading && displayListings.length === 0 && totalCount === 0;
+  // Same pacing as the website demo (210ms per row), compressed so long lists finish within ~2.5s.
+  const bumpStagger = Math.min(BUMP_FLASH_STAGGER_MS, BUMP_FLASH_SPREAD_MS / Math.max(1, displayListings.length));
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -722,7 +734,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             </EmptyState>
           )}
           <AnimatePresence initial={false}>
-            {displayListings.map((listing) => {
+            {displayListings.map((listing, index) => {
               const isEditing = editingListingId === listing._id;
               const isDeleting = deletingListingId === listing._id;
               const itemHash = listing.item.hash;
@@ -736,10 +748,20 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                   key={listing._id}
                   className={itemCard({ className: isDeleting ? 'border-destructive/40 bg-destructive/5' : undefined })}
                 >
+                  {bumpWave > 0 && (
+                    <span
+                      key={bumpWave}
+                      aria-hidden
+                      className="pointer-events-none absolute -inset-px rounded-[inherit] border border-success/45 bg-success/10 opacity-0 animate-bump-flash"
+                      style={{ animationDelay: `${index * bumpStagger}ms` }}
+                    />
+                  )}
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className={cn('truncate', qualityColor(listing.item.quality.name))}
-                        style={{ fontFamily: 'DiabloFont' }}>
+                      <div
+                        className={cn('truncate', qualityColor(listing.item.quality.name))}
+                        style={{ fontFamily: 'DiabloFont' }}
+                      >
                         {listing.item.name}
                       </div>
                       <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -902,7 +924,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                   type="button"
                                   aria-label={isDeleting ? 'Deleting...' : 'Remove listing'}
                                   disabled={isDeleting}
-                                  className={cn(iconButton, 'text-destructive/80 hover:bg-destructive/15 hover:text-destructive')}
+                                  className={cn(
+                                    iconButton,
+                                    'text-destructive/80 hover:bg-destructive/15 hover:text-destructive',
+                                  )}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
