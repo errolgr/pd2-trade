@@ -3106,9 +3106,15 @@ checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 name = "pd2-trader"
 version = "0.10.0"
 dependencies = [
+ "block2 0.6.2",
  "enigo",
  "notify",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation 0.3.2",
  "once_cell",
+ "parking_lot",
  "rdev",
  "runas",
  "serde",
