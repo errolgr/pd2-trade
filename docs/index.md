@@ -105,3 +105,7 @@ Easily compare and trade runes with up-to-date exchange rates.
 <a href="https://i.imgur.com/YvGC9Du.png" target="_blank" rel="noopener noreferrer">
 <img src="https://i.imgur.com/YvGC9Du.png" alt="Rune Exchange" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
+
+#### Themes
+
+Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → General, applied instantly to every window.

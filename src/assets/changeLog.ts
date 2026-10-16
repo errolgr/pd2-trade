@@ -1,4 +1,20 @@
 export const changeLog = {
+  '0.11.0': [
+    '✨ Fresh new look for every window: price check, quick list, delist, chat, offers, toasts, stash value, net worth ticker and panel, settings, changelog and sign-in',
+    '🆕 Themes: pick from 20 color themes (10 dark, 10 light) in Settings → General — Sanctuary (default) keeps the classic look',
+    '✨ Smoother animations everywhere, with consistent title bars, panels that stay readable over the game, and reduced-motion support',
+    '🆕 Price check: 7-day average and change on the price chip, Enter in min/max runs the search, "Clear" for selected stats, Retry on errors and a "No listings found" message',
+    '🆕 Quick list: keyboard-selectable item cards, macro count on the note macros button, empty states and a timeout bar for queued items',
+    '🆕 Chat: day dividers, total unread count, search clear button (Esc clears) and a "No messages yet" state',
+    '🆕 Offers: full timestamp on hover, Enter submits the accept popover, copy buttons confirm with ✓, Esc closes the history',
+    '🆕 Stash value: category tooltips, visible row count and HR total, search clear button, history range change and snapshot compare Clear',
+    '🆕 Settings: section icons with keyboard navigation, hotkey conflict warnings, Saved indicator, clickable template placeholders and loading skeletons',
+    '🔧 Fixed long price check stat lists being cut off instead of scrolling',
+    '🔧 Fixed "Show Less" never appearing in the rune price popover',
+    '🔧 Fixed tooltips and popovers on some buttons not showing or appearing off-screen (e.g. stash value confidence badge)',
+    '🔧 Fixed "Show More" in the listing form acting as a submit button',
+    '🔧 Fixed the Season dropdown cutting off "Betrayal (S13) (current)" and Settings showing no navigation in narrow windows',
+  ],
   '0.10.0': [
     '🆕 Stash Value (Ctrl+X) redesigned as Net Worth: real tabs for Overview, Runes, Currency, Uber Mats, Gems & Mats, Uniques & Sets and History',
     '🆕 Valuation now comes from pd2trader.com and covers all 33 runes, essences, uber mats, gems, mats, uniques and sets — with % of total, 7-day price change and a price-confidence badge per row',
