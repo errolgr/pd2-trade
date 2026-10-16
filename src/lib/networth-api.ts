@@ -31,6 +31,7 @@ export interface ValuationLine {
   sampleCount: number;
   priceChange7dPercent: number | null;
   tab: string | null;
+  /** `/assets/…` is served by BACKEND_URL; `/runes|/currency|/ubers/…` are bundled public assets. */
   iconPath: string | null;
 }
 

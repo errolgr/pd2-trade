@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { BACKEND_URL } from '@/lib/pkce';
 import type { ValuationLine } from '@/lib/networth-api';
 import { CATEGORY_COLORS } from '../lib/networth-format';
 
@@ -9,9 +10,11 @@ export function HoldingName({ line, showTab = false }: { line: ValuationLine; sh
   return (
     <div className="flex items-center gap-2 min-w-0">
       {line.iconPath ? (
-        <img src={line.iconPath}
+        <img
+          src={line.iconPath.startsWith('/assets/') ? `${BACKEND_URL}${line.iconPath}` : line.iconPath}
           alt=""
-          className="h-5 w-5 shrink-0 object-contain" />
+          className="h-5 w-5 shrink-0 object-contain"
+        />
       ) : (
         <span className="h-2 w-2 mx-1.5 shrink-0 rounded-full"
           style={{ background: CATEGORY_COLORS[line.category] }} />
