@@ -20,6 +20,7 @@ import {
   ordinalPercentile,
   plural,
   RANK_BLOCKS,
+  rankBlockIndex,
   rankedStats,
   rankText,
   SLOT_PLURALS,
@@ -271,7 +272,7 @@ export function MarketBlock({ rare, className }: { rare: RareAppraisal; classNam
 export function RankBlocks({ rare }: { rare: RareAppraisal }) {
   const color = VERDICT_COLORS[rare.verdict];
   const slots = SLOT_PLURALS[rare.slot] ?? 'Items';
-  const at = RANK_BLOCKS.findIndex((b) => rare.rank >= b.from && rare.rank < b.to);
+  const at = rankBlockIndex(rare.rank);
   return (
     <div
       className="flex flex-col gap-1.5"

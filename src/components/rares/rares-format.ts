@@ -109,12 +109,22 @@ export function marketSource(rare: RareAppraisal): string | null {
 /** Rank blocks (Blocks rank display): bottom 25% … top 5%, each [from, to) on the 0..1 percentile. */
 export const RANK_BLOCKS: { label: string; from: number; to: number }[] = [
   { label: 'bottom 25%', from: 0, to: 0.25 },
-  { label: '25–50%', from: 0.25, to: 0.5 },
-  { label: '50–75%', from: 0.5, to: 0.75 },
+  { label: 'bottom 50%', from: 0.25, to: 0.5 },
+  { label: 'top 50%', from: 0.5, to: 0.75 },
   { label: 'top 25%', from: 0.75, to: 0.85 },
   { label: 'top 15%', from: 0.85, to: 0.95 },
-  { label: 'top 5%', from: 0.95, to: 1.0001 },
+  { label: 'top 5%', from: 0.95, to: 1 },
 ];
+
+/**
+ * Index of the rank block that holds `rank`, decided on the same rounded "top X%" / "bottom X%" that
+ * `rankText` prints, so the lit block never contradicts the verdict text (rank .75 → "top 25%" → top 25%).
+ */
+export function rankBlockIndex(rank: number): number {
+  if (rank < 0.5) return Math.max(1, Math.round(rank * 100)) <= 25 ? 0 : 1;
+  const top = Math.max(1, Math.round((1 - rank) * 100));
+  return top <= 5 ? 5 : top <= 15 ? 4 : top <= 25 ? 3 : 2;
+}
 
 /** Short names for the corruption note ("20 FCR on rings only via corruption"); the stat label otherwise. */
 const SHORT_STAT: Record<string, string> = {
