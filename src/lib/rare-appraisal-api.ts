@@ -150,3 +150,15 @@ export async function fetchRareAppraisal(
   if (!response.ok) throw new Error(`Rare appraisal API error: ${response.status}`);
   return (await response.json()) as RareAppraisalResponse;
 }
+
+/**
+ * Market history of a Net Worth rare (`GET /api/rare-history/:fingerprint`; the rare's `id` without its `-2`
+ * duplicate suffix). Resolves null when the feature is off or the id is not a fingerprint (404/400).
+ */
+export async function fetchRareHistory(id: string, signal?: AbortSignal): Promise<RareHistory | null> {
+  const fingerprint = id.replace(/^([0-9a-f]{32})-\d+$/, '$1');
+  const response = await fetch(`${BACKEND_URL}/api/rare-history/${encodeURIComponent(fingerprint)}`, { signal });
+  if (response.status === 404 || response.status === 400) return null;
+  if (!response.ok) throw new Error(`Rare history API error: ${response.status}`);
+  return (await response.json()) as RareHistory;
+}

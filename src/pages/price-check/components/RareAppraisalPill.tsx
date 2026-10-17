@@ -4,26 +4,16 @@ import { Loader2 } from 'lucide-react';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
-import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
-import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
-import {
-  HardcoreNote,
-  ItemStatsSection,
-  RankDisplay,
-  RareHistorySection,
-  VerdictBadge,
-} from '@/components/rares/RareParts';
-import { useOptions } from '@/hooks/useOptions';
+import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
+import { VerdictBadge } from '@/components/rares/RareParts';
+import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import {
   bandRange,
   hardcoreNote,
-  marketSource,
   MODEL_SEASON,
   rankText,
   SLOT_LABELS,
   SLOT_PLURALS,
-  VERDICT_COLORS,
-  VERDICT_LABELS,
 } from '@/components/rares/rares-format';
 
 /** Header placeholder while the rare is appraised (same footprint as the uniques' price pill skeleton). */
@@ -65,7 +55,6 @@ export function RareAppraisalPill({
   const market = appraisal.market;
   const hcNote = hardcoreNote(appraisal, hardcore);
   const slots = (SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase();
-  const { settings, updateSettings } = useOptions();
   return (
     <motion.div className="inline-block"
       variants={scaleIn}
@@ -80,44 +69,9 @@ export function RareAppraisalPill({
                 {SLOT_LABELS[appraisal.slot]} · est. from {MODEL_SEASON} listings
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <PopoverTile label="Verdict"
-                emphasis={appraisal.verdict === 'keep'}>
-                <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{VERDICT_LABELS[appraisal.verdict]}</span>
-                <span className="font-medium text-muted-foreground"> · </span>
-                {rankText(appraisal.rank)}
-              </PopoverTile>
-              <PopoverTile label="Usually listed">
-                {market ? `${bandRange(market.lowHr, market.highHr)} HR` : '—'}
-              </PopoverTile>
-            </div>
-            <RankDisplay rare={appraisal}
-              rule={DEFAULT_VERDICT_RULE}
-              mode={settings.rareRankDisplay ?? 'bar'} />
-            {(market || hcNote) && (
-              <div className="space-y-1 border-t border-border pt-2 text-xs">
-                {market && (
-                  <>
-                    <PopoverKeyValue label="Samples">{market.sampleSize}</PopoverKeyValue>
-                    <PopoverKeyValue label="Compared with">{marketSource(appraisal)}</PopoverKeyValue>
-                  </>
-                )}
-                <HardcoreNote rare={appraisal}
-                  hardcore={hardcore} />
-              </div>
-            )}
-            <div className="border-t border-border pt-2">
-              <ItemStatsSection
-                rare={appraisal}
-                open={settings.rareStatsExpanded ?? false}
-                onOpenChange={(open) => updateSettings({ rareStatsExpanded: open })}
-              />
-            </div>
-            {history && !history.weak && history.timesListed > 0 && (
-              <div className="border-t border-border pt-2">
-                <RareHistorySection history={history} />
-              </div>
-            )}
+            <RareAppraisalDetail appraisal={appraisal}
+              history={history}
+              hardcore={hardcore} />
           </div>
         }
       >

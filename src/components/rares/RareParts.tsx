@@ -3,7 +3,6 @@ import moment from 'moment';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type {
-  AppraisedStat,
   CheckPriority,
   RareAppraisal,
   RareHistory,
@@ -13,19 +12,14 @@ import type {
 import { ChevronDown } from 'lucide-react';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import {
-  bandRange,
   hardcoreNote,
-  keyStats,
-  marketSource,
   ordinalPercentile,
   plural,
   RANK_BLOCKS,
   rankBlockIndex,
   rankedStats,
-  rankText,
   SLOT_PLURALS,
   starsText,
-  starTitle,
   statNotes,
   VERDICT_BADGE_CLASS,
   VERDICT_COLORS,
@@ -89,106 +83,6 @@ export function VerdictBadge({
   );
 }
 
-/** "top 8%" / "bottom 12%" with the ordinal percentile on hover. */
-export function RankText({ rare, className }: { rare: RareAppraisal; className?: string }) {
-  const slots = (SLOT_PLURALS[rare.slot] ?? 'items').toLowerCase();
-  return (
-    <Hint text={`Predicted ${ordinalPercentile(rare.rank)} percentile of ${slots} prices at this point of the season`}>
-      <span className={cn('cursor-help whitespace-nowrap text-xs font-medium tabular-nums', className)}>
-        {rankText(rare.rank)}
-      </span>
-    </Hint>
-  );
-}
-
-function StarsMark({ stat }: { stat: AppraisedStat }) {
-  return (
-    <Hint text={starTitle(stat)}>
-      <span className="cursor-help whitespace-nowrap tracking-tighter text-glow">{starsText(stat.stars)}</span>
-    </Hint>
-  );
-}
-
-const MAX_CHIPS = 3;
-
-/** Up to 3 ★ key-stat chips (multiplier on hover only). Vendor rares never show stars. */
-export function StarChips({ rare }: { rare: RareAppraisal }) {
-  const keys = rare.verdict === 'vendor' ? [] : keyStats(rare);
-  if (keys.length === 0) return null;
-  return (
-    <span className="flex min-w-0 flex-wrap items-center gap-1">
-      {keys.slice(0, MAX_CHIPS).map((s, i) => (
-        <Hint key={`${i}-${s.label}`}
-          text={starTitle(s)}>
-          <span className="inline-flex cursor-help items-center gap-1 whitespace-nowrap rounded-md border border-border/60 bg-muted/40 px-1.5 py-px text-[11px] text-foreground/90">
-            <span className="tracking-tighter text-glow">{starsText(s.stars)}</span>
-            {s.label}
-          </span>
-        </Hint>
-      ))}
-      {keys.length > MAX_CHIPS && (
-        <span className="text-[11px] text-muted-foreground">+{keys.length - MAX_CHIPS} more</span>
-      )}
-    </span>
-  );
-}
-
-/**
- * Stats of one rare in in-game order. Key stats carry ★/★★/★★★ (tier multiplier on hover only) and
- * a glow marker; non-key stats are dimmed. Roll bar when the range is known, grey "valuable from N" when
- * the stat is key on this slot but below the threshold, corrupted stats in the corrupted colour.
- * Vendor rares never show stars.
- */
-export function StatList({ rare }: { rare: RareAppraisal }) {
-  const showStars = rare.verdict !== 'vendor';
-  return (
-    <ul className="flex flex-col">
-      {rare.stats.map((s, i) => {
-        const isKey = showStars && s.stars !== null;
-        return (
-          <li
-            key={`${i}-${s.label}`}
-            className={cn(
-              'grid min-h-7 grid-cols-[2.25rem_minmax(0,1fr)_3.25rem] items-center gap-2 rounded-md px-2 py-0.5',
-              isKey && 'bg-accent/40 shadow-[inset_2px_0_0_var(--glow)]',
-            )}
-          >
-            <span className="text-xs">{isKey ? <StarsMark stat={s} /> : null}</span>
-            <span
-              className={cn(
-                'min-w-0 text-sm leading-snug',
-                isKey ? 'font-medium text-foreground' : 'text-muted-foreground/80',
-                s.corrupted && 'text-q-corrupted',
-              )}
-            >
-              {s.label}
-              {s.keyFrom !== null && (
-                <Hint text={`This stat starts to add value on this slot from ${s.keyFrom}`}>
-                  <span className="ml-1.5 cursor-help whitespace-nowrap text-[11px] text-muted-foreground/70">
-                    valuable from {s.keyFrom}
-                  </span>
-                </Hint>
-              )}
-            </span>
-            {s.roll !== null ? (
-              <Hint text={`Roll: ${Math.round(s.roll * 100)}% of the possible range`}>
-                <span className="block h-1 w-full cursor-help overflow-hidden rounded-full bg-muted">
-                  <span
-                    className={cn('block h-full rounded-full', isKey ? 'bg-glow' : 'bg-muted-foreground/50')}
-                    style={{ width: `${Math.round(s.roll * 100)}%` }}
-                  />
-                </span>
-              </Hint>
-            ) : (
-              <span />
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 const pct = (v: number): string => `${Math.min(100, Math.max(0, v * 100))}%`;
 
 /**
@@ -247,21 +141,6 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
         {label}
       </span>
     </div>
-  );
-}
-
-/** Scannable market block: "USUALLY LISTED" / "1.5–2.0 HR" / "circlets at this rank · S13"; sample size on hover. */
-export function MarketBlock({ rare, className }: { rare: RareAppraisal; className?: string }) {
-  const m = rare.market;
-  if (!m) return null;
-  return (
-    <Hint text={`Asking prices (25th–75th percentile) of ${m.sampleSize} listings at a similar rank`}>
-      <div className={cn('flex cursor-help flex-col leading-tight', className)}>
-        <SectionLabel className="text-[10px]">Usually listed</SectionLabel>
-        <span className="text-lg font-semibold tabular-nums text-foreground">{bandRange(m.lowHr, m.highHr)} HR</span>
-        <span className="text-[11px] text-muted-foreground">{marketSource(rare)}</span>
-      </div>
-    </Hint>
   );
 }
 

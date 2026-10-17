@@ -213,12 +213,16 @@ export const isWorthALook = (r: RareAppraisal): boolean =>
 /** Check items without a key stat ("likely low value"), folded per stash tab like vendor rares. */
 export const isLowValue = (r: RareAppraisal): boolean => r.verdict === 'check' && !isWorthALook(r);
 
-/** "War Belt · Belt · Shared 1 · col 3, row 1"; the slot is skipped when it equals the base name (Ring, Jewel). */
+/** "War Belt · Belt · Shared 1" (row line; position is in the detail); the slot is skipped when it equals the base name (Ring, Jewel). */
 export function locationText(rare: RareAppraisal): string {
   const slot = SLOT_LABELS[rare.slot] ?? rare.slot;
-  // Positions are raw PD2 grid coordinates (0-based); shown 1-based.
+  return [rare.baseName, slot === rare.baseName ? null : slot, rare.tab].filter(Boolean).join(' · ');
+}
+
+/** "Shared 1 · col 5, row 1" (raw 0-based PD2 grid coordinates shown 1-based); null without a tab or position. */
+export function stashPositionText(rare: RareAppraisal): string | null {
   const position = rare.position ? `col ${rare.position.column + 1}, row ${rare.position.row + 1}` : null;
-  return [rare.baseName, slot === rare.baseName ? null : slot, rare.tab, position].filter(Boolean).join(' · ');
+  return [rare.tab, position].filter(Boolean).join(' · ') || null;
 }
 
 /** Stash order: tab, then row, then column; items without a position last within their tab. */

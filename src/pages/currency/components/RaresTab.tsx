@@ -1,29 +1,29 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { RaresSummary } from '@/lib/networth-api';
-import type { RareAppraisal, VerdictRule } from '@/lib/rare-appraisal-api';
-import {
-  HardcoreNote,
-  MarketBlock,
-  RankBar,
-  RankText,
-  StarChips,
-  StatList,
-  VerdictBadge,
-} from '@/components/rares/RareParts';
+import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PopoverSectionTitle } from '@/components/custom/popover-parts';
+import { VerdictBadge } from '@/components/rares/RareParts';
+import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
+import { rareArtUrl } from '@/components/rares/rare-art';
+import { statChipText } from '@/components/rares/stat-chip';
 import {
   compareStash,
   fmtBandHr,
   isLowValue,
   isWorthALook,
+  keyStats,
   locationText,
   marketBandText,
   MODEL_SEASON,
   plural,
-  SLOT_LABELS,
+  stashPositionText,
+  starsText,
+  starTitle,
 } from '@/components/rares/rares-format';
 import { EmptyState } from './StatePanel';
 
@@ -178,11 +178,10 @@ export function RaresSummaryCard({ summary }: { summary: RaresSummary }) {
 
 function RareGroup({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
-    <section className="space-y-1">
-      <div className="flex items-baseline gap-2 px-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{title}</span>
-        <span className="text-[11px] tabular-nums text-muted-foreground/70">{count}</span>
-      </div>
+    <section>
+      <PopoverSectionTitle className="px-1">
+        {title} <span className="font-normal tabular-nums text-muted-foreground">{count}</span>
+      </PopoverSectionTitle>
       <ul className="overflow-hidden rounded-lg border border-border/60 bg-card/30">{children}</ul>
     </section>
   );
@@ -206,7 +205,83 @@ function Collapse({ open, children }: { open: boolean; children: React.ReactNode
   );
 }
 
-/** One rare: name + location, verdict, ★ chips (never on vendor), market band, rank; expands to bar + stats. */
+const MAX_ROW_CHIPS = 2;
+
+/** Up to two short ★ chips ("FCR 20%") on one line, "+N" for the rest; full stat text on hover. Never on vendor. */
+function RowChips({ rare }: { rare: RareAppraisal }) {
+  const keys = rare.verdict === 'vendor' ? [] : keyStats(rare);
+  if (keys.length === 0) return null;
+  const rest = keys.slice(MAX_ROW_CHIPS);
+  return (
+    <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
+      {keys.slice(0, MAX_ROW_CHIPS).map((s, i) => (
+        <Tooltip key={`${i}-${s.label}`}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex min-w-0 shrink items-center gap-1 rounded border border-border/60 bg-muted/40 px-1.5 text-[11px] leading-[18px] text-foreground/90">
+              <span className="shrink-0 tracking-tighter text-glow">{starsText(s.stars)}</span>
+              <span className="truncate">{statChipText(s.label)}</span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            {s.label} · {starTitle(s)}
+          </TooltipContent>
+        </Tooltip>
+      ))}
+      {rest.length > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="shrink-0 cursor-help text-[11px] text-muted-foreground">+{rest.length}</span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            {rest.map((s) => `${starsText(s.stars)} ${s.label}`).join(' · ')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </span>
+  );
+}
+
+/** Market history per rare id, fetched once when a row is first expanded. */
+const historyCache = new Map<string, Promise<RareHistory | null>>();
+
+function useRareHistory(id: string): RareHistory | null {
+  const [history, setHistory] = useState<RareHistory | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    let pending = historyCache.get(id);
+    if (!pending) {
+      pending = fetchRareHistory(id).catch(() => null);
+      historyCache.set(id, pending);
+    }
+    pending.then((h) => {
+      if (!cancelled) setHistory(h);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  return history;
+}
+
+function RareRowDetail({ rare, rule, hardcore }: { rare: RareAppraisal; rule: VerdictRule; hardcore: boolean }) {
+  const history = useRareHistory(rare.id);
+  return (
+    <div className="space-y-3 border-t border-border/40 bg-background/30 px-3 py-3 text-sm">
+      <RareAppraisalDetail
+        appraisal={rare}
+        history={history}
+        hardcore={hardcore}
+        rule={rule}
+        stashPosition={stashPositionText(rare)}
+      />
+    </div>
+  );
+}
+
+/**
+ * One rare, two lines: icon, name + verdict, then "base · slot · tab" and up to two ★ chips; the usual asking
+ * band on the right. Expands to the same appraisal detail as the price-check popover.
+ */
 function RareRow({
   rare,
   rule,
@@ -233,25 +308,30 @@ function RareRow({
           expanded && 'bg-accent/30',
         )}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/40 text-[10px] font-semibold uppercase text-muted-foreground">
-          {(SLOT_LABELS[rare.slot] ?? '?').slice(0, 2)}
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/40">
+          <img
+            src={rareArtUrl(rare)}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            className="max-h-7 max-w-7 object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.4)]"
+            onError={(e) => (e.currentTarget.style.visibility = 'hidden')}
+          />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-medium text-q-rare">{rare.name}</span>
             <VerdictBadge rare={rare}
               hardcore={hardcore} />
           </span>
-          <span className="truncate text-[11px] text-muted-foreground">{locationText(rare)}</span>
-          <StarChips rare={rare} />
-        </span>
-        <span className="flex shrink-0 flex-col items-end gap-0.5">
-          <span className="text-sm font-semibold tabular-nums"
-            title={EST_TITLE}>
-            {band ?? <span className="text-muted-foreground/70">—</span>}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">{locationText(rare)}</span>
+            <RowChips rare={rare} />
           </span>
-          <RankText rare={rare}
-            className="text-muted-foreground" />
+        </span>
+        <span className="shrink-0 text-sm font-semibold tabular-nums"
+          title={EST_TITLE}>
+          {band ?? <span className="text-muted-foreground/70">—</span>}
         </span>
         <ChevronDown
           className={cn(
@@ -261,14 +341,9 @@ function RareRow({
         />
       </button>
       <Collapse open={expanded}>
-        <div className="space-y-3 border-t border-border/40 bg-background/30 px-3 py-3">
-          <RankBar rare={rare}
-            rule={rule} />
-          <MarketBlock rare={rare} />
-          <HardcoreNote rare={rare}
-            hardcore={hardcore} />
-          <StatList rare={rare} />
-        </div>
+        <RareRowDetail rare={rare}
+          rule={rule}
+          hardcore={hardcore} />
       </Collapse>
     </li>
   );
