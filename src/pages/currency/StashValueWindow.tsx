@@ -19,6 +19,7 @@ import {
   type NetWorthPoint,
   type Valuation,
 } from '@/lib/networth-api';
+import { DEFAULT_VERDICT_RULE } from '@/lib/rare-appraisal-api';
 import { cn } from '@/lib/utils';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
 import { RunePricePopover } from '../price-check/components/RunePricePopover';
@@ -26,11 +27,21 @@ import { HoldingsTable } from './components/HoldingsTable';
 import { OverviewTab } from './components/OverviewTab';
 import { HistoryTab } from './components/HistoryTab';
 import { AnimatedNumber } from './components/AnimatedNumber';
+import { RaresTab } from './components/RaresTab';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
 
-type WindowTab = 'overview' | 'runes' | 'currency' | 'ubers' | 'gems-mats' | 'uniques-sets' | 'other' | 'history';
+type WindowTab =
+  | 'overview'
+  | 'runes'
+  | 'currency'
+  | 'ubers'
+  | 'gems-mats'
+  | 'uniques-sets'
+  | 'other'
+  | 'rares'
+  | 'history';
 
 const HOLDING_TABS: { value: WindowTab; label: string; categories: NetWorthCategory[]; showTab?: boolean }[] = [
   { value: 'runes', label: 'Runes', categories: ['runes'] },
@@ -98,6 +109,8 @@ export function StashValueWindow() {
   );
 
   const valuation = latest?.valuation ?? null;
+  // Rares come only with the sync response (server has rare appraisal on); never part of the total.
+  const rares = latest?.rares && latest.raresSummary ? latest.rares : null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -105,7 +118,9 @@ export function StashValueWindow() {
         <div className="min-h-screen w-full bg-background text-foreground">
           <WindowTitle
             owner={owner}
-            seasonLabel={netWorth.seasons.find((s) => s.id === (valuation?.seasonId ?? netWorth.currentSeasonId))?.label}
+            seasonLabel={
+              netWorth.seasons.find((s) => s.id === (valuation?.seasonId ?? netWorth.currentSeasonId))?.label
+            }
           />
 
           <div className="space-y-4 px-6 pb-6 pt-4">
@@ -162,6 +177,12 @@ export function StashValueWindow() {
                         {t.label}
                       </TabsTrigger>
                     ))}
+                    {rares && (
+                      <TabsTrigger value="rares"
+                        className={TRIGGER_CLASS}>
+                        Rares
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="history"
                       className={cn(TRIGGER_CLASS, 'gap-1')}>
                       <History className="size-3.5" />
@@ -190,6 +211,17 @@ export function StashValueWindow() {
                       )}
                     </TabsContent>
                   ))}
+
+                  {rares && latest?.raresSummary && (
+                    <TabsContent value="rares"
+                      className="pt-1">
+                      <RaresTab
+                        rares={rares}
+                        rule={latest.rareRule ?? DEFAULT_VERDICT_RULE}
+                        summary={latest.raresSummary}
+                      />
+                    </TabsContent>
+                  )}
 
                   <TabsContent value="history"
                     className="pt-1">
@@ -419,9 +451,11 @@ function TrackingDisabled({ onEnable }: { onEnable: () => void }) {
 
 function SignedOut({ hasToken }: { hasToken: boolean }) {
   return hasToken ? (
-    <EmptyState className="mt-6"
+    <EmptyState
+      className="mt-6"
       icon={<UserRound />}
-      title="Choose your PD2 account in Settings to value your stash." />
+      title="Choose your PD2 account in Settings to value your stash."
+    />
   ) : (
     <EmptyState
       className="mt-6"

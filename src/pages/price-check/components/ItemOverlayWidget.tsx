@@ -75,6 +75,8 @@ import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writeText } from '@/lib/browser-clipboard';
+import { useRareAppraisal } from '../hooks/useRareAppraisal';
+import { RareAppraisalPanel } from './RareAppraisalPanel';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -133,6 +135,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchMode, setSearchMode] = useState(0);
   // Quality override: null = use item's original quality
   const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
+
+  // Rare appraisal (pd2trader.com): replaces the search body while shown; null mode until settings load.
+  const rareMode = useMemo(
+    () =>
+      settingsLoading ? null : { isLadder: settings.ladder === 'ladder', isHardcore: settings.mode === 'hardcore' },
+    [settingsLoading, settings.ladder, settings.mode],
+  );
+  const rareAppraisal = useRareAppraisal(item, rareMode);
+  const [rareView, setRareView] = useState<'appraisal' | 'search'>('appraisal');
+  const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
+  const appraisal = rareResponse?.appraisal ?? null;
+  const showRareCard = appraisal !== null && rareView === 'appraisal';
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -447,6 +461,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Clear corruption prices
       setCorruptionPrices(null);
       setShowAllCorruptions(false);
+      setRareView('appraisal');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
@@ -1149,6 +1164,31 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </Badge>
             )}
 
+            {/* Rare appraisal status: loading, why there is none (subtle), or a way back from the search view */}
+            {rareAppraisal.status === 'loading' && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                aria-busy="true">
+                <Loader2 className="size-3 animate-spin" />
+                Appraising rare…
+              </span>
+            )}
+            {rareResponse && !appraisal && rareResponse.reason && (
+              <span className="text-[11px] text-muted-foreground/70">No rare appraisal: {rareResponse.reason}</span>
+            )}
+            {rareAppraisal.status === 'error' && (
+              <span className="text-[11px] text-muted-foreground/70">Rare appraisal unavailable right now</span>
+            )}
+            {appraisal && rareView === 'search' && (
+              <button
+                type="button"
+                onClick={() => setRareView('appraisal')}
+                className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-sm text-[11px] font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
+                <ChevronRight className="size-3 rotate-180" />
+                Back to rare appraisal
+              </button>
+            )}
+
             {/* Average Price Information for Unique Items - Compact */}
             {isUniqueOrSet && (
               <div className="pt-0.5">
@@ -1312,8 +1352,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             )}
           </motion.header>
 
+          {/* Rare appraisal body; the search body below stays mounted (hidden) so its filters survive switching */}
+          {showRareCard && appraisal && (
+            <div className="flex min-h-0 flex-1 flex-col px-5 pb-4">
+              <RareAppraisalPanel
+                appraisal={appraisal}
+                history={rareResponse?.history ?? null}
+                onSearch={() => setRareView('search')}
+              />
+            </div>
+          )}
+
           {/* Body */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4">
+          <div className={cn('flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4', showRareCard && 'hidden')}>
             {sortedStats.length > 0 && (
               <section className="flex flex-none flex-col gap-1">
                 <div className="flex h-5 items-center justify-between px-2">
