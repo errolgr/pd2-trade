@@ -129,25 +129,27 @@ const SHORT_STAT: Record<string, string> = {
   maxdamage_percent: 'ED',
 };
 
-/** Right-hand / note texts of one stat in the "Stats on this item" list; null parts are not shown. */
-export function statNotes(stat: AppraisedStat, slot: RareSlot): { note: string | null; roll: string | null } {
+/**
+ * Texts of one stat in the "Stats on this item" list: a compact `tag` ("C" corruption-only, "↑4" near miss)
+ * whose full sentence is `note` (tooltip); both null when the stat needs no note.
+ */
+export function statNotes(stat: AppraisedStat, slot: RareSlot): { tag: string | null; note: string | null } {
   const slots = (SLOT_PLURALS[slot] ?? 'items').toLowerCase();
   const mult = (m: number) => `×${m.toFixed(1)}`;
+  let tag: string | null = null;
   let note: string | null = null;
   if (stat.stars && stat.corruptionOnly) {
     const short = stat.key ? SHORT_STAT[stat.key.split('__')[0]] : undefined;
+    tag = 'C';
     note = `${short && stat.value !== null ? `${stat.value} ${short}` : stat.label} on ${slots} only via corruption`;
   } else if (!stat.stars && stat.keyFrom !== null) {
+    tag = `↑${stat.keyFrom}`;
     note =
       (stat.keyFromMultiplier
         ? `near miss: ${stat.keyFrom}+ is ${mult(stat.keyFromMultiplier)} on ${slots}`
         : `valuable from ${stat.keyFrom} on ${slots}`) + (stat.corruptionOnly ? ' (only via corruption)' : '');
   }
-  const roll =
-    stat.roll === null
-      ? null
-      : `roll ${Math.round(stat.roll * 100)}%${stat.stars && stat.multiplier !== null ? ` · ${mult(stat.multiplier)}` : ''}`;
-  return { note, roll };
+  return { tag, note };
 }
 
 /** "Stats on this item" order: key stats strongest first, then near misses, then the rest (in-game order). */

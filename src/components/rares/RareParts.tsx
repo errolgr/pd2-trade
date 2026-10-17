@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import type {
   VerdictRule,
 } from '@/lib/rare-appraisal-api';
 import { ChevronDown } from 'lucide-react';
+import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import {
   bandRange,
   hardcoreNote,
@@ -310,9 +311,43 @@ export function RankDisplay({ rare, rule, mode }: { rare: RareAppraisal; rule: V
     rule={rule} />;
 }
 
+/** One-line text that truncates with an ellipsis; when cut, a dotted underline and the full text on hover. */
+function TruncatedText({ text, className }: { text: string; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setCut(el.scrollWidth > el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text]);
+  // The tooltip wrapper is always mounted (content only when cut) so toggling it never remounts the measured span.
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          ref={ref}
+          className={cn(
+            'block min-w-0 truncate',
+            cut && 'cursor-help underline decoration-dotted underline-offset-2',
+            className,
+          )}
+        >
+          {text}
+        </span>
+      </TooltipTrigger>
+      {cut && <TooltipContent className="max-w-xs">{text}</TooltipContent>}
+    </Tooltip>
+  );
+}
+
 /**
- * Collapsible "Stats on this item": stats ranked by value (key stats, near misses, then the rest dimmed), with
- * ★ on key stats, the tier multiplier, roll, corruption-only and near-miss notes.
+ * Collapsible "Stats on this item" popover section: stats ranked by value (key stats, near misses, then the
+ * rest dimmed), one line each: ★, stat text, a "C" (corruption-only) / "↑N" (near miss) tag with the full note
+ * on hover, and the roll bar + "roll 90% · ×2.4" on the right.
  */
 export function ItemStatsSection({
   rare,
@@ -325,72 +360,78 @@ export function ItemStatsSection({
 }) {
   const keyCount = rare.stats.filter((s) => s.stars).length;
   return (
-    <section className="flex flex-col gap-1">
+    <section>
       <button
         type="button"
         tabIndex={-1}
         aria-expanded={open}
         onClick={() => onOpenChange(!open)}
-        className="flex cursor-pointer items-center justify-between gap-2 rounded-sm text-left outline-none"
+        className={cn('block w-full cursor-pointer text-left outline-none', !open && '-mb-1.5')}
       >
-        <SectionLabel>Stats on this item</SectionLabel>
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          {keyCount > 0 ? plural(keyCount, 'key stat') : 'no key stats'}
-          <ChevronDown className={cn('size-3.5 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
-        </span>
+        <PopoverSectionTitle
+          aside={
+            <>
+              {keyCount > 0 ? plural(keyCount, 'key stat') : 'no key stats'}
+              <ChevronDown className={cn('size-3 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
+            </>
+          }
+        >
+          Stats on this item
+        </PopoverSectionTitle>
       </button>
       {open && (
-        <ul className="-mx-2 flex flex-col">
+        <ul className="space-y-1">
           {rankedStats(rare).map((s, i) => {
-            const { note, roll } = statNotes(s, rare.slot);
+            const { tag, note } = statNotes(s, rare.slot);
+            const roll = s.roll !== null;
             const isKey = s.stars !== null;
             const dim = !isKey && s.keyFrom === null;
+            const mult = isKey && s.multiplier !== null ? `×${s.multiplier.toFixed(1)}` : null;
             return (
               <li
                 key={`${i}-${s.label}`}
-                className={cn(
-                  'grid min-h-7 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-0.5',
-                  isKey && 'bg-glow/8',
-                )}
+                className={cn('-mx-1.5 flex items-center gap-2 rounded-md px-1.5 py-1 text-xs', isKey && 'bg-glow/10')}
               >
-                <span className="text-xs tracking-tighter text-glow">{starsText(s.stars)}</span>
-                <span className="flex min-w-0 flex-col">
-                  <span
-                    className={cn(
-                      'text-sm leading-snug',
-                      isKey ? 'font-medium text-foreground' : dim ? 'text-muted-foreground/70' : 'text-foreground/85',
-                      s.corrupted && 'text-q-corrupted',
-                    )}
-                  >
-                    {s.label}
-                  </span>
-                  {note && <span className="text-[11px] leading-snug text-muted-foreground">{note}</span>}
-                </span>
-                <span className="flex flex-col items-end gap-0.5 justify-self-end">
-                  {roll ? (
+                <span className="w-8 shrink-0 tracking-tighter text-glow">{starsText(s.stars)}</span>
+                <TruncatedText
+                  text={s.label}
+                  className={cn(
+                    'flex-1',
+                    isKey ? 'text-foreground' : dim ? 'text-muted-foreground/70' : 'text-muted-foreground',
+                    s.corrupted && 'text-q-corrupted',
+                  )}
+                />
+                {tag && note && (
+                  <Hint text={note}>
+                    <span
+                      className={cn(
+                        'shrink-0 cursor-help rounded border px-1 text-[10px] font-semibold leading-4 tabular-nums',
+                        tag === 'C'
+                          ? 'border-q-corrupted/40 bg-q-corrupted/10 text-q-corrupted'
+                          : 'border-border bg-muted/60 text-muted-foreground',
+                      )}
+                    >
+                      {tag}
+                    </span>
+                  </Hint>
+                )}
+                <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap tabular-nums">
+                  {roll && (
                     <>
-                      <span className="block h-1 w-14 overflow-hidden rounded-full bg-muted">
+                      <span className="block h-1 w-10 overflow-hidden rounded-full bg-muted">
                         <span
                           className={cn('block h-full rounded-full', isKey ? 'bg-glow' : 'bg-muted-foreground/50')}
                           style={{ width: `${Math.round((s.roll ?? 0) * 100)}%` }}
                         />
                       </span>
-                      <span
-                        className={cn(
-                          'text-[10px] tabular-nums',
-                          dim ? 'text-muted-foreground/70' : 'text-muted-foreground',
-                        )}
-                      >
-                        {roll}
-                      </span>
+                      <span className="text-[10px] text-muted-foreground">roll {Math.round((s.roll ?? 0) * 100)}%</span>
                     </>
-                  ) : (
-                    isKey &&
-                    s.multiplier !== null && (
-                      <span className="text-xs font-semibold tabular-nums text-foreground">
-                        ×{s.multiplier.toFixed(1)}
-                      </span>
-                    )
+                  )}
+                  {mult && (
+                    <>
+                      {roll && <span className="text-[10px] text-muted-foreground">·</span>}
+                      <span className="font-semibold text-foreground">{mult}</span>
+                    </>
                   )}
                 </span>
               </li>
@@ -424,42 +465,41 @@ function listingPrice(listing: RareHistoryListing): string {
 }
 
 /**
- * Market history of this exact item: "Listed N times by M sellers" and its listings (newest first)
- * with a "new owner" marker where the seller changed. Hidden for weak fingerprints and empty histories.
+ * Market history of this exact item, as a popover section: title with "3× · 2 sellers · since Sep 27" and its
+ * listings (newest first; date, "new owner" where the seller changed, price). Hidden for weak fingerprints and
+ * empty histories.
  */
 export function RareHistorySection({ history }: { history: RareHistory | null }) {
   if (!history || history.weak || history.timesListed <= 0) return null;
   return (
-    <section className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionLabel>Item history</SectionLabel>
-        <span className="text-[11px] text-muted-foreground">since {moment(history.firstSeen).format('MMM D')}</span>
-      </div>
-      <p className="text-sm text-foreground/90">
-        Listed {plural(history.timesListed, 'time')} by {plural(history.distinctSellers, 'seller')}
-      </p>
-      <ul className="-mx-2 flex flex-col">
+    <section>
+      <PopoverSectionTitle
+        aside={`${history.timesListed}× · ${plural(history.distinctSellers, 'seller')} · since ${moment(history.firstSeen).format('MMM D')}`}
+      >
+        Item history
+      </PopoverSectionTitle>
+      <ul className="space-y-0.5">
         {history.listings.map((l, i) => (
           <li
             key={`${l.listedAt}-${i}`}
-            className="flex min-h-7 items-center gap-3 rounded-md px-2 py-0.5 text-xs hover:bg-accent/30"
+            className="-mx-1.5 flex items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs transition-colors hover:bg-accent/60"
           >
-            <span className="w-14 shrink-0 tabular-nums text-muted-foreground">
-              {moment(l.listedAt).format('MMM D')}
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="tabular-nums text-muted-foreground">{moment(l.listedAt).format('MMM D')}</span>
+              {l.sellerChanged && (
+                <span className="rounded-full border border-info/40 bg-info/10 px-1.5 py-px text-[10px] font-medium leading-none text-info">
+                  new owner
+                </span>
+              )}
             </span>
             <span
               className={cn(
-                'tabular-nums',
-                l.hrPrice !== null ? 'font-medium text-foreground' : 'text-muted-foreground',
+                'shrink-0 tabular-nums',
+                l.hrPrice !== null ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
               {listingPrice(l)}
             </span>
-            {l.sellerChanged && (
-              <span className="ml-auto rounded-full border border-info/40 bg-info/10 px-1.5 py-px text-[10px] font-medium uppercase leading-none tracking-wide text-info">
-                new owner
-              </span>
-            )}
           </li>
         ))}
       </ul>

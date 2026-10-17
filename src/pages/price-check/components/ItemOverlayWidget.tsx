@@ -1,4 +1,5 @@
 import { openWindowAtCursor } from '@/lib/window';
+import { PopoverKeyValue, PopoverSectionTitle, PopoverTile } from '@/components/custom/popover-parts';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
@@ -1264,44 +1265,38 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             </WebLink>
                           </div>
                           <div className="grid grid-cols-2 gap-1.5">
-                            <PriceStat label="Average"
-                              value={averagePriceData.movingAverage7Days}
-                              emphasis />
-                            <PriceStat label="Median"
-                              value={averagePriceData.medianPrice} />
-                            <PriceStat label="Min"
-                              value={averagePriceData.minPrice} />
-                            <PriceStat label="Max"
-                              value={averagePriceData.maxPrice} />
+                            <PopoverTile label="Average"
+                              emphasis>
+                              {averagePriceData.movingAverage7Days.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label="Median">{averagePriceData.medianPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label="Min">{averagePriceData.minPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label="Max">{averagePriceData.maxPrice.toFixed(2)} HR</PopoverTile>
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Samples:</span>
-                              <span className="tabular-nums">{averagePriceData.sampleCount}</span>
-                            </div>
+                            <PopoverKeyValue label="Samples">{averagePriceData.sampleCount}</PopoverKeyValue>
                             {averagePriceData.priceChange7Days && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">7d Change:</span>
+                              <PopoverKeyValue label="7d Change">
                                 <ChangeLabel
                                   change={averagePriceData.priceChange7Days.change}
                                   percent={averagePriceData.priceChange7Days.changePercent}
                                 />
-                              </div>
+                              </PopoverKeyValue>
                             )}
                           </div>
                           {/* Item's Corruption Price - Display separately if matched */}
                           {itemCorruptions && (
                             <div className="border-t border-border pt-2">
-                              <div className="mb-1.5 text-xs font-semibold text-q-corrupted">
+                              <PopoverSectionTitle className="text-q-corrupted">
                                 This Item&apos;s Corruption
-                              </div>
+                              </PopoverSectionTitle>
                               {renderCorruptionRow(itemCorruptions, itemCorruptions.priceData, 'item')}
                             </div>
                           )}
                           {/* Corruption Prices */}
                           {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
                             <div className="border-t border-border pt-2">
-                              <div className="mb-1.5 text-xs font-semibold">Top Corruptions</div>
+                              <PopoverSectionTitle>Top Corruptions</PopoverSectionTitle>
                               {showAllCorruptions ? (
                                 <ScrollArea className="w-full overflow-x-hidden"
                                   viewportClassName="max-h-[200px]">
@@ -1708,22 +1703,6 @@ function WebLink({
       {children}
       <ExternalLink className="size-3" />
     </button>
-  );
-}
-
-function PriceStat({ label, value, emphasis }: { label: string; value: number; emphasis?: boolean }) {
-  return (
-    <div
-      className={cn(
-        'rounded-md border px-2.5 py-1.5',
-        emphasis ? 'border-glow/40 bg-glow/10' : 'border-border/60 bg-muted/40',
-      )}
-    >
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn('text-sm tabular-nums', emphasis ? 'font-bold text-foreground' : 'font-medium')}>
-        {value.toFixed(2)} HR
-      </div>
-    </div>
   );
 }
 

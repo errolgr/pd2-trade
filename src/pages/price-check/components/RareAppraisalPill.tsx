@@ -5,10 +5,10 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
+import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
 import {
   HardcoreNote,
   ItemStatsSection,
-  MarketBlock,
   RankDisplay,
   RareHistorySection,
   VerdictBadge,
@@ -17,10 +17,13 @@ import { useOptions } from '@/hooks/useOptions';
 import {
   bandRange,
   hardcoreNote,
+  marketSource,
   MODEL_SEASON,
   rankText,
   SLOT_LABELS,
   SLOT_PLURALS,
+  VERDICT_COLORS,
+  VERDICT_LABELS,
 } from '@/components/rares/rares-format';
 
 /** Header placeholder while the rare is appraised (same footprint as the uniques' price pill skeleton). */
@@ -70,19 +73,39 @@ export function RareAppraisalPill({
       animate="visible">
       <HoverPopover
         content={
-          <div className="max-h-[calc(100vh-180px)] w-[380px] max-w-[calc(100vw-16px)] space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+          <div className="max-h-[calc(100vh-180px)] w-[400px] max-w-[calc(100vw-16px)] space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <span className="truncate font-semibold">{title}</span>
               <span className="shrink-0 text-[11px] text-muted-foreground">
                 {SLOT_LABELS[appraisal.slot]} · est. from {MODEL_SEASON} listings
               </span>
             </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <PopoverTile label="Verdict"
+                emphasis={appraisal.verdict === 'keep'}>
+                <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{VERDICT_LABELS[appraisal.verdict]}</span>
+                <span className="font-medium text-muted-foreground"> · </span>
+                {rankText(appraisal.rank)}
+              </PopoverTile>
+              <PopoverTile label="Usually listed">
+                {market ? `${bandRange(market.lowHr, market.highHr)} HR` : '—'}
+              </PopoverTile>
+            </div>
             <RankDisplay rare={appraisal}
               rule={DEFAULT_VERDICT_RULE}
               mode={settings.rareRankDisplay ?? 'bar'} />
-            <MarketBlock rare={appraisal} />
-            <HardcoreNote rare={appraisal}
-              hardcore={hardcore} />
+            {(market || hcNote) && (
+              <div className="space-y-1 border-t border-border pt-2 text-xs">
+                {market && (
+                  <>
+                    <PopoverKeyValue label="Samples">{market.sampleSize}</PopoverKeyValue>
+                    <PopoverKeyValue label="Compared with">{marketSource(appraisal)}</PopoverKeyValue>
+                  </>
+                )}
+                <HardcoreNote rare={appraisal}
+                  hardcore={hardcore} />
+              </div>
+            )}
             <div className="border-t border-border pt-2">
               <ItemStatsSection
                 rare={appraisal}
