@@ -76,7 +76,9 @@ import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writeText } from '@/lib/browser-clipboard';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
-import { RareAppraisalPanel } from './RareAppraisalPanel';
+import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
+import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
+import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -136,17 +138,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Quality override: null = use item's original quality
   const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
 
-  // Rare appraisal (pd2trader.com): replaces the search body while shown; null mode until settings load.
+  // Rare appraisal (pd2trader.com): verdict pill + key-stat stars on the stat rows; null mode until settings load.
   const rareMode = useMemo(
     () =>
       settingsLoading ? null : { isLadder: settings.ladder === 'ladder', isHardcore: settings.mode === 'hardcore' },
     [settingsLoading, settings.ladder, settings.mode],
   );
   const rareAppraisal = useRareAppraisal(item, rareMode);
-  const [rareView, setRareView] = useState<'appraisal' | 'search'>('appraisal');
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
-  const showRareCard = appraisal !== null && rareView === 'appraisal';
+  // Set when an appraisal pre-selects key stats of a Keep rare: runs the search once the filters are applied.
+  const [triggerRareSearch, setTriggerRareSearch] = useState(false);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -461,10 +463,37 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Clear corruption prices
       setCorruptionPrices(null);
       setShowAllCorruptions(false);
-      setRareView('appraisal');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
+
+  // Appraisal stat (stars / "key from N") per stat row key; empty without an appraisal.
+  const rareStats = useMemo(
+    () => (appraisal ? matchRareStats(appraisal.stats, sortedStats) : new Map<string, AppraisedStat>()),
+    [appraisal, sortedStats],
+  );
+
+  // When the appraisal arrives: pre-select its key stats as filters (min = key threshold, max open, user
+  // choices kept) and search right away for a Keep rare; other verdicts wait for the user.
+  useEffect(() => {
+    if (!appraisal) return;
+    const keyRows = sortedStats.filter((s) => rareStats.get(getStatKey(s))?.stars);
+    if (keyRows.length > 0) {
+      setSelected((prev) => new Set([...prev, ...keyRows.map(getStatKey)]));
+      setFilters((prev) => {
+        const next = { ...prev };
+        for (const s of keyRows) {
+          const key = getStatKey(s);
+          const min = keyStatMin(rareStats.get(key)!);
+          next[key] ??= { min: min === null ? '' : String(min), max: '' };
+        }
+        return next;
+      });
+    }
+    if (appraisal.verdict === 'keep') setTriggerRareSearch(true);
+    // Once per appraisal: later stat/setting changes must not re-apply the selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appraisal]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -967,6 +996,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   }, [triggerCorruptionSearch, fetchListings]);
 
+  // Search once the key stats of a Keep rare are pre-selected (filters are applied by then)
+  useEffect(() => {
+    if (triggerRareSearch) {
+      setTriggerRareSearch(false);
+      setPage(0);
+      setTimeout(() => {
+        fetchListings(true);
+      }, 0);
+    }
+  }, [triggerRareSearch, fetchListings]);
+
   // Trigger search when socket search is requested
   useEffect(() => {
     if (triggerSocketSearch) {
@@ -1164,31 +1204,23 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </Badge>
             )}
 
-            {/* Rare appraisal status: loading, why there is none (subtle), or a way back from the search view */}
+            {/* Rare appraisal: verdict pill (same spot/style as the uniques' price pill) + a subtle note */}
             {rareAppraisal.status === 'loading' && (
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                aria-busy="true">
-                <Loader2 className="size-3 animate-spin" />
-                Appraising rare…
-              </span>
+              <div className="pt-0.5">
+                <RareAppraisalPillSkeleton />
+              </div>
+            )}
+            {appraisal && (
+              <div className="pt-0.5">
+                <RareAppraisalPill
+                  appraisal={appraisal}
+                  history={rareResponse?.history ?? null}
+                  title={displayTitle ?? item.name ?? ''}
+                />
+              </div>
             )}
             {rareResponse?.reason && (
-              <span className="text-[11px] text-muted-foreground/70">
-                {appraisal ? 'Appraisal note' : 'No rare appraisal'}: {rareResponse.reason}
-              </span>
-            )}
-            {rareAppraisal.status === 'error' && (
-              <span className="text-[11px] text-muted-foreground/70">Rare appraisal unavailable right now</span>
-            )}
-            {appraisal && rareView === 'search' && (
-              <button
-                type="button"
-                onClick={() => setRareView('appraisal')}
-                className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-sm text-[11px] font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
-              >
-                <ChevronRight className="size-3 rotate-180" />
-                Back to rare appraisal
-              </button>
+              <span className="text-[11px] text-muted-foreground/70">Appraisal note: {rareResponse.reason}</span>
             )}
 
             {/* Average Price Information for Unique Items - Compact */}
@@ -1354,19 +1386,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             )}
           </motion.header>
 
-          {/* Rare appraisal body; the search body below stays mounted (hidden) so its filters survive switching */}
-          {showRareCard && appraisal && (
-            <div className="flex min-h-0 flex-1 flex-col px-5 pb-4">
-              <RareAppraisalPanel
-                appraisal={appraisal}
-                history={rareResponse?.history ?? null}
-                onSearch={() => setRareView('search')}
-              />
-            </div>
-          )}
-
           {/* Body */}
-          <div className={cn('flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4', showRareCard && 'hidden')}>
+          <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4">
             {sortedStats.length > 0 && (
               <section className="flex flex-none flex-col gap-1">
                 <div className="flex h-5 items-center justify-between px-2">
@@ -1405,6 +1426,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         selected={selected}
                         corruptedState={corruptedState}
                         onSubmit={handleSearch}
+                        rare={rareStats.get(getStatKey(s))}
                       />
                     ))}
                   </div>

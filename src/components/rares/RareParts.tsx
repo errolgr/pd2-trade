@@ -258,14 +258,14 @@ export function RareHistorySection({ history }: { history: RareHistory | null })
   if (!history || history.weak || history.timesListed <= 0) return null;
   return (
     <section className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-2 px-2">
+      <div className="flex items-baseline justify-between gap-2">
         <SectionLabel>Item history</SectionLabel>
         <span className="text-[11px] text-muted-foreground">since {moment(history.firstSeen).format('MMM D')}</span>
       </div>
-      <p className="px-2 text-sm text-foreground/90">
+      <p className="text-sm text-foreground/90">
         Listed {plural(history.timesListed, 'time')} by {plural(history.distinctSellers, 'seller')}
       </p>
-      <ul className="flex flex-col">
+      <ul className="-mx-2 flex flex-col">
         {history.listings.map((l, i) => (
           <li
             key={`${l.listedAt}-${i}`}

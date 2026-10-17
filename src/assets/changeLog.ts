@@ -8,7 +8,7 @@ export const changeLog = {
     '🆕 Net Worth ticker over the game (total HR, session change, HR/hour) — click it for a mini panel with a session chart, recent changes, Snapshot now and Start/Stop session',
     '🆕 Net Worth toast when a snapshot moves your value by 0.5 HR or more (configurable), plus an optional snapshot hotkey',
     '🆕 Leaderboards: choose whether your profile is public in Settings → Net Worth (off by default; available from Season 14)',
-    '🆕 Rare appraisal: price check (Ctrl+D) on a rare shows Keep / Check / Vendor, its price percentile in its slot, key stats (★–★★★), roll bars, what similar rares are listed for, and this exact item\'s market history ("Listed 3 times by 2 sellers") — "Search listings" opens the classic search',
+    '🆕 Rare appraisal in price check (Ctrl+D): a Keep / Check / Vendor pill with the rare\'s price rank in its slot and what similar rares are usually listed for — hover it for the percentile bar and this exact item\'s market history ("Listed 3 times by 2 sellers"). Key stats get ★–★★★ and are pre-selected as filters; Keep rares search right away',
     '🆕 Stash Value: new Rares tab — Keep and "worth a look" rares with stars and market bands, likely-vendor rares folded per stash tab (with how many slots they free), and an estimated Keep value that is never added to your total',
     '🆕 Price check: 7-day average and change on the price chip, Enter in min/max runs the search, "Clear" for selected stats, Retry on errors and a "No listings found" message',
     '🆕 Quick list: keyboard-selectable item cards, empty states, a timeout bar for queued items, and a green flash down your listings on Bump All',

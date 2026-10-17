@@ -10,6 +10,8 @@ import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info } from 'lucide-react';
 import { DUR, EASE_OUT } from '@/lib/motion';
+import type { AppraisedStat } from '@/lib/rare-appraisal-api';
+import { starsText, starTitle } from '@/components/rares/rares-format';
 
 interface StatRowProps {
   stat: Stat;
@@ -21,6 +23,8 @@ interface StatRowProps {
   corruptedState?: number; // 0 = both, 1 = corrupted only, 2 = non-corrupted only
   /** Called when Enter is pressed inside the min/max inputs. */
   onSubmit?: () => void;
+  /** Rare appraisal of this row (key stat stars or a "key from N" hint), when the item was appraised. */
+  rare?: AppraisedStat;
 }
 
 // Rows are min-h-9 (py-1 + this 28px input) so selecting a stat doesn't change the row height.
@@ -41,6 +45,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   toggle,
   corruptedState = 0,
   onSubmit,
+  rare,
 }) => {
   const statKey = 'skill' in stat && stat.skill ? `skill:${stat.skill.toLowerCase()}` : `id:${stat.stat_id}`;
   const isSocket = stat.stat_id === StatId.Socket;
@@ -102,6 +107,7 @@ export const StatRow: React.FC<StatRowProps> = ({
           'flex min-h-9 flex-row items-center justify-between gap-2 rounded-md px-2 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
           isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
+          !isActive && rare?.stars && 'bg-glow/8 hover:bg-glow/12',
           nested && 'pl-8',
           isUnknown && 'cursor-not-allowed',
         )}
@@ -164,6 +170,23 @@ export const StatRow: React.FC<StatRowProps> = ({
                 >
                   {stat.name}
                   {valueParts(!isCorrupted)}
+                  {/* Rare appraisal: inline after the text so it follows wrapped lines */}
+                  {rare?.stars && (
+                    <span
+                      className="ml-1.5 cursor-help whitespace-nowrap text-xs tracking-tighter text-glow"
+                      title={starTitle(rare)}
+                    >
+                      {starsText(rare.stars)}
+                    </span>
+                  )}
+                  {rare && rare.stars === null && rare.keyFrom !== null && (
+                    <span
+                      className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70"
+                      title={`This stat starts to add value on this slot from ${rare.keyFrom}`}
+                    >
+                      key from {rare.keyFrom}
+                    </span>
+                  )}
                 </span>
                 <AnimatePresence initial={false}>
                   {corruptedHint && (
