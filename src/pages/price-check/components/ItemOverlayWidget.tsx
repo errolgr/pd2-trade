@@ -1,4 +1,5 @@
 import { openWindowAtCursor } from '@/lib/window';
+import { PopoverKeyValue, PopoverSectionTitle, PopoverTile } from '@/components/custom/popover-parts';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
@@ -75,6 +76,10 @@ import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writeText } from '@/lib/browser-clipboard';
+import { useRareAppraisal } from '../hooks/useRareAppraisal';
+import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
+import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
+import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -133,6 +138,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchMode, setSearchMode] = useState(0);
   // Quality override: null = use item's original quality
   const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
+
+  // Rare appraisal (pd2trader.com): verdict pill + key-stat stars on the stat rows; null mode until settings load.
+  const rareMode = useMemo(
+    () =>
+      settingsLoading ? null : { isLadder: settings.ladder === 'ladder', isHardcore: settings.mode === 'hardcore' },
+    [settingsLoading, settings.ladder, settings.mode],
+  );
+  const rareAppraisal = useRareAppraisal(item, rareMode);
+  const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
+  const appraisal = rareResponse?.appraisal ?? null;
+  // Set when an appraisal pre-selects key stats of a Keep rare: runs the search once the filters are applied.
+  const [triggerRareSearch, setTriggerRareSearch] = useState(false);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -450,6 +467,34 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
+
+  // Appraisal stat (stars / "valuable from N") per stat row key; empty without an appraisal.
+  const rareStats = useMemo(
+    () => (appraisal ? matchRareStats(appraisal.stats, sortedStats) : new Map<string, AppraisedStat>()),
+    [appraisal, sortedStats],
+  );
+
+  // When the appraisal arrives: pre-select its key stats as filters (min = key threshold, max open, user
+  // choices kept) and search right away for a Keep rare; other verdicts wait for the user.
+  useEffect(() => {
+    if (!appraisal) return;
+    const keyRows = sortedStats.filter((s) => rareStats.get(getStatKey(s))?.stars);
+    if (keyRows.length > 0) {
+      setSelected((prev) => new Set([...prev, ...keyRows.map(getStatKey)]));
+      setFilters((prev) => {
+        const next = { ...prev };
+        for (const s of keyRows) {
+          const key = getStatKey(s);
+          const min = keyStatMin(rareStats.get(key)!);
+          next[key] ??= { min: min === null ? '' : String(min), max: '' };
+        }
+        return next;
+      });
+    }
+    if (appraisal.verdict === 'keep') setTriggerRareSearch(true);
+    // Once per appraisal: later stat/setting changes must not re-apply the selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appraisal]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -952,6 +997,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   }, [triggerCorruptionSearch, fetchListings]);
 
+  // Search once the key stats of a Keep rare are pre-selected (filters are applied by then)
+  useEffect(() => {
+    if (triggerRareSearch) {
+      setTriggerRareSearch(false);
+      setPage(0);
+      setTimeout(() => {
+        fetchListings(true);
+      }, 0);
+    }
+  }, [triggerRareSearch, fetchListings]);
+
   // Trigger search when socket search is requested
   useEffect(() => {
     if (triggerSocketSearch) {
@@ -1149,6 +1205,26 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </Badge>
             )}
 
+            {/* Rare appraisal: verdict pill (same spot/style as the uniques' price pill) + a subtle note */}
+            {rareAppraisal.status === 'loading' && (
+              <div className="pt-0.5">
+                <RareAppraisalPillSkeleton />
+              </div>
+            )}
+            {appraisal && (
+              <div className="pt-0.5">
+                <RareAppraisalPill
+                  appraisal={appraisal}
+                  history={rareResponse?.history ?? null}
+                  title={displayTitle ?? item.name ?? ''}
+                  hardcore={settings.mode === 'hardcore'}
+                />
+              </div>
+            )}
+            {rareResponse?.reason && (
+              <span className="text-[11px] text-muted-foreground/70">Appraisal note: {rareResponse.reason}</span>
+            )}
+
             {/* Average Price Information for Unique Items - Compact */}
             {isUniqueOrSet && (
               <div className="pt-0.5">
@@ -1189,44 +1265,38 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             </WebLink>
                           </div>
                           <div className="grid grid-cols-2 gap-1.5">
-                            <PriceStat label="Average"
-                              value={averagePriceData.movingAverage7Days}
-                              emphasis />
-                            <PriceStat label="Median"
-                              value={averagePriceData.medianPrice} />
-                            <PriceStat label="Min"
-                              value={averagePriceData.minPrice} />
-                            <PriceStat label="Max"
-                              value={averagePriceData.maxPrice} />
+                            <PopoverTile label="Average"
+                              emphasis>
+                              {averagePriceData.movingAverage7Days.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label="Median">{averagePriceData.medianPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label="Min">{averagePriceData.minPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label="Max">{averagePriceData.maxPrice.toFixed(2)} HR</PopoverTile>
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Samples:</span>
-                              <span className="tabular-nums">{averagePriceData.sampleCount}</span>
-                            </div>
+                            <PopoverKeyValue label="Samples">{averagePriceData.sampleCount}</PopoverKeyValue>
                             {averagePriceData.priceChange7Days && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">7d Change:</span>
+                              <PopoverKeyValue label="7d Change">
                                 <ChangeLabel
                                   change={averagePriceData.priceChange7Days.change}
                                   percent={averagePriceData.priceChange7Days.changePercent}
                                 />
-                              </div>
+                              </PopoverKeyValue>
                             )}
                           </div>
                           {/* Item's Corruption Price - Display separately if matched */}
                           {itemCorruptions && (
                             <div className="border-t border-border pt-2">
-                              <div className="mb-1.5 text-xs font-semibold text-q-corrupted">
+                              <PopoverSectionTitle className="text-q-corrupted">
                                 This Item&apos;s Corruption
-                              </div>
+                              </PopoverSectionTitle>
                               {renderCorruptionRow(itemCorruptions, itemCorruptions.priceData, 'item')}
                             </div>
                           )}
                           {/* Corruption Prices */}
                           {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
                             <div className="border-t border-border pt-2">
-                              <div className="mb-1.5 text-xs font-semibold">Top Corruptions</div>
+                              <PopoverSectionTitle>Top Corruptions</PopoverSectionTitle>
                               {showAllCorruptions ? (
                                 <ScrollArea className="w-full overflow-x-hidden"
                                   viewportClassName="max-h-[200px]">
@@ -1352,6 +1422,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         selected={selected}
                         corruptedState={corruptedState}
                         onSubmit={handleSearch}
+                        rare={rareStats.get(getStatKey(s))}
                       />
                     ))}
                   </div>
@@ -1632,22 +1703,6 @@ function WebLink({
       {children}
       <ExternalLink className="size-3" />
     </button>
-  );
-}
-
-function PriceStat({ label, value, emphasis }: { label: string; value: number; emphasis?: boolean }) {
-  return (
-    <div
-      className={cn(
-        'rounded-md border px-2.5 py-1.5',
-        emphasis ? 'border-glow/40 bg-glow/10' : 'border-border/60 bg-muted/40',
-      )}
-    >
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn('text-sm tabular-nums', emphasis ? 'font-bold text-foreground' : 'font-medium')}>
-        {value.toFixed(2)} HR
-      </div>
-    </div>
   );
 }
 

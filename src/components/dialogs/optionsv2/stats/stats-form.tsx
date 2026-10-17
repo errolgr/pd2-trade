@@ -15,6 +15,7 @@ const statsFormSchema = z.object({
   statFillLeaveMinEmpty: z.boolean().optional(),
   statFillLeaveMaxEmpty: z.boolean().optional(),
   statDefaultCorruptedFilter: z.enum(['both', 'corrupted', 'non-corrupted']).optional(),
+  rareRankDisplay: z.enum(['bar', 'blocks']).optional(),
 });
 
 type StatsFormValues = z.infer<typeof statsFormSchema>;
@@ -31,6 +32,7 @@ export function StatsForm() {
       statFillLeaveMinEmpty: settings?.statFillLeaveMinEmpty ?? false,
       statFillLeaveMaxEmpty: settings?.statFillLeaveMaxEmpty ?? false,
       statDefaultCorruptedFilter: settings?.statDefaultCorruptedFilter ?? 'both',
+      rareRankDisplay: settings?.rareRankDisplay ?? 'bar',
     },
   });
 
@@ -43,6 +45,7 @@ export function StatsForm() {
           statFillLeaveMinEmpty: settings.statFillLeaveMinEmpty ?? false,
           statFillLeaveMaxEmpty: settings.statFillLeaveMaxEmpty ?? false,
           statDefaultCorruptedFilter: settings.statDefaultCorruptedFilter ?? 'both',
+          rareRankDisplay: settings.rareRankDisplay ?? 'bar',
         },
         { keepDirty: false },
       );
@@ -203,6 +206,35 @@ export function StatsForm() {
                       <SelectItem value="both">Both</SelectItem>
                       <SelectItem value="corrupted">Corrupted only</SelectItem>
                       <SelectItem value="non-corrupted">Non-corrupted only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Rare appraisal">
+          <FormField
+            control={form.control}
+            name="rareRankDisplay"
+            render={({ field }) => (
+              <SettingsRow
+                label="Rare rank display"
+                description="How a rare's price rank among its slot is drawn in the price-check appraisal popover."
+                control={
+                  <Select value={field.value ?? 'bar'}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Rank display" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="bar">Bar (percentile + vendor/keep lines)</SelectItem>
+                      <SelectItem value="blocks">Blocks (6 rank segments)</SelectItem>
                     </SelectContent>
                   </Select>
                 }

@@ -35,6 +35,8 @@ export interface ISettings {
   statFillLeaveMinEmpty?: boolean;
   statFillLeaveMaxEmpty?: boolean;
   statDefaultCorruptedFilter?: 'both' | 'corrupted' | 'non-corrupted';
+  rareRankDisplay?: 'bar' | 'blocks'; // Price-check rare appraisal: continuous percentile bar or 6 rank blocks
+  rareStatsExpanded?: boolean; // Price-check rare popover: "Stats on this item" open (last state)
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
   chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility

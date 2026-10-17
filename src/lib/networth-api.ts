@@ -4,6 +4,7 @@
  */
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
+import type { RareAppraisal, VerdictRule } from '@/lib/rare-appraisal-api';
 
 export type NetWorthCategory = 'runes' | 'currency' | 'ubers' | 'gems' | 'mats' | 'uniques' | 'sets' | 'other';
 export type PriceConfidence = 'ok' | 'low' | 'fixed' | 'none';
@@ -56,6 +57,27 @@ export interface SnapshotResponse {
   snapshotId: string | null;
   deduped: boolean;
   delta: { sincePrevious: number | null; previousTakenAt: string | null };
+  /** Appraised rares of the stash (response only, never persisted); only when the server has rare appraisal on. */
+  rares?: RareAppraisal[];
+  /** Verdict thresholds for the rares bar; present together with `rares`. */
+  rareRule?: VerdictRule;
+  /** Verdict counts + Keep market band of `rares`; present together with `rares`. Never part of `totalHr`. */
+  raresSummary?: RaresSummary;
+}
+
+/** Mirrors the server's networth.types.ts RaresSummary. */
+export interface RaresSummary {
+  keep: number;
+  /** All Check items (any priority). */
+  check: number;
+  /** Check items with priority high or medium ("worth a look"). */
+  checkHigh: number;
+  vendor: number;
+  /** Sum of `market.lowHr` / `market.highHr` over Keep items with a market band. */
+  keepLowHr: number;
+  keepHighHr: number;
+  /** Keep items without a market band (not in keepLowHr/keepHighHr). */
+  keepUnpriced: number;
 }
 
 export interface NetWorthPoint {
