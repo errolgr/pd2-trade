@@ -5,6 +5,7 @@ import './globals.css';
 import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
+import { initFaro } from '@/lib/faro';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
 import LandingPage, { Providers } from './pages/landing/LandingPage';
 import ItemPage from '@/pages/price-check/ItemPage';
@@ -26,6 +27,9 @@ import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 
 // Apply the cached theme before the first render (no flash of the default theme)
 initTheme();
+
+// Grafana Faro (metrics/events/web vitals/traces; errors stay with Sentry) when VITE_FARO_URL is set
+initFaro();
 
 // Initialize debug logging if enabled in settings
 initDebugLoggingFromSettings();

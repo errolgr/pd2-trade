@@ -4,7 +4,7 @@
 
 import { reportApiError } from '@/lib/error-reporting';
 
-const API_BASE_URL = 'https://pd2trader.com';
+export const API_BASE_URL = 'https://pd2trader.com';
 
 export interface AveragePriceResponse {
   typeCode: string;

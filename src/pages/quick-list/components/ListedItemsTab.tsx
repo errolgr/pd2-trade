@@ -38,7 +38,7 @@ import { FormField, FormItem, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { cn } from '@/lib/utils';
@@ -165,10 +165,11 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       setTotalCount(result.total);
 
-      incrementMetric('listed_items.fetch', 1, { status: 'success', page: currentPage.toString() });
-      distributionMetric('listed_items.fetch_duration_ms', duration);
-      distributionMetric('listed_items.fetch_count', result.data.length);
-      distributionMetric('listed_items.total_count', result.total);
+      trackMeasurement(
+        'listed_items_fetch',
+        { duration_ms: duration, returned_items: result.data.length, total_items: result.total },
+        { outcome: 'success', page: currentPage },
+      );
 
       // Update parent component if callbacks provided
       if (onTotalCountChange) {
@@ -180,8 +181,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       }
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.fetch', 1, { status: 'error', page: currentPage.toString() });
-      distributionMetric('listed_items.fetch_duration_ms', duration);
+      trackMeasurement('listed_items_fetch', { duration_ms: duration }, { outcome: 'error', page: currentPage });
       console.error('Failed to fetch market listings:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch listings');
     } finally {
@@ -339,13 +339,19 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       );
 
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.bump', 1, { status: 'success', source: 'listed_items_tab' });
-      distributionMetric('listed_items.bump_duration_ms', duration);
+      trackMeasurement(
+        'listed_items_bump',
+        { duration_ms: duration },
+        { outcome: 'success', source: 'listed_items_tab' },
+      );
       emit('toast-event', 'Item bumped successfully!');
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.bump', 1, { status: 'error', source: 'listed_items_tab' });
-      distributionMetric('listed_items.bump_duration_ms', duration);
+      trackMeasurement(
+        'listed_items_bump',
+        { duration_ms: duration },
+        { outcome: 'error', source: 'listed_items_tab' },
+      );
       console.error('Failed to bump item:', err);
       emit('toast-event', 'Failed to bump item');
     } finally {
@@ -372,13 +378,11 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       setTimeout(() => setBumpWave((w) => (w === wave ? 0 : w)), BUMP_FLASH_SPREAD_MS + BUMP_FLASH_DURATION_MS);
 
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.bump_all', 1, { status: 'success' });
-      distributionMetric('listed_items.bump_all_duration_ms', duration);
+      trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'success' });
       emit('toast-event', 'Successfully bumped all items!');
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.bump_all', 1, { status: 'error' });
-      distributionMetric('listed_items.bump_all_duration_ms', duration);
+      trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to bump all items:', err);
       emit('toast-event', 'Failed to bump all items');
     } finally {
@@ -416,13 +420,11 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       });
 
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.delete', 1, { status: 'success' });
-      distributionMetric('listed_items.delete_duration_ms', duration);
+      trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'success' });
       emit('toast-event', `Removed ${listing.item.name} market listing.`);
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.delete', 1, { status: 'error' });
-      distributionMetric('listed_items.delete_duration_ms', duration);
+      trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to delete listing:', err);
       emit('toast-event', 'Failed to delete listing');
       // Refresh on error to restore correct state
@@ -439,7 +441,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleEdit = (listing: MarketListingEntry) => {
     setEditingListingId(listing._id);
-    incrementMetric('listed_items.edit_started', 1);
+    trackEvent('listed_items_edit_started');
     editForm.reset({
       type: typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' : 'note',
       note: typeof listing.price === 'string' ? listing.price : '',
@@ -487,16 +489,15 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       setEditingListingId(null);
       // await fetchListings();
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.edit_saved', 1, { status: 'success', listing_type: listingType });
-      distributionMetric('listed_items.edit_duration_ms', duration);
-      if (hasPrice && numericPrice !== null) {
-        distributionMetric('listed_items.edit_price_hr', numericPrice);
-      }
+      trackMeasurement(
+        'listed_items_edit_save',
+        { duration_ms: duration, price_hr: hasPrice ? numericPrice : undefined },
+        { outcome: 'success', listing_type: listingType },
+      );
       emit('toast-event', 'Listing updated!');
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('listed_items.edit_saved', 1, { status: 'error' });
-      distributionMetric('listed_items.edit_duration_ms', duration);
+      trackMeasurement('listed_items_edit_save', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to update listing:', err);
       emit('toast-event', 'Failed to update listing');
     }
@@ -634,8 +635,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                 setSearchQuery(newQuery);
                 // setCurrentPage(0); // Handled in useEffect
                 if (newQuery.trim().length > 0) {
-                  incrementMetric('listed_items.search', 1);
-                  distributionMetric('listed_items.search_query_length', newQuery.length);
+                  trackMeasurement('listed_items_search', { query_chars: newQuery.length });
                 }
               }}
               onKeyDown={(e) => {
@@ -946,7 +946,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                   aria-label="Go to trade website"
                                   className={cn(iconButton, 'hover:bg-accent hover:text-accent-foreground')}
                                   onClick={() => {
-                                    incrementMetric('listed_items.open_trade_url', 1);
+                                    trackEvent('listed_items_trade_url_opened');
                                     openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
                                   }}
                                 >

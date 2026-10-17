@@ -25,7 +25,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import ListedItemsTab from './ListedItemsTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
-import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
@@ -124,24 +124,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const items = await findMatchingItems(item);
       const duration = performance.now() - startTime;
 
-      // Track matching items found
-      incrementMetric('list_item.matching_items.search', 1, { status: 'success' });
-      distributionMetric('list_item.matching_items.count', items.length);
-      distributionMetric('list_item.matching_items.search_duration_ms', duration);
+      trackMeasurement(
+        'list_item_matching_search',
+        { duration_ms: duration, matched_items: items.length },
+        { outcome: 'success' },
+      );
 
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
         setShowQueueOption(false); // Reset queue option visibility
-        incrementMetric('list_item.auto_selected', 1);
+        trackEvent('list_item_auto_selected');
       } else {
         setSelectedItem(null);
         setShowQueueOption(false); // Reset queue option visibility when new search
       }
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('list_item.matching_items.search', 1, { status: 'error' });
-      distributionMetric('list_item.matching_items.search_duration_ms', duration);
+      trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
       // AccountMismatchError / AuthenticationError are expected user-state conditions, not app bugs
       if (!(err instanceof AccountMismatchError) && !(err instanceof AuthenticationError)) {
         console.error(err instanceof Error ? err.message : 'Failed to find items');
@@ -284,7 +284,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const numericPrice = priceValue !== null ? Number(priceValue) : null;
       const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
-
+      const startTime = performance.now();
       try {
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
@@ -313,10 +313,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         await fetchAllListings();
 
-        incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType, source: 'queued' });
-        if (hasPrice && numericPrice !== null) {
-          distributionMetric('list_item.create_price_hr', numericPrice);
-        }
+        trackMeasurement(
+          'list_item_create',
+          { duration_ms: performance.now() - startTime, price_hr: hasPrice ? numericPrice : undefined },
+          { outcome: 'success', listing_type: listingType, source: 'queued' },
+        );
 
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
@@ -334,7 +335,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await emit('toast-event', toastPayload);
       } catch (err) {
         console.error('[Queue] Failed to process queued listing:', err);
-        incrementMetric('list_item.create', 1, { status: 'error', source: 'queued' });
+        trackMeasurement(
+          'list_item_create',
+          { duration_ms: performance.now() - startTime },
+          { outcome: 'error', source: 'queued' },
+        );
         const errorToast: GenericToastPayload = {
           title: 'Failed to list item',
           description: err instanceof Error ? err.message : 'Failed to list queued item',
@@ -573,9 +578,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setIsQueued(true);
       setSubmitLoading(false);
 
-      incrementMetric('list_item.queued', 1, {
-        has_multiple_matches: matchingItems.length > 0 ? 'true' : 'false',
-      });
+      trackEvent('list_item_queued', { has_multiple_matches: matchingItems.length > 0 });
       const queuedToast: GenericToastPayload = {
         title: 'Item queued',
         description:
@@ -597,7 +600,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
     if (!selectedItem) {
       setError('Please select an item to list');
-      incrementMetric('list_item.submit_attempt', 1, { status: 'validation_error', reason: 'no_item_selected' });
+      trackEvent('list_item_submit_rejected', { reason: 'no_item_selected' });
       return;
     }
     setSubmitLoading(true);
@@ -631,12 +634,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await fetchAllListings(); // Refresh all listings
         await emit('toast-event', { title: 'PD2 Trader', description: 'Listing updated!' });
 
-        const duration = performance.now() - startTime;
-        incrementMetric('list_item.update', 1, { status: 'success', listing_type: listingType });
-        distributionMetric('list_item.update_duration_ms', duration);
-        if (hasPrice && numericPrice !== null) {
-          distributionMetric('list_item.update_price_hr', numericPrice);
-        }
+        trackMeasurement(
+          'list_item_update',
+          { duration_ms: performance.now() - startTime, price_hr: hasPrice ? numericPrice : undefined },
+          { outcome: 'success', listing_type: listingType },
+        );
 
         await appWindow.hide();
       } else {
@@ -660,12 +662,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         );
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
 
-        const duration = performance.now() - startTime;
-        incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType });
-        distributionMetric('list_item.create_duration_ms', duration);
-        if (hasPrice && numericPrice !== null) {
-          distributionMetric('list_item.create_price_hr', numericPrice);
-        }
+        trackMeasurement(
+          'list_item_create',
+          { duration_ms: performance.now() - startTime, price_hr: hasPrice ? numericPrice : undefined },
+          { outcome: 'success', listing_type: listingType, source: 'direct' },
+        );
 
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
@@ -685,11 +686,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await appWindow.hide();
       }
     } catch (err) {
-      const duration = performance.now() - startTime;
       const isAlreadyListed = !!currentListingForSelected;
-      const action = isAlreadyListed ? 'update' : 'create';
-      incrementMetric(`list_item.${action}`, 1, { status: 'error' });
-      distributionMetric(`list_item.${action}_duration_ms`, duration);
+      trackMeasurement(
+        isAlreadyListed ? 'list_item_update' : 'list_item_create',
+        { duration_ms: performance.now() - startTime },
+        { outcome: 'error', source: isAlreadyListed ? undefined : 'direct' },
+      );
       console.error(err instanceof Error ? err.message : 'Failed to list/update item');
       setError(err instanceof Error ? err.message : 'Failed to list/update item');
     } finally {
@@ -722,18 +724,20 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       await updateMarketListing(marketId, { bumped_at: new Date().toISOString() });
       await updateItemByHash(itemHash, { bumped_at: new Date().toISOString() });
       const duration = performance.now() - startTime;
-      incrementMetric('list_item.bump', 1, { status: 'success', source: 'list_item_shortcut' });
-      distributionMetric('list_item.bump_duration_ms', duration);
+      trackMeasurement(
+        'list_item_bump',
+        { duration_ms: duration },
+        { outcome: 'success', source: 'list_item_shortcut' },
+      );
     } catch (err) {
       const duration = performance.now() - startTime;
-      incrementMetric('list_item.bump', 1, { status: 'error', source: 'list_item_shortcut' });
-      distributionMetric('list_item.bump_duration_ms', duration);
+      trackMeasurement('list_item_bump', { duration_ms: duration }, { outcome: 'error', source: 'list_item_shortcut' });
       throw err;
     }
   };
 
   const handleRefresh = async () => {
-    incrementMetric('list_item.refresh', 1);
+    trackEvent('list_item_refresh');
     await getMarketListingsForStashItems();
     await findMatchingItemsInStash();
   };

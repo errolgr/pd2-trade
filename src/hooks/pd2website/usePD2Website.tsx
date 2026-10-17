@@ -8,6 +8,7 @@ import { useSocket } from './useSocket';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
+import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -301,7 +302,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     }
   }, [settings?.pd2Token]);
 
-  // Set Sentry user context when authData changes
+  // Set Sentry (and Faro telemetry) user context when authData changes
   useEffect(() => {
     if (authData?.user && settings?.lastSeenVersion) {
       Sentry.setUser({
@@ -311,8 +312,14 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       Sentry.setContext('app', {
         lastSeenVersion: settings?.lastSeenVersion,
       });
+      setTelemetryUser({
+        id: authData.user._id,
+        username: authData.user.username,
+        attributes: { last_seen_version: settings.lastSeenVersion },
+      });
     } else {
       Sentry.setUser(null);
+      setTelemetryUser(null);
     }
   }, [authData, settings]);
 

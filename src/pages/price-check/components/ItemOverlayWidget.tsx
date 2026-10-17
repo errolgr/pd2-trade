@@ -61,7 +61,7 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
-import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import {
   fetchItemPrice,
@@ -833,25 +833,27 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
         setHasMore(result.data.length === ITEMS_PER_PAGE);
 
-        incrementMetric('item_overlay.market_search', 1, {
-          status: 'success',
-          archived: searchArchived.toString(),
-          search_mode: shouldUseToggle ? searchMode.toString() : '0',
-          page: isNewSearch ? '0' : page.toString(),
-        });
-        distributionMetric('item_overlay.market_search_duration_ms', duration);
-        if (isNewSearch) {
-          distributionMetric('item_overlay.market_search_results_count', result.total);
-        }
-        distributionMetric('item_overlay.market_search_results_returned', result.data.length);
+        trackMeasurement(
+          'item_overlay_market_search',
+          {
+            duration_ms: duration,
+            returned_items: result.data.length,
+            total_items: isNewSearch ? result.total : undefined,
+          },
+          {
+            outcome: 'success',
+            archived: searchArchived,
+            search_mode: shouldUseToggle ? searchMode : 0,
+            page: isNewSearch ? 0 : page,
+          },
+        );
       } catch (e: any) {
         const duration = performance.now() - startTime;
-        incrementMetric('item_overlay.market_search', 1, {
-          status: 'error',
-          archived: searchArchived.toString(),
-          search_mode: shouldUseToggle ? searchMode.toString() : '0',
-        });
-        distributionMetric('item_overlay.market_search_duration_ms', duration);
+        trackMeasurement(
+          'item_overlay_market_search',
+          { duration_ms: duration },
+          { outcome: 'error', archived: searchArchived, search_mode: shouldUseToggle ? searchMode : 0 },
+        );
         console.log(e.message || 'Failed to fetch market listings');
         setMarketError(e.message || 'Failed to fetch market listings');
       } finally {
@@ -997,9 +999,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openTradeUrl = () => {
     if (tradeUrl) {
-      incrementMetric('item_overlay.trade_url_opened', 1, {
-        archived: searchArchived.toString(),
-        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+      trackEvent('item_overlay_trade_url_opened', {
+        archived: searchArchived,
+        search_mode: shouldUseToggle ? searchMode : 0,
       });
       openUrl(tradeUrl);
     }

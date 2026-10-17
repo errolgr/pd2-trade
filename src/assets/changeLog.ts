@@ -17,6 +17,7 @@ export const changeLog = {
     '🔧 Update installs and hotkey conflicts are now reported correctly; Rune Exchange popover loads only rune prices',
     '🔧 Fixed long price check stat lists being cut off, "Show Less" missing in the rune price popover, and tooltips/popovers that didn\'t show or opened off-screen',
     '🔧 Fixed "Show More" in the listing form acting as submit, and the Season dropdown cutting off "Betrayal (S13) (current)"',
+    '🔧 Usage stats now go to Grafana',
   ],
   '0.9.14': ['🔧 Disabled the browser right-click menu on overlay windows'],
   '0.9.13': [

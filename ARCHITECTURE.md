@@ -166,19 +166,32 @@ Building the app is like baking a cake. You need the ingredients (code component
 2.  **Bake**: We put it in the oven (Compiler) which turns the raw ingredients into a solid cake (Executable file).
 3.  **Frosting**: We put it in a nice box (Installer) so it's ready to be given to people (Users).
 
-## 6. 🐞 Logging & Error Monitoring (Sentry)
+## 6. 🐞 Logging & Error Monitoring (Sentry + Grafana)
 
-The application uses **Sentry** to track errors and monitor performance, ensuring developers can fix bugs quickly.
+Monitoring is split in two:
 
-### Setup
+- **Sentry** tracks errors and crashes so developers can fix bugs quickly.
+- **Grafana Faro** (Grafana Cloud Frontend Observability) collects usage metrics, web vitals and traces to our own backend.
+
+### Sentry (errors)
 
 - **Initialization**: Sentry is initialized in `src/main.tsx` asynchronously to avoid slowing down startup.
+- **Errors**: Uncaught errors and `console.error` are reported. Expected user-state errors (`AccountMismatchError`, `AuthenticationError`, "is not associated with your logged-in account") are dropped. API failures go through `src/lib/error-reporting.ts`, which reports only 5xx responses, grouped by service, status code and endpoint.
 - **Performance**: Captures 100% of transactions (`tracesSampleRate: 1.0`) to debug performance issues.
 - **Replays**: Records session replays for 10% of sessions (100% on errors) to see exactly what the user did before a crash.
 - **Privacy**: Local API calls (IPC) are filtered out to reduce noise and protect privacy.
   - **Session Replay Privacy**: By default, Sentry masks **all text content** and **inputs** (including usernames and passwords) with asterisks (`***`). It does **not** record raw keystrokes or sensitive data entered into forms.
-- **Metrics**: Custom metrics in `src/lib/sentryMetrics.ts` can track usage stats (like how many items are price checked).
+- **Source maps**: uploaded by `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set at build time.
+
+### Grafana Faro (metrics, web vitals, traces)
+
+- **Configuration**: Faro is only initialized when the build-time `VITE_FARO_URL` (Faro collector URL) is set. Local builds without it send nothing to Grafana.
+- **Initialization**: `src/lib/faro.ts` (called from `src/main.tsx`). Every overlay route runs in its own Tauri webview, so each window has its own Faro session; the Tauri window label is the `window_label` session attribute and the Faro view name, and the route (path only) is the Faro page id.
+- **No errors**: Faro's error and console instrumentations are not installed, so exceptions are only reported to Sentry.
+- **Measurements & events**: `src/lib/telemetry.ts` (`trackMeasurement` for operations with durations/counts, `trackEvent` for discrete actions). Names are snake_case, value keys carry their unit (`duration_ms`, `*_items`, `price_hr`), attributes must stay low-cardinality.
+- **Tracing**: fetch/XHR spans are recorded; the `traceparent` header is only sent to our own backend (`VITE_BACKEND_URL` / pd2trader.com), never to the projectdiablo2.com API.
+- **Privacy**: Tauri IPC traffic (`ipc.localhost`) is excluded from tracing, and query strings are stripped from page URLs.
 
 ### 👶 "Explain it like I'm 5"
 
-Sentry is like the car's "Black Box". If the app crashes or runs slowly, Sentry records what happened right before and sends a report to the developers so they can fix the engine.
+Sentry is like the car's "Black Box". If the app crashes or runs slowly, Sentry records what happened right before and sends a report to the developers so they can fix the engine. Grafana is the dashboard: it counts how often each feature is used and how fast it is.
