@@ -138,7 +138,9 @@ export function statNotes(stat: AppraisedStat, slot: RareSlot): { note: string |
     const short = stat.key ? SHORT_STAT[stat.key.split('__')[0]] : undefined;
     note = `${short && stat.value !== null ? `${stat.value} ${short}` : stat.label} on ${slots} only via corruption`;
   } else if (!stat.stars && stat.keyFrom !== null) {
-    note = `near miss: ${stat.keyFrom}+ is ${stat.keyFromMultiplier ? mult(stat.keyFromMultiplier) : 'key'} on ${slots}`;
+    note =
+      `near miss: ${stat.keyFrom}+ is ${stat.keyFromMultiplier ? mult(stat.keyFromMultiplier) : 'key'} on ${slots}` +
+      (stat.corruptionOnly ? ' (only via corruption)' : '');
   }
   const roll =
     stat.roll === null

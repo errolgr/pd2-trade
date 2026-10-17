@@ -43,9 +43,9 @@ export interface AppraisedStat {
   keyFrom: number | null;
   /** Added by corruption. */
   corrupted: boolean;
-  /** Near-miss stats: price multiplier of the tier that starts at `keyFrom` (absent on older servers). */
+  /** Multiplier of the tier holding `keyFrom` on this slot in the current phase; null when not key (absent on older servers). */
   keyFromMultiplier?: number | null;
-  /** This value is only reachable on this slot through corruption (absent on older servers). */
+  /** The key values of this stat on this slot are only reachable through corruption (absent on older servers). */
   corruptionOnly?: boolean;
 }
 
@@ -77,6 +77,8 @@ export interface RareAppraisal {
   rankError: number;
   stats: AppraisedStat[];
   market: MarketReference | null;
+  /** Season phase whose key stats set stars / keyFrom / keyFromMultiplier / corruptionOnly (early = fortnights 0–3). */
+  phase?: 'early' | 'late';
   /** Rank, stars and verdict always come from the softcore-trained model, also for hardcore. */
   modelMode: 'softcore';
   modelVersion: string;
