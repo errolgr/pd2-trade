@@ -1216,6 +1216,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   appraisal={appraisal}
                   history={rareResponse?.history ?? null}
                   title={displayTitle ?? item.name ?? ''}
+                  hardcore={settings.mode === 'hardcore'}
                 />
               </div>
             )}

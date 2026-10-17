@@ -219,6 +219,7 @@ export function StashValueWindow() {
                         rares={rares}
                         rule={latest.rareRule ?? DEFAULT_VERDICT_RULE}
                         summary={latest.raresSummary}
+                        hardcore={!!owner?.isHardcore}
                       />
                     </TabsContent>
                   )}

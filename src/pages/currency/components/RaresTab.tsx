@@ -5,7 +5,15 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { RaresSummary } from '@/lib/networth-api';
 import type { RareAppraisal, VerdictRule } from '@/lib/rare-appraisal-api';
-import { MarketLine, RankBar, RankText, StarChips, StatList, VerdictBadge } from '@/components/rares/RareParts';
+import {
+  HardcoreNote,
+  MarketLine,
+  RankBar,
+  RankText,
+  StarChips,
+  StatList,
+  VerdictBadge,
+} from '@/components/rares/RareParts';
 import {
   compareStash,
   fmtBandHr,
@@ -29,10 +37,13 @@ export function RaresTab({
   rares,
   rule,
   summary,
+  hardcore = false,
 }: {
   rares: RareAppraisal[];
   rule: VerdictRule;
   summary: RaresSummary;
+  /** Stash owner plays hardcore: notes that verdicts are softcore-trained and where prices come from. */
+  hardcore?: boolean;
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
@@ -87,11 +98,14 @@ export function RaresTab({
         <RareGroup title="Keep"
           count={keep.length}>
           {keep.map((r) => (
-            <RareRow key={r.id}
+            <RareRow
+              key={r.id}
               rare={r}
               rule={rule}
+              hardcore={hardcore}
               expanded={expanded.has(r.id)}
-              onToggle={toggle} />
+              onToggle={toggle}
+            />
           ))}
         </RareGroup>
       )}
@@ -100,11 +114,14 @@ export function RaresTab({
         <RareGroup title="Worth a look"
           count={worth.length}>
           {worth.map((r) => (
-            <RareRow key={r.id}
+            <RareRow
+              key={r.id}
               rare={r}
               rule={rule}
+              hardcore={hardcore}
               expanded={expanded.has(r.id)}
-              onToggle={toggle} />
+              onToggle={toggle}
+            />
           ))}
         </RareGroup>
       )}
@@ -118,6 +135,7 @@ export function RaresTab({
               tab={g.tab}
               items={g.items}
               rule={rule}
+              hardcore={hardcore}
               expanded={expanded}
               onToggleItem={toggle}
             />
@@ -192,11 +210,13 @@ function Collapse({ open, children }: { open: boolean; children: React.ReactNode
 function RareRow({
   rare,
   rule,
+  hardcore,
   expanded,
   onToggle,
 }: {
   rare: RareAppraisal;
   rule: VerdictRule;
+  hardcore: boolean;
   expanded: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -219,7 +239,8 @@ function RareRow({
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-medium text-q-rare">{rare.name}</span>
-            <VerdictBadge rare={rare} />
+            <VerdictBadge rare={rare}
+              hardcore={hardcore} />
           </span>
           <span className="truncate text-[11px] text-muted-foreground">{locationText(rare)}</span>
           <StarChips rare={rare} />
@@ -244,6 +265,8 @@ function RareRow({
           <RankBar rare={rare}
             rule={rule} />
           <MarketLine rare={rare} />
+          <HardcoreNote rare={rare}
+            hardcore={hardcore} />
           <StatList rare={rare} />
         </div>
       </Collapse>
@@ -268,6 +291,7 @@ function RareFold({
   tab,
   items,
   rule,
+  hardcore,
   expanded,
   onToggleItem,
 }: {
@@ -275,6 +299,7 @@ function RareFold({
   tab: string;
   items: RareAppraisal[];
   rule: VerdictRule;
+  hardcore: boolean;
   expanded: Set<string>;
   onToggleItem: (id: string) => void;
 }) {
@@ -310,11 +335,14 @@ function RareFold({
       <Collapse open={open}>
         <ul className="border-t border-border/40">
           {items.map((r) => (
-            <RareRow key={r.id}
+            <RareRow
+              key={r.id}
               rare={r}
               rule={rule}
+              hardcore={hardcore}
               expanded={expanded.has(r.id)}
-              onToggle={onToggleItem} />
+              onToggle={onToggleItem}
+            />
           ))}
         </ul>
       </Collapse>

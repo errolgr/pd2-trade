@@ -109,6 +109,17 @@ export function marketText(rare: RareAppraisal): string | null {
     : `${what} are usually listed around ${band}`;
 }
 
+/**
+ * Note for hardcore: the model is softcore-trained; the price band comes from hardcore listings when the
+ * slot has HC bands, else from softcore listings. Null on softcore.
+ */
+export function hardcoreNote(rare: RareAppraisal, hardcore: boolean): string | null {
+  if (!hardcore) return null;
+  const base = 'Hardcore: verdict and stars from softcore data';
+  if (!rare.market) return base;
+  return `${base}; prices from ${rare.market.mode === 'hardcore' ? 'hardcore' : 'softcore'} listings`;
+}
+
 /** Starred stats, strongest first. */
 export function keyStats(rare: RareAppraisal): AppraisedStat[] {
   return rare.stats

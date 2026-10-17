@@ -52,6 +52,8 @@ export interface MarketReference {
   /** 'last-season' = same point of the previous season; 'current' = recent listings this season. */
   source: 'last-season' | 'current';
   sampleSize: number;
+  /** Listings the band comes from: 'hardcore' only for HC requests whose slot has HC bands, else 'softcore'. */
+  mode: 'softcore' | 'hardcore';
 }
 
 export interface RareAppraisal {
@@ -71,6 +73,8 @@ export interface RareAppraisal {
   rankError: number;
   stats: AppraisedStat[];
   market: MarketReference | null;
+  /** Rank, stars and verdict always come from the softcore-trained model, also for hardcore. */
+  modelMode: 'softcore';
   modelVersion: string;
 }
 

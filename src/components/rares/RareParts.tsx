@@ -11,6 +11,7 @@ import type {
   VerdictRule,
 } from '@/lib/rare-appraisal-api';
 import {
+  hardcoreNote,
   keyStats,
   marketText,
   ordinalPercentile,
@@ -54,8 +55,17 @@ function Hint({ text, children }: { text: string | undefined; children: React.Re
   );
 }
 
-export function VerdictBadge({ rare, className }: { rare: RareAppraisal; className?: string }) {
-  const title = rare.verdict === 'check' && rare.checkPriority ? PRIORITY_TITLES[rare.checkPriority] : undefined;
+export function VerdictBadge({
+  rare,
+  className,
+  hardcore = false,
+}: {
+  rare: RareAppraisal;
+  className?: string;
+  hardcore?: boolean;
+}) {
+  const priority = rare.verdict === 'check' && rare.checkPriority ? PRIORITY_TITLES[rare.checkPriority] : null;
+  const title = [priority, hardcoreNote(rare, hardcore)].filter(Boolean).join(' · ') || undefined;
   return (
     <Hint text={title}>
       <span
@@ -242,6 +252,21 @@ export function MarketLine({ rare, className }: { rare: RareAppraisal; className
       <p className={cn('cursor-help text-sm leading-snug text-foreground/90', className)}>{text}.</p>
     </Hint>
   );
+}
+
+/** One muted line on hardcore: verdict/stars are softcore-trained, and which listings the prices come from. */
+export function HardcoreNote({
+  rare,
+  hardcore,
+  className,
+}: {
+  rare: RareAppraisal;
+  hardcore: boolean;
+  className?: string;
+}) {
+  const note = hardcoreNote(rare, hardcore);
+  if (!note) return null;
+  return <p className={cn('text-[11px] leading-snug text-muted-foreground', className)}>{note}.</p>;
 }
 
 /** Asking price of one listing: HR without trailing zeros ("3.5 HR", "2 HR", "0.15 HR"), else the seller's text. */

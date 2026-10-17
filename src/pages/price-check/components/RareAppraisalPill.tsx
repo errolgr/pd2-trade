@@ -5,8 +5,15 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
-import { MarketLine, RankBar, RareHistorySection, VerdictBadge } from '@/components/rares/RareParts';
-import { bandRange, MODEL_SEASON, rankText, SLOT_LABELS, SLOT_PLURALS } from '@/components/rares/rares-format';
+import { HardcoreNote, MarketLine, RankBar, RareHistorySection, VerdictBadge } from '@/components/rares/RareParts';
+import {
+  bandRange,
+  hardcoreNote,
+  MODEL_SEASON,
+  rankText,
+  SLOT_LABELS,
+  SLOT_PLURALS,
+} from '@/components/rares/rares-format';
 
 /** Header placeholder while the rare is appraised (same footprint as the uniques' price pill skeleton). */
 export function RareAppraisalPillSkeleton() {
@@ -36,12 +43,16 @@ export function RareAppraisalPill({
   appraisal,
   history,
   title,
+  hardcore = false,
 }: {
   appraisal: RareAppraisal;
   history: RareHistory | null;
   title: string;
+  /** Price check runs in hardcore mode: note that verdict/stars are softcore-trained (pill tooltip + popover line). */
+  hardcore?: boolean;
 }) {
   const market = appraisal.market;
+  const hcNote = hardcoreNote(appraisal, hardcore);
   const slots = (SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase();
   return (
     <motion.div className="inline-block"
@@ -60,6 +71,8 @@ export function RareAppraisalPill({
             <RankBar rare={appraisal}
               rule={DEFAULT_VERDICT_RULE} />
             <MarketLine rare={appraisal} />
+            <HardcoreNote rare={appraisal}
+              hardcore={hardcore} />
             {history && !history.weak && history.timesListed > 0 && (
               <div className="border-t border-border pt-2">
                 <RareHistorySection history={history} />
@@ -68,7 +81,10 @@ export function RareAppraisalPill({
           </div>
         }
       >
-        <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow">
+        <div
+          title={hcNote ?? undefined}
+          className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow"
+        >
           <VerdictBadge rare={appraisal}
             className="px-2.5 py-1 text-xs" />
           <div className="flex flex-col leading-tight">
