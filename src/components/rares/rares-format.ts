@@ -165,15 +165,26 @@ export function rankedStats(rare: RareAppraisal): AppraisedStat[] {
     .map(({ s }) => s);
 }
 
+/** Which listings a hardcore rank was taken against (server `rankReference`). */
+function rankNote(rare: RareAppraisal): string {
+  if (rare.rankReference === 'hardcore') return 'ranked against hardcore listings';
+  if (rare.rankReference === 'blended') {
+    const pct = Math.round(100 * (rare.rankReferenceWeight ?? 0));
+    return `ranked against hardcore listings blended with softcore (${pct}% hardcore)`;
+  }
+  return 'ranked against softcore listings';
+}
+
 /**
- * Note for hardcore: the model is softcore-trained; the price band comes from hardcore listings when the
- * slot has HC bands, else from softcore listings. Null on softcore.
+ * Note for hardcore: the price model and stars are softcore-trained; the rank is taken against hardcore
+ * listings (blended with softcore while HC listings are few); the price band comes from hardcore listings
+ * when the slot has HC bands, else from softcore listings. Null on softcore.
  */
 export function hardcoreNote(rare: RareAppraisal, hardcore: boolean): string | null {
   if (!hardcore) return null;
-  const base = 'Hardcore: verdict and stars from softcore data';
-  if (!rare.market) return base;
-  return `${base}; prices from ${rare.market.mode === 'hardcore' ? 'hardcore' : 'softcore'} listings`;
+  const parts = ['Hardcore: price model and stars from softcore data', rankNote(rare)];
+  if (rare.market) parts.push(`prices from ${rare.market.mode === 'hardcore' ? 'hardcore' : 'softcore'} listings`);
+  return parts.join('; ');
 }
 
 /** Starred stats, strongest first. */

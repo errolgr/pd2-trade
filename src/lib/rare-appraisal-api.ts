@@ -75,11 +75,18 @@ export interface RareAppraisal {
   rank: number;
   /** Typical rank error (± this, 0..1) for the bar's soft band. */
   rankError: number;
+  /**
+   * Listings the rank is taken against. Hardcore requests blend hardcore with softcore listings by
+   * `rankReferenceWeight` (w = n_HC / (n_HC + K)); 'hardcore' when w ≥ 0.9. Absent from older servers.
+   */
+  rankReference?: 'softcore' | 'hardcore' | 'blended';
+  /** Weight 0..1 of the hardcore listings in `rank`. */
+  rankReferenceWeight?: number;
   stats: AppraisedStat[];
   market: MarketReference | null;
   /** Season phase whose key stats set stars / keyFrom / keyFromMultiplier / corruptionOnly (early = fortnights 0–3). */
   phase?: 'early' | 'late';
-  /** Rank, stars and verdict always come from the softcore-trained model, also for hardcore. */
+  /** Price model and stars always come from the softcore-trained model, also for hardcore. */
   modelMode: 'softcore';
   modelVersion: string;
 }

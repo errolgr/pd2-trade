@@ -402,7 +402,7 @@ export function ItemStatsSection({
   );
 }
 
-/** One muted line on hardcore: verdict/stars are softcore-trained, and which listings the prices come from. */
+/** One muted line on hardcore: softcore-trained model/stars, the rank's reference listings, and where prices come from. */
 export function HardcoreNote({
   rare,
   hardcore,
