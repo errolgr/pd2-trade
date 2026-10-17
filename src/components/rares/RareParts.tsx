@@ -133,7 +133,7 @@ export function StarChips({ rare }: { rare: RareAppraisal }) {
 
 /**
  * Stats of one rare in in-game order. Key stats carry ★/★★/★★★ (tier multiplier on hover only) and
- * a glow marker; non-key stats are dimmed. Roll bar when the range is known, grey "key from N" when
+ * a glow marker; non-key stats are dimmed. Roll bar when the range is known, grey "valuable from N" when
  * the stat is key on this slot but below the threshold, corrupted stats in the corrupted colour.
  * Vendor rares never show stars.
  */
@@ -163,7 +163,7 @@ export function StatList({ rare }: { rare: RareAppraisal }) {
               {s.keyFrom !== null && (
                 <Hint text={`This stat starts to add value on this slot from ${s.keyFrom}`}>
                   <span className="ml-1.5 cursor-help whitespace-nowrap text-[11px] text-muted-foreground/70">
-                    key from {s.keyFrom}
+                    valuable from {s.keyFrom}
                   </span>
                 </Hint>
               )}

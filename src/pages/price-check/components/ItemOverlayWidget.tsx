@@ -467,7 +467,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
 
-  // Appraisal stat (stars / "key from N") per stat row key; empty without an appraisal.
+  // Appraisal stat (stars / "valuable from N") per stat row key; empty without an appraisal.
   const rareStats = useMemo(
     () => (appraisal ? matchRareStats(appraisal.stats, sortedStats) : new Map<string, AppraisedStat>()),
     [appraisal, sortedStats],

@@ -23,7 +23,7 @@ interface StatRowProps {
   corruptedState?: number; // 0 = both, 1 = corrupted only, 2 = non-corrupted only
   /** Called when Enter is pressed inside the min/max inputs. */
   onSubmit?: () => void;
-  /** Rare appraisal of this row (key stat stars or a "key from N" hint), when the item was appraised. */
+  /** Rare appraisal of this row (key stat stars or a "valuable from N" hint), when the item was appraised. */
   rare?: AppraisedStat;
 }
 
@@ -184,7 +184,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                       className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70"
                       title={`This stat starts to add value on this slot from ${rare.keyFrom}`}
                     >
-                      key from {rare.keyFrom}
+                      valuable from {rare.keyFrom}
                     </span>
                   )}
                 </span>
