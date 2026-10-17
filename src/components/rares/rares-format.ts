@@ -98,15 +98,68 @@ export function marketBandText(rare: RareAppraisal): string | null {
   return rare.market ? `~${bandRange(rare.market.lowHr, rare.market.highHr)} HR` : null;
 }
 
-/** "Rings this good are usually listed around 1.5–3.2 HR" / "… were listed around … at this point last season". */
-export function marketText(rare: RareAppraisal): string | null {
+/** Sub-line under the "Usually listed" value: "circlets at this rank · S13" / "· last season" / "· hardcore listings". */
+export function marketSource(rare: RareAppraisal): string | null {
   const m = rare.market;
   if (!m) return null;
-  const band = `${bandRange(m.lowHr, m.highHr)} HR`;
-  const what = `${SLOT_PLURALS[rare.slot] ?? 'Items'} this good`;
-  return m.source === 'last-season'
-    ? `${what} were listed around ${band} at this point last season`
-    : `${what} are usually listed around ${band}`;
+  const where = m.source === 'last-season' ? 'last season' : m.mode === 'hardcore' ? 'hardcore listings' : MODEL_SEASON;
+  return `${(SLOT_PLURALS[rare.slot] ?? 'Items').toLowerCase()} at this rank · ${where}`;
+}
+
+/** Rank blocks (Blocks rank display): bottom 25% … top 5%, each [from, to) on the 0..1 percentile. */
+export const RANK_BLOCKS: { label: string; from: number; to: number }[] = [
+  { label: 'bottom 25%', from: 0, to: 0.25 },
+  { label: '25–50%', from: 0.25, to: 0.5 },
+  { label: '50–75%', from: 0.5, to: 0.75 },
+  { label: 'top 25%', from: 0.75, to: 0.85 },
+  { label: 'top 15%', from: 0.85, to: 0.95 },
+  { label: 'top 5%', from: 0.95, to: 1.0001 },
+];
+
+/** Short names for the corruption note ("20 FCR on rings only via corruption"); the stat label otherwise. */
+const SHORT_STAT: Record<string, string> = {
+  item_fastercastrate: 'FCR',
+  item_fastermovevelocity: 'FRW',
+  item_fastergethitrate: 'FHR',
+  item_fasterattackrate: 'IAS',
+  item_magicbonus: 'MF',
+  item_allskills: 'all skills',
+  item_crushingblow: 'CB',
+  item_deadlystrike: 'DS',
+  maxdamage_percent: 'ED',
+};
+
+/** Right-hand / note texts of one stat in the "Stats on this item" list; null parts are not shown. */
+export function statNotes(stat: AppraisedStat, slot: RareSlot): { note: string | null; roll: string | null } {
+  const slots = (SLOT_PLURALS[slot] ?? 'items').toLowerCase();
+  const mult = (m: number) => `×${m.toFixed(1)}`;
+  let note: string | null = null;
+  if (stat.stars && stat.corruptionOnly) {
+    const short = stat.key ? SHORT_STAT[stat.key.split('__')[0]] : undefined;
+    note = `${short && stat.value !== null ? `${stat.value} ${short}` : stat.label} on ${slots} only via corruption`;
+  } else if (!stat.stars && stat.keyFrom !== null) {
+    note = `near miss: ${stat.keyFrom}+ is ${stat.keyFromMultiplier ? mult(stat.keyFromMultiplier) : 'key'} on ${slots}`;
+  }
+  const roll =
+    stat.roll === null
+      ? null
+      : `roll ${Math.round(stat.roll * 100)}%${stat.stars && stat.multiplier !== null ? ` · ${mult(stat.multiplier)}` : ''}`;
+  return { note, roll };
+}
+
+/** "Stats on this item" order: key stats strongest first, then near misses, then the rest (in-game order). */
+export function rankedStats(rare: RareAppraisal): AppraisedStat[] {
+  const tier = (s: AppraisedStat) => (s.stars ? 0 : s.keyFrom !== null ? 1 : 2);
+  return rare.stats
+    .map((s, i) => ({ s, i }))
+    .sort(
+      (a, b) =>
+        tier(a.s) - tier(b.s) ||
+        (b.s.stars ?? 0) - (a.s.stars ?? 0) ||
+        (b.s.multiplier ?? b.s.keyFromMultiplier ?? 0) - (a.s.multiplier ?? a.s.keyFromMultiplier ?? 0) ||
+        a.i - b.i,
+    )
+    .map(({ s }) => s);
 }
 
 /**

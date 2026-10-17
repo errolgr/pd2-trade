@@ -7,7 +7,7 @@ import type { RaresSummary } from '@/lib/networth-api';
 import type { RareAppraisal, VerdictRule } from '@/lib/rare-appraisal-api';
 import {
   HardcoreNote,
-  MarketLine,
+  MarketBlock,
   RankBar,
   RankText,
   StarChips,
@@ -264,7 +264,7 @@ function RareRow({
         <div className="space-y-3 border-t border-border/40 bg-background/30 px-3 py-3">
           <RankBar rare={rare}
             rule={rule} />
-          <MarketLine rare={rare} />
+          <MarketBlock rare={rare} />
           <HardcoreNote rare={rare}
             hardcore={hardcore} />
           <StatList rare={rare} />

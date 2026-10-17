@@ -5,7 +5,15 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
-import { HardcoreNote, MarketLine, RankBar, RareHistorySection, VerdictBadge } from '@/components/rares/RareParts';
+import {
+  HardcoreNote,
+  ItemStatsSection,
+  MarketBlock,
+  RankDisplay,
+  RareHistorySection,
+  VerdictBadge,
+} from '@/components/rares/RareParts';
+import { useOptions } from '@/hooks/useOptions';
 import {
   bandRange,
   hardcoreNote,
@@ -54,6 +62,7 @@ export function RareAppraisalPill({
   const market = appraisal.market;
   const hcNote = hardcoreNote(appraisal, hardcore);
   const slots = (SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase();
+  const { settings, updateSettings } = useOptions();
   return (
     <motion.div className="inline-block"
       variants={scaleIn}
@@ -61,18 +70,26 @@ export function RareAppraisalPill({
       animate="visible">
       <HoverPopover
         content={
-          <div className="w-[380px] max-w-[calc(100vw-16px)] space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+          <div className="max-h-[calc(100vh-180px)] w-[380px] max-w-[calc(100vw-16px)] space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <span className="truncate font-semibold">{title}</span>
               <span className="shrink-0 text-[11px] text-muted-foreground">
                 {SLOT_LABELS[appraisal.slot]} · est. from {MODEL_SEASON} listings
               </span>
             </div>
-            <RankBar rare={appraisal}
-              rule={DEFAULT_VERDICT_RULE} />
-            <MarketLine rare={appraisal} />
+            <RankDisplay rare={appraisal}
+              rule={DEFAULT_VERDICT_RULE}
+              mode={settings.rareRankDisplay ?? 'bar'} />
+            <MarketBlock rare={appraisal} />
             <HardcoreNote rare={appraisal}
               hardcore={hardcore} />
+            <div className="border-t border-border pt-2">
+              <ItemStatsSection
+                rare={appraisal}
+                open={settings.rareStatsExpanded ?? false}
+                onOpenChange={(open) => updateSettings({ rareStatsExpanded: open })}
+              />
+            </div>
             {history && !history.weak && history.timesListed > 0 && (
               <div className="border-t border-border pt-2">
                 <RareHistorySection history={history} />

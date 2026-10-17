@@ -43,6 +43,10 @@ export interface AppraisedStat {
   keyFrom: number | null;
   /** Added by corruption. */
   corrupted: boolean;
+  /** Near-miss stats: price multiplier of the tier that starts at `keyFrom` (absent on older servers). */
+  keyFromMultiplier?: number | null;
+  /** This value is only reachable on this slot through corruption (absent on older servers). */
+  corruptionOnly?: boolean;
 }
 
 export interface MarketReference {

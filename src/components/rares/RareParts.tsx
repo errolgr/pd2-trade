@@ -10,16 +10,21 @@ import type {
   RareHistoryListing,
   VerdictRule,
 } from '@/lib/rare-appraisal-api';
+import { ChevronDown } from 'lucide-react';
 import {
+  bandRange,
   hardcoreNote,
   keyStats,
-  marketText,
+  marketSource,
   ordinalPercentile,
   plural,
+  RANK_BLOCKS,
+  rankedStats,
   rankText,
   SLOT_PLURALS,
   starsText,
   starTitle,
+  statNotes,
   VERDICT_BADGE_CLASS,
   VERDICT_COLORS,
   VERDICT_LABELS,
@@ -243,14 +248,157 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
   );
 }
 
-/** "Rings this good are usually listed around 1.5–3.2 HR", sample size on hover. */
-export function MarketLine({ rare, className }: { rare: RareAppraisal; className?: string }) {
-  const text = marketText(rare);
-  if (!text || !rare.market) return null;
+/** Scannable market block: "USUALLY LISTED" / "1.5–2.0 HR" / "circlets at this rank · S13"; sample size on hover. */
+export function MarketBlock({ rare, className }: { rare: RareAppraisal; className?: string }) {
+  const m = rare.market;
+  if (!m) return null;
   return (
-    <Hint text={`Asking prices (25th–75th percentile) of ${rare.market.sampleSize} listings at a similar rank`}>
-      <p className={cn('cursor-help text-sm leading-snug text-foreground/90', className)}>{text}.</p>
+    <Hint text={`Asking prices (25th–75th percentile) of ${m.sampleSize} listings at a similar rank`}>
+      <div className={cn('flex cursor-help flex-col leading-tight', className)}>
+        <SectionLabel className="text-[10px]">Usually listed</SectionLabel>
+        <span className="text-lg font-semibold tabular-nums text-foreground">{bandRange(m.lowHr, m.highHr)} HR</span>
+        <span className="text-[11px] text-muted-foreground">{marketSource(rare)}</span>
+      </div>
     </Hint>
+  );
+}
+
+/**
+ * Blocks rank display: six segments (bottom 25% … top 5%), the item's segment filled in the verdict colour,
+ * header "RANK AMONG <SLOTS> (this season)".
+ */
+export function RankBlocks({ rare }: { rare: RareAppraisal }) {
+  const color = VERDICT_COLORS[rare.verdict];
+  const slots = SLOT_PLURALS[rare.slot] ?? 'Items';
+  const at = RANK_BLOCKS.findIndex((b) => rare.rank >= b.from && rare.rank < b.to);
+  return (
+    <div
+      className="flex flex-col gap-1.5"
+      role="img"
+      aria-label={`Rank among ${slots.toLowerCase()}: ${RANK_BLOCKS[at]?.label}`}
+    >
+      <SectionLabel className="text-[10px]">
+        Rank among {slots} <span className="normal-case tracking-normal">(this season)</span>
+      </SectionLabel>
+      <div className="grid grid-cols-6 gap-1">
+        {RANK_BLOCKS.map((b, i) => (
+          <div key={b.label}
+            className="flex flex-col items-center gap-1">
+            <span
+              className={cn('h-2.5 w-full rounded-sm', i !== at && 'bg-muted')}
+              style={i === at ? { background: color, boxShadow: `0 0 8px -1px ${color}` } : undefined}
+            />
+            <span
+              className={cn(
+                'whitespace-nowrap text-[10px] leading-none tabular-nums',
+                i === at ? 'font-semibold' : 'text-muted-foreground/80',
+              )}
+              style={i === at ? { color } : undefined}
+            >
+              {b.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Bar or Blocks, per the "Rare rank display" setting. */
+export function RankDisplay({ rare, rule, mode }: { rare: RareAppraisal; rule: VerdictRule; mode: 'bar' | 'blocks' }) {
+  return mode === 'blocks' ? <RankBlocks rare={rare} /> : <RankBar rare={rare}
+    rule={rule} />;
+}
+
+/**
+ * Collapsible "Stats on this item": stats ranked by value (key stats, near misses, then the rest dimmed), with
+ * ★ on key stats, the tier multiplier, roll, corruption-only and near-miss notes.
+ */
+export function ItemStatsSection({
+  rare,
+  open,
+  onOpenChange,
+}: {
+  rare: RareAppraisal;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const keyCount = rare.stats.filter((s) => s.stars).length;
+  return (
+    <section className="flex flex-col gap-1">
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-expanded={open}
+        onClick={() => onOpenChange(!open)}
+        className="flex cursor-pointer items-center justify-between gap-2 rounded-sm text-left outline-none"
+      >
+        <SectionLabel>Stats on this item</SectionLabel>
+        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          {keyCount > 0 ? plural(keyCount, 'key stat') : 'no key stats'}
+          <ChevronDown className={cn('size-3.5 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
+        </span>
+      </button>
+      {open && (
+        <ul className="-mx-2 flex flex-col">
+          {rankedStats(rare).map((s, i) => {
+            const { note, roll } = statNotes(s, rare.slot);
+            const isKey = s.stars !== null;
+            const dim = !isKey && s.keyFrom === null;
+            return (
+              <li
+                key={`${i}-${s.label}`}
+                className={cn(
+                  'grid min-h-7 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-0.5',
+                  isKey && 'bg-glow/8',
+                )}
+              >
+                <span className="text-xs tracking-tighter text-glow">{starsText(s.stars)}</span>
+                <span className="flex min-w-0 flex-col">
+                  <span
+                    className={cn(
+                      'text-sm leading-snug',
+                      isKey ? 'font-medium text-foreground' : dim ? 'text-muted-foreground/70' : 'text-foreground/85',
+                      s.corrupted && 'text-q-corrupted',
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                  {note && <span className="text-[11px] leading-snug text-muted-foreground">{note}</span>}
+                </span>
+                <span className="flex flex-col items-end gap-0.5 justify-self-end">
+                  {roll ? (
+                    <>
+                      <span className="block h-1 w-14 overflow-hidden rounded-full bg-muted">
+                        <span
+                          className={cn('block h-full rounded-full', isKey ? 'bg-glow' : 'bg-muted-foreground/50')}
+                          style={{ width: `${Math.round((s.roll ?? 0) * 100)}%` }}
+                        />
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[10px] tabular-nums',
+                          dim ? 'text-muted-foreground/70' : 'text-muted-foreground',
+                        )}
+                      >
+                        {roll}
+                      </span>
+                    </>
+                  ) : (
+                    isKey &&
+                    s.multiplier !== null && (
+                      <span className="text-xs font-semibold tabular-nums text-foreground">
+                        ×{s.multiplier.toFixed(1)}
+                      </span>
+                    )
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
