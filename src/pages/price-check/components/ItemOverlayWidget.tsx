@@ -1172,8 +1172,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 Appraising rare…
               </span>
             )}
-            {rareResponse && !appraisal && rareResponse.reason && (
-              <span className="text-[11px] text-muted-foreground/70">No rare appraisal: {rareResponse.reason}</span>
+            {rareResponse?.reason && (
+              <span className="text-[11px] text-muted-foreground/70">
+                {appraisal ? 'Appraisal note' : 'No rare appraisal'}: {rareResponse.reason}
+              </span>
             )}
             {rareAppraisal.status === 'error' && (
               <span className="text-[11px] text-muted-foreground/70">Rare appraisal unavailable right now</span>
