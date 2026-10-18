@@ -8,6 +8,8 @@ export const changeLog = {
     '🆕 Net Worth ticker over the game (total HR, session change, HR/hour) — click it for a mini panel with a session chart, recent changes, Snapshot now and Start/Stop session',
     '🆕 Net Worth toast when a snapshot moves your value by 0.5 HR or more (configurable), plus an optional snapshot hotkey',
     '🆕 Leaderboards: choose whether your profile is public in Settings → Net Worth (off by default; available from Season 14)',
+    '🆕 Rare appraisal in price check (Ctrl+D): a Keep / Check / Vendor pill with the rare\'s price rank in its slot and what similar rares are usually listed for — hover it for the rank (bar or blocks, Settings → Price Check), a "Stats on this item" breakdown (multipliers, rolls, near misses) and this exact item\'s market history ("Listed 3 times by 2 sellers"). Key stats get ★–★★★ and are pre-selected as filters, other stats show "valuable from N" when a higher roll would add value; Keep rares search right away',
+    '🆕 Stash Value: new Rares tab — Keep and "worth a look" rares with stars and market bands, likely-vendor rares folded per stash tab (with how many slots they free), and an estimated Keep value that is never added to your total',
     '🆕 Price check: 7-day average and change on the price chip, Enter in min/max runs the search, "Clear" for selected stats, Retry on errors and a "No listings found" message',
     '🆕 Quick list: keyboard-selectable item cards, empty states, a timeout bar for queued items, and a green flash down your listings on Bump All',
     '🆕 Chat and offers: day dividers, total unread count, search clear (Esc), full timestamps on hover, Enter submits the accept popover, copy buttons confirm with ✓',
@@ -17,7 +19,8 @@ export const changeLog = {
     '🔧 Update installs and hotkey conflicts are now reported correctly; Rune Exchange popover loads only rune prices',
     '🔧 Fixed long price check stat lists being cut off, "Show Less" missing in the rune price popover, and tooltips/popovers that didn\'t show or opened off-screen',
     '🔧 Fixed "Show More" in the listing form acting as submit, and the Season dropdown cutting off "Betrayal (S13) (current)"',
-    '🔧 Usage stats now go to Grafana',
+    '🔧 Price check stat rows keep a steady height when selected, with divider lines between stats and 28px market listing rows',
+    '🔧 Usage stats (features used, load times) now go to Grafana; crash reports still go to Sentry',
   ],
   '0.9.14': ['🔧 Disabled the browser right-click menu on overlay windows'],
   '0.9.13': [

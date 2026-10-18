@@ -4,7 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { X, GripVertical, Loader2, AlertCircle, Clock, Hourglass, ListChecks, PackageSearch, SearchX } from 'lucide-react';
+import {
+  X,
+  GripVertical,
+  Loader2,
+  AlertCircle,
+  Clock,
+  Hourglass,
+  ListChecks,
+  PackageSearch,
+  SearchX,
+} from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -828,8 +838,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         >
           <span className="relative flex size-12 items-center justify-center rounded-full bg-primary/12 text-primary ring-1 ring-primary/25">
             <Hourglass className="size-5" />
-            <Loader2 className="absolute inset-0 size-12 animate-spin text-primary/50 [animation-duration:2.4s]"
-              strokeWidth={1} />
+            <Loader2
+              className="absolute inset-0 size-12 animate-spin text-primary/50 [animation-duration:2.4s]"
+              strokeWidth={1}
+            />
           </span>
           <div className="text-base font-semibold tracking-tight">Items queued for listing</div>
           <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
@@ -852,10 +864,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </AnimatePresence>
         </motion.div>
         <ScrollArea className="flex-1 min-h-0">
-          <motion.div className="flex flex-col gap-2 p-px pb-2 pr-2"
+          <motion.div
+            className="flex flex-col gap-2 p-px pb-2 pr-2"
             variants={listStagger}
             initial="hidden"
-            animate="visible">
+            animate="visible"
+          >
             <AnimatePresence initial={false}>
               {queuedItems.map((pendingListing) => {
                 const itemName = pendingListing.item.name || pendingListing.item.type;
@@ -1160,9 +1174,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
         className="w-screen h-screen">
-        <Tabs value={activeTab}
+        <Tabs
+          value={activeTab}
           onValueChange={setActiveTab}
-          className="w-full flex-1 flex flex-col h-full gap-0 overflow-hidden">
+          className="w-full flex-1 flex flex-col h-full gap-0 overflow-hidden"
+        >
           <div
             className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5"
             id="titlebar"

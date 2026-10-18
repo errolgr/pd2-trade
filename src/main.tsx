@@ -143,7 +143,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         element={<NetWorthPanelPage />} />
       {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
       {process.env.NODE_ENV !== 'production' && (
-        <Route path="/dev/gallery"
+        <Route
+          path="/dev/gallery"
           element={
             <OptionsProvider>
               <PrimitivesGallery />
