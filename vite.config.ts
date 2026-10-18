@@ -1,9 +1,12 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import * as path from 'path';
+import { readFileSync } from 'fs';
 // @ts-expect-error - @tailwindcss/vite may not have complete TypeScript definitions
 import tailwindcss from '@tailwindcss/vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+
+const { version } = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')) as { version: string };
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -13,24 +16,16 @@ export default defineConfig(({ mode }) => {
   // Mode-specific files override base .env values
   const env = loadEnv(mode, process.cwd(), '');
 
-  // Debug: log what mode we're in and if token was found
-  console.log(`[Vite Config] Mode: ${mode}, CWD: ${process.cwd()}`);
-  console.log(`[Vite Config] SENTRY_AUTH_TOKEN in env: ${!!env.SENTRY_AUTH_TOKEN}`);
-  console.log(`[Vite Config] SENTRY_AUTH_TOKEN in process.env: ${!!process.env.SENTRY_AUTH_TOKEN}`);
-
   // Also check process.env as fallback (for cases where .env is loaded by system)
   // This ensures .env works even if loadEnv doesn't pick it up for some reason
   const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN;
   const host = process.env.TAURI_DEV_HOST;
 
-  if (sentryAuthToken) {
-    console.log('✓ Sentry auth token found, enabling Sentry plugin');
-  } else {
-    console.warn('✗ Sentry auth token not found, disabling Sentry plugin');
-    console.warn('  Make sure SENTRY_AUTH_TOKEN is in .env or .env.production');
-  }
-
   return {
+    define: {
+      // Faro app version (src/lib/faro.ts)
+      __APP_VERSION__: JSON.stringify(version),
+    },
     plugins: [
       tailwindcss(),
       react(),

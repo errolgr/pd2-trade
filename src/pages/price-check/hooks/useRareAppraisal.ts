@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchRareAppraisal, type RareAppraisalResponse } from '@/lib/rare-appraisal-api';
 import { reportApiError } from '@/lib/error-reporting';
-import { incrementMetric } from '@/lib/sentryMetrics';
+import { trackEvent } from '@/lib/telemetry';
 import { ItemQuality } from '@/common/types/Item';
 import type { Item } from '../lib/interfaces';
 
@@ -37,7 +37,7 @@ export function useRareAppraisal(
     fetchRareAppraisal(text, { isLadder, isHardcore }, controller.signal).then(
       (response) => {
         if (!response) return settle({ status: 'off' });
-        incrementMetric('item_overlay.rare_appraisal', 1, { verdict: response.appraisal?.verdict ?? 'none' });
+        trackEvent('item_overlay_rare_appraisal', { verdict: response.appraisal?.verdict ?? 'none' });
         settle({ status: 'done', response });
       },
       (err: unknown) => {
