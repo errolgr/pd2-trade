@@ -19,6 +19,14 @@ const TrayContext = createContext<TrayContextValue>({ tray: null });
 
 export const useTray = () => useContext(TrayContext);
 
+// The tray lives in Rust and outlives the page, so every reload or remount would add another icon
+// unless the previous one (found by this fixed id) is removed first. Queued so create/remove never interleave.
+const TRAY_ID = 'pd2-trader';
+let trayQueue: Promise<void> = Promise.resolve();
+const queueTray = (op: () => Promise<void>) => {
+  trayQueue = trayQueue.then(op).catch((err) => console.error('Tray operation failed:', err));
+};
+
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [tray, setTray] = useState<any | null>(null);
   const { settings } = useOptions();
@@ -119,7 +127,9 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     let isMounted = true;
 
     async function setupTray() {
+      if (!isMounted) return;
       try {
+        await TrayIcon.removeById(TRAY_ID).catch(() => {});
         const menu = await Menu.new({
           items: [
             {
@@ -152,6 +162,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         });
 
         const instance = await TrayIcon.new({
+          id: TRAY_ID,
           icon: await defaultWindowIcon(),
           menu,
           action: (event: TrayIconEvent) => {
@@ -179,11 +190,12 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       }
     }
 
-    setupTray();
+    queueTray(setupTray);
 
     return () => {
       isMounted = false;
-      // Tauri doesn't expose explicit tray destruction yet
+      trayRef.current = null;
+      queueTray(() => TrayIcon.removeById(TRAY_ID));
     };
     // openPanel is stable: the tray is created once.
   }, [openPanel]);

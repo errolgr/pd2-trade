@@ -4,6 +4,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
+import { TrayIcon } from '@tauri-apps/api/tray';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
 import { useOverlay } from '@/overlay';
@@ -20,6 +21,8 @@ const state = vi.hoisted(() => ({
   // Shortcuts held by some other process: register() fails with "already registered"
   foreign: new Set<string>(),
   listeners: new Map<string, ((e: { payload: unknown }) => void)[]>(),
+  // Tray icon ids alive in Rust (they outlive the page)
+  trays: [] as string[],
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri }));
@@ -34,7 +37,17 @@ vi.mock('@tauri-apps/plugin-global-shortcut', () => ({
   }),
 }));
 vi.mock('@tauri-apps/api/menu', () => ({ Menu: { new: vi.fn(async (opts: unknown) => opts) } }));
-vi.mock('@tauri-apps/api/tray', () => ({ TrayIcon: { new: vi.fn(async () => ({ id: 'tray-1' })) } }));
+vi.mock('@tauri-apps/api/tray', () => ({
+  TrayIcon: {
+    new: vi.fn(async (opts: { id: string }) => {
+      state.trays.push(opts.id);
+      return { id: opts.id };
+    }),
+    removeById: vi.fn(async (id: string) => {
+      state.trays = state.trays.filter((t) => t !== id);
+    }),
+  },
+}));
 vi.mock('@tauri-apps/api/app', () => ({ defaultWindowIcon: vi.fn(async () => 'icon') }));
 vi.mock('@tauri-apps/api/path', () => ({ appConfigDir: vi.fn(async () => '/cfg/pd2') }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openPath: vi.fn(async () => {}) }));
@@ -93,6 +106,7 @@ beforeEach(() => {
   state.owned.clear();
   state.foreign.clear();
   state.listeners.clear();
+  state.trays = [];
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
   setHotkey('ctrl', 'O');
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -107,7 +121,26 @@ afterEach(() => {
 describe('tray icon', () => {
   it('exposes the created tray through useTray', async () => {
     const { result } = await renderTray();
-    expect(result.current.tray).toEqual({ id: 'tray-1' });
+    expect(result.current.tray).toEqual({ id: 'pd2-trader' });
+  });
+
+  it('replaces the icon a previous page load left behind instead of adding another', async () => {
+    state.trays = ['pd2-trader'];
+    await renderTray();
+    expect(state.trays).toEqual(['pd2-trader']);
+    expect(vi.mocked(TrayIcon.removeById).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(TrayIcon.new).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('removes its icon on unmount, so a remount still leaves exactly one', async () => {
+    const first = await renderTray();
+    first.unmount();
+    await flush();
+    expect(state.trays).toEqual([]);
+
+    await renderTray();
+    expect(state.trays).toEqual(['pd2-trader']);
   });
 
   it('is not created outside Tauri', async () => {

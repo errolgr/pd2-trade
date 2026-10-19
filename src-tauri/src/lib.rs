@@ -1,4 +1,6 @@
+use tauri::webview::PageLoadEvent;
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 pub mod modules;
 
@@ -27,6 +29,17 @@ pub fn run() {
                 .set_focus();
         }))
         .plugin(tauri_plugin_app_exit::init())
+        // Shortcuts registered by the page call back into it; after a reload they'd stay registered but
+        // call into the dead page (and block re-registering). Rust registers none itself, so clear them all.
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Started
+                && webview.label() == modules::config::WINDOW_CONFIG.labels.Main
+            {
+                if let Err(e) = webview.app_handle().global_shortcut().unregister_all() {
+                    eprintln!("Failed to clear global shortcuts on page load: {}", e);
+                }
+            }
+        })
         .setup(|app| {
             // Initialize debug logger with app config directory
             if let Ok(config_dir) = app.path().app_config_dir() {
