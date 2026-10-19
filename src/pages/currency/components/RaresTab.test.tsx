@@ -56,12 +56,18 @@ function star(label: string, stars: 1 | 2 | 3, multiplier: number): AppraisedSta
   return { label, key: null, value: null, stars, multiplier, roll: null, keyFrom: null, corrupted: false };
 }
 
-function renderTab(rares: RareAppraisal[], summary: RaresSummary = SUMMARY, hardcore = false) {
+function renderTab(
+  rares: RareAppraisal[],
+  summary: RaresSummary = SUMMARY,
+  hardcore = false,
+  craftedSummary?: RaresSummary,
+) {
   return render(
     <TooltipProvider delayDuration={0}>
       <RaresTab rares={rares}
         rule={RULE}
         summary={summary}
+        craftedSummary={craftedSummary}
         hardcore={hardcore} />
     </TooltipProvider>,
   );
@@ -248,6 +254,43 @@ describe('RaresTab', () => {
     });
     expect(screen.getByText(/^Hardcore: price model and stars from softcore data/)).not.toBeNull();
   });
+  it('colours crafted names and shows their recipe and low-confidence badges', () => {
+    renderTab([
+      rare({ id: 'c', name: 'Doom Collar', verdict: 'keep', quality: 'Crafted', recipe: 'blood', confidence: 'low' }),
+      rare({ id: 'r', name: 'Rune Loop', verdict: 'keep' }),
+    ]);
+    expect([...document.querySelectorAll('li .text-q-crafted')].map((el) => el.textContent)).toContain('Doom Collar');
+    expect([...document.querySelectorAll('li .text-q-rare')].map((el) => el.textContent)).toEqual(['Rune Loop']);
+    expect(screen.getByText('Blood craft')).not.toBeNull();
+    expect(screen.getAllByText('Low confidence')).toHaveLength(1);
+  });
+
+  it('adds a crafted summary line next to the rares one when the stash has crafted items', () => {
+    const crafted = { ...SUMMARY, keep: 1, check: 0, checkHigh: 0, vendor: 0, keepLowHr: 1, keepHighHr: 2.5 };
+    renderTab([rare({ quality: 'Crafted', recipe: 'blood', confidence: 'normal' }), rare()], SUMMARY, false, crafted);
+    expect(screen.getByText(/^Rares:/).closest('p')!.textContent).toBe(
+      'Rares: 2 Keep · 2 worth a look · 1 likely vendor (frees 1 slot)',
+    );
+    expect(screen.getByText(/^Crafted:/).closest('p')!.textContent).toBe(
+      'Crafted: 1 Keep · 0 worth a look · 0 likely vendor (frees 0 slots)',
+    );
+    expect(screen.getByText(/in Keep crafted items/).textContent).toBe(
+      '+ ~1.0–2.5 HR in Keep crafted items (estimated, not in total)',
+    );
+  });
+
+  it('shows no crafted summary line for a rares-only stash', () => {
+    renderTab([rare()], SUMMARY, false, { ...SUMMARY, keep: 0, check: 0, checkHigh: 0, vendor: 0 });
+    expect(screen.queryByText(/^Crafted:/)).toBeNull();
+  });
+
+  it('never requests market history for crafted items', async () => {
+    renderTab([rare({ name: 'Crafted Row', quality: 'Crafted', recipe: 'caster', confidence: 'low' })]);
+    await act(async () => {
+      fireEvent.click(rowButton('Crafted Row'));
+    });
+    expect(fetchRareHistory).not.toHaveBeenCalled();
+  });
 });
 
 describe('RaresSummaryCard', () => {
@@ -273,16 +316,5 @@ describe('RaresSummaryCard', () => {
   it('hides the Keep band when no Keep rare has a market band', () => {
     render(<RaresSummaryCard summary={{ ...SUMMARY, keep: 2, keepUnpriced: 2 }} />);
     expect(screen.queryByText(/in Keep rares/)).toBeNull();
-  });
-
-  it('colours crafted names and shows their recipe and low-confidence badges', () => {
-    renderTab([
-      rare({ id: 'c', name: 'Doom Collar', verdict: 'keep', quality: 'Crafted', recipe: 'blood', confidence: 'low' }),
-      rare({ id: 'r', name: 'Rune Loop', verdict: 'keep' }),
-    ]);
-    expect([...document.querySelectorAll('li .text-q-crafted')].map((el) => el.textContent)).toContain('Doom Collar');
-    expect([...document.querySelectorAll('li .text-q-rare')].map((el) => el.textContent)).toEqual(['Rune Loop']);
-    expect(screen.getByText('Blood craft')).not.toBeNull();
-    expect(screen.getAllByText('Low confidence')).toHaveLength(1);
   });
 });

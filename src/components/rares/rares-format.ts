@@ -26,6 +26,20 @@ export const appraisalNameClass = (rare: Pick<RareAppraisal, 'quality'>): string
 export const LOW_CONFIDENCE_TITLE =
   "Low confidence: this slot's crafted model is based on limited crafted listing data, so treat the verdict and band as a rough guide.";
 
+/**
+ * Text for a null appraisal's `reason`. Crafted gate-off reasons ("crafted slot unreliable: <backtest detail>")
+ * become a plain sentence (detail stays in the hover title); every other reason is shown verbatim, as before.
+ */
+export function appraisalNote(reason: string): { text: string; title?: string } {
+  if (reason.startsWith('crafted slot unreliable')) {
+    return {
+      text: "crafted items in this slot can't be appraised reliably yet (too little crafted data)",
+      title: reason,
+    };
+  }
+  return { text: reason };
+}
+
 export const SLOT_LABELS: Record<RareSlot, string> = {
   ring: 'Ring',
   amul: 'Amulet',
