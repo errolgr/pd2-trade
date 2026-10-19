@@ -1,15 +1,5 @@
 import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
 
-/**
- * The price crawler's `baseCode` for a market listing's item, mirroring the server's extraction
- * (pd2-price-crawler `src/item-price/item-extraction.ts`), or null when the crawler doesn't price it.
- */
-export interface PriceCode {
-  code: string;
-  /** Runes are quoted by their 7-day moving average, like the Rune Exchange does. */
-  isRune: boolean;
-}
-
 /** Uber ingredients, currency and keys the crawler ingests under the listing's own base_code. */
 const BASE_CODE_ITEMS: Record<string, true> = Object.fromEntries(
   [
@@ -40,14 +30,16 @@ const BASE_CODE_ITEMS: Record<string, true> = Object.fromEntries(
 /** Uniques priced per variant (damage type, class, ...); a name lookup would mix them, so they're skipped. */
 const VARIANT_PRICED: Record<string, true> = { 'rainbow facet': true, 'hellfire torch': true, 'spirit ward': true };
 
-export function listingPriceCode(item: ItemDetail): PriceCode | null {
+/**
+ * The price crawler's `baseCode` for a market listing's item, mirroring the server's extraction
+ * (pd2-price-crawler `src/item-price/item-extraction.ts`), or null when the crawler doesn't price it.
+ */
+export function listingPriceCode(item: ItemDetail): string | null {
   // Stacked runes carry an 's' suffix (r30s); the crawler prices them as the single rune.
   const runeCode = (item.base?.id || item.base_code || '').replace(/s$/, '');
-  if (/^r\d{2}$/.test(runeCode)) return { code: runeCode, isRune: true };
+  if (/^r\d{2}$/.test(runeCode)) return runeCode;
 
-  if (item.base_code && (BASE_CODE_ITEMS[item.base_code] || item.base?.type_code === 't5m')) {
-    return { code: item.base_code, isRune: false };
-  }
+  if (item.base_code && (BASE_CODE_ITEMS[item.base_code] || item.base?.type_code === 't5m')) return item.base_code;
 
   const quality = item.quality?.name;
   if ((quality !== 'Unique' && quality !== 'Set') || item.is_runeword || !item.name) return null;
@@ -59,5 +51,5 @@ export function listingPriceCode(item: ItemDetail): PriceCode | null {
   // The server only prices unique jewels through variant rules (Rainbow Facet).
   if (item.base?.type_code === 'jew' || item.base?.type_code === 'jewl') return null;
   // The server's normalizeItemName: every non-alphanumeric becomes '_'.
-  return { code: name.replace(/[^a-z0-9]/g, '_'), isRune: false };
+  return name.replace(/[^a-z0-9]/g, '_');
 }

@@ -4,18 +4,22 @@ import { cn } from '@/lib/utils';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { TradeMessageData } from '@/components/trade/TradeMessage';
 
-type DealStatus = 'open' | 'accepted' | 'declined';
+type DealStatus = 'open' | 'accepted' | 'declined' | 'closed';
 
-/** Incoming offers are accepted when their listing took them, declined when it took another offer. */
+/**
+ * Same rule both directions: accepted when the listing took this offer, declined when it took another,
+ * closed when the listing was sold or delisted without taking it (outgoing offers on archived listings).
+ */
 function dealStatus(offer: TradeMessageData): DealStatus {
-  if (!offer.acceptedOfferId) return 'open';
-  return offer.acceptedOfferId === offer.id ? 'accepted' : 'declined';
+  if (offer.acceptedOfferId) return offer.acceptedOfferId === offer.id ? 'accepted' : 'declined';
+  return offer.listingClosed ? 'closed' : 'open';
 }
 
 const STATUS_CLASS: Record<DealStatus, string> = {
   open: 'bg-info/15 text-info',
   accepted: 'bg-success/15 text-success',
   declined: 'bg-muted text-muted-foreground',
+  closed: 'bg-muted text-muted-foreground',
 };
 
 const actionClass = cn(

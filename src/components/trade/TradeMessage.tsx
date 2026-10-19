@@ -55,6 +55,7 @@ export interface TradeMessageData {
   listingId?: string; // For website offers
   userId?: string; // User ID for website offers
   acceptedOfferId?: string; // ID of the accepted offer for this listing
+  listingClosed?: boolean; // Outgoing website offers: the listing was sold or delisted (archived)
 }
 
 interface TradeMessageProps {

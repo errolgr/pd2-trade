@@ -68,7 +68,7 @@ interface Pd2WebsiteContextType extends SocialActions {
   outgoingOffers: TradeMessageData[];
   hiddenOutgoingOffers: TradeMessageData[];
   loading: boolean;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   revokeOffer: (offerId: string) => Promise<void>;
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;

@@ -145,12 +145,13 @@ export async function fetchItemPriceByName(
 }
 
 /**
- * Fetch average prices for multiple items in a single batch request (by baseCode only)
+ * Fetch average prices for multiple items in a single batch request (by baseCode only). Codes without data
+ * are absent from the map; null means the request itself failed (HTTP/network error, malformed body).
  */
 export async function fetchMultipleItemPrices(
   items: Array<{ baseCode: string }>,
   config: PriceApiConfig = {},
-): Promise<Map<string, AveragePriceResponse>> {
+): Promise<Map<string, AveragePriceResponse> | null> {
   const results = new Map<string, AveragePriceResponse>();
 
   if (items.length === 0) {
@@ -182,22 +183,21 @@ export async function fetchMultipleItemPrices(
     if (!response.ok) {
       const error = new Error(`API error: ${response.status} ${response.statusText}`);
       reportApiError(error, 'price-api', 'item-prices/average/batch', response.status);
-      return results;
+      return null;
     }
 
     const batchResponse = await response.json();
 
     // Map results by baseCode
-    if (batchResponse.data && Array.isArray(batchResponse.data)) {
-      batchResponse.data.forEach((price: AveragePriceResponse) => {
-        results.set(price.baseCode, price);
-      });
-    }
+    if (!Array.isArray(batchResponse?.data)) return null;
+    batchResponse.data.forEach((price: AveragePriceResponse) => {
+      results.set(price.baseCode, price);
+    });
   } catch (error) {
     const apiError = error instanceof Error ? error : new Error(String(error));
     reportApiError(apiError, 'price-api', 'item-prices/average/batch');
     // Don't fallback to individual requests to avoid N+1 problem
-    // Return empty results instead - the calling code should handle missing data
+    return null;
   }
 
   return results;

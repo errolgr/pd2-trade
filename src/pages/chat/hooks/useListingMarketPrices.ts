@@ -20,20 +20,26 @@ const cache = new Map<string, { price: ListingMarketPrice | null; at: number }>(
 /** Requests in flight per cache key, so re-renders and other pills join them instead of refetching. */
 const inflight = new Map<string, Promise<void>>();
 /** Codes requested this tick, per price config; flushed as one batch request per config in a microtask. */
-const pending = new Map<string, { codes: Map<string, boolean>; done: Promise<void> }>();
+const pending = new Map<string, { codes: Set<string>; done: Promise<void> }>();
 
-function flush(configKey: string, codes: Map<string, boolean>, requestedWindow: string): Promise<void> {
+function flush(configKey: string, codes: Set<string>, requestedWindow: string): Promise<void> {
   const config = JSON.parse(configKey) as PriceApiConfig;
   return fetchMultipleItemPrices(
-    [...codes.keys()].map((baseCode) => ({ baseCode })),
+    [...codes].map((baseCode) => ({ baseCode })),
     config,
   ).then((prices) => {
-    // fetchMultipleItemPrices answers an empty map on failure too; leave those uncached so a later open retries.
-    if (prices.size === 0) return;
+    // A failed request stays uncached so a later open retries; codes a successful batch omits have no data.
+    if (!prices) return;
     const at = Date.now();
-    for (const [code, isRune] of codes) {
+    for (const code of codes) {
       const data = prices.get(code);
-      const hr = data ? (isRune ? (data.movingAverage7Days ?? data.medianPrice) : data.medianPrice) : 0;
+      // The price check's headline figure: the 7-day moving average for the 7-day window and past seasons,
+      // otherwise the mean over the chosen window.
+      const hr = !data
+        ? 0
+        : requestedWindow === '7d' || requestedWindow === 'season'
+          ? (data.movingAverage7Days ?? data.medianPrice)
+          : data.averagePrice;
       const window = priceWindowNote(data?.priceWindow, requestedWindow)?.label ?? requestedWindow;
       cache.set(`${configKey}|${code}`, { price: hr > 0 ? { hr, window } : null, at });
     }
@@ -41,13 +47,13 @@ function flush(configKey: string, codes: Map<string, boolean>, requestedWindow: 
 }
 
 /** Queues `code` into this tick's batch for `configKey`, or joins the request already fetching it. */
-function request(configKey: string, code: string, isRune: boolean, requestedWindow: string): Promise<void> {
+function request(configKey: string, code: string, requestedWindow: string): Promise<void> {
   const key = `${configKey}|${code}`;
   const running = inflight.get(key);
   if (running) return running;
   let batch = pending.get(configKey);
   if (!batch) {
-    const codes = new Map<string, boolean>();
+    const codes = new Set<string>();
     const done = new Promise<void>((resolve) => queueMicrotask(resolve)).then(() => {
       pending.delete(configKey);
       return flush(configKey, codes, requestedWindow);
@@ -55,7 +61,7 @@ function request(configKey: string, code: string, isRune: boolean, requestedWind
     batch = { codes, done };
     pending.set(configKey, batch);
   }
-  batch.codes.set(code, isRune);
+  batch.codes.add(code);
   const done = batch.done.finally(() => inflight.delete(key));
   inflight.set(key, done);
   return done;
@@ -65,9 +71,7 @@ interface PriceRequest {
   listingId: string;
   configKey: string;
   code: string;
-  isRune: boolean;
 }
-
 /**
  * Crawler market prices for chat-linked listings, keyed by listing id; unpriced listings are absent.
  * Each listing is priced in its own realm (its ladder/hardcore flags) over the user's price window and season,
@@ -84,15 +88,15 @@ export function useListingMarketPrices(
 
   const requests: PriceRequest[] = [];
   for (const listing of listings) {
-    const priceCode = listingPriceCode(listing.item);
-    if (!priceCode) continue;
+    const code = listingPriceCode(listing.item);
+    if (!code) continue;
     const config: PriceApiConfig = {
       isLadder: listing.is_ladder,
       isHardcore: listing.is_hardcore,
       ...(startDate ? { startDate } : {}),
       ...(endDate ? { endDate } : { hours }),
     };
-    requests.push({ listingId: listing._id, configKey: JSON.stringify(config), ...priceCode });
+    requests.push({ listingId: listing._id, configKey: JSON.stringify(config), code });
   }
   const requestsKey = JSON.stringify(requests);
   const [settledCount, setSettledCount] = useState(0);
@@ -106,7 +110,7 @@ export function useListingMarketPrices(
     });
     if (stale.length === 0) return;
     let cancelled = false;
-    void Promise.all(stale.map((r) => request(r.configKey, r.code, r.isRune, requestedWindow))).then(() => {
+    void Promise.all(stale.map((r) => request(r.configKey, r.code, requestedWindow))).then(() => {
       if (!cancelled) setSettledCount((n) => n + 1);
     });
     return () => {

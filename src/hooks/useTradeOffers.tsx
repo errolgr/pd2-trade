@@ -36,6 +36,7 @@ interface WebsiteOffer {
     };
     price?: string;
     hr_price?: number;
+    accepted_offer_id?: string | null;
     user?: {
       _id: string;
       username: string;
@@ -51,6 +52,7 @@ interface WebsiteOffer {
     };
     price?: string;
     hr_price?: number;
+    accepted_offer_id?: string | null;
     user?: {
       _id: string;
       username: string;
@@ -91,7 +93,8 @@ interface UseTradeOffersReturn {
   outgoingOffers: TradeMessageData[];
   hiddenOutgoingOffers: TradeMessageData[];
   loading: boolean;
-  refresh: () => void;
+  /** Refetches both lists; resolves once they are in state (fetch failures clear them, never reject). */
+  refresh: () => Promise<void>;
   revokeOffer: (offerId: string) => Promise<void>;
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;
@@ -215,24 +218,29 @@ const getOutgoingOffers = async (
   const result = await handleApiResponse(response, onAuthError);
   const offers: WebsiteOffer[] = result?.data || [];
 
-  // Convert offers to TradeMessageData
-  const tradeOffers: TradeMessageData[] = offers.map((offer) => {
-    const listing = offer.listing || offer.listing_archive;
-    return {
-      id: offer._id,
-      isIncoming: false,
-      playerName: listing?.user?.username || 'Unknown',
-      accountName: listing?.user?.game?.accounts?.[0],
-      characterName: listing?.user?.game?.accounts?.[0],
-      message: `Offer: ${offer.offer || offer.hr_offer || 'N/A'}`,
-      itemName: listing?.item?.name,
-      price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
-      timestamp: new Date(offer.created_at),
-      history: [],
-      listingId: listing?._id,
-      userId: listing?.user?._id,
-    };
-  });
+  // Convert offers to TradeMessageData. Rejected offers (revoked, or declined by the seller) are gone, as
+  // on the incoming side; offers on archived listings stay, flagged, so a bought item still shows.
+  const tradeOffers: TradeMessageData[] = offers
+    .filter((offer) => !offer.rejected)
+    .map((offer) => {
+      const listing = offer.listing || offer.listing_archive;
+      return {
+        id: offer._id,
+        isIncoming: false,
+        playerName: listing?.user?.username || 'Unknown',
+        accountName: listing?.user?.game?.accounts?.[0],
+        characterName: listing?.user?.game?.accounts?.[0],
+        message: `Offer: ${offer.offer || offer.hr_offer || 'N/A'}`,
+        itemName: listing?.item?.name,
+        price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+        timestamp: new Date(offer.created_at),
+        history: [],
+        listingId: listing?._id,
+        userId: listing?.user?._id,
+        acceptedOfferId: listing?.accepted_offer_id || undefined,
+        listingClosed: !offer.listing,
+      };
+    });
 
   return tradeOffers;
 };
@@ -375,9 +383,9 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
   }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
 
   // Single owner of the offers lists (Pd2WebsiteProvider): socket notifications and offer actions call this.
-  const refresh = useCallback(() => {
-    fetchIncomingOffers();
-    fetchOutgoingOffers();
+  // Actions await it, so their callers stay busy until the lists show the change.
+  const refresh = useCallback(async () => {
+    await Promise.all([fetchIncomingOffers(), fetchOutgoingOffers()]);
   }, [fetchIncomingOffers, fetchOutgoingOffers]);
 
   const handleRevokeOffer = useCallback(
@@ -402,11 +410,11 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
           variant: 'success',
         });
 
-        refresh();
+        await refresh();
       } catch (error) {
         console.error('Failed to revoke offer:', error);
         // Revert optimistic update on error
-        refresh();
+        void refresh();
         // Show error toast
         showToast({
           title: 'Failed to Revoke Offer',
@@ -439,7 +447,7 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
           variant: 'success',
         });
 
-        refresh();
+        await refresh();
       } catch (error) {
         console.error('Failed to accept offer:', error);
         // Show error toast
@@ -478,11 +486,11 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
           variant: 'success',
         });
 
-        refresh();
+        await refresh();
       } catch (error) {
         console.error('Failed to reject offer:', error);
         // Revert optimistic update on error
-        refresh();
+        void refresh();
         // Show error toast
         showToast({
           title: 'Failed to Reject Offer',
@@ -515,7 +523,7 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
           variant: 'success',
         });
 
-        refresh();
+        await refresh();
       } catch (error) {
         console.error('Failed to unaccept offer:', error);
         // Show error toast

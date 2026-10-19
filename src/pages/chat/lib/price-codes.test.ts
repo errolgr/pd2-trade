@@ -10,33 +10,25 @@ describe('listingPriceCode', () => {
     [
       'a rune by its base id',
       item({ name: 'Ohm Rune', base_code: 'r27', base: { id: 'r27', name: 'Ohm Rune' } }),
-      'r27',
-      true,
-    ],
-    ['a stacked rune without the s', item({ name: 'Ber Rune', base_code: 'r30s', base: { id: 'r30s' } }), 'r30', true],
-    ['a rune from base_code alone', item({ name: 'Jah Rune', base_code: 'r31' }), 'r31', true],
-    ['an uber ingredient', item({ name: 'Key of Terror', base_code: 'tes', base: { id: 'tes' } }), 'tes', false],
-    ['currency', item({ name: "Larzuk's Puzzlebox", base_code: 'lbox', base: { id: 'lbox' } }), 'lbox', false],
+      'r27'],
+    ['a stacked rune without the s', item({ name: 'Ber Rune', base_code: 'r30s', base: { id: 'r30s' } }), 'r30'],
+    ['a rune from base_code alone', item({ name: 'Jah Rune', base_code: 'r31' }), 'r31'],
+    ['an uber ingredient', item({ name: 'Key of Terror', base_code: 'tes', base: { id: 'tes' } }), 'tes'],
+    ['currency', item({ name: "Larzuk's Puzzlebox", base_code: 'lbox', base: { id: 'lbox' } }), 'lbox'],
     [
       'a tier 5 map',
       item({ name: 'Ruins of Viz-Jun', base_code: 't51', base: { id: 't51', type_code: 't5m' } }),
-      't51',
-      false,
-    ],
+      't51'],
     [
       'a unique by normalized name',
       item({ name: 'Harlequin Crest', quality: { name: 'Unique' }, base: { name: 'Shako' } }),
-      'harlequin_crest',
-      false,
-    ],
+      'harlequin_crest'],
     [
       'a set item with an apostrophe',
       item({ name: "Tal Rasha's Guardianship", quality: { name: 'Set' }, base: { name: 'Lacquered Plate' } }),
-      'tal_rasha_s_guardianship',
-      false,
-    ],
-  ])('prices %s', (_, detail, code, isRune) => {
-    expect(listingPriceCode(detail)).toEqual({ code, isRune });
+      'tal_rasha_s_guardianship'],
+  ])('prices %s', (_, detail, code) => {
+    expect(listingPriceCode(detail)).toBe(code);
   });
 
   it.each([

@@ -123,4 +123,26 @@ describe('ThreadDeals', () => {
     fireEvent.click(screen.getByRole('button', { name: /Revoke/ }));
     expect(actions.revokeOffer).toHaveBeenCalledWith('o4');
   });
+
+  it('settles outgoing offers like incoming ones: no Revoke once the listing took an offer or closed', () => {
+    const outgoing = (over: Partial<TradeMessageData>) => offer({ isIncoming: false, ...over });
+    setOffers(
+      [],
+      [
+        outgoing({ id: 'won', listingId: 'l1', itemName: 'Won Item', acceptedOfferId: 'won' }),
+        outgoing({ id: 'lost', listingId: 'l2', itemName: 'Lost Item', acceptedOfferId: 'other' }),
+        outgoing({ id: 'gone', listingId: 'l3', itemName: 'Gone Item', listingClosed: true }),
+        outgoing({ id: 'stale', listingId: 'l9', itemName: 'Stale Item', listingClosed: true }),
+      ],
+    );
+    renderDeals(['l1', 'l2', 'l3']);
+    fireEvent.click(screen.getByRole('button', { name: /more/ }));
+
+    const statusOf = (item: string) => rows().find((row) => row.textContent!.includes(item))?.textContent;
+    expect(statusOf('Won Item')).toMatch(/accepted$/);
+    expect(statusOf('Lost Item')).toMatch(/declined$/);
+    expect(statusOf('Gone Item')).toMatch(/closed$/);
+    expect(statusOf('Stale Item')).toBeUndefined();
+    expect(screen.queryByRole('button', { name: /Revoke/ })).toBeNull();
+  });
 });
