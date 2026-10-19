@@ -56,7 +56,7 @@ const HOLDING_TABS: { value: WindowTab; label: string; categories: NetWorthCateg
 /** Re-value on open/focus when the latest snapshot is older than this. */
 const STALE_ON_OPEN_MS = 2 * 60 * 1000;
 
-const TRIGGER_CLASS = 'px-2.5 text-xs';
+const TRIGGER_CLASS = 'shrink-0 px-2 text-xs';
 
 function initialTab(): WindowTab {
   return new URLSearchParams(window.location.search).get('tab') === 'history' ? 'history' : 'overview';
@@ -165,7 +165,14 @@ export function StashValueWindow() {
                 <Tabs value={tab}
                   onValueChange={(v) => setTab(v as WindowTab)}
                   className="gap-3">
-                  <TabsList className="h-10 w-full">
+                  <TabsList
+                    className="h-10 w-full justify-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    onWheel={(e) => {
+                      if (e.deltaX === 0 && e.deltaY !== 0) {
+                        e.currentTarget.scrollLeft += e.deltaY;
+                      }
+                    }}
+                  >
                     <TabsTrigger value="overview"
                       className={TRIGGER_CLASS}>
                       Overview
