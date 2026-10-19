@@ -673,7 +673,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         : `Message ${selectedThread.name}...`
                     }
                     templateVars={templateVars}
-                    compact={compact}
                     channel={channel}
                     whisperTarget={whisperAccount}
                     onChannelChange={

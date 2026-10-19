@@ -26,15 +26,7 @@ let settings: Record<string, unknown>;
 let getMarketListings: Mock;
 let onSend: Mock;
 
-function Harness({
-  initial = '',
-  switchable = false,
-  compact = false,
-}: {
-  initial?: string;
-  switchable?: boolean;
-  compact?: boolean;
-}) {
+function Harness({ initial = '', switchable = false }: { initial?: string; switchable?: boolean }) {
   const [value, setValue] = useState(initial);
   const [channel, setChannel] = useState<ReplyChannel>('website');
   return (
@@ -47,7 +39,6 @@ function Harness({
         templateVars={VARS}
         channel={channel}
         onChannelChange={switchable ? setChannel : undefined}
-        compact={compact}
       />
     </ItemsProvider>
   );

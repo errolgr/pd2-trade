@@ -46,8 +46,6 @@ interface ComposerProps {
   onChannelChange?: (channel: ReplyChannel) => void;
   /** The account whispers go to (`/w *account`), for the whisper hints. */
   whisperTarget?: string;
-  /** Compact panel: the quick replies stay on one line that scrolls sideways. */
-  compact?: boolean;
 }
 
 /** The composer's handle: focus it, or insert text at its caret (the trader sidebar links a listing). */
@@ -58,7 +56,7 @@ export interface ComposerHandle {
 
 /** Message input of the open thread, a floating card: channel switch, quick replies, listing picker, input. */
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget, compact = false },
+  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget },
   ref,
 ) {
   const { settings } = useOptions();
@@ -198,14 +196,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </motion.div>
         )}
 
-        {/* Compact: one sideways-scrolling line (no scrollbar). The Website/Whisper labels drop to icons only when the composer itself is under 380px wide */}
+        {/* One sideways-scrolling line (no scrollbar). The Website/Whisper labels drop to icons only when the composer itself is under 380px wide */}
         <div
           role="toolbar"
           aria-label="Quick replies"
-          className={cn(
-            'flex items-center gap-1.5 border-b border-border/50 px-2 py-1.5',
-            compact ? 'flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex-wrap',
-          )}
+          className="flex flex-nowrap items-center gap-1.5 overflow-x-auto border-b border-border/50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {onChannelChange && (
             <ToggleGroup
