@@ -56,7 +56,7 @@ export interface OpenOptions {
   reposition?: boolean;
   /** Already open: only bring it to front (keep payload and payloadVersion, e.g. a half-filled form). */
   keepPayload?: boolean;
-  /** Claim keyboard focus right away (default: def.keyboard === 'onPointerDown' && def.focusOnOpen). */
+  /** Claim keyboard focus right away. Opening never does by default: it would take focus (and sound) from the game. */
   focus?: boolean;
 }
 
@@ -72,17 +72,18 @@ export interface PanelDef {
   placement: Placement;
   /** Restore last user-moved/resized rect from layout-storage (clamped into the overlay). */
   persist: boolean;
-  /** onPointerDown: any pointerdown inside the panel claims keyboard focus. */
+  /**
+   * onPointerDown: a pointerdown on a text field inside the panel claims keyboard focus (the only time the game
+   * loses focus); a pointerdown anywhere else in the panel gives it back.
+   */
   keyboard: 'never' | 'onPointerDown';
-  /** Claim keyboard immediately on open. */
-  focusOnOpen?: boolean;
   /** Closed => display:none but still mounted (state/listeners survive). Mounted (closed) from startup. */
   keepMounted: boolean;
   /** Hidden (not unmounted) while gameFocused === false. */
   hideOnGameBlur: boolean;
   /**
-   * Close (keepMounted: hide, state kept) 150 ms after Main loses OS focus, i.e. the user clicked back into
-   * the game, unless focus returns first. Tauri only.
+   * Close (keepMounted: hide, state kept) when the user clicks outside every panel (Windows mouse hook), or
+   * 150 ms after leaving the overlay or the game for another app unless they come back first. Tauri only.
    */
   closeOnBlur?: boolean;
   /**

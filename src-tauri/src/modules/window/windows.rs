@@ -1,4 +1,5 @@
 use super::{Foreground, WindowRect};
+use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::Mutex;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::AppHandle;
@@ -9,11 +10,12 @@ use windows_sys::Win32::{
         GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
         MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
     },
+    System::Threading::{AttachThreadInput, GetCurrentThreadId},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId, IsIconic,
-        SetForegroundWindow, ShowWindow, EVENT_SYSTEM_FOREGROUND, SW_RESTORE,
-        WINEVENT_OUTOFCONTEXT,
+        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowRect,
+        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, ShowWindow,
+        EVENT_SYSTEM_FOREGROUND, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
     },
 };
 
@@ -48,7 +50,11 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
 }
 
 pub fn foreground() -> Foreground {
-    let foreground = unsafe { GetForegroundWindow() };
+    let mut foreground = unsafe { GetForegroundWindow() };
+    if foreground == 0 {
+        // Mid-activation Windows reports no foreground window; the hook already named the one activating.
+        foreground = LAST_FOREGROUND_EVENT.load(Ordering::SeqCst);
+    }
     if foreground == 0 {
         return Foreground::Unknown;
     }
@@ -79,6 +85,37 @@ pub fn focus_diablo() -> bool {
             ShowWindow(hwnd, SW_RESTORE);
         }
         SetForegroundWindow(hwnd) != 0
+    }
+}
+
+/// Brings `hwnd` to the foreground; true when it got there. Windows only lets the process that produced the
+/// last input do that, and after a global hotkey or our injected Ctrl+C that is the game, so a plain
+/// SetForegroundWindow is refused. Attaching to the foreground thread's input queue for the call gets past it.
+pub fn bring_to_foreground(hwnd: HWND) -> bool {
+    unsafe {
+        let foreground = GetForegroundWindow();
+        if foreground == hwnd {
+            return true;
+        }
+        if SetForegroundWindow(hwnd) != 0 && GetForegroundWindow() == hwnd {
+            return true;
+        }
+
+        let this_thread = GetCurrentThreadId();
+        let foreground_thread = if foreground == 0 {
+            0
+        } else {
+            GetWindowThreadProcessId(foreground, ptr::null_mut())
+        };
+        let attached = foreground_thread != 0
+            && foreground_thread != this_thread
+            && AttachThreadInput(this_thread, foreground_thread, 1) != 0;
+        BringWindowToTop(hwnd);
+        SetForegroundWindow(hwnd);
+        if attached {
+            AttachThreadInput(this_thread, foreground_thread, 0);
+        }
+        GetForegroundWindow() == hwnd
     }
 }
 
@@ -115,15 +152,19 @@ static mut FOREGROUND_HOOK: Option<HWINEVENTHOOK> = None;
 
 static CALLBACK: Mutex<Option<Box<dyn Fn() + Send>>> = Mutex::new(None);
 
+/// Window named by the last EVENT_SYSTEM_FOREGROUND.
+static LAST_FOREGROUND_EVENT: AtomicIsize = AtomicIsize::new(0);
+
 unsafe extern "system" fn win_event_proc(
     _hook: HWINEVENTHOOK,
     _event: u32,
-    _hwnd: HWND,
+    hwnd: HWND,
     _id_object: i32,
     _id_child: i32,
     _event_thread: u32,
     _event_time: u32,
 ) {
+    LAST_FOREGROUND_EVENT.store(hwnd, Ordering::SeqCst);
     if let Some(cb) = &*CALLBACK.lock().unwrap() {
         cb();
     }

@@ -108,6 +108,8 @@ pub fn run() {
             commands::press_key,
             commands::is_diablo_focused,
             commands::focus_diablo,
+            commands::focus_overlay,
+            commands::set_outside_click_watch,
             commands::update_window_bounds,
             region::set_interactive_region,
             commands::start_chat_watcher,

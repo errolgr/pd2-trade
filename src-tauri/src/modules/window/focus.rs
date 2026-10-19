@@ -8,6 +8,7 @@
 //! - No foreground window at all (Windows reports this mid-activation) is ignored instead of being read
 //!   as a focus loss, which used to bounce every listener false -> true.
 
+use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
@@ -16,9 +17,13 @@ use super::{foreground, initialize_foreground_monitoring};
 
 /// Webview event carrying the game context (`bool`); `is_diablo_focused` returns the same value.
 pub const FOCUS_EVENT: &str = "diablo-focus-changed";
+/// Webview event carrying the raw `Foreground` on every foreground change (Unknown skipped). Panels that close
+/// when the user leaves them use it: it also sees leaving the game while the overlay never had focus.
+pub const FOREGROUND_EVENT: &str = "foreground-changed";
 
 /// Who owns the OS foreground, as far as the game context cares.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum Foreground {
     /// The Diablo II window.
     Diablo,
@@ -58,8 +63,12 @@ pub fn initialize_diablo_focus_monitoring(
         let _transition = TRANSITION
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let owner = foreground();
+        if owner != Foreground::Unknown {
+            let _ = app_handle.emit(FOREGROUND_EVENT, owner);
+        }
         let current = GAME_CONTEXT.load(Ordering::SeqCst);
-        let next = next_game_context(current, foreground());
+        let next = next_game_context(current, owner);
         if next == current && !force_emit {
             return;
         }

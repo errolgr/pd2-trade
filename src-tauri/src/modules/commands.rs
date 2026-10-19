@@ -24,6 +24,43 @@ pub fn focus_diablo() -> bool {
     window::focus_diablo()
 }
 
+/// Watches for clicks outside the overlay's panels while a dismissable panel is open (Windows; emits
+/// `overlay-outside-click`), so it can close without the overlay ever taking focus from the game.
+#[tauri::command]
+pub fn set_outside_click_watch(
+    app_handle: tauri::AppHandle,
+    overlay: tauri::WebviewWindow,
+    enabled: bool,
+) {
+    #[cfg(target_os = "windows")]
+    if let Ok(hwnd) = overlay.hwnd() {
+        window::set_outside_click_watch(&app_handle, hwnd.0 as isize, enabled);
+    }
+    #[cfg(not(target_os = "windows"))]
+    let _ = (app_handle, overlay, enabled);
+}
+
+/// Brings the overlay to the foreground so a panel gets the keyboard; false when the OS refused.
+/// Sync on purpose: runs on the main thread, which owns the overlay window.
+#[tauri::command]
+pub fn focus_overlay(overlay: tauri::WebviewWindow) -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(hwnd) = overlay.hwnd() {
+            if window::bring_to_foreground(hwnd.0 as isize) {
+                return true;
+            }
+        }
+        // Last resort, Tauri's own path (SetForegroundWindow, then a simulated Alt press)
+        let _ = overlay.set_focus();
+        overlay.is_focused().unwrap_or(false)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        overlay.set_focus().is_ok()
+    }
+}
+
 /// Fits the Main overlay to the monitor containing Diablo II (primary monitor fallback).
 /// No-op when the window already covers that rect.
 #[tauri::command]

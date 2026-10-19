@@ -28,5 +28,10 @@ mod windows;
 #[cfg(target_os = "windows")]
 pub use windows::*;
 
+#[cfg(target_os = "windows")]
+mod outside_click;
+#[cfg(target_os = "windows")]
+pub use outside_click::*;
+
 mod focus;
 pub use focus::*;

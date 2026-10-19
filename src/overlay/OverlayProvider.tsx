@@ -8,6 +8,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { invoke, isTauri } from '@tauri-apps/api/core';
+import { listen } from '@/lib/browser-events';
 import { claimKeyboard, isKeyboardClaimed, releaseKeyboard, trackKeyboardFocus } from './keyboard';
 import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
@@ -185,6 +187,8 @@ export interface OverlayApi {
 
 /** Same delay the old per-window focus-loss handler used before hiding its window. */
 export const CLOSE_ON_BLUR_MS = 150;
+/** Rust (window::outside_click): a mouse button went down outside every panel. */
+export const OUTSIDE_CLICK_EVENT = 'overlay-outside-click';
 
 interface OverlayInternals {
   defs: PanelDefs;
@@ -277,7 +281,9 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
         }
       }
 
-      if (opts.focus ?? (def.keyboard === 'onPointerDown' && !!def.focusOnOpen)) void claimKeyboard();
+      // Opening never takes focus from the game (it would mute it): panels claim the keyboard only when the user
+      // clicks into a text field (Panel).
+      if (opts.focus) void claimKeyboard();
     },
     [apply, defs],
   );
@@ -340,6 +346,12 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   // Main lost OS focus (the user clicked into the game or another app): close closeOnBlur panels unless focus
   // comes back within CLOSE_ON_BLUR_MS, like the old per-window focus-loss handler hid its window. Our own
   // hand-off to the game (e.g. before a hotkey copies the next item) isn't the user leaving.
+  const closeDismissablePanels = useCallback(() => {
+    for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
+      if (panel.open && defs[id].closeOnBlur) closePanel(id);
+    }
+  }, [closePanel, defs]);
+
   useEffect(() => {
     let blurTimer: ReturnType<typeof setTimeout> | undefined;
     const stop = trackKeyboardFocus((focused, handoff) => {
@@ -348,16 +360,46 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
       if (focused || handoff) return;
       blurTimer = setTimeout(() => {
         blurTimer = undefined;
-        for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
-          if (panel.open && defs[id].closeOnBlur) closePanel(id);
-        }
+        closeDismissablePanels();
       }, CLOSE_ON_BLUR_MS);
     });
     return () => {
       clearTimeout(blurTimer);
       stop();
     };
-  }, [closePanel, defs]);
+  }, [closeDismissablePanels]);
+
+  // A click outside every panel (into the game or another app) closes closeOnBlur panels even though the overlay
+  // never took focus from the game. The Rust mouse hook behind it only runs while one is open.
+  const dismissableOpen = Object.entries(state.panels).some(
+    ([id, panel]) => panel?.open && defs[id as PanelId].closeOnBlur,
+  );
+  useEffect(() => {
+    if (!isTauri()) return;
+    invoke('set_outside_click_watch', { enabled: dismissableOpen }).catch((error) =>
+      console.warn('[overlay] set_outside_click_watch failed:', error),
+    );
+  }, [dismissableOpen]);
+  useEffect(
+    () => () => {
+      if (isTauri()) invoke('set_outside_click_watch', { enabled: false }).catch(() => {});
+    },
+    [],
+  );
+  useEffect(() => {
+    let disposed = false;
+    let off: (() => void) | null = null;
+    listen(OUTSIDE_CLICK_EVENT, closeDismissablePanels)
+      .then((unlisten) => {
+        if (disposed) unlisten();
+        else off = unlisten;
+      })
+      .catch((error) => console.warn('[overlay] outside-click listener failed:', error));
+    return () => {
+      disposed = true;
+      off?.();
+    };
+  }, [closeDismissablePanels]);
 
   useEffect(() => {
     setToastBridge({ openChat: (payload) => openPanel('chat', payload) });

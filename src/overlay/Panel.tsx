@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import * as Sentry from '@sentry/react';
-import { claimKeyboard } from './keyboard';
+import { claimKeyboard, isKeyboardClaimed, releaseKeyboard } from './keyboard';
 import { holdRegionLoop } from './region';
 import { clampRectInto, clampRectVisible } from './layout-storage';
 import { viewportRect } from './game';
@@ -32,6 +32,16 @@ export function usePanel<K extends PanelId>(): PanelContextValue<K> {
 /** Elements that never start a drag even inside [data-panel-drag]. */
 const NO_DRAG_SELECTOR = 'button, a, input, textarea, select, [role=button], [data-no-drag]';
 const DEFAULT_MIN_SIZE = { width: 160, height: 80 };
+/** Elements that take typed text (the only reason a panel takes the keyboard from the game). */
+const TEXT_ENTRY_SELECTOR =
+  'textarea, [contenteditable=""], [contenteditable="true"], ' +
+  'input:not([type=button]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=hidden])' +
+  ':not([type=image]):not([type=radio]):not([type=range]):not([type=reset]):not([type=submit])';
+
+function textEntryAt(target: EventTarget | null): HTMLElement | null {
+  const field = target instanceof Element ? target.closest<HTMLElement>(TEXT_ENTRY_SELECTOR) : null;
+  return field && !(field as HTMLInputElement).disabled ? field : null;
+}
 
 type Edge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 const EDGES: Record<Edge, { className: string; cursor: string }> = {
@@ -133,9 +143,18 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
     frame.addEventListener('pointercancel', onEnd);
   };
 
-  const onPointerDownCapture = () => {
+  const onPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
     bringToFront(id);
-    if (def.keyboard === 'onPointerDown') void claimKeyboard();
+    if (def.keyboard !== 'onPointerDown') return;
+    // Take the keyboard only to type: anything else leaves the game in front (and its sound playing)
+    const field = textEntryAt(e.target);
+    if (field) {
+      void claimKeyboard().then(() => {
+        if (field.isConnected && document.activeElement !== field) field.focus();
+      });
+    } else if (isKeyboardClaimed()) {
+      void releaseKeyboard();
+    }
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {

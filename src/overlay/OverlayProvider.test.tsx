@@ -4,8 +4,10 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { invoke } from '@tauri-apps/api/core';
 import {
   CLOSE_ON_BLUR_MS,
+  OUTSIDE_CLICK_EVENT,
   OverlayProvider,
   computePlacement,
   initialOverlayState,
@@ -54,7 +56,16 @@ vi.mock('./keyboard', () => ({
 }));
 vi.mock('./region', () => ({ useRegionSync: () => {}, holdRegionLoop: () => () => {} }));
 vi.mock('./toast', () => ({ ToastLayer: () => null, setToastBridge: vi.fn(), showToast: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => false, invoke: vi.fn() }));
+const tauri = vi.hoisted(() => ({ on: false }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri.on, invoke: vi.fn(async () => {}) }));
+/** Rust events the provider listens to (e.g. the outside-click hook). */
+const events = vi.hoisted(() => new Map<string, () => void>());
+vi.mock('@/lib/browser-events', () => ({
+  listen: vi.fn(async (event: string, cb: () => void) => {
+    events.set(event, cb);
+    return () => events.delete(event);
+  }),
+}));
 
 const setGame = (next: Partial<typeof game.state>) =>
   act(() => {
@@ -70,9 +81,13 @@ const Probe: React.FC = () => {
     mounts[id] = (mounts[id] ?? 0) + 1;
   }, [id]);
   return (
-    <div data-testid={`content-${id}`}>
-      {JSON.stringify(payload ?? null)}#{payloadVersion}
-    </div>
+    <>
+      <div data-testid={`content-${id}`}>
+        {JSON.stringify(payload ?? null)}#{payloadVersion}
+      </div>
+      <input data-testid={`field-${id}`} />
+      <button data-testid={`button-${id}`}>act</button>
+    </>
   );
 };
 
@@ -92,7 +107,7 @@ const def = (id: PanelId, extra: Partial<PanelDef> = {}): PanelDef => ({
 const DEFS = {
   itemSearch: def('itemSearch', { placement: 'gameRight', keepMounted: true }),
   quickList: def('quickList', { placement: 'cursor' }),
-  currency: def('currency', { placement: 'screenCenter', persist: true, focusOnOpen: true }),
+  currency: def('currency', { placement: 'screenCenter', persist: true }),
   chat: def('chat', { keepMounted: true, closeOnBlur: true }),
   chatButton: def('chatButton', { placement: 'gameBottomRight', keyboard: 'never', keepMounted: true }),
   tradeMessages: def('tradeMessages', { keepMounted: true }),
@@ -126,6 +141,7 @@ const frame = (id: PanelId) => document.querySelector<HTMLElement>(`[data-panel-
 const shown = (id: PanelId) => !!frame(id) && frame(id)!.style.display !== 'none';
 
 beforeEach(() => {
+  tauri.on = false;
   game.state = { gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: true };
   for (const k of Object.keys(mounts)) delete mounts[k];
   localStorage.clear();
@@ -320,22 +336,29 @@ describe('OverlayProvider', () => {
     expect(JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY)!).currency).toMatchObject({ x: 42 });
   });
 
-  it('focusOnOpen claims the keyboard; closing the last keyboard panel releases it', () => {
+  it('opening a panel leaves the game in front; only an explicit focus claims', () => {
     mount();
     act(() => api.openPanel('currency'));
-    expect(claimKeyboard).toHaveBeenCalledTimes(1);
     act(() => api.openPanel('chatButton'));
+    expect(claimKeyboard).not.toHaveBeenCalled();
+    act(() => api.openPanel('settings', undefined, { focus: true }));
     expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
 
+  it('closing the last keyboard panel releases a claim', () => {
+    mount();
     vi.mocked(isKeyboardClaimed).mockReturnValue(true);
-    act(() => api.openPanel('settings'));
+    act(() => {
+      api.openPanel('currency');
+      api.openPanel('settings');
+    });
     act(() => api.closePanel('currency'));
     expect(releaseKeyboard).not.toHaveBeenCalled(); // settings still takes typing
     act(() => api.closePanel('settings'));
     expect(releaseKeyboard).toHaveBeenCalledTimes(1);
   });
 
-  it('pointerdown in an onPointerDown panel claims the keyboard and brings it to front', () => {
+  it('pointerdown brings a panel to front without taking the keyboard', () => {
     mount();
     act(() => {
       api.openPanel('chat');
@@ -345,8 +368,42 @@ describe('OverlayProvider', () => {
     act(() => {
       frame('chat')!.dispatchEvent(new Event('pointerdown', { bubbles: true }));
     });
-    expect(claimKeyboard).toHaveBeenCalled();
+    expect(claimKeyboard).not.toHaveBeenCalled();
     expect(Number(frame('chat')!.style.zIndex)).toBeGreaterThan(Number(frame('settings')!.style.zIndex));
+  });
+
+  it('clicking into a text field takes the keyboard; clicking anything else gives it back', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    act(() => {
+      screen.getByTestId('field-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).toHaveBeenCalledTimes(1);
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('a click outside a text field leaves an unclaimed keyboard alone', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
+  });
+
+  it("keyboard: 'never' panels never take the keyboard, even from a text field", () => {
+    mount();
+    act(() => api.openPanel('chatButton'));
+    act(() => {
+      screen.getByTestId('field-chatButton').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).not.toHaveBeenCalled();
   });
 
   it("interactive: 'children' makes the frame click-through and leaves interactivity to the content", () => {
@@ -520,6 +577,32 @@ describe('closeOnBlur', () => {
     act(() => focus.onChange!(false, true));
     act(() => vi.advanceTimersByTime(CLOSE_ON_BLUR_MS * 2));
     expect(api.isOpen('settings')).toBe(true);
+  });
+
+  it('a click outside every panel closes closeOnBlur panels at once, without focus ever moving', async () => {
+    mount();
+    await act(async () => {}); // the listener subscribes asynchronously
+    act(() => {
+      api.openPanel('chat');
+      api.openPanel('settings');
+      api.openPanel('tradeMessages');
+    });
+    act(() => events.get(OUTSIDE_CLICK_EVENT)!());
+    expect(api.isOpen('chat')).toBe(false);
+    expect(api.isOpen('settings')).toBe(false);
+    expect(api.isOpen('tradeMessages')).toBe(true); // not a closeOnBlur panel
+  });
+
+  it('runs the outside-click hook only while a closeOnBlur panel is open', () => {
+    tauri.on = true;
+    mount();
+    expect(invoke).toHaveBeenLastCalledWith('set_outside_click_watch', { enabled: false });
+    act(() => api.openPanel('tradeMessages'));
+    expect(invoke).not.toHaveBeenCalledWith('set_outside_click_watch', { enabled: true });
+    act(() => api.openPanel('chat'));
+    expect(invoke).toHaveBeenLastCalledWith('set_outside_click_watch', { enabled: true });
+    act(() => api.closePanel('chat'));
+    expect(invoke).toHaveBeenLastCalledWith('set_outside_click_watch', { enabled: false });
   });
 
   it('keeps panels open when focus returns within the delay', () => {

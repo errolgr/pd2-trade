@@ -4,7 +4,26 @@
 //! frontend receive mouse input, everything else falls through to the game.
 
 use serde::Deserialize;
+use std::sync::Mutex;
 use tauri::{AppHandle, Manager, WebviewWindow};
+
+/// Rects of the region last applied to the Main window, for hit-testing clicks (see window::outside_click).
+static CURRENT: Mutex<Vec<RegionRect>> = Mutex::new(Vec::new());
+
+/// Point (physical pixels, relative to the Main window) on one of its interactive rects. Unknown counts as
+/// inside, so nothing closes on a guess.
+pub fn contains(x: i32, y: i32) -> bool {
+    CURRENT
+        .lock()
+        .map(|rects| rects_contain(&rects, x, y))
+        .unwrap_or(true)
+}
+
+fn rects_contain(rects: &[RegionRect], x: i32, y: i32) -> bool {
+    rects
+        .iter()
+        .any(|r| x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height)
+}
 
 /// Rect in physical pixels relative to the Main window's top-left corner.
 #[derive(Deserialize, Clone, Copy, Debug)]
@@ -50,6 +69,9 @@ pub fn apply_region(window: &WebviewWindow, rects: &[RegionRect]) -> Result<(), 
             return Err("SetWindowRgn failed".into());
         }
     }
+    if let Ok(mut current) = CURRENT.lock() {
+        *current = rects.to_vec();
+    }
     Ok(())
 }
 
@@ -92,4 +114,33 @@ pub fn apply_region(window: &WebviewWindow, rects: &[RegionRect]) -> Result<(), 
 #[cfg(not(any(target_os = "windows", target_os = "linux")))]
 pub fn apply_region(_window: &WebviewWindow, _rects: &[RegionRect]) -> Result<(), String> {
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const fn rect(x: i32, y: i32, width: i32, height: i32) -> RegionRect {
+        RegionRect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    #[test]
+    fn hit_tests_the_interactive_rects() {
+        let rects = [rect(10, 10, 100, 50), rect(300, 0, 20, 20)];
+        assert!(rects_contain(&rects, 10, 10));
+        assert!(rects_contain(&rects, 109, 59));
+        assert!(!rects_contain(&rects, 110, 30)); // right edge is exclusive
+        assert!(!rects_contain(&rects, 200, 30)); // between panels: the game
+        assert!(rects_contain(&rects, 305, 5));
+    }
+
+    #[test]
+    fn no_panels_means_every_click_is_outside() {
+        assert!(!rects_contain(&[], 0, 0));
+    }
 }
