@@ -5,7 +5,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
 import { useItems } from '@/hooks/useItems';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { HoverPopover } from '@/components/custom/hover-popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverKeyValue } from '@/components/custom/popover-parts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
@@ -14,36 +14,31 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingArtUrl } from '../lib/listing-art';
 
-const cardClass =
-  'my-1 flex w-72 max-w-full items-center gap-2.5 rounded-xl border border-border/70 bg-background/50 p-2 text-left';
+/**
+ * Inline pill for listing links, so "interested in your [Ohm Rune 75 wss]" reads as one sentence. Shared by
+ * the item card and the plain link MessageContent falls back to when a listing can't be looked up.
+ */
+export const listingPillClass = cn(
+  'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/70 bg-background/50 px-1.5 py-px align-middle text-sm',
+  'transition-[border-color,background-color,transform] duration-(--dur-fast) ease-out hover:border-info/40 hover:bg-accent/40',
+  'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+);
 
-/** Same footprint as a loaded card, so the bubble doesn't jump when the listing arrives. */
+/** Same footprint as a loaded pill, so the sentence doesn't reflow much when the listing arrives. */
 export function ListingCardSkeleton() {
-  return (
-    <div className={cardClass}
-      aria-label="Loading listing">
-      <Skeleton className="size-12 shrink-0 rounded-lg" />
-      <div className="flex-1 space-y-1.5">
-        <Skeleton className="h-3.5 w-3/4" />
-        <Skeleton className="h-3 w-1/3" />
-      </div>
-    </div>
-  );
+  return <Skeleton aria-label="Loading listing"
+    className="mx-0.5 inline-block h-6 w-36 align-middle" />;
 }
 
 function ItemArt({ listing }: { listing: MarketListingEntry }) {
   const { itemsMapByKey } = useItems();
   const [failed, setFailed] = useState(false);
   const src = listingArtUrl(listing.item, itemsMapByKey);
-  if (!src || failed) return <Package className="size-6 text-muted-foreground" />;
-  return (
-    <img
-      src={src}
-      alt=""
-      className="max-h-11 max-w-11 object-contain drop-shadow-[0_2px_4px_rgb(0_0_0/0.35)]"
-      onError={() => setFailed(true)}
-    />
-  );
+  if (!src || failed) return <Package className="size-3.5 text-muted-foreground" />;
+  return <img src={src}
+    alt=""
+    className="max-h-5 max-w-5 object-contain"
+    onError={() => setFailed(true)} />;
 }
 
 const nameColor = (listing: MarketListingEntry) =>
@@ -105,57 +100,51 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
 }
 
 /**
- * A listing linked in chat. At a glance: art, name, base, price and whether it's still listed;
- * stats, seller, mode and age live in the hover popover.
+ * A listing linked in chat, inline in the sentence: thumbnail, name, price and whether it's still listed;
+ * base, stats, seller, mode and age live in the hover popover.
  */
 export function ListingCard({ listing, listed, url }: { listing: MarketListingEntry; listed: boolean; url: string }) {
-  const { item } = listing;
-  const sockets = item.socket_count || 0;
+  const [open, setOpen] = useState(false);
   return (
-    <HoverPopover side="right"
-      content={<ListingDetails listing={listing}
-        listed={listed} />}>
-      <a
-        href={url}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openUrl(url);
-        }}
-        className={cn(
-          cardClass,
-          'transition-[border-color,background-color,transform] duration-(--dur-fast) ease-out hover:border-info/40 hover:bg-accent/40',
-          'active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
-        )}
-      >
-        <div
-          className={cn(
-            'flex size-12 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/40',
-            !listed && 'opacity-50 grayscale',
-          )}
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <a
+          href={url}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openUrl(url);
+          }}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+          className={listingPillClass}
         >
-          <ItemArt listing={listing} />
-        </div>
-        <div className="min-w-0 flex-1 leading-tight">
-          <div className={cn('truncate text-sm font-semibold', nameColor(listing))}>{item.name}</div>
-          {item.base?.name && item.base.name !== item.name && (
-            <div className="truncate text-xs text-muted-foreground">{item.base.name}</div>
-          )}
-          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs">
-            <span className={cn('truncate tabular-nums', listing.hr_price ? 'font-semibold' : 'text-foreground/85')}>
-              {listing.hr_price ? `${listing.hr_price} HR` : listing.price || 'No price'}
-            </span>
-            {item.is_ethereal && <span className="shrink-0 text-info">Eth</span>}
-            {item.corrupted && <span className="shrink-0 text-q-corrupted">Corrupted</span>}
-            {sockets > 0 && <span className="shrink-0 text-muted-foreground">{`${sockets} os`}</span>}
-          </div>
-        </div>
-        {!listed && (
-          <span className="shrink-0 self-start rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            Unlisted
+          <span className={cn('flex size-5 shrink-0 items-center justify-center', !listed && 'opacity-50 grayscale')}>
+            <ItemArt listing={listing} />
           </span>
-        )}
-      </a>
-    </HoverPopover>
+          <span className={cn('truncate font-medium', nameColor(listing))}>{listing.item.name}</span>
+          <span className="shrink-0 tabular-nums text-muted-foreground">
+            {listing.hr_price ? `${listing.hr_price} HR` : listing.price || 'No price'}
+          </span>
+          {!listed && (
+            <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Unlisted
+            </span>
+          )}
+        </a>
+      </PopoverTrigger>
+      <PopoverContent
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        side="top"
+        align="start"
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+      >
+        <ListingDetails listing={listing}
+          listed={listed} />
+      </PopoverContent>
+    </Popover>
   );
 }

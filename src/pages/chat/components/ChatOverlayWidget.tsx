@@ -1161,11 +1161,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                                         : 'rounded-bl-md border-transparent bg-card',
                                     )}
                                   >
-                                    <MessageContent
-                                      content={message.content}
-                                      isOwnMessage={isOwnMessage}
-                                      listings={listings}
-                                    />
+                                    <MessageContent content={message.content}
+                                      listings={listings} />
                                     <div className="mt-0.5 flex items-center justify-end gap-1">
                                       <span className="text-[11px] tabular-nums text-muted-foreground">
                                         {formatMessageTime(message.created_at)}

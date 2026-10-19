@@ -14,9 +14,8 @@ const LISTING = 'https://www.projectdiablo2.com/market/listing/0123456789abcdef'
 afterEach(cleanup);
 
 /** Rendered segments in order: plain text spans as strings, links as { text, href }. */
-function segments(content: string, isOwnMessage = false) {
-  const { container } = render(<MessageContent content={content}
-    isOwnMessage={isOwnMessage} />);
+function segments(content: string) {
+  const { container } = render(<MessageContent content={content} />);
   const root = container.firstElementChild!;
   return Array.from(root.children).map((el) =>
     el.tagName === 'A' ? { text: el.textContent, href: el.getAttribute('href') } : el.textContent,
@@ -117,8 +116,7 @@ describe('MessageContent', () => {
     const parentClick = vi.fn();
     const { getByText } = render(
       <div onClick={parentClick}>
-        <MessageContent content={url}
-          isOwnMessage />
+        <MessageContent content={url} />
       </div>,
     );
     const link = getByText('Shako').closest('a')!;
@@ -168,7 +166,6 @@ describe('MessageContent listing cards', () => {
     return render(
       <ItemsProvider items={[]}>
         <MessageContent content={`Hi, I'm interested in your ${URL}`}
-          isOwnMessage={false}
           listings={listings} />
       </ItemsProvider>,
     );
