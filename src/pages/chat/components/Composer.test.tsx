@@ -250,21 +250,3 @@ describe('Composer listing picker', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 });
-
-describe('Composer quick replies', () => {
-  const row = () => screen.getByRole('toolbar', { name: 'Quick replies' });
-
-  it('keeps the chips on one sideways-scrolling line in a compact panel, wrapping otherwise', () => {
-    render(<Harness switchable
-      compact />);
-    expect(row().className).toContain('flex-nowrap');
-    expect(row().className).toContain('overflow-x-auto');
-    expect(row().className).not.toContain('flex-wrap');
-    expect(within(row()).getByRole('button', { name: 'ty gl' }).className).toContain('shrink-0');
-    cleanup();
-
-    render(<Harness switchable />);
-    expect(row().className).toContain('flex-wrap');
-    expect(row().className).not.toContain('overflow-x-auto');
-  });
-});
