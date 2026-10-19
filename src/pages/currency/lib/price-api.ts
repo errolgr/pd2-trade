@@ -30,6 +30,11 @@ export interface AveragePriceResponse {
     start: string;
     end: string;
   };
+  /**
+   * Window the price was computed over (`'7d'`, `'24h'`, `'30d'`, `'season'`, `'lastSeason'`), set by servers
+   * that fall back to a longer window when the requested one has too few sales. Absent on older servers.
+   */
+  priceWindow?: string;
 }
 
 export interface PriceApiConfig {
@@ -94,7 +99,8 @@ export async function fetchItemPriceByName(
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
       ...(config.startDate !== undefined && { startDate: config.startDate }),
       ...(config.endDate !== undefined && { endDate: config.endDate }),
-      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
+      // With startDate, `hours` is clamped to it (current season); endDate switches the rolling window off.
+      ...(!config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const url = `${API_BASE_URL}/item-prices/average?${params}`;
@@ -235,7 +241,7 @@ export async function fetchCorruptionPrices(
       ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
       ...(config.startDate !== undefined && { startDate: config.startDate }),
       ...(config.endDate !== undefined && { endDate: config.endDate }),
-      ...(!config.startDate && !config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
+      ...(!config.endDate && config.hours !== undefined && { hours: config.hours.toString() }),
     });
 
     const url = `${API_BASE_URL}/item-prices/corruption-prices?${queryParams}`;
@@ -271,6 +277,67 @@ export async function fetchCorruptionPrices(
     reportApiError(apiError, 'price-api', 'item-prices/corruption-prices', undefined, {
       ...params,
     });
+    return null;
+  }
+}
+
+export interface PriceHistoryPoint {
+  /** Day (midnight UTC, ISO). */
+  date: string;
+  /** Trimmed-mean price of that day's distinct listings (HR). */
+  avgPrice: number;
+  count: number;
+  movingAverage: number;
+}
+
+export interface PriceHistoryResponse {
+  baseCode: string;
+  typeCode?: string;
+  dayCount: number;
+  data: PriceHistoryPoint[];
+}
+
+/**
+ * Daily price history for an item (`GET /item-prices/history/:baseCode`), oldest first.
+ * `startDate`/`endDate` are YYYY-MM-DD; `endDate` defaults to yesterday on the server.
+ */
+export async function fetchPriceHistory(
+  baseCode: string,
+  config: { isLadder: boolean; isHardcore: boolean; startDate?: string; endDate?: string; limit?: number },
+): Promise<PriceHistoryResponse | null> {
+  const params = new URLSearchParams({
+    isLadder: String(config.isLadder),
+    isHardcore: String(config.isHardcore),
+    ...(config.limit !== undefined && { limit: String(config.limit) }),
+    ...(config.startDate && { startDate: config.startDate }),
+    ...(config.endDate && { endDate: config.endDate }),
+  });
+  const path = `item-prices/history/${encodeURIComponent(baseCode)}`;
+  try {
+    const response = await fetch(`${API_BASE_URL}/${path}?${params}`);
+    if (!response.ok) {
+      if (response.status !== 404) {
+        reportApiError(
+          new Error(`API error: ${response.status} ${response.statusText}`),
+          'price-api',
+          'item-prices/history',
+          response.status,
+          { baseCode },
+        );
+      }
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    reportApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      'price-api',
+      'item-prices/history',
+      undefined,
+      {
+        baseCode,
+      },
+    );
     return null;
   }
 }

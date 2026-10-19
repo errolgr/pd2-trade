@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { DEFAULT_PRICE_WINDOW_HOURS, PRICE_WINDOW_OPTIONS } from '@/lib/price-window';
 
 const statsFormSchema = z.object({
   fillStatValue: z.number().int().min(0).max(100).optional(),
@@ -16,6 +17,7 @@ const statsFormSchema = z.object({
   statFillLeaveMaxEmpty: z.boolean().optional(),
   statDefaultCorruptedFilter: z.enum(['both', 'corrupted', 'non-corrupted']).optional(),
   rareRankDisplay: z.enum(['bar', 'blocks']).optional(),
+  priceWindowHours: z.union([z.literal(24), z.literal(72), z.literal(168), z.literal(720)]).optional(),
 });
 
 type StatsFormValues = z.infer<typeof statsFormSchema>;
@@ -33,6 +35,7 @@ export function StatsForm() {
       statFillLeaveMaxEmpty: settings?.statFillLeaveMaxEmpty ?? false,
       statDefaultCorruptedFilter: settings?.statDefaultCorruptedFilter ?? 'both',
       rareRankDisplay: settings?.rareRankDisplay ?? 'bar',
+      priceWindowHours: settings?.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS,
     },
   });
 
@@ -46,6 +49,7 @@ export function StatsForm() {
           statFillLeaveMaxEmpty: settings.statFillLeaveMaxEmpty ?? false,
           statDefaultCorruptedFilter: settings.statDefaultCorruptedFilter ?? 'both',
           rareRankDisplay: settings.rareRankDisplay ?? 'bar',
+          priceWindowHours: settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS,
         },
         { keepDirty: false },
       );
@@ -80,6 +84,39 @@ export function StatsForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
+        <SettingsGroup title="Prices">
+          <FormField
+            control={form.control}
+            name="priceWindowHours"
+            render={({ field }) => (
+              <SettingsRow
+                label="Price window"
+                description="Recent sales the price-check average is based on. Thinly traded items fall back to a longer window, marked with a tag."
+                control={
+                  <Select value={String(field.value ?? DEFAULT_PRICE_WINDOW_HOURS)}
+                    onValueChange={(value) => field.onChange(Number(value))}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Price window" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRICE_WINDOW_OPTIONS.map((option) => (
+                        <SelectItem key={option.hours}
+                          value={String(option.hours)}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+        </SettingsGroup>
+
         <SettingsGroup title="Stat ranges">
           <FormField
             control={form.control}

@@ -57,6 +57,7 @@ import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListings
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
 import { getSeasonDateConfig } from '@/lib/seasons';
+import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { openCenteredWindow } from '@/lib/window';
@@ -78,6 +79,7 @@ import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writeText } from '@/lib/browser-clipboard';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
+import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 
@@ -85,6 +87,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const { settings, isLoading: settingsLoading } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
+  const priceHours = settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS;
+  const { startDate: seasonStart, endDate: seasonEnd } = getSeasonDateConfig(settings.selectedSeasonId);
+  // Window the price check asks for (`priceWindow` label); a past season is priced over the whole season.
+  const requestedWindow = seasonEnd ? 'season' : windowLabel(priceHours);
 
   // Use custom hooks for state management
   const { loading, calculatedRuneValues, selectedRuneBreakdown, selectedRuneCombinations, setSelectedRuneBreakdown } =
@@ -336,8 +342,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       baseCode = pd2Item.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     }
 
-    return `https://pd2trader.com/item/${baseCode}`;
-  }, [item.quality, pd2Item?.name, averagePriceData, extractRainbowFacetData]);
+    // Same mode and window on the website's item page.
+    const params = new URLSearchParams({
+      isLadder: String(settings.ladder === 'ladder'),
+      isHardcore: String(settings.mode === 'hardcore'),
+      hours: String(priceHours),
+    });
+    if (seasonStart && seasonEnd) {
+      params.set('startDate', seasonStart);
+      params.set('endDate', seasonEnd);
+    }
+    return `https://pd2trader.com/item/${encodeURIComponent(baseCode)}?${params}`;
+  }, [
+    item.quality,
+    pd2Item?.name,
+    averagePriceData,
+    extractRainbowFacetData,
+    settings.ladder,
+    settings.mode,
+    priceHours,
+    seasonStart,
+    seasonEnd,
+  ]);
 
   // Find the matched item type entry
   const matchedItemType = useMemo(() => {
@@ -516,7 +542,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           isLadder,
           isHardcore,
           ...seasonConfig,
-          ...(!seasonConfig.startDate && !seasonConfig.endDate ? { hours: 168 } : {}),
+          // Rolling window clamped to the current season's start; a past season uses its whole date range.
+          ...(!seasonConfig.endDate ? { hours: priceHours } : {}),
         };
 
         let priceData: AveragePriceResponse | null;
@@ -554,6 +581,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     settings.ladder,
     settings.mode,
     settings.selectedSeasonId,
+    priceHours,
     extractRainbowFacetData,
   ]);
 
@@ -579,7 +607,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           isLadder,
           isHardcore,
           ...seasonConfig,
-          ...(!seasonConfig.startDate && !seasonConfig.endDate ? { hours: 168 } : {}),
+          ...(!seasonConfig.endDate ? { hours: priceHours } : {}),
         };
 
         let corruptionData;
@@ -611,6 +639,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     averagePriceData,
     settings.ladder,
     settings.mode,
+    settings.selectedSeasonId,
+    priceHours,
     extractRainbowFacetData,
   ]);
 
@@ -1068,6 +1098,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const isUniqueOrSet = item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set;
   const canList = isStashItem(item);
   const itemIcon = getItemIcon();
+  // Headline price: the 7-day moving average for the 7-day window and past seasons (as on pd2trader.com),
+  // otherwise the trimmed mean over the chosen window.
+  const headlinePrice = averagePriceData
+    ? requestedWindow === '7d' || requestedWindow === 'season'
+      ? (averagePriceData.movingAverage7Days ?? averagePriceData.medianPrice)
+      : averagePriceData.averagePrice
+    : null;
+  const windowNote = priceWindowNote(averagePriceData?.priceWindow, requestedWindow);
+  const priceBasis = (
+    <span className="inline-flex items-center gap-1">
+      {basisLabel(requestedWindow)}
+      {windowNote && (
+        <span
+          title={windowNote.title}
+          aria-label={windowNote.title}
+          className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
+        >
+          {windowNote.label}
+        </span>
+      )}
+    </span>
+  );
 
   // Top corruptions exclude the item's own corruption (shown in its own section)
   const otherCorruptions = useMemo(
@@ -1259,17 +1311,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     <HoverPopover
                       content={
                         <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="truncate font-semibold">{displayTitle}</span>
-                            <WebLink onClick={openPd2Trader}
-                              inPopover>
-                              View on Web
-                            </WebLink>
-                          </div>
+                          <div className="truncate font-semibold">{displayTitle}</div>
                           <div className="grid grid-cols-2 gap-1.5">
-                            <PopoverTile label="Average"
+                            <PopoverTile label={priceBasis}
                               emphasis>
-                              {averagePriceData.movingAverage7Days.toFixed(2)} HR
+                              {headlinePrice?.toFixed(2)} HR
                             </PopoverTile>
                             <PopoverTile label="Median">{averagePriceData.medianPrice.toFixed(2)} HR</PopoverTile>
                             <PopoverTile label="Min">{averagePriceData.minPrice.toFixed(2)} HR</PopoverTile>
@@ -1285,6 +1331,24 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                 />
                               </PopoverKeyValue>
                             )}
+                          </div>
+                          <div className="space-y-1.5 border-t border-border pt-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-xs font-semibold">Last 30 days</span>
+                              <WebLink onClick={openPd2Trader}
+                                inPopover>
+                                Open on pd2trader.com
+                              </WebLink>
+                            </div>
+                            <PriceSparkline
+                              query={{
+                                baseCode: averagePriceData.baseCode,
+                                isLadder: settings.ladder === 'ladder',
+                                isHardcore: settings.mode === 'hardcore',
+                                seasonStart,
+                                seasonEnd,
+                              }}
+                            />
                           </div>
                           {/* Item's Corruption Price - Display separately if matched */}
                           {itemCorruptions && (
@@ -1359,9 +1423,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         <ArrowLeftRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                         <div className="flex flex-col leading-tight">
                           <span className="text-sm font-semibold tabular-nums text-foreground">
-                            <AnimatedNumber value={averagePriceData.movingAverage7Days} /> HR
+                            <AnimatedNumber value={headlinePrice ?? 0} /> HR
                           </span>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7d average</span>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{priceBasis}</span>
                         </div>
                         {averagePriceData.priceChange7Days && (
                           <ChangeLabel

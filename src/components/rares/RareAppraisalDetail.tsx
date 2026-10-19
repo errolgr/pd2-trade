@@ -1,6 +1,9 @@
 import React from 'react';
+import { CircleHelp } from 'lucide-react';
 import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOptions } from '@/hooks/useOptions';
+import { openUrl } from '@/lib/browser-opener';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
 import { HardcoreNote, ItemStatsSection, RankDisplay, RareHistorySection } from './RareParts';
 import { bandRange, hardcoreNote, marketSource, rankText, VERDICT_COLORS, VERDICT_LABELS } from './rares-format';
@@ -29,8 +32,31 @@ export function RareAppraisalDetail({
   return (
     <>
       <div className="grid grid-cols-2 gap-1.5">
-        <PopoverTile label="Verdict"
-          emphasis={appraisal.verdict === 'keep'}>
+        <PopoverTile
+          label={
+            <span className="flex items-center gap-1">
+              Verdict
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label="How verdicts work"
+                    className="inline-flex cursor-pointer rounded-full text-info/80 outline-none transition-colors hover:text-info focus-visible:text-info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openUrl('https://pd2trader.com/rares/how-it-works');
+                    }}
+                  >
+                    <CircleHelp className="size-[13px]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>How verdicts work</TooltipContent>
+              </Tooltip>
+            </span>
+          }
+          emphasis={appraisal.verdict === 'keep'}
+        >
           <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{VERDICT_LABELS[appraisal.verdict]}</span>
           <span className="font-medium text-muted-foreground"> · </span>
           {rankText(appraisal.rank)}

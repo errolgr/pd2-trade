@@ -270,3 +270,31 @@ export function updateProfileSettings(
 ): Promise<ProfileSettings> {
   return request('/api/networth/profile', token, { method: 'PUT', body: JSON.stringify(update) });
 }
+
+/** Rank card on one leaderboard (null in `ranks` when unranked). */
+export interface RankCard {
+  rank: number;
+  rankChange: number | null;
+  value: number;
+  total: number;
+}
+
+/** `GET /api/networth/standing` (subset used by the app). */
+export interface StandingResponse {
+  seasonId: string;
+  ranks: Record<string, RankCard | null>;
+  /** Share (0–100) of active users whose wealth is ≤ this user; null when not on the wealth board. */
+  percentile: number | null;
+  activeUsers: number;
+}
+
+/** The signed-in login's standing for a mode and season. 404 until the server enables leaderboards. */
+export function getStanding(
+  token: string,
+  mode: { isLadder: boolean; isHardcore: boolean },
+  seasonId?: string,
+): Promise<StandingResponse> {
+  const params = new URLSearchParams({ isLadder: String(mode.isLadder), isHardcore: String(mode.isHardcore) });
+  if (seasonId) params.set('seasonId', seasonId);
+  return request(`/api/networth/standing?${params}`, token);
+}
