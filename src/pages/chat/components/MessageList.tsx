@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { AlertTriangle, Loader2, MessageSquareDashed, RotateCw } from 'lucide-react';
+import { AlertTriangle, ArrowDown, Loader2, MessageSquareDashed, RotateCw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,11 @@ const SKELETON_BUBBLES = [
   ['justify-end', 'w-40 h-8'],
 ] as const;
 
+/**
+ * The open thread's messages (mount one per thread: `key` it by thread id). Opens at the "New" divider above
+ * `unreadKey` when given, else at the bottom; follows new messages while scrolled to the bottom, and offers
+ * "N new · Jump to latest" for messages that arrive while scrolled up.
+ */
 export function MessageList({
   threadId,
   entries,
@@ -31,6 +36,7 @@ export function MessageList({
   readerId,
   otherName,
   listings,
+  unreadKey,
   onRetry,
   onLoadOlder,
   onReload,
@@ -44,6 +50,8 @@ export function MessageList({
   readerId?: string;
   otherName: string;
   listings: ReadonlyMap<string, ChatListingState>;
+  /** The first message that was unread when the thread was opened: the "New" divider goes above it. */
+  unreadKey?: string | null;
   onRetry: (conversationId: string, clientId: string) => void;
   onLoadOlder: (conversationId: string) => void;
   onReload: (conversationId: string) => void;
@@ -61,6 +69,7 @@ export function MessageList({
     estimateSize: (index) =>
       (rows[index].groupContinues ? 40 : 54) +
       (rows[index].startsDay ? 32 : 0) +
+      (rows[index].key === unreadKey ? 32 : 0) +
       (index === 0 ? 0 : rows[index].continuesGroup ? 2 : 10),
     getItemKey: (index) => rows[index].key,
     overscan: 8,
@@ -70,20 +79,47 @@ export function MessageList({
     scrollEndThreshold: PINNED_THRESHOLD_PX,
   });
 
-  // Scroll to the bottom when a message is appended (not when older pages are prepended)
-  const lastRowKey = rows.at(-1)?.key;
-  useEffect(() => {
-    if (lastRowKey) virtualizer.scrollToEnd();
-  }, [lastRowKey, virtualizer]);
+  // Scrolled to the bottom (state for the jump button; the ref for effects, which must not re-run on scroll),
+  // and the last row seen there: rows after it that are not our own are the "new" ones.
+  const [atBottom, setAtBottom] = useState(true);
+  const atBottomRef = useRef(true);
+  const lastRow = rows.at(-1);
+  const lastRowKey = lastRow?.key;
+  const [seenKey, setSeenKey] = useState(lastRowKey);
 
-  const handleScroll = useCallback(
-    (e: React.UIEvent) => {
-      const el = e.target as HTMLElement;
-      if (el.dataset.slot !== 'scroll-area-viewport') return;
-      if (el.scrollTop < LOAD_OLDER_THRESHOLD_PX) onLoadOlder(threadId);
-    },
-    [threadId, onLoadOlder],
-  );
+  // Open at the "New" divider once its row is in, else at the bottom; then follow appended messages (not
+  // prepended pages) while at the bottom, and always after an own message.
+  const unreadIndex = unreadKey ? rows.findIndex((row) => row.key === unreadKey) : -1;
+  const positionedRef = useRef(false);
+  const lastRowOwn = lastRow?.entry.own;
+  useEffect(() => {
+    if (unreadIndex >= 0 && !positionedRef.current) {
+      positionedRef.current = true;
+      virtualizer.scrollToIndex(unreadIndex, { align: 'start' });
+    } else if (lastRowKey && (atBottomRef.current || lastRowOwn)) {
+      virtualizer.scrollToEnd();
+    }
+  }, [unreadIndex, lastRowKey, lastRowOwn, virtualizer]);
+
+  const handleScroll = (e: React.UIEvent) => {
+    const el = e.target as HTMLElement;
+    if (el.dataset.slot !== 'scroll-area-viewport') return;
+    if (el.scrollTop < LOAD_OLDER_THRESHOLD_PX) onLoadOlder(threadId);
+    const bottom = el.scrollHeight - el.scrollTop - el.clientHeight <= PINNED_THRESHOLD_PX;
+    // Everything up to now was seen while at the bottom (also when just leaving it)
+    if (bottom || atBottomRef.current) setSeenKey(lastRowKey);
+    atBottomRef.current = bottom;
+    setAtBottom(bottom);
+  };
+
+  const seenIndex = rows.findIndex((row) => row.key === seenKey);
+  const newCount = atBottom || seenIndex < 0 ? 0 : rows.slice(seenIndex + 1).filter((row) => !row.entry.own).length;
+  const jumpToLatest = () => {
+    atBottomRef.current = true;
+    setAtBottom(true);
+    setSeenKey(lastRowKey);
+    virtualizer.scrollToEnd();
+  };
 
   let placeholder: React.ReactNode = null;
   if (entries.length === 0 && thread.loading) {
@@ -149,14 +185,17 @@ export function MessageList({
                   data-index={item.index}
                   className={cn(
                     'absolute left-0 top-0 w-full px-4',
-                    item.index === 0 ? '' : row.continuesGroup ? 'pt-0.5' : 'pt-2.5',
+                    item.index === 0 ? '' : row.continuesGroup && row.key !== unreadKey ? 'pt-0.5' : 'pt-2.5',
                   )}
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
-                  <MessageBubble row={row}
+                  <MessageBubble
+                    row={row}
+                    startsUnread={row.key === unreadKey}
                     readerId={readerId}
                     listings={listings}
-                    onRetry={onRetry} />
+                    onRetry={onRetry}
+                  />
                 </div>
               );
             })}
@@ -170,6 +209,18 @@ export function MessageList({
             <Loader2 className="size-3.5 animate-spin" />
             Loading older messages...
           </span>
+        </div>
+      )}
+      {newCount > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-primary/40 bg-popover/95 px-3 py-1 text-xs font-medium text-foreground shadow-panel outline-none transition-[background-color,scale] duration-(--dur-fast) hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95"
+          >
+            <ArrowDown className="size-3.5 text-primary" />
+            {newCount} new · Jump to latest
+          </button>
         </div>
       )}
     </div>

@@ -402,7 +402,8 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   }, [closeDismissablePanels]);
 
   useEffect(() => {
-    setToastBridge({ openChat: (payload) => openPanel('chat', payload) });
+    // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away
+    setToastBridge({ openChat: (payload) => openPanel('chat', payload, { focus: true }) });
     return () => setToastBridge(null);
   }, [openPanel]);
 

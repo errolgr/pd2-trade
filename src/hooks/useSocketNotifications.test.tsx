@@ -5,6 +5,7 @@ import { showToast } from '@/overlay';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { ISettings } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
+import { changeChatPrefs, resetChatPrefs, setThreadPrefs } from '@/lib/chat-prefs';
 import { isToastEnabled, useSocketNotifications } from './useSocketNotifications';
 
 type Handler = (event: { payload: unknown }) => unknown;
@@ -58,6 +59,13 @@ vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
+vi.mock('@/lib/browser-fs', () => ({
+  BaseDirectory: { AppConfig: 13 },
+  exists: vi.fn(async () => false),
+  mkdir: vi.fn(async () => {}),
+  readTextFile: vi.fn(),
+  writeTextFile: vi.fn(async () => {}),
+}));
 vi.mock('./pd2website/usePD2Website', () => ({
   usePd2Website: () => ({ isConnected: pd2.isConnected, subscribeSocket: bus.subscribe, refresh: pd2.refresh }),
 }));
@@ -126,6 +134,7 @@ beforeEach(() => {
   pd2.refresh.mockReset();
   bus.held.length = 0;
   bus.state.hold = false;
+  resetChatPrefs();
   vi.stubGlobal('Audio', FakeAudio);
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(invoke).mockImplementation(async (cmd) => (cmd === 'is_diablo_focused' ? diabloFocused : undefined));
@@ -259,8 +268,25 @@ describe('useSocketNotifications whispers', () => {
 
     expect(sounds).toEqual([1]);
     expect(toasts()).toEqual([
-      { title: 'Whisper from Bob', description: `${'x'.repeat(80)}...`, duration: 5000, variant: 'default' },
+      {
+        title: 'Whisper from Bob',
+        description: `${'x'.repeat(80)}...`,
+        duration: 5000,
+        action: { label: 'Reply', type: ToastActionType.OPEN_CHAT_CONVERSATION, data: { threadId: 'whisper:bob' } },
+      },
     ]);
+  });
+
+  it("stays silent for a whisper from someone whose chat thread is muted, under any of the thread's names", async () => {
+    changeChatPrefs((prefs) => setThreadPrefs(prefs, ['c1', 'whisper:bobacc', 'whisper:bob'], { muted: true }));
+    await renderNotifications({ isConnected: false });
+
+    await fire('whisper-received', whisper({ from: '*BobAcc' }));
+    await fire('whisper-received', whisper({ isTrade: true, itemName: 'Shako' }));
+    await fire('whisper-received', whisper({ from: 'Carl' }));
+
+    expect(sounds).toHaveLength(1);
+    expect(toasts()).toEqual([expect.objectContaining({ title: 'Whisper from Carl' })]);
   });
 
   it('keeps an 80-character whisper intact', async () => {
@@ -323,7 +349,12 @@ describe('useSocketNotifications whispers', () => {
 
     expect(sounds).toHaveLength(3);
     expect(toasts()).toEqual([
-      { title: 'Trade Whisper', description: 'Bob: Shako', duration: 5000, variant: 'success' },
+      {
+        title: 'Trade Whisper',
+        description: 'Bob: Shako',
+        duration: 5000,
+        action: { label: 'Reply', type: ToastActionType.OPEN_CHAT_CONVERSATION, data: { threadId: 'whisper:bob' } },
+      },
     ]);
   });
 
@@ -382,7 +413,7 @@ describe('useSocketNotifications whispers', () => {
 describe('useSocketNotifications chat messages', () => {
   const chat = { _id: 'm1', sender_id: 's1', conversation_id: 'c1', content: 'hi there' };
 
-  it('shows a chat toast that opens the conversation, once per message id', async () => {
+  it('shows a chat toast whose Reply opens the conversation, once per message id', async () => {
     await renderNotifications({ isConnected: true });
 
     await fire(CHAT_EVENT, chat);
@@ -392,8 +423,18 @@ describe('useSocketNotifications chat messages', () => {
       {
         title: 'New Chat Message',
         description: 'hi there',
-        action: { label: 'Open Chat', type: ToastActionType.OPEN_CHAT_CONVERSATION, data: { conversationId: 'c1' } },
+        action: { label: 'Reply', type: ToastActionType.OPEN_CHAT_CONVERSATION, data: { conversationId: 'c1' } },
       },
+    ]);
+  });
+
+  it('shows no toast for a muted conversation', async () => {
+    changeChatPrefs((prefs) => setThreadPrefs(prefs, ['c1'], { muted: true }));
+    await renderNotifications({ isConnected: true });
+    await fire(CHAT_EVENT, chat);
+    await fire(CHAT_EVENT, { ...chat, _id: 'm2', conversation_id: 'c2' });
+    expect(toasts()).toEqual([
+      expect.objectContaining({ action: expect.objectContaining({ data: { conversationId: 'c2' } }) }),
     ]);
   });
 

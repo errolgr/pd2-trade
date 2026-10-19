@@ -3,7 +3,15 @@ import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { OPEN_TRADE_MS, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
-import { buildInbox, buildTimeline, threadWhisperAccount, type InboxInput } from './inbox';
+import { setThreadPrefs, EMPTY_PREFS } from '@/lib/chat-prefs';
+import {
+  buildInbox,
+  buildTimeline,
+  threadAliases,
+  threadWhisperAccount,
+  visibleThreads,
+  type InboxInput,
+} from './inbox';
 
 const ME = 'me';
 const NOW = Date.parse('2026-10-18T12:00:00Z');
@@ -162,6 +170,50 @@ describe('buildInbox', () => {
       'user:u2': [false, true],
     });
   });
+
+  it('applies thread preferences found under any of its ids: pinned first, muted, archived until a newer message', () => {
+    let prefs = setThreadPrefs(EMPTY_PREFS, ['whisper:bobacc'], { pinnedAt: 1, muted: true });
+    prefs = setThreadPrefs(prefs, ['c-carl'], { archivedAt: ago(20) });
+    prefs = setThreadPrefs(prefs, ['c-dora'], { archivedAt: ago(20) });
+    const threads = inbox({
+      prefs,
+      conversations: [
+        conversation(
+          'c-bob',
+          { id: 'bob', username: 'bob', accounts: ['BobAcc'] },
+          {
+            latest_message: message('m1', 'bob', 'old', 60),
+          },
+        ),
+        conversation(
+          'c-carl',
+          { id: 'carl', username: 'carl' },
+          { latest_message: message('m2', 'carl', 'before', 30) },
+        ),
+        conversation(
+          'c-dora',
+          { id: 'dora', username: 'dora' },
+          { latest_message: message('m3', 'dora', 'after', 10) },
+        ),
+      ],
+    });
+    expect(threads.map((t) => [t.id, t.pinned, t.muted, t.archived])).toEqual([
+      ['c-bob', true, true, false],
+      ['c-dora', false, false, false],
+      ['c-carl', false, false, true],
+    ]);
+    expect(visibleThreads(threads, 'all', '').map((t) => t.id)).toEqual(['c-bob', 'c-dora']);
+    expect(visibleThreads(threads, 'archived', '').map((t) => t.id)).toEqual(['c-carl']);
+    expect(visibleThreads(threads, 'all', ' DORA ').map((t) => t.id)).toEqual(['c-dora']);
+  });
+
+  it('knows a thread by its id, conversation, user and the whisper names of its people and accounts', () => {
+    const [thread] = inbox({
+      conversations: [conversation('c1', { id: 'u1', username: 'web', accounts: ['*Acc1'] })],
+      people: { acc1: person('acc1', { characterName: 'Sorc' }) },
+    });
+    expect(threadAliases(thread).sort()).toEqual(['c1', 'user:u1', 'whisper:acc1', 'whisper:sorc'].sort());
+  });
 });
 
 describe('buildTimeline', () => {
@@ -203,6 +255,29 @@ describe('buildTimeline', () => {
       'w:bob:w-old',
       'w:bob:w-mid',
       'w:bob:w-new',
+    ]);
+  });
+
+  it('flags unread entries: incoming whispers after readAt and website messages from them not read by me', () => {
+    const read = person('bob', {
+      readAt: ago(20),
+      messages: [
+        { id: 'w1', isIncoming: true, message: 'seen', timestamp: ago(30) },
+        { id: 'w2', isIncoming: true, message: 'new', timestamp: ago(15) },
+      ],
+    });
+    const entries = buildTimeline(
+      [message('a', 'bob', 'read', 25, { reader_ids: [ME] }), message('b', 'bob', 'unread', 5), website[1]],
+      [read],
+      ME,
+      false,
+    );
+    expect(entries.map((e) => [e.content, e.unread])).toEqual([
+      ['seen', false],
+      ['read', false],
+      ['new', true],
+      ['unread', true],
+      ['second website', false],
     ]);
   });
 });

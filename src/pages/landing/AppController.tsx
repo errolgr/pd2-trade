@@ -10,7 +10,14 @@ import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
-import { isKeyboardClaimed, releaseKeyboard, showToast, useOverlay, type PanelPayloads } from '@/overlay';
+import {
+  getBadgeCount,
+  isKeyboardClaimed,
+  releaseKeyboard,
+  showToast,
+  useOverlay,
+  type PanelPayloads,
+} from '@/overlay';
 import { useDelist } from '@/pages/delist/DelistHandler';
 
 /**
@@ -120,7 +127,8 @@ const AppController: React.FC = () => {
     currency: async () => {
       if (await checkDiabloFocus()) openPanel('currency');
     },
-    chat: () => togglePanel('chat'),
+    // Opening with unread messages lands on the newest unread thread (the badge leaves out muted ones)
+    chat: () => (getBadgeCount('chatUnread') > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat')),
     offers: () => openPanel('chat', { filter: 'selling' }),
     delist: handleDelistItem,
     snapshot: async () => {

@@ -33,8 +33,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         break;
       }
       case ToastActionType.OPEN_CHAT_CONVERSATION: {
-        const conversationId = action.data?.conversationId;
-        if (conversationId) bridge?.openChat({ conversationId });
+        // Reply: the conversation (or a whisper sender's thread) with the composer focused
+        const { conversationId, threadId } = action.data ?? {};
+        if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
         break;
       }
       case ToastActionType.UPDATE_AVAILABLE:
@@ -91,6 +92,7 @@ export function showToast(payload: ToastPayload): void {
   }
   toast(custom.title || DEFAULT_TITLE, {
     description: custom.description,
+    duration: custom.duration,
     closeButton: true,
     action: {
       label: action.label,
@@ -136,6 +138,20 @@ export function confirmToast({
     },
     cancel: { label: cancelLabel, onClick: () => {} },
   });
+}
+
+export interface UndoToastOptions {
+  title: string;
+  description?: string;
+  /** ms the Undo button stays. */
+  duration: number;
+  onUndo: () => void;
+}
+
+/** A toast with an Undo button; returns a function that dismisses it (e.g. once the undo window closed). */
+export function undoToast({ title, description, duration, onUndo }: UndoToastOptions): () => void {
+  const id = toast(title, { description, duration, action: { label: 'Undo', onClick: onUndo } });
+  return () => toast.dismiss(id);
 }
 
 /** Sonner toaster pinned to the bottom-right corner of the game rect. Rendered by OverlayRoot. */

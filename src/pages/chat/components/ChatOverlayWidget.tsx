@@ -8,13 +8,21 @@ import { useOptions } from '@/hooks/useOptions';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
 import { writeText } from '@/lib/browser-clipboard';
+import { changeChatPrefs, isThreadMuted, setThreadPrefs, useChatPrefs, type ThreadPrefs } from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers } from '@/lib/whisper-history';
-import { setBadgeCount, showToast, usePanel } from '@/overlay';
+import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { findMarketLinks } from '../lib/market-links';
-import { buildInbox, buildTimeline, threadWhisperAccount, type InboxFilter, type InboxThread } from '../lib/inbox';
-import { whisperThreadId } from '../lib/identity';
+import {
+  buildInbox,
+  buildTimeline,
+  threadAliases,
+  threadWhisperAccount,
+  visibleThreads,
+  type InboxFilter,
+  type InboxThread,
+} from '../lib/inbox';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
@@ -34,18 +42,29 @@ interface ConversationRequest {
   reloaded: boolean;
 }
 
+/**
+ * Where the "New" divider of the open thread goes: its first message that was unread when it was opened
+ * (null: none was); undefined until its messages are in.
+ */
+interface UnreadMarker {
+  threadId: string;
+  key: string | null | undefined;
+}
+
 /** Open trade whispers are re-evaluated (they stop being pinned after a day) this often. */
 const CLOCK_TICK_MS = 60_000;
+/** Narrower than this the panel shows one column: the list, or the open thread with a back button. */
+const COMPACT_BELOW_PX = 640;
+/** A deleted conversation can be restored this long; the website is told to delete it after that. */
+const DELETE_UNDO_MS = 6000;
 
 /**
- * The thread `id` names, also after it was merged or split: a whisper-only thread whose sender got linked to a
- * website user, or an offers-only thread (`user:<id>`) that gained a conversation.
+ * The thread `id` names, also after it was merged or split (a whisper-only thread whose sender got linked to
+ * a website user, an offers-only thread that gained a conversation) or when it is named by another of its ids
+ * (a toast's `whisper:<name>`).
  */
 const findThread = (threads: InboxThread[], id: string | null) =>
-  id === null
-    ? undefined
-    : (threads.find((t) => t.id === id) ??
-      threads.find((t) => t.people.some((p) => whisperThreadId(p.key) === id) || `user:${t.userId}` === id));
+  id === null ? undefined : (threads.find((t) => t.id === id) ?? threads.find((t) => threadAliases(t).includes(id)));
 
 export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const {
@@ -64,14 +83,20 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const whispers = useWhisperHistory();
   const { markRead: markWhispersRead, recordCopied } = whispers;
   // keepMounted panel: payload is undefined until the first openPanel('chat', ...)
-  const { payload, payloadVersion, visible } = usePanel<'chat'>();
+  const { payload, payloadVersion, visible, rect } = usePanel<'chat'>();
+  // One column (list or thread) when the panel itself is narrow, whatever the window size
+  const compact = rect.width < COMPACT_BELOW_PX;
   const { settings } = useOptions();
+  const prefs = useChatPrefs();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('all');
+  const [search, setSearch] = useState('');
   // Unsent text per thread; the panel stays mounted while hidden, so drafts survive hiding it
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Reply channel picked per thread (default: website when it reaches them, else whisper)
   const [channels, setChannels] = useState<Record<string, ReplyChannel>>({});
+  // Conversations deleted but still undoable: hidden now, deleted on the website once the undo window closes
+  const [deleting, setDeleting] = useState<ReadonlySet<string>>(() => new Set());
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
@@ -105,9 +130,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     // Messages count as read only while their conversation is actually on screen (thread ids of website
     // conversations are the conversation ids; other threads match no conversation)
     viewingConversationId: visible ? selectedThreadId : null,
-    onIncomingMessage: (_message, viewing) => {
-      // Whisper sound for messages outside the conversation on screen, if enabled
-      if (viewing || !(settings?.whisperNotificationsEnabled ?? true)) return;
+    onIncomingMessage: (message, viewing) => {
+      // Whisper sound for messages outside the conversation on screen, if enabled and not muted
+      if (viewing || !(settings?.whisperNotificationsEnabled ?? true) || isThreadMuted([message.conversation_id])) {
+        return;
+      }
       playNotificationSound(settings?.whisperNotificationVolume ?? 70);
     },
   });
@@ -117,14 +144,16 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const threads = useMemo(
     () =>
       buildInbox({
-        conversations,
+        conversations: deleting.size > 0 ? conversations.filter((c) => !deleting.has(c._id)) : conversations,
         currentUserId,
         people: whispers.people,
         offers: [...incomingOffers, ...outgoingOffers],
         now,
+        prefs,
       }),
-    [conversations, currentUserId, whispers.people, incomingOffers, outgoingOffers, now],
+    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs],
   );
+  const listed = useMemo(() => visibleThreads(threads, filter, search), [threads, filter, search]);
   const selectedThread = useMemo(() => findThread(threads, selectedThreadId), [threads, selectedThreadId]);
   // The open thread merged into another (its sender got linked, or a conversation with them appeared): follow
   // it, so the conversation on screen counts as viewed (mark-read, no sound) and its draft and reply channel
@@ -145,6 +174,20 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder),
     [websiteMessages, websiteHasOlder, people, currentUserId],
   );
+
+  // The "New" divider: fixed when the thread is opened (once its newest website page is in), until it closes
+  const [unreadMarker, setUnreadMarker] = useState<UnreadMarker | null>(null);
+  const markerReady = !!selectedThread && (!conversation || websiteThread.loaded || websiteThread.failed);
+  const markerSet = !!selectedThread && unreadMarker?.threadId === selectedThread.id && unreadMarker.key !== undefined;
+  if (!selectedThread) {
+    if (unreadMarker) setUnreadMarker(null);
+  } else if (unreadMarker?.threadId !== selectedThread.id || (!markerSet && markerReady)) {
+    setUnreadMarker({
+      threadId: selectedThread.id,
+      key: markerReady ? (entries.find((entry) => entry.unread)?.key ?? null) : undefined,
+    });
+  }
+  const unreadKey = markerSet ? (unreadMarker?.key ?? null) : null;
 
   // Listings linked in the open thread render as item cards.
   const linkedListingIds = useMemo(
@@ -183,16 +226,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     [whisperAccount, person?.characterName, linkedListing, latestTrade?.itemName, latestTrade?.price],
   );
 
-  const totalUnread = threads.reduce((total, thread) => total + thread.unread, 0);
-
-  // Chat button badge: website and whisper unread
+  // Chat button badge: website and whisper unread, leaving out muted and archived threads
+  const unreadTotal = threads.reduce(
+    (total, thread) => (thread.muted || thread.archived ? total : total + thread.unread),
+    0,
+  );
   useEffect(() => {
-    setBadgeCount('chatUnread', totalUnread);
-  }, [totalUnread]);
+    setBadgeCount('chatUnread', unreadTotal);
+  }, [unreadTotal]);
 
-  // Whispers in the thread on screen are read
+  // Whispers in the thread on screen are read (once the "New" divider was placed by them)
   const unreadWhisperKeys =
-    visible && people
+    visible && people && markerSet
       ? people
           .filter((p) => unreadWhispers(p) > 0)
           .map((p) => p.key)
@@ -210,17 +255,29 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     }
   }, [currentUserId, signedIn, loadConversations]);
 
-  // Apply openPanel('chat', { conversationId, conversation, filter }) (every open bumps payloadVersion, so
-  // re-opening on the same conversation re-selects it). Adjusted during render.
+  // Apply openPanel('chat', { conversationId, conversation, threadId, newestUnread, reply, filter }) (every open
+  // bumps payloadVersion, so re-opening on the same conversation re-selects it). Adjusted during render.
   const [handledPayloadVersion, setHandledPayloadVersion] = useState(0);
   const [request, setRequest] = useState<ConversationRequest | null>(null);
+  // The open that asked to focus the composer (a toast's Reply)
+  const [replyVersion, setReplyVersion] = useState(0);
   if (payloadVersion !== handledPayloadVersion) {
     setHandledPayloadVersion(payloadVersion);
     const conversationId = payload?.conversationId;
     const newConversation = payload?.conversation as Conversation | undefined;
+    // The newest unread thread outside muted and archived ones (the chat hotkey with unread messages)
+    const newestUnread = payload?.newestUnread
+      ? threads
+          .filter((t) => t.unread > 0 && !t.muted && !t.archived)
+          .reduce<
+            InboxThread | undefined
+          >((a, b) => (a && (a.latest?.at ?? 0) >= (b.latest?.at ?? 0) ? a : b), undefined)
+      : undefined;
+    const threadId = payload?.threadId ?? newestUnread?.id;
     // A requested conversation shows in the full list; a filter (offers hotkey) applies as asked
     if (payload?.filter) setFilter(payload.filter);
-    else if (conversationId) setFilter('all');
+    else if (conversationId || threadId) setFilter('all');
+    if (payload?.reply) setReplyVersion(payloadVersion);
     if (conversationId && newConversation) {
       // A freshly created conversation: inject it into the list and select it
       chat.upsertConversation({
@@ -238,6 +295,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     } else if (conversationId) {
       // Otherwise select an existing conversation, once the list has (or a reload brought) it
       setRequest({ conversationId, version: payloadVersion, reloaded: false });
+    } else if (threadId) {
+      setSelectedThreadId(threadId);
+      setRequest(null);
     }
   }
   if (request) {
@@ -264,12 +324,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (selectedConversationId) loadMessages(selectedConversationId);
   }, [selectedConversationId, loadMessages]);
 
-  // Focus the composer when a thread is opened
+  // Focus the composer when a thread is opened, and on a toast's Reply
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const openedThreadId = selectedThread?.id;
   useEffect(() => {
     if (openedThreadId) composerRef.current?.focus();
-  }, [openedThreadId]);
+  }, [openedThreadId, replyVersion]);
 
   const clearDraft = (threadId: string) =>
     setDrafts((current) => {
@@ -278,12 +338,77 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       return next;
     });
 
-  const handleDeleteConversation = async (conversationId: string) => {
-    if (await chat.deleteConversation(conversationId)) {
-      setSelectedThreadId((current) => (current === conversationId ? null : current));
+  const selectThread = (threadId: string | null) => {
+    setSelectedThreadId(threadId);
+    setRequest(null);
+  };
+
+  /** Pin/mute/archive the open thread (under every id it is known by). */
+  const setPrefs = (thread: InboxThread, patch: ThreadPrefs) =>
+    changeChatPrefs((current) => setThreadPrefs(current, threadAliases(thread), patch));
+
+  // Deletes waiting out their undo window: the timer that sends them, and their toast
+  const pendingDeletesRef = useRef(new Map<string, { timer: number; dismiss: () => void }>());
+  /** Ends a delete's undo window (stops its timer); undefined when it already ended (sent or undone). */
+  const takePendingDelete = (conversationId: string) => {
+    const pending = pendingDeletesRef.current.get(conversationId);
+    if (!pending) return undefined;
+    pendingDeletesRef.current.delete(conversationId);
+    window.clearTimeout(pending.timer);
+    return pending;
+  };
+
+  /** Tells the website to delete a conversation whose undo window closed (once); a failure brings it back. */
+  const commitDelete = async (conversationId: string) => {
+    const pending = takePendingDelete(conversationId);
+    if (!pending) return;
+    pending.dismiss();
+    const removed = await chat.deleteConversation(conversationId);
+    setDeleting((current) => new Set([...current].filter((id) => id !== conversationId)));
+    if (removed) {
       clearDraft(conversationId);
+    } else {
+      showToast({
+        title: "Couldn't delete the conversation",
+        description: 'It is back in your list.',
+        variant: 'error',
+      });
     }
   };
+
+  /** Hides the conversation right away with an Undo toast; it is deleted on the website once that closes. */
+  const handleDeleteConversation = (conversationId: string, name: string) => {
+    if (pendingDeletesRef.current.has(conversationId)) return;
+    setDeleting((current) => new Set(current).add(conversationId));
+    setSelectedThreadId((current) => (current === conversationId ? null : current));
+    const dismiss = undoToast({
+      title: 'Conversation deleted',
+      description: `Your chat with ${name}.`,
+      duration: DELETE_UNDO_MS,
+      onUndo: () => {
+        if (!takePendingDelete(conversationId)) return;
+        setDeleting((current) => new Set([...current].filter((id) => id !== conversationId)));
+      },
+    });
+    const timer = window.setTimeout(() => void commitDelete(conversationId), DELETE_UNDO_MS);
+    pendingDeletesRef.current.set(conversationId, { timer, dismiss });
+  };
+
+  // Deletes still in their undo window are sent right away when the panel unmounts or the app closes
+  const flushDeletesRef = useRef(() => {});
+  useEffect(() => {
+    flushDeletesRef.current = () => {
+      for (const conversationId of [...pendingDeletesRef.current.keys()]) void commitDelete(conversationId);
+    };
+  });
+  useEffect(() => {
+    const flush = () => flushDeletesRef.current();
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, []);
 
   /** Website message to the open thread's person; starts the conversation for an offers-only thread. */
   const sendWebsite = async (thread: InboxThread, text: string) => {
@@ -316,10 +441,33 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     showToast({ title: 'Whisper copied', description: `Paste it into the game chat to send it to *${account}.` });
   };
 
+  // In-panel keys: Alt+↑/↓ switch to the previous/next thread of the list as filtered; Esc closes the open
+  // thread (back to the list when compact). Keys a field or menu already handled (the "/" template menu,
+  // search's Escape), keys from popovers and menus (the listing picker; they render outside the panel) and
+  // keys finishing an IME composition are left alone.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.defaultPrevented || e.nativeEvent.isComposing || !e.currentTarget.contains(e.target as Node)) return;
+    if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && selectedThread) {
+      e.preventDefault();
+      // Keep the keyboard in the panel: the focused composer is about to unmount
+      e.currentTarget.focus();
+      selectThread(null);
+    } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && listed.length > 0) {
+      e.preventDefault();
+      const index = listed.findIndex((thread) => thread.id === selectedThread?.id);
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      const next =
+        index < 0 ? (step > 0 ? 0 : listed.length - 1) : Math.min(Math.max(index + step, 0), listed.length - 1);
+      selectThread(listed[next].id);
+    }
+  };
+
   return (
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
-        className="relative z-10 h-full w-full">
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="relative z-10 h-full w-full outline-none">
         {/* Top Bar (WindowChrome is the panel drag handle) */}
         <div id="titlebar-drag-handle">
           <WindowChrome
@@ -339,102 +487,129 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         </div>
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          <ConversationList
-            threads={threads}
-            filter={filter}
-            onFilterChange={setFilter}
-            selectedId={selectedThread?.id ?? null}
-            onSelect={(threadId) => {
-              setSelectedThreadId(threadId);
-              setRequest(null);
-            }}
-            loading={loadingConversations}
-            failed={chat.conversationsFailed}
-            signedIn={signedIn}
-            onReload={loadConversations}
-          />
+          {(!compact || !selectedThread) && (
+            <ConversationList
+              threads={listed}
+              total={threads.length}
+              unreadTotal={unreadTotal}
+              filter={filter}
+              onFilterChange={setFilter}
+              search={search}
+              onSearchChange={setSearch}
+              selectedId={selectedThread?.id ?? null}
+              onSelect={selectThread}
+              loading={loadingConversations}
+              failed={chat.conversationsFailed}
+              signedIn={signedIn}
+              onReload={loadConversations}
+              className={compact ? 'w-full border-r-0' : undefined}
+            />
+          )}
 
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {selectedThread ? (
-              <>
-                <ThreadHeader
-                  name={selectedThread.name}
-                  participant={participant}
-                  account={whisperAccount}
-                  inGameOnly={!selectedThread.userId}
-                  characterName={people?.find((p) => p.characterName)?.characterName}
-                  onDeleteConversation={conversation ? () => handleDeleteConversation(conversation._id) : undefined}
-                  onForgetWhispers={
-                    people && people.length > 0
-                      ? () => {
-                          people.forEach((p) => whispers.forget(p.key));
-                          if (!selectedThread.userId) clearDraft(selectedThread.id);
-                        }
-                      : undefined
-                  }
-                />
-                <div className="shrink-0 bg-background/30">
-                  <ThreadDeals
-                    offers={selectedThread.offers}
-                    hiddenOffers={hiddenOutgoingOffers.filter(
-                      (offer) => !!offer.userId && offer.userId === selectedThread.userId,
-                    )}
-                    whisperTrades={openTrades}
-                    listingIds={linkedListingIds}
-                    onCounter={(text) => {
-                      setDrafts((current) => ({ ...current, [selectedThread.id]: text }));
-                      composerRef.current?.focus();
-                    }}
-                    onSendWebsite={(text) => sendWebsite(selectedThread, text)}
-                    onWhisper={(target, text) => void sendWhisper(target, text)}
-                    onDismissTrade={(target, tradeId) => whispers.dismissTrade(target.key, tradeId)}
-                  />
-                </div>
-                <MessageList
-                  threadId={selectedThread.id}
-                  entries={entries}
-                  thread={websiteThread}
-                  readerId={participant?._id}
-                  otherName={selectedThread.name}
-                  listings={listings}
-                  onRetry={chat.retry}
-                  onLoadOlder={loadOlder}
-                  onReload={loadMessages}
-                />
-                <Composer
-                  key={selectedThread.id}
-                  ref={composerRef}
-                  value={drafts[selectedThread.id] ?? ''}
-                  onChange={(text) => setDrafts((current) => ({ ...current, [selectedThread.id]: text }))}
-                  onSend={(text) => {
-                    if (channel === 'website') {
-                      // Shows right away as a pending bubble; a failure stays on it with a retry
-                      void sendWebsite(selectedThread, text);
-                    } else if (whisperAccount) {
-                      void sendWhisper(person ?? { accountName: whisperAccount, playerName: whisperAccount }, text);
+          {(!compact || selectedThread) && (
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {selectedThread ? (
+                <>
+                  <ThreadHeader
+                    name={selectedThread.name}
+                    participant={participant}
+                    account={whisperAccount}
+                    inGameOnly={!selectedThread.userId}
+                    characterName={people?.find((p) => p.characterName)?.characterName}
+                    pinned={selectedThread.pinned}
+                    muted={selectedThread.muted}
+                    archived={selectedThread.archived}
+                    onBack={compact ? () => selectThread(null) : undefined}
+                    onTogglePin={() =>
+                      setPrefs(selectedThread, { pinnedAt: selectedThread.pinned ? undefined : Date.now() })
                     }
-                  }}
-                  placeholder={
-                    channel === 'whisper' ? `Whisper *${whisperAccount}...` : `Message ${selectedThread.name}...`
-                  }
-                  templateVars={templateVars}
-                  channel={channel}
-                  onChannelChange={
-                    websiteReachable && whisperAccount
-                      ? (next) => setChannels((current) => ({ ...current, [selectedThread.id]: next }))
-                      : undefined
-                  }
+                    onToggleMute={() => setPrefs(selectedThread, { muted: !selectedThread.muted })}
+                    onToggleArchive={() => {
+                      if (selectedThread.archived) {
+                        setPrefs(selectedThread, { archivedAt: undefined });
+                        return;
+                      }
+                      // Not before its latest message (clock skew), or it would count as new and un-archive
+                      setPrefs(selectedThread, { archivedAt: Math.max(Date.now(), selectedThread.latest?.at ?? 0) });
+                      selectThread(null);
+                    }}
+                    onDeleteConversation={
+                      conversation ? () => handleDeleteConversation(conversation._id, selectedThread.name) : undefined
+                    }
+                    onForgetWhispers={
+                      people && people.length > 0
+                        ? () => {
+                            people.forEach((p) => whispers.forget(p.key));
+                            if (!selectedThread.userId) clearDraft(selectedThread.id);
+                          }
+                        : undefined
+                    }
+                  />
+                  <div className="shrink-0 bg-background/30">
+                    <ThreadDeals
+                      offers={selectedThread.offers}
+                      hiddenOffers={hiddenOutgoingOffers.filter(
+                        (offer) => !!offer.userId && offer.userId === selectedThread.userId,
+                      )}
+                      whisperTrades={openTrades}
+                      listingIds={linkedListingIds}
+                      onCounter={(text) => {
+                        setDrafts((current) => ({ ...current, [selectedThread.id]: text }));
+                        composerRef.current?.focus();
+                      }}
+                      onSendWebsite={(text) => sendWebsite(selectedThread, text)}
+                      onWhisper={(target, text) => void sendWhisper(target, text)}
+                      onDismissTrade={(target, tradeId) => whispers.dismissTrade(target.key, tradeId)}
+                    />
+                  </div>
+                  <MessageList
+                    key={`messages:${selectedThread.id}`}
+                    threadId={selectedThread.id}
+                    entries={entries}
+                    thread={websiteThread}
+                    readerId={participant?._id}
+                    otherName={selectedThread.name}
+                    listings={listings}
+                    unreadKey={unreadKey}
+                    onRetry={chat.retry}
+                    onLoadOlder={loadOlder}
+                    onReload={loadMessages}
+                  />
+                  <Composer
+                    key={selectedThread.id}
+                    ref={composerRef}
+                    value={drafts[selectedThread.id] ?? ''}
+                    onChange={(text) => setDrafts((current) => ({ ...current, [selectedThread.id]: text }))}
+                    onSend={(text) => {
+                      if (channel === 'website') {
+                        // Shows right away as a pending bubble; a failure stays on it with a retry
+                        void sendWebsite(selectedThread, text);
+                      } else if (whisperAccount) {
+                        void sendWhisper(person ?? { accountName: whisperAccount, playerName: whisperAccount }, text);
+                      }
+                    }}
+                    placeholder={
+                      channel === 'whisper' ? `Whisper *${whisperAccount}...` : `Message ${selectedThread.name}...`
+                    }
+                    templateVars={templateVars}
+                    channel={channel}
+                    onChannelChange={
+                      websiteReachable && whisperAccount
+                        ? (next) => setChannels((current) => ({ ...current, [selectedThread.id]: next }))
+                        : undefined
+                    }
+                  />
+                </>
+              ) : (
+                <EmptyState
+                  className="m-auto max-w-sm"
+                  icon={<MessagesSquare />}
+                  title="Select a conversation to view messages"
+                  description={threads.length > 0 ? 'Pick a chat on the left.' : undefined}
                 />
-              </>
-            ) : (
-              <EmptyState
-                className="m-auto max-w-sm"
-                icon={<MessagesSquare />}
-                title="Select a conversation to view messages"
-                description={threads.length > 0 ? 'Pick a chat on the left.' : undefined}
-              />
-            )}
-          </section>
+              )}
+            </section>
+          )}
         </div>
       </WindowPanel>
     </MotionConfig>

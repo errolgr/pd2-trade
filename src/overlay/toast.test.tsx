@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
-import { ToastLayer, confirmToast, setToastBridge, showToast } from './toast';
+import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
@@ -167,7 +167,7 @@ describe('showToast action toasts', () => {
     expect(openUrl).not.toHaveBeenCalled();
   });
 
-  it('opens the chat panel on the conversation from the action button', async () => {
+  it('Reply opens chat on the conversation or whisper thread with the composer focused', async () => {
     const openChat = vi.fn();
     setToastBridge({ openChat });
     await renderLayer();
@@ -179,7 +179,17 @@ describe('showToast action toasts', () => {
       }),
     );
     await click(screen.getByText('Reply'));
-    expect(openChat).toHaveBeenCalledWith({ conversationId: 'c1' });
+    expect(openChat).toHaveBeenLastCalledWith({ conversationId: 'c1', threadId: undefined, reply: true });
+
+    await show(() =>
+      showToast({
+        title: 'Whisper',
+        description: 'wtb',
+        action: { label: 'Reply', type: ToastActionType.OPEN_CHAT_CONVERSATION, data: { threadId: 'whisper:zed' } },
+      }),
+    );
+    await click(within(toastEl('wtb')!).getByText('Reply'));
+    expect(openChat).toHaveBeenLastCalledWith({ conversationId: undefined, threadId: 'whisper:zed', reply: true });
   });
 
   it('installs the update from the action button', async () => {
@@ -235,5 +245,27 @@ describe('confirmToast', () => {
     );
     await click(screen.getByText('Confirm'));
     expect(console.error).toHaveBeenCalledWith('[overlay] confirm action failed:', expect.any(Error));
+  });
+});
+
+describe('undoToast', () => {
+  it('runs onUndo from its Undo button, and the returned function dismisses it', async () => {
+    const onUndo = vi.fn();
+    await renderLayer();
+    await show(() => undoToast({ title: 'Deleted', description: 'undo me', duration: 6000, onUndo }));
+    await click(within(toastEl('undo me')!).getByText('Undo'));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+
+    // sonner removes a dismissed toast on a later animation frame: check the dismissal itself
+    const dismissSpy = vi.spyOn(toast, 'dismiss');
+    let dismiss = () => {};
+    await show(() => {
+      dismiss = undoToast({ title: 'Deleted', description: 'dismiss me', duration: 6000, onUndo });
+    });
+    expect(toastEl('dismiss me')).not.toBeNull();
+    dismiss();
+    expect(dismissSpy).toHaveBeenCalledTimes(1);
+    expect(dismissSpy.mock.calls[0][0]).toBeDefined();
+    expect(onUndo).toHaveBeenCalledTimes(1);
   });
 });

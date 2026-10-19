@@ -4,13 +4,15 @@
  */
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
-import { isOpenTrade, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
+import { EMPTY_PREFS, isArchived, prefsFor, type ChatPrefs } from '@/lib/chat-prefs';
+import { isOpenTrade, normalizeName, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
 import { messagePreview } from './market-links';
 
-export type InboxFilter = 'all' | 'selling' | 'buying';
+/** 'archived' shows only archived threads; the others leave them out. */
+export type InboxFilter = 'all' | 'selling' | 'buying' | 'archived';
 export type MessageSource = 'website' | 'whisper';
 
 /** The newest item of a thread, across its sources. */
@@ -44,6 +46,10 @@ export interface InboxThread {
   selling: boolean;
   /** Has outgoing offers or open outgoing trade whispers. */
   buying: boolean;
+  /** Client-only preferences (lib/chat-prefs). */
+  pinned: boolean;
+  muted: boolean;
+  archived: boolean;
 }
 
 export interface InboxInput {
@@ -53,10 +59,18 @@ export interface InboxInput {
   /** Visible website offers, incoming and outgoing. */
   offers: readonly TradeOffer[];
   now: number;
+  prefs?: ChatPrefs;
 }
 
-/** Threads newest first (threads without any message last, in list order). */
-export function buildInbox({ conversations, currentUserId, people, offers, now }: InboxInput): InboxThread[] {
+/** Pinned threads first (newest first among them), then the rest newest first (threads without any message last). */
+export function buildInbox({
+  conversations,
+  currentUserId,
+  people,
+  offers,
+  now,
+  prefs = EMPTY_PREFS,
+}: InboxInput): InboxThread[] {
   const threads = new Map<string, InboxThread>();
   const byUser = new Map<string, InboxThread>();
   const add = (thread: InboxThread) => {
@@ -64,6 +78,19 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
     if (thread.userId && !byUser.has(thread.userId)) byUser.set(thread.userId, thread);
     return thread;
   };
+
+  // Fresh fields for a new thread (filled in once every source is merged)
+  const blank = () => ({
+    people: [],
+    offers: [],
+    accounts: [],
+    unread: 0,
+    selling: false,
+    buying: false,
+    pinned: false,
+    muted: false,
+    archived: false,
+  });
 
   for (const conversation of conversations) {
     const participant = otherParticipant(conversation, currentUserId);
@@ -73,12 +100,7 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
       conversation,
       participant,
       userId: participant?._id,
-      people: [],
-      offers: [],
-      accounts: [],
-      unread: 0,
-      selling: false,
-      buying: false,
+      ...blank(),
     });
   }
 
@@ -89,12 +111,7 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
         id: offer.userId ? `user:${offer.userId}` : `offer:${offer.id}`,
         name: offer.playerName,
         userId: offer.userId,
-        people: [],
-        offers: [],
-        accounts: [],
-        unread: 0,
-        selling: false,
-        buying: false,
+        ...blank(),
       });
     }
     thread.offers.push(offer);
@@ -111,16 +128,7 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
     const thread =
       (linked && threads.get(linked)) ||
       threads.get(whisperThreadId(person.key)) ||
-      add({
-        id: whisperThreadId(person.key),
-        name: person.playerName,
-        people: [],
-        offers: [],
-        accounts: [],
-        unread: 0,
-        selling: false,
-        buying: false,
-      });
+      add({ id: whisperThreadId(person.key), name: person.playerName, ...blank() });
     thread.people.push(person);
   }
 
@@ -154,9 +162,54 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
     const openTrades = thread.people.flatMap((p) => p.trades.filter((t) => isOpenTrade(t, now)));
     thread.selling = thread.offers.some((o) => o.isIncoming) || openTrades.some((t) => t.isIncoming);
     thread.buying = thread.offers.some((o) => !o.isIncoming) || openTrades.some((t) => !t.isIncoming);
+    const threadPrefs = prefsFor(prefs, threadAliases(thread));
+    thread.pinned = threadPrefs.pinnedAt !== undefined;
+    thread.muted = !!threadPrefs.muted;
+    thread.archived = isArchived(threadPrefs, thread.latest?.at ?? 0);
   }
 
-  return [...threads.values()].sort((a, b) => (b.latest?.at ?? 0) - (a.latest?.at ?? 0));
+  return [...threads.values()].sort(
+    (a, b) => Number(b.pinned) - Number(a.pinned) || (b.latest?.at ?? 0) - (a.latest?.at ?? 0),
+  );
+}
+
+/**
+ * Every id a thread is known by: its id, its conversation, its website user and `whisper:<name>` for each
+ * name of its whisper senders and each account known for its user. Thread preferences are stored under all
+ * of them; a notification finds a thread by any of them.
+ */
+export function threadAliases(
+  thread: Pick<InboxThread, 'id' | 'conversation' | 'userId' | 'people' | 'accounts'>,
+): string[] {
+  const ids = new Set([thread.id]);
+  if (thread.conversation) ids.add(thread.conversation._id);
+  if (thread.userId) ids.add(`user:${thread.userId}`);
+  for (const name of [
+    ...thread.people.flatMap((p) => [p.key, p.accountName, p.characterName, p.playerName]),
+    ...thread.accounts,
+  ]) {
+    const key = normalizeName(name);
+    if (key) ids.add(whisperThreadId(key));
+  }
+  return [...ids];
+}
+
+/** The list rows for a filter and search text (name, username, in-game names, latest message). */
+export function visibleThreads(threads: readonly InboxThread[], filter: InboxFilter, search: string) {
+  const query = search.toLowerCase().trim();
+  return threads.filter(
+    (thread) =>
+      (filter === 'archived'
+        ? thread.archived
+        : !thread.archived && (filter === 'all' || (filter === 'selling' ? thread.selling : thread.buying))) &&
+      (!query ||
+        [
+          thread.name,
+          thread.participant?.username,
+          ...thread.people.map((person) => person.playerName),
+          thread.latest?.text,
+        ].some((text) => text?.toLowerCase().includes(query))),
+  );
 }
 
 /**
@@ -179,6 +232,8 @@ export interface TimelineEntry {
   message?: ChatMessage;
   /** A whisper copied from the overlay that the game log has not shown as sent yet. */
   copied?: boolean;
+  /** From them and not read yet. */
+  unread: boolean;
 }
 
 /**
@@ -203,6 +258,7 @@ export function buildTimeline(
           content: m.message,
           createdAt: new Date(m.timestamp).toISOString(),
           copied: m.copied,
+          unread: m.isIncoming && m.timestamp > person.readAt,
         }),
       ),
     )
@@ -214,13 +270,15 @@ export function buildTimeline(
   for (const message of website) {
     const at = Date.parse(message.created_at);
     while (w < whispers.length && Date.parse(whispers[w].createdAt) < at) entries.push(whispers[w++]);
+    const own = message.sender_id === currentUserId;
     entries.push({
       key: message.clientId ?? message._id,
       source: 'website',
-      own: message.sender_id === currentUserId,
+      own,
       content: message.content,
       createdAt: message.created_at,
       message,
+      unread: !own && !message.status && !!currentUserId && !message.reader_ids?.includes(currentUserId),
     });
   }
   return entries.concat(whispers.slice(w));

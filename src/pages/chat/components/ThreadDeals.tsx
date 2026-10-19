@@ -156,29 +156,30 @@ function AcceptButton({
           <p className="px-0.5 text-xs font-medium text-muted-foreground">
             {requireGame ? 'Copy an accept whisper with your game' : 'Accept (and message your game, if given)'}
           </p>
+          {/* Fields on one row, the button below: fits a narrow (360px) chat panel */}
           <div className="flex gap-2">
             <Input
               value={game.name}
               onChange={(e) => game.set(e.target.value, game.password)}
               placeholder="Game"
               aria-label="Game name"
-              className="h-8 w-32 text-sm md:text-sm"
+              className="h-8 w-28 text-sm md:text-sm"
             />
             <Input
               value={game.password}
               onChange={(e) => game.set(game.name, e.target.value)}
               placeholder="Password"
               aria-label="Game password"
-              className="h-8 w-32 text-sm md:text-sm"
+              className="h-8 w-28 text-sm md:text-sm"
             />
-            <Button type="submit"
-              size="sm"
-              disabled={(requireGame && !game.name) || busy}
-              className="h-8">
-              {busy ? <Loader2 className="animate-spin" /> : <Check />}
-              Accept offer
-            </Button>
           </div>
+          <Button type="submit"
+            size="sm"
+            disabled={(requireGame && !game.name) || busy}
+            className="h-8">
+            {busy ? <Loader2 className="animate-spin" /> : <Check />}
+            Accept offer
+          </Button>
         </form>
       </PopoverContent>
     </Popover>
@@ -472,7 +473,10 @@ export function ThreadDeals({
               <span className="flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-muted/70">
                 <Direction className="size-3.5 text-muted-foreground" />
               </span>
-              <span className="shrink-0 text-muted-foreground">{isIncoming ? 'Selling' : 'Buying'}</span>
+              {/* The direction icon says it when narrow */}
+              <span className="shrink-0 text-muted-foreground @max-[420px]:sr-only">
+                {isIncoming ? 'Selling' : 'Buying'}
+              </span>
               <span className="min-w-0 flex-1 truncate font-semibold">{itemName ?? 'Unknown item'}</span>
               {price && (
                 <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">{price}</span>

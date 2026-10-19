@@ -145,8 +145,9 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
   const canSend = value.trim().length > 0;
 
   return (
-    <div className="shrink-0 border-t border-border bg-card/50 px-3 pb-3 pt-2">
-      <div className="mb-2 flex items-center gap-1.5">
+    <div className="@container shrink-0 border-t border-border bg-card/50 px-3 pb-3 pt-2">
+      {/* Wraps in a narrow panel; the Website/Whisper switch drops to icons there */}
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
         {onChannelChange && (
           <ToggleGroup
             type="single"
@@ -157,17 +158,23 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             onValueChange={(next) => next && onChannelChange(next as ReplyChannel)}
             className="mr-1 shrink-0"
           >
-            <ToggleGroupItem value="website"
+            <ToggleGroupItem
+              value="website"
               title="Send a website message"
-              className="h-6 gap-1 px-2 text-xs">
+              aria-label="Website"
+              className="h-6 gap-1 px-2 text-xs"
+            >
               <Globe className="size-3" />
-              Website
+              <span className="@max-[480px]:sr-only">Website</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="whisper"
+            <ToggleGroupItem
+              value="whisper"
               title="Copy an in-game /w whisper"
-              className="h-6 gap-1 px-2 text-xs">
+              aria-label="Whisper"
+              className="h-6 gap-1 px-2 text-xs"
+            >
               <Gamepad2 className="size-3" />
-              Whisper
+              <span className="@max-[480px]:sr-only">Whisper</span>
             </ToggleGroupItem>
           </ToggleGroup>
         )}
@@ -183,7 +190,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             {reply}
           </button>
         ))}
-        <span className="ml-auto hidden truncate text-[10px] text-muted-foreground/80 lg:inline">
+        <span className="ml-auto hidden truncate text-[10px] text-muted-foreground/80 @min-[640px]:inline">
           <kbd className="font-sans font-semibold">/</kbd> templates ·{' '}
           <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
         </span>

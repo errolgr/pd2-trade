@@ -51,16 +51,21 @@ function formatDayLabel(timestamp: string) {
 
 export function MessageBubble({
   row,
+  startsUnread = false,
   readerId,
   listings,
   onRetry,
 }: {
   row: MessageRow;
+  /** The first message that was unread when the thread was opened: a "New" divider goes above it. */
+  startsUnread?: boolean;
   readerId?: string;
   listings: ReadonlyMap<string, ChatListingState>;
   onRetry: (conversationId: string, clientId: string) => void;
 }) {
-  const { entry, startsDay, continuesGroup, groupContinues } = row;
+  const { entry, startsDay, continuesGroup: followsInGroup, groupContinues } = row;
+  // The divider splits a group: the bubble below it starts fresh
+  const continuesGroup = followsInGroup && !startsUnread;
   const { message, own: isOwnMessage } = entry;
   const failed = message?.status === 'failed';
   const sending = message?.status === 'sending';
@@ -79,6 +84,14 @@ export function MessageBubble({
             {formatDayLabel(entry.createdAt)}
           </span>
           <span className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
+        </div>
+      )}
+      {startsUnread && (
+        <div role="separator"
+          aria-label="New messages"
+          className="mb-2.5 flex items-center gap-2 px-1">
+          <span className="h-px flex-1 bg-destructive/50" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-destructive">New</span>
         </div>
       )}
       <div className={cn('group/msg flex', isOwnMessage ? 'justify-end' : 'justify-start')}>

@@ -4,6 +4,14 @@ export type { OpenOptions, OverlayRect, PanelDef, PanelDefs, PanelId, PanelPaylo
 export { OverlayProvider, useOverlay, usePanelOpen, type OverlayApi } from './OverlayProvider';
 export { OverlayRoot } from './OverlayRoot';
 export { Panel, usePanel, type PanelContextValue } from './Panel';
-export { showToast, confirmToast, ToastLayer, type ToastPayload, type ConfirmToastOptions } from './toast';
+export {
+  showToast,
+  confirmToast,
+  undoToast,
+  ToastLayer,
+  type ToastPayload,
+  type ConfirmToastOptions,
+  type UndoToastOptions,
+} from './toast';
 export { setBadgeCount, getBadgeCount, useBadgeCount, type BadgeKey } from './badges';
 export { claimKeyboard, releaseKeyboard, isKeyboardClaimed } from './keyboard';

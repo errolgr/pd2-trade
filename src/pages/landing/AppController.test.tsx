@@ -21,6 +21,8 @@ const h = vi.hoisted(() => ({
   releaseKeyboard: vi.fn(async () => {
     h.keyboardClaimed = false;
   }),
+  /** The chat badge: unread messages outside muted threads. */
+  chatUnread: 0,
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
@@ -30,6 +32,7 @@ vi.mock('@/overlay', () => ({
   useOverlay: () => ({ ...h.overlay }),
   isKeyboardClaimed: () => h.keyboardClaimed,
   releaseKeyboard: () => h.releaseKeyboard(),
+  getBadgeCount: (key: string) => (key === 'chatUnread' ? h.chatUnread : 0),
 }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useClipboard', () => ({ useClipboard: vi.fn() }));
@@ -89,6 +92,7 @@ beforeEach(() => {
   itemUnderCursor = 'ITEM sword';
   diabloFocused = true;
   h.keyboardClaimed = false;
+  h.chatUnread = 0;
   invoked = [];
 
   vi.mocked(isTauri).mockReturnValue(true);
@@ -289,6 +293,13 @@ describe('AppController panels', () => {
     expect(h.overlay.togglePanel).toHaveBeenLastCalledWith('chat');
     await press(4);
     expect(h.overlay.openPanel).toHaveBeenLastCalledWith('chat', { filter: 'selling' });
+  });
+
+  it('chat hotkey opens chat on the newest unread thread while there are unread messages', async () => {
+    h.chatUnread = 3;
+    await mount();
+    await press(3);
+    expect(h.overlay.togglePanel).toHaveBeenLastCalledWith('chat', { newestUnread: true });
   });
 
   it('shows the chat button once settings load and closes it when the overlay gets disabled', async () => {

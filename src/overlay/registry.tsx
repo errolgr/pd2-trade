@@ -61,8 +61,10 @@ export const PANEL_DEFS: PanelDefs = {
   chat: {
     id: 'chat',
     component: ChatPage,
-    size: { width: 1000, height: 700 },
-    resizable: false,
+    // Opens compact (one column: the list or a thread); wider than 640px it shows both side by side
+    size: { width: 400, height: 640 },
+    minSize: { width: 360, height: 480 },
+    resizable: true,
     placement: 'gameCenter',
     persist: true,
     keyboard: 'onPointerDown',

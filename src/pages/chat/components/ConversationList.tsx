@@ -1,7 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import moment from 'moment';
-import { AlertTriangle, Gamepad2, MessagesSquare, RotateCw, Search, SearchX, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Archive,
+  BellOff,
+  Gamepad2,
+  MessagesSquare,
+  Pin,
+  RotateCw,
+  Search,
+  SearchX,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,11 +24,27 @@ import { cn } from '@/lib/utils';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
 import { ChatAvatar, CountBadge, ReadReceipt } from './chat-parts';
 
-const FILTERS: { value: InboxFilter; label: string }[] = [
+const FILTERS: { value: Exclude<InboxFilter, 'archived'>; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'selling', label: 'Selling' },
   { value: 'buying', label: 'Buying' },
 ];
+
+const EMPTY_TEXT: Record<InboxFilter, { title: string; description?: string }> = {
+  all: { title: 'No conversations' },
+  selling: {
+    title: 'Nothing you are selling right now',
+    description: 'Offers on your listings and trade whispers from buyers show up here.',
+  },
+  buying: {
+    title: 'Nothing you are buying right now',
+    description: 'Your offers and the trade whispers you send show up here.',
+  },
+  archived: {
+    title: 'No archived chats',
+    description: 'Archive a chat from its ⋯ menu; a new message brings it back.',
+  },
+};
 
 /** Compact relative time for the list: "now", "12m", "3:45 PM", "Yesterday", "Tue", "Mar 4". */
 function formatConversationTime(timestamp: number) {
@@ -32,51 +59,48 @@ function formatConversationTime(timestamp: number) {
   return time.format(time.isSame(now, 'year') ? 'MMM D' : 'MMM D, YY');
 }
 
-/** The inbox sidebar: one row per person (threads come newest first), with All/Selling/Buying filters and search. */
+/**
+ * The inbox sidebar (the whole panel in compact mode): one row per person, pinned first, with
+ * All/Selling/Buying/Archived filters and search. `threads` are the rows to show (filtered and searched).
+ */
 export function ConversationList({
   threads,
+  total,
+  unreadTotal,
   filter,
   onFilterChange,
+  search,
+  onSearchChange,
   selectedId,
   onSelect,
   loading,
   failed,
   signedIn,
   onReload,
+  className,
 }: {
   threads: InboxThread[];
+  /** Every thread, whatever the filter. */
+  total: number;
+  /** Unread messages outside muted and archived threads. */
+  unreadTotal: number;
   filter: InboxFilter;
   onFilterChange: (filter: InboxFilter) => void;
+  search: string;
+  onSearchChange: (search: string) => void;
   selectedId: string | null;
   onSelect: (threadId: string) => void;
   loading: boolean;
   failed: boolean;
   signedIn: boolean;
   onReload: () => void;
+  className?: string;
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const query = searchQuery.toLowerCase().trim();
-  const totalUnread = threads.reduce((total, thread) => total + thread.unread, 0);
-
-  // Filter, then search by name, username, in-game account or latest message text
-  const visible = useMemo(
-    () =>
-      threads.filter(
-        (thread) =>
-          (filter === 'all' || (filter === 'selling' ? thread.selling : thread.buying)) &&
-          (!query ||
-            [
-              thread.name,
-              thread.participant?.username,
-              ...thread.people.map((person) => person.playerName),
-              thread.latest?.text,
-            ].some((text) => text?.toLowerCase().includes(query))),
-      ),
-    [threads, filter, query],
-  );
+  const query = search.trim();
+  const empty = EMPTY_TEXT[filter];
 
   let body: React.ReactNode;
-  if (loading && threads.length === 0) {
+  if (loading && total === 0) {
     body = (
       <div aria-busy
         className="space-y-0.5 p-2">
@@ -96,7 +120,7 @@ export function ConversationList({
         ))}
       </div>
     );
-  } else if (failed && threads.length === 0) {
+  } else if (failed && total === 0) {
     body = (
       <EmptyState
         compact
@@ -114,37 +138,26 @@ export function ConversationList({
         }
       />
     );
-  } else if (visible.length === 0) {
+  } else if (threads.length === 0) {
     body = (
       <EmptyState
         compact
         className="px-4 pt-10"
-        icon={query ? <SearchX /> : <MessagesSquare />}
-        title={
-          query
-            ? 'No conversations match your search'
-            : filter === 'selling'
-              ? 'Nothing you are selling right now'
-              : filter === 'buying'
-                ? 'Nothing you are buying right now'
-                : 'No conversations'
-        }
+        icon={query ? <SearchX /> : filter === 'archived' ? <Archive /> : <MessagesSquare />}
+        title={query ? 'No conversations match your search' : empty.title}
         description={
           query
             ? undefined
-            : filter === 'selling'
-              ? 'Offers on your listings and trade whispers from buyers show up here.'
-              : filter === 'buying'
-                ? 'Your offers and the trade whispers you send show up here.'
-                : signedIn
-                  ? 'Website chats and in-game whispers show up here.'
-                  : 'Sign in to Project Diablo 2 in Settings → Account to chat.'
+            : (empty.description ??
+              (signedIn
+                ? 'Website chats and in-game whispers show up here.'
+                : 'Sign in to Project Diablo 2 in Settings → Account to chat.'))
         }
         action={
           query ? (
             <Button variant="ghost"
               size="sm"
-              onClick={() => setSearchQuery('')}>
+              onClick={() => onSearchChange('')}>
               Clear search
             </Button>
           ) : undefined
@@ -157,7 +170,7 @@ export function ConversationList({
         variants={listStagger}
         initial="hidden"
         animate="visible">
-        {visible.map((thread) => {
+        {threads.map((thread) => {
           const { name, latest } = thread;
           const selected = selectedId === thread.id;
           const unread = thread.unread > 0;
@@ -185,20 +198,32 @@ export function ConversationList({
               />
               <ChatAvatar name={name} />
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-baseline gap-1.5">
                   <span
                     className={cn(
-                      'truncate text-sm',
+                      'min-w-0 flex-1 truncate text-sm',
                       unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
                     )}
                   >
                     {name}
                   </span>
+                  {thread.muted && (
+                    <BellOff
+                      role="img"
+                      aria-label="Muted"
+                      className="size-3 shrink-0 self-center text-muted-foreground/80"
+                    />
+                  )}
+                  {thread.pinned && (
+                    <Pin role="img"
+                      aria-label="Pinned"
+                      className="size-3 shrink-0 self-center text-primary/80" />
+                  )}
                   {latest && (
                     <span
                       className={cn(
                         'shrink-0 text-[11px] tabular-nums',
-                        unread ? 'font-semibold text-primary' : 'text-muted-foreground',
+                        unread && !thread.muted ? 'font-semibold text-primary' : 'text-muted-foreground',
                       )}
                     >
                       {formatConversationTime(latest.at)}
@@ -228,7 +253,12 @@ export function ConversationList({
                       {own && <span className="text-muted-foreground">You: </span>}
                       {latest.text}
                     </span>
-                    {unread && <CountBadge count={thread.unread} />}
+                    {unread && (
+                      <CountBadge
+                        count={thread.unread}
+                        className={thread.muted ? 'bg-muted-foreground/60' : undefined}
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -240,19 +270,21 @@ export function ConversationList({
   }
 
   return (
-    <aside className="flex min-h-0 w-72 shrink-0 flex-col overflow-hidden border-r border-border bg-card/40">
+    <aside
+      className={cn('flex min-h-0 w-72 shrink-0 flex-col overflow-hidden border-r border-border bg-card/40', className)}
+    >
       <div className="shrink-0 space-y-2.5 px-3 pb-3 pt-3">
         <div className="flex items-center gap-2 px-1">
           <h2 className="text-base font-semibold tracking-tight text-foreground">Messages</h2>
           <AnimatePresence>
-            {totalUnread > 0 && (
+            {unreadTotal > 0 && (
               <motion.span key="unread"
                 variants={popIn}
                 initial="hidden"
                 animate="visible"
                 exit="exit">
-                <CountBadge count={totalUnread}
-                  title={`${totalUnread} unread`} />
+                <CountBadge count={unreadTotal}
+                  title={`${unreadTotal} unread`} />
               </motion.span>
             )}
           </AnimatePresence>
@@ -274,26 +306,34 @@ export function ConversationList({
               {label}
             </ToggleGroupItem>
           ))}
+          <ToggleGroupItem
+            value="archived"
+            aria-label="Archived"
+            title="Archived chats"
+            className="h-7 max-w-9 text-xs"
+          >
+            <Archive className="size-3.5" />
+          </ToggleGroupItem>
         </ToggleGroup>
         <div className="group relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors duration-(--dur-fast) group-focus-within:text-foreground" />
           <Input
             placeholder="Search chats..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape' && searchQuery) {
+              if (e.key === 'Escape' && search) {
                 e.preventDefault();
-                setSearchQuery('');
+                onSearchChange('');
               }
             }}
             className="h-8 rounded-lg bg-background/60 pl-8 pr-8 text-sm"
           />
-          {searchQuery && (
+          {search && (
             <button
               type="button"
               aria-label="Clear search"
-              onClick={() => setSearchQuery('')}
+              onClick={() => onSearchChange('')}
               className="absolute right-1 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               <X className="size-3.5" />

@@ -8,7 +8,8 @@ import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
 import { writeText } from '@/lib/browser-clipboard';
-import { exists, writeTextFile } from '@/lib/browser-fs';
+import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
+import { CHAT_PREFS_FILENAME, changeChatPrefs, parseChatPrefs, resetChatPrefs, setThreadPrefs } from '@/lib/chat-prefs';
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
@@ -34,14 +35,29 @@ vi.mock('@/lib/browser-events', () => ({
   }),
 }));
 /**
- * The chat panel's payload/payloadVersion/visible as usePanel() reports them; `openChat()` mimics
- * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read.
+ * The chat panel's payload/payloadVersion/visible/rect as usePanel() reports them; `openChat()` mimics
+ * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read. `rect`:
+ * wide (two columns) unless a test makes it compact.
  */
-const panel = vi.hoisted(() => ({ payload: undefined as unknown, payloadVersion: 0, visible: true }));
+const panel = vi.hoisted(() => ({
+  payload: undefined as unknown,
+  payloadVersion: 0,
+  visible: true,
+  rect: { x: 0, y: 0, width: 1000, height: 700 },
+}));
+/** undoToast calls: the Undo callbacks of the toasts shown, and whether each was dismissed. */
+const undoToasts = vi.hoisted(() => [] as { title: string; onUndo: () => void; dismissed: boolean }[]);
 vi.mock('@/overlay', () => ({
   setBadgeCount: vi.fn(),
   showToast: vi.fn(),
   confirmToast: vi.fn(),
+  undoToast: (options: { title: string; onUndo: () => void }) => {
+    const entry = { title: options.title, onUndo: options.onUndo, dismissed: false };
+    undoToasts.push(entry);
+    return () => {
+      entry.dismissed = true;
+    };
+  },
   usePanel: () => panel,
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
@@ -209,6 +225,9 @@ beforeEach(() => {
   panel.payload = undefined;
   panel.payloadVersion = 0;
   panel.visible = true;
+  panel.rect = { x: 0, y: 0, width: 1000, height: 700 };
+  undoToasts.length = 0;
+  resetChatPrefs();
   settings = {};
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
@@ -595,46 +614,78 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(rowFor('bob').getAttribute('aria-current')).toBe('true');
   });
 
-  it('deletes the open conversation and clears the selection', async () => {
+  async function deleteOpenConversation() {
+    const trigger = screen.getByRole('button', { name: 'Conversation options' });
+    await act(async () => {
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /Delete Conversation/ }));
+    });
+    await flush();
+  }
+
+  it('removes a deleted conversation at once and deletes it on the website exactly once after the undo window', async () => {
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
     await renderWidget([
       conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
       conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
     ]);
     await select('Alice');
+    await deleteOpenConversation();
 
-    const trigger = screen.getByRole('button', { name: 'Conversation options' });
-    await act(async () => {
-      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' });
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: /Delete Conversation/ }));
-    });
-    await flush();
-
-    expect(api.deleteConversation).toHaveBeenCalledWith('c1');
     expect(rows().map((r) => r.textContent?.includes('bob'))).toEqual([true]);
     expect(screen.queryByText('Select a conversation to view messages')).not.toBeNull();
+    expect(undoToasts.map((t) => t.title)).toEqual(['Conversation deleted']);
+    await flush(5999);
+    expect(api.deleteConversation).not.toHaveBeenCalled();
+
+    await flush(1);
+    expect(api.deleteConversation).toHaveBeenCalledTimes(1);
+    expect(api.deleteConversation).toHaveBeenCalledWith('c1');
+    expect(undoToasts[0].dismissed).toBe(true);
+    await flush(10_000);
+    expect(api.deleteConversation).toHaveBeenCalledTimes(1);
+    expect(rows()).toHaveLength(1);
   });
 
-  it('keeps the conversation when deleting it is unauthorized', async () => {
+  it('Undo brings the conversation back and never deletes it on the website', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    await deleteOpenConversation();
+    expect(rows()).toHaveLength(0);
+
+    await act(async () => undoToasts[0].onUndo());
+    expect(rows().map((r) => r.textContent?.includes('Alice'))).toEqual([true]);
+    await flush(10_000);
+    expect(api.deleteConversation).not.toHaveBeenCalled();
+  });
+
+  it('sends a delete still in its undo window when the panel unmounts, once', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    const { unmount } = await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    await deleteOpenConversation();
+
+    unmount();
+    expect(api.deleteConversation).toHaveBeenCalledTimes(1);
+    await flush(10_000);
+    expect(api.deleteConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it('brings the conversation back with an error when deleting it on the website fails', async () => {
     api.deleteConversation.mockResolvedValue(false);
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     await select('Alice');
+    await deleteOpenConversation();
+    expect(rows()).toHaveLength(0);
 
-    const trigger = screen.getByRole('button', { name: 'Conversation options' });
-    await act(async () => {
-      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' });
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: /Delete Conversation/ }));
-    });
-    await flush();
-
+    await flush(6000);
     expect(api.deleteConversation).toHaveBeenCalledWith('c1');
-    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
-    expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Alice');
+    expect(rows().map((r) => r.textContent?.includes('Alice'))).toEqual([true]);
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: "Couldn't delete the conversation" }));
   });
 });
 
@@ -1253,5 +1304,288 @@ describe('ChatOverlayWidget unified inbox', () => {
     await act(async () => fireEvent.click(filterButton('Selling')));
     expect(rows()).toHaveLength(1);
     expect(rowFor('u2web').textContent).toContain('omw');
+  });
+});
+
+describe('ChatOverlayWidget overlay fit', () => {
+  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const filterButton = (name: string) => screen.getByRole('radio', { name });
+  const heading = () => screen.queryByRole('heading', { level: 3 })?.textContent ?? null;
+  const jumpButton = () => screen.queryByRole('button', { name: /Jump to latest/ });
+  const divider = () => screen.queryByRole('separator', { name: 'New messages' });
+  const DAN = { id: 'dan', username: 'dan' };
+
+  async function key(target: Element, init: KeyboardEventInit) {
+    await act(async () => {
+      fireEvent.keyDown(target, init);
+    });
+    await flush(200);
+  }
+
+  async function chooseFromMenu(name: RegExp) {
+    await act(async () => {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Conversation options' }), {
+        button: 0,
+        ctrlKey: false,
+        pointerType: 'mouse',
+      });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name }));
+    });
+    await flush();
+  }
+
+  async function resize(width: number) {
+    panel.rect = { ...panel.rect, width };
+    await act(async () => rerenderWidget());
+    await flush();
+  }
+
+  /** The last chat-prefs.json written. */
+  const savedPrefs = () =>
+    parseChatPrefs(
+      String(
+        vi
+          .mocked(writeTextFile)
+          .mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)
+          .at(-1)?.[1] ?? '',
+      ),
+    );
+
+  it('shows the list or the open thread with a back button when narrow, both side by side when wide', async () => {
+    panel.rect = { ...panel.rect, width: 400 };
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    expect(rows()).toHaveLength(2);
+    expect(screen.queryByText('Select a conversation to view messages')).toBeNull();
+
+    await select('Alice');
+    expect(rows()).toHaveLength(0);
+    expect(heading()).toBe('Alice');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
+    });
+    expect(rows()).toHaveLength(2);
+    expect(heading()).toBeNull();
+
+    await select('Alice');
+    await resize(800);
+    expect(rows()).toHaveLength(2);
+    expect(heading()).toBe('Alice');
+    expect(screen.queryByRole('button', { name: 'Back to conversations' })).toBeNull();
+
+    await resize(639);
+    expect(rows()).toHaveLength(0);
+    expect(heading()).toBe('Alice');
+  });
+
+  it('the chat hotkey payload opens the newest unread thread, leaving out muted ones', async () => {
+    changeChatPrefs((prefs) => setThreadPrefs(prefs, ['c3'], { muted: true }));
+    await renderWidget([
+      conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'older unread', 30) }),
+      conv('c2', BOB, { unread: 2, latest: msg('b1', 'c2', 'bob', 'newest unread', 5) }),
+      conv('c3', { id: 'carol', username: 'carol' }, { unread: 1, latest: msg('k1', 'c3', 'carol', 'muted', 1) }),
+      conv('c4', DAN, { latest: msg('d1', 'c4', 'dan', 'read', 0, [ME]) }),
+    ]);
+    expect(lastEmittedUnread()).toBe(3);
+
+    await openChat({ newestUnread: true });
+    expect(heading()).toBe('bob');
+  });
+
+  it('Reply from a toast opens the conversation or whisper thread with the composer focused', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await openChat({ conversationId: 'c1', reply: true });
+    expect(heading()).toBe('Alice');
+    expect(document.activeElement).toBe(composer());
+
+    await whisperFrom('Zed', 'wtb shako?');
+    await openChat({ threadId: 'whisper:zed', reply: true });
+    expect(heading()).toBe('Zed');
+    expect(document.activeElement).toBe(composer());
+  });
+
+  it('Alt+Arrow keys step through the threads of the filtered list', async () => {
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'bob',
+        itemName: 'Shako',
+        timestamp: new Date(NOW.getTime() - 60_000),
+        userId: 'bob',
+      },
+      {
+        id: 'o2',
+        isIncoming: true,
+        playerName: 'dan',
+        itemName: 'Arach',
+        timestamp: new Date(NOW.getTime() - 120_000),
+        userId: 'dan',
+      },
+    ];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 0) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 10) }),
+      conv('c3', DAN, { latest: msg('d1', 'c3', 'dan', 'sup', 20) }),
+    ]);
+    await openChat({ filter: 'selling' });
+    await select('bob');
+
+    await key(composer(), { key: 'ArrowDown', altKey: true });
+    expect(heading()).toBe('dan');
+    await key(composer(), { key: 'ArrowDown', altKey: true });
+    expect(heading()).toBe('dan');
+    await key(composer(), { key: 'ArrowUp', altKey: true });
+    expect(heading()).toBe('bob');
+    await key(composer(), { key: 'ArrowUp', altKey: true });
+    expect(heading()).toBe('bob');
+  });
+
+  it('Esc closes the open thread (back to the list when narrow), not while the template menu or an IME has it', async () => {
+    settings.acceptOfferMessageTemplate = 'Accepted. Game: {gameInfo}';
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+
+    fireEvent.change(composer(), { target: { value: '/' } });
+    expect(screen.queryByRole('listbox', { name: 'Message templates' })).not.toBeNull();
+    await key(composer(), { key: 'Escape' });
+    expect(screen.queryByRole('listbox', { name: 'Message templates' })).toBeNull();
+    expect(heading()).toBe('Alice');
+
+    await key(composer(), { key: 'Escape', isComposing: true });
+    expect(heading()).toBe('Alice');
+
+    await key(composer(), { key: 'Escape' });
+    expect(heading()).toBeNull();
+    expect(screen.queryByText('Select a conversation to view messages')).not.toBeNull();
+
+    await resize(400);
+    await select('Alice');
+    expect(rows()).toHaveLength(0);
+    fireEvent.change(composer(), { target: { value: '' } });
+    await key(composer(), { key: 'Escape' });
+    expect(heading()).toBeNull();
+    expect(rows()).toHaveLength(1);
+  });
+
+  it('opens a thread with unread messages at a "New" divider above the first unread, kept until it closes', async () => {
+    messagesByConversation.c1 = [
+      msg('a1', 'c1', 'alice', 'read before', 30, [ME]),
+      msg('a2', 'c1', ME, 'my reply', 20, [ME]),
+      msg('a3', 'c1', 'alice', 'first unread', 10),
+      msg('a4', 'c1', 'alice', 'second unread', 5),
+    ];
+    await renderWidget([
+      conv('c1', ALICE, { unread: 2, latest: msg('a4', 'c1', 'alice', 'second unread', 5) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    await select('Alice');
+
+    expect(api.markMessagesAsRead).toHaveBeenCalledWith(['a3', 'a4'], ME);
+    const row = divider()!.parentElement!;
+    expect(row.textContent).toContain('first unread');
+    expect(row.textContent).not.toContain('my reply');
+
+    await select('bob');
+    await select('Alice');
+    expect(divider()).toBeNull();
+  });
+
+  it('puts the divider above unread whispers too, then marks them read', async () => {
+    await renderWidget([]);
+    await whisperFrom('Zed', 'wtb shako?');
+    await whisperFrom('Zed', 'still there?');
+    expect(lastEmittedUnread()).toBe(2);
+    await select('Zed');
+    expect(divider()!.parentElement!.textContent).toContain('wtb shako?');
+    expect(lastEmittedUnread()).toBe(0);
+    expect(divider()).not.toBeNull();
+  });
+
+  it('offers "N new · Jump to latest" only for messages arriving while scrolled up', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+
+    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'at the bottom', 1));
+    expect(jumpButton()).toBeNull();
+
+    const viewport = document.querySelector<HTMLElement>('section [data-slot="scroll-area-viewport"]')!;
+    Object.defineProperty(viewport, 'scrollHeight', { configurable: true, value: 2000 });
+    await act(async () => {
+      fireEvent.scroll(viewport, { target: { scrollTop: 500 } });
+    });
+    expect(jumpButton()).toBeNull();
+
+    await fire('social/message_pushed', msg('a3', 'c1', 'alice', 'while scrolled up', 0));
+    await fire('social/message_pushed', msg('a4', 'c1', 'alice', 'and another', 0));
+    expect(jumpButton()?.textContent).toBe('2 new · Jump to latest');
+
+    await act(async () => {
+      fireEvent.click(jumpButton()!);
+    });
+    expect(jumpButton()).toBeNull();
+  });
+
+  it('pins, mutes and archives from the ⋯ menu and saves it to chat-prefs.json', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 1, [ME])];
+    messagesByConversation.c2 = [msg('b1', 'c2', 'bob', 'yo', 5, [ME])];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 1) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
+    ]);
+    expect(rows()[0].textContent).toContain('Alice');
+
+    // Pinned threads sort first, with a pin
+    await select('bob');
+    await chooseFromMenu(/^Pin$/);
+    expect(rows()[0].textContent).toContain('bob');
+    expect(within(rows()[0] as HTMLElement).queryByLabelText('Pinned')).not.toBeNull();
+    expect(savedPrefs().threads.c2).toEqual({ pinnedAt: expect.any(Number) });
+
+    // Muted: no sound and no badge for its messages
+    await chooseFromMenu(/^Mute$/);
+    expect(within(rowFor('bob')).queryByLabelText('Muted')).not.toBeNull();
+    await select('Alice');
+    await fire('social/message_pushed', msg('b2', 'c2', 'bob', 'ping', 0));
+    expect(audio).toHaveLength(0);
+    expect(rowFor('bob').textContent).toContain('ping');
+    expect(lastEmittedUnread()).toBe(0);
+    expect(savedPrefs().threads.c2).toEqual({ pinnedAt: expect.any(Number), muted: true });
+
+    // Archived: out of All, in Archived, back in All with a new message
+    await chooseFromMenu(/^Archive$/);
+    expect(heading()).toBeNull();
+    expect(rows().map((r) => r.textContent?.includes('Alice'))).toEqual([false]);
+    await act(async () => fireEvent.click(filterButton('Archived')));
+    expect(rows().map((r) => r.textContent?.includes('Alice'))).toEqual([true]);
+    await act(async () => fireEvent.click(filterButton('All')));
+    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'back again', -1));
+    expect(rows().map((r) => r.textContent?.includes('Alice'))).toEqual([false, true]);
+    expect(lastEmittedUnread()).toBe(1);
+  });
+
+  it('restores pinned, muted and archived threads saved earlier', async () => {
+    vi.mocked(exists).mockImplementation(async (path) => path === CHAT_PREFS_FILENAME);
+    vi.mocked(readTextFile).mockImplementation(async (path) =>
+      path === CHAT_PREFS_FILENAME
+        ? JSON.stringify({ threads: { c2: { pinnedAt: 1, muted: true }, c3: { archivedAt: NOW.getTime() } } })
+        : '',
+    );
+    await renderWidget([
+      conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'hi', 1) }),
+      conv('c2', BOB, { unread: 2, latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
+      conv('c3', DAN, { unread: 4, latest: msg('d1', 'c3', 'dan', 'old', 10) }),
+    ]);
+    expect(rows().map((r) => r.textContent?.includes('bob'))).toEqual([true, false]);
+    expect(lastEmittedUnread()).toBe(1);
+    expect(headerUnread()).toBe('1');
   });
 });
