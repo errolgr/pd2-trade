@@ -108,8 +108,10 @@ describe('connection lifecycle', () => {
     expect(hook.result.current.isConnected).toBe(true);
   });
 
-  it('re-authenticates on reconnect and routes responses from the new transport', async () => {
+  it('re-authenticates on reconnect and listens on the new transport', () => {
     const { hook, socket } = connectedSocket('tok');
+    const onMessage = vi.fn();
+    hook.result.current.subscribe('social/message_pushed', onMessage);
     socket.fire('disconnect');
     expect(hook.result.current.isConnected).toBe(false);
 
@@ -118,9 +120,8 @@ describe('connection lifecycle', () => {
     socket.fire('connect');
     expect(socket.ws.sent[0]).toContain('"accessToken":"tok"');
 
-    const pending = hook.result.current.getMessages('c1');
-    socket.ws.deliver('430' + JSON.stringify([null, { data: ['fresh'] }]));
-    await expect(pending).resolves.toEqual({ data: ['fresh'] });
+    socket.ws.deliver('42' + JSON.stringify(['social/message pushed', { _id: 'fresh' }]));
+    expect(onMessage).toHaveBeenCalledWith({ _id: 'fresh' });
     expect(oldWs.send).toHaveBeenCalledTimes(1);
   });
 
@@ -133,66 +134,18 @@ describe('connection lifecycle', () => {
     expect(sockets[1].ws.sent[0]).toContain('"accessToken":"new"');
   });
 
-  it('unmount disconnects, rejects in-flight requests, and stops listening', async () => {
+  it('unmount disconnects and stops listening', () => {
     const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getConversations('u1');
     hook.unmount();
 
-    await expect(pending).rejects.toThrow('Socket cleanup');
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(socket.ws.listeners.size).toBe(0);
   });
 });
 
-describe('request/response', () => {
-  it('rejects immediately while not connected', async () => {
-    const { result } = renderHook(() => useSocket({ settings: { pd2Token: 'tok' } as ISettings }));
-    await expect(result.current.getConversations('u1')).rejects.toThrow('Socket not connected');
-    await expect(result.current.getMessages('c1')).rejects.toThrow('Socket not connected');
-    expect(sockets[0].ws.sent).toEqual([]);
-  });
-
-  it('sends feathers find frames and resolves responses in FIFO order', async () => {
+describe('push events', () => {
+  it('reach subscribers of their sanitized name only', () => {
     const { hook, socket } = connectedSocket();
-    const conversations = hook.result.current.getConversations('u1');
-    const messages = hook.result.current.getMessages('c1');
-
-    expect(socket.ws.sent.slice(1).map((f) => JSON.parse(f.slice(3)))).toEqual([
-      [
-        'find',
-        'social/conversation',
-        {
-          participant_ids: 'u1',
-          $limit: 100,
-          $skip: 0,
-          $resolve: { participants: true, unreadCount: true, latestMessage: { sender: true } },
-        },
-      ],
-      [
-        'find',
-        'social/message',
-        { conversation_id: 'c1', $sort: { created_at: 1 }, $limit: 500, $resolve: { sender: true } },
-      ],
-    ]);
-    expect(socket.ws.sent[1].startsWith('420[')).toBe(true);
-
-    socket.ws.deliver('430' + JSON.stringify([null, { total: 1 }]));
-    socket.ws.deliver('430' + JSON.stringify([null, { total: 2 }]));
-    await expect(conversations).resolves.toEqual({ total: 1 });
-    await expect(messages).resolves.toEqual({ total: 2 });
-  });
-
-  it('the auth acknowledgement does not consume a pending request', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
-    socket.ws.deliver('430' + JSON.stringify([null, { accessToken: 'jwt', user: { _id: 'u1' } }]));
-    socket.ws.deliver('430' + JSON.stringify([null, { data: [1] }]));
-    await expect(pending).resolves.toEqual({ data: [1] });
-  });
-
-  it('push events reach subscribers of their sanitized name and do not consume a pending request', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
     const msg = { _id: 'm1', content: 'hi' };
     const onMessage = vi.fn();
     const onOther = vi.fn();
@@ -202,9 +155,14 @@ describe('request/response', () => {
     socket.ws.deliver('42' + JSON.stringify(['social/message pushed', msg]));
     expect(onMessage).toHaveBeenCalledWith(msg);
     expect(onOther).not.toHaveBeenCalled();
+  });
 
-    socket.ws.deliver('430' + JSON.stringify([null, { data: [] }]));
-    await expect(pending).resolves.toEqual({ data: [] });
+  it('the auth acknowledgement is not delivered as a push', () => {
+    const { hook, socket } = connectedSocket();
+    const onAny = vi.fn();
+    hook.result.current.subscribe('x_pushed', onAny);
+    socket.ws.deliver('430' + JSON.stringify(['x pushed', { accessToken: 'jwt', user: { _id: 'u1' } }]));
+    expect(onAny).not.toHaveBeenCalled();
   });
 
   it('stops delivering after unsubscribe and survives reconnects', () => {
@@ -237,90 +195,20 @@ describe('request/response', () => {
     expect(after).toHaveBeenCalledWith({});
   });
 
-  it('ignores non-string, non-numeric-prefixed, malformed, and unsolicited frames', async () => {
+  it('ignores non-string, non-numeric-prefixed, malformed, non-push and response frames', () => {
     const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
+    const onMessage = vi.fn();
+    hook.result.current.subscribe('social/message_pushed', onMessage);
     socket.ws.deliver(new ArrayBuffer(2));
     socket.ws.deliver('hello');
     socket.ws.deliver('3probe');
     socket.ws.deliver('430{not json');
     socket.ws.deliver('430' + JSON.stringify(['only-one']));
     socket.ws.deliver('430' + JSON.stringify([null, { ok: true }]));
-    await expect(pending).resolves.toEqual({ ok: true });
+    socket.ws.deliver('42' + JSON.stringify(['social/message created', { _id: 'm1' }]));
+    expect(onMessage).not.toHaveBeenCalled();
 
-    socket.ws.deliver('430' + JSON.stringify([null, { stray: true }]));
-    expect(console.warn).toHaveBeenCalledWith('[Socket] Received response but no pending requests');
-  });
-
-  it('rejects when the server answers with an error string', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
-    socket.ws.deliver('430' + JSON.stringify(['Forbidden', null]));
-    await expect(pending).rejects.toThrow('Forbidden');
-  });
-
-  // BUG: useSocket.ts:104 builds the rejection with `parsedPayload[0].toString()`; feathers errors are objects
-  // ({ name, message, code }), so callers only ever see "[object Object]".
-  it.fails('rejects with the server error message when the error is a feathers error object', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
-    socket.ws.deliver('430' + JSON.stringify([{ name: 'NotFound', message: 'No record found', code: 404 }, null]));
-    await expect(pending).rejects.toThrow('No record found');
-  });
-
-  it('a null result rejects with "Empty response"', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
-    socket.ws.deliver('430' + JSON.stringify([null, null]));
-    await expect(pending).rejects.toThrow('Empty response');
-  });
-
-  it('times out after 10s and removes the request from the queue', async () => {
-    const { hook, socket } = connectedSocket();
-    const pending = hook.result.current.getMessages('c1');
-    const assertion = expect(pending).rejects.toThrow('Socket request timeout');
-    await vi.advanceTimersByTimeAsync(9_999);
-    socket.ws.deliver('42' + JSON.stringify(['x pushed', {}]));
-    await vi.advanceTimersByTimeAsync(1);
-    await assertion;
-
-    socket.ws.deliver('430' + JSON.stringify([null, { late: true }]));
-    expect(console.warn).toHaveBeenCalledWith('[Socket] Received response but no pending requests');
-  });
-
-  // BUG: useSocket.ts:99 matches responses FIFO with a constant ack id (every frame is sent as "420"), so a late
-  // reply to a timed-out request is delivered to whichever request is next in the queue.
-  it.fails('a late reply to a timed-out request is not delivered to the next request', async () => {
-    const { hook, socket } = connectedSocket();
-    const first = hook.result.current.getMessages('c-first');
-    first.catch(() => {});
-    await vi.advanceTimersByTimeAsync(10_000);
-
-    const second = hook.result.current.getMessages('c-second');
-    socket.ws.deliver('430' + JSON.stringify([null, { conversation: 'c-first' }]));
-    socket.ws.deliver('430' + JSON.stringify([null, { conversation: 'c-second' }]));
-    await expect(second).resolves.toEqual({ conversation: 'c-second' });
-  });
-
-  it('disconnect rejects every in-flight request', async () => {
-    const { hook, socket } = connectedSocket();
-    const a = hook.result.current.getConversations('u1');
-    const b = hook.result.current.getMessages('c1');
-    socket.fire('disconnect');
-    await expect(a).rejects.toThrow('Socket disconnected');
-    await expect(b).rejects.toThrow('Socket disconnected');
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('a send failure rejects that request and leaves the queue aligned', async () => {
-    const { hook, socket } = connectedSocket();
-    socket.ws.send.mockImplementationOnce(() => {
-      throw new Error('CLOSING');
-    });
-    await expect(hook.result.current.getMessages('c1')).rejects.toThrow('Failed to send message: Error: CLOSING');
-
-    const next = hook.result.current.getMessages('c2');
-    socket.ws.deliver('430' + JSON.stringify([null, { for: 'c2' }]));
-    await expect(next).resolves.toEqual({ for: 'c2' });
+    socket.ws.deliver('42' + JSON.stringify(['social/message pushed', { _id: 'm2' }]));
+    expect(onMessage).toHaveBeenCalledWith({ _id: 'm2' });
   });
 });

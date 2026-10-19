@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { ConversationListResponse, MessageListResponse } from '@/common/types/pd2-website/ChatTypes';
 import { useOptions } from '../useOptions';
 import { ISettings } from '../useOptions';
-
-interface PendingRequest {
-  resolve: (value: any) => void;
-  reject: (error: Error) => void;
-  timeout: NodeJS.Timeout;
-  service: string;
-  method: string;
-}
 
 interface UseSocketProps {
   settings?: ISettings;
@@ -24,6 +15,7 @@ export type SocketPushHandler<T = unknown> = (data: T) => void;
  */
 export type SubscribeSocket = <T = unknown>(type: string, handler: SocketPushHandler<T>) => () => void;
 
+/** The PD2 socket carries server pushes only; requests go through the REST clients (useSocialActions etc.). */
 export const useSocket = (props?: UseSocketProps) => {
   // Use props if provided, otherwise fall back to hooks
   const contextSettings = useOptions().settings;
@@ -33,7 +25,6 @@ export const useSocket = (props?: UseSocketProps) => {
   const rawSocketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pendingRequestsRef = useRef<PendingRequest[]>([]);
   const subscribersRef = useRef(new Map<string, Set<SocketPushHandler>>());
 
   useEffect(() => {
@@ -56,74 +47,39 @@ export const useSocket = (props?: UseSocketProps) => {
     // Message handler for raw socket
     const messageHandler = (event: MessageEvent) => {
       const data = event.data;
+      if (typeof data !== 'string') return;
 
-      if (typeof data === 'string') {
-        // Extract code and payload using regex
-        const match = data.match(/^(\d+)(.+)$/);
+      // Engine.io/socket.io frames are a numeric code followed by a JSON payload
+      const match = data.match(/^\d+(.+)$/);
+      if (!match) return;
 
-        if (match) {
-          const code = match[1];
-          const payload = match[2];
+      try {
+        const parsedPayload = JSON.parse(match[1]);
+        if (!Array.isArray(parsedPayload) || parsedPayload.length !== 2) return;
 
-          try {
-            const parsedPayload = JSON.parse(payload);
-
-            // Handle auth response
-            if (
-              Array.isArray(parsedPayload) &&
-              parsedPayload.length === 2 &&
-              parsedPayload[1] &&
-              typeof parsedPayload[1] === 'object' &&
-              'accessToken' in parsedPayload[1] &&
-              'user' in parsedPayload[1]
-            ) {
-              console.log('[Socket] Authenticated');
-              // Auth is handled by usePD2Website, so we just log it here
-              return; // Don't process auth response as a regular request response
-            }
-
-            // Handle push events (like "social/message pushed")
-            if (Array.isArray(parsedPayload) && parsedPayload.length === 2) {
-              const eventType = parsedPayload[0];
-              const eventData = parsedPayload[1];
-
-              // Check if this is a push event
-              if (typeof eventType === 'string' && eventType.includes('pushed')) {
-                const pushType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
-                subscribersRef.current.get(pushType)?.forEach((handler) => {
-                  try {
-                    handler(eventData);
-                  } catch (err) {
-                    console.error(`[Socket] Push handler for ${pushType} failed:`, err);
-                  }
-                });
-                return; // Don't process push events as request responses
-              }
-
-              // Handle other responses - match to pending requests
-              // Match responses to requests in order (FIFO queue)
-              // This works because responses typically come back in the same order as requests
-              if (pendingRequestsRef.current.length > 0) {
-                const pendingRequest = pendingRequestsRef.current.shift()!;
-                clearTimeout(pendingRequest.timeout);
-
-                // Check if response has error
-                if (parsedPayload[0] !== null) {
-                  pendingRequest.reject(new Error(parsedPayload[0].toString()));
-                } else {
-                  pendingRequest.resolve(parsedPayload[1]);
-                }
-              } else {
-                console.warn('[Socket] Received response but no pending requests');
-              }
-            }
-          } catch (err) {
-            const error = err instanceof Error ? err : new Error(String(err));
-            console.warn('[Socket] Failed to parse payload:', error);
-            // Don't report to Sentry - payload parsing errors are usually due to unexpected data format
-            // and don't indicate a server problem
-          }
+        // Auth response (auth is handled by usePD2Website, so we just log it here)
+        const [eventType, eventData] = parsedPayload;
+        if (eventData && typeof eventData === 'object' && 'accessToken' in eventData && 'user' in eventData) {
+          console.log('[Socket] Authenticated');
+          return;
         }
+
+        // Push events (like "social/message pushed")
+        if (typeof eventType === 'string' && eventType.includes('pushed')) {
+          const pushType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
+          subscribersRef.current.get(pushType)?.forEach((handler) => {
+            try {
+              handler(eventData);
+            } catch (err) {
+              console.error(`[Socket] Push handler for ${pushType} failed:`, err);
+            }
+          });
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.warn('[Socket] Failed to parse payload:', error);
+        // Don't report to Sentry - payload parsing errors are usually due to unexpected data format
+        // and don't indicate a server problem
       }
     };
 
@@ -155,13 +111,6 @@ export const useSocket = (props?: UseSocketProps) => {
       console.log('[Socket] Disconnected');
       setIsConnected(false);
       rawSocketRef.current = null;
-
-      // Reject all pending requests
-      while (pendingRequestsRef.current.length > 0) {
-        const pendingRequest = pendingRequestsRef.current.shift()!;
-        clearTimeout(pendingRequest.timeout);
-        pendingRequest.reject(new Error('Socket disconnected'));
-      }
     });
 
     socket.on('connect_error', (err) => {
@@ -182,113 +131,8 @@ export const useSocket = (props?: UseSocketProps) => {
       socket.disconnect();
       socketRef.current = null;
       rawSocketRef.current = null;
-
-      // Reject all pending requests
-      while (pendingRequestsRef.current.length > 0) {
-        const pendingRequest = pendingRequestsRef.current.shift()!;
-        clearTimeout(pendingRequest.timeout);
-        pendingRequest.reject(new Error('Socket cleanup'));
-      }
     };
   }, [settings?.pd2Token]);
-
-  const sendSocketMessage = useCallback(
-    <T>(method: string, service: string, query: any): Promise<T> => {
-      return new Promise((resolve, reject) => {
-        if (!rawSocketRef.current || !isConnected) {
-          reject(new Error('Socket not connected'));
-          return;
-        }
-
-        const message = [method, service, query];
-
-        const timeout = setTimeout(() => {
-          // Remove this request from the queue
-          const index = pendingRequestsRef.current.findIndex((req) => req.timeout === timeout);
-          if (index !== -1) {
-            pendingRequestsRef.current.splice(index, 1);
-          }
-          reject(new Error('Socket request timeout'));
-        }, 10000);
-
-        // Store the pending request in queue (FIFO)
-        pendingRequestsRef.current.push({
-          resolve: (data: any) => {
-            // Response format is [null, data] or [error, null]
-            if (data === null) {
-              reject(new Error('Empty response'));
-            } else {
-              resolve(data as T);
-            }
-          },
-          reject,
-          timeout,
-          service,
-          method,
-        });
-
-        // Send message using raw socket with code '420'
-        try {
-          rawSocketRef.current.send('420' + JSON.stringify(message));
-        } catch (err) {
-          // Remove this request from the queue
-          const index = pendingRequestsRef.current.findIndex((req) => req.timeout === timeout);
-          if (index !== -1) {
-            pendingRequestsRef.current.splice(index, 1);
-          }
-          clearTimeout(timeout);
-          reject(new Error(`Failed to send message: ${err}`));
-        }
-      });
-    },
-    [isConnected],
-  );
-
-  const getConversations = useCallback(
-    async (participantId: string): Promise<ConversationListResponse> => {
-      if (!isConnected) {
-        throw new Error('Socket not connected');
-      }
-
-      // sendSocketMessage already unwraps the [null, data] format and returns just the data
-      const response = await sendSocketMessage<ConversationListResponse>('find', 'social/conversation', {
-        participant_ids: participantId,
-        $limit: 100,
-        $skip: 0,
-        $resolve: {
-          participants: true,
-          unreadCount: true,
-          latestMessage: {
-            sender: true,
-          },
-        },
-      });
-
-      return response;
-    },
-    [sendSocketMessage, isConnected],
-  );
-
-  const getMessages = useCallback(
-    async (conversationId: string): Promise<MessageListResponse> => {
-      if (!isConnected) {
-        throw new Error('Socket not connected');
-      }
-
-      // sendSocketMessage already unwraps the [null, data] format and returns just the data
-      const response = await sendSocketMessage<MessageListResponse>('find', 'social/message', {
-        conversation_id: conversationId,
-        $sort: { created_at: 1 },
-        $limit: 500,
-        $resolve: {
-          sender: true,
-        },
-      });
-
-      return response;
-    },
-    [sendSocketMessage, isConnected],
-  );
 
   const subscribe = useCallback<SubscribeSocket>(<T>(type: string, handler: SocketPushHandler<T>) => {
     const subscribers = subscribersRef.current;
@@ -307,8 +151,6 @@ export const useSocket = (props?: UseSocketProps) => {
   return {
     isConnected,
     error,
-    getConversations,
-    getMessages,
     subscribe,
     getSocket: () => socketRef.current,
   };
