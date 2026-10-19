@@ -20,10 +20,8 @@ tauri-build = { version = "2.5", features = [] }
 [dependencies]
 tauri = { version = "2.9.1", features = ["tray-icon"] }
 tauri-plugin-opener = "2.5.2"
-tauri-plugin-dialog = "2.4.2"
 tauri-plugin-process = "2.2"
 tauri-plugin-clipboard-manager = "2.3.2"
-tauri-plugin-shell = "2.2"
 tauri-plugin-app-exit = "0.1"
 tauri-plugin-fs = "2.3"
 tauri-plugin-http = "2.5.0"
@@ -36,7 +34,6 @@ tauri-plugin-window-state = "2.4.1"
 once_cell = "1.21.3"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "minwindef"] }
 winreg = "0.10"
 windows-sys = { version = "0.48.0", features = [
     "Win32_Foundation",
@@ -46,7 +43,6 @@ windows-sys = { version = "0.48.0", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Accessibility",
 ] }
-windows = "0.58.0"
 runas = "0.2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

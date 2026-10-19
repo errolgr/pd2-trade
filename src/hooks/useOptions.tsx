@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
-import merge from 'lodash.merge';
+import merge from 'lodash/merge';
 import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
