@@ -21,8 +21,6 @@
     "core:window:allow-close",
     "core:webview:allow-webview-close",
     "core:resources:allow-close",
-    "shell:allow-open",
-    "dialog:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
@@ -64,7 +62,6 @@
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",
     "opener:allow-open-url",
-    "shell:allow-open",
     {
       "identifier": "fs:scope-appdata-recursive",
       "allow": [
