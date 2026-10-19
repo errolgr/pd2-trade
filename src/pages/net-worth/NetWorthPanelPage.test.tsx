@@ -105,8 +105,6 @@ beforeEach(() => {
   netWorth = {
     owner: OWNER,
     trackingEnabled: true,
-    needsConsent: false,
-    setTrackingEnabled: vi.fn(),
     latest: latest(12.5),
     status: 'ok',
     error: null,

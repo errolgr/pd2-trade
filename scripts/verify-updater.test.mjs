@@ -9,7 +9,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { REQUIRED_PLATFORMS, checkConfig, checkManifest, compareVersions, verifySignature } from './verify-updater.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TAURI = path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'tauri.cmd' : 'tauri');
+// Run the CLI's JS entry with node: Windows refuses to spawn node_modules/.bin/tauri.cmd without a
+// shell (EINVAL), and a shell would split the artifact path on its spaces.
+const TAURI_CLI = path.join(ROOT, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
 // Throwaway keys; the CLI can't sign with an empty-password key it generated itself.
 const KEY_PASSWORD = 'verify-updater-test';
 
@@ -18,7 +20,7 @@ const keys = {};
 
 function generateKey(name) {
   const keyPath = path.join(dir, `${name}.key`);
-  execFileSync(TAURI, ['signer', 'generate', '--ci', '-p', KEY_PASSWORD, '-w', keyPath], { stdio: 'pipe' });
+  execFileSync(process.execPath, [TAURI_CLI, 'signer', 'generate', '--ci', '-p', KEY_PASSWORD, '-w', keyPath], { stdio: 'pipe' });
   return { keyPath, pubkey: readFileSync(`${keyPath}.pub`, 'utf8').trim() };
 }
 
@@ -26,7 +28,10 @@ function sign(keyName, filePath) {
   // The CLI rejects -f when a signing key is also set in the environment (e.g. on a release runner).
   const env = { ...process.env };
   for (const name of ['TAURI_SIGNING_PRIVATE_KEY', 'TAURI_PRIVATE_KEY', 'TAURI_PRIVATE_KEY_PATH']) delete env[name];
-  execFileSync(TAURI, ['signer', 'sign', '-f', keys[keyName].keyPath, '-p', KEY_PASSWORD, filePath], { stdio: 'pipe', env });
+  execFileSync(process.execPath, [TAURI_CLI, 'signer', 'sign', '-f', keys[keyName].keyPath, '-p', KEY_PASSWORD, filePath], {
+    stdio: 'pipe',
+    env,
+  });
   return readFileSync(`${filePath}.sig`, 'utf8').trim();
 }
 
