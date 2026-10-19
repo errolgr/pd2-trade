@@ -13,6 +13,7 @@ import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingArtUrl } from '../lib/listing-art';
+import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 
 /**
  * Inline pill for listing links, so "interested in your [Ohm Rune 75 wss]" reads as one sentence. Shared by
@@ -61,10 +62,28 @@ function stashLabel(listing: MarketListingEntry): string | null {
   return location.storage;
 }
 
+/** "12% under market" / "5% over market" / "at market" for an asking price against the market price. */
+function marketDelta(askingHr: number, marketHr: number): { text: string; className: string } {
+  const percent = Math.round(((askingHr - marketHr) / marketHr) * 100);
+  if (percent === 0) return { text: 'at market', className: 'text-muted-foreground' };
+  return percent < 0
+    ? { text: `${-percent}% under market`, className: 'text-success' }
+    : { text: `${percent}% over market`, className: 'text-warning' };
+}
+
 /** Hover detail: full stats plus the trade context the card leaves out. */
-function ListingDetails({ listing, listed }: { listing: MarketListingEntry; listed: boolean }) {
+function ListingDetails({
+  listing,
+  listed,
+  market,
+}: {
+  listing: MarketListingEntry;
+  listed: boolean;
+  market: ListingMarketPrice | undefined;
+}) {
   const { item, user } = listing;
   const online = listed && isUserOnlineIngame(listing.user_last_ingame);
+  const delta = market && listing.hr_price > 0 ? marketDelta(listing.hr_price, market.hr) : null;
   return (
     <div className="w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
       <div className={cn('truncate text-sm font-semibold', nameColor(listing))}>{item.name}</div>
@@ -80,6 +99,13 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
       />
       <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
         {listing.hr_price > 0 && <PopoverKeyValue label="Price">{`${listing.hr_price} HR`}</PopoverKeyValue>}
+        {market && (
+          <PopoverKeyValue label="Market">
+            {`${Number(market.hr.toFixed(2))} HR `}
+            <span className="text-muted-foreground">{`· ${market.window}`}</span>
+            {delta && <span className={cn('ml-1.5', delta.className)}>{delta.text}</span>}
+          </PopoverKeyValue>
+        )}
         {listing.price && (
           <div className="flex justify-between gap-3">
             <span className="shrink-0 text-muted-foreground">Note:</span>
@@ -125,6 +151,8 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
  */
 export function ListingCard({ listing, listed, url }: { listing: MarketListingEntry; listed: boolean; url: string }) {
   const [open, setOpen] = useState(false);
+  // Fetched with the pill rather than on hover, so the popover opens priced; a thread's pills share one batch.
+  const market = useListingMarketPrices([listing]).get(listing._id);
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
@@ -160,7 +188,8 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
         className="w-auto border-0 bg-transparent p-0 shadow-none"
       >
         <ListingDetails listing={listing}
-          listed={listed} />
+          listed={listed}
+          market={market} />
       </PopoverContent>
     </Popover>
   );

@@ -6,6 +6,7 @@ import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { setBadgeCount, type PanelPayloads } from '@/overlay';
+import type { TradeMessageData } from '@/components/trade/TradeMessage';
 import ChatOverlayWidget from './ChatOverlayWidget';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
@@ -54,6 +55,7 @@ let api: {
   deleteConversation: Mock<(conversationId: string) => Promise<boolean>>;
 };
 let messagesByConversation: Record<string, Message[]>;
+let incomingOffers: TradeMessageData[];
 let audio: { src: string; volume: number }[];
 
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
@@ -165,6 +167,7 @@ beforeEach(() => {
   settings = {};
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
+  incomingOffers = [];
   audio = [];
   api = {
     getConversations: vi.fn(),
@@ -187,6 +190,8 @@ beforeEach(() => {
         subscribeSocket,
         getMarketListings: noListings,
         getMarketListingsArchive: noListings,
+        incomingOffers,
+        outgoingOffers: [],
         ...api,
       }) as unknown as ReturnType<typeof usePd2Website>,
   );
@@ -235,7 +240,7 @@ describe('ChatOverlayWidget conversation list', () => {
       expect.stringContaining('bob'),
     ]);
     expect(rowFor('Alice').textContent).toContain('2');
-    expect(rowFor('Alice').textContent).toContain('3 minutes');
+    expect(rowFor('Alice').textContent).toContain('3m');
     expect(rowFor('Alice').textContent).toContain('you there?');
     expect(screen.queryByText('carol')).toBeNull();
   });
@@ -310,12 +315,22 @@ describe('ChatOverlayWidget conversation list', () => {
     expect(screen.queryByText('Sign in to Project Diablo 2 in Settings → Account to chat.')).not.toBeNull();
   });
 
-  it('keeps an empty list when loading conversations fails', async () => {
+  it('shows an error with a retry when loading conversations fails', async () => {
     api.getConversations.mockRejectedValue(new Error('offline'));
     render(<ChatOverlayWidget onClose={vi.fn()} />);
     await flush();
-    expect(screen.queryByText('No conversations')).not.toBeNull();
+    expect(screen.queryByText("Couldn't load conversations")).not.toBeNull();
     expect(screen.queryByText('Loading conversations...')).toBeNull();
+
+    api.getConversations.mockResolvedValue({
+      data: [conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 1) })],
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    });
+    await flush();
+    expect(screen.queryByText("Couldn't load conversations")).toBeNull();
+    expect(rows()).toHaveLength(1);
   });
 
   it('closes via the window chrome', async () => {
@@ -568,7 +583,7 @@ describe('ChatOverlayWidget composer', () => {
       conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
     ]);
     await select('Alice');
-    return screen.getByPlaceholderText('Enter message...') as HTMLInputElement;
+    return screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
   }
 
   it('sends trimmed text on Enter, appends it and moves the conversation to the top', async () => {
@@ -605,7 +620,7 @@ describe('ChatOverlayWidget composer', () => {
     expect(input.value).toBe('draft');
   });
 
-  async function sendText(input: HTMLInputElement, text: string) {
+  async function sendText(input: HTMLTextAreaElement, text: string) {
     fireEvent.change(input, { target: { value: text } });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Send/ }));
@@ -674,6 +689,67 @@ describe('ChatOverlayWidget composer', () => {
     await act(async () => response.resolve(msg('srv1', 'c1', ME, 'hello', 0)));
     await flush();
     expect(bubbles()).toEqual(['hi', 'hello']);
+  });
+});
+
+describe('ChatOverlayWidget drafts and offers', () => {
+  async function openBoth() {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    messagesByConversation.c2 = [msg('b1', 'c2', 'bob', 'yo', 5, [ME])];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
+    ]);
+  }
+  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+
+  it("keeps each conversation's unsent text when switching threads and hiding the panel", async () => {
+    await openBoth();
+    await select('Alice');
+    fireEvent.change(composer(), { target: { value: 'half-typed offer' } });
+
+    await select('bob');
+    expect(composer().value).toBe('');
+    fireEvent.change(composer(), { target: { value: 'for bob' } });
+
+    panel.visible = false;
+    await act(async () => rerenderWidget());
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+
+    await select('Alice');
+    expect(composer().value).toBe('half-typed offer');
+    await select('bob');
+    expect(composer().value).toBe('for bob');
+    expect(api.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('pins offers with the other participant above the thread; Counter puts a reply in the composer', async () => {
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'alice',
+        message: 'Offer: 2 ist',
+        itemName: 'Shako',
+        timestamp: new Date(NOW),
+        listingId: 'l1',
+        userId: 'alice',
+      },
+    ];
+    await openBoth();
+    await select('bob');
+    expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+
+    await select('Alice');
+    const deals = screen.getByRole('list', { name: 'Offers with this user' });
+    // Opening the thread focused the composer; take focus away so the Counter has to bring it back
+    composer().blur();
+    await act(async () => {
+      fireEvent.click(within(deals).getByRole('button', { name: /Counter/ }));
+    });
+    expect(composer().value).toBe('Counter for Shako: ');
+    expect(document.activeElement).toBe(composer());
   });
 });
 

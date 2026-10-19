@@ -24,6 +24,8 @@ export interface ThreadState {
   loadingOlder: boolean;
   /** Bumped whenever a newest page replaces the held history; older pages requested before it are stale. */
   resets: number;
+  /** The last attempt to fetch the newest page failed. */
+  failed: boolean;
 }
 
 export interface ChatState {
@@ -31,6 +33,8 @@ export interface ChatState {
   loadingConversations: boolean;
   /** The conversation list has been requested once (successfully or not). */
   conversationsLoaded: boolean;
+  /** The last attempt to load the conversation list failed. */
+  conversationsFailed: boolean;
   threads: Record<string, ThreadState>;
 }
 
@@ -41,12 +45,14 @@ export const EMPTY_THREAD: ThreadState = {
   hasOlder: false,
   loadingOlder: false,
   resets: 0,
+  failed: false,
 };
 
 export const initialChatState: ChatState = {
   conversations: [],
   loadingConversations: false,
   conversationsLoaded: false,
+  conversationsFailed: false,
   threads: {},
 };
 
@@ -117,11 +123,11 @@ function withPendingStatus(state: ChatState, id: string, clientId: string, statu
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case 'conversationsLoading':
-      return { ...state, loadingConversations: true };
+      return { ...state, loadingConversations: true, conversationsFailed: false };
     case 'conversationsLoaded':
       return { ...state, conversations: action.conversations, loadingConversations: false, conversationsLoaded: true };
     case 'conversationsFailed':
-      return { ...state, loadingConversations: false, conversationsLoaded: true };
+      return { ...state, loadingConversations: false, conversationsLoaded: true, conversationsFailed: true };
     case 'conversationUpserted': {
       const { conversation } = action;
       const exists = state.conversations.some((c) => c._id === conversation._id);
@@ -138,7 +144,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, conversations: state.conversations.filter((c) => c._id !== action.conversationId), threads };
     }
     case 'threadLoading':
-      return withThread(state, action.conversationId, (t) => ({ ...t, loading: true }));
+      return withThread(state, action.conversationId, (t) => ({ ...t, loading: true, failed: false }));
     case 'threadLoaded':
       return withThread(state, action.conversationId, (t) => {
         const { page, pageSize } = action;
@@ -157,7 +163,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         };
       });
     case 'threadFailed':
-      return withThread(state, action.conversationId, (t) => (t.loading ? { ...t, loading: false } : t));
+      return withThread(state, action.conversationId, (t) => (t.loading ? { ...t, loading: false, failed: true } : t));
     case 'olderLoading':
       return withThread(state, action.conversationId, (t) =>
         t.loaded && t.hasOlder && !t.loadingOlder ? { ...t, loadingOlder: true } : t,
@@ -539,6 +545,7 @@ export function useChatStore({
     conversations: state.conversations,
     loadingConversations: state.loadingConversations,
     conversationsLoaded: state.conversationsLoaded,
+    conversationsFailed: state.conversationsFailed,
     threads: state.threads,
     loadConversations,
     loadMessages,

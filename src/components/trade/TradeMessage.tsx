@@ -31,6 +31,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { confirmToast, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
+import { fillTemplate } from '@/lib/message-templates';
 import { DUR, EASE_OUT, scaleIn } from '@/lib/motion';
 
 export interface TradeMessageHistoryEntry {
@@ -86,6 +87,13 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   const { authData, createConversation, sendMessage } = usePd2Website();
   const { openPanel } = useOverlay();
   const { settings } = useOptions();
+  // Tokens every offer message template (Options → Chat) can use; accept messages add {gameInfo}.
+  const templateVars = {
+    accountName: trade.accountName,
+    characterName: trade.characterName,
+    itemName: trade.itemName,
+    price: trade.price,
+  };
 
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
 
@@ -191,21 +199,12 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
         const participantIds = [authData.user._id, trade.userId];
         const conversation = await createConversation(participantIds);
 
-        // Build the accept message using template
-        const accountName = trade.accountName || '';
-        const characterName = trade.characterName || '';
-        const itemName = trade.itemName || '';
-        const price = trade.price || '';
-        const gameInfo = password ? `${gameName}////${password}` : gameName;
-
         // Use custom message template from settings, or fall back to default
         const template = settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}';
-        const messageContent = template
-          .replace(/{gameInfo}/g, gameInfo)
-          .replace(/{accountName}/g, accountName)
-          .replace(/{characterName}/g, characterName)
-          .replace(/{itemName}/g, itemName)
-          .replace(/{price}/g, price);
+        const messageContent = fillTemplate(template, {
+          ...templateVars,
+          gameInfo: password ? `${gameName}////${password}` : gameName,
+        });
 
         // Send message via website chat
         await sendMessage(conversation._id, messageContent, authData.user._id);
@@ -228,21 +227,13 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
       return; // Don't proceed if game name is empty
     }
 
-    const accountName = trade.accountName || '';
-    const characterName = trade.characterName || '';
-    const itemName = trade.itemName || '';
-    const price = trade.price || '';
-    const gameInfo = password ? `${gameName}////${password}` : gameName;
-
     // Use custom message template from settings, or fall back to default
     const template = settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}';
-    const message = template
-      .replace(/{gameInfo}/g, gameInfo)
-      .replace(/{accountName}/g, accountName)
-      .replace(/{characterName}/g, characterName)
-      .replace(/{itemName}/g, itemName)
-      .replace(/{price}/g, price);
-    const acceptMessage = `/w *${accountName} ${message}`;
+    const message = fillTemplate(template, {
+      ...templateVars,
+      gameInfo: password ? `${gameName}////${password}` : gameName,
+    });
+    const acceptMessage = `/w *${trade.accountName || ''} ${message}`;
 
     await copy(acceptMessage);
     setCopiedAction('accept');
@@ -268,18 +259,9 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     }
 
     // For non-website offers, use the old clipboard method
-    const accountName = trade.accountName || '';
-    const characterName = trade.characterName || '';
-    const itemName = trade.itemName || '';
-    const price = trade.price || '';
-
     const template = settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.';
-    const message = template
-      .replace(/{accountName}/g, accountName)
-      .replace(/{characterName}/g, characterName)
-      .replace(/{itemName}/g, itemName)
-      .replace(/{price}/g, price);
-    const rejectMessage = `/w *${accountName} ${message}`;
+    const message = fillTemplate(template, templateVars);
+    const rejectMessage = `/w *${trade.accountName || ''} ${message}`;
     await copy(rejectMessage);
     setCopiedAction('reject');
     setTimeout(() => setCopiedAction(null), 2000);
@@ -338,18 +320,9 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
 
   const handleSold = async () => {
     // Copy sold message to clipboard
-    const accountName = trade.accountName || '';
-    const characterName = trade.characterName || '';
-    const itemName = trade.itemName || '';
-    const price = trade.price || '';
-
     const template = settings?.soldOfferMessageTemplate || 'The item has been sold.';
-    const message = template
-      .replace(/{accountName}/g, accountName)
-      .replace(/{characterName}/g, characterName)
-      .replace(/{itemName}/g, itemName)
-      .replace(/{price}/g, price);
-    const soldMessage = `/w *${accountName} ${message}`;
+    const message = fillTemplate(template, templateVars);
+    const soldMessage = `/w *${trade.accountName || ''} ${message}`;
     await copy(soldMessage);
     setCopiedAction('sold');
     setTimeout(() => setCopiedAction(null), 2000);
