@@ -78,3 +78,25 @@ export function messagePreview(content: string): string {
   if (!link) return content;
   return link.displayName ? `📦 ${link.displayName}` : '📦 Market Listing';
 }
+
+/**
+ * A composer draft split into the text the user types and the listing links attached to it (shown as pills,
+ * never as raw URLs): each link is cut out with the one space `joinDraft` put before it.
+ */
+export function splitDraft(draft: string): { text: string; links: MarketLink[] } {
+  const links = findMarketLinks(draft);
+  let text = '';
+  let last = 0;
+  for (const link of links) {
+    const start = link.start > last && draft[link.start - 1] === ' ' ? link.start - 1 : link.start;
+    text += draft.slice(last, start);
+    last = link.end;
+  }
+  return { text: text + draft.slice(last), links };
+}
+
+/** The draft (and the message sent) for `text` with listing `urls` attached: the links follow the text. */
+export function joinDraft(text: string, urls: readonly string[]): string {
+  if (urls.length === 0) return text;
+  return text ? `${text} ${urls.join(' ')}` : urls.join(' ');
+}

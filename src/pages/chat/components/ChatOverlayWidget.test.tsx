@@ -862,6 +862,25 @@ describe('ChatOverlayWidget drafts and offers', () => {
     expect(api.sendMessage).not.toHaveBeenCalled();
   });
 
+  it("keeps a thread's attached listings with its draft when switching threads", async () => {
+    const url = 'https://www.projectdiablo2.com/market/listing/dd01?display="Griffon\'s Eye"';
+    await openBoth();
+    await select('Alice');
+    // A pasted listing link becomes an attachment
+    await act(async () => {
+      fireEvent.change(composer(), { target: { value: `how about ${url}` } });
+    });
+    const attachments = () => screen.queryByRole('list', { name: 'Attached listings' });
+    expect(composer().value).toBe('how about');
+    expect(within(attachments()!).getByText("Griffon's Eye")).not.toBeNull();
+
+    await select('bob');
+    expect(attachments()).toBeNull();
+    await select('Alice');
+    expect(composer().value).toBe('how about');
+    expect(within(attachments()!).getByText("Griffon's Eye")).not.toBeNull();
+  });
+
   it('pins offers with the other participant above the thread; Counter puts a reply in the composer', async () => {
     incomingOffers = [
       {
@@ -1800,10 +1819,21 @@ describe('ChatOverlayWidget trader sidebar', () => {
       fireEvent.change(composer(), { target: { value: 'how much for' } });
     });
     await click(within(sidebar()!).getByRole('button', { name: 'Link Harlequin Crest in your message' }));
-    expect(composer().value).toBe(
-      'how much for https://www.projectdiablo2.com/market/listing/cc01?display="Harlequin Crest"',
-    );
+    // Attached as a pill (by the name its link carries until it is looked up), not as URL text
+    expect(composer().value).toBe('how much for');
+    const attached = screen.getByRole('list', { name: 'Attached listings' });
+    expect(within(attached).getByText('Harlequin Crest')).not.toBeNull();
     // The slide-over made way for the composer
     expect(sidebar()).toBeNull();
+
+    await act(async () => {
+      fireEvent.keyDown(composer(), { key: 'Enter' });
+    });
+    await flush();
+    expect(api.sendMessage).toHaveBeenCalledWith(
+      'c1',
+      'how much for https://www.projectdiablo2.com/market/listing/cc01?display="Harlequin Crest"',
+      ME,
+    );
   });
 });

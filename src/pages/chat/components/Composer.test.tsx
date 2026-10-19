@@ -12,6 +12,8 @@ import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+// Market prices of attached listings (their hover popover): none known
+vi.mock('@/pages/currency/lib/price-api', () => ({ fetchMultipleItemPrices: vi.fn(async () => new Map()) }));
 
 beforeAll(() => {
   MotionGlobalConfig.skipAnimations = true;
@@ -224,20 +226,56 @@ describe('Composer listing picker', () => {
     expect(items()).toEqual(["Tal Rasha's Guardianshipoffers"]);
   });
 
-  it('inserts the listing link at the caret, as a link the chat recognises', async () => {
+  const URL = 'https://www.projectdiablo2.com/market/listing/aa11?display="Harlequin Crest"';
+  const attachments = () => screen.queryByRole('list', { name: 'Attached listings' });
+  /** Lets the attached listings' lookup settle. */
+  const settle = () => act(async () => {});
+
+  it('attaches a picked listing as a pill, never as text, and sends its link after the text', async () => {
     render(<Harness />);
-    type('want this? ok', 10);
+    type('want this?');
     const picker = await openPicker();
     await act(async () => {
       fireEvent.click(within(picker).getByRole('button', { name: /Harlequin Crest/ }));
     });
+    await settle();
 
-    const url = 'https://www.projectdiablo2.com/market/listing/aa11?display="Harlequin Crest"';
-    expect(textarea().value).toBe(`want this? ${url} ok`);
-    expect(findMarketLinks(textarea().value)).toEqual([
-      expect.objectContaining({ listingId: 'aa11', displayName: 'Harlequin Crest', url }),
-    ]);
+    expect(textarea().value).toBe('want this?');
+    expect(within(attachments()!).getByText('Harlequin Crest')).not.toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onSend).not.toHaveBeenCalled();
+
+    // Editing the text keeps the attachment
+    type('want this? ok');
+    expect(attachments()).not.toBeNull();
+    fireEvent.keyDown(textarea(), { key: 'Enter' });
+    expect(onSend).toHaveBeenCalledWith(`want this? ok ${URL}`);
+    expect(findMarketLinks(onSend.mock.calls[0][0])).toEqual([
+      expect.objectContaining({ listingId: 'aa11', displayName: 'Harlequin Crest', url: URL }),
+    ]);
+    expect(attachments()).toBeNull();
+  });
+
+  it('drops a removed attachment from the message', async () => {
+    render(<Harness initial={`hi ${URL}`} />);
+    await settle();
+    expect(textarea().value).toBe('hi');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Harlequin Crest' }));
+    expect(attachments()).toBeNull();
+    fireEvent.keyDown(textarea(), { key: 'Enter' });
+    expect(onSend).toHaveBeenCalledWith('hi');
+  });
+
+  it('turns a pasted listing link into an attachment, and sends a link alone', async () => {
+    render(<Harness />);
+    type(`look ${URL} here`);
+    await settle();
+    expect(textarea().value).toBe('look here');
+    expect(within(attachments()!).getByText('Harlequin Crest')).not.toBeNull();
+
+    type('');
+    expect(textarea().value).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(onSend).toHaveBeenCalledWith(URL);
   });
 });

@@ -1,11 +1,15 @@
 import React, { forwardRef, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardCopy, FileText, Gamepad2, Globe, SendHorizontal } from 'lucide-react';
+import { ClipboardCopy, FileText, Gamepad2, Globe, Package, SendHorizontal, X } from 'lucide-react';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { fillTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useChatListings } from '../hooks/useChatListings';
+import { joinDraft, splitDraft } from '../lib/market-links';
+import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
 import { ListingPicker, listingMessageUrl } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 
@@ -48,10 +52,10 @@ interface ComposerProps {
   whisperTarget?: string;
 }
 
-/** The composer's handle: focus it, or insert text at its caret (the trader sidebar links a listing). */
+/** The composer's handle: focus it, or attach a listing (the trader sidebar's market). */
 export interface ComposerHandle {
   focus: () => void;
-  insert: (text: string) => void;
+  attach: (listing: MarketListingEntry) => void;
 }
 
 /** Message input of the open thread, a floating card: channel switch, quick replies, listing picker, input. */
@@ -63,7 +67,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuId = useId();
 
-  // Caret position to restore once a programmatic edit (insert, template) is rendered
+  // The draft is text plus attached listing links: the textarea edits the text, the links show as pills
+  const { text, links } = useMemo(() => splitDraft(value), [value]);
+  const urls = links.map((link) => link.url);
+  const attached = useChatListings(links.map((link) => link.listingId));
+
+  // Caret position to restore once a programmatic edit (insert, template, pasted link) is rendered
   const caretRef = useRef<number | null>(null);
   useLayoutEffect(() => {
     const caret = caretRef.current;
@@ -72,28 +81,36 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     textareaRef.current?.setSelectionRange(caret, caret);
   }, [value]);
 
-  const replaceDraft = (next: string, caret: number) => {
+  /** Replaces the text (keeping the attachments) and puts the caret at `caret`. */
+  const replaceText = (next: string, caret: number) => {
     caretRef.current = caret;
-    onChange(next);
+    onChange(joinDraft(next, urls));
     textareaRef.current?.focus();
   };
 
   /** Insert at the caret (replacing a selection), padded with spaces so it doesn't glue onto words. */
-  const insertAtCaret = (text: string) => {
+  const insertAtCaret = (insert: string) => {
     const el = textareaRef.current;
-    const start = el?.selectionStart ?? value.length;
-    const end = el?.selectionEnd ?? value.length;
-    const before = value.slice(0, start);
-    const after = value.slice(end);
-    const head = `${before}${before && !/\s$/.test(before) ? ' ' : ''}${text}${after && !/^\s/.test(after) ? ' ' : ''}`;
-    replaceDraft(head + after, head.length);
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    const before = text.slice(0, start);
+    const after = text.slice(end);
+    const head = `${before}${before && !/\s$/.test(before) ? ' ' : ''}${insert}${after && !/^\s/.test(after) ? ' ' : ''}`;
+    replaceText(head + after, head.length);
   };
-  useImperativeHandle(ref, () => ({ focus: () => textareaRef.current?.focus(), insert: insertAtCaret }));
+
+  /** Attaches a listing (once) as a pill; it is sent as its link after the text. */
+  const attach = (listing: MarketListingEntry) => {
+    const url = listingMessageUrl(listing);
+    if (!urls.includes(url)) onChange(joinDraft(text, [...urls, url]));
+    textareaRef.current?.focus();
+  };
+  useImperativeHandle(ref, () => ({ focus: () => textareaRef.current?.focus(), attach }));
 
   // Template menu
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
   const [active, setActive] = useState(0);
-  const slash = SLASH_COMMAND.exec(value);
+  const slash = SLASH_COMMAND.exec(text);
   const templates = useMemo(() => {
     const vars = {
       gameInfo: templateVars.gameInfo,
@@ -113,13 +130,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const matches = slash
     ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
     : [];
-  const menuOpen = !!slash && dismissedAt !== value && matches.length > 0;
+  const menuOpen = !!slash && dismissedAt !== text && matches.length > 0;
   const activeIndex = Math.min(active, matches.length - 1);
 
   const send = () => {
-    const text = value.trim();
-    if (!text) return;
-    onSend(text);
+    const message = value.trim();
+    if (!message) return;
+    onSend(message);
     onChange('');
   };
 
@@ -135,13 +152,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       }
       if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
         e.preventDefault();
-        const { text } = matches[activeIndex];
-        replaceDraft(text, text.length);
+        const { text: filled } = matches[activeIndex];
+        replaceText(filled, filled.length);
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setDismissedAt(value);
+        setDismissedAt(text);
         return;
       }
     }
@@ -182,7 +199,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   aria-selected={i === activeIndex}
                   onMouseDown={(e) => e.preventDefault()}
                   onMouseEnter={() => setActive(i)}
-                  onClick={() => replaceDraft(t.text, t.text.length)}
+                  onClick={() => replaceText(t.text, t.text.length)}
                   className={cn(
                     'cursor-pointer rounded-md px-2.5 py-1.5 transition-colors duration-(--dur-fast)',
                     i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
@@ -251,18 +268,67 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </span>
         </div>
 
+        {links.length > 0 && (
+          <ul aria-label="Attached listings"
+            className="flex flex-wrap gap-x-1 gap-y-2 px-2 pt-2.5">
+            {links.map((link, index) => {
+              const state = attached.get(link.listingId);
+              const listing = state && 'listing' in state ? state.listing : undefined;
+              const name = listing?.item.name ?? link.displayName ?? 'Market listing';
+              return (
+                <li key={`${link.url}:${index}`}
+                  className="relative inline-flex max-w-full pr-1.5">
+                  {listing ? (
+                    <ListingCard listing={listing}
+                      listed={state?.status === 'listed'}
+                      url={link.url} />
+                  ) : (
+                    // Still loading, or not found: the name the link carries
+                    <span aria-busy={state?.status === 'loading' || undefined}
+                      className={listingPillClass}>
+                      <span className={listingIconBoxClass}>
+                        <Package className="size-3.5 text-muted-foreground" />
+                      </span>
+                      <span className="truncate font-semibold text-info">{name}</span>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${name}`}
+                    onClick={() => {
+                      onChange(
+                        joinDraft(
+                          text,
+                          urls.filter((_, i) => i !== index),
+                        ),
+                      );
+                      textareaRef.current?.focus();
+                    }}
+                    className="absolute -top-1.5 right-0 inline-flex size-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-xs outline-none transition-colors duration-(--dur-fast) hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    <X className="size-2.5" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
         <div className="flex items-end gap-1 p-1.5">
-          <ListingPicker
-            onPick={(listing) => insertAtCaret(listingMessageUrl(listing))}
-            onClosed={() => textareaRef.current?.focus()}
-          />
+          <ListingPicker onPick={attach}
+            onClosed={() => textareaRef.current?.focus()} />
           <textarea
             ref={textareaRef}
             rows={1}
-            value={value}
+            value={text}
             onChange={(e) => {
               setActive(0);
-              onChange(e.target.value);
+              // A listing link typed or pasted in becomes an attachment, the caret staying where it was
+              const typed = splitDraft(e.target.value);
+              if (typed.links.length > 0) {
+                caretRef.current = splitDraft(e.target.value.slice(0, e.target.selectionStart)).text.length;
+              }
+              onChange(joinDraft(typed.text, [...urls, ...typed.links.map((link) => link.url)]));
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}

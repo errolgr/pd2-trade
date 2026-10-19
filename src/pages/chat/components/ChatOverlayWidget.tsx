@@ -40,7 +40,6 @@ import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
 import { ThreadDeals } from './ThreadDeals';
 import { ThreadHeader } from './ThreadHeader';
-import { listingMessageUrl } from './ListingPicker';
 import { TraderSidebar } from './TraderSidebar';
 
 interface ChatOverlayWidgetProps {
@@ -403,7 +402,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   /** Links one of their listings in the draft (the sidebar's market); the slide-over makes way for it. */
   const insertListing = (listing: MarketListingEntry) => {
-    composerRef.current?.insert(listingMessageUrl(listing));
+    composerRef.current?.attach(listing);
     if (!wide) setTraderOverlay(false);
   };
 
