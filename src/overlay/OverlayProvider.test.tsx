@@ -213,6 +213,20 @@ describe('computePlacement', () => {
     expect(computePlacement(placement, size, gameRect, viewport)).toEqual(expected);
   });
 
+  it('keeps game-anchored panels on screen when the game runs under the taskbar (overlay = work area)', () => {
+    // Borderless fullscreen game 1920x1080; the overlay stops at a 48px taskbar
+    const fullscreenGame = { x: 0, y: 0, width: 1920, height: 1080 };
+    const workArea = { x: 0, y: 0, width: 1920, height: 1032 };
+    expect(computePlacement('gameBottomRight', size, fullscreenGame, workArea)).toEqual({
+      x: 1700,
+      y: 932,
+      width: 200,
+      height: 100,
+    });
+    const right = computePlacement('gameRight', size, fullscreenGame, workArea);
+    expect(right.y + right.height).toBeLessThanOrEqual(workArea.height);
+  });
+
   it('places at the cursor and clamps into the overlay', () => {
     expect(computePlacement('cursor', size, gameRect, viewport, { x: 300, y: 200 })).toMatchObject({ x: 300, y: 200 });
     expect(computePlacement('cursor', size, gameRect, viewport, { x: 1900, y: 1070 })).toMatchObject({

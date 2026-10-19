@@ -11,8 +11,9 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
+const overlay = vi.hoisted(() => ({ gameFocused: true }));
 vi.mock('./OverlayProvider', () => ({
-  useOverlay: () => ({ gameRect: { x: 100, y: 50, width: 1280, height: 720 } }),
+  useOverlay: () => ({ gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: overlay.gameFocused }),
 }));
 
 async function advance(ms: number) {
@@ -50,6 +51,7 @@ beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   window.innerWidth = 1920;
   window.innerHeight = 1080;
+  overlay.gameFocused = true;
 });
 
 afterEach(async () => {
@@ -70,6 +72,15 @@ describe('ToastLayer', () => {
     // right = 1920 - (100 + 1280) + 16, bottom = 1080 - (50 + 720) + 16
     expect(toaster.style.getPropertyValue('--offset-right')).toBe('556px');
     expect(toaster.style.getPropertyValue('--offset-bottom')).toBe('326px');
+  });
+
+  it('outside the game, pins it to the bottom-right corner of the screen instead', async () => {
+    overlay.gameFocused = false;
+    await renderLayer();
+    await show(() => showToast('hello'));
+    const toaster = document.querySelector<HTMLElement>('[data-sonner-toaster]')!;
+    expect(toaster.style.getPropertyValue('--offset-right')).toBe('16px');
+    expect(toaster.style.getPropertyValue('--offset-bottom')).toBe('16px');
   });
 });
 
