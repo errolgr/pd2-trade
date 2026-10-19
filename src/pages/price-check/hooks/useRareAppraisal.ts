@@ -14,7 +14,7 @@ export type RareAppraisalState =
   | { status: 'done'; response: RareAppraisalResponse };
 
 /**
- * Appraises a Rare price-check item on pd2trader.com (`POST /api/rare-appraisal`) with the captured item
+ * Appraises a Rare price-check item on pd2trader.com (`POST /api/rares/appraisal`) with the captured item
  * (the PD2 clipboard JSON, re-serialised). `mode === null` (settings still loading) or a non-rare item: idle.
  */
 export function useRareAppraisal(
@@ -43,7 +43,7 @@ export function useRareAppraisal(
       (err: unknown) => {
         if (cancelled) return;
         const error = err instanceof Error ? err : new Error(String(err));
-        reportApiError(error, 'rare-appraisal-api', 'api/rare-appraisal');
+        reportApiError(error, 'rare-appraisal-api', 'api/rares/appraisal');
         settle({ status: 'error' });
       },
     );

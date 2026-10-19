@@ -1,5 +1,5 @@
 /**
- * Client for the pd2-price-crawler rare appraisal API (`POST /api/rare-appraisal`).
+ * Client for the pd2-price-crawler rare appraisal API (`POST /api/rares/appraisal`).
  * Wire types mirror the server's src/rare-appraisal/rare-appraisal.types.ts; keep them in sync.
  */
 import { fetch } from '@/lib/browser-http';
@@ -140,7 +140,7 @@ export async function fetchRareAppraisal(
   opts: { isLadder: boolean; isHardcore: boolean },
   signal?: AbortSignal,
 ): Promise<RareAppraisalResponse | null> {
-  const response = await fetch(`${BACKEND_URL}/api/rare-appraisal`, {
+  const response = await fetch(`${BACKEND_URL}/api/rares/appraisal`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, isLadder: opts.isLadder, isHardcore: opts.isHardcore }),
