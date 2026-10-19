@@ -104,16 +104,15 @@ pub fn run() {
             let app_handle = app.app_handle().clone();
             let _ = commands::reposition_toast_window(app_handle.clone());
 
-            // Initialize Diablo focus monitoring (hotkeys & window repositioning)
+            // Track the game focus context (overlay visibility, hotkeys, window anchoring)
             let app_handle_bounds = app.app_handle().clone();
-            let app_handle_focus = app.app_handle().clone();
             window::initialize_diablo_focus_monitoring(
-                app_handle_focus,
-                Some(Box::new(move |_is_focused| {
-                    // Reposition windows when Diablo focus changes
+                app.app_handle().clone(),
+                Box::new(move |_in_game| {
+                    // Re-anchor windows: Diablo in game context, otherwise the user's screen
                     let _ = commands::update_window_bounds(app_handle_bounds.clone());
                     let _ = commands::reposition_toast_window(app_handle_bounds.clone());
-                })),
+                }),
             );
 
             // Initialize window state saving on focus/blur events

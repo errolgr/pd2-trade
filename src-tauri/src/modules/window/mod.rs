@@ -30,6 +30,9 @@ mod windows;
 #[cfg(target_os = "windows")]
 pub use windows::*;
 
+mod focus;
+pub use focus::*;
+
 // Shared Logic
 
 /// Validates and sanitizes window bounds before saving to prevent integer overflow bugs

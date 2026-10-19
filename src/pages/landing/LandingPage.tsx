@@ -821,7 +821,8 @@ const LandingPage: React.FC = () => {
   const focusDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Central Visibility Manager
-  // Handles auto-hiding windows when Diablo/App loses focus and restoring them when focus is gained.
+  // Hides overlay windows when the game context ends and restores them when it returns. The context
+  // (`diablo-focus-changed`) is Diablo focused, or one of our windows focused from Diablo.
   useEffect(() => {
     if (!isTauri()) return;
 

@@ -9,6 +9,25 @@ import { Toaster } from '@/components/ui/sonner';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { openUrl } from '@/lib/browser-opener';
 
+/**
+ * Shows the toast window anchored to where the user is: the Diablo window while in game, otherwise
+ * the screen they are on. The anchor follows focus, so it is recomputed on every show.
+ */
+async function showToastWindow() {
+  if (!isTauri()) return;
+  try {
+    await invoke('reposition_toast_window');
+  } catch (error) {
+    console.warn('Failed to position toast window:', error);
+  }
+  try {
+    const win = await getCurrentWebviewWindow();
+    if (win) await win.show();
+  } catch (error) {
+    console.error('Failed to show toast window:', error);
+  }
+}
+
 const ToastPage: React.FC = () => {
   const closeToastWebview = async () => {
     if (isTauri()) {
@@ -41,15 +60,7 @@ const ToastPage: React.FC = () => {
     let unlistenConfirmPromise: Promise<() => void>;
 
     listen('toast-confirm-disable-overlay', async (event: any) => {
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
+      await showToastWindow();
 
       handleToastOpen();
       const toastId = toast('Disable Chat Button Overlay?', {
@@ -98,15 +109,7 @@ const ToastPage: React.FC = () => {
     listen('toast-confirm-delete-listing', async (event: any) => {
       const { listingId, itemName } = event.payload || {};
 
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
+      await showToastWindow();
 
       handleToastOpen();
       const toastId = toast.warning('Delete Listing?', {
@@ -155,15 +158,7 @@ const ToastPage: React.FC = () => {
     let unlistenPromise: Promise<() => void>;
 
     listen('toast-event', async (event) => {
-      // Show the window when we receive a toast event (only in Tauri)
-      if (isTauri()) {
-        try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
-        } catch (error) {
-          console.error('Failed to show toast window:', error);
-        }
-      }
+      await showToastWindow();
 
       // event.payload can be string or object
       if (typeof event.payload === 'string') {
