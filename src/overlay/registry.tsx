@@ -61,8 +61,9 @@ export const PANEL_DEFS: PanelDefs = {
   chat: {
     id: 'chat',
     component: ChatPage,
-    // Opens compact (one column: the list or a thread); wider than 640px it shows both side by side
-    size: { width: 400, height: 640 },
+    // Opens wide: conversation list | thread | Trader sidebar (from 1020px); narrower it drops the sidebar to a
+    // slide-over, below 640px to one column (the list or a thread). Clamped to the screen.
+    size: { width: 1100, height: 720 },
     minSize: { width: 360, height: 480 },
     resizable: true,
     placement: 'gameCenter',

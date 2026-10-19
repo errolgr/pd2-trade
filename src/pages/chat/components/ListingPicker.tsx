@@ -1,17 +1,16 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Loader2, Package, PackagePlus, RotateCw, Search } from 'lucide-react';
+import { AlertTriangle, Loader2, PackagePlus, RotateCw, Search } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useItems } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
 import { cn } from '@/lib/utils';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
-import { listingArtUrl } from '../lib/listing-art';
+import { ListingThumb, nameColor } from './ListingCard';
+import { Tip } from './chat-parts';
 
 /** Newest-bumped active listings offered by the picker. */
 const PICKER_LIMIT = 50;
@@ -21,24 +20,6 @@ export const listingMessageUrl = (listing: Pick<MarketListingEntry, '_id' | 'ite
   `https://www.projectdiablo2.com/market/listing/${listing._id}?display="${listing.item.name}"`;
 
 type PickerState = { status: 'loading' } | { status: 'error' } | { status: 'done'; listings: MarketListingEntry[] };
-
-function ListingThumb({ listing }: { listing: MarketListingEntry }) {
-  const { itemsMapByKey } = useItems();
-  const [failed, setFailed] = useState(false);
-  const src = listingArtUrl(listing.item, itemsMapByKey);
-  return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/70">
-      {src && !failed ? (
-        <img src={src}
-          alt=""
-          className="max-h-7 max-w-7 object-contain"
-          onError={() => setFailed(true)} />
-      ) : (
-        <Package className="size-4 text-muted-foreground" />
-      )}
-    </span>
-  );
-}
 
 /** "Link one of my listings": a searchable list of the signed-in user's active listings. */
 export function ListingPicker({
@@ -138,14 +119,7 @@ export function ListingPicker({
             >
               <ListingThumb listing={listing} />
               <span className="min-w-0 flex-1">
-                <span
-                  className={cn(
-                    'block truncate text-sm font-semibold',
-                    listing.item.is_runeword || / Rune$/.test(listing.item.name)
-                      ? 'text-q-rune'
-                      : qualityColor(listing.item.quality?.name ?? ''),
-                  )}
-                >
+                <span className={cn('block truncate text-sm font-semibold', nameColor(listing))}>
                   {listing.item.name}
                 </span>
                 {listing.item.base?.name && listing.item.base.name !== listing.item.name && (
@@ -173,14 +147,15 @@ export function ListingPicker({
         }
       }}
     >
-      <PopoverTrigger
-        aria-label="Link one of my listings"
-        title="Link one of my listings"
-        disabled={!userId}
-        className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
-      >
-        <PackagePlus className="size-4" />
-      </PopoverTrigger>
+      <Tip label="Link one of my listings">
+        <PopoverTrigger
+          aria-label="Link one of my listings"
+          disabled={!userId}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+        >
+          <PackagePlus className="size-4" />
+        </PopoverTrigger>
+      </Tip>
       <PopoverContent
         side="top"
         align="start"

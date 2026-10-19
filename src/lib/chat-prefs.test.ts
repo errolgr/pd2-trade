@@ -89,6 +89,16 @@ describe('thread preferences', () => {
     expect(parseChatPrefs('not json')).toEqual(EMPTY_PREFS);
     expect(parseChatPrefs('{"threads": 1}')).toEqual(EMPTY_PREFS);
   });
+
+  it("keeps the Trader sidebar's collapsed state alongside thread preferences", () => {
+    const collapsed = parseChatPrefs(JSON.stringify({ threads: {}, sidebarCollapsed: true }));
+    expect(collapsed.sidebarCollapsed).toBe(true);
+    expect(setThreadPrefs(collapsed, ['c1'], { muted: true })).toEqual({
+      threads: { c1: { muted: true } },
+      sidebarCollapsed: true,
+    });
+    expect(parseChatPrefs(JSON.stringify({ threads: {}, sidebarCollapsed: 'yes' })).sidebarCollapsed).toBeUndefined();
+  });
 });
 
 describe('chat-prefs store', () => {

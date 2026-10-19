@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { MessageSquare, MessagesSquare } from 'lucide-react';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writeText } from '@/lib/browser-clipboard';
 import {
   changeChatPrefs,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
+import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { findMarketLinks } from '../lib/market-links';
@@ -32,11 +34,14 @@ import {
 } from '../lib/inbox';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
-import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
+import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
+import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
 import { ThreadDeals } from './ThreadDeals';
 import { ThreadHeader } from './ThreadHeader';
+import { listingMessageUrl } from './ListingPicker';
+import { TraderSidebar } from './TraderSidebar';
 
 interface ChatOverlayWidgetProps {
   onClose: () => void;
@@ -62,6 +67,13 @@ interface UnreadMarker {
 const CLOCK_TICK_MS = 60_000;
 /** Narrower than this the panel shows one column: the list, or the open thread with a back button. */
 const COMPACT_BELOW_PX = 640;
+/**
+ * From this width the Trader sidebar is a third column (collapsible, remembered in chat prefs); narrower it
+ * slides over the thread when asked for.
+ */
+const WIDE_FROM_PX = 1020;
+/** The Trader sidebar's width. */
+const TRADER_WIDTH_PX = 300;
 /** A deleted conversation can be restored this long; the website is told to delete it after that. */
 const DELETE_UNDO_MS = 6000;
 
@@ -93,6 +105,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const { payload, payloadVersion, visible, rect } = usePanel<'chat'>();
   // One column (list or thread) when the panel itself is narrow, whatever the window size
   const compact = rect.width < COMPACT_BELOW_PX;
+  const wide = rect.width >= WIDE_FROM_PX;
   const { settings } = useOptions();
   const prefs = useChatPrefs();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
@@ -104,6 +117,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const [channels, setChannels] = useState<Record<string, ReplyChannel>>({});
   // Conversations deleted but still undoable: hidden now, deleted on the website once the undo window closes
   const [deleting, setDeleting] = useState<ReadonlySet<string>>(() => new Set());
+  // The Trader sidebar sliding over the thread (below WIDE_FROM_PX; wide panels show it as a column)
+  const [traderOverlay, setTraderOverlay] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
@@ -212,6 +227,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Whom a whisper reaches (the same accounts link incoming whispers to this thread)
   const person = people?.[0];
+  const characterName = people?.find((p) => p.characterName)?.characterName;
+  // Their market listings and presence (the header's status line, the Trader sidebar)
+  const trader = useTraderProfile(selectedThread?.userId, now);
+  const traderOpen = wide ? !prefs.sidebarCollapsed : traderOverlay;
   const whisperAccount = selectedThread && threadWhisperAccount(selectedThread);
   const openTrades = (people ?? []).flatMap((p) =>
     p.trades.filter((trade) => isOpenTrade(trade, now)).map((trade) => ({ person: p, trade })),
@@ -340,7 +359,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Focus the composer when a thread is opened, and on a toast's Reply; while the panel is hidden (opened
   // with the game in the background) the focus waits until it shows
-  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<ComposerHandle>(null);
   const openedThreadId = selectedThread?.id;
   const focusPendingRef = useRef(false);
   useEffect(() => {
@@ -362,6 +381,30 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const selectThread = (threadId: string | null) => {
     setSelectedThreadId(threadId);
     setRequest(null);
+    setTraderOverlay(false);
+  };
+
+  /** Shows or hides the Trader sidebar: the column's collapsed state when wide (saved), else the slide-over. */
+  const setTraderShown = (shown: boolean) => {
+    if (!wide) {
+      setTraderOverlay(shown);
+      return;
+    }
+    changeChatPrefs((current) =>
+      !shown === !!current.sidebarCollapsed ? current : { ...current, sidebarCollapsed: shown ? undefined : true },
+    );
+  };
+
+  /** Opens a thread with its Trader details showing (an avatar was clicked). */
+  const openTrader = (threadId: string) => {
+    selectThread(threadId);
+    setTraderShown(true);
+  };
+
+  /** Links one of their listings in the draft (the sidebar's market); the slide-over makes way for it. */
+  const insertListing = (listing: MarketListingEntry) => {
+    composerRef.current?.insert(listingMessageUrl(listing));
+    if (!wide) setTraderOverlay(false);
   };
 
   /** Pin/mute/archive the open thread (under every id it is known by). */
@@ -468,7 +511,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // keys finishing an IME composition are left alone.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.defaultPrevented || e.nativeEvent.isComposing || !e.currentTarget.contains(e.target as Node)) return;
-    if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && selectedThread) {
+    if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && !wide && traderOverlay) {
+      // The slide-over closes first
+      e.preventDefault();
+      setTraderOverlay(false);
+    } else if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && selectedThread) {
       e.preventDefault();
       // Keep the keyboard in the panel: the focused composer is about to unmount
       e.currentTarget.focus();
@@ -519,16 +566,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               onSearchChange={setSearch}
               selectedId={selectedThread?.id ?? null}
               onSelect={selectThread}
+              onOpenTrader={openTrader}
               loading={loadingConversations}
               failed={chat.conversationsFailed}
               signedIn={signedIn}
               onReload={loadConversations}
+              now={now}
               className={compact ? 'w-full border-r-0' : undefined}
             />
           )}
 
           {(!compact || selectedThread) && (
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
               {selectedThread ? (
                 <>
                   <ThreadHeader
@@ -536,10 +585,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     participant={participant}
                     account={whisperAccount}
                     inGameOnly={!selectedThread.userId}
-                    characterName={people?.find((p) => p.characterName)?.characterName}
+                    characterName={characterName}
+                    presence={trader.status === 'ready' ? trader.presence.kind : undefined}
+                    presenceText={
+                      trader.status === 'ready' && trader.presence.kind !== 'unknown'
+                        ? presenceLabel(trader.presence, now)
+                        : undefined
+                    }
                     pinned={selectedThread.pinned}
                     muted={selectedThread.muted}
                     archived={selectedThread.archived}
+                    traderOpen={traderOpen}
+                    onToggleTrader={() => setTraderShown(!traderOpen)}
                     onBack={compact ? () => selectThread(null) : undefined}
                     onTogglePin={() =>
                       setPrefs(selectedThread, { pinnedAt: selectedThread.pinned ? undefined : Date.now() })
@@ -566,7 +623,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         : undefined
                     }
                   />
-                  <div className="shrink-0 bg-background/30">
+                  <div className="shrink-0">
                     <ThreadDeals
                       offers={selectedThread.offers}
                       hiddenOffers={hiddenOutgoingOffers.filter(
@@ -590,6 +647,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     thread={websiteThread}
                     readerId={participant?._id}
                     otherName={selectedThread.name}
+                    onOpenTrader={() => setTraderShown(true)}
                     listings={listings}
                     unreadKey={unreadKey}
                     onRetry={chat.retry}
@@ -610,17 +668,59 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                       }
                     }}
                     placeholder={
-                      channel === 'whisper' ? `Whisper *${whisperAccount}...` : `Message ${selectedThread.name}...`
+                      channel === 'whisper'
+                        ? `Whisper *${whisperAccount} — copied for in-game chat`
+                        : `Message ${selectedThread.name}...`
                     }
                     templateVars={templateVars}
                     compact={compact}
                     channel={channel}
+                    whisperTarget={whisperAccount}
                     onChannelChange={
                       websiteReachable && whisperAccount
                         ? (next) => setChannels((current) => ({ ...current, [selectedThread.id]: next }))
                         : undefined
                     }
                   />
+                  {/* Narrower panels: the Trader sidebar slides over the thread */}
+                  <AnimatePresence>
+                    {!wide && traderOverlay && (
+                      <>
+                        <motion.div
+                          key="scrim"
+                          aria-hidden
+                          variants={fadeIn}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          onClick={() => setTraderOverlay(false)}
+                          className="absolute inset-0 z-20 bg-scrim backdrop-blur-[1px]"
+                        />
+                        <motion.div
+                          key="trader"
+                          variants={slideInRight}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          className="absolute inset-y-0 right-0 z-30 flex max-w-full"
+                        >
+                          <TraderSidebar
+                            thread={selectedThread}
+                            profile={trader}
+                            whisperAccount={whisperAccount}
+                            characterName={characterName}
+                            linkedListingIds={linkedListingIds}
+                            listings={listings}
+                            now={now}
+                            onInsertListing={insertListing}
+                            onClose={() => setTraderOverlay(false)}
+                            closeLabel="Close trader details"
+                            className="max-w-full bg-card shadow-panel"
+                          />
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </>
               ) : (
                 <EmptyState
@@ -632,6 +732,33 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               )}
             </section>
           )}
+
+          {/* Wide panels: the Trader sidebar is a third column */}
+          <AnimatePresence initial={false}>
+            {wide && selectedThread && traderOpen && (
+              <motion.div
+                key="trader"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: TRADER_WIDTH_PX, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: DUR.slow, ease: EASE_OUT }}
+                className="flex min-h-0 shrink-0 overflow-hidden"
+              >
+                <TraderSidebar
+                  thread={selectedThread}
+                  profile={trader}
+                  whisperAccount={whisperAccount}
+                  characterName={characterName}
+                  linkedListingIds={linkedListingIds}
+                  listings={listings}
+                  now={now}
+                  onInsertListing={insertListing}
+                  onClose={() => setTraderShown(false)}
+                  closeLabel="Collapse trader details"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </WindowPanel>
     </MotionConfig>

@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
-import { AlertCircle, Gamepad2, Globe, Loader2, RotateCw } from 'lucide-react';
-import { fadeInUp } from '@/lib/motion';
+import { AlertCircle, ClipboardCopy, Gamepad2, Globe, Loader2, RotateCw } from 'lucide-react';
+import { fadeInUp, slideInRight } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
 import { MessageContent } from './MessageContent';
-import { ReadReceipt } from './chat-parts';
+import { ChatAvatar, ReadReceipt } from './chat-parts';
 
 /** Messages from one side and source less than this far apart form a group (tight spacing, shared corners). */
 const GROUP_GAP_MINUTES = 5;
@@ -53,6 +53,8 @@ export function MessageBubble({
   row,
   startsUnread = false,
   readerId,
+  otherName,
+  onOpenTrader,
   listings,
   onRetry,
 }: {
@@ -60,6 +62,10 @@ export function MessageBubble({
   /** The first message that was unread when the thread was opened: a "New" divider goes above it. */
   startsUnread?: boolean;
   readerId?: string;
+  /** The other side's name: their avatar starts each of their groups. */
+  otherName: string;
+  /** Their avatar opens the Trader details. */
+  onOpenTrader: () => void;
   listings: ReadonlyMap<string, ChatListingState>;
   onRetry: (conversationId: string, clientId: string) => void;
 }) {
@@ -73,42 +79,68 @@ export function MessageBubble({
   const whisper = entry.source === 'whisper';
   const SourceIcon = whisper ? Gamepad2 : Globe;
   return (
-    // Only messages that arrive while open animate in; history (and rows virtualized back in) appear as-is
-    <motion.div variants={fadeInUp}
+    // Only messages that arrive while open animate in (own ones from the right, theirs from below); history
+    // (and rows virtualized back in) appear as-is
+    <motion.div
+      variants={isOwnMessage ? slideInRight : fadeInUp}
       initial={message?.live ? 'hidden' : false}
-      animate="visible">
+      animate="visible"
+    >
       {startsDay && (
-        <div className="mb-3 flex items-center gap-3 px-2">
-          <span className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
-          <span className="rounded-full border border-border/70 bg-card/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground shadow-xs">
+        <div className="mb-3 flex items-center justify-center gap-3 px-2">
+          <span className="h-px max-w-24 flex-1 bg-linear-to-r from-transparent to-border" />
+          <span className="rounded-full border border-border/70 bg-linear-to-b from-card to-card/70 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
             {formatDayLabel(entry.createdAt)}
           </span>
-          <span className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
+          <span className="h-px max-w-24 flex-1 bg-linear-to-l from-transparent to-border" />
         </div>
       )}
       {startsUnread && (
         <div role="separator"
           aria-label="New messages"
           className="mb-2.5 flex items-center gap-2 px-1">
-          <span className="h-px flex-1 bg-destructive/50" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-destructive">New</span>
+          <span className="h-px flex-1 bg-linear-to-r from-transparent to-destructive/60" />
+          <span className="rounded-full bg-destructive/12 px-2 py-px text-[10px] font-semibold uppercase tracking-wider text-destructive ring-1 ring-inset ring-destructive/30">
+            New
+          </span>
+          <span className="h-px flex-1 bg-linear-to-l from-transparent to-destructive/60" />
         </div>
       )}
-      <div className={cn('group/msg flex', isOwnMessage ? 'justify-end' : 'justify-start')}>
+      <div className={cn('group/msg flex items-start gap-2', isOwnMessage ? 'justify-end' : 'justify-start')}>
+        {!isOwnMessage &&
+          (continuesGroup ? (
+            <span aria-hidden
+              className="w-7 shrink-0" />
+          ) : (
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label={`Trader details for ${otherName}`}
+              onClick={onOpenTrader}
+              className="mt-0.5 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+            >
+              <ChatAvatar name={otherName}
+                className="size-7 text-xs" />
+            </button>
+          ))}
         <div
           aria-busy={sending || undefined}
           title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
           className={cn(
-            'relative max-w-[72%] rounded-2xl px-3 py-1.5 text-foreground ring-1 ring-inset transition-opacity duration-(--dur-med)',
+            'relative max-w-[72%] rounded-2xl px-3 py-1.5 text-foreground ring-1 ring-inset transition-[opacity,box-shadow] duration-(--dur-med)',
             isOwnMessage
-              ? ['bg-primary/15 ring-primary/25', continuesGroup && 'rounded-tr-md', groupContinues && 'rounded-br-md']
+              ? [
+                  'bg-linear-to-br from-primary/28 via-primary/18 to-primary/10 shadow-sm ring-primary/30',
+                  continuesGroup && 'rounded-tr-md',
+                  groupContinues && 'rounded-br-md',
+                ]
               : [
-                  'bg-card ring-border/70 shadow-xs',
+                  'bg-linear-to-b from-card to-card/85 shadow-sm ring-border/70 group-hover/msg:shadow-md',
                   continuesGroup && 'rounded-tl-md',
                   groupContinues && 'rounded-bl-md',
                 ],
             sending && 'opacity-60',
-            failed && 'bg-destructive/10 ring-destructive/40',
+            failed && 'bg-none bg-destructive/10 ring-destructive/40',
           )}
         >
           <MessageContent content={entry.content}
@@ -119,6 +151,7 @@ export function MessageBubble({
               // Inside a group only the last bubble keeps its time; the others show it on hover
               groupContinues &&
                 !message?.status &&
+                !entry.copied &&
                 'h-0 overflow-hidden opacity-0 group-hover/msg:h-4 group-hover/msg:opacity-100',
             )}
           >
@@ -143,7 +176,16 @@ export function MessageBubble({
                   className="size-2.5 text-muted-foreground/70"
                 />
                 <span>{time}</span>
-                {entry.copied && <span title="Copied to the clipboard; not seen in the game chat yet">· copied</span>}
+                {entry.copied && (
+                  <span
+                    title="Copied to your clipboard as /w *account … — paste it in the game chat (Enter, Ctrl+V) to send it. Marked sent once the game shows it."
+                    className="ml-0.5 inline-flex cursor-help items-center gap-0.5 rounded-sm bg-warning/15 px-1 font-medium text-warning"
+                  >
+                    <ClipboardCopy aria-hidden
+                      className="size-2.5" />
+                    copied
+                  </span>
+                )}
                 {sending && <Loader2 aria-hidden
                   className="size-3 animate-spin" />}
                 {isOwnMessage && message && !message.status && <ReadReceipt message={message}

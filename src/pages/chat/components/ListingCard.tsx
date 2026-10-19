@@ -20,14 +20,14 @@ import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useLis
  * the item card and the plain link MessageContent falls back to when a listing can't be looked up.
  */
 export const listingPillClass = cn(
-  'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/70 bg-background/50 py-0.5 pr-2 pl-0.5 align-middle text-sm',
-  'transition-[border-color,background-color,transform] duration-(--dur-fast) ease-out hover:border-info/40 hover:bg-accent/40',
+  'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/70 bg-background/60 py-0.5 pr-2 pl-0.5 align-middle text-sm shadow-xs',
+  'transition-[border-color,background-color,transform,box-shadow] duration-(--dur-fast) ease-out hover:border-info/40 hover:bg-accent/40 hover:shadow-sm',
   'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
 );
 
 /** Thumbnail tile at the pill's start, a shade off the pill so the art reads as its own slot. */
 export const listingIconBoxClass =
-  'flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-muted/70';
+  'flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-linear-to-b from-muted/90 to-muted/50';
 
 /** Same footprint as a loaded pill, so the sentence doesn't reflow much when the listing arrives. */
 export function ListingCardSkeleton() {
@@ -35,18 +35,43 @@ export function ListingCardSkeleton() {
     className="mx-0.5 inline-block h-[30px] w-36 align-middle" />;
 }
 
-function ItemArt({ listing }: { listing: MarketListingEntry }) {
+/** The item's picture (its type's icon as a fallback, a package when none loads); size it with `className`. */
+function ItemArt({ listing, className = 'max-h-5 max-w-5' }: { listing: MarketListingEntry; className?: string }) {
   const { itemsMapByKey } = useItems();
   const [failed, setFailed] = useState(false);
   const src = listingArtUrl(listing.item, itemsMapByKey);
   if (!src || failed) return <Package className="size-3.5 text-muted-foreground" />;
   return <img src={src}
     alt=""
-    className="max-h-5 max-w-5 object-contain"
+    className={cn('object-contain', className)}
     onError={() => setFailed(true)} />;
 }
 
-const nameColor = (listing: MarketListingEntry) =>
+/** A listing's picture on its own tile (pickers, the trader sidebar, conversation rows). */
+export function ListingThumb({
+  listing,
+  className,
+  artClassName = 'max-h-7 max-w-7',
+}: {
+  listing: MarketListingEntry;
+  className?: string;
+  artClassName?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-linear-to-b from-muted/80 to-muted/40 shadow-xs',
+        className,
+      )}
+    >
+      <ItemArt listing={listing}
+        className={artClassName} />
+    </span>
+  );
+}
+
+/** The item name's colour: rune colour for runes and runewords, else its quality colour. */
+export const nameColor = (listing: MarketListingEntry) =>
   listing.item.is_runeword || / Rune$/.test(listing.item.name)
     ? 'text-q-rune'
     : qualityColor(listing.item.quality?.name ?? '');
@@ -63,7 +88,7 @@ function stashLabel(listing: MarketListingEntry): string | null {
 }
 
 /** "12% under market" / "5% over market" / "at market" for an asking price against the market price. */
-function marketDelta(askingHr: number, marketHr: number): { text: string; className: string } {
+export function marketDelta(askingHr: number, marketHr: number): { text: string; className: string } {
   const percent = Math.round(((askingHr - marketHr) / marketHr) * 100);
   if (percent === 0) return { text: 'at market', className: 'text-muted-foreground' };
   return percent < 0
@@ -71,15 +96,17 @@ function marketDelta(askingHr: number, marketHr: number): { text: string; classN
     : { text: `${percent}% over market`, className: 'text-warning' };
 }
 
-/** Hover detail: full stats plus the trade context the card leaves out. */
-function ListingDetails({
+/** Hover detail: full stats plus the trade context the card leaves out; `hint` says what a click does. */
+export function ListingDetails({
   listing,
   listed,
   market,
+  hint = 'Click to open on projectdiablo2.com',
 }: {
   listing: MarketListingEntry;
   listed: boolean;
   market: ListingMarketPrice | undefined;
+  hint?: string;
 }) {
   const { item, user } = listing;
   const online = listed && isUserOnlineIngame(listing.user_last_ingame);
@@ -138,9 +165,7 @@ function ListingDetails({
           </div>
         )}
       </div>
-      <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">
-        Click to open on projectdiablo2.com
-      </div>
+      <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{hint}</div>
     </div>
   );
 }

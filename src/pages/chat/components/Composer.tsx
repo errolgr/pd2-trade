@@ -7,6 +7,7 @@ import { fillTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { ListingPicker, listingMessageUrl } from './ListingPicker';
+import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 
 /** One-click phrases inserted into the draft (never sent directly). */
 export const QUICK_REPLIES = ['Still available?', 'Sold, sorry', 'Inv me', 'ty gl'] as const;
@@ -43,18 +44,25 @@ interface ComposerProps {
   channel: ReplyChannel;
   /** Set when both channels reach the person: shows the Website/Whisper switch. */
   onChannelChange?: (channel: ReplyChannel) => void;
+  /** The account whispers go to (`/w *account`), for the whisper hints. */
+  whisperTarget?: string;
   /** Compact panel: the quick replies stay on one line that scrolls sideways. */
   compact?: boolean;
 }
 
-/** Message input of the open thread; `ref` is the textarea (focus it to start typing). */
-export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
-  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, compact = false },
+/** The composer's handle: focus it, or insert text at its caret (the trader sidebar links a listing). */
+export interface ComposerHandle {
+  focus: () => void;
+  insert: (text: string) => void;
+}
+
+/** Message input of the open thread, a floating card: channel switch, quick replies, listing picker, input. */
+export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
+  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget, compact = false },
   ref,
 ) {
   const { settings } = useOptions();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  useImperativeHandle(ref, () => textareaRef.current!, []);
   const menuId = useId();
 
   // Caret position to restore once a programmatic edit (insert, template) is rendered
@@ -82,6 +90,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
     const head = `${before}${before && !/\s$/.test(before) ? ' ' : ''}${text}${after && !/^\s/.test(after) ? ' ' : ''}`;
     replaceDraft(head + after, head.length);
   };
+  useImperativeHandle(ref, () => ({ focus: () => textareaRef.current?.focus(), insert: insertAtCaret }));
 
   // Template menu
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
@@ -145,76 +154,18 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
   };
 
   const canSend = value.trim().length > 0;
+  const whisperTip = `Copies /w *${whisperTarget ?? 'account'} … — paste it in the game chat`;
 
   return (
-    <div className="@container shrink-0 border-t border-border bg-card/50 px-3 pb-3 pt-2">
-      {/* Compact: one sideways-scrolling line (no scrollbar); the Website/Whisper switch drops to icons */}
-      <div
-        role="toolbar"
-        aria-label="Quick replies"
-        className={cn(
-          'mb-2 flex items-center gap-1.5',
-          compact
-            ? 'flex-nowrap overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-            : 'flex-wrap',
-        )}
-      >
-        {onChannelChange && (
-          <ToggleGroup
-            type="single"
-            size="sm"
-            variant="outline"
-            aria-label="Reply via"
-            value={channel}
-            onValueChange={(next) => next && onChannelChange(next as ReplyChannel)}
-            className="mr-1 shrink-0"
-          >
-            <ToggleGroupItem
-              value="website"
-              title="Send a website message"
-              aria-label="Website"
-              className="h-6 gap-1 px-2 text-xs"
-            >
-              <Globe className="size-3" />
-              <span className="@max-[480px]:sr-only">Website</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="whisper"
-              title="Copy an in-game /w whisper"
-              aria-label="Whisper"
-              className="h-6 gap-1 px-2 text-xs"
-            >
-              <Gamepad2 className="size-3" />
-              <span className="@max-[480px]:sr-only">Whisper</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        )}
-        {QUICK_REPLIES.map((reply) => (
-          <button
-            key={reply}
-            type="button"
-            // Keep the draft's caret/selection: the chip inserts where the user was typing
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => insertAtCaret(reply)}
-            className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
-          >
-            {reply}
-          </button>
-        ))}
-        <span className="ml-auto hidden truncate text-[10px] text-muted-foreground/80 @min-[640px]:inline">
-          <kbd className="font-sans font-semibold">/</kbd> templates ·{' '}
-          <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
-        </span>
-      </div>
-
-      <div className="relative">
+    <div className="@container shrink-0 px-3 pb-3 pt-1.5">
+      <div className="relative rounded-2xl border border-border/80 bg-linear-to-b from-card to-card/85 shadow-panel ring-1 ring-inset ring-foreground/5 transition-[border-color,box-shadow] duration-(--dur-fast) focus-within:border-ring/50 focus-within:ring-ring/20">
         {menuOpen && (
           <motion.div
             key="templates"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            className="absolute inset-x-0 bottom-full z-20 mb-2 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-panel"
+            className="absolute inset-x-0 bottom-full z-20 mb-2 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-panel"
           >
             <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <FileText className="size-3" />
@@ -247,7 +198,65 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
           </motion.div>
         )}
 
-        <div className="flex items-end gap-1 rounded-xl border border-input bg-background/60 p-1 shadow-xs transition-[border-color,box-shadow] duration-(--dur-fast) focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/25">
+        {/* Compact: one sideways-scrolling line (no scrollbar); the Website/Whisper switch drops to icons */}
+        <div
+          role="toolbar"
+          aria-label="Quick replies"
+          className={cn(
+            'flex items-center gap-1.5 border-b border-border/50 px-2 py-1.5',
+            compact ? 'flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex-wrap',
+          )}
+        >
+          {onChannelChange && (
+            <ToggleGroup
+              type="single"
+              size="sm"
+              aria-label="Reply via"
+              value={channel}
+              onValueChange={(next) => next && onChannelChange(next as ReplyChannel)}
+              className={cn('mr-1 shrink-0', segmentedClass)}
+            >
+              <Tip label="Send a website message (they get it on projectdiablo2.com)">
+                <ToggleGroupItem
+                  value="website"
+                  aria-label="Website"
+                  className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
+                >
+                  <Globe className="size-3" />
+                  <span className="@max-[480px]:sr-only">Website</span>
+                </ToggleGroupItem>
+              </Tip>
+              <Tip label={whisperTip}>
+                <ToggleGroupItem
+                  value="whisper"
+                  aria-label="Whisper (copy)"
+                  className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
+                >
+                  <Gamepad2 className="size-3" />
+                  <span className="@max-[480px]:sr-only">Whisper (copy)</span>
+                </ToggleGroupItem>
+              </Tip>
+            </ToggleGroup>
+          )}
+          {QUICK_REPLIES.map((reply) => (
+            <button
+              key={reply}
+              type="button"
+              // Keep the draft's caret/selection: the chip inserts where the user was typing
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insertAtCaret(reply)}
+              className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color,transform] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+            >
+              {reply}
+            </button>
+          ))}
+          <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
+            <kbd className="font-sans font-semibold">/</kbd> templates ·{' '}
+            <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+          </span>
+        </div>
+
+        <div className="flex items-end gap-1 p-1.5">
           <ListingPicker
             onPick={(listing) => insertAtCaret(listingMessageUrl(listing))}
             onClosed={() => textareaRef.current?.focus()}
@@ -268,17 +277,28 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             // 1–6 lines: grows with its content, then scrolls
             className="field-sizing-content max-h-[8.25rem] min-h-8 flex-1 resize-none self-center bg-transparent px-1.5 py-1.5 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
           />
-          <button
-            type="button"
-            aria-label={channel === 'whisper' ? 'Copy whisper' : 'Send'}
-            title={channel === 'whisper' ? 'Copy the /w whisper to paste in game (Enter)' : 'Send (Enter)'}
-            disabled={!canSend}
-            onClick={send}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs outline-none transition-[opacity,transform,background-color] duration-(--dur-fast) hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          >
-            {channel === 'whisper' ? <ClipboardCopy className="size-4" /> : <SendHorizontal className="size-4" />}
-          </button>
+          <Tip label={channel === 'whisper' ? `${whisperTip} (Enter)` : 'Send (Enter)'}>
+            <button
+              type="button"
+              aria-label={channel === 'whisper' ? 'Copy whisper' : 'Send'}
+              disabled={!canSend}
+              onClick={send}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-b from-primary to-primary/80 text-primary-foreground shadow-sm outline-none transition-[opacity,transform,box-shadow] duration-(--dur-fast) hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+            >
+              {channel === 'whisper' ? <ClipboardCopy className="size-4" /> : <SendHorizontal className="size-4" />}
+            </button>
+          </Tip>
         </div>
+        {channel === 'whisper' && (
+          <p className="flex items-center gap-1.5 border-t border-border/50 px-3 py-1 text-[11px] text-muted-foreground">
+            <ClipboardCopy aria-hidden
+              className="size-3 shrink-0 text-warning" />
+            <span className="truncate">
+              Enter copies <span className="font-medium text-foreground/85">/w *{whisperTarget ?? 'account'} …</span> —
+              paste it in the game chat to send
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

@@ -35,6 +35,7 @@ export function MessageList({
   thread,
   readerId,
   otherName,
+  onOpenTrader,
   listings,
   unreadKey,
   onRetry,
@@ -49,6 +50,8 @@ export function MessageList({
   /** The other participant: own messages they have read show as Read. */
   readerId?: string;
   otherName: string;
+  /** The other side's avatars open their Trader details. */
+  onOpenTrader: () => void;
   listings: ReadonlyMap<string, ChatListingState>;
   /** The first message that was unread when the thread was opened: the "New" divider goes above it. */
   unreadKey?: string | null;
@@ -171,7 +174,7 @@ export function MessageList({
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-background/30">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-linear-to-b from-background/40 via-background/20 to-background/40">
       <ScrollArea
         className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
         ref={containerRef}
@@ -197,6 +200,8 @@ export function MessageList({
                     row={row}
                     startsUnread={row.key === unreadKey}
                     readerId={readerId}
+                    otherName={otherName}
+                    onOpenTrader={onOpenTrader}
                     listings={listings}
                     onRetry={onRetry}
                   />

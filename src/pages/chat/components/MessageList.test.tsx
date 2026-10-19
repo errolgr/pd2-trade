@@ -58,6 +58,7 @@ function renderList(entries: TimelineEntry[], unreadKey: string | null) {
       entries={rows}
       thread={{ ...EMPTY_THREAD, loaded: true }}
       otherName="Alice"
+      onOpenTrader={() => {}}
       listings={new Map()}
       unreadKey={unreadKey}
       onRetry={() => {}}

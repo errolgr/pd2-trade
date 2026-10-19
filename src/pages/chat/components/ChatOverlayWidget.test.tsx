@@ -3,11 +3,14 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { ItemsProvider } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
 import { writeText } from '@/lib/browser-clipboard';
+import { openUrl } from '@/lib/browser-opener';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import {
   CHAT_PREFS_FILENAME,
@@ -25,6 +28,9 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn(async () => {}) }));
+vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
+// Market prices of listings the Trader sidebar shows: none known
+vi.mock('@/pages/currency/lib/price-api', () => ({ fetchMultipleItemPrices: vi.fn(async () => new Map()) }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
   exists: vi.fn(async () => false),
@@ -106,6 +112,8 @@ let api: {
 };
 let messagesByConversation: Record<string, Message[]>;
 let incomingOffers: TradeOffer[];
+/** Active market listings per website user id (the Trader sidebar's market and presence). */
+let traderListings: Record<string, MarketListingEntry[]>;
 let outgoingOffers: TradeOffer[];
 let createConversation: Mock<(participantIds: string[]) => Promise<Conversation>>;
 let audio: { src: string; volume: number }[];
@@ -192,9 +200,11 @@ async function renderWidget(conversations: Conversation[]) {
   api.getConversations.mockResolvedValue({ data: conversations });
   const onClose = vi.fn();
   const widget = () => (
-    <WhisperHistoryProvider>
-      <ChatOverlayWidget onClose={onClose} />
-    </WhisperHistoryProvider>
+    <ItemsProvider items={[]}>
+      <WhisperHistoryProvider>
+        <ChatOverlayWidget onClose={onClose} />
+      </WhisperHistoryProvider>
+    </ItemsProvider>
   );
   const view = render(widget());
   rerenderWidget = () => view.rerender(widget());
@@ -202,11 +212,10 @@ async function renderWidget(conversations: Conversation[]) {
   return { ...view, onClose };
 }
 
-/** Conversation rows in the sidebar, in display order. */
+/** Conversation rows in the list, in display order. */
 function rows() {
-  return Array.from(document.querySelectorAll('aside button[type="button"]')).filter((b) =>
-    b.querySelector('[aria-hidden].rounded-full'),
-  );
+  const list = screen.queryByRole('list', { name: 'Conversations' });
+  return list ? (within(list).queryAllByRole('listitem') as HTMLElement[]) : [];
 }
 const rowFor = (name: string) => rows().find((r) => r.textContent?.includes(name))! as HTMLElement;
 const headerUnread = () => screen.queryByTitle(/unread$/)?.textContent ?? null;
@@ -220,7 +229,8 @@ const bubbles = () => Array.from(document.querySelectorAll('section .whitespace-
 
 async function select(name: string) {
   await act(async () => {
-    fireEvent.click(rowFor(name));
+    // The row's own button (its avatar opens the Trader details)
+    fireEvent.click(within(rowFor(name)).getAllByRole('button').at(-1)!);
   });
   await flush(200);
 }
@@ -239,6 +249,8 @@ beforeEach(() => {
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
   incomingOffers = [];
+  traderListings = {};
+  vi.mocked(openUrl).mockClear();
   outgoingOffers = [];
   createConversation = vi.fn();
   gameLog.clear();
@@ -259,14 +271,19 @@ beforeEach(() => {
     markMessagesAsRead: vi.fn(async () => true),
     deleteConversation: vi.fn(async () => true),
   };
-  // Linked listings resolve to nothing, so listing links stay link chips in these tests.
-  const noListings = async () => ({ total: 0, limit: 0, skip: 0, data: [] });
+  // Linked listings resolve to nothing, so listing links stay link chips in these tests; a user's listings
+  // (the Trader sidebar) come from traderListings.
+  const noListings = async () => ({ total: 0, limit: 0, skip: 0, data: [] as MarketListingEntry[] });
+  const getMarketListings = async (query: { user_id?: string }) => {
+    const data = (query.user_id && traderListings[query.user_id]) || [];
+    return { total: data.length, limit: 24, skip: 0, data };
+  };
   vi.mocked(usePd2Website).mockImplementation(
     () =>
       ({
         authData: auth,
         subscribeSocket,
-        getMarketListings: noListings,
+        getMarketListings,
         getMarketListingsArchive: noListings,
         incomingOffers,
         outgoingOffers,
@@ -435,7 +452,7 @@ describe('ChatOverlayWidget conversation switching', () => {
 
     await select('Alice');
 
-    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('Alice').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
     expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Alice');
     expect(screen.queryByText('@alice99')).not.toBeNull();
     expect(bubbles()).toEqual(['first', 'second']);
@@ -561,7 +578,7 @@ describe('ChatOverlayWidget conversation switching', () => {
     await openChat({ conversationId: 'c1' });
     await flush(200);
 
-    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('Alice').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
     expect(bubbles()).toEqual(['hello again']);
   });
 
@@ -574,11 +591,11 @@ describe('ChatOverlayWidget conversation switching', () => {
     await openChat({ conversationId: 'c1' });
     await flush(200);
     await select('bob');
-    expect(rowFor('bob').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('bob').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
 
     await openChat({ conversationId: 'c1' });
     await flush(200);
-    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('Alice').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
   });
 
   it('selects a requested conversation once a still-loading list arrives', async () => {
@@ -596,13 +613,13 @@ describe('ChatOverlayWidget conversation switching', () => {
     await openChat({ conversationId: 'c1' });
     await act(async () => list.resolve({ data: [conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })] }));
     await flush(600);
-    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('Alice').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
   });
 
   it('ignores opens without a conversation id', async () => {
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     await openChat(undefined);
-    expect(rowFor('Alice').getAttribute('aria-current')).not.toBe('true');
+    expect(rowFor('Alice').querySelector('[aria-current]')?.getAttribute('aria-current')).not.toBe('true');
     expect(api.getMessages).not.toHaveBeenCalled();
   });
 
@@ -618,7 +635,7 @@ describe('ChatOverlayWidget conversation switching', () => {
     await flush(600);
 
     expect(api.getConversations).toHaveBeenCalledTimes(2);
-    expect(rowFor('bob').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('bob').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
   });
 
   async function deleteOpenConversation() {
@@ -1117,18 +1134,18 @@ describe('ChatOverlayWidget unified inbox', () => {
     await select('Zed');
     expect(screen.queryByText('in-game only')).not.toBeNull();
     expect(screen.queryByRole('group', { name: 'Reply via' })).toBeNull();
-    expect(composer().placeholder).toBe('Whisper *Zed...');
+    expect(composer().placeholder).toBe('Whisper *Zed — copied for in-game chat');
 
     await type('2 ist');
     expect(writeText).toHaveBeenCalledWith('/w *Zed 2 ist');
     expect(api.sendMessage).not.toHaveBeenCalled();
     expect(bubbles()).toEqual(['wtb shako?', '2 ist']);
-    expect(screen.queryByText('· copied')).not.toBeNull();
+    expect(screen.queryByText('copied')).not.toBeNull();
 
     // The game log showing it sent confirms the copied entry instead of adding another
     await whisperAt(0, 'Zed', '2 ist', false);
     expect(bubbles()).toEqual(['wtb shako?', '2 ist']);
-    expect(screen.queryByText('· copied')).toBeNull();
+    expect(screen.queryByText('copied')).toBeNull();
 
     // Persisted, debounced
     await flush(SAVE_DEBOUNCE_MS);
@@ -1261,7 +1278,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     await flush();
 
     expect(rows()).toHaveLength(1);
-    expect(rowFor('zedweb')?.getAttribute('aria-current')).toBe('true');
+    expect(rowFor('zedweb').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
     expect(bubbles()).toEqual(['wtb shako?', 'hi from the site']);
     expect(composer().value).toBe('half typed');
     expect(api.markMessagesAsRead.mock.calls).toEqual([[['z1'], ME]]);
@@ -1300,7 +1317,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     await type('inv me pls');
     expect(writeText).toHaveBeenCalledWith('/w *Thumoi inv me pls');
     expect(rows()).toHaveLength(1);
-    expect(rowFor('u2web').getAttribute('aria-current')).toBe('true');
+    expect(rowFor('u2web').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
     expect(bubbles()).toEqual(['hi', 'inv me pls']);
 
     await whisperFrom('Thumoi', 'omw');
@@ -1641,5 +1658,152 @@ describe('ChatOverlayWidget overlay fit', () => {
     // Saved under the conversation too, so its socket notifications find it
     expect(getChatPrefs().threads.c9).toEqual({ muted: true });
     expect(lastEmittedUnread()).toBe(0);
+  });
+});
+
+describe('ChatOverlayWidget trader sidebar', () => {
+  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const sidebar = () => screen.queryByRole('complementary', { name: 'Trader' });
+  const heading = () => screen.queryByRole('heading', { level: 3 })?.textContent ?? null;
+  const savedPrefs = () =>
+    parseChatPrefs(
+      vi
+        .mocked(writeTextFile)
+        .mock.calls.filter(([file]) => file === CHAT_PREFS_FILENAME)
+        .at(-1)?.[1] ?? '{}',
+    );
+  // The trader cache lives for the app's lifetime: every test uses its own users
+  const listing = (id: string, userId: string, name: string, stamps: { ingame?: number; online?: number } = {}) =>
+    ({
+      _id: id,
+      user_id: userId,
+      type: 'item',
+      is_hardcore: false,
+      is_ladder: true,
+      price: '',
+      hr_price: 2,
+      bumped_at: minutesAgo(30),
+      created_at: minutesAgo(60),
+      updated_at: minutesAgo(30),
+      user_last_ingame: stamps.ingame === undefined ? undefined : minutesAgo(stamps.ingame),
+      user_last_online: stamps.online === undefined ? undefined : minutesAgo(stamps.online),
+      user: { username: userId },
+      item: { name, quality: { name: 'Unique' }, base: { name: 'Shako' }, modifiers: [] },
+    }) as unknown as MarketListingEntry;
+
+  async function click(element: HTMLElement) {
+    await act(async () => {
+      fireEvent.click(element);
+    });
+    await flush();
+  }
+
+  it('shows the Trader sidebar as a third column from 1020px wide, collapsible and remembered', async () => {
+    panel.rect = { ...panel.rect, width: 1100 };
+    const tara = { id: 'tr-wide', username: 'tara', display_name: 'Tara' };
+    traderListings[tara.id] = [listing('aa01', tara.id, 'Harlequin Crest', { ingame: 2, online: 1 })];
+    messagesByConversation.c1 = [msg('t1', 'c1', tara.id, 'hi', 10, [ME])];
+    const conversations = [conv('c1', tara, { latest: msg('t1', 'c1', tara.id, 'hi', 10) })];
+    await renderWidget(conversations);
+    // Nothing to show before a thread is open
+    expect(sidebar()).toBeNull();
+
+    await select('Tara');
+    expect(sidebar()).not.toBeNull();
+    expect(within(sidebar()!).getByRole('heading', { level: 4, name: 'Tara' })).not.toBeNull();
+    // Presence from their listings, in the header's status line and the sidebar
+    expect(screen.getAllByText('In game now')).toHaveLength(2);
+
+    await click(screen.getByRole('button', { name: 'Collapse trader details' }));
+    expect(sidebar()).toBeNull();
+    expect(heading()).toBe('Tara');
+    await flush();
+    expect(savedPrefs().sidebarCollapsed).toBe(true);
+
+    // Reopened later: still collapsed until shown from the header
+    cleanup();
+    resetChatPrefs();
+    const saved = JSON.stringify(savedPrefs());
+    vi.mocked(exists).mockImplementation(async (path) => path === CHAT_PREFS_FILENAME);
+    vi.mocked(readTextFile).mockImplementation(async (path) => (path === CHAT_PREFS_FILENAME ? saved : ''));
+    await renderWidget(conversations);
+    await select('Tara');
+    expect(sidebar()).toBeNull();
+    await click(screen.getByRole('button', { name: 'Trader details' }));
+    expect(sidebar()).not.toBeNull();
+    await flush();
+    expect(savedPrefs().sidebarCollapsed).toBeUndefined();
+  });
+
+  it('below 1020px slides the sidebar over the thread from the header or an avatar; Esc closes it first', async () => {
+    const tom = { id: 'tr-narrow', username: 'tom', display_name: 'Tom' };
+    messagesByConversation.c1 = [msg('t1', 'c1', tom.id, 'hi', 10, [ME])];
+    await renderWidget([conv('c1', tom, { latest: msg('t1', 'c1', tom.id, 'hi', 10) })]);
+    await select('Tom');
+    expect(sidebar()).toBeNull();
+
+    await click(screen.getByRole('button', { name: 'Trader details' }));
+    expect(sidebar()).not.toBeNull();
+    // No listings: presence and market say so
+    expect(within(sidebar()!).queryByText('Unknown')).not.toBeNull();
+    expect(within(sidebar()!).queryByText('No active listings.')).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.keyDown(composer(), { key: 'Escape' });
+    });
+    expect(sidebar()).toBeNull();
+    expect(heading()).toBe('Tom');
+
+    // A list avatar opens it too
+    await click(
+      within(screen.getByRole('list', { name: 'Conversations' })).getByRole('button', {
+        name: 'Trader details for Tom',
+      }),
+    );
+    expect(sidebar()).not.toBeNull();
+    await click(screen.getByRole('button', { name: 'Close trader details' }));
+    expect(sidebar()).toBeNull();
+  });
+
+  it('opens their PD2 profile, market and character pages with the names encoded', async () => {
+    panel.rect = { ...panel.rect, width: 1100 };
+    const odd = { id: 'tr-links', username: 'ali ce/2', display_name: 'Alicia' };
+    traderListings[odd.id] = [listing('bb01', odd.id, 'Shako', { ingame: 600, online: 12 })];
+    messagesByConversation.c1 = [msg('o1', 'c1', odd.id, 'hi', 10, [ME])];
+    await renderWidget([conv('c1', odd, { latest: msg('o1', 'c1', odd.id, 'hi', 10) })]);
+    await select('Alicia');
+
+    const profile = 'https://www.projectdiablo2.com/@ali%20ce%2F2';
+    // The header's @username and the sidebar's both open the profile
+    const usernameLinks = screen.getAllByRole('button', { name: '@ali ce/2' });
+    expect(usernameLinks).toHaveLength(2);
+    for (const link of usernameLinks) await click(link);
+    expect(vi.mocked(openUrl).mock.calls).toEqual([[profile], [profile]]);
+
+    await click(within(sidebar()!).getByRole('button', { name: 'View profile' }));
+    await click(within(sidebar()!).getByRole('button', { name: 'Their market' }));
+    expect(vi.mocked(openUrl).mock.calls.slice(2)).toEqual([[profile], [`${profile}/market`]]);
+    // The newest of their in-game/online stamps
+    expect(screen.getAllByText('Online 12m ago').length).toBeGreaterThan(0);
+  });
+
+  it('links one of their listings in the composer when it is clicked in the sidebar', async () => {
+    const nia = { id: 'tr-insert', username: 'nia', display_name: 'Nia' };
+    traderListings[nia.id] = [listing('cc01', nia.id, 'Harlequin Crest'), listing('cc02', nia.id, 'Tal Rasha Belt')];
+    messagesByConversation.c1 = [msg('n1', 'c1', nia.id, 'hi', 10, [ME])];
+    await renderWidget([conv('c1', nia, { latest: msg('n1', 'c1', nia.id, 'hi', 10) })]);
+    // The list avatar opens the thread with its Trader details (a slide-over at this width)
+    await click(screen.getByRole('button', { name: 'Trader details for Nia' }));
+    expect(heading()).toBe('Nia');
+
+    await act(async () => {
+      fireEvent.change(composer(), { target: { value: 'how much for' } });
+    });
+    await click(within(sidebar()!).getByRole('button', { name: 'Link Harlequin Crest in your message' }));
+    expect(composer().value).toBe(
+      'how much for https://www.projectdiablo2.com/market/listing/cc01?display="Harlequin Crest"',
+    );
+    // The slide-over made way for the composer
+    expect(sidebar()).toBeNull();
   });
 });

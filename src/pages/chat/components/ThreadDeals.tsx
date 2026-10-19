@@ -35,17 +35,22 @@ type Deal =
 /**
  * Website offers, same rule both directions: accepted when the listing took this offer, declined when it
  * took another, closed when the listing was sold or delisted without taking it (outgoing offers on archived
- * listings). Hidden outgoing offers and trade whispers have their own chips.
+ * listings).
  */
-function dealStatus(deal: Deal): DealStatus {
-  if (deal.kind === 'whisper') return 'in-game';
-  if (deal.hidden) return 'hidden';
-  const { offer } = deal;
+export function offerStatus(offer: TradeOffer): 'open' | 'accepted' | 'declined' | 'closed' {
   if (offer.acceptedOfferId) return offer.acceptedOfferId === offer.id ? 'accepted' : 'declined';
   return offer.listingClosed ? 'closed' : 'open';
 }
 
-const STATUS_CLASS: Record<DealStatus, string> = {
+/** Hidden outgoing offers and trade whispers have their own chips. */
+function dealStatus(deal: Deal): DealStatus {
+  if (deal.kind === 'whisper') return 'in-game';
+  if (deal.hidden) return 'hidden';
+  return offerStatus(deal.offer);
+}
+
+/** Status chip colours (also the trader sidebar's offers). */
+export const STATUS_CLASS: Record<DealStatus, string> = {
   open: 'bg-info/15 text-info',
   accepted: 'bg-success/15 text-success',
   declined: 'bg-muted text-muted-foreground',
@@ -458,7 +463,7 @@ export function ThreadDeals({
     <div className="@container px-3 pt-2">
       <ul
         aria-label="Offers with this user"
-        className="space-y-1 rounded-xl border border-border/70 bg-card/60 p-1.5 text-sm shadow-xs"
+        className="space-y-1 rounded-xl border border-border/70 bg-linear-to-b from-card/95 to-card/60 p-1.5 text-sm shadow-sm ring-1 ring-inset ring-foreground/5"
       >
         {shown.map((deal) => {
           const status = dealStatus(deal);
@@ -468,8 +473,10 @@ export function ThreadDeals({
           const price = deal.kind === 'offer' ? deal.offer.price : deal.trade.price;
           const Direction = deal.kind === 'whisper' ? Gamepad2 : isIncoming ? ArrowUpRight : ArrowDownLeft;
           return (
-            <li key={`${deal.kind}:${deal.id}`}
-              className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1">
+            <li
+              key={`${deal.kind}:${deal.id}`}
+              className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors duration-(--dur-fast) hover:bg-muted/40"
+            >
               <span className="flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-muted/70">
                 <Direction className="size-3.5 text-muted-foreground" />
               </span>

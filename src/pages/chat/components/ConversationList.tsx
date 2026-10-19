@@ -4,6 +4,8 @@ import moment from 'moment';
 import {
   AlertTriangle,
   Archive,
+  ArrowDownLeft,
+  ArrowUpRight,
   BellOff,
   Gamepad2,
   MessagesSquare,
@@ -21,8 +23,13 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { listItem, listStagger, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useChatListings } from '../hooks/useChatListings';
+import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
-import { ChatAvatar, CountBadge, ReadReceipt } from './chat-parts';
+import { findMarketLinks } from '../lib/market-links';
+import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass } from './chat-parts';
+import { ListingThumb } from './ListingCard';
+import { offerStatus } from './ThreadDeals';
 
 const FILTERS: { value: Exclude<InboxFilter, 'archived'>; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -59,9 +66,16 @@ function formatConversationTime(timestamp: number) {
   return time.format(time.isSame(now, 'year') ? 'MMM D' : 'MMM D, YY');
 }
 
+/** The listing the thread's latest website message links (its last link), if any. */
+const latestLinkedId = (thread: InboxThread) => {
+  const content = thread.latest?.message?.content;
+  return content ? findMarketLinks(content).at(-1)?.listingId : undefined;
+};
+
 /**
  * The inbox sidebar (the whole panel in compact mode): one row per person, pinned first, with
  * All/Selling/Buying/Archived filters and search. `threads` are the rows to show (filtered and searched).
+ * A row's avatar opens the person's Trader details.
  */
 export function ConversationList({
   threads,
@@ -73,10 +87,12 @@ export function ConversationList({
   onSearchChange,
   selectedId,
   onSelect,
+  onOpenTrader,
   loading,
   failed,
   signedIn,
   onReload,
+  now,
   className,
 }: {
   threads: InboxThread[];
@@ -90,24 +106,31 @@ export function ConversationList({
   onSearchChange: (search: string) => void;
   selectedId: string | null;
   onSelect: (threadId: string) => void;
+  /** Opens the thread with its Trader details showing. */
+  onOpenTrader: (threadId: string) => void;
   loading: boolean;
   failed: boolean;
   signedIn: boolean;
   onReload: () => void;
+  /** Epoch ms, for presence dots. */
+  now: number;
   className?: string;
 }) {
   const query = search.trim();
   const empty = EMPTY_TEXT[filter];
+  const presenceOf = useKnownPresence(now);
+  // The item each row's latest message links, as a thumbnail at the row's end
+  const rowListings = useChatListings(threads.flatMap((thread) => latestLinkedId(thread) ?? []));
 
   let body: React.ReactNode;
   if (loading && total === 0) {
     body = (
       <div aria-busy
-        className="space-y-0.5 p-2">
+        className="space-y-1 p-2">
         <span className="sr-only">Loading conversations...</span>
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i}
-            className="flex items-center gap-3 rounded-lg px-2.5 py-2">
+            className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
             <Skeleton className="size-10 shrink-0 rounded-full" />
             <div className="flex-1 space-y-2">
               <div className="flex justify-between gap-4">
@@ -166,116 +189,169 @@ export function ConversationList({
     );
   } else {
     body = (
-      <motion.div className="space-y-0.5 p-2"
+      <motion.ul
+        aria-label="Conversations"
+        className="space-y-1 p-2"
         variants={listStagger}
         initial="hidden"
-        animate="visible">
+        animate="visible"
+      >
         {threads.map((thread) => {
           const { name, latest } = thread;
           const selected = selectedId === thread.id;
           const unread = thread.unread > 0;
           const own = latest?.own;
+          const linkedId = latestLinkedId(thread);
+          const linkedState = linkedId ? rowListings.get(linkedId) : undefined;
+          const linked = linkedState && 'listing' in linkedState ? linkedState.listing : undefined;
+          const offer = linked
+            ? undefined
+            : thread.offers
+                .filter((o) => offerStatus(o) === 'open')
+                .reduce<
+                  (typeof thread.offers)[number] | undefined
+                >((a, b) => (a && a.timestamp >= b.timestamp ? a : b), undefined);
+          const presence = presenceOf(thread.userId)?.kind;
           return (
-            <motion.button
+            <motion.li
               key={thread.id}
               layout="position"
               variants={listItem}
-              type="button"
-              aria-current={selected ? 'true' : undefined}
-              onClick={() => onSelect(thread.id)}
               className={cn(
-                'group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left outline-none',
-                'transition-colors duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60',
-                selected ? 'bg-primary/12 ring-1 ring-inset ring-primary/25' : 'hover:bg-muted/60 active:bg-muted',
+                'group relative flex items-center gap-3 rounded-xl px-2.5 py-2',
+                'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
+                selected
+                  ? 'bg-linear-to-r from-primary/18 via-primary/10 to-primary/5 shadow-sm ring-1 ring-inset ring-primary/25'
+                  : 'hover:bg-muted/60 hover:shadow-xs',
               )}
             >
               <span
                 aria-hidden
                 className={cn(
-                  'absolute inset-y-2.5 -left-px w-[3px] rounded-full bg-primary transition-opacity duration-(--dur-med)',
-                  selected ? 'opacity-100' : 'opacity-0',
+                  'absolute inset-y-2.5 -left-px w-[3px] rounded-full bg-primary transition-[opacity,transform] duration-(--dur-med)',
+                  selected ? 'scale-y-100 opacity-100' : 'scale-y-50 opacity-0',
                 )}
               />
-              <ChatAvatar name={name} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  <span
-                    className={cn(
-                      'min-w-0 flex-1 truncate text-sm',
-                      unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
-                    )}
-                  >
-                    {name}
-                  </span>
-                  {thread.muted && (
-                    <BellOff
-                      role="img"
-                      aria-label="Muted"
-                      className="size-3 shrink-0 self-center text-muted-foreground/80"
-                    />
-                  )}
-                  {thread.pinned && (
-                    <Pin role="img"
-                      aria-label="Pinned"
-                      className="size-3 shrink-0 self-center text-primary/80" />
-                  )}
-                  {latest && (
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-label={`Trader details for ${name}`}
+                onClick={() => onOpenTrader(thread.id)}
+                className="relative z-10 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+              >
+                <ChatAvatar name={name}
+                  presence={presence} />
+              </button>
+              {/* The whole row selects (the button's ::after covers it); the avatar sits above it */}
+              <button
+                type="button"
+                aria-current={selected ? 'true' : undefined}
+                onClick={() => onSelect(thread.id)}
+                className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-ring/60"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline gap-1.5">
                     <span
                       className={cn(
-                        'shrink-0 text-[11px] tabular-nums',
-                        unread && !thread.muted ? 'font-semibold text-primary' : 'text-muted-foreground',
+                        'min-w-0 flex-1 truncate text-sm',
+                        unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
                       )}
                     >
-                      {formatConversationTime(latest.at)}
+                      {name}
                     </span>
-                  )}
-                </div>
-                {latest && (
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    {latest.source === 'whisper' && (
-                      <Gamepad2
+                    {thread.muted && (
+                      <BellOff
                         role="img"
-                        aria-label="In-game whisper"
-                        className="size-3 shrink-0 text-muted-foreground/70"
+                        aria-label="Muted"
+                        className="size-3 shrink-0 self-center text-muted-foreground/80"
                       />
                     )}
-                    {own && latest.message && (
-                      <ReadReceipt message={latest.message}
-                        readerId={thread.participant?._id}
-                        className="shrink-0" />
+                    {thread.pinned && (
+                      <Pin role="img"
+                        aria-label="Pinned"
+                        className="size-3 shrink-0 self-center text-primary/80" />
                     )}
-                    <span
-                      className={cn(
-                        'min-w-0 flex-1 truncate text-xs',
-                        unread ? 'text-foreground/85' : 'text-muted-foreground',
+                    {latest && (
+                      <span
+                        className={cn(
+                          'shrink-0 text-[11px] tabular-nums',
+                          unread && !thread.muted ? 'font-semibold text-primary' : 'text-muted-foreground',
+                        )}
+                      >
+                        {formatConversationTime(latest.at)}
+                      </span>
+                    )}
+                  </span>
+                  {latest && (
+                    <span className="mt-0.5 flex items-center gap-1.5">
+                      {latest.source === 'whisper' && (
+                        <Gamepad2
+                          role="img"
+                          aria-label="In-game whisper"
+                          className="size-3 shrink-0 text-muted-foreground/70"
+                        />
                       )}
-                    >
-                      {own && <span className="text-muted-foreground">You: </span>}
-                      {latest.text}
+                      {own && latest.message && (
+                        <ReadReceipt message={latest.message}
+                          readerId={thread.participant?._id}
+                          className="shrink-0" />
+                      )}
+                      <span
+                        className={cn(
+                          'min-w-0 flex-1 truncate text-xs',
+                          unread ? 'text-foreground/85' : 'text-muted-foreground',
+                        )}
+                      >
+                        {own && <span className="text-muted-foreground">You: </span>}
+                        {latest.text}
+                      </span>
+                      {unread && (
+                        <CountBadge
+                          count={thread.unread}
+                          className={thread.muted ? 'bg-muted-foreground/60 shadow-none' : undefined}
+                        />
+                      )}
                     </span>
-                    {unread && (
-                      <CountBadge
-                        count={thread.unread}
-                        className={thread.muted ? 'bg-muted-foreground/60' : undefined}
-                      />
-                    )}
-                  </div>
+                  )}
+                </span>
+                {linked && (
+                  <ListingThumb listing={linked}
+                    className="size-9 rounded-lg"
+                    artClassName="max-h-8 max-w-8" />
                 )}
-              </div>
-            </motion.button>
+                {offer && (
+                  <span
+                    title={offer.isIncoming ? 'Their open offer on your listing' : 'Your open offer'}
+                    className="flex max-w-24 shrink-0 items-center gap-0.5 rounded-md border border-info/30 bg-info/10 px-1.5 py-0.5 text-[10px] font-semibold text-info"
+                  >
+                    {offer.isIncoming ? (
+                      <ArrowUpRight aria-hidden
+                        className="size-3 shrink-0" />
+                    ) : (
+                      <ArrowDownLeft aria-hidden
+                        className="size-3 shrink-0" />
+                    )}
+                    <span className="truncate">{`Offer · ${offer.price ?? '?'}`}</span>
+                  </span>
+                )}
+              </button>
+            </motion.li>
           );
         })}
-      </motion.div>
+      </motion.ul>
     );
   }
 
   return (
     <aside
-      className={cn('flex min-h-0 w-72 shrink-0 flex-col overflow-hidden border-r border-border bg-card/40', className)}
+      className={cn(
+        'flex min-h-0 w-[300px] shrink-0 flex-col overflow-hidden border-r border-border bg-linear-to-b from-card/60 to-card/30',
+        className,
+      )}
     >
       <div className="shrink-0 space-y-2.5 px-3 pb-3 pt-3">
         <div className="flex items-center gap-2 px-1">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">Messages</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Messages</h2>
           <AnimatePresence>
             {unreadTotal > 0 && (
               <motion.span key="unread"
@@ -288,33 +364,12 @@ export function ConversationList({
               </motion.span>
             )}
           </AnimatePresence>
+          {total > 0 && (
+            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+              {total} {total === 1 ? 'chat' : 'chats'}
+            </span>
+          )}
         </div>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          aria-label="Show"
-          value={filter}
-          // Radix reports '' when the pressed item is clicked again: keep the current filter
-          onValueChange={(value) => value && onFilterChange(value as InboxFilter)}
-          className="w-full"
-        >
-          {FILTERS.map(({ value, label }) => (
-            <ToggleGroupItem key={value}
-              value={value}
-              className="h-7 text-xs">
-              {label}
-            </ToggleGroupItem>
-          ))}
-          <ToggleGroupItem
-            value="archived"
-            aria-label="Archived"
-            title="Archived chats"
-            className="h-7 max-w-9 text-xs"
-          >
-            <Archive className="size-3.5" />
-          </ToggleGroupItem>
-        </ToggleGroup>
         <div className="group relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors duration-(--dur-fast) group-focus-within:text-foreground" />
           <Input
@@ -327,7 +382,7 @@ export function ConversationList({
                 onSearchChange('');
               }
             }}
-            className="h-8 rounded-lg bg-background/60 pl-8 pr-8 text-sm"
+            className="h-8 rounded-lg border-border/70 bg-background/60 pl-8 pr-8 text-sm shadow-xs"
           />
           {search && (
             <button
@@ -340,8 +395,33 @@ export function ConversationList({
             </button>
           )}
         </div>
+        <ToggleGroup
+          type="single"
+          size="sm"
+          aria-label="Show"
+          value={filter}
+          // Radix reports '' when the pressed item is clicked again: keep the current filter
+          onValueChange={(value) => value && onFilterChange(value as InboxFilter)}
+          className={cn('w-full', segmentedClass)}
+        >
+          {FILTERS.map(({ value, label }) => (
+            <ToggleGroupItem key={value}
+              value={value}
+              className={cn('h-6 text-xs', segmentItemClass)}>
+              {label}
+            </ToggleGroupItem>
+          ))}
+          <ToggleGroupItem
+            value="archived"
+            aria-label="Archived"
+            title="Archived chats"
+            className={cn('h-6 max-w-9 text-xs', segmentItemClass)}
+          >
+            <Archive className="size-3.5" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
-      <div className="mx-3 h-px shrink-0 bg-border/70" />
+      <div className="mx-3 h-px shrink-0 bg-linear-to-r from-transparent via-border to-transparent" />
       <ScrollArea className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block">
         {body}
       </ScrollArea>

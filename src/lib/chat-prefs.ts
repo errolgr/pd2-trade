@@ -26,6 +26,8 @@ export interface ThreadPrefs {
 
 export interface ChatPrefs {
   threads: Record<string, ThreadPrefs>;
+  /** The chat panel's Trader sidebar (wide layout) is collapsed. */
+  sidebarCollapsed?: boolean;
 }
 
 export const EMPTY_PREFS: ChatPrefs = { threads: {} };
@@ -58,7 +60,7 @@ export function setThreadPrefs(prefs: ChatPrefs, ids: readonly string[], patch: 
     if (Object.keys(next).length === 0) delete threads[id];
     else threads[id] = next;
   }
-  return { threads };
+  return { ...prefs, threads };
 }
 
 /**
@@ -95,7 +97,7 @@ const ThreadPrefsSchema = z.object({
   muted: z.boolean().optional(),
   archivedAt: z.number().optional(),
 });
-const FileSchema = z.object({ threads: z.record(z.string(), z.unknown()) });
+const FileSchema = z.object({ threads: z.record(z.string(), z.unknown()), sidebarCollapsed: z.unknown().optional() });
 
 /** Reads a saved file; malformed entries are skipped (a broken file yields no preferences). */
 export function parseChatPrefs(text: string): ChatPrefs {
@@ -112,7 +114,7 @@ export function parseChatPrefs(text: string): ChatPrefs {
     const parsed = ThreadPrefsSchema.safeParse(value);
     if (parsed.success) prefs = setThreadPrefs(prefs, [id], parsed.data);
   }
-  return prefs;
+  return file.data.sidebarCollapsed === true ? { ...prefs, sidebarCollapsed: true } : prefs;
 }
 
 async function readPrefsFile(): Promise<ChatPrefs> {
