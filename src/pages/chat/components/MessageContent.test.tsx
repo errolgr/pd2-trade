@@ -156,6 +156,7 @@ describe('MessageContent listing cards', () => {
         modifiers: [],
         socket_count: 0,
         item_level: 96,
+        location: { storage: 'Shared Stash', stash_page: 3 },
         requirements: { level: 57 },
       },
       ...over,
@@ -177,12 +178,13 @@ describe('MessageContent listing cards', () => {
     expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('shows a listed item with its art, price note and no unlisted tag, opening the listing on click', () => {
+  it('shows a listed item with its art and stash tab, keeps the price for the popover, and opens on click', () => {
     renderWith({ status: 'listed', listing: listing() });
     const card = screen.getByRole('link');
     expect(card.getAttribute('href')).toBe(URL);
     expect(within(card).getByText('Ohm Rune')).not.toBeNull();
-    expect(within(card).getByText('75 wss')).not.toBeNull();
+    expect(within(card).getByText('Shared 3')).not.toBeNull();
+    expect(within(card).queryByText('75 wss')).toBeNull();
     expect(card.querySelector('img')!.getAttribute('src')).toBe('/runes/Ohm_Rune.png');
     expect(within(card).queryByText('Unlisted')).toBeNull();
 
@@ -190,11 +192,9 @@ describe('MessageContent listing cards', () => {
     expect(vi.mocked(openUrl)).toHaveBeenCalledWith(URL);
   });
 
-  it('prefers the HR price over the note and tags archived listings as unlisted', () => {
-    renderWith({ status: 'unlisted', listing: listing({ hr_price: 2.5 }) });
-    const card = screen.getByRole('link');
-    expect(within(card).getByText('2.5 HR')).not.toBeNull();
-    expect(within(card).getByText('Unlisted')).not.toBeNull();
+  it('tags archived listings as unlisted', () => {
+    renderWith({ status: 'unlisted', listing: listing() });
+    expect(within(screen.getByRole('link')).getByText('Unlisted')).not.toBeNull();
   });
 
   it('falls back to the link chip when the listing does not exist or was not looked up', () => {

@@ -50,6 +50,17 @@ const nameColor = (listing: MarketListingEntry) =>
     ? 'text-q-rune'
     : qualityColor(listing.item.quality?.name ?? '');
 
+/** Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal", else the storage name. */
+function stashLabel(listing: MarketListingEntry): string | null {
+  const location = listing.item.location;
+  if (!location?.storage) return null;
+  if (/shared/i.test(location.storage)) {
+    return typeof location.stash_page === 'number' ? `Shared ${location.stash_page}` : 'Shared';
+  }
+  if (/^(personal )?stash$/i.test(location.storage)) return 'Personal';
+  return location.storage;
+}
+
 /** Hover detail: full stats plus the trade context the card leaves out. */
 function ListingDetails({ listing, listed }: { listing: MarketListingEntry; listed: boolean }) {
   const { item, user } = listing;
@@ -81,6 +92,11 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
         <PopoverKeyValue label="Mode">
           {`${listing.is_ladder ? 'Ladder' : 'Non-ladder'} · ${listing.is_hardcore ? 'Hardcore' : 'Softcore'}`}
         </PopoverKeyValue>
+        {stashLabel(listing) && (
+          <PopoverKeyValue label="Stash">
+            {`${stashLabel(listing)}${item.position ? ` · column ${item.position.column + 1}, row ${item.position.row + 1}` : ''}`}
+          </PopoverKeyValue>
+        )}
         {item.item_level > 0 && <PopoverKeyValue label="Item level">{item.item_level}</PopoverKeyValue>}
         {item.requirements?.level > 0 && (
           <PopoverKeyValue label="Required level">{item.requirements.level}</PopoverKeyValue>
@@ -104,11 +120,12 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
 }
 
 /**
- * A listing linked in chat, inline in the sentence: thumbnail, name, price and whether it's still listed;
- * base, stats, seller, mode and age live in the hover popover.
+ * A listing linked in chat, inline in the sentence: thumbnail, name, stash tab and whether it's still listed;
+ * price, base, stats, seller, mode and age live in the hover popover.
  */
 export function ListingCard({ listing, listed, url }: { listing: MarketListingEntry; listed: boolean; url: string }) {
   const [open, setOpen] = useState(false);
+  const stash = stashLabel(listing);
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
@@ -128,9 +145,7 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
             <ItemArt listing={listing} />
           </span>
           <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
-          <span className="shrink-0 tabular-nums text-muted-foreground">
-            {listing.hr_price ? `${listing.hr_price} HR` : listing.price || 'No price'}
-          </span>
+          {stash && <span className="shrink-0 text-xs text-muted-foreground">{stash}</span>}
           {!listed && (
             <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Unlisted
