@@ -10,6 +10,15 @@ vi.mock('@sentry/react', () => ({
   browserTracingIntegration: vi.fn(),
   replayIntegration: vi.fn(),
 }));
+const tauri = vi.hoisted(() => ({ on: false, label: 'Main' }));
+vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  isTauri: () => tauri.on,
+}));
+vi.mock('@tauri-apps/api/window', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getCurrentWindow: () => ({ label: tauri.label }),
+}));
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
 vi.mock('@/lib/faro', () => ({ initFaro: vi.fn() }));
@@ -65,6 +74,9 @@ async function boot(path: string) {
 beforeEach(() => {
   vi.useFakeTimers();
   vi.spyOn(console, 'log').mockImplementation(() => {});
+  tauri.on = false;
+  tauri.label = 'Main';
+  document.title = 'PD2Trader';
 });
 
 afterEach(() => {
@@ -114,6 +126,34 @@ describe('main routing', () => {
   });
 });
 
+describe('main page title', () => {
+  it.each([
+    ['Main', 'PD2Trader'],
+    ['Currency', 'PD2Trader: Net Worth'],
+    ['ItemSearch', 'PD2Trader: Item Search'],
+    ['ChangeLog', 'PD2Trader: Changelog'],
+  ])('names the %s window "%s"', async (label, title) => {
+    tauri.on = true;
+    tauri.label = label;
+    await boot('/');
+    expect(document.title).toBe(title);
+  });
+
+  it('falls back to PD2Trader for a label without a title', async () => {
+    tauri.on = true;
+    tauri.label = 'Unknown';
+    document.title = 'stale';
+    await boot('/');
+    expect(document.title).toBe('PD2Trader');
+  });
+
+  it('leaves the title alone outside Tauri', async () => {
+    document.title = 'browser tab';
+    await boot('/');
+    expect(document.title).toBe('browser tab');
+  });
+});
+
 describe('main Sentry setup', () => {
   it('initialises Sentry only after a 1s delay', async () => {
     const { Sentry } = await boot('/item');
@@ -144,7 +184,9 @@ describe('main Sentry setup', () => {
     expect(send({ exception: { values: [{ type: 'AuthenticationError' }] } })).toBeNull();
     // console.error capture arrives as a message event with no exception
     expect(send({ message: 'User Bob is not associated with your logged-in account' })).toBeNull();
-    expect(send({ exception: { values: [{ type: 'Error', value: 'Foo is not associated with your logged-in account' }] } })).toBeNull();
+    expect(
+      send({ exception: { values: [{ type: 'Error', value: 'Foo is not associated with your logged-in account' }] } }),
+    ).toBeNull();
 
     const real = { exception: { values: [{ type: 'TypeError', value: 'x is undefined' }] } };
     expect(send(real, new TypeError('x is undefined'))).toBe(real);

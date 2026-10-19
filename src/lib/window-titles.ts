@@ -14,6 +14,7 @@ export const WindowLabels = config.labels as {
   readonly Delist: 'Delist';
   readonly NetWorthTicker: 'NetWorthTicker';
   readonly NetWorthPanel: 'NetWorthPanel';
+  readonly ChangeLog: 'ChangeLog';
 };
 
 export const WindowTitles = config.titles as {
@@ -30,5 +31,6 @@ export const WindowTitles = config.titles as {
   readonly Delist: 'PD2Trader: Delist';
   readonly NetWorthTicker: 'PD2Trader: Net Worth Ticker';
   readonly NetWorthPanel: 'PD2Trader: Net Worth Panel';
+  readonly ChangeLog: 'PD2Trader: Changelog';
   readonly PREFIX: 'PD2Trader';
 };

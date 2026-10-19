@@ -12,7 +12,8 @@
     "SignIn": "SignIn",
     "Delist": "Delist",
     "NetWorthTicker": "NetWorthTicker",
-    "NetWorthPanel": "NetWorthPanel"
+    "NetWorthPanel": "NetWorthPanel",
+    "ChangeLog": "ChangeLog"
   },
   "titles": {
     "Main": "PD2Trader",
@@ -28,6 +29,7 @@
     "Delist": "PD2Trader: Delist",
     "NetWorthTicker": "PD2Trader: Net Worth Ticker",
     "NetWorthPanel": "PD2Trader: Net Worth Panel",
+    "ChangeLog": "PD2Trader: Changelog",
     "PREFIX": "PD2Trader"
   }
 }
