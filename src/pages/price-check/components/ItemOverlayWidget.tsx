@@ -8,9 +8,12 @@ import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
+import { installUpdateAndRelaunch } from '@/lib/updater';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertCircle,
+  ArrowUpCircle,
   AlertTriangle,
   ArrowLeftRight,
   Check,
@@ -1187,10 +1190,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 </span>
               }
               actions={
-                <ToolbarButton label="Settings"
-                  onClick={openSettingsPage}>
-                  <SettingsIcon />
-                </ToolbarButton>
+                <>
+                  <UpdatePill />
+                  <ToolbarButton label="Settings"
+                    onClick={openSettingsPage}>
+                    <SettingsIcon />
+                  </ToolbarButton>
+                </>
               }
               onClose={onClose}
               closeLabel="Close"
@@ -1425,7 +1431,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           <span className="text-sm font-semibold tabular-nums text-foreground">
                             <AnimatedNumber value={headlinePrice ?? 0} /> HR
                           </span>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{priceBasis}</span>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {priceBasis}
+                          </span>
                         </div>
                         {averagePriceData.priceChange7Days && (
                           <ChangeLabel
@@ -1673,6 +1681,49 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         </WindowPanel>
       </TooltipProvider>
     </MotionConfig>
+  );
+}
+
+/** "Restart to update" in the title bar: price check is the window users look at most. */
+function UpdatePill() {
+  const version = useAvailableUpdate();
+  const [state, setState] = useState<'idle' | 'installing' | 'failed'>('idle');
+  if (!version) return null;
+
+  const install = async () => {
+    setState('installing');
+    // Success relaunches the app; false means the install failed and the app is still running
+    if (!(await installUpdateAndRelaunch())) setState('failed');
+  };
+
+  // Short labels: the title bar also holds the title, toolbar icons and close in a narrow window
+  const label = state === 'installing' ? 'Updating…' : state === 'failed' ? 'Retry update' : 'Restart to update';
+  const hint =
+    state === 'failed'
+      ? `Updating to v${version} failed. Click to try again.`
+      : `Version ${version} is available. Downloads, installs and restarts PD2 Trader.`;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={state === 'installing'}
+          onClick={install}
+          // Subtle tint (like the toolbar icons), not a filled button: noticeable without shouting over the price
+          className={cn(
+            'h-6 shrink-0 gap-1 rounded-full border px-2 text-[11px] font-medium',
+            state === 'failed'
+              ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive'
+              : 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+          )}
+        >
+          {state === 'installing' ? <Loader2 className="size-3 animate-spin" /> : <ArrowUpCircle className="size-3" />}
+          {label}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{hint}</TooltipContent>
+    </Tooltip>
   );
 }
 

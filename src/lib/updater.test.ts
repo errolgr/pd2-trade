@@ -126,7 +126,8 @@ describe('installUpdateAndRelaunch', () => {
     await advance(5 * 60 * 1000);
     expect(toastVersions()).toEqual(['1.2.0']);
 
-    await installUpdateAndRelaunch();
+    // false lets windows without a Toaster (price check pill) show the failure
+    expect(await installUpdateAndRelaunch()).toBe(false);
 
     expect(toast.error).toHaveBeenCalledWith('Failed to download update. Please try again later.', expect.anything());
     expect(relaunch).not.toHaveBeenCalled();
