@@ -3,6 +3,7 @@ export const changeLog = {
     '🆕 Price check shows a 30-day price trend, with a link to the item on pd2trader.com',
     '🆕 Choose how many days prices are averaged over in Settings → Price Check (7 days by default)',
     '🆕 The ? next to Verdict explains what Keep, Check and Vendor mean',
+    "🆕 Automatic updates can be turned off in Settings → About — you'll still get a notification when a new version is out",
     '✨ Price check shows what the price is based on, and tags rarely traded items priced over a longer period',
     '✨ Current-season prices now use your chosen period instead of the whole season',
     '🔧 Rare appraisal in price check works again',

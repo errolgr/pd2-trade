@@ -1,0 +1,46 @@
+name: 'ci'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  # Daily canary: catches release assets/latest.json being edited or removed after publish.
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  test:
+    if: ${{ github.event_name != 'schedule' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Tests
+        run: npm test
+
+      - name: Verify updater config
+        run: node scripts/verify-updater.mjs config
+
+  live-update:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Verify live latest.json and signed downloads
+        run: node scripts/verify-updater.mjs live

@@ -153,9 +153,19 @@ npm run docs:preview
 
 ### 3. Testing
 
+- `npm test` runs the Vitest suite (also runs in CI on every PR and before release builds)
 - Test and Tauri functionality
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)
+
+### 4. Auto-Update Safety
+
+A broken updater can only be fixed by users re-downloading the installer, so it is guarded at every stage:
+
+- `src/hooks/useAppUpdates.test.tsx`, `src/lib/updater.test.ts`: check → download → relaunch flow, opt-out, notifications.
+- `npm run verify:updater -- config`: version files agree; updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
+- Release workflow: before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
+- `ci.yml` runs the live check daily.
 
 ## 🐛 Debugging
 

@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useOptions } from '@/hooks/useOptions';
 import imgPath from '../../../../assets/img.png';
 import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { isTauri } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
 import { openCenteredWindow } from '@/lib/window';
-import { SettingsSkeleton } from '../settings-ui';
+import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 export function AboutForm() {
   const { settings, isLoading } = useOptions();
@@ -121,12 +124,14 @@ export function AboutForm() {
               <AnimatePresence mode="wait"
                 initial={false}>
                 {updateInfo?.available ? (
-                  <motion.div key="available"
+                  <motion.div
+                    key="available"
                     variants={fadeInUp}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="flex flex-col gap-2">
+                    className="flex flex-col gap-2"
+                  >
                     <div className="flex items-center justify-center gap-2 font-medium text-success">
                       <ArrowUpCircle className="size-4" />
                       Update Available (v{updateInfo.version})
@@ -139,12 +144,14 @@ export function AboutForm() {
                     </Button>
                   </motion.div>
                 ) : (
-                  <motion.div key="latest"
+                  <motion.div
+                    key="latest"
                     variants={fadeInUp}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="flex items-center justify-center gap-2 font-medium text-foreground">
+                    className="flex items-center justify-center gap-2 font-medium text-foreground"
+                  >
                     <CheckCircle2 className="size-4 text-success" />
                     You have the latest version
                   </motion.div>
@@ -189,6 +196,8 @@ export function AboutForm() {
         </div>
       </div>
 
+      {isTauri() && <UpdateSettingsForm />}
+
       <div className="grid grid-cols-2 gap-3">
         <CreditTile role="Developer"
           names={['@Doreet']} />
@@ -196,6 +205,46 @@ export function AboutForm() {
           names={['@pandamancer']} />
       </div>
     </div>
+  );
+}
+
+function UpdateSettingsForm() {
+  const { settings, updateSettings } = useOptions();
+  const form = useForm<{ autoUpdateEnabled: boolean }>({
+    defaultValues: { autoUpdateEnabled: settings.autoUpdateEnabled ?? true },
+  });
+
+  // Reset form when settings change externally
+  React.useEffect(() => {
+    form.reset({ autoUpdateEnabled: settings.autoUpdateEnabled ?? true }, { keepDirty: false });
+  }, [settings.autoUpdateEnabled, form]);
+
+  return (
+    <Form {...form}>
+      <SettingsGroup title="Updates">
+        <FormField
+          control={form.control}
+          name="autoUpdateEnabled"
+          render={({ field }) => (
+            <SettingsRow
+              label="Automatic Updates"
+              description="Download and install new versions on startup, then restart. When off, you still get a notification when an update is available."
+              control={
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      updateSettings({ autoUpdateEnabled: checked });
+                    }}
+                  />
+                </FormControl>
+              }
+            />
+          )}
+        />
+      </SettingsGroup>
+    </Form>
   );
 }
 

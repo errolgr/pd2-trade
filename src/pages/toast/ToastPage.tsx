@@ -2,14 +2,12 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { listen, emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { installUpdateAndRelaunch } from '@/lib/updater';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { openUrl } from '@/lib/browser-opener';
-import { check } from '@tauri-apps/plugin-updater';
-import { resetUpdateNotification } from '@/hooks/useAppUpdates';
 
 const ToastPage: React.FC = () => {
   const closeToastWebview = async () => {
@@ -229,62 +227,7 @@ const ToastPage: React.FC = () => {
                   break;
                 }
                 case ToastActionType.UPDATE_AVAILABLE:
-                  if (isTauri()) {
-                    try {
-                      // Check for update and download/install it before relaunching
-                      const update = await check();
-                      if (update?.available) {
-                        // Show a loading toast
-                        const loadingToast = toast.loading('Downloading update...', {
-                          position: 'bottom-right',
-                        });
-
-                        let downloaded = 0;
-                        let contentLength = 0;
-
-                        // Download and install the update
-                        await update.downloadAndInstall((event) => {
-                          switch (event.event) {
-                            case 'Started':
-                              contentLength = event.data.contentLength;
-                              break;
-                            case 'Progress':
-                              downloaded += event.data.chunkLength;
-                              const progress = contentLength
-                                ? Math.min(100, Math.floor((downloaded / contentLength) * 100))
-                                : 0;
-                              toast.loading(`Downloading update... ${progress}%`, {
-                                id: loadingToast,
-                                position: 'bottom-right',
-                              });
-                              break;
-                            case 'Finished':
-                              toast.success('Update downloaded! Restarting...', {
-                                id: loadingToast,
-                                position: 'bottom-right',
-                              });
-                              break;
-                          }
-                        });
-
-                        // Relaunch after successful download/install
-                        await relaunch();
-                      } else {
-                        // No update available, just relaunch
-                        await relaunch();
-                      }
-                    } catch (error) {
-                      console.error('Failed to download/install update:', error);
-                      toast.error('Failed to download update. Please try again later.', {
-                        position: 'bottom-right',
-                      });
-                      // Reset notification state so user can try again
-                      resetUpdateNotification();
-                    }
-                  } else {
-                    // In browser, just reload the page
-                    window.location.reload();
-                  }
+                  await installUpdateAndRelaunch();
                   break;
                 default:
                   console.warn('Unknown toast action type:', customPayload.action.type);

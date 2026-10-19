@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { emit } from '@/lib/browser-events';
 import { useUpdater } from './useUpdater';
+import { useOptions } from './useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
 // Track update state globally to prevent duplicate notifications
@@ -16,16 +17,26 @@ export const resetUpdateNotification = () => {
 
 export const useAppUpdates = () => {
   const { checkForUpdates, downloadUpdate } = useUpdater();
+  const { settings, isLoading } = useOptions();
   const isProcessingRef = useRef(false);
   const hasAutoDownloadedRef = useRef(false);
+  const autoUpdateEnabledRef = useRef(true);
+  autoUpdateEnabledRef.current = settings.autoUpdateEnabled ?? true;
 
-  // Initial auto-download on startup
+  // Initial auto-download on startup; waits for settings so an opt-out is honoured
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!isTauri() || isLoading) return;
 
     const autoDownload = async () => {
       // Prevent concurrent checks
       if (isProcessingRef.current || hasAutoDownloadedRef.current) {
+        return;
+      }
+
+      // One-shot startup decision: opted-out users only get the periodic "Update Available" toast,
+      // and re-enabling mid-session must not trigger a surprise download + restart.
+      if (!autoUpdateEnabledRef.current) {
+        hasAutoDownloadedRef.current = true;
         return;
       }
 
@@ -61,7 +72,7 @@ export const useAppUpdates = () => {
     return () => {
       clearTimeout(initialTimeout);
     };
-  }, [checkForUpdates, downloadUpdate]);
+  }, [isLoading, checkForUpdates, downloadUpdate]);
 
   // Periodic update checks for notifications
   useEffect(() => {

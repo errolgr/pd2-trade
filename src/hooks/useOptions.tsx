@@ -65,6 +65,7 @@ export interface ISettings {
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   themeId?: string; // Color theme id from src/lib/themes.ts
+  autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
 }
 
 interface OptionsContextProps {
@@ -117,6 +118,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   themeId: DEFAULT_THEME_ID,
+  autoUpdateEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
