@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOptions } from '@/hooks/useOptions';
@@ -42,13 +42,13 @@ export function RareAppraisalDetail({
                     type="button"
                     tabIndex={-1}
                     aria-label="How verdicts work"
-                    className="inline-flex cursor-pointer rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-q-gold focus-visible:text-q-gold"
+                    className="inline-flex cursor-pointer rounded-full text-info/80 outline-none transition-colors hover:text-info focus-visible:text-info"
                     onClick={(e) => {
                       e.stopPropagation();
                       openUrl('https://pd2trader.com/rares/how-it-works');
                     }}
                   >
-                    <Info className="size-3.5" />
+                    <CircleHelp className="size-[13px]" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>How verdicts work</TooltipContent>
