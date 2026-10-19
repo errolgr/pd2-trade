@@ -2,12 +2,10 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import io from 'socket.io-client';
-import { emit } from '@/lib/browser-events';
 import type { ISettings } from '@/hooks/useOptions';
 import { useSocket } from './useSocket';
 
 vi.mock('socket.io-client', () => ({ default: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: undefined }) }));
 
 /** Raw engine.io WebSocket stand-in: records sent frames and lets tests push server frames. */
@@ -66,7 +64,6 @@ beforeEach(() => {
     sockets.push(s);
     return s as never;
   });
-  vi.mocked(emit).mockResolvedValue(undefined);
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -193,24 +190,51 @@ describe('request/response', () => {
     await expect(pending).resolves.toEqual({ data: [1] });
   });
 
-  it('push events are re-emitted with a sanitized name and do not consume a pending request', async () => {
+  it('push events reach subscribers of their sanitized name and do not consume a pending request', async () => {
     const { hook, socket } = connectedSocket();
     const pending = hook.result.current.getMessages('c1');
     const msg = { _id: 'm1', content: 'hi' };
+    const onMessage = vi.fn();
+    const onOther = vi.fn();
+    hook.result.current.subscribe('social/message_pushed', onMessage);
+    hook.result.current.subscribe('system/notification_pushed', onOther);
 
     socket.ws.deliver('42' + JSON.stringify(['social/message pushed', msg]));
-    expect(emit).toHaveBeenCalledWith('socket:social/message_pushed', msg);
+    expect(onMessage).toHaveBeenCalledWith(msg);
+    expect(onOther).not.toHaveBeenCalled();
 
     socket.ws.deliver('430' + JSON.stringify([null, { data: [] }]));
     await expect(pending).resolves.toEqual({ data: [] });
   });
 
-  it('a failed push re-emit is swallowed', async () => {
-    vi.mocked(emit).mockRejectedValueOnce(new Error('no window'));
-    const { socket } = connectedSocket();
+  it('stops delivering after unsubscribe and survives reconnects', () => {
+    const { hook, socket } = connectedSocket('a');
+    const onMessage = vi.fn();
+    const unsubscribe = hook.result.current.subscribe('social/message_pushed', onMessage);
+
+    hook.rerender({ t: 'b' });
+    const next = sockets.at(-1)!;
+    next.fire('connect');
+    expect(next).not.toBe(socket);
+    next.ws.deliver('42' + JSON.stringify(['social/message pushed', { _id: 'm2' }]));
+    expect(onMessage).toHaveBeenCalledWith({ _id: 'm2' });
+
+    unsubscribe();
+    next.ws.deliver('42' + JSON.stringify(['social/message pushed', { _id: 'm3' }]));
+    expect(onMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('a throwing subscriber is logged and does not stop the others', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { hook, socket } = connectedSocket();
+    const after = vi.fn();
+    hook.result.current.subscribe('offer_pushed', () => {
+      throw new Error('boom');
+    });
+    hook.result.current.subscribe('offer_pushed', after);
     socket.ws.deliver('42' + JSON.stringify(['offer pushed', {}]));
-    await vi.advanceTimersByTimeAsync(0);
-    expect(console.warn).toHaveBeenCalledWith('[Socket] Failed to emit push event:', new Error('no window'));
+    expect(console.error).toHaveBeenCalledWith('[Socket] Push handler for offer_pushed failed:', new Error('boom'));
+    expect(after).toHaveBeenCalledWith({});
   });
 
   it('ignores non-string, non-numeric-prefixed, malformed, and unsolicited frames', async () => {

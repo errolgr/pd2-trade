@@ -3,11 +3,6 @@ use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
     window::get_diablo_rect(&app_handle)
 }
@@ -23,94 +18,36 @@ pub fn is_diablo_focused() -> bool {
 }
 
 #[tauri::command]
+pub fn focus_diablo() -> bool {
+    window::focus_diablo()
+}
+
+/// Fits the Main overlay to the monitor containing Diablo II (primary monitor fallback).
+/// No-op when the window already covers that rect.
+#[tauri::command]
 pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) {
-        if let Some(main_window) =
-            app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
-        {
-            // Ensure window is not maximized before resizing
-            if let Ok(true) = main_window.is_maximized() {
-                let _ = main_window.unmaximize();
-            }
-
-            // Set Position
-            let _ = main_window.set_position(tauri::PhysicalPosition::new(
-                bounds.x as f64,
-                bounds.y as f64,
-            ));
-
-            // Set Size
-            let _ = main_window.set_size(tauri::PhysicalSize::new(
-                bounds.width as f64,
-                bounds.height as f64,
-            ));
-        }
-    }
-    Ok(())
-}
-
-#[tauri::command]
-pub fn set_window_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
-    if let Some(main_window) =
+    let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) else {
+        return Ok(());
+    };
+    let Some(main_window) =
         app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
-    {
+    else {
+        return Ok(());
+    };
+
+    let position = main_window.outer_position().map_err(|e| e.to_string())?;
+    if position.x != bounds.x || position.y != bounds.y {
         main_window
-            .set_ignore_cursor_events(ignore)
-            .map_err(|e| format!("Failed to set click-through: {}", e))?;
+            .set_position(tauri::PhysicalPosition::new(bounds.x, bounds.y))
+            .map_err(|e| e.to_string())?;
     }
-    Ok(())
-}
-
-#[tauri::command]
-pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if let Some(main_window) =
-        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
-    {
+    // Read the size only after moving: crossing onto a monitor with a different DPI makes
+    // WM_DPICHANGED rescale the window, so a size read before the move would be stale.
+    let size = main_window.outer_size().map_err(|e| e.to_string())?;
+    if size.width as i32 != bounds.width || size.height as i32 != bounds.height {
         main_window
-            .set_focus()
-            .map_err(|e| format!("Failed to set window focus: {}", e))?;
-        main_window
-            .set_always_on_top(true)
-            .map_err(|e| format!("Failed to set always on top: {}", e))?;
-        // Reset always on top after a short delay
-        let app_handle_clone = app_handle.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(100));
-            if let Some(window) = app_handle_clone
-                .get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Main)
-            {
-                let _ = window.set_always_on_top(false);
-            }
-        });
-    }
-    Ok(())
-}
-
-#[tauri::command]
-pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), String> {
-    use tauri::{PhysicalPosition, PhysicalSize};
-
-    // Get bounds of the focused area (Diablo or work area)
-    let bounds =
-        window::get_appropriate_window_bounds(&app_handle).ok_or("Could not get window bounds")?;
-
-    // Toast window size
-    let toast_width = 400;
-    let toast_height = 200;
-    let margin = 10;
-
-    let x = bounds.x + bounds.width - toast_width - margin;
-    let y = bounds.y + bounds.height - toast_height - margin;
-
-    if let Some(toast_window) =
-        app_handle.get_webview_window(&crate::modules::config::WINDOW_CONFIG.labels.Toast)
-    {
-        toast_window
-            .set_position(PhysicalPosition::new(x as f64, y as f64))
-            .map_err(|e| format!("Failed to set toast window position: {}", e))?;
-        toast_window
-            .set_size(PhysicalSize::new(toast_width as f64, toast_height as f64))
-            .map_err(|e| format!("Failed to set toast window size: {}", e))?;
+            .set_size(tauri::PhysicalSize::new(bounds.width as u32, bounds.height as u32))
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

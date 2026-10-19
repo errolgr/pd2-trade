@@ -1,15 +1,15 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showToast } from '@/overlay';
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { emit } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { GeneralForm } from './general-form';
 
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
 vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
@@ -112,7 +112,7 @@ describe('GeneralForm', () => {
   it('Auto-Detect warns when nothing is found and leaves the field alone', async () => {
     await renderForm({ ...BASE, diablo2Directory: 'C:\\Old' });
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Auto-Detect/ })));
-    expect(vi.mocked(emit)).toHaveBeenCalledWith('toast-event', expect.objectContaining({ variant: 'warning' }));
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
     expect(dirInput().value).toBe('C:\\Old');
   });
 
@@ -121,6 +121,6 @@ describe('GeneralForm', () => {
     await renderForm();
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Auto-Detect/ })));
     expect(vi.mocked(invoke)).not.toHaveBeenCalled();
-    expect(vi.mocked(emit)).not.toHaveBeenCalled();
+    expect(vi.mocked(showToast)).not.toHaveBeenCalled();
   });
 });

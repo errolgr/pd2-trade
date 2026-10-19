@@ -7,11 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WindowChrome } from '@/components/custom/window-chrome';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
-import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-events';
-import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
+import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
-import { NETWORTH_OPEN_EVENT, useNetWorth, type NetWorthTab } from '@/hooks/useNetWorth';
+import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import {
   getPoints,
@@ -58,29 +56,24 @@ const STALE_ON_OPEN_MS = 2 * 60 * 1000;
 
 const TRIGGER_CLASS = 'shrink-0 px-2 text-xs';
 
-function initialTab(): WindowTab {
-  return new URLSearchParams(window.location.search).get('tab') === 'history' ? 'history' : 'overview';
-}
-
 export function StashValueWindow() {
   const netWorth = useNetWorth();
   const { owner, latest, status, error, trackingEnabled, takeSnapshot, lastSnapshotAt } = netWorth;
   const { settings } = useOptions();
   const token = settings.pd2Token ?? null;
   const wealthRank = useWealthRank();
-  const [tab, setTab] = useState<WindowTab>(initialTab);
+  const { payload, payloadVersion, close } = usePanel<'currency'>();
+  const { gameFocused } = useOverlay();
+  const [tab, setTab] = useState<WindowTab>(() => payload?.tab ?? 'overview');
 
-  // Deep link from ticker / panel / toasts
-  useEffect(() => {
-    const unlisten = listenAppEvent<{ tab?: NetWorthTab }>(NETWORTH_OPEN_EVENT, ({ payload }) => {
-      if (payload?.tab) setTab(payload.tab);
-    });
-    return () => {
-      unlisten.then((off) => off());
-    };
-  }, []);
+  // Deep link from ticker / panel / hotkey: every openPanel('currency', { tab }) switches the tab
+  const [seenVersion, setSeenVersion] = useState(payloadVersion);
+  if (payloadVersion !== seenVersion) {
+    setSeenVersion(payloadVersion);
+    if (payload?.tab) setTab(payload.tab);
+  }
 
-  // Re-value when the window is opened or refocused with a stale (or no) valuation
+  // Re-value when the panel is opened or shown again with a stale (or no) valuation
   const refreshRef = useRef({ owner, lastSnapshotAt, status, takeSnapshot });
   useEffect(() => {
     refreshRef.current = { owner, lastSnapshotAt, status, takeSnapshot };
@@ -92,13 +85,10 @@ export function StashValueWindow() {
     current.takeSnapshot('manual');
   }, []);
   const ownerKey = owner ? `${owner.account}|${owner.isLadder}|${owner.isHardcore}` : null;
+  // On open, re-open (payloadVersion) and when the panel shows again after the game regains focus
   useEffect(() => {
-    if (ownerKey) refreshIfStale();
-  }, [ownerKey, refreshIfStale]);
-  useEffect(() => {
-    window.addEventListener('focus', refreshIfStale);
-    return () => window.removeEventListener('focus', refreshIfStale);
-  }, [refreshIfStale]);
+    if (ownerKey && gameFocused) refreshIfStale();
+  }, [ownerKey, payloadVersion, gameFocused, refreshIfStale]);
 
   const loadSeasonPoints = useCallback(async (): Promise<NetWorthPoint[]> => {
     if (!token || !owner) return [];
@@ -117,12 +107,13 @@ export function StashValueWindow() {
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
-        <div className="min-h-screen w-full bg-background text-foreground">
+        <div className="h-full w-full overflow-y-auto bg-background text-foreground">
           <WindowTitle
             owner={owner}
             seasonLabel={
               netWorth.seasons.find((s) => s.id === (valuation?.seasonId ?? netWorth.currentSeasonId))?.label
             }
+            onClose={close}
           />
 
           <div className="space-y-4 px-6 pb-6 pt-4">
@@ -259,41 +250,35 @@ export function StashValueWindow() {
   );
 }
 
-function WindowTitle({ owner, seasonLabel }: { owner: NetWorthOwner | null; seasonLabel?: string }) {
+function WindowTitle({
+  owner,
+  seasonLabel,
+  onClose,
+}: {
+  owner: NetWorthOwner | null;
+  seasonLabel?: string;
+  onClose: () => void;
+}) {
   return (
     <WindowChrome
       className="sticky top-0 z-30 h-12 border-border/70 bg-background/85 px-4 backdrop-blur-md"
       titleClassName="flex items-center gap-2.5 overflow-hidden text-base"
       icon={<Gem className="text-q-unique" />}
-      onClose={() => getCurrentWebviewWindow().hide()}
+      onClose={onClose}
       title={
         <>
-          <span data-tauri-drag-region
-            className="shrink-0">
-            Net Worth
-          </span>
+          <span className="shrink-0">Net Worth</span>
           {owner && (
-            <span data-tauri-drag-region
-              className="flex min-w-0 items-center gap-1.5 text-xs font-normal">
-              <span data-tauri-drag-region
-                className="flex min-w-0 items-center gap-1 text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-1.5 text-xs font-normal">
+              <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
                 <UserRound className="size-3 shrink-0" />
-                <span data-tauri-drag-region
-                  className="truncate font-medium text-foreground/90">
-                  {owner.account}
-                </span>
+                <span className="truncate font-medium text-foreground/90">{owner.account}</span>
               </span>
-              <span
-                data-tauri-drag-region
-                className="shrink-0 rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground"
-              >
+              <span className="shrink-0 rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground">
                 {owner.isLadder ? 'Ladder' : 'Non-ladder'} {owner.isHardcore ? 'HC' : 'SC'}
               </span>
               {seasonLabel && (
-                <span
-                  data-tauri-drag-region
-                  className="truncate rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground"
-                >
+                <span className="truncate rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground">
                   {seasonLabel}
                 </span>
               )}
@@ -437,6 +422,7 @@ function TrackingDisabled() {
 }
 
 function SignedOut({ hasToken }: { hasToken: boolean }) {
+  const { openPanel } = useOverlay();
   return hasToken ? (
     <EmptyState
       className="mt-6"
@@ -450,7 +436,7 @@ function SignedOut({ hasToken }: { hasToken: boolean }) {
       title="Sign in with your PD2 account to value your stash."
       action={
         <Button size="sm"
-          onClick={() => emitAppEvent(SIGN_IN_DIALOG_EVENT)}>
+          onClick={() => openPanel('signIn')}>
           <LogIn className="size-3.5" />
           Sign in
         </Button>

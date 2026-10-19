@@ -13,32 +13,27 @@ vi.mock('@sentry/react', () => ({
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
 vi.mock('@/lib/faro', () => ({ initFaro: vi.fn() }));
+const wrap = (name: string) =>
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return <div data-wrapper={name}>{children}</div>;
+  };
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({
   AccountMismatchError: class AccountMismatchError extends Error {},
+  Pd2WebsiteProvider: wrap('pd2website'),
 }));
 
-// Every routed page is a stub that names itself, so routing is observable without booting the app.
-vi.mock('./pages/landing/LandingPage', () => ({
-  default: () => <p>landing</p>,
-  Providers: ({ children }: { children: React.ReactNode }) => <div data-wrapper="providers">{children}</div>,
-}));
-vi.mock('./hooks/useOptions', () => ({
-  OptionsProvider: ({ children }: { children: React.ReactNode }) => <div data-wrapper="options">{children}</div>,
-}));
+// Providers and root components are stubs that name themselves, so the tree is observable without booting the app.
+vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options') }));
+vi.mock('./hooks/useDialog', () => ({ DialogProvider: wrap('dialog') }));
+vi.mock('./hooks/useTray', () => ({ TrayProvider: wrap('tray') }));
+vi.mock('./hooks/useItems', () => ({ ItemsProvider: wrap('items') }));
+vi.mock('./hooks/useNetWorth', () => ({ NetWorthProvider: wrap('networth') }));
+vi.mock('./overlay', () => ({ OverlayProvider: wrap('overlay'), OverlayRoot: () => <p>overlay-root</p> }));
+vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
-vi.mock('./pages/price-check/ItemPage', () => ({ default: () => <p>item</p> }));
-vi.mock('./pages/settings/SettingsPage', () => ({ SettingsPage: () => <p>settings</p> }));
-vi.mock('./pages/change-log/ChangeLogPage', () => ({ default: () => <p>change-log</p> }));
-vi.mock('./pages/quick-list/QuickListPage', () => ({ QuickListPage: () => <p>quick-list</p> }));
-vi.mock('./pages/toast/ToastPage', () => ({ default: () => <p>toast</p> }));
-vi.mock('./pages/currency/CurrencyPage', () => ({ CurrencyPage: () => <p>currency</p> }));
-vi.mock('./pages/chat/ChatButtonPage', () => ({ default: () => <p>chat-button</p> }));
-vi.mock('./pages/trade-messages/TradeMessagesPage', () => ({ default: () => <p>trade-messages</p> }));
-vi.mock('./pages/chat/ChatPage', () => ({ default: () => <p>chat</p> }));
-vi.mock('./pages/sign-in/SignInPage', () => ({ default: () => <p>sign-in</p> }));
-vi.mock('./pages/delist/DelistPage', () => ({ DelistPage: () => <p>delist</p> }));
-vi.mock('./pages/net-worth/NetWorthTickerPage', () => ({ default: () => <p>net-worth-ticker</p> }));
-vi.mock('./pages/net-worth/NetWorthPanelPage', () => ({ default: () => <p>net-worth-panel</p> }));
+vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
+vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
+vi.mock('./pages/net-worth/NetWorthOverlayController', () => ({ default: () => <p>net-worth-controller</p> }));
 vi.mock('./pages/dev/PrimitivesGallery', () => ({ default: () => <p>gallery</p> }));
 
 /** Loads main.tsx fresh at `path` (it renders on import), returning the Sentry options it registers. */
@@ -72,42 +67,33 @@ afterEach(() => {
 });
 
 describe('main routing', () => {
-  it.each([
-    ['/item', 'item'],
-    ['/settings', 'settings'],
-    ['/quick-list', 'quick-list'],
-    ['/toast', 'toast'],
-    ['/currency', 'currency'],
-    ['/chat', 'chat'],
-    ['/chat-button', 'chat-button'],
-    ['/trade-messages', 'trade-messages'],
-    ['/sign-in', 'sign-in'],
-    ['/delist', 'delist'],
-    ['/net-worth-ticker', 'net-worth-ticker'],
-    ['/net-worth-panel', 'net-worth-panel'],
-  ])('%s renders the %s window', async (path, page) => {
-    const { text } = await boot(path);
-    expect(text).toBe(page);
-  });
-
-  it('the main window mounts the landing page inside the app providers with the error handler', async () => {
+  it('mounts every provider once around the app controller, handlers and overlay root', async () => {
     const { root } = await boot('/');
-    const providers = root.querySelector('[data-wrapper="providers"]');
-    expect(providers?.textContent).toBe('error-handlerlanding');
+    // Overlay sits above the domain providers: Tray, Pd2Website and NetWorth open panels through it.
+    const chain = ['dialog', 'options', 'overlay', 'tray', 'items', 'pd2website', 'networth'];
+    let node: Element | null = root;
+    for (const name of chain) {
+      node = node!.querySelector(`:scope > [data-wrapper="${name}"]`);
+      expect(node, name).not.toBeNull();
+    }
+    expect(node!.textContent).toBe('error-handlerapp-controllerdelist-handlernet-worth-controlleroverlay-root');
   });
 
-  it('the changelog window gets its own options provider', async () => {
-    const { root } = await boot('/change-log');
-    expect(root.querySelector('[data-wrapper="options"]')?.textContent).toBe('change-log');
-  });
+  it.each(['/item', '/settings', '/toast', '/chat', '/nope'])(
+    '%s is not a route anymore (pages are panels)',
+    async (path) => {
+      const { text } = await boot(path);
+      expect(text).toBe('');
+    },
+  );
 
-  it('unknown paths render nothing', async () => {
-    const { text } = await boot('/nope');
-    expect(text).toBe('');
+  it('serves the dev gallery outside production', async () => {
+    const { root } = await boot('/dev/gallery');
+    expect(root.querySelector('[data-wrapper="options"]')?.textContent).toBe('gallery');
   });
 
   it('suppresses the native context menu', async () => {
-    await boot('/item');
+    await boot('/');
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
@@ -116,7 +102,7 @@ describe('main routing', () => {
 
 describe('main Sentry setup', () => {
   it('initialises Sentry only after a 1s delay', async () => {
-    const { Sentry } = await boot('/item');
+    const { Sentry } = await boot('/');
     vi.advanceTimersByTime(999);
     expect(Sentry.init).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
@@ -124,7 +110,7 @@ describe('main Sentry setup', () => {
   });
 
   it('drops Tauri IPC breadcrumbs but keeps other HTTP breadcrumbs', async () => {
-    const opts = (await boot('/item')).sentryOptions();
+    const opts = (await boot('/')).sentryOptions();
     const ipc = { category: 'http', data: { url: 'http://ipc.localhost/plugin' } };
     const api = { category: 'http', data: { url: 'https://pd2trader.com/api' } };
     expect(opts.beforeBreadcrumb!(ipc)).toBeNull();
@@ -133,7 +119,7 @@ describe('main Sentry setup', () => {
   });
 
   it('filters expected account/auth errors and keeps everything else', async () => {
-    const { sentryOptions } = await boot('/item');
+    const { sentryOptions } = await boot('/');
     const opts = sentryOptions();
     const { AccountMismatchError } = await import('@/hooks/pd2website/usePD2Website');
     const send = (event: object, originalException?: unknown) =>
@@ -144,7 +130,9 @@ describe('main Sentry setup', () => {
     expect(send({ exception: { values: [{ type: 'AuthenticationError' }] } })).toBeNull();
     // console.error capture arrives as a message event with no exception
     expect(send({ message: 'User Bob is not associated with your logged-in account' })).toBeNull();
-    expect(send({ exception: { values: [{ type: 'Error', value: 'Foo is not associated with your logged-in account' }] } })).toBeNull();
+    expect(
+      send({ exception: { values: [{ type: 'Error', value: 'Foo is not associated with your logged-in account' }] } }),
+    ).toBeNull();
 
     const real = { exception: { values: [{ type: 'TypeError', value: 'x is undefined' }] } };
     expect(send(real, new TypeError('x is undefined'))).toBe(real);

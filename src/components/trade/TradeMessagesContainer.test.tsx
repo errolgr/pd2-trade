@@ -9,8 +9,8 @@ import { TradeMessagesContainer } from './TradeMessagesContainer';
 
 vi.mock('@/hooks/useTradeMessages', () => ({ useTradeMessages: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
-const hide = vi.fn();
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: () => ({ hide }) }));
+const close = vi.hoisted(() => vi.fn());
+vi.mock('@/overlay', () => ({ usePanel: () => ({ close }) }));
 // Stub the row so these tests cover list composition and handler wiring, not row internals.
 vi.mock('./TradeMessage', () => ({
   TradeMessage: (props: {
@@ -22,7 +22,9 @@ vi.mock('./TradeMessage', () => ({
     <div data-testid="trade"
       data-id={props.trade.id}
       data-hidden={String(Boolean(props.isHidden))}>
-      {props.onDelete && <button onClick={() => props.onDelete!(props.trade.listingId!)}>delete {props.trade.id}</button>}
+      {props.onDelete && (
+        <button onClick={() => props.onDelete!(props.trade.listingId!)}>delete {props.trade.id}</button>
+      )}
       {props.onRestoreOutgoing && <span>restorable</span>}
     </div>
   ),
@@ -45,7 +47,12 @@ let site: {
   [key: string]: unknown;
 };
 
-function trade(id: string, minutesAgo: number, isIncoming: boolean, extra: Partial<TradeMessageData> = {}): TradeMessageData {
+function trade(
+  id: string,
+  minutesAgo: number,
+  isIncoming: boolean,
+  extra: Partial<TradeMessageData> = {},
+): TradeMessageData {
   return {
     id,
     isIncoming,
@@ -156,7 +163,10 @@ describe('TradeMessagesContainer', () => {
   });
 
   it('mentions hidden offers in the empty state while they are not shown', async () => {
-    site.hiddenOutgoingOffers = [trade('h1', 1, false, { listingId: 'L1' }), trade('h2', 2, false, { listingId: 'L2' })];
+    site.hiddenOutgoingOffers = [
+      trade('h1', 1, false, { listingId: 'L1' }),
+      trade('h2', 2, false, { listingId: 'L2' }),
+    ];
     render(<TradeMessagesContainer />);
     await selectTab(/Website/);
     await selectTab(/Outgoing/);
@@ -166,11 +176,11 @@ describe('TradeMessagesContainer', () => {
     expect(tab(/Website/).textContent).toContain('0');
   });
 
-  it('hides the offers window from the close button', async () => {
+  it('closes the offers panel from the close button', async () => {
     render(<TradeMessagesContainer />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Hide offers' }));
     });
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 });

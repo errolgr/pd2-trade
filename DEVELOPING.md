@@ -70,8 +70,9 @@ pd2-trade/
 │   │   ├── ui/            # Base UI components (shadcn/ui style)
 │   │   ├── custom/        # Custom components
 │   │   └── dialogs/       # Dialog components
-│   ├── pages/             # Page components
-│   │   ├── landing/       # Landing page
+│   ├── overlay/           # Single overlay window: panels, region click-through, keyboard, toasts
+│   ├── pages/             # Panel contents
+│   │   ├── landing/       # AppController (hotkeys, clipboard, chat watcher; renders nothing)
 │   │   ├── price-check/   # Item price checking
 │   │   ├── quick-list/    # Quick list functionality
 │   │   └── settings/      # Settings page
@@ -147,6 +148,9 @@ npm run docs:preview
 - Use TypeScript for all new code
 - Follow the existing component patterns
 - Use Tailwind CSS for styling
+- Never use `window.alert` / `confirm` / `prompt`: a native dialog wedges the non-focusable transparent overlay window (ESLint `no-alert`). Use `confirmToast` / `showToast` from `@/overlay` or an in-panel dialog
+- New UI is a panel, not a window: add an entry to `src/overlay/registry.tsx` and open it with `useOverlay().openPanel(id, payload)`; read inputs with `usePanel()`. Mark drag handles with `data-panel-drag` (never `data-tauri-drag-region`)
+- Do not emit app events from JS; `@/lib/browser-events` `listen` is only for events emitted by Rust
 - Write meaningful commit messages
 - Add comments for complex logic
 
@@ -157,6 +161,7 @@ npm run docs:preview
 - Tests sit next to the code (`foo.ts` → `foo.test.ts`); DOM tests start with `// @vitest-environment happy-dom` and mock Tauri/plugin modules with `vi.mock`
 - `it.fails` / `it.skip` tests marked `// BUG:` pin known bugs; fixing the bug flips them, so convert them to plain `it` in the fix
 - Test and Tauri functionality
+- Browser smoke test (no Tauri): `npm run dev` and open http://localhost:1420/. The app renders in the page (region and keyboard calls are no-ops). In dev builds the console exposes `window.__pd2Overlay`: `openPanel(id, payload?)`, `closePanel(id)`, `togglePanel(id, payload?)`, `isOpen(id)`, `showToast(payload)` and `state` (panel state snapshot), e.g. `__pd2Overlay.openPanel('settings')` or `__pd2Overlay.openPanel('currency', { tab: 'history' })`
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)
 
@@ -180,6 +185,8 @@ A broken updater can only be fixed by users re-downloading the installer, so it 
 ### Tauri Debugging
 
 - Check the Tauri console output
+- Click-through problems: only `[data-interactive="true"]` panel frames, popovers, dialogs and toasts are clickable (`src/overlay/region.ts` → `set_interactive_region`); anything else passes clicks to the game
+- Keyboard problems: the overlay only takes keyboard focus while a panel that accepts input is in use (`src/overlay/keyboard.ts`); closing the last one hands focus back to Diablo II (`focus_diablo`)
 - Use `npm run tauri:debug` for debug builds
 
 ### Common Issues

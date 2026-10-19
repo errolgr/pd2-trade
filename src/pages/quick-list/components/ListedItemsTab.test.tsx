@@ -2,19 +2,19 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { showToast } from '@/overlay';
 import { useInView } from 'react-intersection-observer';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
-import { emit } from '@/lib/browser-events';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import ListedItemsTab from './ListedItemsTab';
 
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
@@ -55,7 +55,7 @@ let api: Api;
 let inView: boolean;
 const queries: { limit: number; skip: number; hc: boolean; ladder: boolean }[] = [];
 
-const toasts = () => vi.mocked(emit).mock.calls.filter(([e]) => e === 'toast-event').map(([, p]) => p);
+const toasts = () => vi.mocked(showToast).mock.calls.map(([p]) => p);
 const row = (name: string) => screen.getByText(name).closest<HTMLElement>('[class*="rounded"][class*="border"]')!;
 const countChip = () => screen.getByText('Listed Items').querySelector('span')!.textContent;
 

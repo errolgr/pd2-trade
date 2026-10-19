@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import { emit } from '@/lib/browser-events';
 import { useUpdater } from './useUpdater';
 import { useOptions } from './useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
+import { showToast } from '@/overlay';
 
 // Track update state globally to prevent duplicate notifications
 let hasNotified = false;
@@ -106,7 +106,7 @@ export const useAppUpdates = () => {
                 },
               },
             };
-            await emit('toast-event', updateToastPayload);
+            showToast(updateToastPayload);
           }
         } else {
           // No update available, reset flags for next update

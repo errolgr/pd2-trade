@@ -4,8 +4,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
 import { ISettings } from './useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { listen } from '@/lib/browser-events';
-import { emit } from '@/lib/browser-events';
+import { setBadgeCount, showToast } from '@/overlay';
 import qs from 'qs';
 import {
   getDeletedOffers,
@@ -85,7 +84,6 @@ interface UseTradeOffersProps {
   settings: ISettings;
   authData: AuthData | null;
   onAuthError?: () => void | Promise<void>;
-  isConnected?: boolean;
 }
 
 interface UseTradeOffersReturn {
@@ -308,12 +306,7 @@ const unacceptOffer = async (
   await handleApiResponse(response, onAuthError);
 };
 
-export const useTradeOffers = ({
-  settings,
-  authData,
-  onAuthError,
-  isConnected = false,
-}: UseTradeOffersProps): UseTradeOffersReturn => {
+export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffersProps): UseTradeOffersReturn => {
   const [incomingOffers, setIncomingOffers] = useState<TradeMessageData[]>([]);
   const [outgoingOffers, setOutgoingOffers] = useState<TradeMessageData[]>([]);
   const [hiddenOutgoingOffers, setHiddenOutgoingOffers] = useState<TradeMessageData[]>([]);
@@ -381,35 +374,11 @@ export const useTradeOffers = ({
     }
   }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
 
-  // Listen for refresh-offers event (emitted by useSocketNotifications)
-  useEffect(() => {
-    if (!authData?.user?._id || !settings?.pd2Token) {
-      return;
-    }
-
-    let unlisten: (() => void) | null = null;
-
-    const setupListener = async () => {
-      try {
-        unlisten = await listen('refresh-offers', async () => {
-          // Refresh both incoming and outgoing offers when notified
-          fetchIncomingOffers();
-          fetchOutgoingOffers();
-        });
-      } catch (error) {
-        console.error('Failed to set up refresh-offers listener:', error);
-      }
-    };
-
-    setupListener();
-
-    return () => {
-      if (unlisten) {
-        unlisten();
-        unlisten = null;
-      }
-    };
-  }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
+  // Single owner of the offers lists (Pd2WebsiteProvider): socket notifications and offer actions call this.
+  const refresh = useCallback(() => {
+    fetchIncomingOffers();
+    fetchOutgoingOffers();
+  }, [fetchIncomingOffers, fetchOutgoingOffers]);
 
   const handleRevokeOffer = useCallback(
     async (offerId: string) => {
@@ -427,20 +396,19 @@ export const useTradeOffers = ({
         await revokeOffer(settings, offerId, onAuthError);
 
         // Show success toast
-        await emit('toast-event', {
+        showToast({
           title: 'Offer Revoked',
           description: offer ? `Your offer on ${offer.itemName || 'item'} has been revoked` : 'Offer has been revoked',
           variant: 'success',
         });
 
-        // Emit event to refresh offers (handled by the listener)
-        await emit('refresh-offers');
+        refresh();
       } catch (error) {
         console.error('Failed to revoke offer:', error);
-        // Revert optimistic update on error by emitting refresh event
-        await emit('refresh-offers');
+        // Revert optimistic update on error
+        refresh();
         // Show error toast
-        await emit('toast-event', {
+        showToast({
           title: 'Failed to Revoke Offer',
           description: 'An error occurred while revoking the offer',
           variant: 'error',
@@ -448,7 +416,7 @@ export const useTradeOffers = ({
         throw error;
       }
     },
-    [settings, outgoingOffers, onAuthError],
+    [settings, outgoingOffers, onAuthError, refresh],
   );
 
   const handleAcceptOffer = useCallback(
@@ -463,7 +431,7 @@ export const useTradeOffers = ({
         await acceptOffer(settings, listingId, offerId, onAuthError);
 
         // Show success toast
-        await emit('toast-event', {
+        showToast({
           title: 'Offer Accepted',
           description: offer
             ? `You accepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
@@ -471,12 +439,11 @@ export const useTradeOffers = ({
           variant: 'success',
         });
 
-        // Emit event to refresh offers (handled by the listener)
-        await emit('refresh-offers');
+        refresh();
       } catch (error) {
         console.error('Failed to accept offer:', error);
         // Show error toast
-        await emit('toast-event', {
+        showToast({
           title: 'Failed to Accept Offer',
           description: 'An error occurred while accepting the offer',
           variant: 'error',
@@ -484,7 +451,7 @@ export const useTradeOffers = ({
         throw error;
       }
     },
-    [settings, incomingOffers, onAuthError],
+    [settings, incomingOffers, onAuthError, refresh],
   );
 
   const handleRejectOffer = useCallback(
@@ -503,7 +470,7 @@ export const useTradeOffers = ({
         await rejectOffer(settings, offerId, onAuthError);
 
         // Show success toast
-        await emit('toast-event', {
+        showToast({
           title: 'Offer Rejected',
           description: offer
             ? `You rejected ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
@@ -511,14 +478,13 @@ export const useTradeOffers = ({
           variant: 'success',
         });
 
-        // Emit event to refresh offers (handled by the listener)
-        await emit('refresh-offers');
+        refresh();
       } catch (error) {
         console.error('Failed to reject offer:', error);
-        // Revert optimistic update on error by emitting refresh event
-        await emit('refresh-offers');
+        // Revert optimistic update on error
+        refresh();
         // Show error toast
-        await emit('toast-event', {
+        showToast({
           title: 'Failed to Reject Offer',
           description: 'An error occurred while rejecting the offer',
           variant: 'error',
@@ -526,7 +492,7 @@ export const useTradeOffers = ({
         throw error;
       }
     },
-    [settings, incomingOffers, onAuthError],
+    [settings, incomingOffers, onAuthError, refresh],
   );
 
   const handleUnacceptOffer = useCallback(
@@ -541,7 +507,7 @@ export const useTradeOffers = ({
         await unacceptOffer(settings, listingId, onAuthError);
 
         // Show success toast
-        await emit('toast-event', {
+        showToast({
           title: 'Offer Unaccepted',
           description: offer
             ? `You unaccepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
@@ -549,12 +515,11 @@ export const useTradeOffers = ({
           variant: 'success',
         });
 
-        // Emit event to refresh offers (handled by the listener)
-        await emit('refresh-offers');
+        refresh();
       } catch (error) {
         console.error('Failed to unaccept offer:', error);
         // Show error toast
-        await emit('toast-event', {
+        showToast({
           title: 'Failed to Unaccept Offer',
           description: 'An error occurred while unaccepting the offer',
           variant: 'error',
@@ -562,7 +527,7 @@ export const useTradeOffers = ({
         throw error;
       }
     },
-    [settings, incomingOffers, onAuthError],
+    [settings, incomingOffers, onAuthError, refresh],
   );
 
   const handleDeleteOutgoingOffer = useCallback(
@@ -580,14 +545,12 @@ export const useTradeOffers = ({
       }
 
       // Show success toast
-      emit('toast-event', {
+      showToast({
         title: 'Offer Hidden',
         description: offer
           ? `Your offer on ${offer.itemName || 'item'} has been hidden. It will be removed after 7 days.`
           : 'Offer has been hidden',
         variant: 'success',
-      }).catch((err) => {
-        console.error('Failed to emit toast event:', err);
       });
     },
     [outgoingOffers],
@@ -608,27 +571,18 @@ export const useTradeOffers = ({
       }
 
       // Show success toast
-      emit('toast-event', {
+      showToast({
         title: 'Offer Restored',
         description: offer ? `Your offer on ${offer.itemName || 'item'} has been restored` : 'Offer has been restored',
         variant: 'success',
-      }).catch((err) => {
-        console.error('Failed to emit toast event:', err);
       });
     },
     [hiddenOutgoingOffers],
   );
 
-  // Emit offer count updates whenever offers change
+  // Chat button badge
   useEffect(() => {
-    const totalCount = incomingOffers.length + outgoingOffers.length;
-    emit('trade-offers-count-updated', {
-      incomingCount: incomingOffers.length,
-      outgoingCount: outgoingOffers.length,
-      totalCount,
-    }).catch((err) => {
-      console.error('[useTradeOffers] Failed to emit trade-offers-count-updated:', err);
-    });
+    setBadgeCount('tradeOffers', incomingOffers.length + outgoingOffers.length);
   }, [incomingOffers.length, outgoingOffers.length]);
 
   return {
@@ -636,10 +590,7 @@ export const useTradeOffers = ({
     outgoingOffers,
     hiddenOutgoingOffers,
     loading,
-    refresh: () => {
-      fetchIncomingOffers();
-      fetchOutgoingOffers();
-    },
+    refresh,
     revokeOffer: handleRevokeOffer,
     acceptOffer: handleAcceptOffer,
     rejectOffer: handleRejectOffer,

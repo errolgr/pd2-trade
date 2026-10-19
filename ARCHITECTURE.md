@@ -6,9 +6,20 @@ The frontend is a **React** application built with **Vite** and styled using **T
 
 ### Key Components
 
-- **Pages**: Located in `src/pages`. Each feature (Price Check, Trade Chat, Settings) has its own directory.
-- **Hooks**: Custom hooks in `src/hooks` encapsulate logic for authentication (`usePD2Auth`), trading (`useTradeOffers`), and system interaction.
-- **IPC Layer**: Wrappers in `src/lib/browser-events.ts` and `src/lib/browser-http.ts` abstract the communication with the Rust backend and external APIs.
+- **Overlay**: `src/overlay`. The whole UI runs in **one** transparent, always-on-top Tauri window (`Main`) that hosts every surface as a _panel_ in a single React tree (see [Overlay window & panels](#overlay-window--panels)).
+- **Pages**: Located in `src/pages`. Each feature (Price Check, Trade Chat, Settings) has its own directory; each page is the content of a panel.
+- **App controller**: `src/pages/landing/AppController.tsx` holds app-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket notifications, updates/auth/changelog.
+- **Hooks**: Custom hooks in `src/hooks` encapsulate logic for authentication (`usePD2Auth`), trading (`useTradeOffers`), and system interaction. Providers (options, items, PD2 website, net worth) are mounted exactly once at the root in `src/main.tsx`.
+- **IPC Layer**: `invoke` for Rust commands; `src/lib/browser-events.ts` `listen` only subscribes to events **emitted by Rust** (chat watcher, Diablo focus). The frontend never emits app events: UI actions go through the overlay API and data through providers. `src/lib/browser-http.ts` wraps HTTP for external APIs.
+
+### Overlay window & panels
+
+- **One window**: Rust builds `Main` transparent, undecorated, always on top, `focusable(false)`, `resizable(false)`, covering the full monitor that contains the Diablo II window (primary monitor as fallback), and re-fits it when the game moves or regains focus. There are no other windows (no Toast window, no window-state plugin).
+- **Panels**: `src/overlay/registry.tsx` defines every panel (`itemSearch`, `quickList`, `currency`, `chat`, `chatButton`, `tradeMessages`, `settings`, `changeLog`, `signIn`, `delist`, `netWorthTicker`, `netWorthPanel`) with its size, default placement (relative to the game rect, the screen or the cursor), persistence, keyboard policy and whether it stays mounted while closed. Code opens them through `useOverlay()` (`openPanel(id, payload)`, `closePanel`, `togglePanel`, `isOpen`); a panel reads its input with `usePanel()` (`payload`, `payloadVersion`, `close`, `setRect`). Panels drag by elements marked `data-panel-drag` (never `data-tauri-drag-region`, which would drag the whole overlay).
+- **Region click-through**: the window is click-through everywhere except where panels are. `src/overlay/region.ts` collects the rects of `[data-interactive]` frames and open popovers/dialogs/toasts and sends them, in physical pixels, to the Rust command `set_interactive_region` (`src-tauri/src/modules/region.rs`: `SetWindowRgn` on Windows, GTK input shape on Linux). Rust seeds an empty region right after creating the window, so it is click-through before React mounts.
+- **Keyboard claim/release**: the window is normally not focusable, so the game keeps keyboard focus. `src/overlay/keyboard.ts` `claimKeyboard()` makes it focusable and focuses it when the user presses inside a panel that takes input (or focuses an input); when the last such panel closes, `releaseKeyboard()` makes it non-focusable again and calls `focus_diablo` to hand the keyboard back to the game.
+- **Toasts**: `showToast()` / `confirmToast()` from `@/overlay` render in the in-overlay toast layer.
+- **Never use `window.alert` / `confirm` / `prompt`**: a native dialog wedges the non-focusable transparent window (ESLint `no-alert` enforces this). Use `confirmToast` or an in-panel dialog.
 
 ### 👶 "Explain it like I'm 5"
 
@@ -22,7 +33,7 @@ The backend is built with **Tauri** using **Rust**. It handles system-level task
 
 - **Commands**: Defined in `src-tauri/src/modules/commands.rs`. These are functions the frontend can call directly (e.g., `get_diablo_rect`, `press_key`).
 - **Chat Watcher**: `src-tauri/src/modules/chat_watcher.rs`. Monitors the Diablo 2 chat log file for new messages and emits events to the frontend.
-- **Window Management**: `src-tauri/src/modules/window/`. Handles low-level window positioning and focus tracking to ensure overlays appear correctly over the game.
+- **Window Management**: `src-tauri/src/modules/window/`. Finds the Diablo II window (rect, focus, `focus_diablo`), sizes the overlay window to the game's monitor and tracks foreground changes. `src-tauri/src/modules/region.rs` applies the interactive region (click-through outside panels) so that the overlay appears correctly over the game.
 - **Keystroke Simulation**: Implemented in `src-tauri/src/modules/keyboard.rs` using the **Enigo** crate.
   - **How it works**: The frontend sends a string like "Ctrl+V". The backend parses this string, separating modifiers (Ctrl, Alt) from the main key (V). It then uses OS-level inputs to simulate pressing the modifiers down, clicking the main key, and releasing the modifiers. This is essential for features like "Quick List" or Item Search, where you can hover over an item and press the hotkey to quick list it and the application will first copy the item you are hovering over then issuing the list command.
 
@@ -41,8 +52,8 @@ The two sides communicate using **Tauri's Inter-Process Communication (IPC)**.
 1.  **User Action**: User presses `Ctrl+C` on an item in Diablo 2.
 2.  **Backend Detect**: The clipboard change or hotkey is detected (managed by `tauri-plugin-clipboard` or global shortcuts).
 3.  **Frontend Receive**: Logic in `src/hooks/useShortcuts.tsx` or clipboard listeners captures the item text.
-4.  **Process**: The item text is parsed and a `new-search` event is emitted.
-5.  **Display**: `src/pages/price-check/ItemPage.tsx` listens for the event, opens the overlay, and queries the PD2 API for prices.
+4.  **Process**: `AppController` encodes the item text and calls `openPanel('itemSearch', { text })`.
+5.  **Display**: The `itemSearch` panel (`src/pages/price-check/ItemPage.tsx`) reads the payload via `usePanel()`, starts a new search on every `payloadVersion`, and queries the PD2 API for prices.
 
 ```mermaid
 sequenceDiagram
@@ -186,7 +197,7 @@ Monitoring is split in two:
 ### Grafana Faro (metrics, web vitals, traces)
 
 - **Configuration**: Faro is only initialized when the build-time `VITE_FARO_URL` (Faro collector URL) is set. Local builds without it send nothing to Grafana.
-- **Initialization**: `src/lib/faro.ts` (called from `src/main.tsx`). Every overlay route runs in its own Tauri webview, so each window has its own Faro session; the Tauri window label is the `window_label` session attribute and the Faro view name, and the route (path only) is the Faro page id.
+- **Initialization**: `src/lib/faro.ts` (called from `src/main.tsx`). The whole overlay runs in the single `Main` webview, so there is one Faro session; the `window_label` session attribute and the view name are `Main` (`browser` in browser dev mode), and the route (path only) is the Faro page id.
 - **No errors**: Faro's error and console instrumentations are not installed, so exceptions are only reported to Sentry.
 - **Measurements & events**: `src/lib/telemetry.ts` (`trackMeasurement` for operations with durations/counts, `trackEvent` for discrete actions). Names are snake_case, value keys carry their unit (`duration_ms`, `*_items`, `price_hr`), attributes must stay low-cardinality.
 - **Tracing**: fetch/XHR spans are recorded; the `traceparent` header is only sent to our own backend (`VITE_BACKEND_URL` / pd2trader.com), never to the projectdiablo2.com API.

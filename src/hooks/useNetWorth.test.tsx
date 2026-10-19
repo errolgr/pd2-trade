@@ -1,9 +1,8 @@
 // @vitest-environment happy-dom
-import React from 'react';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { emit, listen } from '@/lib/browser-events';
+import { useOverlay, type OverlayApi } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
@@ -18,33 +17,13 @@ import {
   type SnapshotResponse,
 } from '@/lib/networth-api';
 import type * as NetWorthApiModule from '@/lib/networth-api';
-import {
-  ChildNetWorthProvider,
-  NETWORTH_TAKE_SNAPSHOT_EVENT,
-  NetWorthProvider,
-  requestNetWorthSnapshot,
-  useNetWorth,
-} from './useNetWorth';
-
-type Handler = (event: { payload: unknown }) => unknown;
-
-const bus = vi.hoisted(() => ({ handlers: new Map<string, Set<(event: { payload: unknown }) => unknown>>() }));
+import { NetWorthProvider, useNetWorth } from './useNetWorth';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({
-  emit: vi.fn(async (event: string, payload?: unknown) => {
-    await Promise.all([...(bus.handlers.get(event) ?? [])].map((handler) => handler({ payload })));
-  }),
-  listen: vi.fn(async (event: string, handler: Handler) => {
-    if (!bus.handlers.has(event)) bus.handlers.set(event, new Set());
-    bus.handlers.get(event)!.add(handler);
-    return () => bus.handlers.get(event)!.delete(handler);
-  }),
-}));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: vi.fn() }));
-vi.mock('@/components/dialogs/SignInDialog', () => ({ SIGN_IN_DIALOG_EVENT: 'pd2:show-sign-in-dialog' }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AuthenticationError extends Error {}
   class AccountMismatchError extends Error {}
@@ -52,7 +31,6 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => {
     AuthenticationError,
     AccountMismatchError,
     usePd2Website: vi.fn(),
-    Pd2WebsiteProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 });
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
@@ -66,13 +44,13 @@ vi.mock('@/lib/networth-api', async (importOriginal) => ({
 const NOW = new Date('2026-10-18T12:00:00Z').getTime();
 const MINUTE = 60 * 1000;
 const OWNER = { account: 'Acc', isLadder: true, isHardcore: false };
-const SIGN_IN = 'pd2:show-sign-in-dialog';
 
 let options: { settings: Partial<ISettings>; isLoading: boolean };
 let authData: { user: { _id: string } } | null;
 let holdings: Array<{ key: string; tab: string | null; qty: number }>;
 let focused: boolean;
 const updateSettings = vi.fn();
+const openPanel = vi.fn();
 const refreshTokens = vi.fn<(refreshToken: string) => Promise<boolean>>();
 
 function snapshot(snapshotId: string | null = 'snap'): SnapshotResponse {
@@ -124,7 +102,6 @@ async function renderHost(settings: Partial<ISettings> = {}, isLoading = false) 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
-  bus.handlers.clear();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   authData = { user: { _id: 'me' } };
   holdings = [{ key: 'ist', tab: '1', qty: 2 }];
@@ -142,6 +119,8 @@ beforeEach(() => {
     updateSettings,
   }));
   vi.mocked(usePd2Website).mockImplementation(() => ({ authData }) as never);
+  openPanel.mockReset();
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
   vi.mocked(getSeasons).mockRejectedValue(new Error('offline'));
   vi.mocked(getSessions).mockResolvedValue({ sessions: [] } as never);
   vi.mocked(postSessionMarker).mockResolvedValue({ ok: true });
@@ -264,7 +243,7 @@ describe('NetWorthProvider snapshots', () => {
 
     expect(result.current.error).toBe('Your PD2 session expired. Sign in again.');
     expect(refreshTokens).not.toHaveBeenCalled();
-    expect(vi.mocked(emit).mock.calls.filter(([event]) => event === SIGN_IN)).toHaveLength(1);
+    expect(openPanel.mock.calls.filter(([id]) => id === 'signIn')).toHaveLength(1);
   });
 
   it('prompts sign-in on 401 when the refresh fails', async () => {
@@ -272,7 +251,7 @@ describe('NetWorthProvider snapshots', () => {
     await renderHost({ pd2RefreshToken: 'r' });
 
     expect(refreshTokens).toHaveBeenCalledWith('r');
-    expect(vi.mocked(emit).mock.calls.filter(([event]) => event === SIGN_IN)).toHaveLength(1);
+    expect(openPanel.mock.calls.filter(([id]) => id === 'signIn')).toHaveLength(1);
   });
 
   it('retries the failed snapshot with the refreshed token', async () => {
@@ -290,7 +269,7 @@ describe('NetWorthProvider snapshots', () => {
       ['tok2', 'startup'],
     ]);
     expect(result.current.status).toBe('ok');
-    expect(vi.mocked(emit).mock.calls.filter(([event]) => event === SIGN_IN)).toHaveLength(0);
+    expect(openPanel).not.toHaveBeenCalledWith('signIn');
   });
 
   it('drops a result that lands after switching accounts and resets owner state', async () => {
@@ -312,14 +291,13 @@ describe('NetWorthProvider snapshots', () => {
     expect(result.current.latest).toBeNull();
   });
 
-  it('takes a snapshot when another window requests one', async () => {
-    await renderHost();
-    await act(() => requestNetWorthSnapshot('web'));
-    await act(() => emit(NETWORTH_TAKE_SNAPSHOT_EVENT, {}));
-    expect(syncs()).toEqual([
-      ['startup', true],
-      ['web', true],
-      ['manual', true],
+  it('openNetWorth opens the Net Worth panel on the requested tab (overview by default)', async () => {
+    const { result } = await renderHost();
+    act(() => result.current.openNetWorth('history'));
+    act(() => result.current.openNetWorth());
+    expect(openPanel.mock.calls).toEqual([
+      ['currency', { tab: 'history' }],
+      ['currency', { tab: 'overview' }],
     ]);
   });
 });
@@ -445,123 +423,5 @@ describe('NetWorthProvider scheduler', () => {
     focused = true;
     await advance(30_000);
     expect(syncs().at(-1)).toEqual(['interval', true]);
-  });
-});
-
-describe('NetWorthProvider cross-window RPC', () => {
-  async function rpc(request: Record<string, unknown>) {
-    const responses: unknown[] = [];
-    await listen('networth:rpc-response', (event) => {
-      responses.push(event.payload);
-    });
-    await act(() => emit('networth:rpc-request', request));
-    return responses;
-  }
-
-  it('answers RPC calls with the result or a described error', async () => {
-    await renderHost();
-
-    const ok = await rpc({ requestId: 'r1', method: 'takeSnapshot', trigger: 'manual' });
-    expect(ok).toEqual([{ requestId: 'r1', ok: true, result: expect.objectContaining({ snapshotId: 'snap' }) }]);
-
-    vi.mocked(postSessionMarker).mockRejectedValue(new NetWorthApiError('nope', 429));
-    bus.handlers.delete('networth:rpc-response');
-    const failed = await rpc({ requestId: 'r2', method: 'startSession' });
-    expect(failed).toEqual([{ requestId: 'r2', ok: false, error: 'Too many requests. Try again in a minute.' }]);
-  });
-
-  it('ignores requests without an id and republishes state on request', async () => {
-    await renderHost();
-    expect(await rpc({ method: 'takeSnapshot' })).toEqual([]);
-
-    const states: unknown[] = [];
-    await listen('networth:state', (event) => {
-      states.push(event.payload);
-    });
-    await act(() => emit('networth:request-state', {}));
-    expect(states).toEqual([expect.objectContaining({ owner: OWNER, status: 'ok' })]);
-  });
-});
-
-describe('ChildNetWorthProvider', () => {
-  async function renderChild() {
-    const hook = renderHook(() => useNetWorth(), { wrapper: ChildNetWorthProvider });
-    await flush();
-    return hook;
-  }
-
-  it('mirrors host state and asks for it on mount', async () => {
-    const requested = vi.fn();
-    await listen('networth:request-state', requested);
-    const { result } = await renderChild();
-    expect(requested).toHaveBeenCalledTimes(1);
-    expect(result.current.status).toBe('idle');
-
-    await act(() => emit('networth:state', { ...result.current, status: 'ok', owner: OWNER }));
-    expect(result.current.status).toBe('ok');
-    expect(result.current.owner).toEqual(OWNER);
-  });
-
-  it('resolves actions through the host and surfaces host errors', async () => {
-    await listen('networth:rpc-request', (event) => {
-      const request = event.payload as { requestId: string; method: string };
-      const response =
-        request.method === 'takeSnapshot'
-          ? { requestId: request.requestId, ok: true, result: snapshot('from-host') }
-          : { requestId: request.requestId, ok: false, error: 'host says no' };
-      emit('networth:rpc-response', response);
-    });
-    const { result } = await renderChild();
-
-    await expect(result.current.takeSnapshot()).resolves.toMatchObject({ snapshotId: 'from-host' });
-    await expect(result.current.startSession()).rejects.toThrow('host says no');
-    await expect(result.current.stopSession()).rejects.toThrow('host says no');
-  });
-
-  it('times out unanswered requests after 60s; takeSnapshot then resolves to null', async () => {
-    const { result } = await renderChild();
-
-    let settled: SnapshotResponse | null | undefined;
-    result.current.takeSnapshot().then((value) => (settled = value));
-    await advance(60_000 - 1);
-    expect(settled).toBeUndefined();
-    await advance(1);
-    expect(settled).toBeNull();
-
-    const start = result.current.startSession();
-    const assertion = expect(start).rejects.toThrow('Net worth request timed out (startSession)');
-    await advance(60_000);
-    await assertion;
-  });
-
-  it('rejects pending requests when unmounted', async () => {
-    const { result, unmount } = await renderChild();
-    const start = result.current.startSession();
-    unmount();
-    await expect(start).rejects.toThrow('ChildNetWorthProvider unmounted');
-  });
-
-  it('ignores responses for unknown requests', async () => {
-    const { result } = await renderChild();
-    const start = result.current.startSession();
-    await act(() => emit('networth:rpc-response', { requestId: 'someone-else', ok: true }));
-
-    const assertion = expect(start).rejects.toThrow('timed out');
-    await advance(60_000);
-    await assertion;
-  });
-
-  it('hosts its own state outside Tauri', async () => {
-    vi.mocked(isTauri).mockReturnValue(false);
-    options = {
-      settings: { pd2Token: 'tok', account: 'Acc', ladder: 'ladder' } as Partial<ISettings>,
-      isLoading: false,
-    };
-    const { result } = await renderChild();
-    await flush();
-
-    expect(result.current.owner).toEqual(OWNER);
-    // History is on by default
-    expect(syncs()).toEqual([['startup', true]]);
   });
 });

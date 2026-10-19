@@ -1,15 +1,9 @@
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::Foundation::RECT;
-
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GETWORKAREA};
-
 pub mod modules;
 
 // Re-export modules for easier access
-pub use modules::{chat_watcher, commands, debug_logger, keyboard, system, window};
+pub use modules::{chat_watcher, commands, debug_logger, keyboard, region, system, window};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -26,13 +20,6 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .plugin(
-            tauri_plugin_window_state::Builder::default()
-                .with_filename("window-state.json")
-                .with_state_flags(tauri_plugin_window_state::StateFlags::all())
-                .with_denylist(&["SignIn"])
-                .build(),
-        )
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window(&modules::config::WINDOW_CONFIG.labels.Main)
@@ -45,8 +32,6 @@ pub fn run() {
             if let Ok(config_dir) = app.path().app_config_dir() {
                 debug_logger::init(config_dir);
             }
-
-            let _handle = app.app_handle();
 
             let (x, y, width, height) =
                 match window::get_appropriate_window_bounds(app.app_handle()) {
@@ -62,7 +47,10 @@ pub fn run() {
                     }
                 };
 
-            let win_builder = WebviewWindowBuilder::new(
+            // Single transparent always-on-top overlay hosting every UI panel. It never takes
+            // focus on its own (the frontend toggles focusable while a panel needs the keyboard)
+            // and only receives clicks inside the region set via `set_interactive_region`.
+            let main_window = WebviewWindowBuilder::new(
                 app,
                 &modules::config::WINDOW_CONFIG.labels.Main,
                 WebviewUrl::default(),
@@ -73,51 +61,30 @@ pub fn run() {
             .decorations(false)
             .transparent(true)
             .visible(true)
-            .focused(true)
-            .shadow(false)
-            .always_on_top(true)
-            .skip_taskbar(true);
-
-            let main_window = win_builder.build().unwrap();
-            let _ = main_window.set_ignore_cursor_events(true);
-
-            // Create toast window
-
-            let _toast_window = WebviewWindowBuilder::new(
-                app,
-                &modules::config::WINDOW_CONFIG.labels.Toast,
-                WebviewUrl::App("toast".into()),
-            )
-            .title(&modules::config::WINDOW_CONFIG.titles.Toast)
-            .inner_size(400.0, 200.0)
-            .decorations(false)
-            .transparent(true)
-            .visible(false)
+            .focused(false)
+            .focusable(false)
+            .resizable(false)
             .shadow(false)
             .always_on_top(true)
             .skip_taskbar(true)
-            .focusable(false)
-            .build()
-            .unwrap();
+            .build()?;
 
-            // Position the toast window initially
-            let app_handle = app.app_handle().clone();
-            let _ = commands::reposition_toast_window(app_handle.clone());
+            // Click-through until the frontend reports its interactive rects.
+            if let Err(e) = region::apply_region(&main_window, &[]) {
+                eprintln!("Failed to seed empty interactive region: {}", e);
+            }
+            // The builder takes logical units; snap to the exact physical monitor rect.
+            let _ = commands::update_window_bounds(app.app_handle().clone());
 
-            // Initialize Diablo focus monitoring (hotkeys & window repositioning)
+            // Diablo focus monitoring (emits `diablo-focus-changed`); re-fit the overlay to
+            // the monitor Diablo is on.
             let app_handle_bounds = app.app_handle().clone();
-            let app_handle_focus = app.app_handle().clone();
             window::initialize_diablo_focus_monitoring(
-                app_handle_focus,
+                app.app_handle().clone(),
                 Some(Box::new(move |_is_focused| {
-                    // Reposition windows when Diablo focus changes
                     let _ = commands::update_window_bounds(app_handle_bounds.clone());
-                    let _ = commands::reposition_toast_window(app_handle_bounds.clone());
                 })),
             );
-
-            // Initialize window state saving on focus/blur events
-            window::initialize_window_state_saving(app.app_handle().clone());
 
             #[cfg(debug_assertions)]
             main_window.open_devtools();
@@ -127,10 +94,9 @@ pub fn run() {
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,
+            commands::focus_diablo,
             commands::update_window_bounds,
-            commands::set_window_click_through,
-            commands::force_window_focus,
-            commands::reposition_toast_window,
+            region::set_interactive_region,
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,

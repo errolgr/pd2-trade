@@ -5,6 +5,7 @@ import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { usePanelPortalContainer } from '@/overlay/portal';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet"
@@ -22,7 +23,9 @@ function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Clo
 }
 
 function SheetPortal({ ...props }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+  const container = usePanelPortalContainer();
   return <SheetPrimitive.Portal data-slot="sheet-portal"
+    container={container}
     {...props} />;
 }
 
@@ -47,13 +50,16 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left';
 }) {
+  // Inside an overlay panel the sheet slides over the panel, not the monitor edge
+  const inPanel = !!usePanelPortalContainer();
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className={inPanel ? 'absolute' : undefined} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
           'bg-popover text-popover-foreground border-border data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-panel transition ease-out data-[state=closed]:duration-(--dur-med) data-[state=open]:duration-(--dur-slow)',
+          inPanel && 'absolute',
           side === 'right' &&
             'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
           side === 'left' &&

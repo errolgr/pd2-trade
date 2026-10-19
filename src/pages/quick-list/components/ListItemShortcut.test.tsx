@@ -2,12 +2,11 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { showToast } from '@/overlay';
 import { useInView } from 'react-intersection-observer';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
-import { emit } from '@/lib/browser-events';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { ToastActionType } from '@/common/types/Events';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -15,6 +14,8 @@ import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketLis
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import ListItemShortcutForm from './ListItemShortcut';
 
+const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => panel }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
@@ -23,9 +24,7 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => {
   return { usePd2Website: vi.fn(), AuthenticationError, AccountMismatchError };
 });
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
 
@@ -64,9 +63,9 @@ let api: Api;
 let userListings: MarketListingEntry[];
 /** Total reported by the server; defaults to userListings.length. */
 let userTotal: number | null;
-let hide: Mock<() => Promise<void>>;
+let close: Mock<() => void>;
 
-const toasts = () => vi.mocked(emit).mock.calls.filter(([e]) => e === 'toast-event').map(([, p]) => p);
+const toasts = () => vi.mocked(showToast).mock.calls.map(([p]) => p);
 const tab = (name: RegExp) => screen.getByRole('tab', { name });
 const submitButton = () => document.querySelector<HTMLButtonElement>('button[type="submit"]')!;
 const priceInput = () => screen.getByPlaceholderText('HR') as HTMLInputElement;
@@ -121,7 +120,6 @@ beforeEach(() => {
   localStorage.clear();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  vi.mocked(emit).mockResolvedValue(undefined);
   userListings = [];
   userTotal = null;
   api = {
@@ -145,9 +143,8 @@ beforeEach(() => {
   const options = { settings: { mode: 'softcore', ladder: 'ladder' } };
   vi.mocked(useOptions).mockImplementation(() => options as never);
   vi.mocked(useInView).mockImplementation(() => ({ ref: vi.fn(), inView: false }) as never);
-  hide = vi.fn(async () => {});
-  const win = { hide };
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue(win as never);
+  close = vi.fn();
+  panel.close = close;
 });
 afterEach(() => {
   cleanup();
@@ -176,13 +173,13 @@ describe('tabs', () => {
     expect(tab(/Manage/).textContent).toBe('Manage12');
   });
 
-  it('close hides the window', async () => {
+  it('close closes the panel', async () => {
     renderForm();
     await flush();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     });
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -221,13 +218,13 @@ describe('finding the item', () => {
     expect(submitButton().textContent).toBe('Post');
   });
 
-  it('explains an account mismatch and raises a destructive toast', async () => {
+  it('explains an account mismatch and raises an error toast', async () => {
     api.findMatchingItems.mockRejectedValueOnce(new AccountMismatchError('Wrong account'));
     renderForm();
     await flush();
     expect(screen.queryByText('Wrong account detected')).not.toBeNull();
     expect(toasts()).toEqual([
-      { title: 'Account Mismatch', description: 'Wrong account', variant: 'destructive', duration: 8000 },
+      { title: 'Account Mismatch', description: 'Wrong account', variant: 'error', duration: 8000 },
     ]);
   });
 
@@ -256,7 +253,7 @@ describe('finding the item', () => {
 });
 
 describe('listing a new item', () => {
-  it('posts with an exact HR price, toasts a link to the listing, and hides', async () => {
+  it('posts with an exact HR price, toasts a link to the listing, and closes the panel', async () => {
     renderForm();
     await flush();
     fireEvent.change(noteInput(), { target: { value: 'fast trade' } });
@@ -270,7 +267,7 @@ describe('listing a new item', () => {
         action: { label: 'Shako #1', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'NEW' } },
       },
     ]);
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('posts a note-only listing with zero HR', async () => {
@@ -289,7 +286,7 @@ describe('listing a new item', () => {
     await submit();
     expect(api.listSpecificItem).not.toHaveBeenCalled();
     expect(toasts()).toEqual([expect.objectContaining({ title: 'Maximum listings reached', variant: 'error' })]);
-    expect(hide).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
     expect(submitButton().disabled).toBe(false);
   });
 
@@ -300,7 +297,7 @@ describe('listing a new item', () => {
     fireEvent.change(priceInput(), { target: { value: '1' } });
     await submit();
     expect(screen.getByRole('alert').textContent).toContain('Item already listed');
-    expect(hide).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
   });
 });
 
@@ -326,7 +323,7 @@ describe('updating an existing listing', () => {
     expect(api.updateMarketListing.mock.calls).toEqual([['L1', { price: 'or best', hr_price: 0 }]]);
     expect(api.updateItemByHash.mock.calls).toEqual([['h1', { price: 'or best', hr_price: 0 }]]);
     expect(toasts()).toEqual([{ title: 'PD2 Trader', description: 'Listing updated!' }]);
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('allows updating even at the 50-listing cap', async () => {

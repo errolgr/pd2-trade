@@ -1,105 +1,66 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { isTauri, invoke } from '@tauri-apps/api/core';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { LogicalPosition, LogicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
-import { OptionsProvider, useOptions, ISettings } from '@/hooks/useOptions';
-import { ItemsProvider } from '@/hooks/useItems';
-import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
-import { ChildNetWorthProvider, useNetWorth } from '@/hooks/useNetWorth';
-import { useWealthRank } from '@/hooks/useWealthRank';
-import { emit, listen } from '@/lib/browser-events';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { MotionConfig } from 'framer-motion';
+import { useOptions } from '@/hooks/useOptions';
+import { useNetWorth } from '@/hooks/useNetWorth';
+import { useWealthRank } from '@/hooks/useWealthRank';
+import { usePanel, useOverlay, type OverlayRect } from '@/overlay';
+import { screenToOverlayRect } from '@/overlay/game';
+import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
 import {
   clampToArea,
   formatHr,
   formatSignedHr,
-  monitorWorkAreas,
-  NETWORTH_TOGGLE_PANEL_EVENT,
-  pickArea,
+  NET_WORTH_PANEL_SIZE,
+  panelBesideTicker,
+  tickerPosition,
 } from './overlay';
 
-type TickerAnchor = NonNullable<ISettings['netWorthTickerAnchor']>;
-type TickerPosition = NonNullable<ISettings['netWorthTickerPosition']>;
-type DiabloRect = { x: number; y: number; width: number; height: number };
-
-const EDGE_MARGIN = 12;
-/** Chat button window geometry used by LandingPage (240px window, 20px right / 10px bottom inset). */
-const CHAT_BUTTON_WINDOW = { size: 240, right: 20, bottom: 10 };
-/** Pointer travel (px) before a press on the ticker becomes a window drag instead of a click. */
+/** Pointer travel (px) before a press on the ticker becomes a drag instead of a click. */
 const DRAG_THRESHOLD_PX = 4;
-/** Quiet time after the last move event before a drag counts as finished and is saved. */
-const DRAG_SETTLE_MS = 400;
-/** A drag that produced no move events for this long no longer holds off automatic placement. */
-const DRAG_STALE_MS = 2_000;
+/** Px between the ticker and the mini panel opened from it. */
+const PANEL_GAP = 6;
+
+const viewport = (): OverlayRect => ({ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight });
 
 /**
- * Resizes the ticker window to its pill and moves it: to the anchor on the Diablo frame, or for `custom` to the
- * dragged position (or where it is now), kept inside a connected monitor's work area. Resolves to the physical
- * position it set, or null when it did not move the window.
+ * Overlay px of the old ticker window's saved top-left (`settings.netWorthTickerPosition`: physical screen px, or
+ * CSS px in a browser), or null when the overlay window's position or scale can't be read.
  */
-async function placeTickerWindow(
-  anchor: TickerAnchor,
-  customPosition: TickerPosition | undefined,
-  width: number,
-  height: number,
-): Promise<{ x: number; y: number } | null> {
-  const win = getCurrentWebviewWindow();
-  await win.setSize(new LogicalSize(width, height));
-  const scale = await win.scaleFactor();
-  const physicalWidth = Math.round(width * scale);
-  const physicalHeight = Math.round(height * scale);
-
-  if (anchor === 'custom') {
-    const origin = customPosition ?? (await win.outerPosition());
-    const rect = { x: origin.x, y: origin.y, width: physicalWidth, height: physicalHeight };
-    const area = pickArea(rect, await monitorWorkAreas());
-    const target = area ? clampToArea(rect, area) : { x: rect.x, y: rect.y };
-    await win.setPosition(new PhysicalPosition(target.x, target.y));
-    return target;
+async function legacyTickerOrigin(position: { x: number; y: number }): Promise<{ x: number; y: number } | null> {
+  if (!isTauri()) return position;
+  try {
+    const win = getCurrentWindow();
+    const [outer, scaleFactor] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
+    const { x, y } = screenToOverlayRect({ ...position, width: 0, height: 0 }, outer, scaleFactor);
+    return { x, y };
+  } catch (error) {
+    console.warn('[NetWorthTicker] Could not convert the saved ticker position:', error);
+    return null;
   }
-
-  const rect = await invoke<DiabloRect | null>('get_diablo_rect');
-  if (!rect) return null;
-
-  if (anchor === 'above-chat') {
-    // Mirror LandingPage's chat button placement, which feeds the Diablo rect straight into window coordinates.
-    const chatX = rect.x + rect.width - CHAT_BUTTON_WINDOW.size - CHAT_BUTTON_WINDOW.right;
-    const chatY = rect.y + rect.height - CHAT_BUTTON_WINDOW.size - CHAT_BUTTON_WINDOW.bottom;
-    await win.setPosition(new LogicalPosition(chatX + CHAT_BUTTON_WINDOW.size - width, chatY - height - 4));
-    const placed = await win.outerPosition();
-    return { x: placed.x, y: placed.y };
-  }
-
-  const margin = EDGE_MARGIN * scale;
-  const x = anchor.endsWith('left')
-    ? rect.x + margin
-    : anchor.endsWith('right')
-      ? rect.x + rect.width - physicalWidth - margin
-      : rect.x + (rect.width - physicalWidth) / 2;
-  const y = anchor.startsWith('bottom') ? rect.y + rect.height - physicalHeight - margin : rect.y + margin;
-  const target = { x: Math.round(x), y: Math.round(y) };
-  await win.setPosition(new PhysicalPosition(target.x, target.y));
-  return target;
 }
 
+/**
+ * Net worth ticker panel. The panel is sized to the pill and placed at its anchor on the game (following the
+ * game), or for `custom` where the user dragged it (the panel layout persists it). Click toggles the mini panel.
+ */
 const NetWorthTicker: React.FC = () => {
   const { settings, updateSettings } = useOptions();
   const { latest, status, lastSnapshotAt, currentSession } = useNetWorth();
+  const { gameRect, togglePanel } = useOverlay();
+  const { rect, setRect } = usePanel<'netWorthTicker'>();
   const pillRef = useRef<HTMLButtonElement>(null);
+  const [pillSize, setPillSize] = useState<{ width: number; height: number } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const anchor = settings.netWorthTickerAnchor ?? 'top-center';
-  const customX = settings.netWorthTickerPosition?.x;
-  const customY = settings.netWorthTickerPosition?.y;
 
-  // Drag state: a press that travels DRAG_THRESHOLD_PX starts an OS window drag; the click that may follow is
-  // swallowed. `lastPlaced` is where placement last put the window, so its own move events are not mistaken
-  // for a drag.
-  const pressRef = useRef<{ x: number; y: number } | null>(null);
+  // A press that travels DRAG_THRESHOLD_PX moves the panel; the click that follows is swallowed.
+  const pressRef = useRef<{ x: number; y: number; origin: OverlayRect } | null>(null);
+  const draggingRef = useRef(false);
   const suppressClickRef = useRef(false);
-  const dragRef = useRef<{ active: boolean; lastActivity: number }>({ active: false, lastActivity: 0 });
-  const lastPlacedRef = useRef<{ x: number; y: number } | null>(null);
 
   // Re-evaluate freshness every 30s
   useEffect(() => {
@@ -107,113 +68,99 @@ const NetWorthTicker: React.FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
-  // Keep the window exactly the size of the pill (the window is the click target), at its anchor or custom spot
-  useEffect(() => {
+  // Track the pill's box (zero while the panel is hidden, so those reads are ignored)
+  useLayoutEffect(() => {
     const pill = pillRef.current;
-    if (!isTauri() || !pill) return;
-    const customPosition = customX !== undefined && customY !== undefined ? { x: customX, y: customY } : undefined;
-
-    const place = () => {
-      // Never fight an OS drag in progress; its end saves the new position and re-places from there.
-      const drag = dragRef.current;
-      if (drag.active && Date.now() - drag.lastActivity < DRAG_STALE_MS) return;
-      const { width, height } = pill.getBoundingClientRect();
-      placeTickerWindow(anchor, customPosition, Math.ceil(width), Math.ceil(height))
-        .then((placed) => {
-          if (placed) lastPlacedRef.current = placed;
-        })
-        .catch((error) => console.warn('[NetWorthTicker] Failed to place ticker window:', error));
+    if (!pill) return;
+    const measure = () => {
+      const box = pill.getBoundingClientRect();
+      const width = Math.ceil(box.width);
+      const height = Math.ceil(box.height);
+      if (width <= 0 || height <= 0) return;
+      setPillSize((prev) => (prev?.width === width && prev.height === height ? prev : { width, height }));
     };
-
-    place();
-    const observer = new ResizeObserver(place);
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(pill);
+    return () => observer.disconnect();
+  }, []);
 
-    let unlisten: (() => void) | null = null;
-    let cancelled = false;
-    listen<boolean>('diablo-focus-changed', ({ payload: focused }) => {
-      if (focused) place();
-    }).then((off) => {
-      if (cancelled) off();
-      else unlisten = off;
-    });
+  // Latest rect for the placement effect, which must not re-run (and snap back) on every rect change
+  const rectRef = useRef(rect);
+  useLayoutEffect(() => {
+    rectRef.current = rect;
+  });
 
-    // Monitor DPI changes (and with them resolution/layout changes) re-place and re-clamp the ticker
-    let unlistenScale: (() => void) | null = null;
-    getCurrentWebviewWindow()
-      .onScaleChanged(place)
-      .then((off) => {
-        if (cancelled) off();
-        else unlistenScale = off;
-      });
+  // One-time upgrade: the old ticker window kept its dragged spot in settings. The first custom placement moves it
+  // into the panel layout (unless the layout already has a ticker rect) and clears the setting; placement waits
+  // while it converts, then re-runs via `migrated`.
+  const legacyPosition = settings.netWorthTickerPosition;
+  const migrationRef = useRef<'unchecked' | 'running' | 'done'>('unchecked');
+  const [migrated, setMigrated] = useState(false);
 
-    return () => {
-      cancelled = true;
-      observer.disconnect();
-      unlisten?.();
-      unlistenScale?.();
-    };
-  }, [anchor, customX, customY]);
+  // Keep the panel exactly the pill's size, at its anchor on the game or (custom) where it is, inside the overlay
+  useLayoutEffect(() => {
+    if (!pillSize || draggingRef.current) return;
+    if (anchor === 'custom' && migrationRef.current === 'unchecked') {
+      migrationRef.current = 'done';
+      if (legacyPosition && !loadPanelRect('netWorthTicker')) {
+        migrationRef.current = 'running';
+        void legacyTickerOrigin(legacyPosition).then((origin) => {
+          migrationRef.current = 'done';
+          if (origin) setRect(origin);
+          setMigrated(true);
+          void updateSettings({ netWorthTickerPosition: undefined });
+        });
+      }
+    }
+    if (anchor === 'custom' && migrationRef.current === 'running') return;
+    const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect);
+    const next = { ...clampToArea({ ...origin, ...pillSize }, viewport()), ...pillSize };
+    const current = rectRef.current;
+    if (
+      next.x !== current.x ||
+      next.y !== current.y ||
+      next.width !== current.width ||
+      next.height !== current.height
+    ) {
+      setRect(next);
+    }
+  }, [anchor, gameRect, pillSize, setRect, legacyPosition, updateSettings, migrated]);
 
-  // A finished drag saves the position and switches the ticker to Custom
-  useEffect(() => {
-    if (!isTauri()) return;
-    let settleTimer: number | undefined;
-    let unlisten: (() => void) | null = null;
-    let cancelled = false;
-    getCurrentWebviewWindow()
-      .onMoved(({ payload }) => {
-        const drag = dragRef.current;
-        const placed = lastPlacedRef.current;
-        if (!drag.active || (placed && placed.x === payload.x && placed.y === payload.y)) return;
-        drag.lastActivity = Date.now();
-        window.clearTimeout(settleTimer);
-        settleTimer = window.setTimeout(() => {
-          dragRef.current = { active: false, lastActivity: 0 };
-          lastPlacedRef.current = { x: payload.x, y: payload.y };
-          updateSettings({ netWorthTickerAnchor: 'custom', netWorthTickerPosition: { x: payload.x, y: payload.y } });
-        }, DRAG_SETTLE_MS);
-      })
-      .then((off) => {
-        if (cancelled) off();
-        else unlisten = off;
-      });
-    return () => {
-      cancelled = true;
-      window.clearTimeout(settleTimer);
-      unlisten?.();
-    };
-  }, [updateSettings]);
-
-  const onPointerDown = (event: React.PointerEvent) => {
+  const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     suppressClickRef.current = false;
-    pressRef.current = event.button === 0 ? { x: event.screenX, y: event.screenY } : null;
+    pressRef.current = null;
+    if (event.button !== 0) return;
+    pressRef.current = { x: event.clientX, y: event.clientY, origin: rect };
+    // Keep receiving moves when a fast drag leaves the small pill before the threshold
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
   const onPointerMove = (event: React.PointerEvent) => {
     const press = pressRef.current;
     if (!press) return;
-    if ((event.buttons & 1) === 0) {
-      pressRef.current = null;
-      return;
+    const dx = event.clientX - press.x;
+    const dy = event.clientY - press.y;
+    if (!draggingRef.current) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      draggingRef.current = true;
+      suppressClickRef.current = true;
     }
-    if (Math.hypot(event.screenX - press.x, event.screenY - press.y) < DRAG_THRESHOLD_PX) return;
+    setRect(clampToArea({ ...press.origin, x: press.origin.x + dx, y: press.origin.y + dy }, viewport()));
+  };
+  // A finished drag switches the ticker to Custom; the panel layout keeps the dragged position
+  const endPress = () => {
     pressRef.current = null;
-    suppressClickRef.current = true;
-    if (!isTauri()) return;
-    dragRef.current = { active: true, lastActivity: Date.now() };
-    getCurrentWebviewWindow()
-      .startDragging()
-      .catch((error) => {
-        dragRef.current = { active: false, lastActivity: 0 };
-        console.warn('[NetWorthTicker] Failed to start dragging:', error);
-      });
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    if (anchor !== 'custom') updateSettings({ netWorthTickerAnchor: 'custom' });
   };
   const onClick = () => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
       return;
     }
-    emit(NETWORTH_TOGGLE_PANEL_EVENT);
+    const placement = panelBesideTicker(rect, NET_WORTH_PANEL_SIZE, viewport(), PANEL_GAP);
+    togglePanel('netWorthPanel', undefined, { placement });
   };
 
   const intervalMinutes = settings.netWorthAutoSnapshotMinutes || 15;
@@ -238,16 +185,15 @@ const NetWorthTicker: React.FC = () => {
   return (
     <MotionConfig reducedMotion="user">
       <div className="inline-block">
-        {/* No transforms/shadows here: the window is sized to this pill's box, so it must not grow on hover. */}
+        {/* No transforms/shadows here: the panel is sized to this pill's box, so it must not grow on hover. */}
         <button
           ref={pillRef}
           type="button"
           onClick={onClick}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={() => {
-            pressRef.current = null;
-          }}
+          onPointerUp={endPress}
+          onPointerCancel={endPress}
           style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
           className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
           title="Net worth — click for details, drag to move"
@@ -303,16 +249,4 @@ const NetWorthTicker: React.FC = () => {
   );
 };
 
-const NetWorthTickerPage: React.FC = () => (
-  <OptionsProvider>
-    <ItemsProvider>
-      <ChildPd2WebsiteProvider>
-        <ChildNetWorthProvider>
-          <NetWorthTicker />
-        </ChildNetWorthProvider>
-      </ChildPd2WebsiteProvider>
-    </ItemsProvider>
-  </OptionsProvider>
-);
-
-export default NetWorthTickerPage;
+export default NetWorthTicker;

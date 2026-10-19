@@ -2,7 +2,8 @@
 import * as React from 'react';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emit } from '@/lib/browser-events';
+import { showToast } from '@/overlay';
+import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import { applyTheme, getTheme } from '@/lib/themes';
 import type * as Themes from '@/lib/themes';
 import { mkdir, writeTextFile } from '@/lib/browser-fs';
@@ -13,9 +14,9 @@ const state = vi.hoisted(() => ({
   dirExists: true,
   tauri: true,
   failWrite: false,
-  listeners: new Map<string, ((e: { payload: unknown }) => void)[]>(),
 }));
 
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri, invoke: vi.fn() }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
@@ -33,20 +34,7 @@ vi.mock('@/lib/browser-fs', () => ({
     state.files.set(path, content);
   }),
 }));
-vi.mock('@/lib/browser-events', () => ({
-  emit: vi.fn(async () => {}),
-  listen: vi.fn(async (event: string, cb: (e: { payload: unknown }) => void) => {
-    const list = state.listeners.get(event) ?? [];
-    list.push(cb);
-    state.listeners.set(event, list);
-    return () => {
-      state.listeners.set(
-        event,
-        (state.listeners.get(event) ?? []).filter((l) => l !== cb),
-      );
-    };
-  }),
-}));
+vi.mock('@/lib/debug-logger', () => ({ startDebugLogging: vi.fn(), stopDebugLogging: vi.fn() }));
 vi.mock('@/lib/themes', async (importOriginal) => ({
   ...(await importOriginal<typeof Themes>()),
   applyTheme: vi.fn(),
@@ -70,7 +58,6 @@ beforeEach(() => {
   state.dirExists = true;
   state.tauri = true;
   state.failWrite = false;
-  state.listeners.clear();
   // Serialize like the Web Locks API: each request runs after the previous one settles
   let chain: Promise<unknown> = Promise.resolve();
   Object.defineProperty(navigator, 'locks', {
@@ -145,25 +132,6 @@ describe('OptionsProvider loading', () => {
     expect(state.files.get('settings.json')).toBe('{not json');
   });
 
-  it('re-reads the file when another window broadcasts settings-updated', async () => {
-    state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
-    const { result } = await renderLoaded();
-
-    state.files.set('settings.json', JSON.stringify({ ...savedSettings(), hotkeyKey: 'z' }));
-    await act(async () => {
-      for (const cb of state.listeners.get('settings-updated') ?? []) cb({ payload: {} });
-    });
-
-    await waitFor(() => expect(result.current.settings.hotkeyKey).toBe('z'));
-  });
-
-  it('stops listening for settings-updated after unmount', async () => {
-    const { unmount } = await renderLoaded();
-    expect(state.listeners.get('settings-updated')).toHaveLength(1);
-    unmount();
-    await waitFor(() => expect(state.listeners.get('settings-updated')).toHaveLength(0));
-  });
-
   // BUG: src/hooks/useOptions.tsx:191 deep-merges with lodash/merge, which merges arrays by index.
   // A user who disables toast types (e.g. keeps only ['whispers', 'trade']) gets the trailing defaults
   // ('joins', 'offers', 'networth') re-enabled on every load.
@@ -175,7 +143,7 @@ describe('OptionsProvider loading', () => {
 });
 
 describe('updateSettings', () => {
-  it('persists the change, updates state and broadcasts the full settings', async () => {
+  it('persists the change and updates state', async () => {
     state.dirExists = false;
     const { result } = await renderLoaded();
 
@@ -184,7 +152,7 @@ describe('updateSettings', () => {
     expect(result.current.settings.hotkeyKey).toBe('k');
     expect(savedSettings().hotkeyKey).toBe('k');
     expect(savedSettings().hotkeyKeyListItem).toBe('l');
-    expect(emit).toHaveBeenCalledWith('settings-updated', expect.objectContaining({ hotkeyKey: 'k', mode: 'softcore' }));
+    expect(savedSettings().mode).toBe('softcore');
   });
 
   it('merges onto the on-disk file so another window’s change is not lost', async () => {
@@ -199,7 +167,7 @@ describe('updateSettings', () => {
     expect(result.current.settings.pd2Token).toBe('from-other-window');
   });
 
-  it('skips write and broadcast when nothing changed', async () => {
+  it('skips the write when nothing changed', async () => {
     state.dirExists = false;
     const { result } = await renderLoaded();
     vi.mocked(writeTextFile).mockClear();
@@ -207,10 +175,9 @@ describe('updateSettings', () => {
     await act(() => result.current.updateSettings({ hotkeyKey: 'd' }));
 
     expect(writeTextFile).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalledWith('settings-updated', expect.anything());
   });
 
-  it('leaves state untouched and does not broadcast when the write fails', async () => {
+  it('leaves state untouched when the write fails', async () => {
     state.dirExists = false;
     const { result } = await renderLoaded();
     state.failWrite = true;
@@ -218,7 +185,6 @@ describe('updateSettings', () => {
     await act(() => result.current.updateSettings({ hotkeyKey: 'k' }));
 
     expect(result.current.settings.hotkeyKey).toBe('d');
-    expect(emit).not.toHaveBeenCalledWith('settings-updated', expect.anything());
   });
 
   it('writes onto defaults when the file vanished', async () => {
@@ -244,6 +210,19 @@ describe('theme', () => {
   });
 });
 
+describe('debug logging', () => {
+  it('follows debugLoggingEnabled once settings load and when it is toggled', async () => {
+    state.files.set('settings.json', JSON.stringify({ debugLoggingEnabled: true }));
+    const view = renderHook(() => useOptions(), { wrapper });
+    expect(startDebugLogging).not.toHaveBeenCalled();
+    await waitFor(() => expect(view.result.current.isLoading).toBe(false));
+    expect(startDebugLogging).toHaveBeenCalledTimes(1);
+
+    await act(() => view.result.current.updateSettings({ debugLoggingEnabled: false }));
+    expect(stopDebugLogging).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('browser token handoff', () => {
   beforeEach(() => {
     state.tauri = false;
@@ -257,7 +236,7 @@ describe('browser token handoff', () => {
     await waitFor(() => expect(result.current.settings.pd2Token).toBe('abc'));
     expect(savedSettings().pd2Token).toBe('abc');
     expect(window.location.search).toBe('?tab=chat');
-    expect(emit).toHaveBeenCalledWith('toast-event', expect.objectContaining({ title: 'PD2 Trader' }));
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'PD2 Trader' }));
   });
 
   it('ignores a token that matches the stored one', async () => {
@@ -267,7 +246,7 @@ describe('browser token handoff', () => {
     await renderLoaded();
 
     expect(window.location.search).toBe('?token=abc');
-    expect(emit).not.toHaveBeenCalledWith('toast-event', expect.anything());
+    expect(showToast).not.toHaveBeenCalledWith(expect.anything());
   });
 
   it('is disabled inside Tauri', async () => {

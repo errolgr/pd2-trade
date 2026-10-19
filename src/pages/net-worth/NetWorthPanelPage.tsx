@@ -1,14 +1,10 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { AlertTriangle, Camera, ExternalLink, LogIn, Loader2, Play, Square, TrendingUp } from 'lucide-react';
-import { OptionsProvider, useOptions } from '@/hooks/useOptions';
-import { ItemsProvider } from '@/hooks/useItems';
-import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
-import { ChildNetWorthProvider, useNetWorth } from '@/hooks/useNetWorth';
+import { useOptions } from '@/hooks/useOptions';
+import { useNetWorth } from '@/hooks/useNetWorth';
 import { getPoints, NetWorthPoint } from '@/lib/networth-api';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
-import { emit as emitAppEvent } from '@/lib/browser-events';
-import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
+import { usePanel, useOverlay } from '@/overlay';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
@@ -50,9 +46,11 @@ const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
       animate={{ clipPath: 'inset(0 0% 0 0)' }}
       transition={{ duration: 0.6, ease: EASE_OUT }}
     >
-      <svg viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
+      <svg
+        viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
         className="h-full w-full overflow-visible"
-        preserveAspectRatio="none">
+        preserveAspectRatio="none"
+      >
         <defs>
           <linearGradient id={gradientId}
             x1="0"
@@ -102,6 +100,8 @@ const NetWorthPanel: React.FC = () => {
     stopSession,
     openNetWorth,
   } = useNetWorth();
+  const { openPanel } = useOverlay();
+  const { close } = usePanel<'netWorthPanel'>();
   const [points, setPoints] = useState<NetWorthPoint[]>([]);
   const [pointsError, setPointsError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'snapshot' | 'session' | null>(null);
@@ -165,25 +165,26 @@ const NetWorthPanel: React.FC = () => {
 
   const sessionOpen = currentSession?.isOpen ?? false;
   const sessionDelta = sessionOpen && currentSession ? currentSession.endHr - currentSession.startHr : null;
-  const sparkChange =
-    sessionValues.length > 1 ? sessionValues[sessionValues.length - 1] - sessionValues[0] : null;
+  const sparkChange = sessionValues.length > 1 ? sessionValues[sessionValues.length - 1] - sessionValues[0] : null;
 
   const signedIn = status !== 'signed-out' && !!owner;
 
   return (
     <WindowPanel animate
-      className="h-screen w-full">
+      className="h-full w-full">
       <WindowChrome
         title="Net Worth"
         icon={<TrendingUp />}
         closeLabel="Hide"
-        onClose={() => getCurrentWebviewWindow().hide()}
+        onClose={close}
         actions={
           signedIn ? (
-            <Button size="sm"
+            <Button
+              size="sm"
               variant="ghost"
               className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => openNetWorth('history')}>
+              onClick={() => openNetWorth('history')}
+            >
               <ExternalLink className="size-3.5" />
               Open full view
             </Button>
@@ -196,10 +197,12 @@ const NetWorthPanel: React.FC = () => {
           <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
             <LogIn className="size-5" />
           </span>
-          <p className="max-w-60 text-sm text-muted-foreground">Sign in with your PD2 account to track your net worth.</p>
+          <p className="max-w-60 text-sm text-muted-foreground">
+            Sign in with your PD2 account to track your net worth.
+          </p>
           {!token && (
             <Button size="sm"
-              onClick={() => emitAppEvent(SIGN_IN_DIALOG_EVENT)}>
+              onClick={() => openPanel('signIn')}>
               <LogIn className="size-3.5" />
               Sign in
             </Button>
@@ -299,8 +302,10 @@ const NetWorthPanel: React.FC = () => {
             )}
 
             {status === 'error' && error && (
-              <div role="alert"
-                className="flex items-start gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+              <div
+                role="alert"
+                className="flex items-start gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
+              >
                 <AlertTriangle className="mt-px size-3.5 shrink-0" />
                 {error}
               </div>
@@ -308,10 +313,12 @@ const NetWorthPanel: React.FC = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2.5 [&>button]:h-8 [&>button]:flex-1 [&>button]:text-xs">
-            <Button size="sm"
+            <Button
+              size="sm"
               className="px-2.5"
               disabled={busy !== null}
-              onClick={() => run('snapshot', () => takeSnapshot('manual'))}>
+              onClick={() => run('snapshot', () => takeSnapshot('manual'))}
+            >
               {busy === 'snapshot' ? <Loader2 className="size-3.5 animate-spin" /> : <Camera className="size-3.5" />}
               Snapshot now
             </Button>
@@ -342,15 +349,7 @@ const NetWorthPanel: React.FC = () => {
 
 const NetWorthPanelPage: React.FC = () => (
   <MotionConfig reducedMotion="user">
-    <OptionsProvider>
-      <ItemsProvider>
-        <ChildPd2WebsiteProvider>
-          <ChildNetWorthProvider>
-            <NetWorthPanel />
-          </ChildNetWorthProvider>
-        </ChildPd2WebsiteProvider>
-      </ItemsProvider>
-    </OptionsProvider>
+    <NetWorthPanel />
   </MotionConfig>
 );
 

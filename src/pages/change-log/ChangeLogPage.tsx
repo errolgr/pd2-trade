@@ -1,8 +1,8 @@
 import { useOptions } from '@/hooks/useOptions';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { usePanel } from '@/overlay';
 import { Sparkles } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { getVersion } from '@tauri-apps/api/app';
+import { getVersion } from '@/lib/browser-app';
 import { motion, MotionConfig } from 'framer-motion';
 import { changeLog } from '@/assets/changeLog';
 import { Badge } from '@/components/ui/badge';
@@ -121,6 +121,7 @@ function ChangelogSkeleton() {
 
 export default function ChangelogPage() {
   const { settings, updateSettings } = useOptions();
+  const { close } = usePanel();
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -137,11 +138,11 @@ export default function ChangelogPage() {
   return (
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
-        className="h-screen w-screen">
+        className="h-full w-full">
         <WindowChrome
           title="What's New"
           icon={<Sparkles className="text-primary" />}
-          onClose={() => getCurrentWebviewWindow().hide()}
+          onClose={close}
           closeLabel="Close changelog"
           className="h-12 px-3"
           titleClassName="text-base font-bold"
@@ -155,10 +156,12 @@ export default function ChangelogPage() {
               animate="visible">
               {allVersions.map((version, idx) => (
                 <React.Fragment key={version}>
-                  <VersionSection version={version}
+                  <VersionSection
+                    version={version}
                     entries={changeLog[version]}
                     isCurrent={version === currentVersion}
-                    stagger={idx < STAGGERED_SECTIONS} />
+                    stagger={idx < STAGGERED_SECTIONS}
+                  />
                   {idx < allVersions.length - 1 && !(version === currentVersion) && (
                     <div aria-hidden
                       className="mx-1 my-2 h-px bg-border/70" />

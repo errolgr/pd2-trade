@@ -2,18 +2,17 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { showToast } from '@/overlay';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { emit } from '@/lib/browser-events';
 import { openUrl } from '@/lib/browser-opener';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import MarketListingBadge from './MarketListingBadge';
 
+const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => panel }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
 
 const NOW = new Date('2026-03-01T12:00:00Z');
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3600_000).toISOString();
@@ -25,7 +24,7 @@ const listing = (bumped_at: string | null) =>
 let onBump: Mock<(id: string, hash: string) => Promise<void>>;
 let onRefresh: Mock<() => Promise<void>>;
 let deleteMarketListing: Mock<(id: string) => Promise<void>>;
-let hide: Mock<() => Promise<void>>;
+let close: Mock<() => void>;
 
 function renderBadge(currentListings: MarketListingEntry[]) {
   return render(
@@ -41,7 +40,7 @@ function renderBadge(currentListings: MarketListingEntry[]) {
   );
 }
 
-const toasts = () => vi.mocked(emit).mock.calls.filter(([e]) => e === 'toast-event').map(([, p]) => p);
+const toasts = () => vi.mocked(showToast).mock.calls.map(([p]) => p);
 const hover = () => fireEvent.mouseEnter(screen.getByText('Listed').closest('span.relative')!);
 
 beforeEach(() => {
@@ -50,8 +49,8 @@ beforeEach(() => {
   onBump = vi.fn(async () => {});
   onRefresh = vi.fn(async () => {});
   deleteMarketListing = vi.fn(async () => {});
-  hide = vi.fn(async () => {});
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ hide } as never);
+  close = vi.fn();
+  panel.close = close;
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterEach(() => {
@@ -116,16 +115,16 @@ describe('MarketListingBadge', () => {
     expect(bump.disabled).toBe(false);
   });
 
-  it('removes the listing, refreshes, toasts the item name and hides the window', async () => {
+  it('removes the listing, refreshes, toasts the item name and closes the panel', async () => {
     const order: string[] = [];
     deleteMarketListing.mockImplementation(async (id) => void order.push(`delete ${id}`));
     onRefresh.mockImplementation(async () => void order.push('refresh'));
-    hide.mockImplementation(async () => void order.push('hide'));
+    close.mockImplementation(() => void order.push('close'));
     renderBadge([listing(null)]);
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Remove listing'));
     });
-    expect(order).toEqual(['delete L1', 'refresh', 'hide']);
+    expect(order).toEqual(['delete L1', 'refresh', 'close']);
     expect(toasts()).toEqual(['Removed Shako market listing.']);
   });
 

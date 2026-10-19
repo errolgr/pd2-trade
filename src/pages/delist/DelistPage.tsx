@@ -1,54 +1,32 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { MotionConfig, motion } from 'framer-motion';
 import { Loader2, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { OptionsProvider } from '@/hooks/useOptions';
-import { ItemsProvider } from '@/hooks/useItems';
-import { ChildPd2WebsiteProvider, usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit, listen } from '@/lib/browser-events';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
-import { useSearchParams } from 'react-router-dom';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import { countChip, itemCard } from '@/pages/quick-list/components/styles';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { listItem, listStagger } from '@/lib/motion';
+import { showToast, usePanel } from '@/overlay';
 
-const DelistContent: React.FC = () => {
+export const DelistPage: React.FC = () => {
   const { deleteMarketListing } = usePd2Website();
-  const [listings, setListings] = useState<MarketListingEntry[]>([]);
+  const { payload, payloadVersion, close } = usePanel<'delist'>();
+  const listings = payload?.listings ?? [];
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    const data = searchParams.get('data');
-    if (data) {
-      try {
-        const parsed = JSON.parse(atob(decodeURIComponent(data)));
-        setListings(parsed);
-      } catch (err) {
-        console.error('[DelistPage] Failed to parse listings from URL:', err);
-      }
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    listen<MarketListingEntry[]>('delist-update', ({ payload }) => {
-      setListings(payload);
-      setDeletingId(null);
-      setExpandedItems(new Set());
-    }).then((fn) => {
-      unlisten = fn;
-    });
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
+  // A new delist while the picker is open replaces the list: re-enable selection and collapse stats
+  const [seenVersion, setSeenVersion] = useState(payloadVersion);
+  if (seenVersion !== payloadVersion) {
+    setSeenVersion(payloadVersion);
+    setDeletingId(null);
+    setExpandedItems(new Set());
+  }
 
   const handleDelete = useCallback(
     async (listing: MarketListingEntry) => {
@@ -56,44 +34,31 @@ const DelistContent: React.FC = () => {
       setDeletingId(listing._id);
       try {
         await deleteMarketListing(listing._id);
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: `Removed ${listing.item.name} listing.`,
         });
       } catch (err) {
         console.error('[DelistPage] Delete failed:', err);
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: 'Failed to remove listing.',
           variant: 'error',
         });
       }
-      try {
-        await getCurrentWebviewWindow().close();
-      } catch {
-        // ignore close errors
-      }
+      close();
     },
-    [deleteMarketListing, deletingId],
+    [deleteMarketListing, deletingId, close],
   );
-
-  const handleClose = useCallback(async () => {
-    try {
-      const win = getCurrentWebviewWindow();
-      await win.close();
-    } catch {
-      // ignore
-    }
-  }, []);
 
   return (
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
-        className="h-screen">
+        className="h-full w-full">
         <WindowChrome
           title="Select listing to remove"
           icon={<Trash2 />}
-          onClose={handleClose}
+          onClose={close}
           showGrip={false}
           actions={
             listings.length > 0 ? (
@@ -141,55 +106,56 @@ const DelistContent: React.FC = () => {
                 >
                   {/* Dim via an inner wrapper: framer owns the card's inline opacity. */}
                   <div
-                    className={cn(
-                      'transition-opacity duration-(--dur-med)',
-                      deletingId && !isDeleting && 'opacity-40',
-                    )}
+                    className={cn('transition-opacity duration-(--dur-med)', deletingId && !isDeleting && 'opacity-40')}
                   >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className={cn('truncate', qualityColor(listing.item.quality.name))}
-                        style={{ fontFamily: 'DiabloFont' }}>
-                        {listing.item.name}
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={cn('truncate', qualityColor(listing.item.quality.name))}
+                          style={{ fontFamily: 'DiabloFont' }}
+                        >
+                          {listing.item.name}
+                        </div>
+                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                          {listing.hr_price ? (
+                            <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
+                              {`${listing.hr_price} HR`}
+                            </span>
+                          ) : null}
+                          {listing.price && <span className="truncate">{listing.price}</span>}
+                        </div>
                       </div>
-                      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        {listing.hr_price ? (
-                          <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
-                            {`${listing.hr_price} HR`}
-                          </span>
-                        ) : null}
-                        {listing.price && <span className="truncate">{listing.price}</span>}
-                      </div>
+                      {isDeleting ? (
+                        <span
+                          className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-destructive"
+                          role="status"
+                        >
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Removing...
+                        </span>
+                      ) : (
+                        <span
+                          aria-hidden
+                          className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-destructive opacity-0 transition-opacity duration-(--dur-fast) group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
+                        >
+                          <Trash2 className="size-3.5" />
+                          Remove
+                        </span>
+                      )}
                     </div>
-                    {isDeleting ? (
-                      <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-destructive"
-                        role="status">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Removing...
-                      </span>
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-destructive opacity-0 transition-opacity duration-(--dur-fast) group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
-                      >
-                        <Trash2 className="size-3.5" />
-                        Remove
-                      </span>
-                    )}
-                  </div>
-                  <ItemStatsDisplay
-                    // Listing ItemDetail is a superset-compatible view of the stash item for display purposes.
-                    stashItem={listing.item as unknown as GameStashItem}
-                    isExpanded={expandedItems.has(listing._id)}
-                    onToggleExpanded={() => {
-                      setExpandedItems((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(listing._id)) next.delete(listing._id);
-                        else next.add(listing._id);
-                        return next;
-                      });
-                    }}
-                  />
+                    <ItemStatsDisplay
+                      // Listing ItemDetail is a superset-compatible view of the stash item for display purposes.
+                      stashItem={listing.item as unknown as GameStashItem}
+                      isExpanded={expandedItems.has(listing._id)}
+                      onToggleExpanded={() => {
+                        setExpandedItems((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(listing._id)) next.delete(listing._id);
+                          else next.add(listing._id);
+                          return next;
+                        });
+                      }}
+                    />
                   </div>
                 </motion.div>
               );
@@ -198,18 +164,6 @@ const DelistContent: React.FC = () => {
         </ScrollArea>
       </WindowPanel>
     </MotionConfig>
-  );
-};
-
-export const DelistPage: React.FC = () => {
-  return (
-    <OptionsProvider>
-      <ItemsProvider>
-        <ChildPd2WebsiteProvider>
-          <DelistContent />
-        </ChildPd2WebsiteProvider>
-      </ItemsProvider>
-    </OptionsProvider>
   );
 };
 

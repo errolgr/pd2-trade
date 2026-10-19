@@ -6,23 +6,18 @@ import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
 import { initFaro } from '@/lib/faro';
-import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
-import LandingPage, { Providers } from './pages/landing/LandingPage';
-import ItemPage from '@/pages/price-check/ItemPage';
-import { SettingsPage } from '@/pages/settings/SettingsPage';
-import ChangelogPage from '@/pages/change-log/ChangeLogPage';
-import { QuickListPage } from './pages/quick-list/QuickListPage';
+import { AccountMismatchError, Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { OptionsProvider } from './hooks/useOptions';
-import ToastPage from './pages/toast/ToastPage';
-import { CurrencyPage } from './pages/currency/CurrencyPage';
+import { DialogProvider } from './hooks/useDialog';
+import { TrayProvider } from './hooks/useTray';
+import { ItemsProvider } from './hooks/useItems';
+import { NetWorthProvider } from './hooks/useNetWorth';
 import { GlobalErrorHandler } from './components/GlobalErrorHandler';
-import ChatButtonPage from './pages/chat/ChatButtonPage';
-import TradeMessagesPage from './pages/trade-messages/TradeMessagesPage';
-import ChatPage from './pages/chat/ChatPage';
-import SignInPage from './pages/sign-in/SignInPage';
-import { DelistPage } from './pages/delist/DelistPage';
-import NetWorthTickerPage from './pages/net-worth/NetWorthTickerPage';
-import NetWorthPanelPage from './pages/net-worth/NetWorthPanelPage';
+import AppController from './pages/landing/AppController';
+import DelistHandler from './pages/delist/DelistHandler';
+import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayController';
+import { OverlayProvider, OverlayRoot } from './overlay';
+import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 
 // Apply the cached theme before the first render (no flash of the default theme)
@@ -85,62 +80,37 @@ setTimeout(() => {
 // Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 
+/**
+ * The single overlay window: every provider mounted once, every UI surface a panel.
+ * OverlayProvider sits above the domain providers so they (sign-in, tray settings, net worth) can open panels.
+ */
+const AppRoot: React.FC = () => (
+  <DialogProvider>
+    <OptionsProvider>
+      <OverlayProvider defs={PANEL_DEFS}>
+        <TrayProvider>
+          <ItemsProvider>
+            <Pd2WebsiteProvider>
+              <NetWorthProvider>
+                <GlobalErrorHandler />
+                <AppController />
+                <DelistHandler />
+                <NetWorthOverlayController />
+                <OverlayRoot />
+              </NetWorthProvider>
+            </Pd2WebsiteProvider>
+          </ItemsProvider>
+        </TrayProvider>
+      </OverlayProvider>
+    </OptionsProvider>
+  </DialogProvider>
+);
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <BrowserRouter>
     <Routes>
-      <Route
-        path="/"
-        element={
-          <Providers>
-            <GlobalErrorHandler />
-            <LandingPage />
-          </Providers>
-        }
-      />
-
-      <Route path="/item"
-        element={<ItemPage />} />
-
-      <Route path={'/settings'}
-        element={<SettingsPage />} />
-
-      <Route path={'/quick-list'}
-        element={<QuickListPage />} />
-
-      <Route
-        path={'/change-log'}
-        element={
-          <OptionsProvider>
-            <ChangelogPage />
-          </OptionsProvider>
-        }
-      />
-      <Route path={'/toast'}
-        element={<ToastPage />} />
-
-      <Route path={'/currency'}
-        element={<CurrencyPage />} />
-
-      <Route path={'/chat'}
-        element={<ChatPage />} />
-
-      <Route path={'/chat-button'}
-        element={<ChatButtonPage />} />
-
-      <Route path={'/trade-messages'}
-        element={<TradeMessagesPage />} />
-
-      <Route path={'/sign-in'}
-        element={<SignInPage />} />
-
-      <Route path={'/delist'}
-        element={<DelistPage />} />
-
-      <Route path={'/net-worth-ticker'}
-        element={<NetWorthTickerPage />} />
-
-      <Route path={'/net-worth-panel'}
-        element={<NetWorthPanelPage />} />
+      <Route path="/"
+        element={<AppRoot />} />
       {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
       {process.env.NODE_ENV !== 'production' && (
         <Route

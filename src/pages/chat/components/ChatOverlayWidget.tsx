@@ -22,7 +22,7 @@ import { fadeIn, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useChatApi } from '@/hooks/pd2website/useChatApi';
 import { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
-import { listen, emit } from '@/lib/browser-events';
+import { setBadgeCount, usePanel } from '@/overlay';
 import { Badge } from '@/components/ui/badge';
 import moment from 'moment';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,9 @@ interface ChatOverlayWidgetProps {
 }
 
 export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
-  const { authData } = usePd2Website();
+  const { authData, subscribeSocket } = usePd2Website();
+  // keepMounted panel: payload is undefined until the first openPanel('chat', ...)
+  const { payload, payloadVersion } = usePanel<'chat'>();
   const { settings } = useOptions();
   const {
     deleteConversation: deleteConversationApi,
@@ -64,8 +66,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const selectedConversationRef = useRef<Conversation | null>(null);
   const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
   const processedMessagesRef = useRef<Set<string>>(new Set());
-  const messageListenerUnlistenRef = useRef<(() => void) | null>(null);
-  const isMessageListenerSetupRef = useRef<boolean>(false);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -280,9 +280,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     return total;
   }, [conversations]);
 
-  // Emit unread count update whenever it changes
+  // Chat button badge
   useEffect(() => {
-    emit('chat-unread-count-updated', { count: totalUnreadCount });
+    setBadgeCount('chatUnread', totalUnreadCount);
   }, [totalUnreadCount]);
 
   // Fetch conversations on mount and when user is available
@@ -299,299 +299,213 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     }
   }, [currentUserId, authData?.accessToken, loadConversations]);
 
-  // Listen for conversation selection event
+  // Select the conversation requested by openPanel('chat', { conversationId, conversation }) (every open
+  // bumps payloadVersion, so re-opening on the same conversation re-selects it)
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
+    const conversationId = payload?.conversationId;
+    if (!conversationId) return;
+    const newConversation = payload.conversation as Conversation | undefined;
 
-    const setupListener = async () => {
-      try {
-        unlisten = await listen<{ conversationId: string; conversation?: any }>(
-          'select-chat-conversation',
-          async (event) => {
-            const { conversationId, conversation: newConversation } = event.payload;
-
-            // If a new conversation object was provided, inject it into the list
-            if (newConversation) {
-              // Format the conversation to match the Conversation type
-              const formattedConversation: Conversation = {
-                _id: newConversation._id,
-                participant_ids: newConversation.participant_ids,
-                created_at: newConversation.created_at,
-                updated_at: newConversation.updated_at,
-                created_by_id: newConversation.created_by_id,
-                unread_count: 0, // New conversation has no unread messages
-                participants: newConversation.participants || [],
-                latest_message: undefined, // No messages yet
-              };
-
-              // Check if conversation already exists in the list
-              setConversations((prev) => {
-                const exists = prev.some((c) => c._id === conversationId);
-                if (exists) {
-                  // Update existing conversation
-                  return prev.map((c) => (c._id === conversationId ? formattedConversation : c));
-                } else {
-                  // Add new conversation to the beginning of the list
-                  return [formattedConversation, ...prev];
-                }
-              });
-
-              // Select the conversation
-              setSelectedConversation(formattedConversation);
-              return;
-            }
-
-            // If no new conversation object provided, try to find existing one
-            if (!newConversation) {
-              // Wait for conversations to be loaded
-              setConversations((prev) => {
-                if (prev.length === 0) {
-                  // If conversations aren't loaded yet, wait a bit and try again
-                  setTimeout(() => {
-                    setConversations((current) => {
-                      const conversation = current.find((c) => c._id === conversationId);
-                      if (conversation) {
-                        setSelectedConversation(conversation);
-                      }
-                      return current;
-                    });
-                  }, 500);
-                  return prev;
-                }
-
-                // Find and select the conversation
-                const conversation = prev.find((c) => c._id === conversationId);
-                if (conversation) {
-                  setSelectedConversation(conversation);
-                } else {
-                  // If conversation not found, reload conversations and try again
-                  if (loadConversationsRef.current) {
-                    loadConversationsRef.current().then(() => {
-                      setTimeout(() => {
-                        setConversations((current) => {
-                          const foundConversation = current.find((c) => c._id === conversationId);
-                          if (foundConversation) {
-                            setSelectedConversation(foundConversation);
-                          }
-                          return current;
-                        });
-                      }, 500);
-                    });
-                  }
-                }
-                return prev;
-              });
-            }
-          },
-        );
-      } catch (error) {
-        console.error('Failed to set up select-chat-conversation listener:', error);
-      }
-    };
-
-    setupListener();
-
-    return () => {
-      if (unlisten) {
-        unlisten();
-      }
-    };
-  }, [currentUserId]);
-
-  // Listen for new messages from socket
-  useEffect(() => {
-    if (!currentUserId) {
-      // Clean up listener if no user ID
-      if (messageListenerUnlistenRef.current) {
-        messageListenerUnlistenRef.current();
-        messageListenerUnlistenRef.current = null;
-        isMessageListenerSetupRef.current = false;
-      }
+    // A freshly created conversation (e.g. "Start chat" on an offer): inject it into the list and select it
+    if (newConversation) {
+      const formattedConversation: Conversation = {
+        _id: newConversation._id,
+        participant_ids: newConversation.participant_ids,
+        created_at: newConversation.created_at,
+        updated_at: newConversation.updated_at,
+        created_by_id: newConversation.created_by_id,
+        unread_count: 0, // New conversation has no unread messages
+        participants: newConversation.participants || [],
+        latest_message: undefined, // No messages yet
+      };
+      setConversations((prev) =>
+        prev.some((c) => c._id === conversationId)
+          ? prev.map((c) => (c._id === conversationId ? formattedConversation : c))
+          : [formattedConversation, ...prev],
+      );
+      setSelectedConversation(formattedConversation);
       return;
     }
 
-    // Prevent multiple listeners from being set up
-    if (isMessageListenerSetupRef.current) {
-      return;
-    }
+    // Otherwise select an existing conversation, waiting for / reloading the list if needed
+    const selectWhenLoaded = () =>
+      setConversations((current) => {
+        const conversation = current.find((c) => c._id === conversationId);
+        if (conversation) setSelectedConversation(conversation);
+        return current;
+      });
+    setConversations((prev) => {
+      if (prev.length === 0) {
+        // Conversations aren't loaded yet: try again shortly
+        setTimeout(selectWhenLoaded, 500);
+        return prev;
+      }
+      const conversation = prev.find((c) => c._id === conversationId);
+      if (conversation) {
+        setSelectedConversation(conversation);
+      } else {
+        // Unknown conversation: reload the list and try again
+        loadConversationsRef.current?.().then(() => setTimeout(selectWhenLoaded, 500));
+      }
+      return prev;
+    });
+    // payload is read only when its version changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payloadVersion]);
 
-    const setupListener = async () => {
-      // Double-check after async gap
-      if (isMessageListenerSetupRef.current) {
+  // New messages pushed by the PD2 socket
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    return subscribeSocket<Message>('social/message_pushed', (newMessage) => {
+      // Atomic de-duping check: prevent duplicate processing
+      // Check if this message has already been processed
+      if (processedMessagesRef.current.has(newMessage._id)) {
         return;
       }
 
-      try {
-        // Clean up any existing listener first
-        if (messageListenerUnlistenRef.current) {
-          messageListenerUnlistenRef.current();
-          messageListenerUnlistenRef.current = null;
-        }
+      // Mark as processed immediately to prevent duplicate processing
+      processedMessagesRef.current.add(newMessage._id);
 
-        const unlistenFn = await listen<Message>('socket:social/message_pushed', async (event) => {
-          const newMessage = event.payload;
+      // Clean up old message IDs (keep only last 500)
+      if (processedMessagesRef.current.size > 500) {
+        const idsArray = Array.from(processedMessagesRef.current);
+        processedMessagesRef.current = new Set(idsArray.slice(-500));
+      }
 
-          // Atomic de-duping check: prevent duplicate processing
-          // Check if this message has already been processed
-          if (processedMessagesRef.current.has(newMessage._id)) {
-            return;
-          }
+      // Get current selected conversation before updating conversations list
+      const currentSelectedConversation = selectedConversationRef.current;
+      const currentSelectedConversationId = currentSelectedConversation?._id;
 
-          // Mark as processed immediately to prevent duplicate processing
-          processedMessagesRef.current.add(newMessage._id);
-
-          // Clean up old message IDs (keep only last 500)
-          if (processedMessagesRef.current.size > 500) {
-            const idsArray = Array.from(processedMessagesRef.current);
-            processedMessagesRef.current = new Set(idsArray.slice(-500));
-          }
-
-          // Get current selected conversation before updating conversations list
-          const currentSelectedConversation = selectedConversationRef.current;
-          const currentSelectedConversationId = currentSelectedConversation?._id;
-
-          // Update conversations list locally (avoid server call which can race with FIFO socket)
-          const isFromOtherUser = newMessage.sender_id !== currentUserId;
-          setConversations((prev) => {
-            const existingConv = prev.find((c) => c._id === newMessage.conversation_id);
-            if (existingConv) {
-              const shouldIncrementUnread =
-                isFromOtherUser && newMessage.conversation_id !== currentSelectedConversation?._id;
-              return prev.map((conv) => {
-                if (conv._id === newMessage.conversation_id) {
-                  return {
-                    ...conv,
-                    latest_message: newMessage,
-                    unread_count: shouldIncrementUnread ? (conv.unread_count || 0) + 1 : conv.unread_count,
-                  };
-                }
-                return conv;
-              });
-            } else if (isFromOtherUser) {
-              // New conversation - reload from server
-              if (loadConversationsRef.current) {
-                loadConversationsRef.current();
-              }
+      // Update conversations list locally (avoid server call which can race with FIFO socket)
+      const isFromOtherUser = newMessage.sender_id !== currentUserId;
+      setConversations((prev) => {
+        const existingConv = prev.find((c) => c._id === newMessage.conversation_id);
+        if (existingConv) {
+          const shouldIncrementUnread =
+            isFromOtherUser && newMessage.conversation_id !== currentSelectedConversation?._id;
+          return prev.map((conv) => {
+            if (conv._id === newMessage.conversation_id) {
+              return {
+                ...conv,
+                latest_message: newMessage,
+                unread_count: shouldIncrementUnread ? (conv.unread_count || 0) + 1 : conv.unread_count,
+              };
             }
-            return prev;
+            return conv;
+          });
+        } else if (isFromOtherUser) {
+          // New conversation - reload from server
+          if (loadConversationsRef.current) {
+            loadConversationsRef.current();
+          }
+        }
+        return prev;
+      });
+
+      // Play notification sound if user is recipient and conversation is not currently open
+      const isCurrentConversationOpen =
+        currentSelectedConversation && newMessage.conversation_id === currentSelectedConversation._id;
+      if (newMessage.sender_id !== currentUserId && !isCurrentConversationOpen) {
+        // Play notification sound for new messages in other conversations if general notifications are enabled
+        const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
+        if (generalEnabled) {
+          const volume = settings?.whisperNotificationVolume ?? 70;
+          playNotificationSound(volume);
+        }
+      }
+
+      // Always add the new message to the cache for its conversation (even if not currently open)
+      const conversationId = newMessage.conversation_id;
+      const cachedMessagesForConversation = messagesCacheRef.current.get(conversationId) || [];
+      const messageExistsInCache = cachedMessagesForConversation.some((m) => m._id === newMessage._id);
+
+      if (!messageExistsInCache) {
+        // Add message to cache
+        const updatedCachedMessages = [...cachedMessagesForConversation, newMessage];
+        messagesCacheRef.current.set(conversationId, updatedCachedMessages);
+
+        // If this conversation is currently open, also update the state
+        if (isCurrentConversationOpen) {
+          // Use functional update to only add the new message, avoiding full re-render
+          setMessages((prev) => {
+            // Check if message already exists in state (defensive check)
+            if (prev.some((m) => m._id === newMessage._id)) {
+              return prev; // Return previous state to avoid re-render
+            }
+            return [...prev, newMessage]; // Only add the new message
           });
 
-          // Play notification sound if user is recipient and conversation is not currently open
-          const isCurrentConversationOpen =
-            currentSelectedConversation && newMessage.conversation_id === currentSelectedConversation._id;
-          if (newMessage.sender_id !== currentUserId && !isCurrentConversationOpen) {
-            // Play notification sound for new messages in other conversations if general notifications are enabled
-            const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
-            if (generalEnabled) {
-              const volume = settings?.whisperNotificationVolume ?? 70;
-              playNotificationSound(volume);
-            }
-          }
+          // Mark as read if user is recipient
+          if (newMessage.sender_id !== currentUserId) {
+            markMessagesAsRead([newMessage._id], currentUserId)
+              .then(() => {
+                // Update message with read status in cache
+                const readUpdatedMessages = updatedCachedMessages.map((m) => {
+                  if (m._id === newMessage._id) {
+                    return {
+                      ...m,
+                      reader_ids: [...(m.reader_ids || []), currentUserId],
+                    };
+                  }
+                  return m;
+                });
+                messagesCacheRef.current.set(conversationId, readUpdatedMessages);
 
-          // Always add the new message to the cache for its conversation (even if not currently open)
-          const conversationId = newMessage.conversation_id;
-          const cachedMessagesForConversation = messagesCacheRef.current.get(conversationId) || [];
-          const messageExistsInCache = cachedMessagesForConversation.some((m) => m._id === newMessage._id);
+                // Update state only if message read status changed
+                setMessages((prev) =>
+                  prev.map((m) => {
+                    if (m._id === newMessage._id && !m.reader_ids?.includes(currentUserId)) {
+                      return {
+                        ...m,
+                        reader_ids: [...(m.reader_ids || []), currentUserId],
+                      };
+                    }
+                    return m;
+                  }),
+                );
 
-          if (!messageExistsInCache) {
-            // Add message to cache
-            const updatedCachedMessages = [...cachedMessagesForConversation, newMessage];
-            messagesCacheRef.current.set(conversationId, updatedCachedMessages);
-
-            // If this conversation is currently open, also update the state
-            if (isCurrentConversationOpen) {
-              // Use functional update to only add the new message, avoiding full re-render
-              setMessages((prev) => {
-                // Check if message already exists in state (defensive check)
-                if (prev.some((m) => m._id === newMessage._id)) {
-                  return prev; // Return previous state to avoid re-render
-                }
-                return [...prev, newMessage]; // Only add the new message
-              });
-
-              // Mark as read if user is recipient
-              if (newMessage.sender_id !== currentUserId) {
-                markMessagesAsRead([newMessage._id], currentUserId)
-                  .then(() => {
-                    // Update message with read status in cache
-                    const readUpdatedMessages = updatedCachedMessages.map((m) => {
-                      if (m._id === newMessage._id) {
-                        return {
-                          ...m,
-                          reader_ids: [...(m.reader_ids || []), currentUserId],
-                        };
+                // Update conversation unread_count (only update the specific conversation)
+                // Use functional update to avoid unnecessary re-renders
+                setConversations((prev) =>
+                  prev.map((conv) => {
+                    if (conv._id === conversationId && conv.unread_count > 0) {
+                      const newUnreadCount = Math.max(0, conv.unread_count - 1);
+                      const updatedConv = {
+                        ...conv,
+                        unread_count: newUnreadCount,
+                      };
+                      // Also update the selected conversation state if it matches (defer to avoid render during state update)
+                      if (currentSelectedConversationId === conversationId) {
+                        setTimeout(() => {
+                          setSelectedConversation((prevSelected) => {
+                            if (prevSelected?._id === conversationId) {
+                              return { ...prevSelected, unread_count: newUnreadCount };
+                            }
+                            return prevSelected;
+                          });
+                        }, 0);
                       }
-                      return m;
-                    });
-                    messagesCacheRef.current.set(conversationId, readUpdatedMessages);
-
-                    // Update state only if message read status changed
-                    setMessages((prev) =>
-                      prev.map((m) => {
-                        if (m._id === newMessage._id && !m.reader_ids?.includes(currentUserId)) {
-                          return {
-                            ...m,
-                            reader_ids: [...(m.reader_ids || []), currentUserId],
-                          };
-                        }
-                        return m;
-                      }),
-                    );
-
-                    // Update conversation unread_count (only update the specific conversation)
-                    // Use functional update to avoid unnecessary re-renders
-                    setConversations((prev) =>
-                      prev.map((conv) => {
-                        if (conv._id === conversationId && conv.unread_count > 0) {
-                          const newUnreadCount = Math.max(0, conv.unread_count - 1);
-                          const updatedConv = {
-                            ...conv,
-                            unread_count: newUnreadCount,
-                          };
-                          // Also update the selected conversation state if it matches (defer to avoid render during state update)
-                          if (currentSelectedConversationId === conversationId) {
-                            setTimeout(() => {
-                              setSelectedConversation((prevSelected) => {
-                                if (prevSelected?._id === conversationId) {
-                                  return { ...prevSelected, unread_count: newUnreadCount };
-                                }
-                                return prevSelected;
-                              });
-                            }, 0);
-                          }
-                          return updatedConv;
-                        }
-                        return conv;
-                      }),
-                    );
-                  })
-                  .catch((error) => {
-                    console.error('Failed to mark new message as read:', error);
-                  });
-              }
-            }
+                      return updatedConv;
+                    }
+                    return conv;
+                  }),
+                );
+              })
+              .catch((error) => {
+                console.error('Failed to mark new message as read:', error);
+              });
           }
-        });
-
-        messageListenerUnlistenRef.current = unlistenFn;
-        isMessageListenerSetupRef.current = true;
-      } catch (error) {
-        console.error('Failed to set up socket message listener:', error);
-        isMessageListenerSetupRef.current = false;
+        }
       }
-    };
-
-    setupListener();
-
-    return () => {
-      // Cleanup: unlisten when component unmounts or dependencies change
-      if (messageListenerUnlistenRef.current) {
-        messageListenerUnlistenRef.current();
-        messageListenerUnlistenRef.current = null;
-        isMessageListenerSetupRef.current = false;
-      }
-    };
-  }, [currentUserId, markMessagesAsRead, settings?.whisperNotificationsEnabled, settings?.whisperNotificationVolume]);
+    });
+  }, [
+    currentUserId,
+    subscribeSocket,
+    markMessagesAsRead,
+    settings?.whisperNotificationsEnabled,
+    settings?.whisperNotificationVolume,
+  ]);
 
   // Load conversations
 
@@ -866,17 +780,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const selectedParticipant = selectedConversation ? getOtherParticipant(selectedConversation) : null;
   const selectedName = selectedParticipant?.display_name || selectedParticipant?.username || 'Unknown';
   const selectedUsername =
-    selectedParticipant?.username && selectedParticipant.username !== selectedName ? selectedParticipant.username : null;
+    selectedParticipant?.username && selectedParticipant.username !== selectedName
+      ? selectedParticipant.username
+      : null;
   const hasSearch = searchQuery.trim().length > 0;
   const canSend = messageInput.trim().length > 0;
 
   return (
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
-        className="relative z-10 h-screen w-screen">
-        {/* Top Bar */}
-        <div id="titlebar-drag-handle"
-          data-tauri-drag-region>
+        className="relative z-10 h-full w-full">
+        {/* Top Bar (WindowChrome is the panel drag handle) */}
+        <div id="titlebar-drag-handle">
           <WindowChrome
             title="PD2 Chat"
             icon={<MessageSquare />}
@@ -1070,8 +985,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                                         className="size-3 shrink-0 text-info" />;
                                     }
                                     // Single check = sent/delivered
-                                    return <Check aria-label="Sent"
-                                      className="size-3 shrink-0 text-muted-foreground" />;
+                                    return (
+                                      <Check aria-label="Sent"
+                                        className="size-3 shrink-0 text-muted-foreground" />
+                                    );
                                   }
                                   return null;
                                 })()}
@@ -1180,7 +1097,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                           {messages.map((message, index) => {
                             const isOwnMessage = message.sender_id === currentUserId;
                             const previous = index > 0 ? messages[index - 1] : null;
-                            const startsDay = !previous || !moment(message.created_at).isSame(previous.created_at, 'day');
+                            const startsDay =
+                              !previous || !moment(message.created_at).isSame(previous.created_at, 'day');
                             const continuesGroup =
                               !!previous &&
                               !startsDay &&
@@ -1253,8 +1171,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 </ScrollArea>
 
                 {/* Message Input */}
-                <div ref={composerRef}
-                  className="flex flex-shrink-0 items-center gap-2 border-t border-border bg-card/40 p-2.5">
+                <div
+                  ref={composerRef}
+                  className="flex flex-shrink-0 items-center gap-2 border-t border-border bg-card/40 p-2.5"
+                >
                   <Input
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}

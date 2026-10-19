@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { useClipboard } from '@/hooks/useClipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit, listen } from '@/lib/browser-events';
+import { confirmToast, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { DUR, EASE_OUT, scaleIn } from '@/lib/motion';
 
@@ -84,6 +84,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   isHidden = false,
 }) => {
   const { authData, createConversation, sendMessage } = usePd2Website();
+  const { openPanel } = useOverlay();
   const { settings } = useOptions();
 
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
@@ -92,9 +93,17 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   const [gameName, setGameName] = useState('');
   const [password, setPassword] = useState('');
   const [copiedAction, setCopiedAction] = useState<'accept' | 'whisper' | 'reject' | 'sold' | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // Only the re-render matters: "time ago" labels use moment().fromNow() during render
+  const [, setCurrentTime] = useState(new Date());
   const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = useRef(false);
   const historyCardRef = React.useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // The history card overlays the enclosing panel frame (not the whole full-monitor overlay)
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  useLayoutEffect(() => {
+    setPortalTarget(rootRef.current?.closest('[data-panel-id]') ?? document.body);
+  }, []);
   const { copy } = useClipboard();
 
   // Update timer to refresh "time ago" display
@@ -106,21 +115,17 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Handle click outside and blur to close history card
+  // Close the history card on a pointer press outside it (also presses on other panels, which no longer
+  // blur a window), when the overlay window loses focus, or on Escape
   useEffect(() => {
     if (!historyPopoverOpen) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handlePointerDownOutside = (event: PointerEvent) => {
       if (historyCardRef.current && !historyCardRef.current.contains(event.target as Node)) {
         setHistoryPopoverOpen(false);
       }
     };
-
-    const handleBlur = (event: FocusEvent) => {
-      if (historyCardRef.current && !historyCardRef.current.contains(event.target as Node)) {
-        setHistoryPopoverOpen(false);
-      }
-    };
+    const handleWindowBlur = () => setHistoryPopoverOpen(false);
     // Escape closes the history card (QOL)
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setHistoryPopoverOpen(false);
@@ -128,15 +133,16 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
 
     // Small delay to prevent immediate close when opening
     const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-      window.addEventListener('blur', handleBlur);
+      // Capture phase: panel drag handles preventDefault/stopPropagation their pointerdown
+      document.addEventListener('pointerdown', handlePointerDownOutside, true);
+      window.addEventListener('blur', handleWindowBlur);
     }, 100);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('blur', handleBlur);
+      document.removeEventListener('pointerdown', handlePointerDownOutside, true);
+      window.removeEventListener('blur', handleWindowBlur);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [historyPopoverOpen]);
@@ -296,44 +302,36 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
     }
   };
 
-  const handleDelete = () => {
-    // Show confirmation toast before deleting
-    if (trade.listingId && onDelete) {
-      emit('toast-confirm-delete-listing', {
-        listingId: trade.listingId,
-        itemName: trade.itemName,
-        tradeId: trade.id,
-      });
+  const deleteListing = async (listingId: string) => {
+    if (!onDelete || processingRef.current) return;
+    processingRef.current = true;
+    setIsProcessing(true);
+    try {
+      await onDelete(listingId);
+      // Close the trade message after successful deletion
+      onClose(trade.id);
+    } catch (error) {
+      console.error('Failed to delete listing:', error);
+    } finally {
+      processingRef.current = false;
+      setIsProcessing(false);
     }
   };
 
-  // Listen for delete confirmation
-  useEffect(() => {
-    if (!trade.listingId || !onDelete) return;
-
-    const handleConfirmDelete = async (event: any) => {
-      const { listingId } = event.payload || {};
-      if (listingId === trade.listingId) {
-        if (isProcessing) return;
-        setIsProcessing(true);
-        try {
-          await onDelete(trade.listingId);
-          // Close the trade message after successful deletion
-          onClose(trade.id);
-        } catch (error) {
-          console.error('Failed to delete listing:', error);
-        } finally {
-          setIsProcessing(false);
-        }
-      }
-    };
-
-    const unlistenPromise = listen('confirm-delete-listing', handleConfirmDelete);
-
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten());
-    };
-  }, [trade.listingId, trade.id, onDelete, onClose, isProcessing]);
+  const handleDelete = () => {
+    const listingId = trade.listingId;
+    if (!listingId || !onDelete) return;
+    confirmToast({
+      title: 'Delete Listing?',
+      description: trade.itemName
+        ? `Are you sure you want to delete the listing for ${trade.itemName}?`
+        : 'Are you sure you want to delete this listing?',
+      confirmLabel: 'Delete',
+      variant: 'warning',
+      duration: 10000,
+      onConfirm: () => deleteListing(listingId),
+    });
+  };
 
   // Check if this offer is accepted
   const isAccepted = trade.listingId && trade.acceptedOfferId === trade.id;
@@ -394,8 +392,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
       const participantIds = [authData.user._id, trade.userId];
       const conversation = await createConversation(participantIds);
 
-      // Toggle chat window and pass conversation object
-      await emit('toggle-chat-window', {
+      // Open (or focus) the chat panel on this conversation
+      openPanel('chat', {
         conversationId: conversation._id,
         conversation: conversation,
       });
@@ -409,11 +407,14 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   return (
     <>
       <div
+        ref={rootRef}
         data-slot="trade-message"
         className={cn(
           'group/offer relative w-full overflow-hidden rounded-lg border bg-card/70 py-2.5 pl-4 pr-2.5 text-card-foreground shadow-sm',
           'transition-[border-color,box-shadow,opacity] duration-(--dur-med) ease-out hover:shadow-md',
-          trade.isIncoming ? 'border-success/40 hover:border-success/70' : 'border-destructive/40 hover:border-destructive/70',
+          trade.isIncoming
+            ? 'border-success/40 hover:border-success/70'
+            : 'border-destructive/40 hover:border-destructive/70',
           isHidden && 'opacity-60 hover:opacity-90',
         )}
       >
@@ -618,10 +619,12 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                                 placeholder="Password"
                                 className="h-8 w-32 text-sm md:text-sm"
                               />
-                              <Button type="submit"
+                              <Button
+                                type="submit"
                                 size="sm"
                                 disabled={!gameName || isProcessing}
-                                className="h-8 cursor-pointer">
+                                className="h-8 cursor-pointer"
+                              >
                                 {isProcessing ? <Loader2 className="animate-spin" /> : <Check />}
                                 Accept
                               </Button>
@@ -677,87 +680,96 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
         </div>
       </div>
 
-      {createPortal(
-        <AnimatePresence>
-          {historyPopoverOpen && (
-            <motion.div
-              key="history"
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: DUR.med, ease: EASE_OUT } }}
-              exit={{ opacity: 0, transition: { duration: DUR.fast, ease: EASE_OUT } }}
-            >
-              {/* Backdrop */}
-              <div className="absolute inset-0 bg-scrim backdrop-blur-[2px]"
-                onClick={() => setHistoryPopoverOpen(false)} />
-              {/* Centered Card */}
+      {portalTarget &&
+        createPortal(
+          <AnimatePresence>
+            {historyPopoverOpen && (
               <motion.div
-                ref={historyCardRef}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Communication History"
-                variants={scaleIn}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="relative z-50 flex max-h-[80vh] w-96 flex-col rounded-lg border border-border bg-popover text-popover-foreground shadow-panel outline-none"
-                onBlur={() => setHistoryPopoverOpen(false)}
-                tabIndex={-1}
+                key="history"
+                className="absolute inset-0 z-50 flex items-center justify-center p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { duration: DUR.med, ease: EASE_OUT } }}
+                exit={{ opacity: 0, transition: { duration: DUR.fast, ease: EASE_OUT } }}
               >
-                <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <History className="size-4 shrink-0 text-muted-foreground" />
-                    <h4 className="text-sm font-semibold">Communication History</h4>
-                    <span className="truncate text-xs text-muted-foreground"
-                      style={{ fontFamily: 'DiabloFont' }}>
-                      {trade.playerName}
-                    </span>
+                {/* Backdrop */}
+                <div
+                  className="absolute inset-0 bg-scrim backdrop-blur-[2px]"
+                  onClick={() => setHistoryPopoverOpen(false)}
+                />
+                {/* Centered Card */}
+                <motion.div
+                  ref={historyCardRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Communication History"
+                  variants={scaleIn}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="relative z-50 flex max-h-full w-96 max-w-full flex-col rounded-lg border border-border bg-popover text-popover-foreground shadow-panel outline-none"
+                  onBlur={() => setHistoryPopoverOpen(false)}
+                  tabIndex={-1}
+                >
+                  <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <History className="size-4 shrink-0 text-muted-foreground" />
+                      <h4 className="text-sm font-semibold">Communication History</h4>
+                      <span className="truncate text-xs text-muted-foreground"
+                        style={{ fontFamily: 'DiabloFont' }}>
+                        {trade.playerName}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Close history"
+                      className="size-7"
+                      onClick={() => setHistoryPopoverOpen(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost"
-                    size="icon"
-                    aria-label="Close history"
-                    className="size-7"
-                    onClick={() => setHistoryPopoverOpen(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="max-h-[min(60vh,320px)] space-y-2 overflow-y-auto p-3">
-                  {trade.history && trade.history.length > 0 ? (
-                    trade.history
-                      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-                      .map((entry) => (
-                        <div
-                          key={entry.id}
-                          className={cn(
-                            'rounded-md border-l-2 p-2 text-sm',
-                            entry.isIncoming ? 'border-success bg-success/10' : 'border-info bg-info/10',
-                          )}
-                        >
-                          <div className="mb-1 flex items-center justify-between">
-                            <span
-                              className="text-xs font-medium text-foreground"
-                              style={{ fontFamily: entry.isIncoming ? 'DiabloFont' : 'inherit' }}
-                            >
-                              {entry.isIncoming ? trade.playerName : 'You'}
-                            </span>
-                            <span className="text-xs text-muted-foreground"
-                              title={moment(entry.timestamp).format('LLL')}>
-                              {formatTimeAgo(entry.timestamp)}
-                            </span>
+                  <div className="max-h-[min(60vh,320px)] space-y-2 overflow-y-auto p-3">
+                    {trade.history && trade.history.length > 0 ? (
+                      trade.history
+                        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+                        .map((entry) => (
+                          <div
+                            key={entry.id}
+                            className={cn(
+                              'rounded-md border-l-2 p-2 text-sm',
+                              entry.isIncoming ? 'border-success bg-success/10' : 'border-info bg-info/10',
+                            )}
+                          >
+                            <div className="mb-1 flex items-center justify-between">
+                              <span
+                                className="text-xs font-medium text-foreground"
+                                style={{ fontFamily: entry.isIncoming ? 'DiabloFont' : 'inherit' }}
+                              >
+                                {entry.isIncoming ? trade.playerName : 'You'}
+                              </span>
+                              <span
+                                className="text-xs text-muted-foreground"
+                                title={moment(entry.timestamp).format('LLL')}
+                              >
+                                {formatTimeAgo(entry.timestamp)}
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap break-words text-xs text-foreground/90">
+                              {entry.message}
+                            </p>
                           </div>
-                          <p className="whitespace-pre-wrap break-words text-xs text-foreground/90">{entry.message}</p>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="py-4 text-center text-sm text-muted-foreground">No history yet</div>
-                  )}
-                </div>
+                        ))
+                    ) : (
+                      <div className="py-4 text-center text-sm text-muted-foreground">No history yet</div>
+                    )}
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      )}
+            )}
+          </AnimatePresence>,
+          portalTarget,
+        )}
     </>
   );
 };

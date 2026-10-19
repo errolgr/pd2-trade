@@ -5,12 +5,11 @@ import { ArrowUp, Check, Loader2, SquareArrowOutUpRight, Trash2 } from 'lucide-r
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import moment from 'moment';
-import { emit } from '@/lib/browser-events';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
+import { showToast, usePanel } from '@/overlay';
 
 interface MarketListingBadgeProps {
   stashItem: GameStashItem;
@@ -33,6 +32,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   deleteMarketListing,
   onRefresh,
 }) => {
+  const { close } = usePanel<'quickList'>();
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
   const [bumping, setBumping] = useState<string | null>(null);
@@ -68,10 +68,10 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
       await onBump(marketId, stashItem.hash);
       await onRefresh();
       setJustBumped(stashItem.hash);
-      await emit('toast-event', 'Item bumped successfully!');
+      showToast('Item bumped successfully!');
     } catch (err) {
       console.error('Failed to bump item:', err);
-      await emit('toast-event', 'Failed to bump item');
+      showToast('Failed to bump item');
     } finally {
       setBumping(null);
     }
@@ -111,33 +111,35 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           transition={swap}
         >
-            {state === 'bumped' ? (
-              <span className={cn(pill, 'border-success/40 bg-success text-success-foreground')}>
-                <Check className="size-3" />
-              </span>
-            ) : state === 'bump' ? (
-              <button
-                type="button"
-                className={cn(
-                  pill,
-                  'cursor-pointer border-primary/40 bg-primary text-primary-foreground shadow-sm outline-none transition-[box-shadow,transform] duration-(--dur-fast) hover:shadow-glow focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95 disabled:opacity-70',
-                )}
-                onClick={handleBump}
-                disabled={bumping === stashItem.hash}
-              >
-                {bumping === stashItem.hash ? <Loader2 className="size-3 animate-spin" /> : <ArrowUp className="size-3" />}
-                Bump
-              </button>
-            ) : state === 'cooldown' ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  {listedPill(true)}
-                </TooltipTrigger>
-                <TooltipContent>{`You can bump this item ${timeUntilBump(stashItem)}`}</TooltipContent>
-              </Tooltip>
-            ) : (
-              listedPill(false)
-            )}
+          {state === 'bumped' ? (
+            <span className={cn(pill, 'border-success/40 bg-success text-success-foreground')}>
+              <Check className="size-3" />
+            </span>
+          ) : state === 'bump' ? (
+            <button
+              type="button"
+              className={cn(
+                pill,
+                'cursor-pointer border-primary/40 bg-primary text-primary-foreground shadow-sm outline-none transition-[box-shadow,transform] duration-(--dur-fast) hover:shadow-glow focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95 disabled:opacity-70',
+              )}
+              onClick={handleBump}
+              disabled={bumping === stashItem.hash}
+            >
+              {bumping === stashItem.hash ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <ArrowUp className="size-3" />
+              )}
+              Bump
+            </button>
+          ) : state === 'cooldown' ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>{listedPill(true)}</TooltipTrigger>
+              <TooltipContent>{`You can bump this item ${timeUntilBump(stashItem)}`}</TooltipContent>
+            </Tooltip>
+          ) : (
+            listedPill(false)
+          )}
         </motion.span>
       </span>
       <Tooltip delayDuration={0}>
@@ -153,9 +155,8 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
               try {
                 await deleteMarketListing(listing._id);
                 await onRefresh();
-                await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
-                const win = await getCurrentWebviewWindow();
-                if (win) await win.hide();
+                showToast(`Removed ${stashItem?.name || ''} market listing.`);
+                close();
               } finally {
                 setDeleting(false);
               }

@@ -2,13 +2,13 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
-import { getVersion } from '@tauri-apps/api/app';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getVersion } from '@/lib/browser-app';
+import { usePanel } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import ChangelogPage from './ChangeLogPage';
 
-vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn() }));
-vi.mock('@tauri-apps/api/webviewWindow', () => ({ getCurrentWebviewWindow: vi.fn() }));
+vi.mock('@/lib/browser-app', () => ({ getVersion: vi.fn() }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/assets/changeLog', () => ({
   changeLog: {
@@ -19,7 +19,7 @@ vi.mock('@/assets/changeLog', () => ({
 }));
 
 const updateSettings = vi.fn();
-const hide = vi.fn();
+const close = vi.fn();
 
 async function renderPage(running: string, lastSeenVersion?: string) {
   vi.mocked(getVersion).mockResolvedValue(running);
@@ -41,8 +41,8 @@ afterAll(() => {
 
 beforeEach(() => {
   updateSettings.mockReset();
-  hide.mockReset();
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ hide } as never);
+  close.mockReset();
+  vi.mocked(usePanel).mockReturnValue({ close } as never);
 });
 
 afterEach(cleanup);
@@ -90,9 +90,9 @@ describe('ChangelogPage', () => {
     expect(within(section('1.9.0')).queryByText('1 change')).not.toBeNull();
   });
 
-  it('hides the window on close', async () => {
+  it('closes the panel on close', async () => {
     await renderPage('2.0.0', '2.0.0');
     fireEvent.click(screen.getByRole('button', { name: 'Close changelog' }));
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 });

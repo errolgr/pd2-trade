@@ -6,13 +6,15 @@ import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useChatApi } from '@/hooks/pd2website/useChatApi';
 import { useOptions } from '@/hooks/useOptions';
-import { emit, listen } from '@/lib/browser-events';
+import { setBadgeCount, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/pd2website/useChatApi', () => ({ useChatApi: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
+/** The chat panel's payload/payloadVersion as usePanel() reports them; `openChat()` mimics openPanel('chat', ...). */
+const panel = vi.hoisted(() => ({ payload: undefined as unknown, payloadVersion: 0 }));
+vi.mock('@/overlay', () => ({ setBadgeCount: vi.fn(), usePanel: () => panel }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 
 const NOW = new Date('2026-05-01T12:00:00Z');
@@ -25,8 +27,17 @@ afterAll(() => {
   MotionGlobalConfig.skipAnimations = false;
 });
 
-type Handler = (event: { payload: unknown }) => unknown;
-let handlers: Map<string, Set<Handler>>;
+type SocketHandler = (data: unknown) => void;
+let handlers: Map<string, Set<SocketHandler>>;
+/** Stable like the provider's: the widget subscribes once per user. */
+function subscribeSocket(type: string, cb: SocketHandler) {
+  if (!handlers.has(type)) handlers.set(type, new Set());
+  handlers.get(type)!.add(cb);
+  return () => {
+    handlers.get(type)!.delete(cb);
+  };
+}
+let rerenderWidget: () => void;
 let settings: Record<string, unknown>;
 let auth: { accessToken?: string; user?: { _id: string } } | null;
 let api: {
@@ -41,12 +52,32 @@ let audio: { src: string; volume: number }[];
 
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
 
-function msg(id: string, conversation_id: string, sender_id: string, content: string, ago: number, reader_ids: string[] = []): Message {
+function msg(
+  id: string,
+  conversation_id: string,
+  sender_id: string,
+  content: string,
+  ago: number,
+  reader_ids: string[] = [],
+): Message {
   const created_at = minutesAgo(ago);
-  return { _id: id, conversation_id, sender_id, content, reader_ids, created_at, updated_at: created_at, created_by_id: sender_id };
+  return {
+    _id: id,
+    conversation_id,
+    sender_id,
+    content,
+    reader_ids,
+    created_at,
+    updated_at: created_at,
+    created_by_id: sender_id,
+  };
 }
 
-function conv(id: string, other: { id: string; username: string; display_name?: string }, opts: { unread?: number; latest?: Message } = {}): Conversation {
+function conv(
+  id: string,
+  other: { id: string; username: string; display_name?: string },
+  opts: { unread?: number; latest?: Message } = {},
+): Conversation {
   return {
     _id: id,
     participant_ids: [ME, other.id],
@@ -71,10 +102,18 @@ async function flush(ms = 0) {
   });
 }
 
-async function fire(event: string, payload: unknown) {
+/** A socket push event delivered by the provider's socket. */
+async function fire(type: string, data: unknown) {
   await act(async () => {
-    for (const handler of handlers.get(event) ?? []) await handler({ payload });
+    for (const handler of handlers.get(type) ?? []) handler(data);
   });
+  await flush();
+}
+
+async function openChat(payload: PanelPayloads['chat']) {
+  panel.payload = payload;
+  panel.payloadVersion += 1;
+  await act(async () => rerenderWidget());
   await flush();
 }
 
@@ -82,18 +121,24 @@ async function renderWidget(conversations: Conversation[]) {
   api.getConversations.mockResolvedValue({ data: conversations });
   const onClose = vi.fn();
   const view = render(<ChatOverlayWidget onClose={onClose} />);
+  rerenderWidget = () => view.rerender(<ChatOverlayWidget onClose={onClose} />);
   await flush();
   return { ...view, onClose };
 }
 
 /** Conversation rows in the sidebar, in display order. */
 function rows() {
-  return Array.from(document.querySelectorAll('aside button[type="button"]')).filter((b) => b.querySelector('[aria-hidden].rounded-full'));
+  return Array.from(document.querySelectorAll('aside button[type="button"]')).filter((b) =>
+    b.querySelector('[aria-hidden].rounded-full'),
+  );
 }
 const rowFor = (name: string) => rows().find((r) => r.textContent?.includes(name))! as HTMLElement;
 const headerUnread = () => screen.queryByTitle(/unread$/)?.textContent ?? null;
 const lastEmittedUnread = () =>
-  vi.mocked(emit).mock.calls.filter(([e]) => e === 'chat-unread-count-updated').at(-1)?.[1];
+  vi
+    .mocked(setBadgeCount)
+    .mock.calls.filter(([key]) => key === 'chatUnread')
+    .at(-1)?.[1];
 /** Message bubble texts in the open conversation, in order. */
 const bubbles = () => Array.from(document.querySelectorAll('section .whitespace-pre-wrap')).map((el) => el.textContent);
 
@@ -108,6 +153,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
   handlers = new Map();
+  panel.payload = undefined;
+  panel.payloadVersion = 0;
   settings = {};
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
@@ -119,15 +166,12 @@ beforeEach(() => {
     markMessagesAsRead: vi.fn(async () => {}),
     deleteConversation: vi.fn(async () => {}),
   };
-  vi.mocked(usePd2Website).mockImplementation(() => ({ authData: auth }) as unknown as ReturnType<typeof usePd2Website>);
+  vi.mocked(usePd2Website).mockImplementation(
+    () => ({ authData: auth, subscribeSocket }) as unknown as ReturnType<typeof usePd2Website>,
+  );
   vi.mocked(useChatApi).mockImplementation(() => api as unknown as ReturnType<typeof useChatApi>);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as unknown as ReturnType<typeof useOptions>);
-  vi.mocked(emit).mockResolvedValue(undefined);
-  vi.mocked(listen).mockImplementation(async (event: string, cb: Handler) => {
-    if (!handlers.has(event)) handlers.set(event, new Set());
-    handlers.get(event)!.add(cb);
-    return () => handlers.get(event)!.delete(cb);
-  });
+  vi.mocked(setBadgeCount).mockReset();
   vi.stubGlobal(
     'Audio',
     class {
@@ -176,15 +220,23 @@ describe('ChatOverlayWidget conversation list', () => {
       conv('c2', BOB, { unread: 3, latest: msg('m2', 'c2', 'bob', 'b', 2) }),
     ]);
     expect(headerUnread()).toBe('5');
-    expect(lastEmittedUnread()).toEqual({ count: 5 });
+    expect(lastEmittedUnread()).toBe(5);
   });
 
   it('summarises listing links in previews by display name', async () => {
     await renderWidget([
       conv('c1', ALICE, {
-        latest: msg('m1', 'c1', 'alice', 'https://www.projectdiablo2.com/market/listing/abc123?display="Harlequin%20Crest"', 1),
+        latest: msg(
+          'm1',
+          'c1',
+          'alice',
+          'https://www.projectdiablo2.com/market/listing/abc123?display="Harlequin%20Crest"',
+          1,
+        ),
       }),
-      conv('c2', BOB, { latest: msg('m2', 'c2', 'bob', 'see https://www.projectdiablo2.com/market/listing/def456', 2) }),
+      conv('c2', BOB, {
+        latest: msg('m2', 'c2', 'bob', 'see https://www.projectdiablo2.com/market/listing/def456', 2),
+      }),
     ]);
     expect(rowFor('Alice').textContent).toContain('📦 Harlequin Crest');
     expect(rowFor('bob').textContent).toContain('📦 Market Listing');
@@ -304,7 +356,7 @@ describe('ChatOverlayWidget conversation switching', () => {
     // One batched request covering only unread messages from the other participant
     expect(api.markMessagesAsRead.mock.calls).toEqual([[['a1', 'a2'], ME]]);
     expect(headerUnread()).toBe('1');
-    expect(lastEmittedUnread()).toEqual({ count: 1 });
+    expect(lastEmittedUnread()).toBe(1);
   });
 
   it('keeps the unread count when marking as read fails', async () => {
@@ -315,10 +367,10 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(headerUnread()).toBe('1');
   });
 
-  it('opens a conversation pushed by another window, injecting it when new', async () => {
+  it('opens a conversation requested through the panel payload, injecting it when new', async () => {
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     const fresh = conv('c-new', BOB);
-    await fire('select-chat-conversation', { conversationId: 'c-new', conversation: fresh });
+    await openChat({ conversationId: 'c-new', conversation: fresh });
     await flush(200);
 
     expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('bob');
@@ -326,17 +378,53 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(api.getMessages).toHaveBeenCalledWith('c-new');
   });
 
-  it('opens an existing conversation pushed by id', async () => {
+  it('opens an existing conversation requested by id', async () => {
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hello again', 10, [ME])];
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hello again', 10) })]);
-    await fire('select-chat-conversation', { conversationId: 'c1' });
+    await openChat({ conversationId: 'c1' });
     await flush(200);
 
     expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
     expect(bubbles()).toEqual(['hello again']);
   });
 
-  it('reloads conversations to find a pushed id it does not know yet', async () => {
+  it('re-selects on every open, even with the same conversation id', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    await openChat({ conversationId: 'c1' });
+    await flush(200);
+    await select('bob');
+    expect(rowFor('bob').getAttribute('aria-current')).toBe('true');
+
+    await openChat({ conversationId: 'c1' });
+    await flush(200);
+    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+  });
+
+  it('selects a requested conversation once a still-loading list arrives', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    const list = Promise.withResolvers<{ data: Conversation[] }>();
+    api.getConversations.mockReturnValue(list.promise);
+    const view = render(<ChatOverlayWidget onClose={vi.fn()} />);
+    rerenderWidget = () => view.rerender(<ChatOverlayWidget onClose={vi.fn()} />);
+
+    await openChat({ conversationId: 'c1' });
+    await act(async () => list.resolve({ data: [conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })] }));
+    await flush(600);
+    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+  });
+
+  it('ignores opens without a conversation id', async () => {
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await openChat(undefined);
+    expect(rowFor('Alice').getAttribute('aria-current')).not.toBe('true');
+    expect(api.getMessages).not.toHaveBeenCalled();
+  });
+
+  it('reloads conversations to find a requested id it does not know yet', async () => {
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     api.getConversations.mockResolvedValue({
       data: [
@@ -344,7 +432,7 @@ describe('ChatOverlayWidget conversation switching', () => {
         conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'new chat', 1) }),
       ],
     });
-    await fire('select-chat-conversation', { conversationId: 'c2' });
+    await openChat({ conversationId: 'c2' });
     await flush(600);
 
     expect(api.getConversations).toHaveBeenCalledTimes(2);
@@ -445,7 +533,7 @@ describe('ChatOverlayWidget socket messages', () => {
   it('bumps unread, updates the preview and plays the whisper sound for a background conversation', async () => {
     settings.whisperNotificationVolume = 25;
     await setup();
-    await fire('socket:social/message_pushed', msg('b2', 'c2', 'bob', 'still selling?', 0));
+    await fire('social/message_pushed', msg('b2', 'c2', 'bob', 'still selling?', 0));
 
     expect(rowFor('bob').textContent).toContain('still selling?');
     expect(rowFor('bob').textContent).toContain('Just now');
@@ -457,8 +545,8 @@ describe('ChatOverlayWidget socket messages', () => {
   it('ignores a duplicate push of the same message', async () => {
     await setup();
     const m = msg('b2', 'c2', 'bob', 'dup', 0);
-    await fire('socket:social/message_pushed', m);
-    await fire('socket:social/message_pushed', m);
+    await fire('social/message_pushed', m);
+    await fire('social/message_pushed', m);
     expect(headerUnread()).toBe('2');
     expect(audio).toHaveLength(1);
   });
@@ -466,7 +554,7 @@ describe('ChatOverlayWidget socket messages', () => {
   it('stays silent when whisper notifications are disabled', async () => {
     settings.whisperNotificationsEnabled = false;
     await setup();
-    await fire('socket:social/message_pushed', msg('b2', 'c2', 'bob', 'quiet', 0));
+    await fire('social/message_pushed', msg('b2', 'c2', 'bob', 'quiet', 0));
     expect(headerUnread()).toBe('2');
     expect(audio).toHaveLength(0);
   });
@@ -476,7 +564,7 @@ describe('ChatOverlayWidget socket messages', () => {
     await select('Alice');
     api.markMessagesAsRead.mockClear();
 
-    await fire('socket:social/message_pushed', msg('a2', 'c1', 'alice', 'new while open', 0));
+    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'new while open', 0));
 
     expect(bubbles()).toEqual(['hi', 'new while open']);
     expect(api.markMessagesAsRead.mock.calls.flatMap(([ids]) => ids)).toContain('a2');
@@ -486,7 +574,7 @@ describe('ChatOverlayWidget socket messages', () => {
 
   it('does not count own messages echoed from another device as unread', async () => {
     await setup();
-    await fire('socket:social/message_pushed', msg('b2', 'c2', ME, 'mine', 0));
+    await fire('social/message_pushed', msg('b2', 'c2', ME, 'mine', 0));
     expect(headerUnread()).toBe('1');
     expect(audio).toHaveLength(0);
     expect(within(rowFor('bob')).queryByLabelText('Sent')).not.toBeNull();
@@ -500,7 +588,7 @@ describe('ChatOverlayWidget socket messages', () => {
         conv('c3', { id: 'eve', username: 'eve' }, { unread: 1, latest: msg('e1', 'c3', 'eve', 'new person', 0) }),
       ],
     });
-    await fire('socket:social/message_pushed', msg('e1', 'c3', 'eve', 'new person', 0));
+    await fire('social/message_pushed', msg('e1', 'c3', 'eve', 'new person', 0));
     await flush();
 
     expect(api.getConversations).toHaveBeenCalledTimes(2);
@@ -509,16 +597,16 @@ describe('ChatOverlayWidget socket messages', () => {
 
   it('shows a cached background message immediately when its conversation is opened later', async () => {
     await setup();
-    await fire('socket:social/message_pushed', msg('b2', 'c2', 'bob', 'pushed earlier', 0));
+    await fire('social/message_pushed', msg('b2', 'c2', 'bob', 'pushed earlier', 0));
     api.getMessages.mockImplementation(() => Promise.withResolvers<{ data: Message[] }>().promise);
     await select('bob');
     expect(bubbles()).toEqual(['pushed earlier']);
   });
 
-  it('stops listening for socket messages on unmount', async () => {
+  it('unsubscribes from socket messages on unmount', async () => {
     const { unmount } = await renderWidget([]);
-    expect(handlers.get('socket:social/message_pushed')?.size).toBe(1);
+    expect(handlers.get('social/message_pushed')?.size).toBe(1);
     unmount();
-    expect(handlers.get('socket:social/message_pushed')?.size).toBe(0);
+    expect(handlers.get('social/message_pushed')?.size).toBe(0);
   });
 });

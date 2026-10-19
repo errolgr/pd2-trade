@@ -1,28 +1,15 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setBadgeCount, showToast } from '@/overlay';
 import { fetch as tauriFetch } from '@/lib/browser-http';
-import { emit } from '@/lib/browser-events';
 import { getDeletedOffers, markOfferAsDeleted } from '@/lib/deleted-offers-storage';
 import type { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import type { ISettings } from './useOptions';
 import { useTradeOffers } from './useTradeOffers';
 
-type Handler = (event: { payload: unknown }) => unknown;
-
-const bus = vi.hoisted(() => ({ handlers: new Map<string, Set<(event: { payload: unknown }) => unknown>>() }));
-
+vi.mock('@/overlay', () => ({ showToast: vi.fn(), setBadgeCount: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({
-  emit: vi.fn(async (event: string, payload?: unknown) => {
-    await Promise.all([...(bus.handlers.get(event) ?? [])].map((handler) => handler({ payload })));
-  }),
-  listen: vi.fn(async (event: string, handler: Handler) => {
-    if (!bus.handlers.has(event)) bus.handlers.set(event, new Set());
-    bus.handlers.get(event)!.add(handler);
-    return () => bus.handlers.get(event)!.delete(handler);
-  }),
-}));
 // The real module drags in the whole PD2 website provider; this stub keeps handleApiResponse's contract:
 // ok → JSON body, 401 → onAuthError() and null, anything else → throw.
 vi.mock('./pd2website/usePD2Website', () => ({
@@ -72,7 +59,11 @@ function outgoingOffer(id: string, extra: object = {}) {
     user_id: 'me',
     created_at: '2026-10-18T10:00:00Z',
     updated_at: '2026-10-18T10:00:00Z',
-    listing: { _id: `listing-${id}`, item: { name: `Item ${id}` }, user: { _id: `seller-${id}`, username: `seller-${id}` } },
+    listing: {
+      _id: `listing-${id}`,
+      item: { name: `Item ${id}` },
+      user: { _id: `seller-${id}`, username: `seller-${id}` },
+    },
     ...extra,
   };
 }
@@ -89,17 +80,19 @@ function patchCalls() {
   return vi
     .mocked(tauriFetch)
     .mock.calls.filter(([, init]) => init?.method === 'PATCH')
-    .map(([url, init]) => [String(url).replace('https://api.projectdiablo2.com/market/', ''), JSON.parse(String(init?.body))]);
+    .map(([url, init]) => [
+      String(url).replace('https://api.projectdiablo2.com/market/', ''),
+      JSON.parse(String(init?.body)),
+    ]);
 }
 
 function toasts() {
-  return vi
-    .mocked(emit)
-    .mock.calls.filter(([event]) => event === 'toast-event')
-    .map(([, payload]) => payload);
+  return vi.mocked(showToast).mock.calls.map(([payload]) => payload);
 }
 
-async function renderOffers(props: { settings?: ISettings; authData?: AuthData | null; onAuthError?: () => void } = {}) {
+async function renderOffers(
+  props: { settings?: ISettings; authData?: AuthData | null; onAuthError?: () => void } = {},
+) {
   const hook = renderHook(() => useTradeOffers({ settings, authData, ...props }));
   await act(async () => {});
   return hook;
@@ -107,7 +100,6 @@ async function renderOffers(props: { settings?: ISettings; authData?: AuthData |
 
 beforeEach(() => {
   localStorage.clear();
-  bus.handlers.clear();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   api = {
     incoming: () => apiResponse({ data: [] }),
@@ -145,7 +137,9 @@ describe('useTradeOffers fetching', () => {
       });
     const { result } = await renderOffers();
 
-    expect(result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.message, o.acceptedOfferId])).toEqual([
+    expect(
+      result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.message, o.acceptedOfferId]),
+    ).toEqual([
       ['o1', 'buyer-o1', '2 ist', 'Offer: 2 ist', 'o1'],
       ['o3', 'Unknown', '3 HR', 'Offer: 3', 'o1'],
     ]);
@@ -172,7 +166,9 @@ describe('useTradeOffers fetching', () => {
       });
     const { result } = await renderOffers();
 
-    expect(result.current.outgoingOffers.map((o) => [o.id, o.isIncoming, o.playerName, o.itemName, o.listingId])).toEqual([
+    expect(
+      result.current.outgoingOffers.map((o) => [o.id, o.isIncoming, o.playerName, o.itemName, o.listingId]),
+    ).toEqual([
       ['a', false, 'seller-a', 'Item a', 'listing-a'],
       ['b', false, 'Seller', 'Arach', 'arch'],
     ]);
@@ -181,10 +177,10 @@ describe('useTradeOffers fetching', () => {
   it.each([
     ['no auth data', { authData: null }],
     ['no token', { settings: {} as ISettings }],
-  ])('does not fetch or listen with %s', async (_label, props) => {
-    await renderOffers(props);
+  ])('does not fetch with %s', async (_label, props) => {
+    const { result } = await renderOffers(props);
+    await act(async () => result.current.refresh());
     expect(tauriFetch).not.toHaveBeenCalled();
-    expect(bus.handlers.get('refresh-offers')?.size ?? 0).toBe(0);
   });
 
   it('clears offers when a refetch fails', async () => {
@@ -195,7 +191,7 @@ describe('useTradeOffers fetching', () => {
 
     api.incoming = () => apiResponse(null, 500);
     api.outgoing = () => apiResponse(null, 500);
-    await act(() => emit('refresh-offers'));
+    await act(async () => result.current.refresh());
 
     expect(result.current.incomingOffers).toEqual([]);
     expect(result.current.outgoingOffers).toEqual([]);
@@ -213,28 +209,22 @@ describe('useTradeOffers fetching', () => {
     expect(result.current.outgoingOffers).toEqual([]);
   });
 
-  it('refetches on refresh-offers and on refresh()', async () => {
+  it('refetches both lists on refresh()', async () => {
     const { result } = await renderOffers();
     api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('new')])] });
-
-    await act(() => emit('refresh-offers'));
-    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
-
     api.outgoing = () => apiResponse({ data: [outgoingOffer('x')] });
+
     await act(async () => result.current.refresh());
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
     expect(result.current.outgoingOffers.map((o) => o.id)).toEqual(['x']);
   });
 
-  it('publishes incoming/outgoing counts', async () => {
+  it('publishes the total offer count as the tradeOffers badge', async () => {
     api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('o1'), websiteOffer('o2')])] });
     api.outgoing = () => apiResponse({ data: [outgoingOffer('a')] });
     await renderOffers();
 
-    const last = vi
-      .mocked(emit)
-      .mock.calls.filter(([event]) => event === 'trade-offers-count-updated')
-      .at(-1)?.[1];
-    expect(last).toEqual({ incomingCount: 2, outgoingCount: 1, totalCount: 3 });
+    expect(vi.mocked(setBadgeCount)).toHaveBeenLastCalledWith('tradeOffers', 3);
   });
 
   // BUG: useTradeOffers.tsx:330-342/344-375 — incoming and outgoing fetches share one `loading` flag, so

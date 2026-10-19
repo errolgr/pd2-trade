@@ -230,26 +230,69 @@ pub fn is_diablo_focused() -> bool {
     .unwrap_or(false)
 }
 
-pub fn get_work_area(app: &AppHandle) -> Option<WindowRect> {
-    let monitor = app.primary_monitor().ok()??;
-    let size = monitor.size();
-    let position = monitor.position();
+/// Full rect of the monitor containing the Diablo II window (by its center), else the primary monitor.
+pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
+    let monitor_rect = |monitor: &tauri::Monitor| {
+        let position = monitor.position();
+        let size = monitor.size();
+        WindowRect {
+            x: position.x,
+            y: position.y,
+            width: size.width as i32,
+            height: size.height as i32,
+        }
+    };
 
-    Some(WindowRect {
-        x: position.x,
-        y: position.y,
-        width: size.width as i32,
-        height: size.height as i32,
-    })
+    if let Some(d2) = get_diablo_rect(app) {
+        let (cx, cy) = (d2.x + d2.width / 2, d2.y + d2.height / 2);
+        let containing = app.available_monitors().ok().and_then(|monitors| {
+            monitors.iter().map(monitor_rect).find(|m| {
+                cx >= m.x && cx < m.x + m.width && cy >= m.y && cy < m.y + m.height
+            })
+        });
+        if containing.is_some() {
+            return containing;
+        }
+    }
+
+    app.primary_monitor().ok().flatten().as_ref().map(monitor_rect)
 }
 
-pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    let d2 = get_diablo_rect(app);
-    if let Some(rect) = &d2 {
-        return Some(rect.clone());
-    }
-    let wa = get_work_area(app);
-    wa
+/// Best-effort: activate, raise and focus the Diablo II window (EWMH + core X11).
+pub fn focus_diablo() -> bool {
+    use x11rb::protocol::xproto::{
+        ClientMessageEvent, ConfigureWindowAux, EventMask, InputFocus, StackMode,
+    };
+
+    with_connection(|conn, screen_num| -> Result<bool, Box<dyn Error>> {
+        let Some(window) = find_diablo_window(conn)? else {
+            return Ok(false);
+        };
+        let root = conn.setup().roots[screen_num].root;
+
+        // EWMH activation request (source indication 2 = pager, honoured by most WMs).
+        let net_active_window = get_atom(conn, "_NET_ACTIVE_WINDOW")?;
+        let activate = ClientMessageEvent::new(
+            32,
+            window,
+            net_active_window,
+            [2, x11rb::CURRENT_TIME, 0, 0, 0],
+        );
+        conn.send_event(
+            false,
+            root,
+            EventMask::SUBSTRUCTURE_REDIRECT | EventMask::SUBSTRUCTURE_NOTIFY,
+            activate,
+        )?;
+
+        // Fallback for WMs that ignore the request.
+        conn.configure_window(window, &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE))?;
+        conn.set_input_focus(InputFocus::PARENT, window, x11rb::CURRENT_TIME)?;
+        conn.flush()?;
+        Ok(true)
+    })
+    .and_then(Result::ok)
+    .unwrap_or(false)
 }
 
 pub fn initialize_diablo_focus_monitoring(

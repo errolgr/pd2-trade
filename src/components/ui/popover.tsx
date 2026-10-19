@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@/lib/utils';
+import { usePanelPortalContainer } from '@/overlay/portal';
 
 const Popover = PopoverPrimitive.Root;
 
@@ -13,7 +14,7 @@ const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 >(({ className, align = 'center', sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
+  <PopoverPrimitive.Portal container={usePanelPortalContainer()}>
     <PopoverPrimitive.Content
       ref={ref}
       align={align}

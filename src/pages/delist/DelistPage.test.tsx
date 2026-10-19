@@ -1,23 +1,22 @@
 // @vitest-environment happy-dom
-import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { showToast } from '@/overlay';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit, listen } from '@/lib/browser-events';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import DelistPage from './DelistPage';
 
-vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
-vi.mock('@/hooks/useOptions', () => ({ OptionsProvider: ({ children }: { children: React.ReactNode }) => children }));
-vi.mock('@/hooks/useItems', () => ({ ItemsProvider: ({ children }: { children: React.ReactNode }) => children }));
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  ChildPd2WebsiteProvider: ({ children }: { children: React.ReactNode }) => children,
-  usePd2Website: vi.fn(),
+const h = vi.hoisted(() => ({
+  panel: {
+    payload: undefined as { listings: unknown[] } | undefined,
+    payloadVersion: 0,
+    close: (() => {}) as () => void,
+  },
 }));
+
+vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => h.panel }));
+vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
+vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 
 const listing = (n: number, over: Record<string, unknown> = {}) =>
   ({
@@ -29,39 +28,32 @@ const listing = (n: number, over: Record<string, unknown> = {}) =>
   }) as unknown as MarketListingEntry;
 
 let deleteMarketListing: Mock<(id: string) => Promise<void>>;
-let close: Mock<() => Promise<void>>;
-let delistUpdate: ((e: { payload: MarketListingEntry[] }) => void) | null;
-let unlisten: Mock<() => void>;
+let close: Mock<() => void>;
 
-function renderPage(listings: MarketListingEntry[] | string) {
-  const data = typeof listings === 'string' ? listings : encodeURIComponent(btoa(JSON.stringify(listings)));
-  return render(
-    <MemoryRouter initialEntries={[`/delist?data=${data}`]}>
-      <DelistPage />
-    </MemoryRouter>,
-  );
+/** Simulates openPanel('delist', { listings }): new payload, bumped payloadVersion. */
+function openWith(listings: MarketListingEntry[] | undefined) {
+  h.panel = { payload: listings && { listings }, payloadVersion: h.panel.payloadVersion + 1, close };
 }
 
-const toasts = () => vi.mocked(emit).mock.calls.filter(([e]) => e === 'toast-event').map(([, p]) => p);
+function renderPage(listings: MarketListingEntry[] | undefined) {
+  openWith(listings);
+  return render(<DelistPage />);
+}
+
+const toasts = () => vi.mocked(showToast).mock.calls.map(([p]) => p);
 const card = (name: string) => screen.getByRole('button', { name: `Remove ${name} listing` });
 
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   deleteMarketListing = vi.fn(async () => {});
-  close = vi.fn(async () => {});
-  delistUpdate = null;
-  unlisten = vi.fn();
+  close = vi.fn();
+  h.panel = { payload: undefined, payloadVersion: 0, close };
   vi.mocked(usePd2Website).mockImplementation(() => ({ deleteMarketListing }) as never);
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ close } as never);
-  vi.mocked(listen).mockImplementation(async (event, cb) => {
-    if (event === 'delist-update') delistUpdate = cb as typeof delistUpdate;
-    return unlisten;
-  });
 });
 afterEach(cleanup);
 
 describe('DelistPage', () => {
-  it('renders the listings passed in the URL with their prices and a count', () => {
+  it('renders the listings from the panel payload with their prices and a count', () => {
     renderPage([listing(1, { hr_price: 3, price: 'or offer' }), listing(2)]);
     expect(screen.getAllByRole('button', { name: /^Remove Item \d listing$/ })).toHaveLength(2);
     expect(screen.queryByText('3 HR')).not.toBeNull();
@@ -69,16 +61,16 @@ describe('DelistPage', () => {
     expect(screen.getByLabelText('2 listings').textContent).toBe('2');
   });
 
-  it('renders nothing (and does not crash) for malformed data', () => {
-    renderPage('%%%not-base64');
+  it('renders nothing (and does not crash) without a payload', () => {
+    renderPage(undefined);
     expect(screen.queryAllByRole('button', { name: /^Remove/ })).toHaveLength(0);
     expect(screen.queryByLabelText(/listings$/)).toBeNull();
   });
 
-  it('deletes the clicked listing, toasts, and closes the window', async () => {
+  it('deletes the clicked listing, toasts, and closes the panel', async () => {
     const order: string[] = [];
     deleteMarketListing.mockImplementation(async (id) => void order.push(`delete ${id}`));
-    close.mockImplementation(async () => void order.push('close'));
+    close.mockImplementation(() => void order.push('close'));
     renderPage([listing(1), listing(2)]);
     await act(async () => {
       fireEvent.click(card('Item 2'));
@@ -140,16 +132,15 @@ describe('DelistPage', () => {
     expect(deleteMarketListing).not.toHaveBeenCalled();
   });
 
-  it('replaces the list on delist-update and re-enables selection', async () => {
+  it('replaces the list when reopened with new listings and re-enables selection', async () => {
     let finish!: () => void;
     deleteMarketListing.mockImplementationOnce(() => new Promise<void>((r) => (finish = r)));
-    renderPage([listing(1)]);
+    const view = renderPage([listing(1)]);
     await act(async () => {
       fireEvent.click(card('Item 1'));
     });
-    await act(async () => {
-      delistUpdate!({ payload: [listing(7), listing(8)] });
-    });
+    openWith([listing(7), listing(8)]);
+    view.rerender(<DelistPage />);
     expect(screen.queryByText('Item 1')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
     await act(async () => {
@@ -159,19 +150,9 @@ describe('DelistPage', () => {
     await act(async () => finish());
   });
 
-  it('close button closes the window and swallows close errors', async () => {
-    close.mockRejectedValueOnce(new Error('already closed'));
+  it('close button closes the panel', () => {
     renderPage([listing(1)]);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(close).toHaveBeenCalledTimes(1);
-  });
-
-  it('stops listening for updates on unmount', async () => {
-    const view = renderPage([]);
-    await act(async () => {});
-    view.unmount();
-    expect(unlisten).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,24 +14,24 @@ afterEach(cleanup);
 const bar = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-slot="window-chrome"]')!;
 
 describe('WindowChrome', () => {
-  it('is a Tauri drag region with a grip by default', () => {
+  it('is the panel drag handle with a grip by default', () => {
     const { container } = render(<WindowChrome title="Offers" />);
-    expect(bar(container).hasAttribute('data-tauri-drag-region')).toBe(true);
-    expect(screen.getByText('Offers').hasAttribute('data-tauri-drag-region')).toBe(true);
+    expect(bar(container).hasAttribute('data-panel-drag')).toBe(true);
+    expect(screen.getByText('Offers').closest('[data-panel-drag]')).toBe(bar(container));
     expect(bar(container).querySelector('svg[aria-hidden]')).not.toBeNull();
   });
 
   it('drops drag regions and the grip when dragRegion is false', () => {
     const { container } = render(<WindowChrome title="Static"
       dragRegion={false} />);
-    expect(container.querySelector('[data-tauri-drag-region]')).toBeNull();
+    expect(container.querySelector('[data-panel-drag]')).toBeNull();
     expect(bar(container).querySelector('svg')).toBeNull();
   });
 
   it('can hide the grip while keeping the drag region', () => {
     const { container } = render(<WindowChrome title="T"
       showGrip={false} />);
-    expect(bar(container).hasAttribute('data-tauri-drag-region')).toBe(true);
+    expect(bar(container).hasAttribute('data-panel-drag')).toBe(true);
     expect(bar(container).querySelector('svg')).toBeNull();
   });
 
@@ -67,8 +67,12 @@ describe('WindowChrome', () => {
 
 describe('WindowPanel', () => {
   it('renders a plain panel passing through DOM props', () => {
-    render(<WindowPanel id="p"
-      aria-label="panel">content</WindowPanel>);
+    render(
+      <WindowPanel id="p"
+        aria-label="panel">
+        content
+      </WindowPanel>,
+    );
     const panel = screen.getByLabelText('panel');
     expect(panel.id).toBe('p');
     expect(panel.getAttribute('data-slot')).toBe('window-panel');
@@ -76,14 +80,22 @@ describe('WindowPanel', () => {
   });
 
   it('animates in only when requested and motion is not reduced', () => {
-    const { rerender } = render(<WindowPanel animate
-      aria-label="panel">x</WindowPanel>);
+    const { rerender } = render(
+      <WindowPanel animate
+        aria-label="panel">
+        x
+      </WindowPanel>,
+    );
     // framer-motion sets the initial "hidden" variant as inline style
     expect(screen.getByLabelText('panel').getAttribute('style')).toContain('opacity');
 
     vi.mocked(useReducedMotionSafe).mockReturnValue(true);
-    rerender(<WindowPanel animate
-      aria-label="panel">x</WindowPanel>);
+    rerender(
+      <WindowPanel animate
+        aria-label="panel">
+        x
+      </WindowPanel>,
+    );
     expect(screen.getByLabelText('panel').getAttribute('style')).toBeNull();
   });
 });

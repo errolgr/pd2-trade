@@ -9,11 +9,10 @@ import { Form, FormControl, FormField } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { isTauri } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
-import { openCenteredWindow } from '@/lib/window';
+import { useOverlay } from '@/overlay';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 export function AboutForm() {
@@ -23,6 +22,7 @@ export function AboutForm() {
   const [isChecking, setIsChecking] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<any>(null);
   const { checkForUpdates, downloadUpdate } = useUpdater();
+  const { openPanel } = useOverlay();
 
   useEffect(() => {
     getVersion().then(setVersion);
@@ -69,24 +69,7 @@ export function AboutForm() {
     }
   };
 
-  const openChangelog = async () => {
-    // Try to show existing hidden window first
-    if (isTauri()) {
-      const existing = await WebviewWindow.getByLabel('ChangeLog');
-      if (existing) {
-        await existing.show();
-        await existing.setFocus();
-        return;
-      }
-    }
-    openCenteredWindow('ChangeLog', '/change-log', {
-      decorations: false,
-      transparent: true,
-      focus: true,
-      shadow: false,
-      skipTaskbar: true,
-    });
-  };
+  const openChangelog = () => openPanel('changeLog');
 
   return (
     <div className="flex flex-col gap-y-6">

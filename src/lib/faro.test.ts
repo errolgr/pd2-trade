@@ -18,7 +18,6 @@ const sdk = vi.hoisted(() => {
     initializeFaro: vi.fn(),
     getWebInstrumentations: vi.fn(),
     tauri: { value: false },
-    getCurrentWindow: vi.fn(),
   };
 });
 
@@ -30,7 +29,6 @@ vi.mock('@grafana/faro-web-sdk', () => ({
 }));
 vi.mock('@grafana/faro-web-tracing', () => ({ TracingInstrumentation: sdk.TracingInstrumentation }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => sdk.tauri.value }));
-vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: sdk.getCurrentWindow }));
 vi.mock('@/pages/currency/lib/price-api', () => ({ API_BASE_URL: 'https://prices.pd2trader.com' }));
 
 /** Loads faro.ts fresh: BACKEND_URL (pkce.ts) is read from the env at module load. */
@@ -82,19 +80,10 @@ describe('initFaro', () => {
   });
 
   it.each([
-    ['browser', false, () => ({ label: 'x' }), 'browser'],
-    ['Tauri window', true, () => ({ label: 'QuickList' }), 'QuickList'],
-    [
-      'Tauri without a window',
-      true,
-      () => {
-        throw new Error('no window');
-      },
-      'unknown',
-    ],
-  ])('labels the session and view for a %s', async (_case, isTauri, getWindow, label) => {
+    ['browser', false, 'browser'],
+    ['Tauri overlay', true, 'Main'],
+  ])('labels the session and view for %s', async (_case, isTauri, label) => {
     sdk.tauri.value = isTauri;
-    sdk.getCurrentWindow.mockImplementation(getWindow);
 
     const config = await init();
 

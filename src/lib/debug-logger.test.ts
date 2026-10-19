@@ -2,13 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import type * as DebugLoggerModule from './debug-logger';
 import { invoke } from '@tauri-apps/api/core';
 import { readTextFile } from '@/lib/browser-fs';
-import { listen } from '@/lib/browser-events';
 
 const tauri = vi.hoisted(() => ({ value: true }));
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri.value, invoke: vi.fn() }));
 vi.mock('@/lib/browser-fs', () => ({ readTextFile: vi.fn(), BaseDirectory: { AppConfig: 13 } }));
-vi.mock('@/lib/browser-events', () => ({ listen: vi.fn() }));
 
 let logger: typeof DebugLoggerModule;
 let original: { log: MockInstance; warn: MockInstance; error: MockInstance };
@@ -40,7 +38,6 @@ beforeEach(async () => {
     error: vi.spyOn(console, 'error').mockImplementation(() => {}),
   };
   vi.mocked(invoke).mockResolvedValue(undefined);
-  vi.mocked(listen).mockResolvedValue(() => {});
   // Fresh module per test: debug-logger keeps its buffer/active flag and the captured console in module state.
   vi.resetModules();
   logger = await import('./debug-logger');
@@ -164,19 +161,6 @@ describe('initDebugLoggingFromSettings', () => {
 
     await logger.initDebugLoggingFromSettings();
 
-    expect(console.log).toBe(original.log);
-  });
-
-  it('follows the toggle from settings-updated events', async () => {
-    vi.mocked(readTextFile).mockRejectedValue(new Error('not found'));
-    await logger.initDebugLoggingFromSettings();
-    const [event, handler] = vi.mocked(listen).mock.calls[0];
-    expect(event).toBe('settings-updated');
-
-    handler({ payload: { debugLoggingEnabled: true } });
-    expect(console.log).not.toBe(original.log);
-
-    handler({ payload: { debugLoggingEnabled: false } });
     expect(console.log).toBe(original.log);
   });
 });

@@ -2,29 +2,16 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["*"],
+  "windows": ["Main"],
   "permissions": [
     "core:default",
     "opener:default",
-    "core:window:allow-start-dragging",
-    "core:window:allow-hide",
-    "core:window:allow-show",
     "core:window:allow-set-focus",
-    "core:window:allow-set-title",
-    "core:window:allow-set-size",
-    "core:window:allow-set-position",
-    "core:window:allow-unminimize",
-    "core:app:allow-app-show",
-    "core:window:allow-set-ignore-cursor-events",
-    "core:webview:allow-create-webview-window",
-    "core:webview:allow-create-webview",
-    "core:window:allow-close",
-    "core:webview:allow-webview-close",
+    "core:window:allow-set-focusable",
     "core:resources:allow-close",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
-    "core:window:allow-destroy",
     "updater:default",
     "process:default",
     "process:allow-exit",
@@ -109,7 +96,6 @@
           "url": "https://caritive-zoila-unhumorously.ngrok-free.dev/**"
         }
       ]
-    },
-    "window-state:default"
+    }
   ]
 }

@@ -27,7 +27,6 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { emit } from '@/lib/browser-events';
 import { openUrl } from '@/lib/browser-opener';
 import { PD2Website } from '@/common/constants';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -45,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import EmptyState from './EmptyState';
 import { countChip, itemCard } from './styles';
+import { showToast } from '@/overlay';
 
 interface ListedItemsTabProps {
   onClose: () => void;
@@ -344,7 +344,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { duration_ms: duration },
         { outcome: 'success', source: 'listed_items_tab' },
       );
-      emit('toast-event', 'Item bumped successfully!');
+      showToast('Item bumped successfully!');
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement(
@@ -353,7 +353,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { outcome: 'error', source: 'listed_items_tab' },
       );
       console.error('Failed to bump item:', err);
-      emit('toast-event', 'Failed to bump item');
+      showToast('Failed to bump item');
     } finally {
       setBumpingListingId(null);
     }
@@ -361,7 +361,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleBumpAll = async () => {
     if (!authData) {
-      emit('toast-event', 'Unable to bump listings: not authenticated');
+      showToast('Unable to bump listings: not authenticated');
       return;
     }
 
@@ -379,12 +379,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'success' });
-      emit('toast-event', 'Successfully bumped all items!');
+      showToast('Successfully bumped all items!');
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to bump all items:', err);
-      emit('toast-event', 'Failed to bump all items');
+      showToast('Failed to bump all items');
     } finally {
       setIsBumpingAll(false);
     }
@@ -421,12 +421,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'success' });
-      emit('toast-event', `Removed ${listing.item.name} market listing.`);
+      showToast(`Removed ${listing.item.name} market listing.`);
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to delete listing:', err);
-      emit('toast-event', 'Failed to delete listing');
+      showToast('Failed to delete listing');
       // Refresh on error to restore correct state
       setCurrentPage(0);
       await fetchListings();
@@ -494,12 +494,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { duration_ms: duration, price_hr: hasPrice ? numericPrice : undefined },
         { outcome: 'success', listing_type: listingType },
       );
-      emit('toast-event', 'Listing updated!');
+      showToast('Listing updated!');
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_edit_save', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to update listing:', err);
-      emit('toast-event', 'Failed to update listing');
+      showToast('Failed to update listing');
     }
   };
 

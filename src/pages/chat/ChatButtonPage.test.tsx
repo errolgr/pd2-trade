@@ -1,21 +1,26 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emit, listen } from '@/lib/browser-events';
+import {
+  confirmToast,
+  setBadgeCount,
+  showToast,
+  useOverlay,
+  type ConfirmToastOptions,
+  type OverlayApi,
+} from '@/overlay';
+import type * as Overlay from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import ChatButtonPage from './ChatButtonPage';
 
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
-vi.mock('@/hooks/useOptions', () => ({
-  useOptions: vi.fn(),
-  OptionsProvider: ({ children }: { children: ReactNode }) => children,
+vi.mock('@/overlay', async (importOriginal) => ({
+  ...(await importOriginal<typeof Overlay>()),
+  showToast: vi.fn(),
+  confirmToast: vi.fn(),
+  useOverlay: vi.fn(),
 }));
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  ChildPd2WebsiteProvider: ({ children }: { children: ReactNode }) => children,
-}));
-vi.mock('@/hooks/useItems', () => ({ ItemsProvider: ({ children }: { children: ReactNode }) => children }));
+vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 
 beforeAll(() => {
   MotionGlobalConfig.skipAnimations = true;
@@ -24,106 +29,81 @@ afterAll(() => {
   MotionGlobalConfig.skipAnimations = false;
 });
 
-type Handler = (event: { payload: unknown }) => unknown;
-let handlers: Map<string, Handler>;
-let unlistened: string[];
 const updateSettings = vi.fn();
-
-async function fire(event: string, payload?: unknown) {
-  await act(async () => {
-    await handlers.get(event)!({ payload });
-  });
-}
-
-async function renderPage() {
-  const view = render(<ChatButtonPage />);
-  await act(async () => {});
-  return view;
-}
+const overlay = { openPanel: vi.fn(), togglePanel: vi.fn() };
 
 beforeEach(() => {
-  handlers = new Map();
-  unlistened = [];
+  vi.clearAllMocks();
   updateSettings.mockResolvedValue(undefined);
-  vi.mocked(useOptions).mockImplementation(
-    () => ({ updateSettings }) as unknown as ReturnType<typeof useOptions>,
-  );
-  vi.mocked(emit).mockResolvedValue(undefined);
-  vi.mocked(listen).mockImplementation(async (event: string, cb: Handler) => {
-    handlers.set(event, cb);
-    return () => unlistened.push(event);
-  });
-  vi.spyOn(console, 'log').mockImplementation(() => {});
+  vi.mocked(useOptions).mockImplementation(() => ({ updateSettings }) as never);
+  vi.mocked(useOverlay).mockImplementation(() => overlay as unknown as OverlayApi);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  act(() => {
+    setBadgeCount('chatUnread', 0);
+    setBadgeCount('tradeMessages', 0);
+    setBadgeCount('tradeOffers', 0);
+  });
+});
 
 describe('ChatButtonPage', () => {
-  it('shows the unread chat count pushed by the chat window', async () => {
-    await renderPage();
+  it('shows the unread chat badge count', async () => {
+    render(<ChatButtonPage />);
     expect(screen.queryByLabelText(/unread messages$/)).toBeNull();
 
-    await fire('chat-unread-count-updated', { count: 4 });
+    act(() => setBadgeCount('chatUnread', 4));
     expect(screen.getByLabelText('4 unread messages').textContent).toBe('4');
 
-    await fire('chat-unread-count-updated', { count: 0 });
-    expect(screen.queryByLabelText(/unread messages$/)).toBeNull();
+    // let the badge finish its exit animation
+    await act(async () => setBadgeCount('chatUnread', 0));
+    await waitFor(() => expect(screen.queryByLabelText(/unread messages$/)).toBeNull());
   });
 
-  it('sums whisper and website offer counts into one trade badge, each source replacing its own share', async () => {
-    await renderPage();
-    await fire('trade-messages-count-updated', { count: 2 });
+  it('sums whisper and website offer badges into one trade badge, each source replacing its own share', () => {
+    render(<ChatButtonPage />);
+    act(() => setBadgeCount('tradeMessages', 2));
     expect(screen.getByLabelText('2 trade offers')).not.toBeNull();
 
-    await fire('trade-offers-count-updated', { incomingCount: 3, outgoingCount: 1, totalCount: 4 });
+    act(() => setBadgeCount('tradeOffers', 4));
     expect(screen.getByLabelText('6 trade offers')).not.toBeNull();
 
-    await fire('trade-messages-count-updated', { count: 0 });
+    act(() => setBadgeCount('tradeMessages', 0));
     expect(screen.getByLabelText('4 trade offers')).not.toBeNull();
   });
 
-  it('disables the overlay setting once the toast confirmation arrives, then notifies the user', async () => {
+  it('asks for confirmation before disabling the overlay, then disables it and notifies the user', async () => {
     const order: string[] = [];
     updateSettings.mockImplementation(async (s: unknown) => {
       order.push(`update ${JSON.stringify(s)}`);
     });
-    vi.mocked(emit).mockImplementation(async (event: string) => {
-      order.push(`emit ${event}`);
+    vi.mocked(showToast).mockImplementation(() => {
+      order.push('showToast');
     });
-    await renderPage();
+    render(<ChatButtonPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Disable Overlay' }));
+    expect(confirmToast).toHaveBeenCalledTimes(1);
     expect(updateSettings).not.toHaveBeenCalled();
 
-    await fire('confirm-disable-overlay');
-    expect(order).toEqual([
-      'emit toast-confirm-disable-overlay',
-      'update {"chatButtonOverlayEnabled":false}',
-      'emit toast-event',
-    ]);
+    const options = vi.mocked(confirmToast).mock.calls[0][0] as ConfirmToastOptions;
+    expect(options).toMatchObject({ title: 'Disable Chat Button Overlay?', confirmLabel: 'Disable' });
+    await act(async () => {
+      await options.onConfirm();
+    });
+    expect(order).toEqual(['update {"chatButtonOverlayEnabled":false}', 'showToast']);
   });
 
   it.each([
-    ['Open PD2 Chat', 'toggle-chat-window'],
-    ['Settings', 'open-settings'],
-    ['Trade Messages', 'toggle-trade-messages-window'],
-    ['Manage Listings', 'open-quick-list-manage'],
-  ])('%s emits %s', async (name, event) => {
-    await renderPage();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name }));
-    });
-    expect(vi.mocked(emit).mock.calls.map(([e]) => e)).toEqual([event]);
-  });
-
-  it('removes all listeners on unmount', async () => {
-    const view = await renderPage();
-    view.unmount();
-    expect(unlistened.sort()).toEqual([
-      'chat-unread-count-updated',
-      'confirm-disable-overlay',
-      'trade-messages-count-updated',
-      'trade-offers-count-updated',
-    ]);
+    ['Open PD2 Chat', 'togglePanel', ['chat']],
+    ['Settings', 'openPanel', ['settings']],
+    ['Trade Messages', 'togglePanel', ['tradeMessages']],
+    // keepPayload: an open quick list keeps the item being listed
+    ['Manage Listings', 'openPanel', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
+  ] as const)('%s calls %s', (name, method, args) => {
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name }));
+    expect(overlay[method].mock.calls).toEqual([args]);
   });
 });

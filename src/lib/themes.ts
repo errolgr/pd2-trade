@@ -14,7 +14,6 @@
  */
 
 import { useSyncExternalStore, type CSSProperties } from 'react';
-import { listen } from '@/lib/browser-events';
 
 export type ThemeMode = 'dark' | 'light';
 
@@ -785,20 +784,12 @@ function readStoredThemeId(): string | undefined {
 
 /**
  * Called once from main.tsx before the first render: applies the cached theme
- * synchronously (no flash of the default theme) and follows theme changes made
- * in any window. `settings-updated` is an app-wide event carrying the saved
- * settings, so this also covers windows that do not mount OptionsProvider
- * (e.g. /toast); OptionsProvider windows additionally re-apply from their state.
+ * synchronously (no flash of the default theme). Later changes are applied by
+ * OptionsProvider from its settings state.
  */
 export function initTheme(): void {
   applyTheme(getTheme(readStoredThemeId()));
   applyWindowTransparency(readStoredWindowTransparency());
-  listen<{ themeId?: string; windowTransparency?: number }>('settings-updated', ({ payload }) => {
-    if (payload?.themeId) applyTheme(getTheme(payload.themeId));
-    if (payload) applyWindowTransparency(payload.windowTransparency);
-  }).catch(() => {
-    // Event bridge unavailable: the theme still follows on the next window load.
-  });
 }
 
 const readMode = (): ThemeMode => (document.documentElement.classList.contains('light') ? 'light' : 'dark');

@@ -1,72 +1,20 @@
 /**
- * Browser-compatible event system
- * Uses Tauri events in Tauri environment, falls back to CustomEvent in browser
+ * Subscriptions to events emitted by the Rust side (chat watcher, Diablo focus, plugin events).
+ *
+ * The frontend never emits app events: UI actions go through the overlay API (`@/overlay`) and data
+ * through providers. In browser mode (`isTauri() === false`) there is no Rust side, so `listen` is a
+ * no-op that resolves to a harmless unlisten function.
  */
 
 import { isTauri } from '@tauri-apps/api/core';
-import { emit as tauriEmit, listen as tauriListen } from '@tauri-apps/api/event';
+import { listen as tauriListen } from '@tauri-apps/api/event';
 
 type EventCallback<T = any> = (event: { payload: T }) => void;
 
-const eventListeners = new Map<string, Set<EventCallback>>();
+const noop = () => {};
 
-/**
- * Emit an event
- */
-export async function emit<T = any>(event: string, payload?: T): Promise<void> {
-  if (isTauri()) {
-    await tauriEmit(event, payload);
-    return;
-  }
-
-  // Browser fallback: use CustomEvent
-  const customEvent = new CustomEvent(event, { detail: payload });
-  window.dispatchEvent(customEvent);
-
-  // Also call registered listeners directly
-  const listeners = eventListeners.get(event);
-  if (listeners) {
-    listeners.forEach((callback) => {
-      try {
-        callback({ payload });
-      } catch (error) {
-        console.error(`Error in event listener for ${event}:`, error);
-      }
-    });
-  }
-}
-
-/**
- * Listen to an event
- */
+/** Listen to a Rust-emitted event; resolves to the unlisten function. */
 export async function listen<T = any>(event: string, callback: EventCallback<T>): Promise<() => void> {
-  if (isTauri()) {
-    return await tauriListen<T>(event, callback);
-  }
-
-  // Browser fallback: use CustomEvent
-  const handler = (e: Event) => {
-    const customEvent = e as CustomEvent<T>;
-    callback({ payload: customEvent.detail });
-  };
-
-  window.addEventListener(event, handler);
-
-  // Also register in our listener map
-  if (!eventListeners.has(event)) {
-    eventListeners.set(event, new Set());
-  }
-  eventListeners.get(event)!.add(callback);
-
-  // Return unlisten function
-  return () => {
-    window.removeEventListener(event, handler);
-    const listeners = eventListeners.get(event);
-    if (listeners) {
-      listeners.delete(callback);
-      if (listeners.size === 0) {
-        eventListeners.delete(event);
-      }
-    }
-  };
+  if (!isTauri()) return noop;
+  return await tauriListen<T>(event, callback);
 }

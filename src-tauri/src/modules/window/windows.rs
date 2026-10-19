@@ -5,10 +5,15 @@ use tauri::{AppHandle, Emitter};
 
 use windows_sys::Win32::{
     Foundation::{HWND, POINT, RECT},
+    Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
+        MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
+    },
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetCursorPos, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
-        SystemParametersInfoW, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
+        FindWindowW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId, IsIconic,
+        SetForegroundWindow, ShowWindow, EVENT_SYSTEM_FOREGROUND, SW_RESTORE,
+        WINEVENT_OUTOFCONTEXT,
     },
 };
 
@@ -16,12 +21,14 @@ fn to_wide(s: &str) -> Vec<u16> {
     OsStr::new(s).encode_wide().chain(iter::once(0)).collect()
 }
 
-pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+fn find_diablo_hwnd() -> Option<HWND> {
     let title_w = to_wide("Diablo II");
     let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
-    if hwnd == 0 {
-        return None;
-    }
+    (hwnd != 0).then_some(hwnd)
+}
+
+pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+    let hwnd = find_diablo_hwnd()?;
     let mut r = RECT {
         left: 0,
         top: 0,
@@ -41,13 +48,10 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
 }
 
 pub fn is_diablo_focused() -> bool {
-    let title_w = to_wide("Diablo II");
-    let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
-
     // 1. Check if Diablo II window was found
-    if hwnd == 0 {
+    let Some(hwnd) = find_diablo_hwnd() else {
         return false;
-    }
+    };
 
     let foreground = unsafe { GetForegroundWindow() };
 
@@ -68,32 +72,44 @@ pub fn is_diablo_focused() -> bool {
     false
 }
 
-pub fn get_work_area(_app: &AppHandle) -> Option<WindowRect> {
-    let mut work_area = RECT {
-        left: 0,
-        top: 0,
-        right: 0,
-        bottom: 0,
+/// Gives keyboard focus back to the Diablo II window.
+pub fn focus_diablo() -> bool {
+    let Some(hwnd) = find_diablo_hwnd() else {
+        return false;
     };
-    let ok =
-        unsafe { SystemParametersInfoW(SPI_GETWORKAREA, 0, &mut work_area as *mut _ as *mut _, 0) };
-    if ok == 0 {
+    unsafe {
+        if IsIconic(hwnd) != 0 {
+            ShowWindow(hwnd, SW_RESTORE);
+        }
+        SetForegroundWindow(hwnd) != 0
+    }
+}
+
+fn monitor_rect(monitor: HMONITOR) -> Option<WindowRect> {
+    if monitor == 0 {
         return None;
     }
+    let mut info: MONITORINFO = unsafe { std::mem::zeroed() };
+    info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+    if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
+        return None;
+    }
+    let r = info.rcMonitor;
     Some(WindowRect {
-        x: work_area.left,
-        y: work_area.top,
-        width: work_area.right - work_area.left,
-        height: work_area.bottom - work_area.top,
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
     })
 }
 
-pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    if is_diablo_focused() {
-        get_diablo_rect(app)
-    } else {
-        get_work_area(app)
-    }
+/// Full rect (not work area) of the monitor containing Diablo II, else the primary monitor.
+pub fn get_appropriate_window_bounds(_app: &AppHandle) -> Option<WindowRect> {
+    let monitor = match find_diablo_hwnd() {
+        Some(hwnd) => unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) },
+        None => unsafe { MonitorFromPoint(POINT { x: 0, y: 0 }, MONITOR_DEFAULTTOPRIMARY) },
+    };
+    monitor_rect(monitor)
 }
 
 // --- Event-driven foreground monitoring ---
@@ -103,13 +119,13 @@ static mut FOREGROUND_HOOK: Option<HWINEVENTHOOK> = None;
 static CALLBACK: Mutex<Option<Box<dyn Fn() + Send>>> = Mutex::new(None);
 
 unsafe extern "system" fn win_event_proc(
-    _hWinEventHook: HWINEVENTHOOK,
+    _hook: HWINEVENTHOOK,
     _event: u32,
     _hwnd: HWND,
-    _idObject: i32,
-    _idChild: i32,
-    _dwEventThread: u32,
-    _dwmsEventTime: u32,
+    _id_object: i32,
+    _id_child: i32,
+    _event_thread: u32,
+    _event_time: u32,
 ) {
     if let Some(cb) = &*CALLBACK.lock().unwrap() {
         cb();

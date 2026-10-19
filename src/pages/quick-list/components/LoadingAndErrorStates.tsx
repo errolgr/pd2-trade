@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Search, Loader2, AlertTriangle, CircleAlert } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { fadeIn, fadeInUp } from '@/lib/motion';
 
 interface LoadingAndErrorStatesProps {
@@ -13,7 +11,6 @@ interface LoadingAndErrorStatesProps {
   error: string | null;
   matchingItems: unknown[];
   onRetry: () => void;
-  embedded?: boolean;
   isAccountMismatch?: boolean;
 }
 
@@ -22,18 +19,19 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   error,
   matchingItems,
   onRetry,
-  embedded = false,
   isAccountMismatch = false,
 }) => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <motion.div key="loading"
+        <motion.div
+          key="loading"
           variants={fadeIn}
           initial="hidden"
           animate="visible"
           className="flex flex-col gap-3"
-          aria-busy>
+          aria-busy
+        >
           <div className="flex items-center gap-2 text-sm text-muted-foreground"
             role="status">
             <Loader2 className="size-4 animate-spin text-primary" />
@@ -109,19 +107,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
     return null; // Let parent handle empty state
   }
 
-  if (embedded) {
-    return content;
-  }
-
-  return (
-    <WindowPanel animate
-      className="w-screen">
-      <WindowChrome title="List Item"
-        diabloFont
-        onClose={() => getCurrentWebviewWindow().hide()} />
-      <div className="p-4">{content}</div>
-    </WindowPanel>
-  );
+  return content;
 };
 
 export default LoadingAndErrorStates;

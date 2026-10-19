@@ -2,10 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emit } from '@/lib/browser-events';
 import { ChatButton } from './ChatButton';
-
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 
 beforeAll(() => {
   MotionGlobalConfig.skipAnimations = true;
@@ -132,13 +129,23 @@ describe('ChatButton', () => {
     expect(tradeBadge()!.parentElement).toBe(tradeButton.parentElement);
   });
 
-  it('asks for confirmation via a toast instead of disabling immediately', () => {
+  it('hands the disable click to its handler (the page asks for confirmation)', () => {
     const onDisableClick = vi.fn();
     render(<ChatButton handleClick={vi.fn()}
       onDisableClick={onDisableClick} />);
     fireEvent.click(screen.getByRole('button', { name: 'Disable Overlay' }));
-    expect(vi.mocked(emit)).toHaveBeenCalledWith('toast-confirm-disable-overlay');
-    expect(onDisableClick).not.toHaveBeenCalled();
+    expect(onDisableClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps only the orb interactive until the fan expands', () => {
+    render(<ChatButton handleClick={vi.fn()}
+      onSettingsClick={vi.fn()} />);
+    const cluster = mainButton().parentElement!.parentElement!;
+    expect(Array.from(document.querySelectorAll('[data-interactive="true"]'))).toEqual([cluster]);
+
+    hover(cluster);
+    expect(document.querySelectorAll('[data-interactive="true"]')).toHaveLength(2);
+    expect(document.querySelector('[data-panel-drag]')).not.toBeNull();
   });
 
   it('routes fan buttons to their handlers', () => {

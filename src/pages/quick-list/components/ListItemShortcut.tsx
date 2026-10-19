@@ -18,14 +18,11 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { emit } from '@/lib/browser-events';
 import { usePd2Website, AccountMismatchError, AuthenticationError } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
-import { isTauri } from '@tauri-apps/api/core';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
@@ -43,6 +40,7 @@ import { countChip, itemCard } from './styles';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
+import { showToast, usePanel } from '@/overlay';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -95,13 +93,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  // Get the current window reference
-  const appWindow = getCurrentWebviewWindow();
-
-  // Window control handler
-  const handleClose = useCallback(async () => {
-    await appWindow.hide();
-  }, [appWindow]);
+  const { close: handleClose } = usePanel<'quickList'>();
 
   // Complete reset function for new items
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
@@ -165,15 +157,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         setError(errorMessage);
         setIsAccountMismatch(true);
 
-        if (isTauri()) {
-          const toastPayload: GenericToastPayload = {
-            title: 'Account Mismatch',
-            description: errorMessage,
-            variant: 'destructive',
-            duration: 8000,
-          };
-          emit('toast-event', toastPayload);
-        }
+        const toastPayload: GenericToastPayload = {
+          title: 'Account Mismatch',
+          description: errorMessage,
+          variant: 'error',
+          duration: 8000,
+        };
+        showToast(toastPayload);
       } else {
         setError(err instanceof Error ? err.message : 'Failed to find items');
       }
@@ -309,7 +299,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
               variant: 'error',
             };
-            await emit('toast-event', warningToast);
+            showToast(warningToast);
             return;
           }
         }
@@ -342,7 +332,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           },
         };
 
-        await emit('toast-event', toastPayload);
+        showToast(toastPayload);
       } catch (err) {
         console.error('[Queue] Failed to process queued listing:', err);
         trackMeasurement(
@@ -355,10 +345,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           description: err instanceof Error ? err.message : 'Failed to list queued item',
           variant: 'error',
         };
-        await emit('toast-event', errorToast);
+        showToast(errorToast);
       }
     },
-    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, appWindow],
+    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount],
   );
 
   // Poll for all queued items
@@ -418,9 +408,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           description: `The item "${pendingListing.item.name || pendingListing.item.type}" could not be listed. The server did not sync the item within the timeout period. Please try again.`,
           variant: 'error',
         };
-        emit('toast-event', timeoutToast).catch((err) => {
-          console.error('[Queue] Failed to emit timeout toast:', err);
-        });
+        showToast(timeoutToast);
         return;
       }
 
@@ -492,19 +480,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             return next;
           });
 
-          if (isTauri()) {
-            const toastPayload: GenericToastPayload = {
-              title: 'Account Mismatch',
-              description:
-                err.message ||
-                'The selected account is not associated with your logged-in account. Please check your account settings.',
-              variant: 'error',
-              duration: 8000,
-            };
-            emit('toast-event', toastPayload).catch((emitErr) => {
-              console.error('[Queue] Failed to emit account mismatch toast:', emitErr);
-            });
-          }
+          const toastPayload: GenericToastPayload = {
+            title: 'Account Mismatch',
+            description:
+              err.message ||
+              'The selected account is not associated with your logged-in account. Please check your account settings.',
+            variant: 'error',
+            duration: 8000,
+          };
+          showToast(toastPayload);
         }
       }
     });
@@ -573,7 +557,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
           variant: 'error',
         };
-        await emit('toast-event', warningToast);
+        showToast(warningToast);
         setSubmitLoading(false);
         return;
       }
@@ -597,7 +581,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             : "We're waiting for the server to sync your item (usually takes a few minutes). Once synced, it will be listed automatically.",
         variant: 'default',
       };
-      await emit('toast-event', queuedToast);
+      showToast(queuedToast);
 
       // Switch to queued tab to show the queued item
       setActiveTab('queued');
@@ -642,7 +626,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
         await fetchAllListings(); // Refresh all listings
-        await emit('toast-event', { title: 'PD2 Trader', description: 'Listing updated!' });
+        showToast({ title: 'PD2 Trader', description: 'Listing updated!' });
 
         trackMeasurement(
           'list_item_update',
@@ -650,7 +634,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           { outcome: 'success', listing_type: listingType },
         );
 
-        await appWindow.hide();
+        handleClose();
       } else {
         // Check if user has reached the maximum number of listings (50)
         if (totalListingsCount >= 50) {
@@ -660,7 +644,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
             variant: 'error',
           };
-          await emit('toast-event', warningToast);
+          showToast(warningToast);
           setSubmitLoading(false);
           return;
         }
@@ -691,9 +675,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           },
         };
 
-        await emit('toast-event', toastPayload);
+        showToast(toastPayload);
         await fetchAllListings(); // Refresh all listings
-        await appWindow.hide();
+        handleClose();
       }
     } catch (err) {
       const isAlreadyListed = !!currentListingForSelected;
@@ -975,7 +959,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           error={error}
           matchingItems={matchingItems}
           onRetry={findMatchingItemsInStash}
-          embedded={true}
           isAccountMismatch={isAccountMismatch}
         />
       );
@@ -1173,7 +1156,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   return (
     <MotionConfig reducedMotion="user">
       <WindowPanel animate
-        className="w-screen h-screen">
+        className="h-full w-full">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -1182,11 +1165,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           <div
             className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5"
             id="titlebar"
-            data-tauri-drag-region
+            data-panel-drag
           >
             <div className="flex items-center gap-1.5">
               <GripVertical
-                data-tauri-drag-region
+                data-panel-drag
                 className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground transition-colors duration-(--dur-fast) hover:text-foreground"
                 id="titlebar-drag-handle"
               />
