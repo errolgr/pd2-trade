@@ -1,7 +1,6 @@
 import React from 'react';
 import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
 import { useOptions } from '@/hooks/useOptions';
-import { openUrl } from '@/lib/browser-opener';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
 import { HardcoreNote, ItemStatsSection, RankDisplay, RareHistorySection } from './RareParts';
 import { bandRange, hardcoreNote, marketSource, rankText, VERDICT_COLORS, VERDICT_LABELS } from './rares-format';
@@ -30,26 +29,8 @@ export function RareAppraisalDetail({
   return (
     <>
       <div className="grid grid-cols-2 gap-1.5">
-        <PopoverTile
-          label={
-            <span className="flex items-center justify-between gap-2">
-              Verdict
-              <span className="flex items-center gap-1.5 font-normal normal-case tracking-normal">
-                <SiteLink path="/rares/how-it-works"
-                  title="How the appraisal works">
-                  Why?
-                </SiteLink>
-                <SiteLink
-                  path={`/rares/appraisal?${new URLSearchParams({ slot: appraisal.slot, ...(hardcore && { mode: 'hc' }) })}`}
-                  title="What sells on this slot"
-                >
-                  Guide
-                </SiteLink>
-              </span>
-            </span>
-          }
-          emphasis={appraisal.verdict === 'keep'}
-        >
+        <PopoverTile label="Verdict"
+          emphasis={appraisal.verdict === 'keep'}>
           <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{VERDICT_LABELS[appraisal.verdict]}</span>
           <span className="font-medium text-muted-foreground"> · </span>
           {rankText(appraisal.rank)}
@@ -87,23 +68,5 @@ export function RareAppraisalDetail({
         </div>
       )}
     </>
-  );
-}
-
-/** Small link to a pd2trader.com page, opened in the browser. */
-function SiteLink({ path, title, children }: { path: string; title: string; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      tabIndex={-1}
-      title={title}
-      className="cursor-pointer rounded-sm text-info underline-offset-2 outline-none hover:underline focus-visible:underline"
-      onClick={(e) => {
-        e.stopPropagation();
-        openUrl(`https://pd2trader.com${path}`);
-      }}
-    >
-      {children}
-    </button>
   );
 }
