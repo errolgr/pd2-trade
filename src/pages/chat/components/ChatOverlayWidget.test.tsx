@@ -50,8 +50,8 @@ let api: {
   >;
   getMessages: Mock<(conversationId: string, page?: { limit?: number; skip?: number }) => Promise<{ data: Message[] }>>;
   sendMessage: Mock<(conversationId: string, content: string, senderId: string) => Promise<Message>>;
-  markMessagesAsRead: Mock<(ids: string[], userId: string) => Promise<void>>;
-  deleteConversation: Mock<(conversationId: string) => Promise<void>>;
+  markMessagesAsRead: Mock<(ids: string[], userId: string) => Promise<boolean>>;
+  deleteConversation: Mock<(conversationId: string) => Promise<boolean>>;
 };
 let messagesByConversation: Record<string, Message[]>;
 let audio: { src: string; volume: number }[];
@@ -175,8 +175,8 @@ beforeEach(() => {
         .slice(skip, skip + limit),
     })),
     sendMessage: vi.fn(),
-    markMessagesAsRead: vi.fn(async () => {}),
-    deleteConversation: vi.fn(async () => {}),
+    markMessagesAsRead: vi.fn(async () => true),
+    deleteConversation: vi.fn(async () => true),
   };
   // Linked listings resolve to nothing, so listing links stay link chips in these tests.
   const noListings = async () => ({ total: 0, limit: 0, skip: 0, data: [] });
@@ -393,6 +393,18 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(headerUnread()).toBe('1');
   });
 
+  it('keeps the unread count when marking as read is unauthorized', async () => {
+    api.markMessagesAsRead.mockResolvedValue(false);
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10)];
+    await renderWidget([conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    await act(async () => rerenderWidget());
+    await flush();
+    expect(api.markMessagesAsRead).toHaveBeenCalledTimes(1);
+    expect(headerUnread()).toBe('1');
+    expect(lastEmittedUnread()).toBe(1);
+  });
+
   it('marks cached and freshly fetched unread messages read in a single request on open', async () => {
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
     messagesByConversation.c2 = [msg('b1', 'c2', 'bob', 'yo', 20), msg('b2', 'c2', 'bob', 'pushed earlier', 0)];
@@ -414,7 +426,7 @@ describe('ChatOverlayWidget conversation switching', () => {
   });
 
   it('does not re-send a mark-read that is still in flight', async () => {
-    const pending = Promise.withResolvers<void>();
+    const pending = Promise.withResolvers<boolean>();
     api.markMessagesAsRead.mockReturnValue(pending.promise);
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10)];
     await renderWidget([conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
@@ -427,7 +439,7 @@ describe('ChatOverlayWidget conversation switching', () => {
       [['a1'], ME],
       [['a2'], ME],
     ]);
-    await act(async () => pending.resolve());
+    await act(async () => pending.resolve(true));
     await flush();
     expect(api.markMessagesAsRead).toHaveBeenCalledTimes(2);
     expect(headerUnread()).toBeNull();
@@ -525,6 +537,26 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(api.deleteConversation).toHaveBeenCalledWith('c1');
     expect(rows().map((r) => r.textContent?.includes('bob'))).toEqual([true]);
     expect(screen.queryByText('Select a conversation to view messages')).not.toBeNull();
+  });
+
+  it('keeps the conversation when deleting it is unauthorized', async () => {
+    api.deleteConversation.mockResolvedValue(false);
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+
+    const trigger = screen.getByRole('button', { name: 'Conversation options' });
+    await act(async () => {
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /Delete Conversation/ }));
+    });
+    await flush();
+
+    expect(api.deleteConversation).toHaveBeenCalledWith('c1');
+    expect(rowFor('Alice').getAttribute('aria-current')).toBe('true');
+    expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Alice');
   });
 });
 

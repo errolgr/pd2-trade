@@ -22,6 +22,8 @@ export interface ThreadState {
   loading: boolean;
   hasOlder: boolean;
   loadingOlder: boolean;
+  /** Bumped whenever a newest page replaces the held history; older pages requested before it are stale. */
+  resets: number;
 }
 
 export interface ChatState {
@@ -38,6 +40,7 @@ export const EMPTY_THREAD: ThreadState = {
   loading: false,
   hasOlder: false,
   loadingOlder: false,
+  resets: 0,
 };
 
 export const initialChatState: ChatState = {
@@ -58,7 +61,8 @@ export type ChatAction =
   | { type: 'threadLoaded'; conversationId: string; page: Message[]; pageSize: number }
   | { type: 'threadFailed'; conversationId: string }
   | { type: 'olderLoading'; conversationId: string }
-  | { type: 'olderLoaded'; conversationId: string; page: Message[]; pageSize: number }
+  /** `resets`: the thread's `resets` when the page was requested. */
+  | { type: 'olderLoaded'; conversationId: string; page: Message[]; pageSize: number; resets: number }
   | { type: 'olderFailed'; conversationId: string }
   | { type: 'messageReceived'; message: Message; currentUserId: string; viewingConversationId: string | null }
   | { type: 'sendQueued'; message: ChatMessage }
@@ -149,6 +153,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           loaded: true,
           loading: false,
           hasOlder: t.loaded && !gap ? t.hasOlder : full,
+          resets: gap ? t.resets + 1 : t.resets,
         };
       });
     case 'threadFailed':
@@ -158,12 +163,17 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         t.loaded && t.hasOlder && !t.loadingOlder ? { ...t, loadingOlder: true } : t,
       );
     case 'olderLoaded':
-      return withThread(state, action.conversationId, (t) => ({
-        ...t,
-        messages: mergeMessages(t.messages, action.page),
-        hasOlder: action.page.length >= action.pageSize,
-        loadingOlder: false,
-      }));
+      return withThread(state, action.conversationId, (t) =>
+        // Requested against history that has since been replaced: its offset no longer joins up, drop it
+        action.resets !== t.resets
+          ? { ...t, loadingOlder: false }
+          : {
+              ...t,
+              messages: mergeMessages(t.messages, action.page),
+              hasOlder: action.page.length >= action.pageSize,
+              loadingOlder: false,
+            },
+      );
     case 'olderFailed':
       return withThread(state, action.conversationId, (t) => (t.loadingOlder ? { ...t, loadingOlder: false } : t));
     case 'messageReceived': {
@@ -174,8 +184,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       if (thread.messages.some((m) => m._id === message._id)) return state;
 
       const fromOther = message.sender_id !== currentUserId;
-      // Our own message echoed back before its send response: it acknowledges the matching pending send
-      const ack = fromOther ? undefined : thread.messages.find((m) => m.status && m.content === message.content);
+      // Our own message echoed back before its send response: it acknowledges the matching in-flight send
+      // (not a failed one: the same text may have been sent again since)
+      const ack = fromOther
+        ? undefined
+        : thread.messages.find((m) => m.status === 'sending' && m.content === message.content);
       const messages = ack
         ? mergeMessages(
             thread.messages.filter((m) => m !== ack),
@@ -202,9 +215,12 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       if (!state.threads[conversationId]) return state; // deleted meanwhile
       const next = withThread(state, conversationId, (t) => ({
         ...t,
-        // Drop the pending entry and any echo of this message that did not match it
         messages: mergeMessages(
-          t.messages.filter((m) => m.clientId !== clientId && m._id !== message._id),
+          t.messages
+            // Drop the unacknowledged entry and any echo of this message that did not match it
+            .filter((m) => !(m.clientId === clientId && m.status) && m._id !== message._id)
+            // An echo of the same text sent elsewhere acknowledged this send by mistake: it is its own message
+            .map((m) => (m.clientId === clientId ? { ...m, clientId: undefined } : m)),
           [{ ...message, clientId, live: true }],
         ),
       }));
@@ -339,12 +355,15 @@ export function useChatStore({
   );
 
   const olderInFlightRef = useRef(new Set<string>());
-  /** Fetch the page before the oldest held message; no-op while one is loading or when the start was reached. */
+  /**
+   * Fetch the page before the oldest held message; no-op while one is loading, while the newest page is being
+   * refetched (it may replace the held history the offset is based on) or when the start was reached.
+   */
   const loadOlder = useCallback(
     async (conversationId: string) => {
       const thread = stateRef.current.threads[conversationId];
       const inFlight = olderInFlightRef.current;
-      if (!thread?.loaded || !thread.hasOlder || inFlight.has(conversationId)) return;
+      if (!thread?.loaded || thread.loading || !thread.hasOlder || inFlight.has(conversationId)) return;
       inFlight.add(conversationId);
       dispatch({ type: 'olderLoading', conversationId });
       // Newest-first offset: every confirmed message we hold is newer than the next page
@@ -353,7 +372,13 @@ export function useChatStore({
         const response = await getMessages(conversationId, { limit: MESSAGE_PAGE_SIZE, skip });
         dispatch(
           response
-            ? { type: 'olderLoaded', conversationId, page: response.data ?? [], pageSize: MESSAGE_PAGE_SIZE }
+            ? {
+                type: 'olderLoaded',
+                conversationId,
+                page: response.data ?? [],
+                pageSize: MESSAGE_PAGE_SIZE,
+                resets: thread.resets,
+              }
             : { type: 'olderFailed', conversationId },
         );
       } catch (error) {
@@ -425,11 +450,11 @@ export function useChatStore({
     [deliver],
   );
 
-  /** Archive a conversation; resolves whether it was removed. */
+  /** Archive a conversation; resolves whether it was removed (false on failure or a 401). */
   const removeConversation = useCallback(
     async (conversationId: string) => {
       try {
-        await deleteConversation(conversationId);
+        if (!(await deleteConversation(conversationId))) return false;
         dispatch({ type: 'conversationRemoved', conversationId });
         return true;
       } catch (error) {
@@ -497,7 +522,11 @@ export function useChatStore({
     ids.forEach((id) => inFlight.add(id));
     markMessagesAsRead(ids, currentUserId)
       .then(
-        () => dispatch({ type: 'markedRead', conversationId, messageIds: ids, readerId: currentUserId }),
+        (marked) => {
+          // false: unauthorized (re-auth started), nothing was marked server-side
+          if (marked) dispatch({ type: 'markedRead', conversationId, messageIds: ids, readerId: currentUserId });
+          else ids.forEach((id) => failed.add(id));
+        },
         (error) => {
           console.error('Failed to mark messages as read:', error);
           ids.forEach((id) => failed.add(id));

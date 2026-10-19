@@ -187,6 +187,36 @@ describe('useSocialActions', () => {
     expect(onAuthError).toHaveBeenCalledTimes(1);
   });
 
+  it('delete and mark-read report false on 401 (nothing changed) and true on success', async () => {
+    const { actions, onAuthError } = social('tok');
+    await expect(actions.deleteConversation('c5')).resolves.toBe(true);
+    await expect(actions.markMessagesAsRead(['m1'], 'u1')).resolves.toBe(true);
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(401, { message: 'jwt expired' }, 'Unauthorized'));
+    await expect(actions.deleteConversation('c5')).resolves.toBe(false);
+    fetchMock.mockResolvedValueOnce(fakeResponse(401, { message: 'jwt expired' }, 'Unauthorized'));
+    await expect(actions.markMessagesAsRead(['m1'], 'u1')).resolves.toBe(false);
+    expect(onAuthError).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the same callbacks across settings changes that keep the token, so chat does not refetch', () => {
+    const onAuthError = vi.fn();
+    const { result, rerender } = renderHook(({ settings }) => useSocialActions({ settings, onAuthError }), {
+      initialProps: { settings: { pd2Token: 'tok', whisperNotificationVolume: 50 } as ISettings },
+    });
+    const before = result.current;
+
+    rerender({ settings: { pd2Token: 'tok', whisperNotificationVolume: 80 } as ISettings });
+    expect(result.current.getConversations).toBe(before.getConversations);
+    expect(result.current.getMessages).toBe(before.getMessages);
+    expect(result.current.sendMessage).toBe(before.sendMessage);
+    expect(result.current.markMessagesAsRead).toBe(before.markMessagesAsRead);
+    expect(result.current.deleteConversation).toBe(before.deleteConversation);
+
+    rerender({ settings: { pd2Token: 'new' } as ISettings });
+    expect(result.current.getConversations).not.toBe(before.getConversations);
+  });
+
   it('throws API errors for other failures without calling the auth handler', async () => {
     fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'Internal Server Error'));
     const { actions, onAuthError } = social('tok');

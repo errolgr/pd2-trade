@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
+import type { Conversation, Message, MessageListResponse } from '@/common/types/pd2-website/ChatTypes';
 import {
   chatReducer,
   initialChatState,
@@ -173,6 +173,45 @@ describe('chatReducer sends', () => {
     expect(after).toBe(state);
     expect(after.threads.c1).toBeUndefined();
   });
+
+  it('an echo never acknowledges a failed send: the same text sent again is the one confirmed', () => {
+    const echo = msg('s2', ME, 'ok', 0, [ME]);
+    const state = run(
+      [
+        queued('local-1', 'ok'),
+        { type: 'sendFailed', conversationId: 'c1', clientId: 'local-1' },
+        queued('local-2', 'ok'),
+        received(echo),
+      ],
+      withConversations(conv('c1')),
+    );
+    expect(thread(state).messages.map((m) => [m._id, m.clientId, m.status])).toEqual([
+      ['s2', 'local-2', undefined],
+      ['local-1', 'local-1', 'failed'],
+    ]);
+  });
+
+  it('a same-text message from another device that took the pending send stays when the send confirms', () => {
+    const fromWebsite = msg('w1', ME, 'gg', 1, [ME]);
+    const ours = msg('s1', ME, 'gg', 0, [ME]);
+    const send = (extra: ChatAction[]) =>
+      run(
+        [
+          queued('local-1', 'gg'),
+          received(fromWebsite),
+          ...extra,
+          { type: 'sendSucceeded', conversationId: 'c1', clientId: 'local-1', message: ours },
+        ],
+        withConversations(conv('c1')),
+      );
+
+    for (const state of [send([]), send([received(ours)])]) {
+      expect(thread(state).messages.map((m) => [m._id, m.clientId])).toEqual([
+        ['w1', undefined],
+        ['s1', 'local-1'],
+      ]);
+    }
+  });
 });
 
 describe('chatReducer paging', () => {
@@ -211,6 +250,7 @@ describe('chatReducer paging', () => {
         conversationId: 'c1',
         page: newestFirst(msg('a2', 'alice', '2', 4), msg('a3', 'alice', '3', 3)),
         pageSize: 3,
+        resets: 0,
       },
     ]);
     expect(ids(state)).toEqual(['a2', 'a3', 'a4', 'a5']);
@@ -232,7 +272,7 @@ describe('chatReducer paging', () => {
     const page = (...m: Message[]) => ({ type: 'threadLoaded', conversationId: 'c1', page: m, pageSize: 2 }) as const;
     const state = run([
       page(msg('a3', 'alice', '3', 3), msg('a4', 'alice', '4', 2)),
-      { type: 'olderLoaded', conversationId: 'c1', page: [msg('a2', 'alice', '2', 4)], pageSize: 2 },
+      { type: 'olderLoaded', conversationId: 'c1', page: [msg('a2', 'alice', '2', 4)], pageSize: 2, resets: 0 },
       page(msg('a4', 'alice', '4', 2), msg('a5', 'alice', '5', 1)),
     ]);
     expect(ids(state)).toEqual(['a2', 'a3', 'a4', 'a5']);
@@ -252,6 +292,35 @@ describe('chatReducer paging', () => {
     ]);
     expect(ids(state)).toEqual(['a8', 'a9', 'local-1']);
     expect(thread(state).hasOlder).toBe(true);
+  });
+
+  it('drops an older page requested before the held history was replaced', () => {
+    const state = run([
+      {
+        type: 'threadLoaded',
+        conversationId: 'c1',
+        page: [msg('a3', 'alice', '3', 7), msg('a4', 'alice', '4', 6)],
+        pageSize: 2,
+      },
+      { type: 'olderLoading', conversationId: 'c1' },
+      // The newest page no longer joins up: history restarts from it
+      {
+        type: 'threadLoaded',
+        conversationId: 'c1',
+        page: [msg('a8', 'alice', '8', 2), msg('a9', 'alice', '9', 1)],
+        pageSize: 2,
+      },
+      // The older page asked with skip 2 against the replaced history
+      {
+        type: 'olderLoaded',
+        conversationId: 'c1',
+        page: [msg('a1', 'alice', '1', 9), msg('a2', 'alice', '2', 8)],
+        pageSize: 2,
+        resets: 0,
+      },
+    ]);
+    expect(ids(state)).toEqual(['a8', 'a9']);
+    expect(thread(state)).toMatchObject({ hasOlder: true, loadingOlder: false });
   });
 });
 
@@ -324,5 +393,36 @@ describe('useChatStore conversations', () => {
     );
     await act(() => result.current.loadConversations());
     expect(result.current).toMatchObject({ conversations: [], loadingConversations: false, conversationsLoaded: true });
+  });
+});
+
+describe('useChatStore older pages', () => {
+  afterEach(cleanup);
+
+  it('does not page older messages while the newest page is being refetched', async () => {
+    const newest = Array.from({ length: 50 }, (_, i) => msg(`m${i}`, 'alice', 'x', i, [ME]));
+    const listing = (skip: number, data: Message[]): MessageListResponse => ({ total: 200, limit: 50, skip, data });
+    const refetch = Promise.withResolvers<MessageListResponse | null>();
+    const getMessages = vi
+      .fn<ChatApi['getMessages']>()
+      .mockResolvedValueOnce(listing(0, newest))
+      .mockReturnValueOnce(refetch.promise)
+      .mockResolvedValue(listing(50, []));
+    const api = { getMessages } as unknown as ChatApi;
+    const subscribeSocket = () => () => {};
+    const { result } = renderHook(() =>
+      useChatStore({ currentUserId: ME, api, subscribeSocket, viewingConversationId: null }),
+    );
+
+    await act(() => result.current.loadMessages('c1'));
+    act(() => {
+      void result.current.loadMessages('c1');
+    });
+    await act(() => result.current.loadOlder('c1'));
+    expect(getMessages).toHaveBeenCalledTimes(2);
+
+    await act(async () => refetch.resolve(listing(0, newest)));
+    await act(() => result.current.loadOlder('c1'));
+    expect(getMessages.mock.calls.at(-1)).toEqual(['c1', { limit: 50, skip: 50 }]);
   });
 });

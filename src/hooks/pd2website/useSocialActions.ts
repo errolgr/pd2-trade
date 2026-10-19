@@ -22,14 +22,17 @@ interface UseSocialActionsProps {
   onAuthError?: () => void | Promise<void>;
 }
 
-/** List/send calls resolve null on a 401 (onAuthError has started the re-auth flow). */
+/**
+ * List/send calls resolve null, and delete/mark-read resolve false, on a 401 (onAuthError has started the
+ * re-auth flow; nothing changed server-side).
+ */
 export interface SocialActions {
-  deleteConversation: (conversationId: string) => Promise<void>;
+  deleteConversation: (conversationId: string) => Promise<boolean>;
   getConversations: (participantId: string, page?: PageParams) => Promise<ConversationListResponse | null>;
   /** One page of a thread, newest first ($sort created_at -1); `skip` counts messages newer than the page. */
   getMessages: (conversationId: string, page?: PageParams) => Promise<MessageListResponse | null>;
   sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message | null>;
-  markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
+  markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<boolean>;
   createConversation: (participantIds: string[]) => Promise<any>;
 }
 
@@ -43,24 +46,26 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
 }
 
 export function useSocialActions({ settings, onAuthError }: UseSocialActionsProps): SocialActions {
+  // Callbacks change with the token only: other settings changes must not refetch chat or resubscribe
+  const token = settings?.pd2Token;
   const deleteConversation = useCallback(
-    async (conversationId: string): Promise<void> => {
-      if (!settings?.pd2Token) {
+    async (conversationId: string): Promise<boolean> => {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
       const response = await tauriFetch(`${API_BASE}/social/conversation/${conversationId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ $archive: true }),
       });
 
-      await handleApiResponse(response, onAuthError);
+      return (await handleApiResponse(response, onAuthError)) !== null;
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   const getConversations = useCallback(
@@ -68,7 +73,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       participantId: string,
       { limit = CONVERSATION_PAGE_SIZE, skip = 0 }: PageParams = {},
     ): Promise<ConversationListResponse | null> => {
-      if (!settings?.pd2Token) {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
@@ -89,13 +94,13 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       const response = await tauriFetch(url, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       return await handleApiResponse(response, onAuthError);
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   const getMessages = useCallback(
@@ -103,7 +108,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       conversationId: string,
       { limit = MESSAGE_PAGE_SIZE, skip = 0 }: PageParams = {},
     ): Promise<MessageListResponse | null> => {
-      if (!settings?.pd2Token) {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
@@ -125,7 +130,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
         const response = await tauriFetch(url, {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${settings.pd2Token}`,
+            Authorization: `Bearer ${token}`,
           },
           signal: controller.signal,
         });
@@ -134,12 +139,12 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
         clearTimeout(timeout);
       }
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   const sendMessage = useCallback(
     async (conversationId: string, content: string, senderId: string): Promise<Message | null> => {
-      if (!settings?.pd2Token) {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
@@ -153,7 +158,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       const response = await tauriFetch(`${API_BASE}/social/message`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -161,17 +166,17 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
 
       return await handleApiResponse(response, onAuthError);
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   const markMessagesAsRead = useCallback(
-    async (messageIds: string[], readerId: string): Promise<void> => {
-      if (!settings?.pd2Token) {
+    async (messageIds: string[], readerId: string): Promise<boolean> => {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
       if (messageIds.length === 0) {
-        return; // No messages to mark as read
+        return true; // No messages to mark as read
       }
 
       const body = {
@@ -196,20 +201,20 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       const response = await tauriFetch(url, {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
       });
 
-      await handleApiResponse(response, onAuthError);
+      return (await handleApiResponse(response, onAuthError)) !== null;
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   const createConversation = useCallback(
     async (participantIds: string[]): Promise<any> => {
-      if (!settings?.pd2Token) {
+      if (!token) {
         throw new Error('No auth token available');
       }
 
@@ -220,7 +225,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
       const response = await tauriFetch(`${API_BASE}/social/conversation`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -228,7 +233,7 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
 
       return await handleApiResponse(response, onAuthError);
     },
-    [settings, onAuthError],
+    [token, onAuthError],
   );
 
   return {
