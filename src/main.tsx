@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
+import { isTauri } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { WindowTitles } from '@/lib/window-titles';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
 import { initFaro } from '@/lib/faro';
@@ -24,6 +27,12 @@ import { DelistPage } from './pages/delist/DelistPage';
 import NetWorthTickerPage from './pages/net-worth/NetWorthTickerPage';
 import NetWorthPanelPage from './pages/net-worth/NetWorthPanelPage';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
+
+// Task Manager names each WebView2 process after its page title
+if (isTauri()) {
+  const { label } = getCurrentWindow();
+  document.title = WindowTitles[label as keyof typeof WindowTitles] ?? WindowTitles.PREFIX;
+}
 
 // Apply the cached theme before the first render (no flash of the default theme)
 initTheme();
