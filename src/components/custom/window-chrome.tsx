@@ -15,7 +15,7 @@ interface WindowChromeProps {
   titleClassName?: string;
   /** Render the title in the DiabloFont face. */
   diabloFont?: boolean;
-  /** Marks the bar and title as Tauri drag regions. Default true. */
+  /** Marks the bar as the panel's drag handle (`data-panel-drag`; children inherit it). Default true. */
   dragRegion?: boolean;
   /** Show the grip affordance on the left. Default true when dragRegion. */
   showGrip?: boolean;
@@ -37,7 +37,7 @@ function WindowChrome({
   gripId,
   closeLabel = 'Close',
 }: WindowChromeProps) {
-  const drag = dragRegion ? { 'data-tauri-drag-region': true } : {};
+  const drag = dragRegion ? { 'data-panel-drag': true } : {};
   const grip = showGrip ?? dragRegion;
 
   return (
@@ -50,15 +50,11 @@ function WindowChrome({
         className,
       )}
     >
-      {grip && (
-        <GripVertical {...drag}
-          id={gripId}
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground" />
-      )}
+      {grip && <GripVertical id={gripId}
+        aria-hidden
+        className="size-4 shrink-0 text-muted-foreground" />}
       {icon && <span className="flex shrink-0 items-center text-muted-foreground [&_svg]:size-4">{icon}</span>}
       <div
-        {...drag}
         className={cn('min-w-0 flex-1 truncate text-sm font-semibold tracking-tight', titleClassName)}
         style={diabloFont ? { fontFamily: 'DiabloFont' } : undefined}
       >
@@ -95,12 +91,14 @@ function WindowPanel({ className, animate = false, children, ...props }: WindowP
     // HTML drag/animation handlers clash with framer's typed ones; the panel never uses them.
     const motionProps = props as unknown as React.ComponentProps<typeof motion.div>;
     return (
-      <motion.div data-slot="window-panel"
+      <motion.div
+        data-slot="window-panel"
         className={classes}
         variants={scaleIn}
         initial="hidden"
         animate="visible"
-        {...motionProps}>
+        {...motionProps}
+      >
         {children}
       </motion.div>
     );

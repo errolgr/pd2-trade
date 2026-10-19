@@ -4,15 +4,12 @@ import { MotionGlobalConfig } from 'framer-motion';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useInView } from 'react-intersection-observer';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useOptions } from '@/hooks/useOptions';
 import { ItemsProvider } from '@/hooks/useItems';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { allItems } from '@/assets/items';
-import { emit } from '@/lib/browser-events';
 import { openUrl } from '@/lib/browser-opener';
 import { writeText } from '@/lib/browser-clipboard';
-import { openCenteredWindow, openWindowAtCursor } from '@/lib/window';
 import {
   fetchCorruptionPrices,
   fetchItemPrice,
@@ -51,12 +48,11 @@ vi.mock('@/pages/currency/lib/price-api', () => ({
   fetchCorruptionPrices: vi.fn(),
   fetchPriceHistory: vi.fn(),
 }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
+const overlay = vi.hoisted(() => ({ openPanel: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: () => overlay }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
-vi.mock('@/lib/window', () => ({ openWindowAtCursor: vi.fn(), openCenteredWindow: vi.fn() }));
-vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: { getByLabel: vi.fn() } }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
 // Listing hover detail belongs to quick-list; a stub keeps these tests about the price check itself.
 vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
@@ -188,7 +184,6 @@ beforeEach(() => {
   vi.mocked(fetchItemPriceByName).mockResolvedValue(null);
   vi.mocked(fetchCorruptionPrices).mockResolvedValue(null);
   vi.mocked(fetchPriceHistory).mockResolvedValue(null);
-  vi.mocked(WebviewWindow.getByLabel).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -269,7 +264,7 @@ describe('ItemOverlayWidget header', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
-    expect(emit).toHaveBeenCalledWith('open-settings', undefined);
+    expect(overlay.openPanel).toHaveBeenCalledWith('settings');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
@@ -592,32 +587,15 @@ describe('ItemOverlayWidget listing to quick-list', () => {
     expect((screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('opens the quick-list window with the encoded item for stash items', async () => {
+  it('opens the quick-list panel at the cursor with the encoded item for stash items', () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
     const list = screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement;
     if (list.disabled) throw new Error('expected stash item to be listable');
     fireEvent.click(list);
-    await waitFor(() => expect(openWindowAtCursor).toHaveBeenCalled());
-    const url = vi.mocked(openWindowAtCursor).mock.calls[0][1] as string;
-    const encoded = decodeURIComponent(url.replace('/quick-list?item=', ''));
+    expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
+    const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
-  });
-
-  it('reuses an existing quick-list window by sending it the item', async () => {
-    const existing = {
-      unminimize: vi.fn().mockResolvedValue(undefined),
-      show: vi.fn().mockResolvedValue(undefined),
-      setFocus: vi.fn().mockResolvedValue(undefined),
-      emit: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn(),
-    };
-    // Only the window methods the reuse path calls; a real WebviewWindow needs a Tauri runtime.
-    vi.mocked(WebviewWindow.getByLabel).mockResolvedValue(existing as unknown as WebviewWindow);
-    renderWidget(rareRing({ location: 'Stash' }));
-    fireEvent.click(screen.getByRole('button', { name: /List$/ }));
-    await waitFor(() => expect(existing.emit).toHaveBeenCalledWith('quick-list-new-item', expect.any(String)));
-    expect(openWindowAtCursor).not.toHaveBeenCalled();
   });
 });
 
@@ -733,11 +711,10 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
   });
 
-  it('Net Worth opens the currency window when none is open', async () => {
+  it('Net Worth opens the currency panel', () => {
     renderWidget(rareRing());
     fireEvent.click(screen.getByRole('button', { name: 'Net Worth' }));
-    await waitFor(() => expect(openCenteredWindow).toHaveBeenCalled());
-    expect(vi.mocked(openCenteredWindow).mock.calls[0][1]).toBe('/currency');
+    expect(overlay.openPanel).toHaveBeenCalledWith('currency');
   });
 
   it('titles a Rainbow Facet by element and rolls, and prices that exact facet', async () => {

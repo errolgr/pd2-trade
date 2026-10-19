@@ -4,7 +4,7 @@ import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
 import { useSocialActions } from './useSocialActions';
 import { useTradeOffers } from '../useTradeOffers';
-import { useSocket } from './useSocket';
+import { useSocket, type SubscribeSocket } from './useSocket';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
@@ -16,47 +16,14 @@ import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListings
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
 import { TradeMessageData } from '@/components/trade/TradeMessage';
-import { emit } from '@tauri-apps/api/event';
 import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
-import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-events';
-import { SignInDialog, SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
+import { showToast, useOverlay } from '@/overlay';
 
 interface Pd2WebsiteProviderProps {
   children: React.ReactNode;
-  suppressSessionExpiredToast?: boolean;
 }
-
-interface Pd2WebsiteRpcRequest {
-  requestId: string;
-  method: string;
-  args: any[];
-}
-
-interface Pd2WebsiteRpcResponse {
-  requestId: string;
-  ok: boolean;
-  result?: any;
-  error?: string;
-  // Typed-error metadata so the child window can rebuild AuthenticationError / AccountMismatchError
-  errorName?: string;
-  errorStatusCode?: number;
-  errorAccount?: string;
-}
-
-interface Pd2WebsiteSnapshot {
-  authData: AuthData;
-  incomingOffers: TradeMessageData[];
-  outgoingOffers: TradeMessageData[];
-  hiddenOutgoingOffers: TradeMessageData[];
-  loading: boolean;
-}
-
-const PD2WEBSITE_SNAPSHOT_EVENT = 'pd2website:snapshot';
-const PD2WEBSITE_REQUEST_SNAPSHOT_EVENT = 'pd2website:request-snapshot';
-const PD2WEBSITE_RPC_REQUEST_EVENT = 'pd2website:rpc-request';
-const PD2WEBSITE_RPC_RESPONSE_EVENT = 'pd2website:rpc-response';
 
 // Custom error class for authentication errors
 export class AuthenticationError extends Error {
@@ -83,21 +50,7 @@ export class AccountMismatchError extends Error {
   }
 }
 
-// RPC responses cross a Tauri event boundary as JSON; restore the error class so
-// instanceof checks and Sentry's beforeSend filters work in child windows.
-function rebuildRpcError(payload: Pd2WebsiteRpcResponse): Error {
-  const message = payload.error || 'PD2 RPC request failed';
-  if (payload.errorName === 'AuthenticationError') {
-    return new AuthenticationError(message, payload.errorStatusCode);
-  }
-  if (payload.errorName === 'AccountMismatchError') {
-    return new AccountMismatchError(message, payload.errorStatusCode, payload.errorAccount);
-  }
-  return new Error(message);
-}
-
 interface Pd2WebsiteContextType {
-  open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
     stashItem: GameStashItem,
@@ -131,12 +84,16 @@ interface Pd2WebsiteContextType {
   restoreOutgoingOffer: (offerId: string) => void;
   logout: () => Promise<void>;
   startOAuthFlow: () => Promise<string | false>;
+  /** The provider's PD2 socket: connection state and server push events. */
+  isConnected: boolean;
+  subscribeSocket: SubscribeSocket;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
 
-export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = false }: Pd2WebsiteProviderProps) => {
+export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   const { updateSettings, settings, isLoading } = useOptions();
+  const { openPanel } = useOverlay();
   const { startOAuthFlow, refreshTokens } = useOAuth();
   const [authData, setAuthData] = useState<AuthData>(null);
   const isHandlingAuthError = useRef(false);
@@ -181,15 +138,15 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
         if (success) return;
       }
 
-      // Refresh failed or unavailable — show sign-in dialog to user
-      await emitAppEvent(SIGN_IN_DIALOG_EVENT);
+      // Refresh failed or unavailable — ask the user to sign in
+      openPanel('signIn');
     } finally {
       // Reset flag after a short delay to allow for retry
       setTimeout(() => {
         isHandlingAuthError.current = false;
       }, 2000);
     }
-  }, [refreshTokens, startOAuthFlow]);
+  }, [refreshTokens, openPanel]);
 
   // Logout function to manually trigger re-authentication
   const logout = useCallback(async () => {
@@ -219,7 +176,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
       variant: 'default',
       duration: 3000,
     };
-    emit('toast-event', toastPayload);
+    showToast(toastPayload);
   }, [updateSettings]);
 
   // Update the ref so useStashCache can use the handler
@@ -255,7 +212,7 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     });
 
   // Socket connection
-  const { isConnected } = useSocket({ settings });
+  const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
 
   // Trade offers
   const {
@@ -274,7 +231,6 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     settings,
     authData,
     onAuthError: handleAuthenticationError,
-    isConnected,
   });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
@@ -334,155 +290,9 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
     }
   }, [authData, settings.account]);
 
-  // Publish serializable snapshot so child windows can consume parent-owned PD2 state.
-  const publishSnapshot = useCallback(async () => {
-    const snapshot: Pd2WebsiteSnapshot = {
-      authData,
-      incomingOffers,
-      outgoingOffers,
-      hiddenOutgoingOffers,
-      loading,
-    };
-    await emitAppEvent(PD2WEBSITE_SNAPSHOT_EVENT, snapshot);
-  }, [authData, incomingOffers, outgoingOffers, hiddenOutgoingOffers, loading]);
-
-  useEffect(() => {
-    publishSnapshot().catch((error) => {
-      console.warn('[Pd2WebsiteProvider] Failed to publish snapshot:', error);
-    });
-  }, [publishSnapshot]);
-
-  // Serve snapshot on demand for newly-opened child windows.
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-
-    const setup = async () => {
-      unlisten = await listenAppEvent(PD2WEBSITE_REQUEST_SNAPSHOT_EVENT, () => {
-        publishSnapshot().catch((error) => {
-          console.warn('[Pd2WebsiteProvider] Failed to publish requested snapshot:', error);
-        });
-      });
-    };
-
-    setup();
-    return () => {
-      if (unlisten) {
-        unlisten();
-      }
-    };
-  }, [publishSnapshot]);
-
-  // Keep latest handlers in a ref so the RPC listener never needs to re-register.
-  const rpcHandlersRef = useRef<Record<string, (...args: any[]) => Promise<any> | any>>({});
-  useEffect(() => {
-    rpcHandlersRef.current = {
-      findMatchingItems,
-      listSpecificItem,
-      getMarketListings,
-      getMarketListingsArchive,
-      deleteMarketListing,
-      bumpAllMarketListings,
-      updateMarketListing,
-      updateItemByHash,
-      deleteConversation,
-      getConversations,
-      getMessages,
-      sendMessage,
-      markMessagesAsRead,
-      createConversation,
-      refresh,
-      revokeOffer,
-      acceptOffer,
-      rejectOffer,
-      unacceptOffer,
-      deleteOutgoingOffer,
-      restoreOutgoingOffer,
-      logout,
-      startOAuthFlow,
-    };
-  }, [
-    findMatchingItems,
-    listSpecificItem,
-    getMarketListings,
-    getMarketListingsArchive,
-    deleteMarketListing,
-    bumpAllMarketListings,
-    updateMarketListing,
-    updateItemByHash,
-    deleteConversation,
-    getConversations,
-    getMessages,
-    sendMessage,
-    markMessagesAsRead,
-    createConversation,
-    refresh,
-    revokeOffer,
-    acceptOffer,
-    rejectOffer,
-    unacceptOffer,
-    deleteOutgoingOffer,
-    restoreOutgoingOffer,
-    logout,
-    startOAuthFlow,
-  ]);
-
-  // RPC bridge: registered once — reads latest handlers from ref so it never re-registers.
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-
-    const setup = async () => {
-      unlisten = await listenAppEvent<Pd2WebsiteRpcRequest>(PD2WEBSITE_RPC_REQUEST_EVENT, async (event) => {
-        const payload = event.payload;
-        if (!payload?.requestId || !payload?.method) {
-          return;
-        }
-
-        const handler = rpcHandlersRef.current[payload.method];
-        if (!handler) {
-          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
-            requestId: payload.requestId,
-            ok: false,
-            error: `Unknown method: ${payload.method}`,
-          } as Pd2WebsiteRpcResponse);
-          return;
-        }
-
-        try {
-          const result = await handler(...(payload.args ?? []));
-          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
-            requestId: payload.requestId,
-            ok: true,
-            result,
-          } as Pd2WebsiteRpcResponse);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          await emitAppEvent(PD2WEBSITE_RPC_RESPONSE_EVENT, {
-            requestId: payload.requestId,
-            ok: false,
-            error: message,
-            errorName: error instanceof Error ? error.name : undefined,
-            errorStatusCode:
-              error instanceof AuthenticationError || error instanceof AccountMismatchError
-                ? error.statusCode
-                : undefined,
-            errorAccount: error instanceof AccountMismatchError ? error.account : undefined,
-          } as Pd2WebsiteRpcResponse);
-        }
-      });
-    };
-
-    setup();
-    return () => {
-      if (unlisten) {
-        unlisten();
-      }
-    };
-  }, []);
-
   return (
     <Pd2WebsiteContext.Provider
       value={{
-        open,
         findMatchingItems,
         listSpecificItem,
         deleteMarketListing,
@@ -511,156 +321,13 @@ export const Pd2WebsiteProvider = ({ children, suppressSessionExpiredToast = fal
         restoreOutgoingOffer,
         logout,
         startOAuthFlow,
+        isConnected,
+        subscribeSocket,
       }}
     >
       {children}
-      <SignInDialog />
     </Pd2WebsiteContext.Provider>
   );
-};
-
-export const ChildPd2WebsiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [snapshot, setSnapshot] = useState<Pd2WebsiteSnapshot>({
-    authData: null,
-    incomingOffers: [],
-    outgoingOffers: [],
-    hiddenOutgoingOffers: [],
-    loading: false,
-  });
-
-  const pendingRequestsRef = useRef<
-    Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout }>
-  >(new Map());
-
-  const normalizeOffers = (offers: TradeMessageData[] | undefined): TradeMessageData[] => {
-    if (!offers) return [];
-    return offers.map((offer) => ({
-      ...offer,
-      timestamp: offer.timestamp instanceof Date ? offer.timestamp : new Date(offer.timestamp as unknown as string),
-    }));
-  };
-
-  useEffect(() => {
-    let unlistenSnapshot: (() => void) | null = null;
-    let unlistenRpcResponse: (() => void) | null = null;
-
-    const setup = async () => {
-      unlistenSnapshot = await listenAppEvent<Pd2WebsiteSnapshot>(PD2WEBSITE_SNAPSHOT_EVENT, (event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        setSnapshot({
-          authData: payload.authData ?? null,
-          incomingOffers: normalizeOffers(payload.incomingOffers),
-          outgoingOffers: normalizeOffers(payload.outgoingOffers),
-          hiddenOutgoingOffers: normalizeOffers(payload.hiddenOutgoingOffers),
-          loading: payload.loading ?? false,
-        });
-      });
-
-      unlistenRpcResponse = await listenAppEvent<Pd2WebsiteRpcResponse>(PD2WEBSITE_RPC_RESPONSE_EVENT, (event) => {
-        const payload = event.payload;
-        if (!payload?.requestId) return;
-        const pending = pendingRequestsRef.current.get(payload.requestId);
-        if (!pending) return;
-
-        clearTimeout(pending.timeout);
-        pendingRequestsRef.current.delete(payload.requestId);
-
-        if (payload.ok) {
-          pending.resolve(payload.result);
-        } else {
-          pending.reject(rebuildRpcError(payload));
-        }
-      });
-
-      await emitAppEvent(PD2WEBSITE_REQUEST_SNAPSHOT_EVENT, {});
-    };
-
-    setup();
-    return () => {
-      if (unlistenSnapshot) {
-        unlistenSnapshot();
-      }
-      if (unlistenRpcResponse) {
-        unlistenRpcResponse();
-      }
-
-      pendingRequestsRef.current.forEach((pending) => {
-        clearTimeout(pending.timeout);
-        pending.reject(new Error('ChildPd2WebsiteProvider unmounted'));
-      });
-      pendingRequestsRef.current.clear();
-    };
-  }, []);
-
-  const rpcCall = useCallback(<T,>(method: string, ...args: any[]): Promise<T> => {
-    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    return new Promise<T>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        pendingRequestsRef.current.delete(requestId);
-        reject(new Error(`PD2 RPC timeout for ${method}`));
-      }, 20000);
-
-      pendingRequestsRef.current.set(requestId, { resolve, reject, timeout });
-
-      emitAppEvent(PD2WEBSITE_RPC_REQUEST_EVENT, {
-        requestId,
-        method,
-        args,
-      } as Pd2WebsiteRpcRequest).catch((error) => {
-        clearTimeout(timeout);
-        pendingRequestsRef.current.delete(requestId);
-        reject(error);
-      });
-    });
-  }, []);
-
-  const contextValue: Pd2WebsiteContextType = {
-    open,
-    findMatchingItems: (item) => rpcCall('findMatchingItems', item),
-    listSpecificItem: (stashItem, hrPrice, note, type) => rpcCall('listSpecificItem', stashItem, hrPrice, note, type),
-    getMarketListings: (query) => rpcCall('getMarketListings', query),
-    getMarketListingsArchive: (query) => rpcCall('getMarketListingsArchive', query),
-    deleteMarketListing: (listingId) => rpcCall('deleteMarketListing', listingId),
-    bumpAllMarketListings: (userId) => rpcCall('bumpAllMarketListings', userId),
-    authData: snapshot.authData,
-    updateMarketListing: (hash, update) => rpcCall('updateMarketListing', hash, update),
-    updateItemByHash: (hash, update) => {
-      rpcCall('updateItemByHash', hash, update).catch((error) => {
-        console.warn('[ChildPd2WebsiteProvider] Failed to update item by hash:', error);
-      });
-      return false;
-    },
-    deleteConversation: (conversationId) => rpcCall('deleteConversation', conversationId),
-    getConversations: (participantId) => rpcCall('getConversations', participantId),
-    getMessages: (conversationId) => rpcCall('getMessages', conversationId),
-    sendMessage: (conversationId, content, senderId) => rpcCall('sendMessage', conversationId, content, senderId),
-    markMessagesAsRead: (messageIds, readerId) => rpcCall('markMessagesAsRead', messageIds, readerId),
-    createConversation: (participantIds) => rpcCall('createConversation', participantIds),
-    incomingOffers: snapshot.incomingOffers,
-    outgoingOffers: snapshot.outgoingOffers,
-    hiddenOutgoingOffers: snapshot.hiddenOutgoingOffers,
-    loading: snapshot.loading,
-    refresh: () => rpcCall('refresh'),
-    revokeOffer: (offerId) => rpcCall('revokeOffer', offerId),
-    acceptOffer: (listingId, offerId) => rpcCall('acceptOffer', listingId, offerId),
-    rejectOffer: (offerId) => rpcCall('rejectOffer', offerId),
-    unacceptOffer: (listingId) => rpcCall('unacceptOffer', listingId),
-    deleteOutgoingOffer: (offerId) => {
-      rpcCall('deleteOutgoingOffer', offerId).catch((error) => {
-        console.warn('[ChildPd2WebsiteProvider] Failed to delete outgoing offer:', error);
-      });
-    },
-    restoreOutgoingOffer: (offerId) => {
-      rpcCall('restoreOutgoingOffer', offerId).catch((error) => {
-        console.warn('[ChildPd2WebsiteProvider] Failed to restore outgoing offer:', error);
-      });
-    },
-    logout: () => rpcCall('logout'),
-    startOAuthFlow: () => rpcCall('startOAuthFlow'),
-  };
-
-  return <Pd2WebsiteContext.Provider value={contextValue}>{children}</Pd2WebsiteContext.Provider>;
 };
 
 export const usePd2Website = () => {

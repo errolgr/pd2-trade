@@ -1,6 +1,6 @@
-use super::WindowRect;
+use super::{Foreground, WindowRect};
 use std::error::Error;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{AtomEnum, ConnectionExt, Window};
 
@@ -142,145 +142,110 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
     .flatten()
 }
 
-pub fn is_diablo_focused() -> bool {
+pub fn foreground() -> Foreground {
     with_connection(|conn, screen_num| {
-        let screen = &conn.setup().roots[screen_num];
-        let root = screen.root;
+        let root = conn.setup().roots[screen_num].root;
 
-        // Pipeline atom requests
-        let net_active_window_cookie = conn.intern_atom(false, b"_NET_ACTIVE_WINDOW");
-        let net_wm_pid_cookie = conn.intern_atom(false, b"_NET_WM_PID");
-        let net_wm_name_cookie = conn.intern_atom(false, b"_NET_WM_NAME");
-        let utf8_string_cookie = conn.intern_atom(false, b"UTF8_STRING");
-
-        let net_active_window = net_active_window_cookie
-            .ok()
-            .and_then(|c| c.reply().ok())
-            .map(|r| r.atom)
-            .unwrap_or(0);
-        let net_wm_pid = net_wm_pid_cookie
-            .ok()
-            .and_then(|c| c.reply().ok())
-            .map(|r| r.atom)
-            .unwrap_or(0);
-        let net_wm_name = net_wm_name_cookie
-            .ok()
-            .and_then(|c| c.reply().ok())
-            .map(|r| r.atom)
-            .unwrap_or(0);
-        let utf8_string = utf8_string_cookie
-            .ok()
-            .and_then(|c| c.reply().ok())
-            .map(|r| r.atom)
-            .unwrap_or(0);
-
-        if net_active_window == 0 {
-            return false;
-        }
-
-        // Get Active Window Property
-        let active_window =
-            match get_property_u32(conn, root, net_active_window, AtomEnum::WINDOW.into()) {
-                Ok(Some(v)) if !v.is_empty() => v[0],
-                _ => return false,
-            };
-
-        // 1. Check PID (Own process check)
-        if net_wm_pid != 0 {
-            if let Ok(Some(pids)) =
-                get_property_u32(conn, active_window, net_wm_pid, AtomEnum::CARDINAL.into())
-            {
-                if !pids.is_empty() && pids[0] == std::process::id() {
-                    return true;
-                }
-            }
-        }
-
-        // 2. Check Name (Diablo II check)
-        let check_name = |atom: u32, type_: u32| -> bool {
-            if atom == 0 {
-                return false;
-            }
-            if let Ok(reply) = conn.get_property(false, active_window, atom, type_, 0, 1024) {
-                if let Ok(reply) = reply.reply() {
-                    if reply.format == 8 && reply.value_len > 0 {
-                        let name = String::from_utf8_lossy(&reply.value);
-                        // Whitelist our own windows (via prefix) + Diablo II
-                        // See src/lib/window-titles.ts for the common prefix
-                        return name.contains("Diablo II") || name.contains("PD2Trade:");
-                    }
-                }
-            }
-            false
+        let active_window = match get_atom(conn, "_NET_ACTIVE_WINDOW").ok().and_then(|atom| {
+            get_property_u32(conn, root, atom, AtomEnum::WINDOW.into())
+                .ok()
+                .flatten()
+        }) {
+            Some(v) if !v.is_empty() && v[0] != 0 => v[0],
+            _ => return Foreground::Other,
         };
 
-        if check_name(net_wm_name, utf8_string) {
-            return true;
-        }
-        if check_name(AtomEnum::WM_NAME.into(), AtomEnum::STRING.into()) {
-            return true;
-        }
+        // Own window: same PID, or our title prefix (see src/lib/window-titles.ts)
+        let own_pid = get_atom(conn, "_NET_WM_PID")
+            .ok()
+            .and_then(|atom| {
+                get_property_u32(conn, active_window, atom, AtomEnum::CARDINAL.into())
+                    .ok()
+                    .flatten()
+            })
+            .is_some_and(|pids| pids.first() == Some(&std::process::id()));
+        let name = get_window_name(conn, active_window).unwrap_or_default();
+        let diablo = find_diablo_window(conn).ok().flatten();
 
-        // Fallback
-        match find_diablo_window(conn) {
-            Ok(Some(dw)) => active_window == dw,
-            _ => false,
+        if own_pid || name.starts_with("PD2Trader") {
+            return if diablo.is_some() {
+                Foreground::OwnWindow
+            } else {
+                Foreground::Other
+            };
+        }
+        if name.contains("Diablo II") || diablo == Some(active_window) {
+            Foreground::Diablo
+        } else {
+            Foreground::Other
         }
     })
-    .unwrap_or(false)
+    .unwrap_or(Foreground::Other)
 }
 
-pub fn get_work_area(app: &AppHandle) -> Option<WindowRect> {
-    let monitor = app.primary_monitor().ok()??;
-    let size = monitor.size();
-    let position = monitor.position();
-
-    Some(WindowRect {
-        x: position.x,
-        y: position.y,
-        width: size.width as i32,
-        height: size.height as i32,
-    })
-}
-
+/// Full rect of the monitor containing the Diablo II window (by its center), else the primary monitor.
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    let d2 = get_diablo_rect(app);
-    if let Some(rect) = &d2 {
-        return Some(rect.clone());
+    let monitor_rect = |monitor: &tauri::Monitor| {
+        let position = monitor.position();
+        let size = monitor.size();
+        WindowRect {
+            x: position.x,
+            y: position.y,
+            width: size.width as i32,
+            height: size.height as i32,
+        }
+    };
+
+    if let Some(d2) = get_diablo_rect(app) {
+        let (cx, cy) = (d2.x + d2.width / 2, d2.y + d2.height / 2);
+        let containing = app.available_monitors().ok().and_then(|monitors| {
+            monitors.iter().map(monitor_rect).find(|m| {
+                cx >= m.x && cx < m.x + m.width && cy >= m.y && cy < m.y + m.height
+            })
+        });
+        if containing.is_some() {
+            return containing;
+        }
     }
-    let wa = get_work_area(app);
-    wa
+
+    app.primary_monitor().ok().flatten().as_ref().map(monitor_rect)
 }
 
-pub fn initialize_diablo_focus_monitoring(
-    app_handle: AppHandle,
-    on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
-) {
-    let initial_focus_state = is_diablo_focused();
-    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
-    if let Some(ref callback) = on_focus_change {
-        callback(initial_focus_state);
-    }
+/// Best-effort: activate, raise and focus the Diablo II window (EWMH + core X11).
+pub fn focus_diablo() -> bool {
+    use x11rb::protocol::xproto::{
+        ClientMessageEvent, ConfigureWindowAux, EventMask, InputFocus, StackMode,
+    };
 
-    // State tracking to prevent duplicate events
-    // We use Arc<Mutex<>> because the closure must be 'static
-    use std::sync::{Arc, Mutex};
-    let last_state = Arc::new(Mutex::new(Some(initial_focus_state)));
+    with_connection(|conn, screen_num| -> Result<bool, Box<dyn Error>> {
+        let Some(window) = find_diablo_window(conn)? else {
+            return Ok(false);
+        };
+        let root = conn.setup().roots[screen_num].root;
 
-    // Use our new event-driven foreground monitoring, mirroring Windows structure
-    initialize_foreground_monitoring(move || {
-        let current_state = is_diablo_focused();
+        // EWMH activation request (source indication 2 = pager, honoured by most WMs).
+        let net_active_window = get_atom(conn, "_NET_ACTIVE_WINDOW")?;
+        let activate = ClientMessageEvent::new(
+            32,
+            window,
+            net_active_window,
+            [2, x11rb::CURRENT_TIME, 0, 0, 0],
+        );
+        conn.send_event(
+            false,
+            root,
+            EventMask::SUBSTRUCTURE_REDIRECT | EventMask::SUBSTRUCTURE_NOTIFY,
+            activate,
+        )?;
 
-        let mut last_state_guard = last_state.lock().unwrap();
-        // Only emit if state has changed
-        if last_state_guard.unwrap_or(!current_state) != current_state {
-            *last_state_guard = Some(current_state);
-            let _ = app_handle.emit("diablo-focus-changed", current_state);
-            if let Some(ref callback) = on_focus_change {
-                callback(current_state);
-            }
-        }
-    });
+        // Fallback for WMs that ignore the request.
+        conn.configure_window(window, &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE))?;
+        conn.set_input_focus(InputFocus::PARENT, window, x11rb::CURRENT_TIME)?;
+        conn.flush()?;
+        Ok(true)
+    })
+    .and_then(Result::ok)
+    .unwrap_or(false)
 }
 
 pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {

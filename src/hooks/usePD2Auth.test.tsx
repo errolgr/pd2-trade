@@ -1,25 +1,25 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emit } from '@/lib/browser-events';
+import { useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
 import { usePD2Auth } from './usePD2Auth';
 
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: vi.fn() }));
-vi.mock('@/components/dialogs/SignInDialog', () => ({ SIGN_IN_DIALOG_EVENT: 'pd2:show-sign-in-dialog' }));
 
 const NOW = new Date('2026-10-18T12:00:00Z').getTime();
 const FIVE_MINUTES = 5 * 60 * 1000;
 
+const openPanel = vi.fn();
 const refreshTokens = vi.fn<(refreshToken: string) => Promise<boolean>>();
 let options: { settings: Partial<ISettings>; isLoading: boolean };
 
 function signInPrompts() {
-  return vi.mocked(emit).mock.calls.filter(([event]) => event === 'pd2:show-sign-in-dialog').length;
+  return openPanel.mock.calls.filter(([id]) => id === 'signIn').length;
 }
 
 function renderAuth(settings: Partial<ISettings>, isLoading = false) {
@@ -30,7 +30,8 @@ function renderAuth(settings: Partial<ISettings>, isLoading = false) {
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
-  vi.mocked(emit).mockResolvedValue(undefined);
+  openPanel.mockReset();
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
   refreshTokens.mockReset().mockResolvedValue(true);
   vi.mocked(useOAuth).mockReturnValue({ startOAuthFlow: vi.fn(), refreshTokens });
   vi.mocked(useOptions).mockImplementation(() => ({
@@ -109,7 +110,11 @@ describe('usePD2Auth', () => {
   });
 
   it('cancels the scheduled refresh when the token changes or the hook unmounts', async () => {
-    const { rerender, unmount } = renderAuth({ pd2Token: 't', pd2RefreshToken: 'r', pd2TokenExpiry: NOW + FIVE_MINUTES + 60_000 });
+    const { rerender, unmount } = renderAuth({
+      pd2Token: 't',
+      pd2RefreshToken: 'r',
+      pd2TokenExpiry: NOW + FIVE_MINUTES + 60_000,
+    });
 
     // New token with a later expiry replaces the old timer.
     options.settings = { pd2Token: 't2', pd2RefreshToken: 'r2', pd2TokenExpiry: NOW + FIVE_MINUTES + 120_000 };

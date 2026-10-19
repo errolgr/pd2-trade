@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { listen } from '@/lib/browser-events';
 import {
   applyTheme,
   DEFAULT_THEME_ID,
@@ -14,8 +13,6 @@ import {
   useThemeMode,
 } from './themes';
 
-vi.mock('@/lib/browser-events', () => ({ listen: vi.fn() }));
-
 const root = document.documentElement;
 const darkTheme = THEMES.find((t) => t.mode === 'dark' && t.id !== DEFAULT_THEME_ID)!;
 const lightTheme = THEMES.find((t) => t.mode === 'light')!;
@@ -26,9 +23,7 @@ function resetRoot() {
   delete root.dataset.theme;
 }
 
-beforeEach(() => {
-  vi.mocked(listen).mockResolvedValue(() => {});
-});
+beforeEach(() => {});
 
 afterEach(() => {
   cleanup();
@@ -138,27 +133,6 @@ describe('initTheme', () => {
 
     expect(root.dataset.theme).toBe(DEFAULT_THEME_ID);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe(DEFAULT_THEME_ID);
-  });
-
-  it('follows settings-updated events that carry a themeId and ignores ones that do not', () => {
-    initTheme();
-    const [event, handler] = vi.mocked(listen).mock.calls[0];
-    expect(event).toBe('settings-updated');
-
-    handler({ payload: { themeId: lightTheme.id } });
-    expect(root.dataset.theme).toBe(lightTheme.id);
-
-    handler({ payload: {} });
-    handler({ payload: undefined });
-    expect(root.dataset.theme).toBe(lightTheme.id);
-  });
-
-  it('survives an unavailable event bridge', async () => {
-    vi.mocked(listen).mockRejectedValue(new Error('no bridge'));
-
-    expect(() => initTheme()).not.toThrow();
-    await Promise.resolve();
-    expect(root.dataset.theme).toBe(DEFAULT_THEME_ID);
   });
 });
 

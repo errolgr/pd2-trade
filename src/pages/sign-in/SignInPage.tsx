@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import React, { useEffect, useRef, useState } from 'react';
+import { usePanel } from '@/overlay';
 import { useOAuth } from '@/hooks/useOAuth';
-import { useOptions, OptionsProvider } from '@/hooks/useOptions';
+import { useOptions } from '@/hooks/useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,14 +16,24 @@ import { cn } from '@/lib/utils';
 function SignInContent() {
   const { startOAuthFlow } = useOAuth();
   const { updateSettings } = useOptions();
+  const { close } = usePanel();
   const [loading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<string[] | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  // The panel unmounts when closed; abort the browser flow so it stops polling, frees the sign-in lock for the next
+  // open, and never updates this unmounted component.
+  const flowRef = useRef<AbortController | null>(null);
+  useEffect(() => () => flowRef.current?.abort(), []);
 
   const handleSignIn = async () => {
+    flowRef.current?.abort();
+    const flow = new AbortController();
+    flowRef.current = flow;
+    const { signal } = flow;
     setLoading(true);
     try {
-      const token = await startOAuthFlow();
+      const token = await startOAuthFlow(signal);
+      if (signal.aborted) return;
       if (!token) {
         setLoading(false);
         return;
@@ -36,9 +46,11 @@ function SignInContent() {
           Authorization: `Bearer ${token}`,
         },
       });
+      if (signal.aborted) return;
 
       if (response.ok) {
         const data = await response.json();
+        if (signal.aborted) return;
         const userAccounts = data?.user?.game?.accounts ?? [];
         console.log('[SignIn] Accounts found:', userAccounts);
 
@@ -47,20 +59,18 @@ function SignInContent() {
           if (userAccounts.length === 1) {
             await updateSettings({ account: userAccounts[0] });
           }
-          getCurrentWebviewWindow().close();
+          close();
         } else {
-          // Multiple accounts — show selector and bring window to front
+          // Multiple accounts — show selector
           setAccounts(userAccounts);
           setLoading(false);
-          getCurrentWebviewWindow()
-            .setFocus()
-            .catch(() => {});
         }
       } else {
         // Auth check failed but tokens are stored — just close
-        getCurrentWebviewWindow().close();
+        close();
       }
     } catch (err) {
+      if (signal.aborted) return;
       console.error('[SignIn] Error during sign-in flow:', err);
       setLoading(false);
     }
@@ -69,12 +79,10 @@ function SignInContent() {
   const handleSelectAccount = async (account: string) => {
     setSelectedAccount(account);
     await updateSettings({ account });
-    getCurrentWebviewWindow().close();
+    close();
   };
 
-  const handleLater = () => {
-    getCurrentWebviewWindow().close();
-  };
+  const handleLater = close;
 
   const closeButton = (
     <button
@@ -91,8 +99,8 @@ function SignInContent() {
   if (accounts && accounts.length > 1) {
     return (
       <WindowPanel
-        className="relative h-screen items-center justify-center gap-4 px-8 py-5 select-none"
-        data-tauri-drag-region
+        className="relative h-full w-full items-center justify-center gap-4 px-8 py-5 select-none"
+        data-panel-drag
       >
         {closeButton}
 
@@ -101,25 +109,21 @@ function SignInContent() {
           initial="hidden"
           animate="visible"
           className="flex flex-shrink-0 flex-col items-center gap-1.5 text-center"
-          data-tauri-drag-region
         >
-          <h1 className="text-lg font-semibold tracking-tight"
-            data-tauri-drag-region>
-            Sign in to PD2 Trader
-          </h1>
-          <p className="text-sm text-muted-foreground"
-            data-tauri-drag-region>
-            Multiple accounts found. Select which one to use.
-          </p>
+          <h1 className="text-lg font-semibold tracking-tight">Sign in to PD2 Trader</h1>
+          <p className="text-sm text-muted-foreground">Multiple accounts found. Select which one to use.</p>
         </motion.div>
 
-        <ScrollArea className="w-full max-w-xs min-h-0 flex-1">
-          <motion.div className="flex flex-col gap-2 p-0.5"
+        <ScrollArea className="w-full max-w-xs min-h-0 flex-1"
+          data-no-drag>
+          <motion.div
+            className="flex flex-col gap-2 p-0.5"
             role="listbox"
             aria-label="Game accounts"
             variants={listStagger}
             initial="hidden"
-            animate="visible">
+            animate="visible"
+          >
             {accounts.map((account) => {
               const isSelected = selectedAccount === account;
               return (
@@ -168,10 +172,8 @@ function SignInContent() {
 
   // Sign in view
   return (
-    <WindowPanel
-      className="relative h-screen items-center justify-center gap-5 px-8 select-none"
-      data-tauri-drag-region
-    >
+    <WindowPanel className="relative h-full w-full items-center justify-center gap-5 px-8 select-none"
+      data-panel-drag>
       {closeButton}
       <div
         aria-hidden
@@ -182,14 +184,9 @@ function SignInContent() {
         initial="hidden"
         animate="visible"
         className="relative flex flex-col items-center gap-1.5 text-center"
-        data-tauri-drag-region
       >
-        <h1 className="text-xl font-semibold tracking-tight"
-          data-tauri-drag-region>
-          Sign in to PD2 Trader
-        </h1>
-        <p className="text-sm text-muted-foreground"
-          data-tauri-drag-region>
+        <h1 className="text-xl font-semibold tracking-tight">Sign in to PD2 Trader</h1>
+        <p className="text-sm text-muted-foreground">
           Connect your Project Diablo 2 account to access trading features.
         </p>
       </motion.div>
@@ -230,10 +227,8 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <OptionsProvider>
-      <MotionConfig reducedMotion="user">
-        <SignInContent />
-      </MotionConfig>
-    </OptionsProvider>
+    <MotionConfig reducedMotion="user">
+      <SignInContent />
+    </MotionConfig>
   );
 }

@@ -2,17 +2,39 @@ import { useCallback, useEffect, useRef } from 'react';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { emit, listen } from '@/lib/browser-events';
-
-interface DelistHandlerProps {
-  onShowPopup?: (listings: any[]) => void;
-}
+import { showToast, useOverlay } from '@/overlay';
 
 const AUTH_WAIT_TIMEOUT = 5000;
 const AUTH_POLL_INTERVAL = 200;
 
-const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
+type DelistFn = (raw: string) => Promise<void>;
+
+/** The mounted DelistHandler's implementation (it needs the Pd2Website/overlay contexts). */
+let activeDelist: DelistFn | null = null;
+
+export interface DelistApi {
+  /** Delist the raw clipboard item: deletes a single matching listing, or opens the picker for several. */
+  delistItem(raw: string): Promise<void>;
+}
+
+const delistApi: DelistApi = {
+  delistItem: (raw) => {
+    if (!activeDelist) {
+      console.warn('[DelistHandler] delistItem called while DelistHandler is not mounted');
+      return Promise.resolve();
+    }
+    return activeDelist(raw);
+  },
+};
+
+/** Stable delist API; works anywhere (AppController is a sibling of DelistHandler, not a child). */
+export function useDelist(): DelistApi {
+  return delistApi;
+}
+
+const DelistHandler: React.FC = () => {
   const { findMatchingItems, getMarketListings, deleteMarketListing, authData } = usePd2Website();
+  const { openPanel } = useOverlay();
   const isDelistingRef = useRef(false);
   const authDataRef = useRef(authData);
 
@@ -37,15 +59,14 @@ const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
     });
   }, []);
 
-  const handleDelistRef = useRef<(raw: string) => Promise<void>>();
+  const handleDelistRef = useRef<DelistFn>();
 
   handleDelistRef.current = async (raw: string) => {
-    console.log('[DelistHandler] Received delist-item event');
     if (isDelistingRef.current) return;
 
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
-      emit('toast-event', {
+      showToast({
         title: 'Delist',
         description: 'You must be logged in to delist items.',
         variant: 'error',
@@ -59,7 +80,7 @@ const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
       const matchingStashItems = await findMatchingItems(item);
 
       if (matchingStashItems.length === 0) {
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: 'Item not found in stash.',
           variant: 'error',
@@ -69,7 +90,7 @@ const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
 
       const query = buildGetMarketListingByStashItemQuery(matchingStashItems, authDataRef.current.user._id);
       if (!query) {
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: 'No active listings match this item.',
           variant: 'info',
@@ -81,24 +102,24 @@ const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
       const listings = result.data;
 
       if (listings.length === 0) {
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: 'No active listings found for this item.',
           variant: 'info',
         });
       } else if (listings.length === 1) {
         await deleteMarketListing(listings[0]._id);
-        emit('toast-event', {
+        showToast({
           title: 'Delist',
           description: `Removed ${listings[0].item.name} listing.`,
         });
       } else {
-        // Multiple matches - emit event for popup
-        emit('delist-show-popup', listings);
+        // Multiple matches: let the user pick (replaces the list if the picker is already open)
+        openPanel('delist', { listings });
       }
     } catch (err) {
       console.error('[DelistHandler] Error:', err);
-      emit('toast-event', {
+      showToast({
         title: 'Delist',
         description: 'Failed to delist item.',
         variant: 'error',
@@ -109,20 +130,10 @@ const DelistHandler: React.FC<DelistHandlerProps> = ({ onShowPopup }) => {
   };
 
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    let mounted = true;
-    listen<string>('delist-item', ({ payload }) => {
-      handleDelistRef.current?.(payload);
-    }).then((fn) => {
-      if (mounted) {
-        unlisten = fn;
-      } else {
-        fn();
-      }
-    });
+    const impl: DelistFn = (raw) => handleDelistRef.current!(raw);
+    activeDelist = impl;
     return () => {
-      mounted = false;
-      if (unlisten) unlisten();
+      if (activeDelist === impl) activeDelist = null;
     };
   }, []);
 

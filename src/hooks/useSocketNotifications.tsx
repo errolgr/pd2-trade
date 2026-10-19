@@ -1,13 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { listen as listenBrowser } from '@/lib/browser-events';
-import { listen as listenTauri } from '@tauri-apps/api/event';
-import { emit } from '@/lib/browser-events';
-import { emit as emitTauri } from '@tauri-apps/api/event';
-import { isTauri } from '@tauri-apps/api/core';
-import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@/lib/browser-events';
+import { isTauri, invoke } from '@tauri-apps/api/core';
+import { usePd2Website } from './pd2website/usePD2Website';
 import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { ISettings } from './useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
+import { showToast } from '@/overlay';
 
 interface SystemNotification {
   _id: string;
@@ -33,9 +31,16 @@ interface WhisperEvent {
 }
 
 interface UseSocketNotificationsProps {
-  isConnected: boolean;
   settings?: ISettings;
   whisperNotificationsEnabled?: boolean;
+}
+
+interface ChatMessagePush {
+  _id: string;
+  sender_id: string;
+  conversation_id: string;
+  content: string;
+  sender?: { _id?: string; display_name?: string; username?: string };
 }
 
 // Play the notification sound from assets
@@ -57,118 +62,62 @@ export function isToastEnabled(settings: ISettings | undefined, type: string): b
   return types.includes(type);
 }
 
+/** Exactly one instance (AppController): socket offer/chat pushes and Rust whisper events -> sound + toasts. */
 export const useSocketNotifications = ({
-  isConnected,
   settings,
   whisperNotificationsEnabled = true,
 }: UseSocketNotificationsProps) => {
+  const { isConnected, subscribeSocket, refresh: refreshOffers } = usePd2Website();
   const processedNotificationsRef = useRef<Set<string>>(new Set());
-  const unlistenRef = useRef<(() => void) | null>(null);
-  const isListenerSetupRef = useRef<boolean>(false);
 
   // Listen for offer received notifications via socket
   useEffect(() => {
-    if (!isConnected) {
-      // Clean up listener if disconnected
-      if (unlistenRef.current) {
-        unlistenRef.current();
-        unlistenRef.current = null;
-        isListenerSetupRef.current = false;
-      }
-      return;
-    }
+    if (!isConnected) return;
 
-    // Prevent multiple listeners from being set up
-    if (isListenerSetupRef.current) {
-      return;
-    }
+    return subscribeSocket<SystemNotification>('system/notification_pushed', (notification) => {
+      // Only handle offer_received notifications
+      if (notification.type !== 'offer_received' || !notification.data?.listing_id) return;
+      if (processedNotificationsRef.current.has(notification._id)) return;
+      processedNotificationsRef.current.add(notification._id);
 
-    const setupListener = async () => {
-      // Double-check after async gap
-      if (isListenerSetupRef.current) {
-        return;
+      // Clean up old notification IDs (keep only last 100)
+      if (processedNotificationsRef.current.size > 100) {
+        const idsArray = Array.from(processedNotificationsRef.current);
+        processedNotificationsRef.current = new Set(idsArray.slice(-100));
       }
 
-      try {
-        // Clean up any existing listener first
-        if (unlistenRef.current) {
-          unlistenRef.current();
-          unlistenRef.current = null;
-        }
+      const listingId = notification.data.listing_id;
+      const offerMessage = notification.meta?.string || 'New offer received';
 
-        const unlistenFn = await listenBrowser<SystemNotification>(
-          'socket:system/notification_pushed',
-          async (event) => {
-            const notification = event.payload;
+      // Play notification sound if trade notifications are enabled
+      const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
+      if (tradeEnabled) {
+        const volume = settings?.whisperNotificationVolume ?? 70;
+        playNotificationSound(volume);
+      }
 
-            // Only handle offer_received notifications
-            if (notification.type === 'offer_received' && notification.data?.listing_id) {
-              // Atomic check-and-add to prevent race conditions
-              // If the ID already exists, return immediately
-              if (processedNotificationsRef.current.has(notification._id)) {
-                return;
-              }
-
-              // Mark as processed immediately to prevent duplicate processing
-              processedNotificationsRef.current.add(notification._id);
-
-              // Clean up old notification IDs (keep only last 100)
-              if (processedNotificationsRef.current.size > 100) {
-                const idsArray = Array.from(processedNotificationsRef.current);
-                processedNotificationsRef.current = new Set(idsArray.slice(-100));
-              }
-
-              const listingId = notification.data.listing_id;
-              const offerMessage = notification.meta?.string || 'New offer received';
-
-              // Play notification sound if trade notifications are enabled
-              const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
-              if (tradeEnabled) {
-                const volume = settings?.whisperNotificationVolume ?? 70;
-                playNotificationSound(volume);
-              }
-
-              // Show toast notification with link to listing
-              if (isToastEnabled(settings, 'offers')) {
-                await emit('toast-event', {
-                  title: 'New Offer',
-                  description: offerMessage,
-                  action: {
-                    label: 'View Listing',
-                    type: ToastActionType.OPEN_MARKET_LISTING,
-                    data: {
-                      listingId: listingId,
-                    },
-                  },
-                });
-              }
-
-              // Emit event to refresh offers (this will be handled by useTradeOffers)
-              await emit('refresh-offers');
-            }
+      // Show toast notification with link to listing
+      if (isToastEnabled(settings, 'offers')) {
+        showToast({
+          title: 'New Offer',
+          description: offerMessage,
+          action: {
+            label: 'View Listing',
+            type: ToastActionType.OPEN_MARKET_LISTING,
+            data: {
+              listingId: listingId,
+            },
           },
-        );
-
-        unlistenRef.current = unlistenFn;
-        isListenerSetupRef.current = true;
-      } catch (error) {
-        console.error('Failed to set up offer notification listener:', error);
-        isListenerSetupRef.current = false;
+        });
       }
-    };
 
-    setupListener();
-
-    return () => {
-      // Cleanup: unlisten when component unmounts or dependencies change
-      if (unlistenRef.current) {
-        unlistenRef.current();
-        unlistenRef.current = null;
-        isListenerSetupRef.current = false;
-      }
-    };
+      // Refresh the trade offers list (owned by Pd2WebsiteProvider)
+      refreshOffers();
+    });
   }, [
     isConnected,
+    subscribeSocket,
+    refreshOffers,
     settings?.whisperNotificationVolume,
     settings?.tradeNotificationsEnabled,
     settings?.toastPopupsEnabled,
@@ -185,7 +134,7 @@ export const useSocketNotifications = ({
 
     const setupListener = async () => {
       try {
-        const unlistenFn = await listenTauri<WhisperEvent>('whisper-received', async (event) => {
+        const unlistenFn = await listen<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
 
           // Skip outgoing messages (messages sent by the user)
@@ -209,7 +158,7 @@ export const useSocketNotifications = ({
                   duration: 5000,
                   variant: 'default',
                 };
-                emitTauri('toast-event', toastPayload);
+                showToast(toastPayload);
               }
             }
             return; // Don't process join messages as regular whispers
@@ -269,7 +218,7 @@ export const useSocketNotifications = ({
                   duration: 5000,
                   variant: 'success',
                 };
-                emitTauri('toast-event', toastPayload);
+                showToast(toastPayload);
               }
             }
             return; // Trade whispers handled
@@ -290,7 +239,7 @@ export const useSocketNotifications = ({
                 duration: 5000,
                 variant: 'default',
               };
-              emitTauri('toast-event', toastPayload);
+              showToast(toastPayload);
             }
           }
         });
@@ -324,60 +273,31 @@ export const useSocketNotifications = ({
 
   // Listen for chat message notifications via socket (show toast popup)
   useEffect(() => {
-    if (!isConnected) {
-      return;
-    }
+    if (!isConnected) return;
 
-    let unlisten: (() => void) | undefined;
+    return subscribeSocket<ChatMessagePush>('social/message_pushed', (msg) => {
+      if (!msg._id || !msg.sender_id || !msg.conversation_id) return;
 
-    const setupListener = async () => {
-      try {
-        const unlistenFn = await listenBrowser<{
-          _id: string;
-          sender_id: string;
-          conversation_id: string;
-          content: string;
-          sender?: { _id?: string; display_name?: string; username?: string };
-        }>('socket:social/message_pushed', async (event) => {
-          const msg = event.payload;
-          if (!msg._id || !msg.sender_id || !msg.conversation_id) return;
-
-          // Dedup — prevent duplicate toasts from multiple hook instances
-          if (processedNotificationsRef.current.has(msg._id)) return;
-          processedNotificationsRef.current.add(msg._id);
-          if (processedNotificationsRef.current.size > 100) {
-            const idsArray = Array.from(processedNotificationsRef.current);
-            processedNotificationsRef.current = new Set(idsArray.slice(-100));
-          }
-
-          if (!isToastEnabled(settings, 'whispers')) return;
-
-          const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
-
-          await emit('toast-event', {
-            title: 'New Chat Message',
-            description: messagePreview,
-            action: {
-              label: 'Open Chat',
-              type: ToastActionType.OPEN_CHAT_CONVERSATION,
-              data: { conversationId: msg.conversation_id },
-            },
-          });
-        });
-
-        unlisten = unlistenFn;
-      } catch (error) {
-        console.error('Failed to set up chat message toast listener:', error);
+      if (processedNotificationsRef.current.has(msg._id)) return;
+      processedNotificationsRef.current.add(msg._id);
+      if (processedNotificationsRef.current.size > 100) {
+        const idsArray = Array.from(processedNotificationsRef.current);
+        processedNotificationsRef.current = new Set(idsArray.slice(-100));
       }
-    };
 
-    setupListener();
+      if (!isToastEnabled(settings, 'whispers')) return;
 
-    return () => {
-      if (unlisten) {
-        unlisten();
-        unlisten = undefined;
-      }
-    };
-  }, [isConnected, settings?.toastPopupsEnabled, settings?.toastPopupTypes]);
+      const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
+
+      showToast({
+        title: 'New Chat Message',
+        description: messagePreview,
+        action: {
+          label: 'Open Chat',
+          type: ToastActionType.OPEN_CHAT_CONVERSATION,
+          data: { conversationId: msg.conversation_id },
+        },
+      });
+    });
+  }, [isConnected, subscribeSocket, settings?.toastPopupsEnabled, settings?.toastPopupTypes]);
 };

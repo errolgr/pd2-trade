@@ -1,22 +1,42 @@
 import { useCallback } from 'react';
 import { useOptions } from './useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
-import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { BACKEND_URL, PD2_SCOPES } from '@/lib/pkce';
 import { GenericToastPayload } from '@/common/types/Events';
+import { showToast } from '@/overlay';
 
-let flowInProgress = false;
+/** The running sign-in flow; a new flow is refused while one is active. Cleared when it ends or its signal aborts. */
+let activeFlow: object | null = null;
+
+/** Resolves after `ms`, or as soon as `signal` aborts. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  if (signal?.aborted) {
+    resolve();
+    return promise;
+  }
+  const done = () => {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', done);
+    resolve();
+  };
+  const timer = setTimeout(done, ms);
+  signal?.addEventListener('abort', done, { once: true });
+  return promise;
+}
 
 async function pollForTokens(
   state: string,
+  signal?: AbortSignal,
   intervalMs = 2000,
   timeoutMs = 10 * 60 * 1000,
 ): Promise<{ accessToken: string; refreshToken?: string; idToken?: string; expiresIn: number } | null> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    await sleep(intervalMs, signal);
+    if (signal?.aborted) return null;
 
     try {
       const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/poll/${state}`);
@@ -38,69 +58,85 @@ async function pollForTokens(
 export function useOAuth() {
   const { updateSettings } = useOptions();
 
-  const startOAuthFlow = useCallback(async (): Promise<string | false> => {
-    if (flowInProgress) return false;
-    flowInProgress = true;
+  /**
+   * Runs the browser sign-in flow. Aborting `signal` (the caller went away) ends the flow right away: polling stops,
+   * nothing is stored or toasted, the result is `false`, and a new flow may start immediately.
+   */
+  const startOAuthFlow = useCallback(
+    async (signal?: AbortSignal): Promise<string | false> => {
+      if (activeFlow || signal?.aborted) return false;
+      const flow = {};
+      activeFlow = flow;
+      const release = () => {
+        if (activeFlow === flow) activeFlow = null;
+      };
+      signal?.addEventListener('abort', release, { once: true });
 
-    try {
-      // 1. Start flow on backend
-      const startResponse = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scopes: PD2_SCOPES }),
-      });
+      try {
+        // 1. Start flow on backend
+        const startResponse = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scopes: PD2_SCOPES }),
+        });
 
-      if (!startResponse.ok) {
-        throw new Error(`Failed to start OAuth flow: ${startResponse.status}`);
-      }
+        if (!startResponse.ok) {
+          throw new Error(`Failed to start OAuth flow: ${startResponse.status}`);
+        }
 
-      const { authUrl, state } = await startResponse.json();
+        const { authUrl, state } = await startResponse.json();
+        if (signal?.aborted) return false;
 
-      // 2. Open system browser
-      if (isTauri()) {
-        await invoke('open_oauth_url', { url: authUrl });
-      } else {
-        window.open(authUrl, '_blank', 'noopener,noreferrer');
-      }
+        // 2. Open system browser
+        if (isTauri()) {
+          await invoke('open_oauth_url', { url: authUrl });
+        } else {
+          window.open(authUrl, '_blank', 'noopener,noreferrer');
+        }
 
-      // 3. Poll for completion
-      const tokens = await pollForTokens(state);
-      if (!tokens) {
-        const timeoutToast: GenericToastPayload = {
+        // 3. Poll for completion
+        const tokens = await pollForTokens(state, signal);
+        if (signal?.aborted) return false;
+        if (!tokens) {
+          const timeoutToast: GenericToastPayload = {
+            title: 'PD2 Trader',
+            description: 'Login timed out. Please try again.',
+            variant: 'warning',
+          };
+          showToast(timeoutToast);
+          return false;
+        }
+
+        // 4. Store tokens
+        await updateSettings({
+          pd2Token: tokens.accessToken,
+          pd2RefreshToken: tokens.refreshToken,
+          pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
+        });
+
+        const successToast: GenericToastPayload = {
           title: 'PD2 Trader',
-          description: 'Login timed out. Please try again.',
-          variant: 'warning',
+          description: 'Authentication successful!',
         };
-        emit('toast-event', timeoutToast);
+        showToast(successToast);
+        return tokens.accessToken;
+      } catch (error) {
+        if (signal?.aborted) return false;
+        console.error('[OAuth] Flow failed:', error);
+        const errorToast: GenericToastPayload = {
+          title: 'PD2 Trader',
+          description: 'Authentication failed. Please try again.',
+          variant: 'error',
+        };
+        showToast(errorToast);
         return false;
+      } finally {
+        signal?.removeEventListener('abort', release);
+        release();
       }
-
-      // 4. Store tokens
-      await updateSettings({
-        pd2Token: tokens.accessToken,
-        pd2RefreshToken: tokens.refreshToken,
-        pd2TokenExpiry: Date.now() + tokens.expiresIn * 1000,
-      });
-
-      const successToast: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Authentication successful!',
-      };
-      emit('toast-event', successToast);
-      return tokens.accessToken;
-    } catch (error) {
-      console.error('[OAuth] Flow failed:', error);
-      const errorToast: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Authentication failed. Please try again.',
-        variant: 'error',
-      };
-      emit('toast-event', errorToast);
-      return false;
-    } finally {
-      flowInProgress = false;
-    }
-  }, [updateSettings]);
+    },
+    [updateSettings],
+  );
 
   const refreshTokens = useCallback(
     async (refreshToken: string): Promise<boolean> => {

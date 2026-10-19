@@ -1,24 +1,24 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showToast } from '@/overlay';
 import { check } from '@tauri-apps/plugin-updater';
 import type { DownloadEvent, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';
-import { emit } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { CustomToastPayload } from '@/common/types/Events';
 import { resetUpdateNotification, useAppUpdates } from '@/hooks/useAppUpdates';
 import { installUpdateAndRelaunch } from './updater';
 
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
 vi.mock('sonner', () => ({
   toast: { loading: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useDialog', () => ({
   useDialog: () => ({ openDialog: vi.fn(), closeDialog: vi.fn() }),
@@ -51,7 +51,6 @@ beforeEach(() => {
   vi.mocked(relaunch).mockImplementation(async () => {
     calls.push('relaunch');
   });
-  vi.mocked(emit).mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -112,10 +111,7 @@ describe('installUpdateAndRelaunch', () => {
       updateSettings: vi.fn(),
     });
     const toastVersions = () =>
-      vi
-        .mocked(emit)
-        .mock.calls.filter(([event]) => event === 'toast-event')
-        .map(([, payload]) => (payload as CustomToastPayload).action?.data?.version);
+      vi.mocked(showToast).mock.calls.map(([payload]) => (payload as CustomToastPayload).action?.data?.version);
     const advance = (ms: number) =>
       act(async () => {
         await vi.advanceTimersByTimeAsync(ms);

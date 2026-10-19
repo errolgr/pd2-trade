@@ -11,10 +11,11 @@ import { cn } from '@/lib/utils';
 import { fadeIn, fadeInUp } from '@/lib/motion';
 import { useTradeMessages } from '@/hooks/useTradeMessages';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { usePanel } from '@/overlay';
 
 export const TradeMessagesContainer: React.FC = () => {
   const { trades, removeTrade } = useTradeMessages();
+  const { close } = usePanel<'tradeMessages'>();
   const [showHiddenOffers, setShowHiddenOffers] = useState(false);
   const {
     incomingOffers,
@@ -64,7 +65,7 @@ export const TradeMessagesContainer: React.FC = () => {
             <WindowChrome
               title={
                 <span className="flex items-center gap-3">
-                  <span data-tauri-drag-region>Offers</span>
+                  <span>Offers</span>
                   <TabsList className="h-8">
                     <TabsTrigger value="whispers"
                       className="gap-1.5 px-2.5 text-xs">
@@ -78,7 +79,7 @@ export const TradeMessagesContainer: React.FC = () => {
                 </span>
               }
               titleClassName="overflow-visible"
-              onClose={() => getCurrentWebviewWindow().hide()}
+              onClose={close}
               closeLabel="Hide offers"
             />
 
@@ -178,7 +179,10 @@ export const TradeMessagesContainer: React.FC = () => {
                       size="sm"
                       onClick={() => setShowHiddenOffers(!showHiddenOffers)}
                       aria-pressed={showHiddenOffers}
-                      className={cn('h-8 text-xs text-muted-foreground', showHiddenOffers && 'bg-accent text-accent-foreground')}
+                      className={cn(
+                        'h-8 text-xs text-muted-foreground',
+                        showHiddenOffers && 'bg-accent text-accent-foreground',
+                      )}
                     >
                       {showHiddenOffers ? (
                         <>
@@ -275,10 +279,16 @@ const OfferList: React.FC<{ empty: React.ReactNode; children: React.ReactNode }>
     <ScrollArea className="h-full px-4">
       <div className="flex flex-col gap-2 pb-4">
         <AnimatePresence initial={false}>
-          {hasItems ? children : <motion.div key="empty"
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible">{empty}</motion.div>}
+          {hasItems ? (
+            children
+          ) : (
+            <motion.div key="empty"
+              variants={fadeIn}
+              initial="hidden"
+              animate="visible">
+              {empty}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </ScrollArea>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { MessageSquare, GripVertical, Settings, ShoppingBag, X, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { emit } from '@/lib/browser-events';
 import { popIn } from '@/lib/motion';
 
 interface ChatButtonProps {
@@ -65,14 +64,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = React.useRef<number | null>(null);
 
-  const handleDisableClick = () => {
-    // Emit a toast event that will show a confirmation dialog
-    // The actual disable will happen when user confirms in the toast
-    if (onDisableClick) {
-      emit('toast-confirm-disable-overlay');
-    }
-  };
-
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       window.clearTimeout(hoverTimeoutRef.current);
@@ -114,10 +105,13 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
-        {/* Invisible hover area that covers the expanded button positions */}
+      {/* Centered in its panel frame. The frame is click-through: only the orb (and, while expanded, the fan
+          area) are interactive, so the rest of the frame never blocks clicks on the game. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        {/* Invisible hover area that covers the expanded button positions (interactive only while expanded) */}
         <div
-          className="pointer-events-auto absolute"
+          data-interactive={isHovered ? 'true' : undefined}
+          className={cn('absolute', isHovered ? 'pointer-events-auto' : 'pointer-events-none')}
           style={{
             width: expandedRadius * 2,
             height: expandedRadius * 2,
@@ -128,9 +122,12 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
-        <div className="pointer-events-auto relative size-14"
+        <div
+          data-interactive="true"
+          className="pointer-events-auto relative size-14"
           onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}>
+          onMouseLeave={handleMouseLeave}
+        >
           {/* Soft halo behind the cluster while expanded */}
           <div
             aria-hidden
@@ -143,13 +140,12 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
           {/* Drag Handle Circle */}
           <div
-            data-tauri-drag-region
+            data-panel-drag
             title="Drag to move"
             className={cn(orb, 'size-9 cursor-grab text-muted-foreground active:cursor-grabbing active:scale-100')}
             style={fanStyle('drag')}
           >
-            <GripVertical data-tauri-drag-region
-              className="size-4" />
+            <GripVertical className="size-4" />
           </div>
 
           {/* Settings Button Circle */}
@@ -181,7 +177,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               </button>
               <AnimatePresence>
                 {tradeOffersCount > 0 && isHovered && (
-                  <CountBadge key="trade"
+                  <CountBadge
+                    key="trade"
                     count={tradeOffersCount}
                     label={`${tradeOffersCount} trade offers`}
                     className="-top-1 -right-1 bg-info text-info-foreground"
@@ -209,7 +206,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           {onDisableClick && (
             <button
               type="button"
-              onClick={handleDisableClick}
+              onClick={onDisableClick}
               className={cn(
                 orb,
                 'border-destructive/60 bg-destructive text-destructive-foreground hover:border-destructive hover:bg-destructive/85 hover:text-destructive-foreground',
@@ -242,14 +239,16 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             </button>
             <AnimatePresence>
               {unreadCount > 0 && (
-                <CountBadge key="unread"
+                <CountBadge
+                  key="unread"
                   count={unreadCount}
                   label={`${unreadCount} unread messages`}
                   className="-top-1 -right-1 bg-destructive text-destructive-foreground"
                 />
               )}
               {tradeOffersCount > 0 && !isHovered && (
-                <CountBadge key="trade"
+                <CountBadge
+                  key="trade"
                   count={tradeOffersCount}
                   label={`${tradeOffersCount} trade offers`}
                   className="-top-1 -left-1 bg-info text-info-foreground"

@@ -3,12 +3,12 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { useOptions } from '@/hooks/useOptions';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { usePanel } from '@/overlay';
 import { createOptionsStore, type OptionsStore } from './test-utils';
 import SettingsLayout from './options-layout';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn() }));
 // Section bodies have their own tests; stand-ins expose which one is mounted. vi.mock factories are
 // hoisted above static imports, so SettingsLink has to be loaded inside the factory.
 vi.mock('./appearance/layout', async () => {
@@ -32,7 +32,7 @@ vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
 const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Net Worth', 'Hotkeys', 'About'];
 
 let store: OptionsStore;
-const hide = vi.fn();
+const close = vi.fn();
 
 function renderLayout() {
   store = createOptionsStore({ mode: 'softcore' });
@@ -58,8 +58,8 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  hide.mockReset();
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ hide } as never);
+  close.mockReset();
+  vi.mocked(usePanel).mockReturnValue({ close } as never);
 });
 
 afterEach(() => {
@@ -111,10 +111,10 @@ describe('SettingsLayout navigation', () => {
     expect(panelText()).toBe('net-worth-body');
   });
 
-  it('closing hides the window rather than destroying it', () => {
+  it('closing closes the settings panel', () => {
     renderLayout();
     fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 });
 

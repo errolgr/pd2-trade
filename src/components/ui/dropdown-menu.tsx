@@ -3,6 +3,7 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CheckIcon, CircleIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { usePanelPortalContainer } from '@/overlay/portal';
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu"
@@ -10,7 +11,9 @@ function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrim
 }
 
 function DropdownMenuPortal({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
+  const container = usePanelPortalContainer();
   return <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal"
+    container={container}
     {...props} />;
 }
 
@@ -25,7 +28,7 @@ function DropdownMenuContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPortal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
@@ -35,7 +38,7 @@ function DropdownMenuContent({
         )}
         {...props}
       />
-    </DropdownMenuPrimitive.Portal>
+    </DropdownMenuPortal>
   );
 }
 

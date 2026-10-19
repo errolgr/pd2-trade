@@ -1,6 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { readTextFile, BaseDirectory } from '@/lib/browser-fs';
-import { listen } from '@/lib/browser-events';
 
 const FLUSH_INTERVAL = 2000;
 
@@ -72,8 +71,8 @@ export function startDebugLogging() {
 
 /**
  * Reads settings.json directly and starts logging if debugLoggingEnabled is true.
- * Called at app startup in main.tsx so all windows get the interceptor.
- * Also listens for settings-updated events to respond to toggle changes.
+ * Called at app startup in main.tsx, before OptionsProvider has loaded settings.
+ * Toggle changes afterwards are applied by OptionsProvider (start/stopDebugLogging).
  */
 export async function initDebugLoggingFromSettings() {
   try {
@@ -85,16 +84,6 @@ export async function initDebugLoggingFromSettings() {
   } catch {
     // Settings file doesn't exist yet or parse error — no-op
   }
-
-  // Listen for settings changes to start/stop logging dynamically
-  listen<any>('settings-updated', (event) => {
-    const settings = event.payload;
-    if (settings?.debugLoggingEnabled) {
-      startDebugLogging();
-    } else {
-      stopDebugLogging();
-    }
-  });
 }
 
 export function stopDebugLogging() {

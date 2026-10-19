@@ -3,21 +3,21 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { isTauri } from '@tauri-apps/api/core';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
-import { openCenteredWindow } from '@/lib/window';
+import { useOverlay } from '@/overlay';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { AboutForm } from './about-form';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn() }));
-vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: { getByLabel: vi.fn() } }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-app', () => ({ getVersion: vi.fn() }));
 vi.mock('@/hooks/useUpdater', () => ({ useUpdater: vi.fn() }));
-vi.mock('@/lib/window', () => ({ openCenteredWindow: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+
+const openPanel = vi.fn();
 
 let store: OptionsStore;
 const checkForUpdates = vi.fn();
@@ -43,7 +43,7 @@ afterAll(() => {
 beforeEach(() => {
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(getVersion).mockResolvedValue('1.4.0');
-  vi.mocked(WebviewWindow.getByLabel).mockResolvedValue(null);
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
   checkForUpdates.mockReset();
   downloadUpdate.mockReset();
   vi.mocked(useUpdater).mockReturnValue({ checkForUpdates, downloadUpdate } as never);
@@ -110,20 +110,10 @@ describe('AboutForm', () => {
     expect(screen.getByRole('switch', { name: 'Automatic Updates' }).getAttribute('aria-checked')).toBe('true');
   });
 
-  it('re-shows an existing changelog window instead of opening another', async () => {
-    const existing = { show: vi.fn(), setFocus: vi.fn() };
-    vi.mocked(WebviewWindow.getByLabel).mockResolvedValue(existing as never);
+  it('opens the changelog panel', async () => {
     await renderForm();
     await click(/View Changelog/);
-    expect(existing.show).toHaveBeenCalled();
-    expect(existing.setFocus).toHaveBeenCalled();
-    expect(openCenteredWindow).not.toHaveBeenCalled();
-  });
-
-  it('opens a new changelog window when none exists', async () => {
-    await renderForm();
-    await click(/View Changelog/);
-    expect(vi.mocked(openCenteredWindow).mock.calls[0].slice(0, 2)).toEqual(['ChangeLog', '/change-log']);
+    expect(openPanel).toHaveBeenCalledWith('changeLog');
   });
 
   it('in the browser hides update controls and opens the changelog directly', async () => {
@@ -132,7 +122,6 @@ describe('AboutForm', () => {
     expect(screen.queryByRole('button', { name: /Check for Updates/ })).toBeNull();
     expect(screen.queryByRole('switch', { name: 'Automatic Updates' })).toBeNull();
     await click(/View Changelog/);
-    expect(WebviewWindow.getByLabel).not.toHaveBeenCalled();
-    expect(openCenteredWindow).toHaveBeenCalledTimes(1);
+    expect(openPanel).toHaveBeenCalledWith('changeLog');
   });
 });

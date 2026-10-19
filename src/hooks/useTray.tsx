@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
-import { openCenteredWindow, attachWindowCloseHandler } from '@/lib/window';
+import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
@@ -10,89 +10,29 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
-import { WindowTitles } from '@/lib/window-titles';
 
 type TrayContextValue = {
   tray: any | null;
-  settingsWindow: any | null;
 };
 
-const TrayContext = createContext<TrayContextValue>({ tray: null, settingsWindow: null });
+const TrayContext = createContext<TrayContextValue>({ tray: null });
 
 export const useTray = () => useContext(TrayContext);
 
+// The tray lives in Rust and outlives the page, so every reload or remount would add another icon
+// unless the previous one (found by this fixed id) is removed first. Queued so create/remove never interleave.
+const TRAY_ID = 'pd2-trader';
+let trayQueue: Promise<void> = Promise.resolve();
+const queueTray = (op: () => Promise<void>) => {
+  trayQueue = trayQueue.then(op).catch((err) => console.error('Tray operation failed:', err));
+};
+
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [tray, setTray] = useState<any | null>(null);
-  const [settingsWindow, setSettingsWindow] = useState<any | null>(null);
   const { settings } = useOptions();
+  const { openPanel } = useOverlay();
   const trayRef = useRef<any | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
-  const settingsWinRef = useRef<any | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const isSettingsOpenRef = useRef(isSettingsOpen);
-
-  // Keep ref in sync with state
-  useEffect(() => {
-    isSettingsOpenRef.current = isSettingsOpen;
-  }, [isSettingsOpen]);
-
-  const showSettingsWindow = async () => {
-    if (settingsWinRef.current) {
-      try {
-        await settingsWinRef.current.show();
-        setIsSettingsOpen(true);
-        return;
-      } catch (err) {
-        // Window was closed out from under us ("window not found"); drop the stale handle and recreate
-        console.warn('[Tray] Stale settings window handle, recreating:', err);
-        settingsWinRef.current = null;
-        setSettingsWindow(null);
-      }
-    }
-    try {
-      settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
-        title: WindowTitles.Settings,
-        decorations: false,
-        skipTaskbar: true,
-        transparent: true,
-        alwaysOnTop: true,
-        focus: true,
-        shadow: false,
-        width: 1025,
-        height: 700,
-      });
-    } catch (err) {
-      console.error('[Tray] Failed to open settings window:', err);
-      return;
-    }
-    setSettingsWindow(settingsWinRef.current);
-    setIsSettingsOpen(true);
-    attachWindowCloseHandler(settingsWinRef.current, () => {
-      settingsWinRef.current = null;
-      setSettingsWindow(null);
-      setIsSettingsOpen(false);
-    });
-  };
-
-  // Listen for open-settings event
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-
-    listen('open-settings', () => {
-      showSettingsWindow();
-    })
-      .then((off) => {
-        unlisten = off;
-      })
-      .catch((err) => {
-        console.error('Failed to listen for open-settings event:', err);
-      });
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
-
   // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
     if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
@@ -118,7 +58,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         if (!(await isRegistered(shortcut))) {
           await register(shortcut, (event) => {
             if (event.state === 'Pressed') {
-              showSettingsWindow();
+              openPanel('settings');
             }
           });
         }
@@ -176,7 +116,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       // Unregister shortcut on cleanup
       schedule(unregisterShortcut);
     };
-  }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
+  }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings, openPanel]);
 
   useEffect(() => {
     if (!isTauri()) {
@@ -187,14 +127,16 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     let isMounted = true;
 
     async function setupTray() {
+      if (!isMounted) return;
       try {
+        await TrayIcon.removeById(TRAY_ID).catch(() => {});
         const menu = await Menu.new({
           items: [
             {
               id: 'settings',
               text: 'Settings',
               action: () => {
-                showSettingsWindow();
+                openPanel('settings');
               },
             },
             {
@@ -220,6 +162,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         });
 
         const instance = await TrayIcon.new({
+          id: TRAY_ID,
           icon: await defaultWindowIcon(),
           menu,
           action: (event: TrayIconEvent) => {
@@ -247,13 +190,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       }
     }
 
-    setupTray();
+    queueTray(setupTray);
 
     return () => {
       isMounted = false;
-      // Tauri doesn't expose explicit tray destruction yet
+      trayRef.current = null;
+      queueTray(() => TrayIcon.removeById(TRAY_ID));
     };
-  }, []);
+    // openPanel is stable: the tray is created once.
+  }, [openPanel]);
 
-  return <TrayContext.Provider value={{ tray, settingsWindow }}>{children}</TrayContext.Provider>;
+  return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
 };

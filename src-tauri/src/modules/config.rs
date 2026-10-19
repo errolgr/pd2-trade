@@ -1,35 +1,17 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 
+// Label and title of the single overlay window (`Main`), read from src/common/window-config.json.
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct WindowLabels {
     pub Main: String,
-    pub Chat: String,
-    pub ChatButton: String,
-    pub TradeMessages: String,
-    pub QuickList: String,
-    pub ItemSearch: String,
-    pub Settings: String,
-    pub Currency: String,
-    pub Toast: String,
-    pub SignIn: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct WindowTitles {
     pub Main: String,
-    pub Chat: String,
-    pub ChatButton: String,
-    pub TradeMessages: String,
-    pub QuickList: String,
-    pub ItemSearch: String,
-    pub Settings: String,
-    pub Currency: String,
-    pub Toast: String,
-    pub SignIn: String,
-    pub PREFIX: String,
 }
 
 #[derive(Deserialize, Debug)]

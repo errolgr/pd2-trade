@@ -2,12 +2,12 @@
 import * as React from 'react';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Mock } from 'vitest';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
+import { TrayIcon } from '@tauri-apps/api/tray';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
-import { attachWindowCloseHandler, openCenteredWindow } from '@/lib/window';
+import { useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { TrayProvider, useTray } from './useTray';
 
@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
   // Shortcuts held by some other process: register() fails with "already registered"
   foreign: new Set<string>(),
   listeners: new Map<string, ((e: { payload: unknown }) => void)[]>(),
+  // Tray icon ids alive in Rust (they outlive the page)
+  trays: [] as string[],
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri }));
@@ -35,27 +37,35 @@ vi.mock('@tauri-apps/plugin-global-shortcut', () => ({
   }),
 }));
 vi.mock('@tauri-apps/api/menu', () => ({ Menu: { new: vi.fn(async (opts: unknown) => opts) } }));
-vi.mock('@tauri-apps/api/tray', () => ({ TrayIcon: { new: vi.fn(async () => ({ id: 'tray-1' })) } }));
+vi.mock('@tauri-apps/api/tray', () => ({
+  TrayIcon: {
+    new: vi.fn(async (opts: { id: string }) => {
+      state.trays.push(opts.id);
+      return { id: opts.id };
+    }),
+    removeById: vi.fn(async (id: string) => {
+      state.trays = state.trays.filter((t) => t !== id);
+    }),
+  },
+}));
 vi.mock('@tauri-apps/api/app', () => ({ defaultWindowIcon: vi.fn(async () => 'icon') }));
 vi.mock('@tauri-apps/api/path', () => ({ appConfigDir: vi.fn(async () => '/cfg/pd2') }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openPath: vi.fn(async () => {}) }));
 vi.mock('@tauri-apps/plugin-process', () => ({ exit: vi.fn() }));
-vi.mock('@/lib/window', () => ({ openCenteredWindow: vi.fn(), attachWindowCloseHandler: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({
   listen: vi.fn(async (event: string, cb: (e: { payload: unknown }) => void) => {
     state.listeners.set(event, [...(state.listeners.get(event) ?? []), cb]);
-    return () => state.listeners.set(event, (state.listeners.get(event) ?? []).filter((l) => l !== cb));
+    return () =>
+      state.listeners.set(
+        event,
+        (state.listeners.get(event) ?? []).filter((l) => l !== cb),
+      );
   }),
 }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 
-let windows: { show: Mock<() => Promise<void>> }[];
-
-function fakeWindow() {
-  const w = { show: vi.fn(async () => {}) };
-  windows.push(w);
-  return w;
-}
+const openPanel = vi.fn();
 
 async function flush() {
   await act(async () => {
@@ -91,18 +101,13 @@ function menuItem(id: string): MenuItem {
   return item;
 }
 
-function closeLatestWindow() {
-  const onClose = vi.mocked(attachWindowCloseHandler).mock.calls.at(-1)?.[1] as () => void;
-  act(() => onClose());
-}
-
 beforeEach(() => {
   state.tauri = true;
   state.owned.clear();
   state.foreign.clear();
   state.listeners.clear();
-  windows = [];
-  vi.mocked(openCenteredWindow).mockImplementation(async () => fakeWindow() as never);
+  state.trays = [];
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
   setHotkey('ctrl', 'O');
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -116,7 +121,26 @@ afterEach(() => {
 describe('tray icon', () => {
   it('exposes the created tray through useTray', async () => {
     const { result } = await renderTray();
-    expect(result.current.tray).toEqual({ id: 'tray-1' });
+    expect(result.current.tray).toEqual({ id: 'pd2-trader' });
+  });
+
+  it('replaces the icon a previous page load left behind instead of adding another', async () => {
+    state.trays = ['pd2-trader'];
+    await renderTray();
+    expect(state.trays).toEqual(['pd2-trader']);
+    expect(vi.mocked(TrayIcon.removeById).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(TrayIcon.new).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('removes its icon on unmount, so a remount still leaves exactly one', async () => {
+    const first = await renderTray();
+    first.unmount();
+    await flush();
+    expect(state.trays).toEqual([]);
+
+    await renderTray();
+    expect(state.trays).toEqual(['pd2-trader']);
   });
 
   it('is not created outside Tauri', async () => {
@@ -142,49 +166,11 @@ describe('tray icon', () => {
   });
 });
 
-describe('settings window', () => {
-  it('opens once and re-shows the same window on later requests', async () => {
-    const { result } = await renderTray();
-
+describe('settings panel', () => {
+  it('the tray menu opens the settings panel', async () => {
+    await renderTray();
     await act(async () => menuItem('settings').action());
-    await flush();
-    expect(result.current.settingsWindow).toBe(windows[0]);
-
-    await fire('open-settings');
-    expect(openCenteredWindow).toHaveBeenCalledTimes(1);
-    expect(windows[0].show).toHaveBeenCalledTimes(1);
-  });
-
-  it('recreates the window when the cached handle is stale', async () => {
-    const { result } = await renderTray();
-    await fire('open-settings');
-    windows[0].show.mockRejectedValueOnce(new Error('window not found'));
-
-    await fire('open-settings');
-
-    expect(openCenteredWindow).toHaveBeenCalledTimes(2);
-    expect(result.current.settingsWindow).toBe(windows[1]);
-  });
-
-  it('opens a fresh window after the user closes it', async () => {
-    const { result } = await renderTray();
-    await fire('open-settings');
-
-    closeLatestWindow();
-    expect(result.current.settingsWindow).toBeNull();
-
-    await fire('open-settings');
-    expect(openCenteredWindow).toHaveBeenCalledTimes(2);
-    expect(windows[0].show).not.toHaveBeenCalled();
-  });
-
-  it('stays closed when the window fails to open', async () => {
-    vi.mocked(openCenteredWindow).mockRejectedValueOnce(new Error('boom'));
-    const { result } = await renderTray();
-    await fire('open-settings');
-
-    expect(result.current.settingsWindow).toBeNull();
-    expect(attachWindowCloseHandler).not.toHaveBeenCalled();
+    expect(openPanel).toHaveBeenCalledWith('settings');
   });
 });
 
@@ -199,10 +185,11 @@ describe('settings hotkey', () => {
 
     cb!({ state: 'Released' });
     await flush();
-    expect(openCenteredWindow).not.toHaveBeenCalled();
+    expect(openPanel).not.toHaveBeenCalled();
     cb!({ state: 'Pressed' });
     await flush();
-    expect(openCenteredWindow).toHaveBeenCalledTimes(1);
+    expect(openPanel).toHaveBeenCalledTimes(1);
+    expect(openPanel).toHaveBeenCalledWith('settings');
 
     await fire('diablo-focus-changed', false);
     expect(state.owned.size).toBe(0);

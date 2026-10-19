@@ -1,17 +1,17 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showToast } from '@/overlay';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { fetch as tauriFetch } from '@/lib/browser-http';
-import { emit } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { GenericToastPayload } from '@/common/types/Events';
 import { useOAuth } from './useOAuth';
 
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 
 const NOW = new Date('2026-10-18T12:00:00Z').getTime();
@@ -24,14 +24,14 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 function toasts(): GenericToastPayload[] {
-  return vi
-    .mocked(emit)
-    .mock.calls.filter(([event]) => event === 'toast-event')
-    .map(([, payload]) => payload as GenericToastPayload);
+  return vi.mocked(showToast).mock.calls.map(([payload]) => payload as GenericToastPayload);
 }
 
 /** Route fetch by URL; `poll` is consulted for every poll request in order (last entry repeats). */
-function routeFetch(poll: Array<Response | Error>, start: Response = jsonResponse({ authUrl: 'https://auth', state: 'state-123' })) {
+function routeFetch(
+  poll: Array<Response | Error>,
+  start: Response = jsonResponse({ authUrl: 'https://auth', state: 'state-123' }),
+) {
   let pollIndex = 0;
   vi.mocked(tauriFetch).mockImplementation(async (input) => {
     const url = String(input);
@@ -55,7 +55,6 @@ beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(isTauri).mockReturnValue(true);
-  vi.mocked(emit).mockResolvedValue(undefined);
   updateSettings.mockReset().mockResolvedValue(undefined);
   vi.mocked(useOptions).mockReturnValue({
     isOpen: false,
@@ -131,7 +130,9 @@ describe('useOAuth startOAuthFlow', () => {
     expect(outcome).toBe(false);
     expect(pollCount()).toBe(300);
     expect(updateSettings).not.toHaveBeenCalled();
-    expect(toasts()).toEqual([expect.objectContaining({ variant: 'warning', description: 'Login timed out. Please try again.' })]);
+    expect(toasts()).toEqual([
+      expect.objectContaining({ variant: 'warning', description: 'Login timed out. Please try again.' }),
+    ]);
   });
 
   it('rejects a concurrent second flow, and allows a new flow once the first finishes', async () => {
@@ -162,7 +163,9 @@ describe('useOAuth startOAuthFlow', () => {
       await expect(result.current.startOAuthFlow()).resolves.toBe(false);
     });
     expect(pollCount()).toBe(0);
-    expect(toasts()).toEqual([expect.objectContaining({ variant: 'error', description: 'Authentication failed. Please try again.' })]);
+    expect(toasts()).toEqual([
+      expect.objectContaining({ variant: 'error', description: 'Authentication failed. Please try again.' }),
+    ]);
 
     routeFetch([jsonResponse({ accessToken: 'acc2', expiresIn: 60 })]);
     await act(async () => {
@@ -170,6 +173,66 @@ describe('useOAuth startOAuthFlow', () => {
       await vi.advanceTimersByTimeAsync(2000);
       await expect(retry).resolves.toBe('acc2');
     });
+  });
+
+  it('stops polling as soon as the caller aborts, stays silent, and lets a new flow start right away', async () => {
+    routeFetch([jsonResponse(null, 404)]);
+    const { result } = renderHook(() => useOAuth());
+    const closed = new AbortController();
+
+    let outcome: string | false | undefined;
+    await act(async () => {
+      const pending = result.current.startOAuthFlow(closed.signal).then((v) => (outcome = v));
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(pollCount()).toBe(1);
+      closed.abort();
+      await pending;
+    });
+    expect(outcome).toBe(false);
+
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    vi.mocked(tauriFetch).mockClear();
+    await act(async () => {
+      const again = result.current.startOAuthFlow(new AbortController().signal);
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(again).resolves.toBe('acc');
+    });
+    // The aborted flow never polled again; only the new flow did.
+    expect(pollCount()).toBe(1);
+    expect(toasts().map((t) => t.description)).toEqual(['Authentication successful!']);
+  });
+
+  it('ignores tokens that arrive after the caller aborted', async () => {
+    const late = Promise.withResolvers<Response>();
+    vi.mocked(tauriFetch).mockImplementation(async (input) =>
+      String(input) === POLL_URL ? late.promise : jsonResponse({ authUrl: 'https://auth', state: 'state-123' }),
+    );
+    const { result } = renderHook(() => useOAuth());
+    const closed = new AbortController();
+
+    await act(async () => {
+      const pending = result.current.startOAuthFlow(closed.signal);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(pollCount()).toBe(1);
+      closed.abort();
+      late.resolve(jsonResponse({ accessToken: 'late', expiresIn: 60 }));
+      await expect(pending).resolves.toBe(false);
+    });
+
+    expect(updateSettings).not.toHaveBeenCalled();
+    expect(toasts()).toEqual([]);
+  });
+
+  it('does nothing when the signal is already aborted', async () => {
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => useOAuth());
+    const closed = new AbortController();
+    closed.abort();
+
+    await act(async () => {
+      await expect(result.current.startOAuthFlow(closed.signal)).resolves.toBe(false);
+    });
+    expect(tauriFetch).not.toHaveBeenCalled();
   });
 });
 
@@ -190,7 +253,9 @@ describe('useOAuth refreshTokens', () => {
   });
 
   it('stores a rotated refresh token', async () => {
-    vi.mocked(tauriFetch).mockResolvedValue(jsonResponse({ accessToken: 'new', refreshToken: 'rotated', expiresIn: 1 }));
+    vi.mocked(tauriFetch).mockResolvedValue(
+      jsonResponse({ accessToken: 'new', refreshToken: 'rotated', expiresIn: 1 }),
+    );
     const { result } = renderHook(() => useOAuth());
 
     await expect(result.current.refreshTokens('old')).resolves.toBe(true);

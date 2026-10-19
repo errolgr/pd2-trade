@@ -34,6 +34,7 @@ export default [
       'react/prop-types': 'off', // TypeScript handles prop validation
       'react-hooks/set-state-in-effect': 'warn', // Downgrade to warning
       'no-case-declarations': 'off', // Allow declarations in case blocks
+      'no-alert': 'error', // window.alert/confirm/prompt wedge the non-focusable overlay window; use confirmToast()
     },
   }
 ];

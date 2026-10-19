@@ -6,14 +6,15 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { writeText } from '@/lib/browser-clipboard';
-import { emit, listen } from '@/lib/browser-events';
+import { confirmToast, type ConfirmToastOptions } from '@/overlay';
 import { openUrl } from '@/lib/browser-opener';
 import { TradeMessage, type TradeMessageData } from './TradeMessage';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn(), readText: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
+const openPanel = vi.hoisted(() => vi.fn());
+vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), useOverlay: () => ({ openPanel }) }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 
 beforeAll(() => {
@@ -26,8 +27,6 @@ afterAll(() => {
 
 const NOW = new Date('2026-05-01T12:00:00Z');
 
-type Handler = (event: { payload: unknown }) => unknown;
-let handlers: Map<string, Set<Handler>>;
 let settings: Record<string, string | undefined>;
 let site: {
   authData: { user: { _id: string } } | null;
@@ -93,17 +92,23 @@ async function openAcceptAndSubmit(game: string, password = '') {
   await flush();
 }
 
-async function fire(event: string, payload: unknown) {
-  await act(async () => {
-    for (const handler of handlers.get(event) ?? []) await handler({ payload });
-  });
-  await flush();
+/** Options of the last confirmToast() call; `confirm()` runs its onConfirm like the toast's confirm button. */
+function lastConfirm() {
+  const options = vi.mocked(confirmToast).mock.calls.at(-1)?.[0] as ConfirmToastOptions;
+  return {
+    options,
+    confirm: async () => {
+      await act(async () => {
+        await options.onConfirm();
+      });
+      await flush();
+    },
+  };
 }
 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
-  handlers = new Map();
   settings = {};
   calls = [];
   site = {
@@ -120,12 +125,8 @@ beforeEach(() => {
   vi.mocked(usePd2Website).mockImplementation(() => site as unknown as ReturnType<typeof usePd2Website>);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as unknown as ReturnType<typeof useOptions>);
   vi.mocked(writeText).mockResolvedValue(undefined);
-  vi.mocked(emit).mockResolvedValue(undefined);
-  vi.mocked(listen).mockImplementation(async (event: string, cb: Handler) => {
-    if (!handlers.has(event)) handlers.set(event, new Set());
-    handlers.get(event)!.add(cb);
-    return () => handlers.get(event)!.delete(cb);
-  });
+  vi.mocked(confirmToast).mockReset();
+  openPanel.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -282,10 +283,42 @@ describe('TradeMessage history', () => {
 
     await flush(100);
     await act(async () => {
-      fireEvent.mouseDown(document.body);
+      fireEvent.pointerDown(document.body);
     });
     await flush(500);
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('closes on a press outside even when the target stops propagation (other panels drag handles)', async () => {
+    renderTrade({ trade: whisper() });
+    const other = document.createElement('div');
+    other.addEventListener('pointerdown', (e) => e.stopPropagation());
+    document.body.appendChild(other);
+    await click(button('View history'));
+
+    await flush(100);
+    await act(async () => {
+      fireEvent.pointerDown(other);
+    });
+    await flush(500);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    other.remove();
+  });
+
+  it('renders the history card inside the enclosing panel frame', async () => {
+    const frame = document.createElement('div');
+    frame.setAttribute('data-panel-id', 'tradeMessages');
+    document.body.appendChild(frame);
+    render(
+      <TooltipProvider>
+        <TradeMessage trade={whisper()}
+          onClose={vi.fn()} />
+      </TooltipProvider>,
+      { container: frame.appendChild(document.createElement('div')) },
+    );
+    await click(button('View history'));
+    expect(frame.contains(screen.getByRole('dialog', { name: 'Communication History' }))).toBe(true);
+    frame.remove();
   });
 
   it('has no history or sold actions for website offers', () => {
@@ -404,7 +437,7 @@ describe('TradeMessage website offer accept/decline', () => {
   it('opens a chat with the buyer', async () => {
     renderTrade({ trade: websiteOffer() });
     await click(button('Start chat'));
-    expect(vi.mocked(emit)).toHaveBeenCalledWith('toggle-chat-window', {
+    expect(openPanel).toHaveBeenCalledWith('chat', {
       conversationId: 'conv1',
       conversation: { _id: 'conv1' },
     });
@@ -415,58 +448,78 @@ describe('TradeMessage website offer accept/decline', () => {
     site.authData = null;
     renderTrade({ trade: websiteOffer() });
     await click(button('Start chat'));
-    expect(vi.mocked(emit)).not.toHaveBeenCalled();
+    expect(openPanel).not.toHaveBeenCalled();
   });
 });
 
 describe('TradeMessage listing deletion', () => {
-  it('asks for confirmation, then deletes and closes only for the matching listing', async () => {
+  it('asks for confirmation naming the item, then deletes and closes the offer', async () => {
     const onDelete = vi.fn(async () => {});
     const { onClose } = renderTrade({ trade: websiteOffer(), onDelete });
 
     await click(button('Delete listing'));
-    expect(vi.mocked(emit)).toHaveBeenCalledWith('toast-confirm-delete-listing', {
-      listingId: 'listing1',
-      itemName: 'Shako',
-      tradeId: 'offer1',
+    const { options, confirm } = lastConfirm();
+    expect(options).toMatchObject({
+      title: 'Delete Listing?',
+      description: 'Are you sure you want to delete the listing for Shako?',
+      confirmLabel: 'Delete',
+      variant: 'warning',
+      duration: 10000,
     });
     expect(onDelete).not.toHaveBeenCalled();
 
-    await fire('confirm-delete-listing', { listingId: 'someone-else' });
-    expect(onDelete).not.toHaveBeenCalled();
-
-    await fire('confirm-delete-listing', { listingId: 'listing1' });
+    await confirm();
     expect(onDelete).toHaveBeenCalledWith('listing1');
     expect(onClose).toHaveBeenCalledWith('offer1');
+  });
+
+  it('uses a generic description when the item name is unknown', async () => {
+    renderTrade({ trade: websiteOffer({ itemName: undefined }), onDelete: vi.fn() });
+    await click(button('Delete listing'));
+    expect(lastConfirm().options.description).toBe('Are you sure you want to delete this listing?');
   });
 
   it('keeps the offer open when deletion fails', async () => {
     const onDelete = vi.fn().mockRejectedValue(new Error('nope'));
     const { onClose } = renderTrade({ trade: websiteOffer(), onDelete });
-    await fire('confirm-delete-listing', { listingId: 'listing1' });
+    await click(button('Delete listing'));
+    await lastConfirm().confirm();
     expect(onDelete).toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('does not subscribe to delete confirmations without a delete handler', () => {
-    renderTrade({ trade: websiteOffer() });
-    expect(handlers.has('confirm-delete-listing')).toBe(false);
-    expect(screen.queryByRole('button', { name: 'Delete listing' })).toBeNull();
+  it('ignores a second confirmation while the delete is still running', async () => {
+    const pending = Promise.withResolvers<void>();
+    const onDelete = vi.fn(() => pending.promise);
+    renderTrade({ trade: websiteOffer(), onDelete });
+    await click(button('Delete listing'));
+    await click(button('Delete listing'));
+    const first = vi.mocked(confirmToast).mock.calls[0][0].onConfirm;
+    const second = vi.mocked(confirmToast).mock.calls[1][0].onConfirm;
+
+    await act(async () => {
+      void first();
+      void second();
+      pending.resolve();
+    });
+    await flush();
+    expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it('unsubscribes from delete confirmations on unmount', async () => {
-    const { unmount } = renderTrade({ trade: websiteOffer(), onDelete: vi.fn() });
-    await flush();
-    unmount();
-    await flush();
-    expect(handlers.get('confirm-delete-listing')?.size ?? 0).toBe(0);
+  it('offers no listing deletion without a delete handler', () => {
+    renderTrade({ trade: websiteOffer() });
+    expect(screen.queryByRole('button', { name: 'Delete listing' })).toBeNull();
   });
 });
 
 describe('TradeMessage outgoing website offers', () => {
   it('hides an outgoing offer and removes it from the list', async () => {
     const onDeleteOutgoing = vi.fn();
-    const { onClose } = renderTrade({ trade: websiteOffer({ isIncoming: false }), onDeleteOutgoing, onRevoke: vi.fn() });
+    const { onClose } = renderTrade({
+      trade: websiteOffer({ isIncoming: false }),
+      onDeleteOutgoing,
+      onRevoke: vi.fn(),
+    });
     await click(button('Hide offer'));
     expect(onDeleteOutgoing).toHaveBeenCalledWith('offer1');
     expect(onClose).toHaveBeenCalledWith('offer1');

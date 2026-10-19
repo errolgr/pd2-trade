@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
-import { listen, emit } from '@tauri-apps/api/event';
+import { listen } from '@/lib/browser-events';
+import { showToast } from '@/overlay';
 
 export function GlobalErrorHandler() {
   useEffect(() => {
+    // Rust-emitted errors (chat watcher etc.) -> overlay toast
     const unlistenPromise = listen<string>('error', (event) => {
-      // Re-emit as a toast event for the Toast window to handle
-      emit('toast-event', {
+      showToast({
         title: 'Error',
         description: event.payload,
         variant: 'error',

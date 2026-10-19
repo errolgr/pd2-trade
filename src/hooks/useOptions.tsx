@@ -3,11 +3,12 @@ import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import merge from 'lodash/merge';
-import { emit, listen } from '@/lib/browser-events';
+import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
+import { showToast } from '@/overlay';
 
 export type NetWorthTickerAnchor =
   | 'top-left'
@@ -68,7 +69,10 @@ export interface ISettings {
   netWorthTrackingEnabled?: boolean; // history snapshots on pd2trader.com; on unless explicitly turned off
   netWorthTickerEnabled?: boolean;
   netWorthTickerAnchor?: NetWorthTickerAnchor;
-  /** Ticker window top-left in physical screen pixels, used when the anchor is 'custom' (set by dragging the ticker). */
+  /**
+   * Legacy: the old ticker window's dragged top-left in physical screen pixels. No longer written; the ticker
+   * migrates it once into the overlay panel layout and clears it.
+   */
   netWorthTickerPosition?: { x: number; y: number };
   netWorthTickerOpacity?: number; // 0-100
   netWorthAutoSnapshotMinutes?: number; // 0 = off, otherwise >= 5
@@ -173,7 +177,6 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         settingsJsonRef.current = updatedJson;
         setSettings(updated);
-        await emit('settings-updated', updated); // Notify other parts of the app
       });
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -228,19 +231,6 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     fetchSettings();
-
-    let unlistenPromise: Promise<() => void>;
-    listen<ISettings>('settings-updated', () => {
-      fetchSettings();
-    }).then((unlisten) => {
-      unlistenPromise = Promise.resolve(unlisten);
-    });
-
-    return () => {
-      if (unlistenPromise) {
-        unlistenPromise.then((off) => off());
-      }
-    };
   }, []);
 
   // Check for token in URL parameters (browser mode)
@@ -261,7 +251,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
         window.history.replaceState({}, '', newUrl);
 
-        emit('toast-event', {
+        showToast({
           title: 'PD2 Trader',
           description: 'Token loaded from URL successfully!',
         });
@@ -269,9 +259,9 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [isLoading, settings?.pd2Token, updateSettings]);
 
-  // ApplyTheme: apply the selected theme in this window once settings are loaded
-  // (before that, main.tsx already applied the cached theme). Other windows pick up
-  // changes through the 'settings-updated' event → fetchSettings above.
+  // Single overlay window, single OptionsProvider: settings side effects (theme, transparency,
+  // debug logging) are applied here once loaded. Before that, main.tsx applied the cached theme
+  // and initDebugLoggingFromSettings() read the file directly.
   useEffect(() => {
     if (isLoading) return;
     applyTheme(getTheme(settings.themeId));
@@ -281,6 +271,12 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isLoading) return;
     applyWindowTransparency(settings.windowTransparency);
   }, [isLoading, settings.windowTransparency]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (settings.debugLoggingEnabled) startDebugLogging();
+    else stopDebugLogging();
+  }, [isLoading, settings.debugLoggingEnabled]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

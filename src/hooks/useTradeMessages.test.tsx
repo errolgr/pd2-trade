@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emit } from '@tauri-apps/api/event';
+import { setBadgeCount } from '@/overlay';
 import { isTauri } from '@tauri-apps/api/core';
 import { useTradeMessages } from './useTradeMessages';
 
@@ -16,8 +16,8 @@ const bus = vi.hoisted(() => {
 });
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true) }));
-vi.mock('@tauri-apps/api/event', () => ({
-  emit: vi.fn(async () => {}),
+vi.mock('@/overlay', () => ({ setBadgeCount: vi.fn() }));
+vi.mock('@/lib/browser-events', () => ({
   listen: vi.fn(async (event: string, handler: (event: { payload: unknown }) => unknown) => {
     if (!bus.handlers.has(event)) bus.handlers.set(event, new Set());
     bus.handlers.get(event)!.add(handler);
@@ -39,7 +39,7 @@ interface TradeEvent {
 
 async function renderTrades() {
   const hook = renderHook(() => useTradeMessages());
-  // Listener registration is async (three awaited listen calls).
+  // Listener registration is async (two listen calls).
   await act(async () => {});
   return hook;
 }
@@ -77,7 +77,12 @@ describe('useTradeMessages trade-message events', () => {
 
     await fire('trade-message', incomingFromBob);
     vi.setSystemTime(NOW + 1000);
-    await fire('trade-message', { ...incomingFromBob, playerName: 'Carl', accountName: 'Carl', characterName: 'CarlPal' });
+    await fire('trade-message', {
+      ...incomingFromBob,
+      playerName: 'Carl',
+      accountName: 'Carl',
+      characterName: 'CarlPal',
+    });
 
     expect(result.current.trades.map((t) => t.playerName)).toEqual(['Carl', 'Bob']);
     const bob = result.current.trades[1];
@@ -116,14 +121,22 @@ describe('useTradeMessages trade-message events', () => {
   // BUG: useTradeMessages.tsx:72-77 compares normalized names with `===` even when both sides are
   // missing ('' === ''). chat_watcher.rs sends accountName=None for senders without "(*account)", so an
   // outgoing whisper to a brand-new player is appended to an unrelated trade instead of opening its own.
-  it.fails('opens a new trade for an outgoing whisper to an unrelated player when account names are absent', async () => {
-    const { result } = await renderTrades();
-    await fire('trade-message', { isIncoming: true, playerName: 'Alice', characterName: 'Alice', message: 'wtb' });
+  it.fails(
+    'opens a new trade for an outgoing whisper to an unrelated player when account names are absent',
+    async () => {
+      const { result } = await renderTrades();
+      await fire('trade-message', { isIncoming: true, playerName: 'Alice', characterName: 'Alice', message: 'wtb' });
 
-    await fire('trade-message', { isIncoming: false, playerName: 'Zed', characterName: 'Zed', message: 'your Shako listed for 2 ist?' });
+      await fire('trade-message', {
+        isIncoming: false,
+        playerName: 'Zed',
+        characterName: 'Zed',
+        message: 'your Shako listed for 2 ist?',
+      });
 
-    expect(result.current.trades.map((t) => t.playerName)).toEqual(['Zed', 'Alice']);
-  });
+      expect(result.current.trades.map((t) => t.playerName)).toEqual(['Zed', 'Alice']);
+    },
+  );
 });
 
 describe('useTradeMessages whisper history', () => {
@@ -145,7 +158,13 @@ describe('useTradeMessages whisper history', () => {
     const { result } = await renderTrades();
     await fire('trade-message', incomingFromBob);
 
-    await fire('whisper-received', { isTrade: false, from: 'Bob', message: incomingFromBob.message, isJoin: false, isIncoming: false });
+    await fire('whisper-received', {
+      isTrade: false,
+      from: 'Bob',
+      message: incomingFromBob.message,
+      isJoin: false,
+      isIncoming: false,
+    });
 
     expect(result.current.trades[0].history.map((h) => h.isIncoming)).toEqual([true, false]);
   });
@@ -154,40 +173,47 @@ describe('useTradeMessages whisper history', () => {
     const { result } = await renderTrades();
     await fire('trade-message', incomingFromBob);
 
-    await fire('whisper-received', { isTrade: false, from: '*bobsorc', message: 'still there?', isJoin: false, isIncoming: true });
-    await fire('whisper-received', { isTrade: false, from: 'Bob', message: 'Bob joined', isJoin: true, isIncoming: true });
-    await fire('whisper-received', { isTrade: false, from: 'Stranger', message: 'hi', isJoin: false, isIncoming: true });
+    await fire('whisper-received', {
+      isTrade: false,
+      from: '*bobsorc',
+      message: 'still there?',
+      isJoin: false,
+      isIncoming: true,
+    });
+    await fire('whisper-received', {
+      isTrade: false,
+      from: 'Bob',
+      message: 'Bob joined',
+      isJoin: true,
+      isIncoming: true,
+    });
+    await fire('whisper-received', {
+      isTrade: false,
+      from: 'Stranger',
+      message: 'hi',
+      isJoin: false,
+      isIncoming: true,
+    });
 
     expect(result.current.trades[0].history.map((h) => h.message)).toEqual([incomingFromBob.message, 'still there?']);
   });
 });
 
 describe('useTradeMessages removal and counts', () => {
-  it('removeTrade drops the trade locally and broadcasts the removal', async () => {
-    const { result } = await renderTrades();
-    await fire('trade-message', incomingFromBob);
-    const id = result.current.trades[0].id;
-
-    act(() => result.current.removeTrade(id));
-
-    expect(result.current.trades).toEqual([]);
-    expect(emit).toHaveBeenCalledWith('trade-message-removed', { id });
-  });
-
-  it('applies removals broadcast by other windows and ignores unknown ids', async () => {
+  it('removeTrade drops the trade', async () => {
     const { result } = await renderTrades();
     await fire('trade-message', incomingFromBob);
     await fire('trade-message', { ...incomingFromBob, playerName: 'Carl', accountName: 'Carl', characterName: 'Carl' });
     const [carl, bob] = result.current.trades;
 
-    await fire('trade-message-removed', { id: 'missing' });
+    act(() => result.current.removeTrade('missing'));
     expect(result.current.trades).toEqual([carl, bob]);
 
-    await fire('trade-message-removed', { id: carl.id });
+    act(() => result.current.removeTrade(carl.id));
     expect(result.current.trades).toEqual([bob]);
   });
 
-  it('publishes the trade count as it changes, including clearAll', async () => {
+  it('publishes the trade count as the tradeMessages badge, including clearAll', async () => {
     const { result } = await renderTrades();
     await fire('trade-message', incomingFromBob);
     await fire('trade-message', { ...incomingFromBob, playerName: 'Carl', accountName: 'Carl', characterName: 'Carl' });
@@ -195,25 +221,24 @@ describe('useTradeMessages removal and counts', () => {
     act(() => result.current.clearAll());
 
     expect(result.current.trades).toEqual([]);
-    const countPayloads = vi
-      .mocked(emit)
-      .mock.calls.filter(([event]) => event === 'trade-messages-count-updated')
-      .map(([, payload]) => payload);
-    expect(countPayloads).toEqual([{ count: 0 }, { count: 1 }, { count: 2 }, { count: 0 }]);
+    expect(vi.mocked(setBadgeCount).mock.calls).toEqual([
+      ['tradeMessages', 0],
+      ['tradeMessages', 1],
+      ['tradeMessages', 2],
+      ['tradeMessages', 0],
+    ]);
   });
 
   it('stops receiving events after unmount', async () => {
     const { unmount } = await renderTrades();
     unmount();
+    await act(async () => {});
     expect([...bus.handlers.values()].every((set) => set.size === 0)).toBe(true);
   });
 
-  it('registers no listeners and emits nothing outside Tauri', async () => {
+  it('registers no listeners outside Tauri', async () => {
     vi.mocked(isTauri).mockReturnValue(false);
-    const { result } = await renderTrades();
-
+    await renderTrades();
     expect(bus.handlers.size).toBe(0);
-    act(() => result.current.removeTrade('x'));
-    expect(emit).not.toHaveBeenCalled();
   });
 });

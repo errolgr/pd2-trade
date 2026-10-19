@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import { usePanel } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { fadeInUp, springSnappy } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -95,13 +95,12 @@ export default function SettingsLayout() {
   const tabRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const saved = useSavedFlash();
+  const { close } = usePanel();
 
   const select = React.useCallback((item: INavItem) => {
     setSelectedItem(item);
     // Each section starts at the top instead of inheriting the previous scroll offset.
-    scrollRef.current
-      ?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]')
-      ?.scrollTo({ top: 0 });
+    scrollRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]')?.scrollTo({ top: 0 });
   }, []);
 
   const goTo = React.useCallback(
@@ -123,7 +122,7 @@ export default function SettingsLayout() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel className="h-screen w-full">
+      <WindowPanel className="h-full w-full">
         <WindowChrome
           title={
             <span className="flex items-baseline gap-2">
@@ -134,7 +133,7 @@ export default function SettingsLayout() {
             </span>
           }
           gripId="titlebar-drag-handle"
-          onClose={() => getCurrentWebviewWindow().hide()}
+          onClose={close}
           closeLabel="Close settings"
           className="h-12 px-4"
         />
@@ -169,9 +168,7 @@ export default function SettingsLayout() {
                         'group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-sm font-medium outline-none',
                         'transition-[color,background-color,transform] duration-(--dur-fast) ease-out motion-safe:active:scale-[0.98]',
                         'focus-visible:ring-2 focus-visible:ring-ring/60',
-                        active
-                          ? 'text-foreground'
-                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                        active ? 'text-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                       )}
                     >
                       {active && (

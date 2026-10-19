@@ -1,13 +1,11 @@
 // @vitest-environment happy-dom
-import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
 import { useOptions } from '@/hooks/useOptions';
 import { useWealthRank } from '@/hooks/useWealthRank';
-import { emit, listen } from '@/lib/browser-events';
-import { getCurrentWebviewWindow, type BrowserWebviewWindow } from '@/lib/browser-webview';
+import { usePanel, useOverlay, type OverlayApi, type PanelContextValue, type PanelPayloads } from '@/overlay';
 import {
   getPoints,
   type NetWorthCategory,
@@ -21,12 +19,10 @@ import type * as NetWorthApi from '@/lib/networth-api';
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { StashValueWindow } from './StashValueWindow';
 
-vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn(), NETWORTH_OPEN_EVENT: 'networth:open' }));
+vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useWealthRank', () => ({ useWealthRank: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
-vi.mock('@/components/dialogs/SignInDialog', () => ({ SIGN_IN_DIALOG_EVENT: 'pd2:show-sign-in-dialog' }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
@@ -144,9 +140,15 @@ function point(takenAt: string, totalHr: number): NetWorthPoint {
 
 let netWorth: NetWorthContextValue;
 let settings: { pd2Token?: string };
-let openListener: ((event: { payload: unknown }) => void) | null;
-let unlisten: Mock;
-let hide: Mock;
+let panel: { payload: PanelPayloads['currency']; payloadVersion: number };
+let gameFocused: boolean;
+let close: Mock;
+let openPanel: Mock;
+
+/** openPanel('currency', payload) again: new payload, bumped payloadVersion. */
+function reopen(payload: PanelPayloads['currency']) {
+  panel = { payload, payloadVersion: panel.payloadVersion + 1 };
+}
 
 function setNetWorth(overrides: Partial<NetWorthContextValue>) {
   netWorth = { ...netWorth, ...overrides };
@@ -178,7 +180,6 @@ afterAll(() => {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
-  window.history.replaceState(null, '', '/stash-value');
   settings = { pd2Token: 'tok' };
   netWorth = {
     owner: OWNER,
@@ -201,14 +202,12 @@ beforeEach(() => {
   vi.mocked(useNetWorth).mockImplementation(() => netWorth);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(useWealthRank).mockReturnValue(null);
-  openListener = null;
-  unlisten = vi.fn();
-  vi.mocked(listen).mockImplementation(async (_event, callback) => {
-    openListener = callback as typeof openListener;
-    return unlisten;
-  });
-  hide = vi.fn();
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ hide } as unknown as BrowserWebviewWindow);
+  panel = { payload: undefined, payloadVersion: 1 };
+  gameFocused = true;
+  close = vi.fn();
+  openPanel = vi.fn();
+  vi.mocked(usePanel).mockImplementation(() => ({ ...panel, close }) as unknown as PanelContextValue<'currency'>);
+  vi.mocked(useOverlay).mockImplementation(() => ({ gameFocused, openPanel }) as unknown as OverlayApi);
   vi.mocked(getPoints).mockResolvedValue({ points: [] });
 });
 
@@ -225,7 +224,7 @@ describe('StashValueWindow signed out', () => {
     expect(screen.getByText('Sign in with your PD2 account to value your stash.')).not.toBeNull();
     expect(screen.queryByRole('tablist')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(vi.mocked(emit).mock.calls).toEqual([['pd2:show-sign-in-dialog']]);
+    expect(openPanel.mock.calls).toEqual([['signIn']]);
   });
 
   it('asks to pick an account when signed in without one', () => {
@@ -335,10 +334,10 @@ describe('StashValueWindow header', () => {
     await act(async () => {});
   });
 
-  it('hides the window from the title bar close button', async () => {
+  it('closes its panel from the title bar close button', async () => {
     renderWindow();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
     await act(async () => {});
   });
 });
@@ -393,52 +392,59 @@ describe('StashValueWindow re-value when stale', () => {
     ['there is no account', { lastSnapshotAt: null, owner: null }],
   ])('does not re-value when %s', async (_, overrides) => {
     setNetWorth(overrides);
-    renderWindow();
-    fireEvent.focus(window);
+    const { rerender } = renderWindow();
+    reopen(undefined);
+    rerender(<StashValueWindow />);
     expect(netWorth.takeSnapshot).not.toHaveBeenCalled();
     await act(async () => {});
   });
 
-  it('re-values on window focus once the snapshot went stale', async () => {
-    renderWindow();
+  it('re-values when the panel is opened again once the snapshot went stale', async () => {
+    const { rerender } = renderWindow();
     expect(netWorth.takeSnapshot).not.toHaveBeenCalled();
     vi.setSystemTime(NOW.getTime() + 3 * 60_000);
-    fireEvent.focus(window);
+    reopen(undefined);
+    rerender(<StashValueWindow />);
     expect(netWorth.takeSnapshot).toHaveBeenCalledTimes(1);
     await act(async () => {});
   });
 
-  it('stops listening for focus after unmount', async () => {
-    const { unmount } = renderWindow();
-    await act(async () => {});
-    unmount();
-    await act(async () => {});
+  it('re-values when the panel shows again after the game regains focus, not while it is hidden', async () => {
+    const { rerender } = renderWindow();
     vi.setSystemTime(NOW.getTime() + 3 * 60_000);
-    fireEvent.focus(window);
+    gameFocused = false;
+    rerender(<StashValueWindow />);
     expect(netWorth.takeSnapshot).not.toHaveBeenCalled();
-    expect(unlisten).toHaveBeenCalledTimes(1);
+    gameFocused = true;
+    rerender(<StashValueWindow />);
+    expect(netWorth.takeSnapshot).toHaveBeenCalledTimes(1);
+    await act(async () => {});
   });
 });
 
 describe('StashValueWindow tabs', () => {
-  it('opens on Overview, or History when deep-linked', async () => {
+  it('opens on Overview, or on the tab in the panel payload', async () => {
     renderWindow();
     expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true');
     cleanup();
-    window.history.replaceState(null, '', '/stash-value?tab=history');
+    reopen({ tab: 'history' });
     renderWindow();
     expect(screen.getByRole('tab', { name: /History/ }).getAttribute('aria-selected')).toBe('true');
     await act(async () => {});
   });
 
-  it('switches tab when another window asks to open one', async () => {
-    renderWindow();
+  it('switches tab when the panel is opened again on a tab, and keeps it when opened without one', async () => {
+    const { rerender } = renderWindow();
     await act(async () => {});
-    expect(vi.mocked(listen).mock.calls[0][0]).toBe('networth:open');
-    act(() => openListener!({ payload: { tab: 'history' } }));
+    reopen({ tab: 'history' });
+    rerender(<StashValueWindow />);
     expect(screen.getByRole('tab', { name: /History/ }).getAttribute('aria-selected')).toBe('true');
-    act(() => openListener!({ payload: {} }));
+    reopen(undefined);
+    rerender(<StashValueWindow />);
     expect(screen.getByRole('tab', { name: /History/ }).getAttribute('aria-selected')).toBe('true');
+    reopen({ tab: 'overview' });
+    rerender(<StashValueWindow />);
+    expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('shows only the holdings of the tab categories, with the stash tab for uniques', async () => {

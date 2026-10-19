@@ -1,33 +1,8 @@
 {
   "labels": {
-    "Main": "Main",
-    "Chat": "Chat",
-    "ChatButton": "ChatButton",
-    "TradeMessages": "TradeMessages",
-    "QuickList": "QuickList",
-    "ItemSearch": "ItemSearch",
-    "Settings": "Settings",
-    "Currency": "Currency",
-    "Toast": "Toast",
-    "SignIn": "SignIn",
-    "Delist": "Delist",
-    "NetWorthTicker": "NetWorthTicker",
-    "NetWorthPanel": "NetWorthPanel"
+    "Main": "Main"
   },
   "titles": {
-    "Main": "PD2Trader",
-    "Chat": "PD2Trader: Chat",
-    "ChatButton": "PD2Trader: Button",
-    "TradeMessages": "PD2Trader: Trade Messages",
-    "QuickList": "PD2Trader: QuickList",
-    "ItemSearch": "PD2Trader: Item Search",
-    "Settings": "PD2Trader: Settings",
-    "Currency": "PD2Trader: Net Worth",
-    "Toast": "PD2Trader: Toast",
-    "SignIn": "PD2Trader: Sign In",
-    "Delist": "PD2Trader: Delist",
-    "NetWorthTicker": "PD2Trader: Net Worth Ticker",
-    "NetWorthPanel": "PD2Trader: Net Worth Panel",
-    "PREFIX": "PD2Trader"
+    "Main": "PD2Trader"
   }
 }

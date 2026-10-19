@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { FolderSearch, Wand2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { showToast } from '@/overlay';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -217,7 +217,7 @@ export function GeneralForm() {
                               field.onChange(detected);
                               setDetectedDirectory(detected);
                             } else {
-                              emit('toast-event', {
+                              showToast({
                                 title: 'Detection Failed',
                                 description: 'Could not auto-detect Diablo II directory. Please enter it manually.',
                                 variant: 'warning',

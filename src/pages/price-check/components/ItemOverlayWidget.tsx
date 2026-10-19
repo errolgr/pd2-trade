@@ -1,7 +1,5 @@
-import { openWindowAtCursor } from '@/lib/window';
 import { PopoverKeyValue, PopoverSectionTitle, PopoverTile } from '@/components/custom/popover-parts';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
@@ -58,16 +56,14 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit } from '@/lib/browser-events';
+import { useOverlay } from '@/overlay';
 import { getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
-import { WindowTitles, WindowLabels } from '@/lib/window-titles';
 import {
   fetchItemPrice,
   fetchItemPriceByName,
@@ -91,6 +87,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const { settings, isLoading: settingsLoading } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
+  const { openPanel } = useOverlay();
   const priceHours = settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS;
   const { startDate: seasonStart, endDate: seasonEnd } = getSeasonDateConfig(settings.selectedSeasonId);
   // Window the price check asks for (`priceWindow` label); a past season is priced over the whole season.
@@ -801,87 +798,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   }, [searchMode, item.type, matchedItemType]);
 
-  const openCurrencyValuation = useCallback(async () => {
-    const currencyLabel = WindowLabels.Currency;
+  const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
-    try {
-      // Check if window exists
-      const existingWin = await WebviewWindow.getByLabel(currencyLabel);
-
-      if (existingWin) {
-        try {
-          await existingWin.unminimize();
-          await existingWin.show();
-          await existingWin.setFocus();
-          return;
-        } catch (err) {
-          console.warn('[ItemOverlay] Failed to reuse Currency window, attempting to recreate:', err);
-          try {
-            await existingWin.close();
-          } catch (closeErr) {
-            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
-          }
-        }
-      }
-
-      await openCenteredWindow(currencyLabel, '/currency', {
-        title: WindowTitles.Currency,
-        decorations: false,
-        focus: true,
-        shadow: false,
-        width: 760,
-        height: 870,
-        alwaysOnTop: true,
-        skipTaskbar: true,
-      });
-    } catch (err) {
-      console.error('[ItemOverlay] Failed to open Currency window:', err);
-    }
-  }, []);
-
-  const openListWindow = useCallback(async () => {
-    const raw = JSON.stringify(item);
-    const encodedItem = encodeItemForQuickList(raw);
-    const quickListLabel = WindowLabels.QuickList;
-    const safeEncodedItem = encodeURIComponent(encodedItem);
-
-    try {
-      // Check if window exists
-      const existingWin = await WebviewWindow.getByLabel(quickListLabel);
-
-      if (existingWin) {
-        try {
-          await existingWin.unminimize();
-          await existingWin.show();
-          await existingWin.setFocus();
-          await existingWin.emit('quick-list-new-item', safeEncodedItem);
-          return;
-        } catch (err) {
-          console.warn('[ItemOverlay] Failed to reuse QuickList window, attempting to recreate:', err);
-          try {
-            await existingWin.close();
-          } catch (closeErr) {
-            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
-          }
-        }
-      }
-
-      await openWindowAtCursor(quickListLabel, `/quick-list?item=${safeEncodedItem}`, {
-        decorations: false,
-        transparent: true,
-        focus: false,
-        shadow: false,
-        skipTaskbar: true,
-        focusable: true,
-        width: 600,
-        height: 512,
-        resizable: true,
-        alwaysOnTop: true,
-      });
-    } catch (err) {
-      console.error('[ItemOverlay] Failed to open QuickList:', err);
-    }
-  }, [item]);
+  const openListWindow = useCallback(
+    () => openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) }, { placement: 'cursor' }),
+    [item, openPanel],
+  );
 
   const fetchListings = useCallback(
     async (isNewSearch: boolean = false) => {
@@ -1077,9 +999,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   }, [inView, marketLoading, hasMore]);
 
-  const openSettingsPage = useCallback(async () => {
-    await emit('open-settings', undefined);
-  }, []);
+  const openSettingsPage = useCallback(() => openPanel('settings'), [openPanel]);
 
   // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`)
   const clearSelectedStats = useCallback(() => {
@@ -1166,10 +1086,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
-        <WindowPanel className="h-screen w-screen">
+        <WindowPanel className="h-full w-full">
           {/* Top Bar */}
           <div id="titlebar-drag-handle"
-            data-tauri-drag-region
+            data-panel-drag
             className="flex-none bg-muted/30">
             <WindowChrome
               title="Price Check"

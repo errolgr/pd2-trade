@@ -1,9 +1,9 @@
 /**
  * Grafana Faro bootstrap for every overlay webview.
  *
- * Each overlay route runs in its own Tauri webview, so each window initializes its own Faro instance
- * and session. The Tauri window label is attached as the `window_label` session attribute and as the
- * Faro view name; the route (path only) is the Faro page id, which follows in-window navigation.
+ * The whole overlay runs in the single Tauri `Main` webview, so there is one Faro instance and session.
+ * The `window_label` session attribute and the Faro view name are `Main` in the app and `browser` in
+ * browser dev mode (kept stable for existing dashboards); the route (path only) is the Faro page id.
  *
  * Exceptions and crashes are reported by Sentry (see `main.tsx`), so Faro's error and console
  * instrumentations are not installed: Faro handles sessions, views, web vitals, performance timings,
@@ -22,7 +22,6 @@ import {
 } from '@grafana/faro-web-sdk';
 import { TracingInstrumentation } from '@grafana/faro-web-tracing';
 import { isTauri } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { BACKEND_URL } from '@/lib/pkce';
 import { API_BASE_URL as PRICE_API_BASE_URL } from '@/pages/currency/lib/price-api';
 
@@ -48,15 +47,6 @@ function backendOriginPatterns(): RegExp[] {
     }
   }
   return [...origins].map((origin) => new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`));
-}
-
-function getWindowLabel(): string {
-  if (!isTauri()) return 'browser';
-  try {
-    return getCurrentWindow().label;
-  } catch {
-    return 'unknown';
-  }
 }
 
 /** Drops query string and hash; returns non-URL input unchanged. */
@@ -96,7 +86,7 @@ export function initFaro(): void {
   const url = import.meta.env.VITE_FARO_URL;
   if (!url) return;
 
-  const windowLabel = getWindowLabel();
+  const windowLabel = isTauri() ? 'Main' : 'browser';
 
   initializeFaro({
     url,

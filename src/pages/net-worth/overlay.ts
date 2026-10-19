@@ -1,7 +1,5 @@
-import { availableMonitors } from '@tauri-apps/api/window';
-
-/** App event: toggle the net worth mini panel window (emitted by the ticker, handled by NetWorthOverlayHost). */
-export const NETWORTH_TOGGLE_PANEL_EVENT = 'networth:toggle-panel';
+import type { NetWorthTickerAnchor } from '@/hooks/useOptions';
+import type { OverlayRect } from '@/overlay';
 
 /** Formats an HR amount for compact overlay display (1 decimal under 1000, none above). */
 export function formatHr(value: number): string {
@@ -13,63 +11,43 @@ export function formatSignedHr(value: number): string {
   return `${value >= 0 ? '+' : '-'}${formatHr(Math.abs(value))}`;
 }
 
-/** A rectangle in physical screen pixels. */
-export interface ScreenRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+/** Default size of the net worth mini panel (registry `netWorthPanel`). */
+export const NET_WORTH_PANEL_SIZE = { width: 360, height: 420 };
 
-function overlapArea(a: ScreenRect, b: ScreenRect): number {
-  const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-  const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-  return w > 0 && h > 0 ? w * h : 0;
-}
-
-function centerDistance(a: ScreenRect, b: ScreenRect): number {
-  return Math.hypot(a.x + a.width / 2 - (b.x + b.width / 2), a.y + a.height / 2 - (b.y + b.height / 2));
-}
-
-/** A monitor's work area (physical pixels) and its scale factor. */
-export interface ScreenArea extends ScreenRect {
-  scaleFactor: number;
-}
-
-/** Work areas (screen minus taskbar/dock) of every connected monitor. */
-export async function monitorWorkAreas(): Promise<ScreenArea[]> {
-  const monitors = await availableMonitors();
-  return monitors.map(({ workArea, scaleFactor }) => ({
-    x: workArea.position.x,
-    y: workArea.position.y,
-    width: workArea.size.width,
-    height: workArea.size.height,
-    scaleFactor,
-  }));
-}
-
-/** The area `rect` is mostly on: largest overlap, else the nearest area (e.g. its monitor was unplugged). */
-export function pickArea<T extends ScreenRect>(rect: ScreenRect, areas: T[]): T | null {
-  let best: T | null = null;
-  let bestOverlap = 0;
-  for (const area of areas) {
-    const overlap = overlapArea(rect, area);
-    if (overlap > bestOverlap) {
-      best = area;
-      bestOverlap = overlap;
-    }
-  }
-  if (best) return best;
-  return areas.reduce<T | null>(
-    (nearest, area) => (!nearest || centerDistance(rect, area) < centerDistance(rect, nearest) ? area : nearest),
-    null,
-  );
-}
+/** Gap (px) between the ticker and the edges of the game. */
+const TICKER_EDGE_MARGIN = 12;
+/** The chat button panel's default spot: 240px frame, 20px from the game's right edge, 10px from its bottom. */
+const CHAT_BUTTON_FRAME = { size: 240, right: 20, bottom: 10 };
 
 /** Moves `rect` the least distance needed to lie fully inside `area` (top-left wins if it is larger). */
-export function clampToArea(rect: ScreenRect, area: ScreenRect): { x: number; y: number } {
+export function clampToArea(rect: OverlayRect, area: OverlayRect): { x: number; y: number } {
   const x = Math.max(area.x, Math.min(rect.x, area.x + area.width - rect.width));
   const y = Math.max(area.y, Math.min(rect.y, area.y + area.height - rect.height));
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+/**
+ * Top-left (overlay px) of a `size` ticker at `anchor` on the game rect: a corner or top center inset by
+ * TICKER_EDGE_MARGIN, or right-aligned just above the chat button's default spot.
+ */
+export function tickerPosition(
+  anchor: Exclude<NetWorthTickerAnchor, 'custom'>,
+  size: { width: number; height: number },
+  game: OverlayRect,
+): { x: number; y: number } {
+  if (anchor === 'above-chat') {
+    const chatRight = game.x + game.width - CHAT_BUTTON_FRAME.right;
+    const chatTop = game.y + game.height - CHAT_BUTTON_FRAME.size - CHAT_BUTTON_FRAME.bottom;
+    return { x: Math.round(chatRight - size.width), y: Math.round(chatTop - size.height - 4) };
+  }
+  const x = anchor.endsWith('left')
+    ? game.x + TICKER_EDGE_MARGIN
+    : anchor.endsWith('right')
+      ? game.x + game.width - size.width - TICKER_EDGE_MARGIN
+      : game.x + (game.width - size.width) / 2;
+  const y = anchor.startsWith('bottom')
+    ? game.y + game.height - size.height - TICKER_EDGE_MARGIN
+    : game.y + TICKER_EDGE_MARGIN;
   return { x: Math.round(x), y: Math.round(y) };
 }
 
@@ -78,9 +56,9 @@ export function clampToArea(rect: ScreenRect, area: ScreenRect): { x: number; y:
  * room below; left edges aligned, or right edges when it would overflow to the right; then kept inside `area`.
  */
 export function panelBesideTicker(
-  ticker: ScreenRect,
+  ticker: OverlayRect,
   panel: { width: number; height: number },
-  area: ScreenRect,
+  area: OverlayRect,
   gap: number,
 ): { x: number; y: number } {
   let y = ticker.y + ticker.height + gap;

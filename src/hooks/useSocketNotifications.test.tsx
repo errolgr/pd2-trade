@@ -1,17 +1,19 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showToast } from '@/overlay';
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { emit } from '@/lib/browser-events';
-import { emit as emitTauri } from '@tauri-apps/api/event';
 import type { ISettings } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
 import { isToastEnabled, useSocketNotifications } from './useSocketNotifications';
 
 type Handler = (event: { payload: unknown }) => unknown;
+type SocketHandler = (data: unknown) => void;
 
+/** Rust events (async listen) and socket push events (sync subscribe) on one test bus. */
 const bus = vi.hoisted(() => {
   const handlers = new Map<string, Set<Handler>>();
+  const socketHandlers = new Map<string, Set<SocketHandler>>();
   /** When set, listen() registrations stay pending until `releaseListens()`. */
   const held: Array<() => void> = [];
   const state = { hold: false };
@@ -25,27 +27,43 @@ const bus = vi.hoisted(() => {
     handlers.get(event)!.add(handler);
     return () => handlers.get(event)!.delete(handler);
   }
+  function subscribe(type: string, handler: SocketHandler) {
+    if (!socketHandlers.has(type)) socketHandlers.set(type, new Set());
+    socketHandlers.get(type)!.add(handler);
+    return () => {
+      socketHandlers.get(type)!.delete(handler);
+    };
+  }
   return {
     handlers,
+    socketHandlers,
     held,
     state,
     listen,
+    subscribe,
     async fire(event: string, payload: unknown) {
+      socketHandlers.get(event)?.forEach((handler) => handler(payload));
       await Promise.all([...(handlers.get(event) ?? [])].map((handler) => handler({ payload })));
     },
     listenerCount(event: string) {
-      return handlers.get(event)?.size ?? 0;
+      return (handlers.get(event)?.size ?? 0) + (socketHandlers.get(event)?.size ?? 0);
     },
   };
 });
 
+/** usePd2Website() as seen by the hook: the provider's socket state and the offers owner's refresh. */
+const pd2 = vi.hoisted(() => ({ isConnected: false, refresh: vi.fn() }));
+
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: bus.listen, emit: vi.fn() }));
-vi.mock('@/lib/browser-events', () => ({ listen: bus.listen, emit: vi.fn(async () => {}) }));
+vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
+vi.mock('./pd2website/usePD2Website', () => ({
+  usePd2Website: () => ({ isConnected: pd2.isConnected, subscribeSocket: bus.subscribe, refresh: pd2.refresh }),
+}));
 
-const OFFER_EVENT = 'socket:system/notification_pushed';
-const CHAT_EVENT = 'socket:social/message_pushed';
+const OFFER_EVENT = 'system/notification_pushed';
+const CHAT_EVENT = 'social/message_pushed';
 
 let sounds: number[];
 let diabloFocused: boolean;
@@ -76,24 +94,22 @@ function whisper(overrides: Record<string, unknown> = {}) {
   return { isTrade: false, from: 'Bob', message: 'hello', isJoin: false, isIncoming: true, ...overrides };
 }
 
-function appToasts() {
-  return vi
-    .mocked(emit)
-    .mock.calls.filter(([event]) => event === 'toast-event')
-    .map(([, payload]) => payload);
+function toasts() {
+  return vi.mocked(showToast).mock.calls.map(([payload]) => payload);
 }
 
-function tauriToasts() {
-  return vi
-    .mocked(emitTauri)
-    .mock.calls.filter(([event]) => event === 'toast-event')
-    .map(([, payload]) => payload);
-}
-
-async function renderNotifications(props: { isConnected: boolean; settings?: Partial<ISettings>; whisperNotificationsEnabled?: boolean }) {
-  const hook = renderHook((p: typeof props) => useSocketNotifications({ ...p, settings: p.settings as ISettings }), {
-    initialProps: props,
-  });
+async function renderNotifications(props: {
+  isConnected: boolean;
+  settings?: Partial<ISettings>;
+  whisperNotificationsEnabled?: boolean;
+}) {
+  const hook = renderHook(
+    ({ isConnected, ...p }: typeof props) => {
+      pd2.isConnected = isConnected;
+      return useSocketNotifications({ ...p, settings: p.settings as ISettings });
+    },
+    { initialProps: props },
+  );
   await act(async () => {});
   return hook;
 }
@@ -106,6 +122,8 @@ beforeEach(() => {
   sounds = [];
   diabloFocused = false;
   bus.handlers.clear();
+  bus.socketHandlers.clear();
+  pd2.refresh.mockReset();
   bus.held.length = 0;
   bus.state.hold = false;
   vi.stubGlobal('Audio', FakeAudio);
@@ -124,7 +142,9 @@ describe('isToastEnabled', () => {
   });
 
   it('honors the global switch over the type list', () => {
-    expect(isToastEnabled({ toastPopupsEnabled: false, toastPopupTypes: ['offers'] } as ISettings, 'offers')).toBe(false);
+    expect(isToastEnabled({ toastPopupsEnabled: false, toastPopupTypes: ['offers'] } as ISettings, 'offers')).toBe(
+      false,
+    );
   });
 
   it('only enables the listed types', () => {
@@ -140,14 +160,14 @@ describe('useSocketNotifications offer notifications', () => {
     await fire(OFFER_EVENT, offer('n1'));
 
     expect(sounds).toEqual([0.4]);
-    expect(appToasts()).toEqual([
+    expect(toasts()).toEqual([
       {
         title: 'New Offer',
         description: 'Bob offered 2 ist',
         action: { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'listing-1' } },
       },
     ]);
-    expect(vi.mocked(emit).mock.calls.filter(([e]) => e === 'refresh-offers')).toHaveLength(1);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('processes each notification id once', async () => {
@@ -157,7 +177,7 @@ describe('useSocketNotifications offer notifications', () => {
     await fire(OFFER_EVENT, offer('n1'));
 
     expect(sounds).toHaveLength(1);
-    expect(appToasts()).toHaveLength(1);
+    expect(toasts()).toHaveLength(1);
   });
 
   it('forgets the oldest id once more than 100 are tracked', async () => {
@@ -178,7 +198,7 @@ describe('useSocketNotifications offer notifications', () => {
     await fire(OFFER_EVENT, offer('b', { data: {} }));
 
     expect(sounds).toEqual([]);
-    expect(emit).not.toHaveBeenCalled();
+    expect(pd2.refresh).not.toHaveBeenCalled();
   });
 
   it('still refreshes offers with sound and toast both disabled, using a default description', async () => {
@@ -190,14 +210,14 @@ describe('useSocketNotifications offer notifications', () => {
     await fire(OFFER_EVENT, offer('n1', { meta: {} }));
 
     expect(sounds).toEqual([]);
-    expect(appToasts()).toEqual([]);
-    expect(emit).toHaveBeenCalledWith('refresh-offers');
+    expect(toasts()).toEqual([]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('shows the default description when the notification has no text', async () => {
     await renderNotifications({ isConnected: true });
     await fire(OFFER_EVENT, offer('n1', { meta: {} }));
-    expect(appToasts()).toEqual([expect.objectContaining({ description: 'New offer received' })]);
+    expect(toasts()).toEqual([expect.objectContaining({ description: 'New offer received' })]);
   });
 
   it('only listens while connected', async () => {
@@ -217,7 +237,10 @@ describe('useSocketNotifications offer notifications', () => {
   });
 
   it('applies changed settings to later notifications', async () => {
-    const { rerender } = await renderNotifications({ isConnected: true, settings: { tradeNotificationsEnabled: true } });
+    const { rerender } = await renderNotifications({
+      isConnected: true,
+      settings: { tradeNotificationsEnabled: true },
+    });
     rerender({ isConnected: true, settings: { tradeNotificationsEnabled: false } });
     await act(async () => {});
 
@@ -225,18 +248,6 @@ describe('useSocketNotifications offer notifications', () => {
 
     expect(bus.listenerCount(OFFER_EVENT)).toBe(1);
     expect(sounds).toEqual([]);
-  });
-
-  // BUG: useSocketNotifications.tsx:166-173 — cleanup runs before the async listen() resolves, so a
-  // settings change during setup leaves the first listener (with stale settings) registered forever.
-  it.fails('keeps a single listener when settings change while the listener is still registering', async () => {
-    bus.state.hold = true;
-    const { rerender } = await renderNotifications({ isConnected: true, settings: { tradeNotificationsEnabled: true } });
-    rerender({ isConnected: true, settings: { tradeNotificationsEnabled: false } });
-    bus.state.hold = false;
-    await act(async () => bus.held.splice(0).forEach((release) => release()));
-
-    expect(bus.listenerCount(OFFER_EVENT)).toBe(1);
   });
 });
 
@@ -247,7 +258,7 @@ describe('useSocketNotifications whispers', () => {
     await fire('whisper-received', whisper({ message: 'x'.repeat(81) }));
 
     expect(sounds).toEqual([1]);
-    expect(tauriToasts()).toEqual([
+    expect(toasts()).toEqual([
       { title: 'Whisper from Bob', description: `${'x'.repeat(80)}...`, duration: 5000, variant: 'default' },
     ]);
   });
@@ -255,7 +266,7 @@ describe('useSocketNotifications whispers', () => {
   it('keeps an 80-character whisper intact', async () => {
     await renderNotifications({ isConnected: false });
     await fire('whisper-received', whisper({ message: 'y'.repeat(80) }));
-    expect(tauriToasts()).toEqual([expect.objectContaining({ description: 'y'.repeat(80) })]);
+    expect(toasts()).toEqual([expect.objectContaining({ description: 'y'.repeat(80) })]);
   });
 
   it('plays the sound but skips the toast while Diablo is focused', async () => {
@@ -265,7 +276,7 @@ describe('useSocketNotifications whispers', () => {
     await fire('whisper-received', whisper());
 
     expect(sounds).toEqual([0.7]);
-    expect(tauriToasts()).toEqual([]);
+    expect(toasts()).toEqual([]);
   });
 
   it.each([
@@ -281,7 +292,7 @@ describe('useSocketNotifications whispers', () => {
     await fire('whisper-received', payload);
 
     expect(sounds).toEqual([]);
-    expect(tauriToasts()).toEqual([]);
+    expect(toasts()).toEqual([]);
   });
 
   it('notifies announcements when enabled', async () => {
@@ -311,7 +322,9 @@ describe('useSocketNotifications whispers', () => {
     await fire('whisper-received', whisper({ isTrade: true, itemName: 'Arach' }));
 
     expect(sounds).toHaveLength(3);
-    expect(tauriToasts()).toEqual([{ title: 'Trade Whisper', description: 'Bob: Shako', duration: 5000, variant: 'success' }]);
+    expect(toasts()).toEqual([
+      { title: 'Trade Whisper', description: 'Bob: Shako', duration: 5000, variant: 'success' },
+    ]);
   });
 
   it('trade whispers follow the trade switch, not the general whisper switch', async () => {
@@ -335,7 +348,9 @@ describe('useSocketNotifications whispers', () => {
     await fire('whisper-received', whisper({ isJoin: true }));
 
     expect(sounds).toHaveLength(1);
-    expect(tauriToasts()).toEqual([{ title: 'Player Joined', description: 'Bob joined the game', duration: 5000, variant: 'default' }]);
+    expect(toasts()).toEqual([
+      { title: 'Player Joined', description: 'Bob joined the game', duration: 5000, variant: 'default' },
+    ]);
   });
 
   it('does not listen for whispers outside Tauri or when disabled by prop', async () => {
@@ -373,7 +388,7 @@ describe('useSocketNotifications chat messages', () => {
     await fire(CHAT_EVENT, chat);
     await fire(CHAT_EVENT, chat);
 
-    expect(appToasts()).toEqual([
+    expect(toasts()).toEqual([
       {
         title: 'New Chat Message',
         description: 'hi there',
@@ -388,12 +403,12 @@ describe('useSocketNotifications chat messages', () => {
     await fire(CHAT_EVENT, { ...chat, conversation_id: '' });
     await fire(CHAT_EVENT, { ...chat, _id: 'm2', content: 'z'.repeat(100) });
 
-    expect(appToasts()).toEqual([expect.objectContaining({ description: `${'z'.repeat(80)}...` })]);
+    expect(toasts()).toEqual([expect.objectContaining({ description: `${'z'.repeat(80)}...` })]);
   });
 
   it('respects the whispers toast type', async () => {
     await renderNotifications({ isConnected: true, settings: { toastPopupTypes: ['offers'] } });
     await fire(CHAT_EVENT, chat);
-    expect(appToasts()).toEqual([]);
+    expect(toasts()).toEqual([]);
   });
 });

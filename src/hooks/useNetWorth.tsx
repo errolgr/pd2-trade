@@ -1,15 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
-import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
-import {
-  AccountMismatchError,
-  AuthenticationError,
-  Pd2WebsiteProvider,
-  usePd2Website,
-} from '@/hooks/pd2website/usePD2Website';
+import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useOverlay } from '@/overlay';
 import {
   getSeasons,
   getSessions,
@@ -40,17 +34,9 @@ export interface NetWorthContextValue {
   takeSnapshot(trigger?: SnapshotTrigger): Promise<SnapshotResponse | null>;
   startSession(): Promise<void>;
   stopSession(): Promise<void>;
+  /** Opens (or switches) the Net Worth panel on `tab` (default overview). */
   openNetWorth(tab?: NetWorthTab): void;
 }
-
-/** Fire-and-forget: any window asks the host provider to take a snapshot. Payload `{ trigger?: SnapshotTrigger }`. */
-export const NETWORTH_TAKE_SNAPSHOT_EVENT = 'networth:take-snapshot';
-/** Ask the main window to open/focus the Net Worth window on a tab. Payload `{ tab: NetWorthTab }`. */
-export const NETWORTH_OPEN_EVENT = 'networth:open';
-const NETWORTH_STATE_EVENT = 'networth:state';
-const NETWORTH_REQUEST_STATE_EVENT = 'networth:request-state';
-const NETWORTH_RPC_REQUEST_EVENT = 'networth:rpc-request';
-const NETWORTH_RPC_RESPONSE_EVENT = 'networth:rpc-response';
 
 /** Auto triggers are skipped when the previous snapshot is younger than this. */
 const AUTO_SNAPSHOT_FLOOR_MS = 2 * 60 * 1000;
@@ -61,35 +47,8 @@ const SCHEDULER_TICK_MS = 30 * 1000;
  */
 const IDLE_AFTER_MS = 30 * 60 * 1000;
 const IDLE_PROBE_MS = 30 * 60 * 1000;
-const RPC_TIMEOUT_MS = 60 * 1000;
-
-export function requestNetWorthSnapshot(trigger: SnapshotTrigger = 'manual'): Promise<void> {
-  return emitAppEvent(NETWORTH_TAKE_SNAPSHOT_EVENT, { trigger });
-}
-
-type NetWorthState = Omit<NetWorthContextValue, 'takeSnapshot' | 'startSession' | 'stopSession' | 'openNetWorth'>;
-
-type RpcCall =
-  | { method: 'takeSnapshot'; trigger: SnapshotTrigger }
-  | { method: 'startSession' }
-  | { method: 'stopSession' };
-
-type RpcRequest = RpcCall & { requestId: string };
-
-interface RpcResponse {
-  requestId: string;
-  ok: boolean;
-  result?: SnapshotResponse | null;
-  error?: string;
-}
 
 const NetWorthContext = createContext<NetWorthContextValue | undefined>(undefined);
-
-const openNetWorth = (tab: NetWorthTab = 'overview') => {
-  emitAppEvent(NETWORTH_OPEN_EVENT, { tab }).catch((error) => {
-    console.warn('[NetWorth] Failed to request window open:', error);
-  });
-};
 
 function describeError(error: unknown): string {
   if (error instanceof AccountMismatchError) {
@@ -122,12 +81,13 @@ async function isDiabloFocused(): Promise<boolean> {
 }
 
 /**
- * Host provider: mounted once in the main window (inside Pd2WebsiteProvider). Owns the stash fetch,
- * the auto-snapshot scheduler, sessions and seasons, and mirrors its state to child windows.
+ * Mounted once at the app root (inside Pd2WebsiteProvider and OverlayProvider). Owns the stash fetch, the
+ * auto-snapshot scheduler, sessions and seasons.
  */
 export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings, isLoading } = useOptions();
   const { authData } = usePd2Website();
+  const { openPanel } = useOverlay();
 
   const token = settings.pd2Token;
   const account = settings.account;
@@ -247,7 +207,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const refreshToken = settingsRef.current.pd2RefreshToken;
             const refreshed = refreshToken ? await refreshTokens(refreshToken) : false;
             if (refreshed) retryAfterAuthRef.current = trigger;
-            else await emitAppEvent(SIGN_IN_DIALOG_EVENT);
+            else openPanel('signIn');
           }
           return null;
         } finally {
@@ -257,7 +217,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       inFlightRef.current = run;
       return run;
     },
-    [refreshSessions, refreshTokens],
+    [refreshSessions, refreshTokens, openPanel],
   );
 
   const takeSnapshot = useCallback((trigger: SnapshotTrigger = 'manual') => runSnapshot(trigger), [runSnapshot]);
@@ -325,8 +285,9 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => clearInterval(timer);
   }, [signedIn, autoMinutes, runSnapshot]);
 
-  // Mirror state to child windows.
-  const state: NetWorthState = useMemo(
+  const openNetWorth = useCallback((tab: NetWorthTab = 'overview') => openPanel('currency', { tab }), [openPanel]);
+
+  const value: NetWorthContextValue = useMemo(
     () => ({
       owner,
       trackingEnabled,
@@ -337,163 +298,26 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       currentSession,
       seasons,
       currentSeasonId,
-    }),
-    [owner, trackingEnabled, latest, status, error, lastSnapshotAt, currentSession, seasons, currentSeasonId],
-  );
-  const stateRef = useRef(state);
-  stateRef.current = state;
-
-  useEffect(() => {
-    emitAppEvent(NETWORTH_STATE_EVENT, state).catch((err) => {
-      console.warn('[NetWorth] Failed to publish state:', err);
-    });
-  }, [state]);
-
-  const rpcHandlersRef = useRef({ takeSnapshot, startSession, stopSession });
-  rpcHandlersRef.current = { takeSnapshot, startSession, stopSession };
-
-  useEffect(() => {
-    const unlisteners: Promise<() => void>[] = [
-      listenAppEvent(NETWORTH_REQUEST_STATE_EVENT, () => {
-        emitAppEvent(NETWORTH_STATE_EVENT, stateRef.current).catch(() => {});
-      }),
-      listenAppEvent<{ trigger?: SnapshotTrigger }>(NETWORTH_TAKE_SNAPSHOT_EVENT, (event) => {
-        takeSnapshotRef.current(event.payload?.trigger ?? 'manual');
-      }),
-      listenAppEvent<RpcRequest>(NETWORTH_RPC_REQUEST_EVENT, async (event) => {
-        const request = event.payload;
-        if (!request?.requestId) return;
-        const handlers = rpcHandlersRef.current;
-        let response: RpcResponse;
-        try {
-          let result: SnapshotResponse | null = null;
-          switch (request.method) {
-            case 'takeSnapshot':
-              result = await handlers.takeSnapshot(request.trigger);
-              break;
-            case 'startSession':
-              await handlers.startSession();
-              break;
-            case 'stopSession':
-              await handlers.stopSession();
-              break;
-          }
-          response = { requestId: request.requestId, ok: true, result };
-        } catch (err) {
-          response = { requestId: request.requestId, ok: false, error: describeError(err) };
-        }
-        await emitAppEvent(NETWORTH_RPC_RESPONSE_EVENT, response);
-      }),
-    ];
-    return () => {
-      unlisteners.forEach((p) => p.then((off) => off()).catch(() => {}));
-    };
-  }, []);
-
-  const value: NetWorthContextValue = useMemo(
-    () => ({ ...state, takeSnapshot, startSession, stopSession, openNetWorth }),
-    [state, takeSnapshot, startSession, stopSession],
-  );
-
-  return <NetWorthContext.Provider value={value}>{children}</NetWorthContext.Provider>;
-};
-
-const EMPTY_STATE: NetWorthState = {
-  owner: null,
-  trackingEnabled: false,
-  latest: null,
-  status: 'idle',
-  error: null,
-  lastSnapshotAt: null,
-  currentSession: null,
-  seasons: startedSeasons(SEASONS),
-  currentSeasonId: getCurrentSeason(SEASONS)?.id ?? null,
-};
-
-/** Child-window provider: mirrors the host's state and forwards actions to it over app events. */
-export const ChildNetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Browser-mode windows are separate tabs and app events do not cross tabs, so each one hosts its own state.
-  if (!isTauri()) {
-    return (
-      <Pd2WebsiteProvider>
-        <NetWorthProvider>{children}</NetWorthProvider>
-      </Pd2WebsiteProvider>
-    );
-  }
-  return <NetWorthMirror>{children}</NetWorthMirror>;
-};
-
-interface PendingRpc {
-  resolve: (value: SnapshotResponse | null) => void;
-  reject: (reason?: unknown) => void;
-  timeout: NodeJS.Timeout;
-}
-
-const NetWorthMirror: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<NetWorthState>(EMPTY_STATE);
-  const pendingRef = useRef(new Map<string, PendingRpc>());
-
-  useEffect(() => {
-    const pending = pendingRef.current;
-    const unlisteners: Promise<() => void>[] = [
-      listenAppEvent<NetWorthState>(NETWORTH_STATE_EVENT, (event) => {
-        if (event.payload) setState(event.payload);
-      }),
-      listenAppEvent<RpcResponse>(NETWORTH_RPC_RESPONSE_EVENT, (event) => {
-        const response = event.payload;
-        const entry = response?.requestId ? pending.get(response.requestId) : undefined;
-        if (!entry) return;
-        clearTimeout(entry.timeout);
-        pending.delete(response.requestId);
-        if (response.ok) entry.resolve(response.result ?? null);
-        else entry.reject(new Error(response.error || 'Net worth request failed'));
-      }),
-    ];
-    Promise.all(unlisteners).then(() => emitAppEvent(NETWORTH_REQUEST_STATE_EVENT, {}));
-    return () => {
-      unlisteners.forEach((p) => p.then((off) => off()).catch(() => {}));
-      pending.forEach((entry) => {
-        clearTimeout(entry.timeout);
-        entry.reject(new Error('ChildNetWorthProvider unmounted'));
-      });
-      pending.clear();
-    };
-  }, []);
-
-  const rpcCall = useCallback((call: RpcCall): Promise<SnapshotResponse | null> => {
-    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        pendingRef.current.delete(requestId);
-        reject(new Error(`Net worth request timed out (${call.method})`));
-      }, RPC_TIMEOUT_MS);
-      pendingRef.current.set(requestId, { resolve, reject, timeout });
-      const request: RpcRequest = { ...call, requestId };
-      emitAppEvent(NETWORTH_RPC_REQUEST_EVENT, request).catch((err) => {
-        clearTimeout(timeout);
-        pendingRef.current.delete(requestId);
-        reject(err);
-      });
-    });
-  }, []);
-
-  const value: NetWorthContextValue = useMemo(
-    () => ({
-      ...state,
-      takeSnapshot: (trigger: SnapshotTrigger = 'manual') =>
-        rpcCall({ method: 'takeSnapshot', trigger }).catch((err) => {
-          console.warn('[NetWorth] takeSnapshot failed:', err);
-          return null;
-        }),
-      startSession: async () => {
-        await rpcCall({ method: 'startSession' });
-      },
-      stopSession: async () => {
-        await rpcCall({ method: 'stopSession' });
-      },
+      takeSnapshot,
+      startSession,
+      stopSession,
       openNetWorth,
     }),
-    [state, rpcCall],
+    [
+      owner,
+      trackingEnabled,
+      latest,
+      status,
+      error,
+      lastSnapshotAt,
+      currentSession,
+      seasons,
+      currentSeasonId,
+      takeSnapshot,
+      startSession,
+      stopSession,
+      openNetWorth,
+    ],
   );
 
   return <NetWorthContext.Provider value={value}>{children}</NetWorthContext.Provider>;
@@ -501,6 +325,6 @@ const NetWorthMirror: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 export function useNetWorth(): NetWorthContextValue {
   const ctx = useContext(NetWorthContext);
-  if (!ctx) throw new Error('useNetWorth must be used within NetWorthProvider or ChildNetWorthProvider');
+  if (!ctx) throw new Error('useNetWorth must be used within NetWorthProvider');
   return ctx;
 }

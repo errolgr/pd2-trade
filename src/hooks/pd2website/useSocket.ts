@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { ConversationListResponse, MessageListResponse } from '@/common/types/pd2-website/ChatTypes';
 import { useOptions } from '../useOptions';
-import { emit } from '@/lib/browser-events';
 import { ISettings } from '../useOptions';
 
 interface PendingRequest {
@@ -17,6 +16,14 @@ interface UseSocketProps {
   settings?: ISettings;
 }
 
+export type SocketPushHandler<T = unknown> = (data: T) => void;
+/**
+ * Subscribe to server push events of this socket. `type` is the server event type with every character
+ * outside [a-zA-Z0-9-/:_] replaced by '_' (e.g. 'social/message pushed' -> 'social/message_pushed').
+ * Returns the unsubscribe function.
+ */
+export type SubscribeSocket = <T = unknown>(type: string, handler: SocketPushHandler<T>) => () => void;
+
 export const useSocket = (props?: UseSocketProps) => {
   // Use props if provided, otherwise fall back to hooks
   const contextSettings = useOptions().settings;
@@ -27,6 +34,7 @@ export const useSocket = (props?: UseSocketProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pendingRequestsRef = useRef<PendingRequest[]>([]);
+  const subscribersRef = useRef(new Map<string, Set<SocketPushHandler>>());
 
   useEffect(() => {
     if (!settings?.pd2Token) {
@@ -81,13 +89,13 @@ export const useSocket = (props?: UseSocketProps) => {
 
               // Check if this is a push event
               if (typeof eventType === 'string' && eventType.includes('pushed')) {
-                // Emit a custom event for push notifications
-                // Replace spaces and special chars with underscores for Tauri compatibility
-                const sanitizedEventType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
-                emit(`socket:${sanitizedEventType}`, eventData).catch((err) => {
-                  const error = err instanceof Error ? err : new Error(String(err));
-                  console.warn('[Socket] Failed to emit push event:', error);
-                  // Don't report to Sentry - this is a local event emission issue, not a server error
+                const pushType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
+                subscribersRef.current.get(pushType)?.forEach((handler) => {
+                  try {
+                    handler(eventData);
+                  } catch (err) {
+                    console.error(`[Socket] Push handler for ${pushType} failed:`, err);
+                  }
                 });
                 return; // Don't process push events as request responses
               }
@@ -282,11 +290,26 @@ export const useSocket = (props?: UseSocketProps) => {
     [sendSocketMessage, isConnected],
   );
 
+  const subscribe = useCallback<SubscribeSocket>(<T>(type: string, handler: SocketPushHandler<T>) => {
+    const subscribers = subscribersRef.current;
+    let handlers = subscribers.get(type);
+    if (!handlers) {
+      handlers = new Set();
+      subscribers.set(type, handlers);
+    }
+    handlers.add(handler as SocketPushHandler);
+    return () => {
+      handlers.delete(handler as SocketPushHandler);
+      if (handlers.size === 0 && subscribers.get(type) === handlers) subscribers.delete(type);
+    };
+  }, []);
+
   return {
     isConnected,
     error,
     getConversations,
     getMessages,
+    subscribe,
     getSocket: () => socketRef.current,
   };
 };

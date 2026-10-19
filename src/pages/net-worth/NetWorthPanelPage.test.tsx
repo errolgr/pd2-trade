@@ -1,31 +1,17 @@
 // @vitest-environment happy-dom
-import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
-import { emit } from '@/lib/browser-events';
-import { getCurrentWebviewWindow, type BrowserWebviewWindow } from '@/lib/browser-webview';
+import { usePanel, useOverlay, type OverlayApi, type PanelContextValue } from '@/overlay';
 import { getPoints, type NetWorthPoint, type SessionSummary, type SnapshotResponse } from '@/lib/networth-api';
 import type * as NetWorthApi from '@/lib/networth-api';
 import NetWorthPanelPage from './NetWorthPanelPage';
 
-vi.mock('@/hooks/useOptions', () => ({
-  OptionsProvider: ({ children }: { children: React.ReactNode }) => children,
-  useOptions: vi.fn(),
-}));
-vi.mock('@/hooks/useItems', () => ({ ItemsProvider: ({ children }: { children: React.ReactNode }) => children }));
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  ChildPd2WebsiteProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-vi.mock('@/hooks/useNetWorth', () => ({
-  ChildNetWorthProvider: ({ children }: { children: React.ReactNode }) => children,
-  useNetWorth: vi.fn(),
-}));
-vi.mock('@/lib/browser-events', () => ({ emit: vi.fn() }));
-vi.mock('@/lib/browser-webview', () => ({ getCurrentWebviewWindow: vi.fn() }));
-vi.mock('@/components/dialogs/SignInDialog', () => ({ SIGN_IN_DIALOG_EVENT: 'pd2:show-sign-in-dialog' }));
+vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
@@ -36,7 +22,8 @@ const OWNER = { account: 'Hammerdin', isLadder: true, isHardcore: false };
 
 let settings: Partial<ISettings>;
 let netWorth: NetWorthContextValue;
-let hide: Mock;
+let close: Mock;
+let openPanel: Mock;
 
 function latest(totalHr: number, overrides: { snapshotId?: string; uncertainHr?: number } = {}): SnapshotResponse {
   return {
@@ -120,8 +107,10 @@ beforeEach(() => {
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(useNetWorth).mockImplementation(() => netWorth);
   vi.mocked(getPoints).mockResolvedValue({ points: [] });
-  hide = vi.fn();
-  vi.mocked(getCurrentWebviewWindow).mockReturnValue({ hide } as unknown as BrowserWebviewWindow);
+  close = vi.fn();
+  openPanel = vi.fn();
+  vi.mocked(usePanel).mockReturnValue({ close } as unknown as PanelContextValue<'netWorthPanel'>);
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
 });
 
 afterEach(() => {
@@ -137,7 +126,7 @@ describe('NetWorthPanel signed out', () => {
     expect(screen.getByText('Sign in with your PD2 account to track your net worth.')).not.toBeNull();
     expect(screen.queryByRole('button', { name: /Open full view/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(vi.mocked(emit).mock.calls).toEqual([['pd2:show-sign-in-dialog']]);
+    expect(openPanel.mock.calls).toEqual([['signIn']]);
     expect(getPoints).not.toHaveBeenCalled();
   });
 
@@ -169,12 +158,12 @@ describe('NetWorthPanel summary', () => {
     expect(screen.getByRole('alert').textContent).toBe('PD2 is down');
   });
 
-  it('opens the full view on the History tab and hides itself on close', async () => {
+  it('opens the full view on the History tab and closes its panel on Hide', async () => {
     await renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /Open full view/ }));
     expect(vi.mocked(netWorth.openNetWorth).mock.calls).toEqual([['history']]);
     fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
-    expect(hide).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('shows the open session gain, rate and length', async () => {
