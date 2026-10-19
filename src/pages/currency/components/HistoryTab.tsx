@@ -89,7 +89,15 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
-function SectionHeader({ title, meta, children }: { title: string; meta?: React.ReactNode; children?: React.ReactNode }) {
+function SectionHeader({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-3">
       <h3 className="flex items-baseline gap-2 text-sm font-semibold tracking-tight">
@@ -137,8 +145,7 @@ export function HistoryTab(props: HistoryTabProps) {
 
   const rangeQuery = useNetWorthQuery(range === 'season' ? null : loadRange, refreshKey);
   const points = range === 'season' ? seasonPoints : rangeQuery.data;
-  const rangeChange =
-    points && points.length > 1 ? points[points.length - 1].totalHr - points[0].totalHr : null;
+  const rangeChange = points && points.length > 1 ? points[points.length - 1].totalHr - points[0].totalHr : null;
   const reloading = range !== 'season' && rangeQuery.loading && points !== null;
 
   return (
@@ -179,7 +186,10 @@ export function HistoryTab(props: HistoryTabProps) {
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className={cn('rounded-full px-2 py-0.5 text-xs font-medium tabular-nums', deltaPillClass(rangeChange))}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
+                    deltaPillClass(rangeChange),
+                  )}
                   title="Change over the selected range"
                 >
                   {formatSignedHr(rangeChange)}
@@ -253,7 +263,7 @@ type ChartRow = { t: number; totalHr: number } & Partial<Record<NetWorthCategory
 
 function ChartTooltipCard({ row, stacked }: { row: ChartRow; stacked: boolean }) {
   return (
-    <div className="min-w-36 rounded-lg border border-border bg-popover/95 px-2.5 py-2 text-xs text-popover-foreground shadow-panel backdrop-blur-md">
+    <div className="min-w-36 rounded-lg border border-border bg-surface-elevated px-2.5 py-2 text-xs text-popover-foreground shadow-panel backdrop-blur-md">
       <p className="text-muted-foreground">{moment(row.t).format('MMM D HH:mm')}</p>
       <p className="text-sm font-semibold tabular-nums">{row.totalHr.toFixed(2)} HR</p>
       {stacked && (
@@ -336,11 +346,13 @@ function NetWorthChart({ points, stacked, seasons }: { points: NetWorthPoint[]; 
             tickMargin={8}
             fontSize={11}
           />
-          <YAxis width={40}
+          <YAxis
+            width={40}
             tickFormatter={(v: number) => v.toFixed(0)}
             tickLine={false}
             axisLine={false}
-            fontSize={11} />
+            fontSize={11}
+          />
           <ChartTooltip
             cursor={{ stroke: 'var(--muted-foreground)', strokeOpacity: 0.5, strokeDasharray: '3 3' }}
             content={({ active, payload }) => {
@@ -702,11 +714,13 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                     Prices now
                   </ToggleGroupItem>
                 </ToggleGroup>
-                <Button size="icon"
+                <Button
+                  size="icon"
                   variant="ghost"
                   className="size-8"
                   aria-label="Close comparison"
-                  onClick={() => setSelected([])}>
+                  onClick={() => setSelected([])}
+                >
                   <X className="size-4" />
                 </Button>
               </div>
@@ -732,7 +746,9 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                     <span className={deltaClass(diff.data.farmedHr)}>{formatSignedHr(diff.data.farmedHr)}</span>
                   </DiffStat>
                   <DiffStat label="Market drift">
-                    <span className={deltaClass(diff.data.marketDriftHr)}>{formatSignedHr(diff.data.marketDriftHr)}</span>
+                    <span className={deltaClass(diff.data.marketDriftHr)}>
+                      {formatSignedHr(diff.data.marketDriftHr)}
+                    </span>
                   </DiffStat>
                   <DiffStat label="Total">
                     {diff.data.from.totalHr.toFixed(2)} → {diff.data.to.totalHr.toFixed(2)} HR
@@ -840,10 +856,12 @@ function DeleteHistory({
       </p>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button size="sm"
+          <Button
+            size="sm"
             variant="ghost"
             className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={busy}>
+            disabled={busy}
+          >
             {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />} Delete history
           </Button>
         </AlertDialogTrigger>
@@ -866,7 +884,8 @@ function DeleteHistory({
               <AlertDialogAction
                 className={buttonVariants({
                   variant: 'outline',
-                  className: 'border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive',
+                  className:
+                    'border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive',
                 })}
                 onClick={() => run(currentSeasonId)}
               >

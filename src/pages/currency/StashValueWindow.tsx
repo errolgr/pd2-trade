@@ -64,7 +64,7 @@ function initialTab(): WindowTab {
 
 export function StashValueWindow() {
   const netWorth = useNetWorth();
-  const { owner, latest, status, error, trackingEnabled, needsConsent, takeSnapshot, lastSnapshotAt } = netWorth;
+  const { owner, latest, status, error, trackingEnabled, takeSnapshot, lastSnapshotAt } = netWorth;
   const { settings } = useOptions();
   const token = settings.pd2Token ?? null;
   const wealthRank = useWealthRank();
@@ -142,9 +142,6 @@ export function StashValueWindow() {
                 )}
 
                 <AnimatePresence initial={false}>
-                  {needsConsent && <ConsentPrompt key="consent"
-                    onAnswer={netWorth.setTrackingEnabled} />}
-
                   {status === 'error' && error && (
                     <Banner
                       key="error"
@@ -230,7 +227,7 @@ export function StashValueWindow() {
                   <TabsContent value="history"
                     className="pt-1">
                     {!trackingEnabled ? (
-                      <TrackingDisabled onEnable={() => netWorth.setTrackingEnabled(true)} />
+                      <TrackingDisabled />
                     ) : token && owner ? (
                       <HistoryTab
                         token={token}
@@ -422,43 +419,12 @@ function Header({
   );
 }
 
-function ConsentPrompt({ onAnswer }: { onAnswer: (enabled: boolean) => void }) {
-  return (
-    <Banner
-      tone="info"
-      role="status"
-      icon={<History />}
-      actions={
-        <>
-          <Button size="sm"
-            variant="ghost"
-            onClick={() => onAnswer(false)}>
-            No thanks
-          </Button>
-          <Button size="sm"
-            onClick={() => onAnswer(true)}>
-            Track history
-          </Button>
-        </>
-      }
-    >
-      Track net worth over time? Snapshots are stored on pd2trader.com.
-    </Banner>
-  );
-}
-
-function TrackingDisabled({ onEnable }: { onEnable: () => void }) {
+function TrackingDisabled() {
   return (
     <EmptyState
       icon={<History />}
       title="History is off."
-      description="Turn on tracking to store a snapshot of your net worth on pd2trader.com each time it is refreshed (on start-up, every few minutes while Diablo is focused, and on demand). You get a chart, sessions with HR/hour, and item diffs between any two snapshots. History is private to your PD2 login and can be deleted at any time."
-      action={
-        <Button size="sm"
-          onClick={onEnable}>
-          Enable tracking
-        </Button>
-      }
+      description='Turn on "Save net worth history" in Settings → Net Worth to see a chart, sessions with HR/hour, and what changed between snapshots.'
     />
   );
 }

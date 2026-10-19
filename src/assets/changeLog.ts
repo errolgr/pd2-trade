@@ -8,6 +8,8 @@ export const changeLog = {
     '🆕 Automatic updates can be turned off (Settings → About); you still get notified, and price check shows a "Restart to update" button',
     '✨ Price check shows what the price is based on, and tags rarely traded items priced over a longer period',
     '✨ Smoother price check, quick list, chat and settings',
+    '✨ Move the Net Worth ticker anywhere (drag) or pin it to any corner',
+    '✨ Window transparency setting (Settings → Interface)',
     '✨ Anonymous usage stats help us improve the app',
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',

@@ -30,8 +30,6 @@ export type NetWorthTab = 'overview' | 'history';
 export interface NetWorthContextValue {
   owner: NetWorthOwner | null;
   trackingEnabled: boolean;
-  needsConsent: boolean;
-  setTrackingEnabled(enabled: boolean): void;
   latest: SnapshotResponse | null;
   status: NetWorthStatus;
   error: string | null;
@@ -69,16 +67,12 @@ export function requestNetWorthSnapshot(trigger: SnapshotTrigger = 'manual'): Pr
   return emitAppEvent(NETWORTH_TAKE_SNAPSHOT_EVENT, { trigger });
 }
 
-type NetWorthState = Omit<
-  NetWorthContextValue,
-  'setTrackingEnabled' | 'takeSnapshot' | 'startSession' | 'stopSession' | 'openNetWorth'
->;
+type NetWorthState = Omit<NetWorthContextValue, 'takeSnapshot' | 'startSession' | 'stopSession' | 'openNetWorth'>;
 
 type RpcCall =
   | { method: 'takeSnapshot'; trigger: SnapshotTrigger }
   | { method: 'startSession' }
-  | { method: 'stopSession' }
-  | { method: 'setTrackingEnabled'; enabled: boolean };
+  | { method: 'stopSession' };
 
 type RpcRequest = RpcCall & { requestId: string };
 
@@ -132,7 +126,7 @@ async function isDiabloFocused(): Promise<boolean> {
  * the auto-snapshot scheduler, sessions and seasons, and mirrors its state to child windows.
  */
 export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { settings, updateSettings, isLoading } = useOptions();
+  const { settings, isLoading } = useOptions();
   const { authData } = usePd2Website();
 
   const token = settings.pd2Token;
@@ -144,8 +138,8 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [token, account, isLadder, isHardcore],
   );
   const ownerKey = owner ? `${owner.account.toLowerCase()}|${owner.isLadder}|${owner.isHardcore}` : null;
-  const trackingEnabled = settings.netWorthTrackingEnabled === true;
-  const needsConsent = !isLoading && settings.netWorthTrackingEnabled === undefined;
+  // On by default; only an explicit `false` (Settings → Net Worth) turns history off.
+  const trackingEnabled = settings.netWorthTrackingEnabled !== false;
   const autoMinutes = settings.netWorthAutoSnapshotMinutes ?? 15;
 
   const [latest, setLatest] = useState<SnapshotResponse | null>(null);
@@ -279,13 +273,6 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const takeSnapshotRef = useRef(takeSnapshot);
   takeSnapshotRef.current = takeSnapshot;
 
-  const setTrackingEnabled = useCallback(
-    (enabled: boolean) => {
-      updateSettings({ netWorthTrackingEnabled: enabled });
-    },
-    [updateSettings],
-  );
-
   const sendMarker = useCallback(
     async (type: 'start' | 'stop') => {
       const { token: t, owner: o } = latestRef.current;
@@ -343,7 +330,6 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     () => ({
       owner,
       trackingEnabled,
-      needsConsent,
       latest,
       status,
       error,
@@ -352,18 +338,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       seasons,
       currentSeasonId,
     }),
-    [
-      owner,
-      trackingEnabled,
-      needsConsent,
-      latest,
-      status,
-      error,
-      lastSnapshotAt,
-      currentSession,
-      seasons,
-      currentSeasonId,
-    ],
+    [owner, trackingEnabled, latest, status, error, lastSnapshotAt, currentSession, seasons, currentSeasonId],
   );
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -374,8 +349,8 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [state]);
 
-  const rpcHandlersRef = useRef({ takeSnapshot, startSession, stopSession, setTrackingEnabled });
-  rpcHandlersRef.current = { takeSnapshot, startSession, stopSession, setTrackingEnabled };
+  const rpcHandlersRef = useRef({ takeSnapshot, startSession, stopSession });
+  rpcHandlersRef.current = { takeSnapshot, startSession, stopSession };
 
   useEffect(() => {
     const unlisteners: Promise<() => void>[] = [
@@ -402,9 +377,6 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             case 'stopSession':
               await handlers.stopSession();
               break;
-            case 'setTrackingEnabled':
-              handlers.setTrackingEnabled(request.enabled);
-              break;
           }
           response = { requestId: request.requestId, ok: true, result };
         } catch (err) {
@@ -419,8 +391,8 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const value: NetWorthContextValue = useMemo(
-    () => ({ ...state, setTrackingEnabled, takeSnapshot, startSession, stopSession, openNetWorth }),
-    [state, setTrackingEnabled, takeSnapshot, startSession, stopSession],
+    () => ({ ...state, takeSnapshot, startSession, stopSession, openNetWorth }),
+    [state, takeSnapshot, startSession, stopSession],
   );
 
   return <NetWorthContext.Provider value={value}>{children}</NetWorthContext.Provider>;
@@ -429,7 +401,6 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 const EMPTY_STATE: NetWorthState = {
   owner: null,
   trackingEnabled: false,
-  needsConsent: false,
   latest: null,
   status: 'idle',
   error: null,
@@ -509,11 +480,6 @@ const NetWorthMirror: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const value: NetWorthContextValue = useMemo(
     () => ({
       ...state,
-      setTrackingEnabled: (enabled: boolean) => {
-        rpcCall({ method: 'setTrackingEnabled', enabled }).catch((err) =>
-          console.warn('[NetWorth] setTrackingEnabled failed:', err),
-        );
-      },
       takeSnapshot: (trigger: SnapshotTrigger = 'manual') =>
         rpcCall({ method: 'takeSnapshot', trigger }).catch((err) => {
           console.warn('[NetWorth] takeSnapshot failed:', err);

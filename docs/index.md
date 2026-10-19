@@ -97,7 +97,7 @@ Instantly calculate the value of your stash (Ctrl+X): runes, currency, uniques a
 
 #### Net Worth Ticker
 
-Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Configure it under Settings → Net Worth.
+Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Turn it on under Settings → Net Worth, then pin it to a corner of the game or drag it anywhere on screen.
 
 #### Rune Exchange
 
@@ -109,3 +109,5 @@ Easily compare and trade runes with up-to-date exchange rates.
 #### Themes
 
 Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → Interface, applied instantly to every window.
+
+Windows are opaque by default; the Window transparency slider in Settings → Interface lets the game show through their backgrounds (up to 90%).

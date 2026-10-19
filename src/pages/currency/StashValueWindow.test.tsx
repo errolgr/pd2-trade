@@ -45,7 +45,12 @@ vi.mock('../price-check/components/RunePricePopover', () => ({
 }));
 // History has its own tests; this stub exposes what the window passes down
 vi.mock('./components/HistoryTab', () => ({
-  HistoryTab: (props: { seasonPoints: NetWorthPoint[] | null; refreshKey: string | null; currentSeasonId: string | null; onHistoryChanged: () => void }) => (
+  HistoryTab: (props: {
+    seasonPoints: NetWorthPoint[] | null;
+    refreshKey: string | null;
+    currentSeasonId: string | null;
+    onHistoryChanged: () => void;
+  }) => (
     <div data-testid="history">
       points={props.seasonPoints === null ? 'null' : props.seasonPoints.length} refreshKey={props.refreshKey} season=
       {props.currentSeasonId}
@@ -178,8 +183,6 @@ beforeEach(() => {
   netWorth = {
     owner: OWNER,
     trackingEnabled: true,
-    needsConsent: false,
-    setTrackingEnabled: vi.fn(),
     latest: snapshot(),
     status: 'ok',
     error: null,
@@ -340,7 +343,7 @@ describe('StashValueWindow header', () => {
   });
 });
 
-describe('StashValueWindow errors and consent', () => {
+describe('StashValueWindow errors', () => {
   it('replaces the header with the error and a Retry when nothing was valued yet', async () => {
     setNetWorth({ status: 'error', error: 'PD2 is down', latest: null });
     renderWindow();
@@ -361,13 +364,10 @@ describe('StashValueWindow errors and consent', () => {
     await act(async () => {});
   });
 
-  it('asks for history consent and passes the answer on', async () => {
-    setNetWorth({ needsConsent: true });
+  it('shows no history prompt or tracking banner', async () => {
     renderWindow();
-    expect(screen.getByRole('status').textContent).toContain('Track net worth over time?');
-    fireEvent.click(screen.getByRole('button', { name: 'No thanks' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Track history' }));
-    expect(vi.mocked(netWorth.setTrackingEnabled).mock.calls).toEqual([[false], [true]]);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText(/Track net worth|tracking/i)).toBeNull();
     await act(async () => {});
   });
 });
@@ -523,13 +523,13 @@ describe('StashValueWindow tabs', () => {
 });
 
 describe('StashValueWindow history tab', () => {
-  it('offers to enable tracking when history is off', async () => {
+  it('points to Settings → Net Worth when history is off', async () => {
     setNetWorth({ trackingEnabled: false });
     renderWindow();
     openTab(/History/);
     expect(screen.getByText('History is off.')).not.toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Enable tracking' }));
-    expect(vi.mocked(netWorth.setTrackingEnabled).mock.calls).toEqual([[true]]);
+    expect(screen.getByText(/Save net worth history" in Settings → Net Worth/)).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /tracking/i })).toBeNull();
     await act(async () => {});
   });
 

@@ -325,7 +325,7 @@ const ToastPage: React.FC = () => {
  */
 const tint = (token: string, amount: number) => `color-mix(in oklab, var(${token}) ${amount}%, var(--popover))`;
 const TOAST_THEME_VARS = {
-  '--normal-bg': 'color-mix(in oklab, var(--popover) 94%, transparent)',
+  '--normal-bg': 'color-mix(in oklab, var(--popover) var(--window-opacity-elevated), transparent)',
   '--normal-border': 'var(--border)',
   '--normal-text': 'var(--popover-foreground)',
   '--success-bg': tint('--success', 12),

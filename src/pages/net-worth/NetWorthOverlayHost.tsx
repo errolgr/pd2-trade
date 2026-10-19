@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { PhysicalPosition } from '@tauri-apps/api/dpi';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { isToastEnabled } from '@/hooks/useSocketNotifications';
@@ -9,9 +10,11 @@ import { openWindowCenteredOnDiablo, type BrowserWindow } from '@/lib/window';
 import { WindowLabels, WindowTitles } from '@/lib/window-titles';
 import type { SnapshotResponse, ValuationLine } from '@/lib/networth-api';
 import type { GenericToastPayload } from '@/common/types/Events';
-import { formatSignedHr, NETWORTH_TOGGLE_PANEL_EVENT } from './overlay';
+import { formatSignedHr, monitorWorkAreas, NETWORTH_TOGGLE_PANEL_EVENT, panelBesideTicker, pickArea } from './overlay';
 
 const PANEL_SIZE = { width: 360, height: 420 };
+/** Logical px between the ticker and the panel opened from it. */
+const PANEL_GAP = 6;
 const FOCUS_LOSS_HIDE_DELAY_MS = 500;
 
 /**
@@ -42,6 +45,24 @@ function describeTopChanges(previous: ValuationLine[], next: ValuationLine[], ga
 }
 
 /**
+ * Physical position for the mini panel next to the visible ticker (flipped above / right-aligned near screen
+ * edges), or null when the ticker is not showing (the panel then opens centered on Diablo).
+ */
+async function panelPositionNearTicker(ticker: WebviewWindow | null): Promise<PhysicalPosition | null> {
+  if (!ticker || !(await ticker.isVisible())) return null;
+  const [position, size] = await Promise.all([ticker.outerPosition(), ticker.outerSize()]);
+  const tickerRect = { x: position.x, y: position.y, width: size.width, height: size.height };
+  const area = pickArea(tickerRect, await monitorWorkAreas());
+  if (!area) return null;
+  const panel = {
+    width: Math.round(PANEL_SIZE.width * area.scaleFactor),
+    height: Math.round(PANEL_SIZE.height * area.scaleFactor),
+  };
+  const { x, y } = panelBesideTicker(tickerRect, panel, area, Math.round(PANEL_GAP * area.scaleFactor));
+  return new PhysicalPosition(x, y);
+}
+
+/**
  * Lives in the main window inside the host NetWorthProvider. Owns the net worth overlay windows
  * (ticker + mini panel) and the snapshot toasts.
  */
@@ -57,7 +78,8 @@ const NetWorthOverlayHost: React.FC = () => {
     settingsRef.current = settings;
   }, [settings]);
 
-  // Snapshot toast: persisted, non-deduped snapshot whose change crosses the threshold
+  // Snapshot toast: persisted, non-deduped snapshot whose change crosses the threshold. Only while the ticker is
+  // on, so history saving in the background (on by default) shows nothing until the player opts into the overlay.
   useEffect(() => {
     const previous = previousLatestRef.current;
     previousLatestRef.current = latest;
@@ -66,7 +88,7 @@ const NetWorthOverlayHost: React.FC = () => {
     const change = latest.delta.sincePrevious;
     const threshold = settingsRef.current.netWorthToastThresholdHr ?? 0.5;
     if (change === null || Math.abs(change) < threshold) return;
-    if (!isToastEnabled(settingsRef.current, 'networth')) return;
+    if (settingsRef.current.netWorthTickerEnabled !== true || !isToastEnabled(settingsRef.current, 'networth')) return;
 
     const movers = previous ? describeTopChanges(previous.valuation.lines, latest.valuation.lines, change > 0) : '';
     const payload: GenericToastPayload = {
@@ -77,7 +99,7 @@ const NetWorthOverlayHost: React.FC = () => {
     emit('toast-event', payload);
   }, [latest]);
 
-  // Mini panel: toggled by the ticker
+  // Mini panel: toggled by the ticker, opened next to it
   useEffect(() => {
     const togglePanel = async () => {
       const existing = panelWindowRef.current;
@@ -86,6 +108,10 @@ const NetWorthOverlayHost: React.FC = () => {
           if ('isVisible' in existing && (await existing.isVisible())) {
             await existing.hide();
           } else {
+            if (existing instanceof WebviewWindow) {
+              const position = await panelPositionNearTicker(tickerWindowRef.current).catch(() => null);
+              if (position) await existing.setPosition(position);
+            }
             await existing.show();
             await existing.setFocus();
           }
@@ -95,7 +121,10 @@ const NetWorthOverlayHost: React.FC = () => {
           panelWindowRef.current = null;
         }
       }
+      const position = isTauri() ? await panelPositionNearTicker(tickerWindowRef.current).catch(() => null) : null;
       const created = await openWindowCenteredOnDiablo(WindowLabels.NetWorthPanel, '/net-worth-panel', {
+        // Next to the ticker: created hidden, then moved and shown (positions here are physical pixels)
+        visible: position === null,
         title: WindowTitles.NetWorthPanel,
         decorations: false,
         transparent: true,
@@ -108,6 +137,17 @@ const NetWorthOverlayHost: React.FC = () => {
       });
       if (!created) return;
       panelWindowRef.current = created;
+      if (position && created instanceof WebviewWindow) {
+        created.once('tauri://created', async () => {
+          try {
+            await created.setPosition(position);
+            await created.show();
+            await created.setFocus();
+          } catch (error) {
+            console.warn('[NetWorthOverlay] Failed to place panel next to the ticker:', error);
+          }
+        });
+      }
       created.onCloseRequested(() => {
         panelWindowRef.current = null;
       });
@@ -127,8 +167,9 @@ const NetWorthOverlayHost: React.FC = () => {
     };
   }, []);
 
-  // Ticker: visible only while enabled, signed in and Diablo (or one of our windows) is focused
-  const tickerWanted = settings.netWorthTickerEnabled !== false && !!settings.pd2Token;
+  // Ticker: off until turned on in Settings → Net Worth; visible only while signed in and Diablo (or one of our
+  // windows) is focused
+  const tickerWanted = settings.netWorthTickerEnabled === true && !!settings.pd2Token;
   useEffect(() => {
     if (!isTauri()) return;
 
