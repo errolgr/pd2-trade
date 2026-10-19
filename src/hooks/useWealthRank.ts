@@ -1,13 +1,12 @@
 import { useCallback } from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
-import { LEADERBOARD_LIVE } from '@/lib/feature-flags';
 import { getStanding } from '@/lib/networth-api';
 import { useNetWorthQuery } from '@/pages/currency/lib/useNetWorthQuery';
 
 /**
  * "#41 Wealth · Top 7%" for the signed-in user's mode and the current season, from `/api/networth/standing`;
- * null while leaderboards are off (LEADERBOARD_LIVE, or the server's 404), unranked, or on any error.
+ * null while the server has leaderboards off (404), unranked, or on any error.
  * Must be used under a NetWorth provider. Refreshes when the valuation's price day changes (boards are daily).
  */
 export function useWealthRank(): string | null {
@@ -22,7 +21,7 @@ export function useWealthRank(): string | null {
     [token, isLadder, isHardcore, currentSeasonId],
   );
   const { data } = useNetWorthQuery(
-    LEADERBOARD_LIVE && token && isLadder !== undefined && isHardcore !== undefined ? load : null,
+    token && isLadder !== undefined && isHardcore !== undefined ? load : null,
     latest?.valuation.priceDay,
   );
 

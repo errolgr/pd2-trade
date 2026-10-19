@@ -12,8 +12,6 @@ declare global {
 
   /** package.json version, injected by vite.config.ts. */
   const __APP_VERSION__: string;
-  /** VITE_LEADERBOARD_LIVE === 'true' at build time, injected by vite.config.ts (src/lib/feature-flags.ts). */
-  const __LEADERBOARD_LIVE__: boolean;
 }
 
 export {};
