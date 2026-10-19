@@ -61,14 +61,15 @@ export function getSeasonSettingOptions(seasons: Season[] = SEASONS): { value: s
 
 /**
  * Returns startDate/endDate config for price API calls based on the selected season.
- * For current season, returns { startDate } to constrain to season start.
- * Past seasons return explicit start/end dates.
+ * For the current season (including one with a known, future end date), returns { startDate } to constrain to
+ * season start. Past seasons return explicit start/end dates.
  */
 export function getSeasonDateConfig(selectedSeasonId?: string): { startDate?: string; endDate?: string } {
   const season = getSeasonById(selectedSeasonId || CURRENT_SEASON_SETTING);
   if (!season) return {};
+  const today = new Date().toISOString().slice(0, 10);
   return {
     startDate: season.startDate,
-    ...(season.endDate ? { endDate: season.endDate } : {}),
+    ...(season.endDate && season.endDate < today ? { endDate: season.endDate } : {}),
   };
 }

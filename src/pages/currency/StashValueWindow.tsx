@@ -12,6 +12,7 @@ import { emit as emitAppEvent, listen as listenAppEvent } from '@/lib/browser-ev
 import { SIGN_IN_DIALOG_EVENT } from '@/components/dialogs/SignInDialog';
 import { useOptions } from '@/hooks/useOptions';
 import { NETWORTH_OPEN_EVENT, useNetWorth, type NetWorthTab } from '@/hooks/useNetWorth';
+import { useWealthRank } from '@/hooks/useWealthRank';
 import {
   getPoints,
   type NetWorthCategory,
@@ -66,6 +67,7 @@ export function StashValueWindow() {
   const { owner, latest, status, error, trackingEnabled, needsConsent, takeSnapshot, lastSnapshotAt } = netWorth;
   const { settings } = useOptions();
   const token = settings.pd2Token ?? null;
+  const wealthRank = useWealthRank();
   const [tab, setTab] = useState<WindowTab>(initialTab);
 
   // Deep link from ticker / panel / toasts
@@ -133,6 +135,7 @@ export function StashValueWindow() {
                     valuation={valuation}
                     sincePrevious={latest?.delta.sincePrevious ?? null}
                     seasonPoints={seasonPoints.data}
+                    wealthRank={wealthRank}
                     loading={status === 'loading'}
                     onRefresh={() => takeSnapshot('manual')}
                   />
@@ -302,12 +305,15 @@ function Header({
   valuation,
   sincePrevious,
   seasonPoints,
+  wealthRank,
   loading,
   onRefresh,
 }: {
   valuation: Valuation | null;
   sincePrevious: number | null;
   seasonPoints: NetWorthPoint[] | null;
+  /** "#41 Wealth · Top 7%" (leaderboards live and ranked), else null. */
+  wealthRank: string | null;
   loading: boolean;
   onRefresh: () => void;
 }) {
@@ -347,7 +353,14 @@ function Header({
       />
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1.5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Net worth</p>
+          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Net worth
+            {wealthRank && (
+              <span className="rounded-full border border-glow/40 bg-glow/10 px-2 py-px font-semibold normal-case tracking-normal text-foreground tabular-nums">
+                {wealthRank}
+              </span>
+            )}
+          </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className="text-4xl font-semibold leading-none tracking-tight">
               <AnimatedNumber value={valuation.totalHr}

@@ -7,6 +7,7 @@ import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
+import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -35,6 +36,7 @@ export interface ISettings {
   statFillLeaveMinEmpty?: boolean;
   statFillLeaveMaxEmpty?: boolean;
   statDefaultCorruptedFilter?: 'both' | 'corrupted' | 'non-corrupted';
+  priceWindowHours?: PriceWindowHours; // Price-check averages: rolling window sent as `hours` (default 7 days)
   rareRankDisplay?: 'bar' | 'blocks'; // Price-check rare appraisal: continuous percentile bar or 6 rank blocks
   rareStatsExpanded?: boolean; // Price-check rare popover: "Stats on this item" open (last state)
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
@@ -96,6 +98,7 @@ const DEFAULT_SETTINGS: ISettings = {
   statFillLeaveMinEmpty: false,
   statFillLeaveMaxEmpty: false,
   statDefaultCorruptedFilter: 'both',
+  priceWindowHours: DEFAULT_PRICE_WINDOW_HOURS,
   whisperNotificationsEnabled: true,
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',

@@ -25,6 +25,8 @@ export default defineConfig(({ mode }) => {
     define: {
       // Faro app version (src/lib/faro.ts)
       __APP_VERSION__: JSON.stringify(version),
+      // Feature flag (src/lib/feature-flags.ts): VITE_LEADERBOARD_LIVE=true in the env or a .env file
+      __LEADERBOARD_LIVE__: JSON.stringify((env.VITE_LEADERBOARD_LIVE || process.env.VITE_LEADERBOARD_LIVE) === 'true'),
     },
     plugins: [
       tailwindcss(),

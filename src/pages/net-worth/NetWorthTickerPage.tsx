@@ -6,6 +6,7 @@ import { OptionsProvider, useOptions, ISettings } from '@/hooks/useOptions';
 import { ItemsProvider } from '@/hooks/useItems';
 import { ChildPd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { ChildNetWorthProvider, useNetWorth } from '@/hooks/useNetWorth';
+import { useWealthRank } from '@/hooks/useWealthRank';
 import { emit, listen } from '@/lib/browser-events';
 import { MotionConfig } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -106,6 +107,7 @@ const NetWorthTicker: React.FC = () => {
   const total = latest?.valuation.totalHr ?? null;
   const flash = useChangeFlash(total);
   const sessionDelta = currentSession?.isOpen ? currentSession.endHr - currentSession.startHr : null;
+  const wealthRank = useWealthRank();
 
   return (
     <MotionConfig reducedMotion="user">
@@ -153,6 +155,13 @@ const NetWorthTicker: React.FC = () => {
               <span className="tabular-nums text-muted-foreground">
                 <span className="text-surface-foreground/90">{formatHr(currentSession.hrPerHour)}</span> HR/h
               </span>
+            </>
+          )}
+          {wealthRank && (
+            <>
+              <span aria-hidden
+                className="h-3 w-px bg-border" />
+              <span className="tabular-nums text-muted-foreground">{wealthRank}</span>
             </>
           )}
           <span
