@@ -203,9 +203,7 @@ describe('RaresTab', () => {
       distinctSellers: 2,
       firstSeen: '2026-09-27T12:00:00',
       lastSeen: '2026-10-01T12:00:00',
-      listings: [
-        { listedAt: '2026-10-01T12:00:00', lastSeenAt: '', hrPrice: 2, priceText: null, sellerChanged: true },
-      ],
+      listings: [{ listedAt: '2026-10-01T12:00:00', lastSeenAt: '', hrPrice: 2, priceText: null, sellerChanged: true }],
     };
     vi.mocked(fetchRareHistory).mockResolvedValue(history);
     const r = rare({ name: 'Expand Me', tab: 'Shared 4', position: { column: 4, row: 0 } });
@@ -275,5 +273,16 @@ describe('RaresSummaryCard', () => {
   it('hides the Keep band when no Keep rare has a market band', () => {
     render(<RaresSummaryCard summary={{ ...SUMMARY, keep: 2, keepUnpriced: 2 }} />);
     expect(screen.queryByText(/in Keep rares/)).toBeNull();
+  });
+
+  it('colours crafted names and shows their recipe and low-confidence badges', () => {
+    renderTab([
+      rare({ id: 'c', name: 'Doom Collar', verdict: 'keep', quality: 'Crafted', recipe: 'blood', confidence: 'low' }),
+      rare({ id: 'r', name: 'Rune Loop', verdict: 'keep' }),
+    ]);
+    expect([...document.querySelectorAll('li .text-q-crafted')].map((el) => el.textContent)).toContain('Doom Collar');
+    expect([...document.querySelectorAll('li .text-q-rare')].map((el) => el.textContent)).toEqual(['Rune Loop']);
+    expect(screen.getByText('Blood craft')).not.toBeNull();
+    expect(screen.getAllByText('Low confidence')).toHaveLength(1);
   });
 });

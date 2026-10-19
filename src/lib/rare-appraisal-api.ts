@@ -19,6 +19,9 @@ export type RareSlot =
   | 'quiver'
   | 'weapon';
 
+/** Crafted recipe the server inferred from the guaranteed recipe mods; null when it can't tell. */
+export type CraftRecipe = 'blood' | 'caster' | 'hitpower' | 'safety' | 'vampiric' | 'bountiful' | 'brilliant';
+
 export type Verdict = 'keep' | 'check' | 'vendor';
 
 /** Check items are ordered by their strongest key stat: high = any ★★+, medium = ★, low = none. */
@@ -89,6 +92,12 @@ export interface RareAppraisal {
   /** Price model and stars always come from the softcore-trained model, also for hardcore. */
   modelMode: 'softcore';
   modelVersion: string;
+  /** Set only for crafted items (absent = rare). Crafted items use a separate per-slot model. */
+  quality?: 'Rare' | 'Crafted';
+  /** Crafted only: recipe inferred from the guaranteed recipe mods, null when none matched. */
+  recipe?: CraftRecipe | null;
+  /** Crafted only: 'low' when the slot's crafted model rests on limited data (every crafted slot except weapons). */
+  confidence?: 'normal' | 'low' | null;
 }
 
 /** Thresholds the UI draws (bar lines) and the server applies. */
@@ -124,15 +133,18 @@ export interface RareHistory {
 export interface RareAppraisalResponse {
   appraisal: RareAppraisal | null;
   history: RareHistory | null;
-  /** Why `appraisal` is null, e.g. 'not a rare', 'unknown base', 'unparsed stats: 2'. */
+  /** Why `appraisal` is null, e.g. 'not a rare', 'unknown base', 'unparsed stats: 2', 'crafted slot unreliable: <detail>'. */
   reason: string | null;
+  /** Crafted items only (absent for rares), so a null appraisal can still be labelled. */
+  quality?: 'Rare' | 'Crafted';
+  recipe?: CraftRecipe | null;
 }
 
 /** Shown when the server has no rule for a response (matches the server default). */
 export const DEFAULT_VERDICT_RULE: VerdictRule = { keepRank: 0.8, vendorRank: 0.25, rankError: 0.18 };
 
 /**
- * Appraise one rare from the captured clipboard item (the PD2 item JSON string, sent verbatim).
+ * Appraise one rare or crafted item from the captured clipboard item (the PD2 item JSON string, sent verbatim).
  * Resolves `null` when the feature is off on the server (404); network/server errors reject.
  */
 export async function fetchRareAppraisal(

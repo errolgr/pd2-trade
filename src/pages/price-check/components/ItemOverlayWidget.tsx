@@ -1268,7 +1268,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {/* Rare appraisal: verdict pill (same spot/style as the uniques' price pill) + a subtle note */}
             {rareAppraisal.status === 'loading' && (
               <div className="pt-0.5">
-                <RareAppraisalPillSkeleton />
+                <RareAppraisalPillSkeleton crafted={item.quality === ItemQuality.Crafted} />
               </div>
             )}
             {appraisal && (

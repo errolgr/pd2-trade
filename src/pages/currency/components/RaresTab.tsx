@@ -7,11 +7,12 @@ import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
-import { VerdictBadge } from '@/components/rares/RareParts';
+import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import { rareArtUrl } from '@/components/rares/rare-art';
 import { statChipText } from '@/components/rares/stat-chip';
 import {
+  appraisalNameClass,
   compareStash,
   fmtBandHr,
   isLowValue,
@@ -320,9 +321,10 @@ function RareRow({
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-medium text-q-rare">{rare.name}</span>
+            <span className={cn('truncate text-sm font-medium', appraisalNameClass(rare))}>{rare.name}</span>
             <VerdictBadge rare={rare}
               hardcore={hardcore} />
+            <CraftedBadges rare={rare} />
           </span>
           <span className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">{locationText(rare)}</span>
