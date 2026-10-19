@@ -167,8 +167,8 @@ const NetWorthOverlayHost: React.FC = () => {
     };
   }, []);
 
-  // Ticker: off until turned on in Settings → Net Worth; visible only while signed in and Diablo (or one of our
-  // windows) is focused
+  // Ticker: off until turned on in Settings → Net Worth; visible only while signed in and in game context
+  // (Diablo focused, or one of our windows focused from it)
   const tickerWanted = settings.netWorthTickerEnabled === true && !!settings.pd2Token;
   useEffect(() => {
     if (!isTauri()) return;

@@ -1,14 +1,15 @@
-use super::WindowRect;
+use super::{Foreground, WindowRect};
 use std::sync::Mutex;
-use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use tauri::{AppHandle, Emitter};
+use std::{ffi::OsStr, iter, mem, os::windows::prelude::OsStrExt, ptr};
+use tauri::AppHandle;
 
 use windows_sys::Win32::{
-    Foundation::{HWND, POINT, RECT},
+    Foundation::{HWND, RECT},
+    Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTOPRIMARY},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::WindowsAndMessaging::{
-        FindWindowW, GetCursorPos, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
-        SystemParametersInfoW, EVENT_SYSTEM_FOREGROUND, SPI_GETWORKAREA, WINEVENT_OUTOFCONTEXT,
+        FindWindowW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId,
+        EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT,
     },
 };
 
@@ -16,9 +17,13 @@ fn to_wide(s: &str) -> Vec<u16> {
     OsStr::new(s).encode_wide().chain(iter::once(0)).collect()
 }
 
-pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+fn find_diablo_window() -> HWND {
     let title_w = to_wide("Diablo II");
-    let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
+    unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) }
+}
+
+pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+    let hwnd = find_diablo_window();
     if hwnd == 0 {
         return None;
     }
@@ -40,60 +45,48 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
     })
 }
 
-pub fn is_diablo_focused() -> bool {
-    let title_w = to_wide("Diablo II");
-    let hwnd: HWND = unsafe { FindWindowW(ptr::null(), title_w.as_ptr()) };
-
-    // 1. Check if Diablo II window was found
-    if hwnd == 0 {
-        return false;
-    }
-
+pub fn foreground() -> Foreground {
     let foreground = unsafe { GetForegroundWindow() };
-
-    // 2. Check if Diablo II is the foreground window
-    if hwnd == foreground {
-        return true;
+    if foreground == 0 {
+        return Foreground::Unknown;
     }
 
-    // 3. Check if the foreground window belongs to THIS application (PID check)
-    // This prevents flickering when interacting with overlays (Chat, Settings, etc.)
+    let diablo = find_diablo_window();
+    if diablo == 0 {
+        return Foreground::Other;
+    }
+    if foreground == diablo {
+        return Foreground::Diablo;
+    }
+
     let mut foreground_pid: u32 = 0;
     unsafe { GetWindowThreadProcessId(foreground, &mut foreground_pid) };
-
     if foreground_pid == std::process::id() {
-        return true;
+        Foreground::OwnWindow
+    } else {
+        Foreground::Other
     }
-
-    false
 }
 
+/// Work area (screen minus taskbar) of the monitor holding the foreground window, so toasts land
+/// on the screen the user is looking at; the primary monitor when nothing is in front.
 pub fn get_work_area(_app: &AppHandle) -> Option<WindowRect> {
-    let mut work_area = RECT {
-        left: 0,
-        top: 0,
-        right: 0,
-        bottom: 0,
-    };
-    let ok =
-        unsafe { SystemParametersInfoW(SPI_GETWORKAREA, 0, &mut work_area as *mut _ as *mut _, 0) };
-    if ok == 0 {
+    let monitor = unsafe { MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTOPRIMARY) };
+    if monitor == 0 {
         return None;
     }
-    Some(WindowRect {
-        x: work_area.left,
-        y: work_area.top,
-        width: work_area.right - work_area.left,
-        height: work_area.bottom - work_area.top,
-    })
-}
-
-pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    if is_diablo_focused() {
-        get_diablo_rect(app)
-    } else {
-        get_work_area(app)
+    let mut info: MONITORINFO = unsafe { mem::zeroed() };
+    info.cbSize = mem::size_of::<MONITORINFO>() as u32;
+    if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
+        return None;
     }
+    let work = info.rcWork;
+    Some(WindowRect {
+        x: work.left,
+        y: work.top,
+        width: work.right - work.left,
+        height: work.bottom - work.top,
+    })
 }
 
 // --- Event-driven foreground monitoring ---
@@ -130,51 +123,6 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
         FOREGROUND_HOOK = Some(hook);
         *CALLBACK.lock().unwrap() = Some(Box::new(callback));
     }
-}
-
-static DIABLO_FOCUS_STATE: Mutex<Option<bool>> = Mutex::new(None);
-
-pub fn initialize_diablo_focus_monitoring(
-    app_handle: AppHandle,
-    on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
-) {
-    let initial_focus_state = is_diablo_focused();
-
-    // Store initial state
-    *DIABLO_FOCUS_STATE.lock().unwrap() = Some(initial_focus_state);
-
-    // Emit initial state
-    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
-
-    // Call optional callback with initial state
-    if let Some(ref callback) = on_focus_change {
-        callback(initial_focus_state);
-    }
-
-    initialize_foreground_monitoring(move || {
-        let current_focus_state = is_diablo_focused();
-        let mut last_state: std::sync::MutexGuard<'_, Option<bool>> = DIABLO_FOCUS_STATE.lock().unwrap();
-
-        if let Some(last) = *last_state {
-            if current_focus_state != last {
-                *last_state = Some(current_focus_state);
-                let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
-
-                // Call optional callback when focus changes
-                if let Some(callback) = &on_focus_change {
-                    callback(current_focus_state);
-                }
-            }
-        } else {
-            *last_state = Some(current_focus_state);
-            let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
-
-            // Call optional callback
-            if let Some(callback) = &on_focus_change {
-                callback(current_focus_state);
-            }
-        }
-    });
 }
 
 pub fn cleanup_foreground_monitoring() {

@@ -17,9 +17,11 @@ pub fn press_key(sequence: String) -> Result<(), String> {
     keyboard::press_key(sequence)
 }
 
+/// Game context, not raw focus: true while Diablo II is in front or one of our windows was focused
+/// from it (see `window::focus`). Same value as the `diablo-focus-changed` event.
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
-    window::is_diablo_focused()
+    window::is_game_context()
 }
 
 #[tauri::command]
@@ -90,7 +92,7 @@ pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
 pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     use tauri::{PhysicalPosition, PhysicalSize};
 
-    // Get bounds of the focused area (Diablo or work area)
+    // Diablo in game context, otherwise the work area of the screen the user is on
     let bounds =
         window::get_appropriate_window_bounds(&app_handle).ok_or("Could not get window bounds")?;
 
