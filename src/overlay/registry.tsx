@@ -27,6 +27,9 @@ export const PANEL_DEFS: PanelDefs = {
     placement: 'gameRight',
     persist: false,
     keyboard: 'onPointerDown',
+    // Like the old price-check window (activated on show): without focus, clicking back into the game is no
+    // focus change, so closeOnBlur could never fire. Hotkeys hand focus back to the game before copying.
+    focusOnOpen: true,
     keepMounted: true,
     hideOnGameBlur: true,
     closeOnBlur: true,

@@ -121,6 +121,41 @@ describe('trackKeyboardFocus', () => {
     expect(win.focusHandler).toBeNull();
   });
 
+  it('marks the focus loss caused by releaseKeyboard as a hand-off, and only that one', async () => {
+    const seen: [boolean, boolean][] = [];
+    const stop = trackKeyboardFocus((focused, handoff) => seen.push([focused, handoff]));
+    await flush();
+    await claimKeyboard();
+    await releaseKeyboard();
+    win.focusHandler!({ payload: false }); // our hand-off to the game
+    await claimKeyboard();
+    win.focusHandler!({ payload: true });
+    win.focusHandler!({ payload: false }); // the user clicking into the game
+    expect(seen).toEqual([
+      [false, true],
+      [true, false],
+      [false, false],
+    ]);
+    stop();
+  });
+
+  it('treats a focus loss long after a hand-off as the user leaving', async () => {
+    vi.useFakeTimers();
+    try {
+      const seen: boolean[] = [];
+      const stop = trackKeyboardFocus((_focused, handoff) => seen.push(handoff));
+      await flush();
+      await claimKeyboard();
+      await releaseKeyboard();
+      vi.advanceTimersByTime(5000);
+      win.focusHandler!({ payload: false });
+      expect(seen).toEqual([false]);
+      stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reports every focus change after updating the claim', async () => {
     const seen: [boolean, boolean][] = [];
     const stop = trackKeyboardFocus((focused) => seen.push([focused, isKeyboardClaimed()]));

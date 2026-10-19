@@ -338,13 +338,14 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   );
 
   // Main lost OS focus (the user clicked into the game or another app): close closeOnBlur panels unless focus
-  // comes back within CLOSE_ON_BLUR_MS, like the old per-window focus-loss handler hid its window.
+  // comes back within CLOSE_ON_BLUR_MS, like the old per-window focus-loss handler hid its window. Our own
+  // hand-off to the game (e.g. before a hotkey copies the next item) isn't the user leaving.
   useEffect(() => {
     let blurTimer: ReturnType<typeof setTimeout> | undefined;
-    const stop = trackKeyboardFocus((focused) => {
+    const stop = trackKeyboardFocus((focused, handoff) => {
       clearTimeout(blurTimer);
       blurTimer = undefined;
-      if (focused) return;
+      if (focused || handoff) return;
       blurTimer = setTimeout(() => {
         blurTimer = undefined;
         for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {

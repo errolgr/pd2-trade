@@ -16,11 +16,21 @@ import AppController from './AppController';
 /** Overlay API spies. */
 const h = vi.hoisted(() => ({
   overlay: { openPanel: vi.fn(), closePanel: vi.fn(), togglePanel: vi.fn() },
+  /** An open panel (e.g. a price check) holds the keyboard. */
+  keyboardClaimed: false,
+  releaseKeyboard: vi.fn(async () => {
+    h.keyboardClaimed = false;
+  }),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
 // A fresh value per render (like any context value that changes): hotkey handlers must not depend on its identity
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), useOverlay: () => ({ ...h.overlay }) }));
+vi.mock('@/overlay', () => ({
+  showToast: vi.fn(),
+  useOverlay: () => ({ ...h.overlay }),
+  isKeyboardClaimed: () => h.keyboardClaimed,
+  releaseKeyboard: () => h.releaseKeyboard(),
+}));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useClipboard', () => ({ useClipboard: vi.fn() }));
 vi.mock('@/hooks/useKeySender', () => ({ useKeySender: vi.fn() }));
@@ -78,6 +88,7 @@ beforeEach(() => {
   clipboard = 'user text';
   itemUnderCursor = 'ITEM sword';
   diabloFocused = true;
+  h.keyboardClaimed = false;
   invoked = [];
 
   vi.mocked(isTauri).mockReturnValue(true);
@@ -121,6 +132,33 @@ describe('AppController price check hotkey', () => {
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
     expect(clipboard).toBe('user text');
     expect(h.overlay.openPanel).not.toHaveBeenCalledWith('itemSearch', expect.anything());
+  });
+
+  it('hands the keyboard back to the game before copying when an open panel holds it', async () => {
+    h.keyboardClaimed = true;
+    await mount();
+    await press(0);
+    await advance(400);
+    expect(h.releaseKeyboard).toHaveBeenCalledTimes(1);
+    expect(h.releaseKeyboard.mock.invocationCallOrder[0]).toBeLessThan(keyPress.mock.invocationCallOrder[0]);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
+  });
+
+  it('copies even with a Ctrl+C hotkey when a panel held the keyboard (the game never saw the press)', async () => {
+    h.keyboardClaimed = true;
+    await mount();
+    act(() => store.replace({ ...SETTINGS, hotkeyKey: 'c' }));
+    await press(0);
+    await advance(400);
+    expect(keyPress).toHaveBeenCalledWith('ctrl+c');
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
+  });
+
+  it('leaves focus alone when no panel holds the keyboard', async () => {
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.releaseKeyboard).not.toHaveBeenCalled();
   });
 
   it('opens the item search panel with the copied item and gives the user their clipboard back', async () => {

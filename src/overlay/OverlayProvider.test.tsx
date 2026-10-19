@@ -40,12 +40,12 @@ vi.mock('./game', async (importOriginal) => {
   };
 });
 /** Main's OS focus listener registered through trackKeyboardFocus (Tauri). */
-const focus = vi.hoisted(() => ({ onChange: null as ((focused: boolean) => void) | null }));
+const focus = vi.hoisted(() => ({ onChange: null as ((focused: boolean, handoff?: boolean) => void) | null }));
 vi.mock('./keyboard', () => ({
   claimKeyboard: vi.fn(async () => {}),
   releaseKeyboard: vi.fn(async () => {}),
   isKeyboardClaimed: vi.fn(() => false),
-  trackKeyboardFocus: (onChange: (focused: boolean) => void) => {
+  trackKeyboardFocus: (onChange: (focused: boolean, handoff?: boolean) => void) => {
     focus.onChange = onChange;
     return () => {
       focus.onChange = null;
@@ -512,6 +512,14 @@ describe('closeOnBlur', () => {
     // hidden, not unmounted: the conversation survives
     expect(mounts.chat).toBe(1);
     expect(screen.getByTestId('content-chat').textContent).toBe('{"conversationId":"c1"}#1');
+  });
+
+  it('keeps panels open when the focus loss is our own hand-off to the game', () => {
+    mount();
+    act(() => api.openPanel('settings'));
+    act(() => focus.onChange!(false, true));
+    act(() => vi.advanceTimersByTime(CLOSE_ON_BLUR_MS * 2));
+    expect(api.isOpen('settings')).toBe(true);
   });
 
   it('keeps panels open when focus returns within the delay', () => {

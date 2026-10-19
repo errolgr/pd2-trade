@@ -10,7 +10,7 @@ import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
-import { showToast, useOverlay, type PanelPayloads } from '@/overlay';
+import { isKeyboardClaimed, releaseKeyboard, showToast, useOverlay, type PanelPayloads } from '@/overlay';
 import { useDelist } from '@/pages/delist/DelistHandler';
 
 /**
@@ -48,8 +48,15 @@ const AppController: React.FC = () => {
   /** Ctrl+C the item under the cursor, restoring the user's clipboard afterwards. */
   const copyItemUnderCursor = useCallback(
     async (sendCopy: boolean): Promise<string | null> => {
+      // A panel holding the keyboard (e.g. an open price check) would get the Ctrl+C, and a Ctrl+C hotkey never
+      // reached the game: hand focus back and let the game take the foreground before copying.
+      const handedBack = isKeyboardClaimed();
+      if (handedBack) {
+        await releaseKeyboard();
+        await sleep(50);
+      }
       const savedClipboard = await read();
-      if (sendCopy) await keyPress('ctrl+c');
+      if (sendCopy || handedBack) await keyPress('ctrl+c');
       await sleep(250);
       const raw = await read();
       try {

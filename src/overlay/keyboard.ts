@@ -9,6 +9,9 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
  * last keyboard panel closes (then focus goes back to the game).
  */
 let claimed = false;
+/** When releaseKeyboard() last handed focus away; the focus loss that follows is ours, not a user click. */
+let handoffAt = 0;
+const HANDOFF_BLUR_MS = 1000;
 
 export function isKeyboardClaimed(): boolean {
   return claimed;
@@ -31,6 +34,7 @@ export async function claimKeyboard(): Promise<void> {
 export async function releaseKeyboard({ focusGame = true }: { focusGame?: boolean } = {}): Promise<void> {
   if (!isTauri() || !claimed) return;
   claimed = false;
+  handoffAt = Date.now();
   try {
     await getCurrentWindow().setFocusable(false);
     if (focusGame) await invoke<boolean>('focus_diablo');
@@ -41,14 +45,17 @@ export async function releaseKeyboard({ focusGame = true }: { focusGame?: boolea
 
 /**
  * Track Main's OS focus: losing it (user clicked into the game) ends the claim. `onFocusChange` sees every
- * change (Tauri only). Returns the unsubscribe.
+ * change (Tauri only); `handoff` marks a focus loss caused by releaseKeyboard() rather than the user.
+ * Returns the unsubscribe.
  */
-export function trackKeyboardFocus(onFocusChange?: (focused: boolean) => void): () => void {
+export function trackKeyboardFocus(onFocusChange?: (focused: boolean, handoff: boolean) => void): () => void {
   if (!isTauri()) return () => {};
   let disposed = false;
   let unlisten: (() => void) | null = null;
   getCurrentWindow()
     .onFocusChanged(({ payload: focused }) => {
+      const handoff = !focused && Date.now() - handoffAt < HANDOFF_BLUR_MS;
+      if (handoff || focused) handoffAt = 0;
       if (focused) {
         claimed = true;
       } else if (claimed) {
@@ -57,7 +64,7 @@ export function trackKeyboardFocus(onFocusChange?: (focused: boolean) => void): 
           .setFocusable(false)
           .catch((error) => console.warn('[overlay] setFocusable(false) failed:', error));
       }
-      onFocusChange?.(focused);
+      onFocusChange?.(focused, handoff);
     })
     .then((off) => {
       if (disposed) off();
@@ -73,4 +80,5 @@ export function trackKeyboardFocus(onFocusChange?: (focused: boolean) => void): 
 /** Test seam: reset module state between tests. */
 export function resetKeyboardStateForTests(): void {
   claimed = false;
+  handoffAt = 0;
 }
