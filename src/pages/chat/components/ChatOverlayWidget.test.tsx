@@ -1216,4 +1216,42 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(audio).toHaveLength(sounds);
     expect(headerUnread()).toBeNull();
   });
+
+  it("keeps whispers in the thread when the partner's account is only known from their offer", async () => {
+    // u2 registered no account on their profile; their offer's user carries the account Thumoi
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'u2web',
+        accountName: 'Thumoi',
+        itemName: 'Shako',
+        timestamp: new Date(NOW.getTime() - 60 * 60_000),
+        listingId: 'l1',
+        userId: 'u2',
+      },
+    ];
+    messagesByConversation.c2 = [msg('m1', 'c2', 'u2', 'hi', 90, [ME])];
+    await renderWidget([conv('c2', { id: 'u2', username: 'u2web' }, { latest: msg('m1', 'c2', 'u2', 'hi', 90) })]);
+    await select('u2web');
+    expect(screen.queryByText('Thumoi')).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('group', { name: 'Reply via' })).getByRole('radio', { name: /Whisper/ }));
+    });
+    await type('inv me pls');
+    expect(writeText).toHaveBeenCalledWith('/w *Thumoi inv me pls');
+    expect(rows()).toHaveLength(1);
+    expect(rowFor('u2web').getAttribute('aria-current')).toBe('true');
+    expect(bubbles()).toEqual(['hi', 'inv me pls']);
+
+    await whisperFrom('Thumoi', 'omw');
+    expect(rows()).toHaveLength(1);
+    expect(bubbles()).toEqual(['hi', 'inv me pls', 'omw']);
+    expect(rowFor('u2web').textContent).toContain('omw');
+
+    await act(async () => fireEvent.click(filterButton('Selling')));
+    expect(rows()).toHaveLength(1);
+    expect(rowFor('u2web').textContent).toContain('omw');
+  });
 });

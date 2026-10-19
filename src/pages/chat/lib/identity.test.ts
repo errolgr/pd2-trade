@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { WhisperPerson } from '@/lib/whisper-history';
-import { linkSender, participantAccounts, type LinkCandidate } from './identity';
+import { knownAccounts, linkSender, type LinkCandidate } from './identity';
 
 const sender = (over: Partial<WhisperPerson>): WhisperPerson => ({
   key: 'bob',
@@ -20,9 +20,9 @@ const participant = (accounts: string[], beta_accounts?: string[]): Participant 
 });
 
 const CANDIDATES: LinkCandidate[] = [
-  { threadId: 'c-alice', accounts: participantAccounts(participant(['AliceAcc'], ['AliceBeta'])) },
-  { threadId: 'c-bob', accounts: participantAccounts(participant(['  *BobAcc '])) },
-  { threadId: 'c-blank', accounts: participantAccounts(participant(['', '  '])) },
+  { threadId: 'c-alice', accounts: knownAccounts(participant(['AliceAcc'], ['AliceBeta']), []) },
+  { threadId: 'c-bob', accounts: knownAccounts(participant(['  *BobAcc ']), []) },
+  { threadId: 'c-blank', accounts: knownAccounts(participant(['', '  ']), []) },
 ];
 
 describe('linkSender', () => {
@@ -55,8 +55,17 @@ describe('linkSender', () => {
     expect(linkSender(sender({ key: 'zed', playerName: 'Zed' }), CANDIDATES)).toBeUndefined();
   });
 
-  it('collects live and beta accounts of a participant', () => {
-    expect(participantAccounts(participant(['a'], ['b']))).toEqual(['a', 'b']);
-    expect(participantAccounts(undefined)).toEqual([]);
+  it('knows live, beta and offer accounts, deduplicated case-insensitively, blanks dropped', () => {
+    expect(knownAccounts(participant(['A'], ['b']), [{ accountName: '*a ' }, { accountName: 'Thumoi' }, {}])).toEqual([
+      'A',
+      'b',
+      'Thumoi',
+    ]);
+    expect(knownAccounts(undefined, [{ accountName: ' ' }])).toEqual([]);
+  });
+
+  it('links by an account only known from their market offers', () => {
+    const thread = { threadId: 'c-u2', accounts: knownAccounts(participant([]), [{ accountName: 'Thumoi' }]) };
+    expect(linkSender(sender({ key: 'thumoi', playerName: 'Thumoi' }), [thread])).toBe('c-u2');
   });
 });

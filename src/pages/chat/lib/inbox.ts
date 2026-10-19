@@ -4,10 +4,10 @@
  */
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
-import { isOpenTrade, unreadWhispers, type WhisperPerson } from '@/lib/whisper-history';
+import { isOpenTrade, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
-import { linkSender, participantAccounts, whisperThreadId, type LinkCandidate } from './identity';
+import { knownAccounts, linkSender, whisperThreadId } from './identity';
 import { messagePreview } from './market-links';
 
 export type InboxFilter = 'all' | 'selling' | 'buying';
@@ -36,6 +36,8 @@ export interface InboxThread {
   people: WhisperPerson[];
   /** Website offers with this user, both directions. */
   offers: TradeOffer[];
+  /** Every in-game account known for the website user (see knownAccounts); whispers from them link here. */
+  accounts: string[];
   latest?: InboxPreview;
   unread: number;
   /** Has incoming offers or open incoming trade whispers. */
@@ -57,7 +59,6 @@ export interface InboxInput {
 export function buildInbox({ conversations, currentUserId, people, offers, now }: InboxInput): InboxThread[] {
   const threads = new Map<string, InboxThread>();
   const byUser = new Map<string, InboxThread>();
-  const candidates: LinkCandidate[] = [];
   const add = (thread: InboxThread) => {
     threads.set(thread.id, thread);
     if (thread.userId && !byUser.has(thread.userId)) byUser.set(thread.userId, thread);
@@ -74,11 +75,11 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
       userId: participant?._id,
       people: [],
       offers: [],
+      accounts: [],
       unread: 0,
       selling: false,
       buying: false,
     });
-    candidates.push({ threadId: conversation._id, accounts: participantAccounts(participant) });
   }
 
   for (const offer of offers) {
@@ -90,14 +91,20 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
         userId: offer.userId,
         people: [],
         offers: [],
+        accounts: [],
         unread: 0,
         selling: false,
         buying: false,
       });
-      candidates.push({ threadId: thread.id, accounts: [offer.accountName] });
     }
     thread.offers.push(offer);
   }
+
+  // Accounts once every offer is in: a conversation partner may only show accounts on their offers
+  const candidates = [...threads.values()].map((thread) => {
+    thread.accounts = knownAccounts(thread.participant, thread.offers);
+    return { threadId: thread.id, accounts: thread.accounts };
+  });
 
   for (const person of Object.values(people)) {
     const linked = linkSender(person, candidates);
@@ -109,6 +116,7 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
         name: person.playerName,
         people: [],
         offers: [],
+        accounts: [],
         unread: 0,
         selling: false,
         buying: false,
@@ -150,6 +158,13 @@ export function buildInbox({ conversations, currentUserId, people, offers, now }
 
   return [...threads.values()].sort((a, b) => (b.latest?.at ?? 0) - (a.latest?.at ?? 0));
 }
+
+/**
+ * Whom `/w *<account>` from a thread reaches: its whisper sender (linked by one of `thread.accounts`), else
+ * the first account known for its website user; undefined when no account is known.
+ */
+export const threadWhisperAccount = (thread: Pick<InboxThread, 'people' | 'accounts'>) =>
+  thread.people[0] ? whisperTarget(thread.people[0]) : thread.accounts[0];
 
 /** One message of a thread's timeline, from either source. */
 export interface TimelineEntry {

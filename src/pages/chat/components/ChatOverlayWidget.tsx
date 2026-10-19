@@ -8,13 +8,13 @@ import { useOptions } from '@/hooks/useOptions';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
 import { writeText } from '@/lib/browser-clipboard';
-import { isOpenTrade, unreadWhispers, whisperTarget } from '@/lib/whisper-history';
+import { isOpenTrade, unreadWhispers } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, usePanel } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { findMarketLinks } from '../lib/market-links';
-import { buildInbox, buildTimeline, type InboxFilter, type InboxThread } from '../lib/inbox';
-import { participantAccounts, whisperThreadId } from '../lib/identity';
+import { buildInbox, buildTimeline, threadWhisperAccount, type InboxFilter, type InboxThread } from '../lib/inbox';
+import { whisperThreadId } from '../lib/identity';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
@@ -153,11 +153,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   );
   const listings = useChatListings(linkedListingIds);
 
-  // Whom a whisper reaches: their whisper sender, else their registered (or offer) account
+  // Whom a whisper reaches (the same accounts link incoming whispers to this thread)
   const person = people?.[0];
-  const whisperAccount = person
-    ? whisperTarget(person)
-    : participantAccounts(participant)[0] || selectedThread?.offers.find((o) => o.accountName)?.accountName;
+  const whisperAccount = selectedThread && threadWhisperAccount(selectedThread);
   const openTrades = (people ?? []).flatMap((p) =>
     p.trades.filter((trade) => isOpenTrade(trade, now)).map((trade) => ({ person: p, trade })),
   );

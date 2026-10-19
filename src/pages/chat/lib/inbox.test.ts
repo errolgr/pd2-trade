@@ -3,7 +3,7 @@ import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { OPEN_TRADE_MS, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
-import { buildInbox, buildTimeline, type InboxInput } from './inbox';
+import { buildInbox, buildTimeline, threadWhisperAccount, type InboxInput } from './inbox';
 
 const ME = 'me';
 const NOW = Date.parse('2026-10-18T12:00:00Z');
@@ -121,6 +121,20 @@ describe('buildInbox', () => {
       offers: [offer({ userId: 'dave', playerName: 'dave', accountName: 'DaveAcc' })],
     });
     expect(threads.map((t) => [t.id, t.people.length])).toEqual([['user:dave', 1]]);
+  });
+
+  it("links whispers to a conversation by an account only its partner's offers carry, and whispers go there", () => {
+    const input = {
+      conversations: [conversation('c-u2', { id: 'u2', username: 'u2web' })],
+      offers: [offer({ userId: 'u2', accountName: 'Thumoi' })],
+    };
+    const [before] = inbox(input);
+    expect(before.accounts).toEqual(['Thumoi']);
+    expect(threadWhisperAccount(before)).toBe('Thumoi');
+
+    const threads = inbox({ ...input, people: { thumoi: person('thumoi', { accountName: 'Thumoi' }) } });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['c-u2', ['thumoi']]]);
+    expect(threadWhisperAccount(threads[0])).toBe('Thumoi');
   });
 
   it('marks threads selling/buying from offers and open trade whispers', () => {
