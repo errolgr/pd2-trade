@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isTauri } from '@tauri-apps/api/core';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { setBadgeCount } from '@/overlay';
-import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
+import { OPEN_TRADE_MS, parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { useWhisperHistory, WhisperHistoryProvider } from './useWhisperHistory';
 
 const bus = vi.hoisted(() => {
@@ -154,5 +154,16 @@ describe('WhisperHistoryProvider', () => {
     expect(result.current.recordCopied).toBe(first.recordCopied);
     act(() => result.current.forget('carl'));
     expect(result.current.people.carl).toBeUndefined();
+  });
+
+  it('drops a trade from the badge once it ages out of the open window, with no other change', async () => {
+    await renderHistory();
+    fire('trade-message', tradeFromBob);
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
+
+    await act(async () => vi.advanceTimersByTimeAsync(OPEN_TRADE_MS - 60_000));
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
+    await act(async () => vi.advanceTimersByTimeAsync(60_000));
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 0]);
   });
 });

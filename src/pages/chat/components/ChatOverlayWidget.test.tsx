@@ -1186,4 +1186,34 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(rows()).toHaveLength(1);
     expect(bubbles()).toEqual(['still for sale?']);
   });
+
+  it('follows the open whisper thread into the conversation it merges with: reads it, keeps the draft', async () => {
+    await renderWidget([]);
+    await whisperAt(1, 'Zed', 'wtb shako?');
+    await select('Zed');
+    fireEvent.change(composer(), { target: { value: 'half typed' } });
+
+    // A website conversation with Zed (account registered) appears while his whisper thread is open
+    const first = msg('z1', 'c9', 'zed', 'hi from the site', 0);
+    messagesByConversation.c9 = [first];
+    api.getConversations.mockResolvedValue({
+      data: [withAccount(conv('c9', { id: 'zed', username: 'zedweb' }, { unread: 1, latest: first }), ['Zed'])],
+    });
+    await fire('social/message_pushed', first);
+    await flush();
+
+    expect(rows()).toHaveLength(1);
+    expect(rowFor('zedweb')?.getAttribute('aria-current')).toBe('true');
+    expect(bubbles()).toEqual(['wtb shako?', 'hi from the site']);
+    expect(composer().value).toBe('half typed');
+    expect(api.markMessagesAsRead.mock.calls).toEqual([[['z1'], ME]]);
+    expect(headerUnread()).toBeNull();
+    const sounds = audio.length;
+
+    // Now on screen as a conversation: a new message is read right away, silently
+    await fire('social/message_pushed', msg('z2', 'c9', 'zed', 'still there?', 0));
+    expect(api.markMessagesAsRead.mock.calls.at(-1)).toEqual([['z2'], ME]);
+    expect(audio).toHaveLength(sounds);
+    expect(headerUnread()).toBeNull();
+  });
 });

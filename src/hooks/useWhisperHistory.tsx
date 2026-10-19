@@ -73,6 +73,9 @@ export interface WhisperHistoryApi {
   forget: (key: string) => void;
 }
 
+/** How often open trades are re-evaluated for the badge (they stop being open after OPEN_TRADE_MS). */
+const CLOCK_TICK_MS = 60_000;
+
 const WhisperHistoryContext = createContext<WhisperHistoryApi | null>(null);
 
 /**
@@ -118,14 +121,19 @@ export function WhisperHistoryProvider({ children }: { children: React.ReactNode
   }, [saver, history, revision]);
   useEffect(() => () => void saver.flush(), [saver]);
 
+  // A clock, so trades that age out of the open window leave the badge without any other history change
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const now = Date.now();
+    const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
+    return () => window.clearInterval(id);
+  }, []);
+  useEffect(() => {
     const openTrades = Object.values(history.people).reduce(
       (count, person) => count + person.trades.filter((trade) => isOpenTrade(trade, now)).length,
       0,
     );
     setBadgeCount('whisperTrades', openTrades);
-  }, [history.people]);
+  }, [history.people, now]);
 
   // Stable across history changes (dispatch never changes), so consumers can use them as effect deps
   const [actions] = useState(() => ({

@@ -126,6 +126,16 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     [conversations, currentUserId, whispers.people, incomingOffers, outgoingOffers, now],
   );
   const selectedThread = useMemo(() => findThread(threads, selectedThreadId), [threads, selectedThreadId]);
+  // The open thread merged into another (its sender got linked, or a conversation with them appeared): follow
+  // it, so the conversation on screen counts as viewed (mark-read, no sound) and its draft and reply channel
+  // carry over. Adjusted during render; the re-render happens before anything commits.
+  if (selectedThread && selectedThreadId !== null && selectedThread.id !== selectedThreadId) {
+    const from = selectedThreadId;
+    const to = selectedThread.id;
+    setSelectedThreadId(to);
+    setDrafts(({ [from]: draft, ...rest }) => (draft === undefined || rest[to] ? rest : { ...rest, [to]: draft }));
+    setChannels(({ [from]: picked, ...rest }) => (picked === undefined || rest[to] ? rest : { ...rest, [to]: picked }));
+  }
   const conversation = selectedThread?.conversation;
   const participant = selectedThread?.participant;
   const websiteThread = (conversation && chat.threads[conversation._id]) || EMPTY_THREAD;
