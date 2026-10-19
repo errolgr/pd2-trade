@@ -60,7 +60,9 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: { getByLabel: v
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
 // Listing hover detail belongs to quick-list; a stub keeps these tests about the price check itself.
 vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
-  default: ({ stashItem }: { stashItem: { name?: string } }) => <div data-testid="listing-stats">{stashItem?.name}</div>,
+  default: ({ stashItem }: { stashItem: { name?: string } }) => (
+    <div data-testid="listing-stats">{stashItem?.name}</div>
+  ),
 }));
 
 // happy-dom's WAAPI rejects cancelled animations as unhandled errors; finish motion instantly instead.
@@ -182,9 +184,7 @@ beforeEach(() => {
     () => ({ getMarketListings, getMarketListingsArchive }) as unknown as ReturnType<typeof usePd2Website>,
   );
   vi.mocked(useRareAppraisal).mockImplementation(() => rareState);
-  vi.mocked(useInView).mockImplementation(
-    () => ({ ref: () => {}, inView }) as unknown as ReturnType<typeof useInView>,
-  );
+  vi.mocked(useInView).mockImplementation(() => ({ ref: () => {}, inView }) as unknown as ReturnType<typeof useInView>);
   vi.mocked(fetchItemPriceByName).mockResolvedValue(null);
   vi.mocked(fetchCorruptionPrices).mockResolvedValue(null);
   vi.mocked(fetchPriceHistory).mockResolvedValue(null);
@@ -230,7 +230,9 @@ describe('ItemOverlayWidget header', () => {
   });
 
   it('titles a runeword by its runeword name with a badge', () => {
-    renderWidget(rareRing({ name: 'Monarch', quality: 'Normal', type: 'Monarch', isRuneword: true, runeword: 'Spirit' }));
+    renderWidget(
+      rareRing({ name: 'Monarch', quality: 'Normal', type: 'Monarch', isRuneword: true, runeword: 'Spirit' }),
+    );
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.textContent).toContain('Spirit');
     expect(within(h1).getByText('Runeword')).not.toBeNull();
@@ -281,7 +283,9 @@ describe('ItemOverlayWidget unique price pill', () => {
     renderWidget(shako());
     expect(await screen.findByText('Loading price data...')).not.toBeNull();
 
-    await act(async () => resolve(priceData({ priceChange7Days: { change: -0.5, changePercent: -12.5, previousMedianPrice: 4 } })));
+    await act(async () =>
+      resolve(priceData({ priceChange7Days: { change: -0.5, changePercent: -12.5, previousMedianPrice: 4 } })),
+    );
     await waitFor(() => expect(screen.getByAltText('Harlequin Crest').parentElement!.textContent).toContain('3.50 HR'));
     const pill = screen.getByAltText('Harlequin Crest').parentElement!;
     expect(pill.textContent).toContain('7-day avg');
@@ -416,7 +420,9 @@ describe('ItemOverlayWidget stat selection', () => {
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '' } });
     fireEvent.click(searchButton());
     await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
-    expect(JSON.stringify(lastQuery())).toContain('{"$elemMatch":{"name":"item_fastercastrate","values.0":{"$gte":15}}}');
+    expect(JSON.stringify(lastQuery())).toContain(
+      '{"$elemMatch":{"name":"item_fastercastrate","values.0":{"$gte":15}}}',
+    );
   });
 
   it('Enter in a range input runs the search', async () => {
@@ -455,9 +461,7 @@ describe('ItemOverlayWidget market search', () => {
     expect(await screen.findByText('Loading market listings...')).not.toBeNull();
     expect(screen.queryByText('Ready to search')).toBeNull();
 
-    await act(async () =>
-      resolve(page([listing({ hr_price: 2 }), listing({ hr_price: 0, price: 'offer me' })], 57)),
-    );
+    await act(async () => resolve(page([listing({ hr_price: 2 }), listing({ hr_price: 0, price: 'offer me' })], 57)));
     expect(await screen.findByText('2 HR')).not.toBeNull();
     expect(screen.getByText('offer me')).not.toBeNull();
     expect(screen.getByText('57')).not.toBeNull();
@@ -473,7 +477,9 @@ describe('ItemOverlayWidget market search', () => {
 
   it('truncates long free-text prices and shows "-" when there is no price', async () => {
     const note = 'x'.repeat(50);
-    getMarketListings.mockResolvedValue(page([listing({ hr_price: 0, price: note }), listing({ hr_price: 0, price: '' })]));
+    getMarketListings.mockResolvedValue(
+      page([listing({ hr_price: 0, price: note }), listing({ hr_price: 0, price: '' })]),
+    );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     expect(await screen.findByText(`${'x'.repeat(40)}...`)).not.toBeNull();
@@ -482,9 +488,7 @@ describe('ItemOverlayWidget market search', () => {
 
   it('shows listing badges for ethereal, corrupted and socketed items', async () => {
     getMarketListings.mockResolvedValue(
-      page([
-        listing({ item: { name: 'x', is_ethereal: true, socket_count: 3, corruptions: ['c'] } }),
-      ]),
+      page([listing({ item: { name: 'x', is_ethereal: true, socket_count: 3, corruptions: ['c'] } })]),
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
@@ -715,9 +719,9 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
   });
 
-  it('Stash value opens the currency window when none is open', async () => {
+  it('Net Worth opens the currency window when none is open', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByRole('button', { name: 'Stash value' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Net Worth' }));
     await waitFor(() => expect(openCenteredWindow).toHaveBeenCalled());
     expect(vi.mocked(openCenteredWindow).mock.calls[0][1]).toBe('/currency');
   });
