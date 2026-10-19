@@ -58,12 +58,17 @@ export interface SnapshotResponse {
   snapshotId: string | null;
   deduped: boolean;
   delta: { sincePrevious: number | null; previousTakenAt: string | null };
-  /** Appraised rares of the stash (response only, never persisted); only when the server has rare appraisal on. */
+  /**
+   * Appraised rares of the stash (response only, never persisted); only when the server has rare appraisal on.
+   * Crafted items of slots with a crafted model follow the rares (`quality: 'Crafted'`).
+   */
   rares?: RareAppraisal[];
   /** Verdict thresholds for the rares bar; present together with `rares`. */
   rareRule?: VerdictRule;
   /** Verdict counts + Keep market band of `rares`; present together with `rares`. Never part of `totalHr`. */
   raresSummary?: RaresSummary;
+  /** Same counts over the crafted entries of `rares` (gate-on slots only); absent on older servers. Never in `totalHr`. */
+  craftedSummary?: RaresSummary;
 }
 
 /** Mirrors the server's networth.types.ts RaresSummary. */

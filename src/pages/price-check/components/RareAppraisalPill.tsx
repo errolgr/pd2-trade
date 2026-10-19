@@ -5,11 +5,12 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
 import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
-import { VerdictBadge } from '@/components/rares/RareParts';
+import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import {
   bandRange,
   hardcoreNote,
+  isCrafted,
   MODEL_SEASON,
   rankText,
   SLOT_LABELS,
@@ -17,7 +18,7 @@ import {
 } from '@/components/rares/rares-format';
 
 /** Header placeholder while the rare is appraised (same footprint as the uniques' price pill skeleton). */
-export function RareAppraisalPillSkeleton() {
+export function RareAppraisalPillSkeleton({ crafted = false }: { crafted?: boolean }) {
   return (
     <div
       className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
@@ -28,7 +29,7 @@ export function RareAppraisalPillSkeleton() {
         <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="size-3 animate-spin" />
-          Appraising rare...
+          {crafted ? 'Appraising crafted item...' : 'Appraising rare...'}
         </span>
       </div>
     </div>
@@ -64,11 +65,16 @@ export function RareAppraisalPill({
         content={
           <div className="max-h-[calc(100vh-180px)] w-[400px] max-w-[calc(100vw-16px)] space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
-              <span className="truncate font-semibold">{title}</span>
+              <span
+                className={isCrafted(appraisal) ? 'truncate font-semibold text-q-crafted' : 'truncate font-semibold'}
+              >
+                {title}
+              </span>
               <span className="shrink-0 text-[11px] text-muted-foreground">
                 {SLOT_LABELS[appraisal.slot]} · est. from {MODEL_SEASON} listings
               </span>
             </div>
+            <CraftedBadges rare={appraisal} />
             <RareAppraisalDetail appraisal={appraisal}
               history={history}
               hardcore={hardcore} />
@@ -81,6 +87,8 @@ export function RareAppraisalPill({
         >
           <VerdictBadge rare={appraisal}
             className="px-2.5 py-1 text-xs" />
+          <CraftedBadges rare={appraisal}
+            className="flex-col items-start" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">of {slots}</span>

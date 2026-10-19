@@ -2,10 +2,43 @@
  * Formatting + text helpers for appraised rares (price-check rare card, Net Worth "Rares" tab).
  * Same wording as the pd2trader.com Net Worth view (client/src/components/wealth/rares/raresFormat.js).
  */
-import type { AppraisedStat, RareAppraisal, RareSlot, Stars, Verdict } from '@/lib/rare-appraisal-api';
+import type { AppraisedStat, CraftRecipe, RareAppraisal, RareSlot, Stars, Verdict } from '@/lib/rare-appraisal-api';
 
 /** Season the model's asking prices come from (shown on the "est." hint). */
 export const MODEL_SEASON = 'S13';
+
+export const RECIPE_LABELS: Record<CraftRecipe, string> = {
+  blood: 'Blood craft',
+  caster: 'Caster craft',
+  hitpower: 'Hit Power craft',
+  safety: 'Safety craft',
+  vampiric: 'Vampiric craft',
+  bountiful: 'Bountiful craft',
+  brilliant: 'Brilliant craft',
+};
+
+export const isCrafted = (rare: Pick<RareAppraisal, 'quality'>): boolean => rare.quality === 'Crafted';
+
+/** Item-name colour class by quality (older servers send no quality: rare). */
+export const appraisalNameClass = (rare: Pick<RareAppraisal, 'quality'>): string =>
+  isCrafted(rare) ? 'text-q-crafted' : 'text-q-rare';
+
+export const LOW_CONFIDENCE_TITLE =
+  "Low confidence: this slot's crafted model is based on limited crafted listing data, so treat the verdict and band as a rough guide.";
+
+/**
+ * Text for a null appraisal's `reason`. Crafted gate-off reasons ("crafted slot unreliable: <backtest detail>")
+ * become a plain sentence (detail stays in the hover title); every other reason is shown verbatim, as before.
+ */
+export function appraisalNote(reason: string): { text: string; title?: string } {
+  if (reason.startsWith('crafted slot unreliable')) {
+    return {
+      text: "crafted items in this slot can't be appraised reliably yet (too little crafted data)",
+      title: reason,
+    };
+  }
+  return { text: reason };
+}
 
 export const SLOT_LABELS: Record<RareSlot, string> = {
   ring: 'Ring',

@@ -42,6 +42,14 @@ describe('useRareAppraisal', () => {
     expect(fetchRareAppraisal).not.toHaveBeenCalled();
   });
 
+  it('appraises Crafted items exactly like rares', () => {
+    vi.mocked(fetchRareAppraisal).mockReturnValue(new Promise(() => {}));
+    const item: Item = { ...rare('Doom Collar'), quality: 'Crafted', type: 'Amulet' };
+    const { result } = render(item, sc);
+    expect(result.current).toEqual({ status: 'loading' });
+    expect(fetchRareAppraisal).toHaveBeenCalledWith(JSON.stringify(item), sc, expect.any(AbortSignal));
+  });
+
   it('stays idle while settings are loading (mode null), then loads once mode arrives', () => {
     vi.mocked(fetchRareAppraisal).mockReturnValue(new Promise(() => {}));
     const item = rare();
@@ -118,7 +126,9 @@ describe('useRareAppraisal', () => {
 
   it('does not report the abort rejection of a superseded request', async () => {
     const first = Promise.withResolvers<RareAppraisalResponse | null>();
-    vi.mocked(fetchRareAppraisal).mockReturnValueOnce(first.promise).mockReturnValue(new Promise(() => {}));
+    vi.mocked(fetchRareAppraisal)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValue(new Promise(() => {}));
     const { rerender } = render(rare('A'), sc);
     rerender({ item: rare('B'), mode: sc });
     await act(async () => first.reject(new DOMException('aborted', 'AbortError')));

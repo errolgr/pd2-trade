@@ -27,6 +27,7 @@ import { OverviewTab } from './components/OverviewTab';
 import { HistoryTab } from './components/HistoryTab';
 import { AnimatedNumber } from './components/AnimatedNumber';
 import { RaresTab } from './components/RaresTab';
+import { isCrafted } from '@/components/rares/rares-format';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
@@ -178,7 +179,7 @@ export function StashValueWindow() {
                     {rares && (
                       <TabsTrigger value="rares"
                         className={TRIGGER_CLASS}>
-                        Rares
+                        {rares.some(isCrafted) ? 'Rares & Crafted' : 'Rares'}
                       </TabsTrigger>
                     )}
                     <TabsTrigger value="history"
@@ -217,6 +218,7 @@ export function StashValueWindow() {
                         rares={rares}
                         rule={latest.rareRule ?? DEFAULT_VERDICT_RULE}
                         summary={latest.raresSummary}
+                        craftedSummary={latest.craftedSummary}
                         hardcore={!!owner?.isHardcore}
                       />
                     </TabsContent>

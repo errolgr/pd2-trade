@@ -678,6 +678,20 @@ describe('ItemOverlayWidget rare appraisal', () => {
     expect(screen.getByText('Appraisal note: unknown base')).not.toBeNull();
     expect(screen.queryByText('Keep')).toBeNull();
   });
+
+  it('explains a crafted gate-off reason in plain words and keeps the detail on hover', () => {
+    const reason = 'crafted slot unreliable: backtest MAE not better than the crafted median';
+    rareState = {
+      status: 'done',
+      response: { appraisal: null, history: null, reason, quality: 'Crafted', recipe: null },
+    };
+    renderWidget(rareRing({ name: 'Storm Grip', quality: 'Crafted', type: 'Vampirebone Gloves' }));
+    const note = screen.getByText(/^Appraisal note:/);
+    expect(note.textContent).toBe(
+      "Appraisal note: crafted items in this slot can't be appraised reliably yet (too little crafted data)",
+    );
+    expect(note.getAttribute('title')).toBe(reason);
+  });
 });
 
 describe('ItemOverlayWidget extra header behaviour', () => {
