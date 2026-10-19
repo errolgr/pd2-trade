@@ -7,13 +7,15 @@ import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
-import { VerdictBadge } from '@/components/rares/RareParts';
+import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import { rareArtUrl } from '@/components/rares/rare-art';
 import { statChipText } from '@/components/rares/stat-chip';
 import {
+  appraisalNameClass,
   compareStash,
   fmtBandHr,
+  isCrafted,
   isLowValue,
   isWorthALook,
   keyStats,
@@ -37,11 +39,15 @@ export function RaresTab({
   rares,
   rule,
   summary,
+  craftedSummary,
   hardcore = false,
 }: {
   rares: RareAppraisal[];
   rule: VerdictRule;
+  /** Over the rares only. */
   summary: RaresSummary;
+  /** Over the crafted entries of `rares`; the crafted line shows only when there are any. */
+  craftedSummary?: RaresSummary;
   /** Stash owner plays hardcore: notes that verdicts are softcore-trained and where prices come from. */
   hardcore?: boolean;
 }) {
@@ -93,6 +99,8 @@ export function RaresTab({
   return (
     <div className="space-y-3">
       <RaresSummaryCard summary={summary} />
+      {craftedSummary && rares.some(isCrafted) && <RaresSummaryCard summary={craftedSummary}
+        crafted />}
 
       {keep.length > 0 && (
         <RareGroup title="Keep"
@@ -147,13 +155,14 @@ export function RaresTab({
 }
 
 /** "Rares: N Keep · N worth a look · N likely vendor (frees N slots)" + the Keep band (never in the total). */
-export function RaresSummaryCard({ summary }: { summary: RaresSummary }) {
+export function RaresSummaryCard({ summary, crafted = false }: { summary: RaresSummary; crafted?: boolean }) {
   const { keep, checkHigh, vendor, keepLowHr, keepHighHr, keepUnpriced } = summary;
   const priced = keep - keepUnpriced;
+  const keepNoun = crafted ? 'Keep crafted item' : 'Keep rare';
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm">
       <p>
-        <span className="text-muted-foreground">Rares: </span>
+        <span className="text-muted-foreground">{crafted ? 'Crafted: ' : 'Rares: '}</span>
         <span className="font-medium text-success">{keep} Keep</span>
         <span className="text-muted-foreground"> · </span>
         <span className="font-medium text-warning">{checkHigh} worth a look</span>
@@ -164,12 +173,12 @@ export function RaresSummaryCard({ summary }: { summary: RaresSummary }) {
       {priced > 0 && (
         <p
           className="text-xs text-muted-foreground"
-          title={`${EST_TITLE}${keepUnpriced ? `; ${plural(keepUnpriced, 'Keep rare')} without a market band not included` : ''}`}
+          title={`${EST_TITLE}${keepUnpriced ? `; ${plural(keepUnpriced, keepNoun)} without a market band not included` : ''}`}
         >
           <span className="font-semibold tabular-nums text-foreground">
             + ~{fmtBandHr(keepLowHr)}–{fmtBandHr(keepHighHr)} HR
           </span>{' '}
-          in Keep rares (estimated, not in total)
+          in {keepNoun}s (estimated, not in total)
         </p>
       )}
     </div>
@@ -241,12 +250,13 @@ function RowChips({ rare }: { rare: RareAppraisal }) {
   );
 }
 
-/** Market history per rare id, fetched once when a row is first expanded. */
+/** Market history per rare id, fetched once when a row is first expanded. Crafted items have no history: never fetched. */
 const historyCache = new Map<string, Promise<RareHistory | null>>();
 
-function useRareHistory(id: string): RareHistory | null {
+function useRareHistory(id: string, crafted: boolean): RareHistory | null {
   const [history, setHistory] = useState<RareHistory | null>(null);
   useEffect(() => {
+    if (crafted) return;
     let cancelled = false;
     let pending = historyCache.get(id);
     if (!pending) {
@@ -259,12 +269,12 @@ function useRareHistory(id: string): RareHistory | null {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, crafted]);
   return history;
 }
 
 function RareRowDetail({ rare, rule, hardcore }: { rare: RareAppraisal; rule: VerdictRule; hardcore: boolean }) {
-  const history = useRareHistory(rare.id);
+  const history = useRareHistory(rare.id, isCrafted(rare));
   return (
     <div className="space-y-3 border-t border-border/40 bg-background/30 px-3 py-3 text-sm">
       <RareAppraisalDetail
@@ -320,9 +330,10 @@ function RareRow({
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-medium text-q-rare">{rare.name}</span>
+            <span className={cn('truncate text-sm font-medium', appraisalNameClass(rare))}>{rare.name}</span>
             <VerdictBadge rare={rare}
               hardcore={hardcore} />
+            <CraftedBadges rare={rare} />
           </span>
           <span className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">{locationText(rare)}</span>

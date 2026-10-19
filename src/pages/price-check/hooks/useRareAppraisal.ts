@@ -14,14 +14,17 @@ export type RareAppraisalState =
   | { status: 'done'; response: RareAppraisalResponse };
 
 /**
- * Appraises a Rare price-check item on pd2trader.com (`POST /api/rares/appraisal`) with the captured item
- * (the PD2 clipboard JSON, re-serialised). `mode === null` (settings still loading) or a non-rare item: idle.
+ * Appraises a Rare or Crafted price-check item on pd2trader.com (`POST /api/rares/appraisal`) with the captured item
+ * (the PD2 clipboard JSON, re-serialised). `mode === null` (settings still loading) or any other quality: idle.
  */
 export function useRareAppraisal(
   item: Item,
   mode: { isLadder: boolean; isHardcore: boolean } | null,
 ): RareAppraisalState {
-  const text = useMemo(() => (item.quality === ItemQuality.Rare ? JSON.stringify(item) : null), [item]);
+  const text = useMemo(
+    () => (item.quality === ItemQuality.Rare || item.quality === ItemQuality.Crafted ? JSON.stringify(item) : null),
+    [item],
+  );
   const isLadder = mode?.isLadder;
   const isHardcore = mode?.isHardcore;
   const requestKey = text !== null && mode ? `${isLadder}|${isHardcore}|${text}` : null;

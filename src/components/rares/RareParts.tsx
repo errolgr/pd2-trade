@@ -9,13 +9,16 @@ import type {
   RareHistoryListing,
   VerdictRule,
 } from '@/lib/rare-appraisal-api';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, TriangleAlert } from 'lucide-react';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import {
   hardcoreNote,
+  isCrafted,
+  LOW_CONFIDENCE_TITLE,
   ordinalPercentile,
   plural,
   RANK_BLOCKS,
+  RECIPE_LABELS,
   rankBlockIndex,
   rankedStats,
   SLOT_PLURALS,
@@ -80,6 +83,28 @@ export function VerdictBadge({
         {VERDICT_LABELS[rare.verdict]}
       </span>
     </Hint>
+  );
+}
+
+/** Crafted items only: recipe chip ("Caster craft") and a "Low confidence" badge when the server flags it. */
+export function CraftedBadges({ rare, className }: { rare: RareAppraisal; className?: string }) {
+  if (!isCrafted(rare)) return null;
+  const recipe = rare.recipe ? RECIPE_LABELS[rare.recipe] : 'Crafted';
+  return (
+    <span className={cn('inline-flex shrink-0 items-center gap-1', className)}>
+      <span className="inline-flex shrink-0 items-center rounded-full border border-q-crafted/40 bg-q-crafted/10 px-2 py-0.5 text-[11px] font-medium leading-none text-q-crafted">
+        {recipe}
+      </span>
+      {rare.confidence === 'low' && (
+        <Hint text={LOW_CONFIDENCE_TITLE}>
+          <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold leading-none text-amber-500">
+            <TriangleAlert aria-hidden
+              className="size-3" />
+            Low confidence
+          </span>
+        </Hint>
+      )}
+    </span>
   );
 }
 

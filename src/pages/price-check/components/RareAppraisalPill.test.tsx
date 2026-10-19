@@ -102,3 +102,28 @@ describe('RareAppraisalPill', () => {
     expect(screen.getByText(/Ring · est\. from S13 listings/)).not.toBeNull();
   });
 });
+
+describe('RareAppraisalPill crafted', () => {
+  it('shows no crafted chips for rares', () => {
+    renderPill();
+    expect(screen.queryByText(/craft/i)).toBeNull();
+    expect(screen.queryByText('Low confidence')).toBeNull();
+  });
+
+  it('shows the recipe chip without a low-confidence badge for a normal-confidence craft', () => {
+    renderPill({ appraisal: appraisal({ quality: 'Crafted', recipe: 'caster', confidence: 'normal' }) });
+    expect(screen.getByText('Caster craft')).not.toBeNull();
+    expect(screen.queryByText('Low confidence')).toBeNull();
+  });
+
+  it('flags low confidence and falls back to "Crafted" without a recipe', () => {
+    renderPill({ appraisal: appraisal({ quality: 'Crafted', recipe: null, confidence: 'low' }) });
+    expect(screen.getByText('Crafted')).not.toBeNull();
+    expect(screen.getByText('Low confidence')).not.toBeNull();
+  });
+
+  it('announces a crafted appraisal in the skeleton', () => {
+    const { container } = render(<RareAppraisalPillSkeleton crafted />);
+    expect(container.textContent).toContain('Appraising crafted item...');
+  });
+});

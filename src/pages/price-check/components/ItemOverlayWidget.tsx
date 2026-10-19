@@ -82,6 +82,7 @@ import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writeText } from '@/lib/browser-clipboard';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
+import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
@@ -157,6 +158,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const rareAppraisal = useRareAppraisal(item, rareMode);
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
+  const appraisalNoteText = rareResponse?.reason ? appraisalNote(rareResponse.reason) : null;
   // Set when an appraisal pre-selects key stats of a Keep rare: runs the search once the filters are applied.
   const [triggerRareSearch, setTriggerRareSearch] = useState(false);
 
@@ -1268,7 +1270,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {/* Rare appraisal: verdict pill (same spot/style as the uniques' price pill) + a subtle note */}
             {rareAppraisal.status === 'loading' && (
               <div className="pt-0.5">
-                <RareAppraisalPillSkeleton />
+                <RareAppraisalPillSkeleton crafted={item.quality === ItemQuality.Crafted} />
               </div>
             )}
             {appraisal && (
@@ -1281,8 +1283,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 />
               </div>
             )}
-            {rareResponse?.reason && (
-              <span className="text-[11px] text-muted-foreground/70">Appraisal note: {rareResponse.reason}</span>
+            {appraisalNoteText && (
+              <span className="text-[11px] text-muted-foreground/70"
+                title={appraisalNoteText.title}>
+                Appraisal note: {appraisalNoteText.text}
+              </span>
             )}
 
             {/* Average Price Information for Unique Items - Compact */}
