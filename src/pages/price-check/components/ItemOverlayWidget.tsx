@@ -1174,7 +1174,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
               showGrip={false}
               icon={
-                // Rune Information Popover + stash value
+                // Rune Information Popover + Net Worth
                 <span className="flex items-center gap-0.5 text-muted-foreground">
                   <RunePricePopover
                     loading={loading}
@@ -1183,7 +1183,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     selectedRuneCombinations={selectedRuneCombinations}
                     onRuneBreakdownSelect={setSelectedRuneBreakdown}
                   />
-                  <ToolbarButton label="Stash value"
+                  <ToolbarButton label="Net Worth"
                     onClick={openCurrencyValuation}>
                     <LuggageIcon />
                   </ToolbarButton>

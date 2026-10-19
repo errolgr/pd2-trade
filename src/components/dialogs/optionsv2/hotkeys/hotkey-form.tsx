@@ -103,8 +103,8 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeySettings',
   },
   {
-    label: 'Currency',
-    description: 'Open your stash value and net worth.',
+    label: 'Net Worth',
+    description: 'Open the Net Worth window.',
     modifier: 'hotkeyModifierCurrencyValuation',
     key: 'hotkeyKeyCurrencyValuation',
   },

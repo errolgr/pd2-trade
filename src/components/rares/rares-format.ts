@@ -1,5 +1,5 @@
 /**
- * Formatting + text helpers for appraised rares (price-check rare card, Stash Value "Rares" tab).
+ * Formatting + text helpers for appraised rares (price-check rare card, Net Worth "Rares" tab).
  * Same wording as the pd2trader.com Net Worth view (client/src/components/wealth/rares/raresFormat.js).
  */
 import type { AppraisedStat, RareAppraisal, RareSlot, Stars, Verdict } from '@/lib/rare-appraisal-api';

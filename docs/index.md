@@ -33,8 +33,8 @@ features:
   - title: Manage Listings
     details: Easily manage, update, and view all your items currently listed on the PD2 marketplace from a dedicated tab.
     image: https://i.imgur.com/VQ8gNuf.jpeg
-  - title: Stash Value
-    details: Instantly calculate the total value of your stash so you always know how much your runes are worth.
+  - title: Net Worth
+    details: Instantly calculate the value of your stash (Ctrl+X) and track it over the season.
     image: https://i.imgur.com/wCqiZpj.png
   - title: Rune Exchange
     details: Easily compare and trade runes with up-to-date exchange rates.
@@ -88,16 +88,16 @@ Easily manage, update, and view all your items currently listed on the PD2 marke
 <img src="https://i.imgur.com/VQ8gNuf.jpeg" alt="Manage Listings" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
 
-#### Stash Value
+#### Net Worth
 
-Instantly calculate the total value of your stash so you always know how much your runes are worth.
+Instantly calculate the value of your stash (Ctrl+X): runes, currency, uniques and more, with history over the season.
 <a href="https://i.imgur.com/wCqiZpj.png" target="_blank" rel="noopener noreferrer">
-<img src="https://i.imgur.com/wCqiZpj.png" alt="Stash Value" style="max-width: 100%; margin-top: 0.5rem;" />
+<img src="https://i.imgur.com/wCqiZpj.png" alt="Net Worth" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
 
-#### Net Worth Overlay
+#### Net Worth Ticker
 
-Track your stash value while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Configure it under Settings → Net Worth.
+Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Configure it under Settings → Net Worth.
 
 #### Rune Exchange
 

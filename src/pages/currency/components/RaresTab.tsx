@@ -30,7 +30,7 @@ import { EmptyState } from './StatePanel';
 const EST_TITLE = `Estimated from ${MODEL_SEASON} asking prices of similar rares — not part of the total`;
 
 /**
- * Stash Value "Rares" tab: verdict summary + Keep band, Keep and worth-a-look rares as expandable rows,
+ * Net Worth "Rares" tab: verdict summary + Keep band, Keep and worth-a-look rares as expandable rows,
  * and per stash tab folds for likely-vendor and low-value Check rares. Rares never count in the total.
  */
 export function RaresTab({

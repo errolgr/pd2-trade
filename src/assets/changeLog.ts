@@ -1,8 +1,8 @@
 export const changeLog = {
   '0.10.0': [
     '🆕 Fresh new look for every window, plus 20 color themes (Settings → Interface)',
-    '🆕 Stash Value (Ctrl+X): tabs per item type, net worth history charts and an in-game Net Worth ticker',
-    '🆕 Rare appraisal: Keep / Check / Vendor for your rares in price check and a Rares tab in Stash Value — the ? next to Verdict explains it',
+    '🆕 Net Worth (was Stash Value, Ctrl+X): tabs per item type, history charts and an in-game ticker',
+    '🆕 Rare appraisal: Keep / Check / Vendor for your rares in price check and a Rares tab in Net Worth — the ? next to Verdict explains it',
     '🆕 Price check shows a 30-day price trend, with a link to the item on pd2trader.com',
     '🆕 Choose how many days prices are averaged over (Settings → Price Check, 7 days by default)',
     '🆕 Automatic updates can be turned off (Settings → About); you still get notified, and price check shows a "Restart to update" button',

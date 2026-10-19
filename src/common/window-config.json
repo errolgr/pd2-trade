@@ -22,12 +22,12 @@
     "QuickList": "PD2Trader: QuickList",
     "ItemSearch": "PD2Trader: Item Search",
     "Settings": "PD2Trader: Settings",
-    "Currency": "PD2Trader: Currency",
+    "Currency": "PD2Trader: Net Worth",
     "Toast": "PD2Trader: Toast",
     "SignIn": "PD2Trader: Sign In",
     "Delist": "PD2Trader: Delist",
     "NetWorthTicker": "PD2Trader: Net Worth Ticker",
-    "NetWorthPanel": "PD2Trader: Net Worth",
+    "NetWorthPanel": "PD2Trader: Net Worth Panel",
     "PREFIX": "PD2Trader"
   }
 }
