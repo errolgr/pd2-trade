@@ -23,6 +23,9 @@ const actionClass = cn(
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50',
 );
 
+/** Action labels drop to icon-only (title tooltip, still the accessible name) when the thread is narrow. */
+const actionLabelClass = '@max-[600px]:sr-only';
+
 /** Collapsed strips show the most relevant offer plus an "N more" toggle once there are more than this. */
 const COLLAPSE_AFTER = 2;
 
@@ -70,7 +73,7 @@ export function ThreadDeals({
   };
 
   return (
-    <div className="px-3 pt-2">
+    <div className="@container px-3 pt-2">
       <ul
         aria-label="Offers with this user"
         className="space-y-1 rounded-xl border border-border/70 bg-card/60 p-1.5 text-sm shadow-xs"
@@ -85,14 +88,13 @@ export function ThreadDeals({
               <span className="flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-muted/70">
                 <Direction className="size-3.5 text-muted-foreground" />
               </span>
-              <div className="min-w-0 flex-1 truncate">
-                <span className="text-muted-foreground">
-                  {offer.isIncoming ? `Selling to ${offer.playerName}` : `Buying from ${offer.playerName}`}
-                  {': '}
+              <span className="shrink-0 text-muted-foreground">{offer.isIncoming ? 'Selling' : 'Buying'}</span>
+              <span className="min-w-0 flex-1 truncate font-semibold">{offer.itemName ?? 'Unknown item'}</span>
+              {offer.price && (
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
+                  {offer.price}
                 </span>
-                <span className="font-semibold">{offer.itemName ?? 'Unknown item'}</span>
-                {offer.price && <span className="tabular-nums text-muted-foreground">{` for ${offer.price}`}</span>}
-              </div>
+              )}
               <span
                 className={cn(
                   'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
@@ -105,56 +107,61 @@ export function ThreadDeals({
                 {offer.isIncoming && status === 'open' && offer.listingId && (
                   <button
                     type="button"
+                    title="Accept offer"
                     disabled={disabled}
                     className={cn(actionClass, 'text-success hover:bg-success/15')}
                     onClick={() => void run(offer.id, () => acceptOffer(offer.listingId!, offer.id))}
                   >
                     <Check className="size-3.5" />
-                    Accept
+                    <span className={actionLabelClass}>Accept</span>
                   </button>
                 )}
                 {offer.isIncoming && status === 'open' && (
                   <>
                     <button
                       type="button"
+                      title="Counter in the composer"
                       disabled={disabled}
                       className={cn(actionClass, 'text-foreground hover:bg-accent')}
                       onClick={() => onCounter(offer.itemName ? `Counter for ${offer.itemName}: ` : 'Counter: ')}
                     >
                       <Reply className="size-3.5" />
-                      Counter
+                      <span className={actionLabelClass}>Counter</span>
                     </button>
                     <button
                       type="button"
+                      title="Decline offer"
                       disabled={disabled}
                       className={cn(actionClass, 'text-destructive hover:bg-destructive/15')}
                       onClick={() => void run(offer.id, () => rejectOffer(offer.id))}
                     >
                       <X className="size-3.5" />
-                      Decline
+                      <span className={actionLabelClass}>Decline</span>
                     </button>
                   </>
                 )}
                 {offer.isIncoming && status === 'accepted' && offer.listingId && (
                   <button
                     type="button"
+                    title="Unaccept offer"
                     disabled={disabled}
                     className={cn(actionClass, 'text-muted-foreground hover:bg-accent hover:text-foreground')}
                     onClick={() => void run(offer.id, () => unacceptOffer(offer.listingId!))}
                   >
                     <Undo2 className="size-3.5" />
-                    Unaccept
+                    <span className={actionLabelClass}>Unaccept</span>
                   </button>
                 )}
                 {!offer.isIncoming && status === 'open' && (
                   <button
                     type="button"
+                    title="Revoke offer"
                     disabled={disabled}
                     className={cn(actionClass, 'text-destructive hover:bg-destructive/15')}
                     onClick={() => void run(offer.id, () => revokeOffer(offer.id))}
                   >
                     <Undo2 className="size-3.5" />
-                    Revoke
+                    <span className={actionLabelClass}>Revoke</span>
                   </button>
                 )}
               </div>

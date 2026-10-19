@@ -75,8 +75,8 @@ describe('ThreadDeals', () => {
     fireEvent.click(screen.getByRole('button', { name: /2 more/ }));
     const expanded = rows().map((row) => row.textContent ?? '');
     expect(expanded).toHaveLength(3);
-    expect(expanded.some((row) => row.includes('Buying from bob') && row.includes('Ber Rune'))).toBe(true);
-    expect(expanded.some((row) => row.includes('Selling to bob') && row.includes('Arachnid Mesh'))).toBe(true);
+    expect(expanded.some((row) => row.startsWith('BuyingBer Rune1 ber'))).toBe(true);
+    expect(expanded.some((row) => row.startsWith('SellingArachnid Mesh2 ist'))).toBe(true);
     expect(expanded.some((row) => row.includes('Mara'))).toBe(false);
   });
 
