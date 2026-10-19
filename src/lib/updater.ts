@@ -4,12 +4,13 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';
 import { resetUpdateNotification } from '@/hooks/useAppUpdates';
 
-// "Download & Restart" toast action: install the pending update (if any) and restart the app.
-export async function installUpdateAndRelaunch(): Promise<void> {
+// "Download & Restart" action: install the pending update (if any) and restart the app.
+// Resolves false when the install failed (the app keeps running); windows without a Toaster use it for feedback.
+export async function installUpdateAndRelaunch(): Promise<boolean> {
   if (!isTauri()) {
     // In browser, just reload the page
     window.location.reload();
-    return;
+    return true;
   }
 
   try {
@@ -48,6 +49,7 @@ export async function installUpdateAndRelaunch(): Promise<void> {
 
     // Relaunch after a successful install, or directly when no update is pending
     await relaunch();
+    return true;
   } catch (error) {
     console.error('Failed to download/install update:', error);
     toast.error('Failed to download update. Please try again later.', {
@@ -55,5 +57,6 @@ export async function installUpdateAndRelaunch(): Promise<void> {
     });
     // Reset notification state so user can try again
     resetUpdateNotification();
+    return false;
   }
 }
