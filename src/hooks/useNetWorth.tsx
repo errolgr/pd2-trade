@@ -47,7 +47,7 @@ export interface NetWorthContextValue {
 
 /** Fire-and-forget: any window asks the host provider to take a snapshot. Payload `{ trigger?: SnapshotTrigger }`. */
 export const NETWORTH_TAKE_SNAPSHOT_EVENT = 'networth:take-snapshot';
-/** Ask the main window to open/focus the Stash Value window on a tab. Payload `{ tab: NetWorthTab }`. */
+/** Ask the main window to open/focus the Net Worth window on a tab. Payload `{ tab: NetWorthTab }`. */
 export const NETWORTH_OPEN_EVENT = 'networth:open';
 const NETWORTH_STATE_EVENT = 'networth:state';
 const NETWORTH_REQUEST_STATE_EVENT = 'networth:request-state';

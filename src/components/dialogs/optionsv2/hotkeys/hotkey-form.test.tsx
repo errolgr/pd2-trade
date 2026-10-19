@@ -100,9 +100,9 @@ describe('HotkeyForm', () => {
 
   it('warns that Ctrl + C is reserved', () => {
     renderForm();
-    type('Currency', 'c');
+    type('Net Worth', 'c');
     expect(screen.getByRole('status').textContent).toContain('Ctrl + C is reserved');
-    expect(keyInput('Currency').getAttribute('aria-invalid')).toBe('true');
+    expect(keyInput('Net Worth').getAttribute('aria-invalid')).toBe('true');
   });
 
   it('follows external settings changes without echoing them back as a save', () => {

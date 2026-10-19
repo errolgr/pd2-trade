@@ -105,7 +105,7 @@ export function NetWorthForm() {
             render={({ field }) => (
               <SettingsRow
                 label="Save net worth history"
-                description="Store snapshots of your stash value on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
+                description="Store snapshots of your net worth on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
                 control={
                   <FormControl>
                     <Switch checked={field.value === true}
@@ -158,7 +158,7 @@ export function NetWorthForm() {
             render={({ field }) => (
               <SettingsRow
                 label="Net worth ticker"
-                description="Show your stash value, session change and HR per hour over the game. Click it for details."
+                description="Show your net worth, session change and HR per hour over the game. Click it for details."
                 control={
                   <FormControl>
                     <Switch checked={field.value}

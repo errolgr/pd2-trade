@@ -266,7 +266,7 @@ function WindowTitle({ owner, seasonLabel }: { owner: NetWorthOwner | null; seas
         <>
           <span data-tauri-drag-region
             className="shrink-0">
-            Stash Value
+            Net Worth
           </span>
           {owner && (
             <span data-tauri-drag-region
@@ -452,7 +452,7 @@ function TrackingDisabled({ onEnable }: { onEnable: () => void }) {
     <EmptyState
       icon={<History />}
       title="History is off."
-      description="Turn on tracking to store a snapshot of your stash value on pd2trader.com each time it is refreshed (on start-up, every few minutes while Diablo is focused, and on demand). You get a chart, sessions with HR/hour, and item diffs between any two snapshots. History is private to your PD2 login and can be deleted at any time."
+      description="Turn on tracking to store a snapshot of your net worth on pd2trader.com each time it is refreshed (on start-up, every few minutes while Diablo is focused, and on demand). You get a chart, sessions with HR/hour, and item diffs between any two snapshots. History is private to your PD2 login and can be deleted at any time."
       action={
         <Button size="sm"
           onClick={onEnable}>
