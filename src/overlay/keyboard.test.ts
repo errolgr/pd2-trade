@@ -38,13 +38,20 @@ const flush = async () => {
 };
 /** The OS foreground moved to `owner`. */
 const foreground = (owner: ForegroundOwner) => events.foreground!({ payload: owner });
+/** Rust command answers; anything not listed resolves true (in the game, overlay came to the front, ...). */
+let commands: Record<string, unknown>;
+const calls = (command: string) => vi.mocked(invoke).mock.calls.filter(([name]) => name === command).length;
+const callOrder = (command: string) =>
+  vi.mocked(invoke).mock.invocationCallOrder[vi.mocked(invoke).mock.calls.findIndex(([name]) => name === command)];
 
 beforeEach(() => {
   vi.clearAllMocks();
   resetKeyboardStateForTests();
   events.foreground = null;
   events.subscribed = [];
+  commands = {};
   vi.mocked(isTauri).mockReturnValue(true);
+  vi.mocked(invoke).mockImplementation(async (command: string) => (command in commands ? commands[command] : true));
   vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
@@ -54,23 +61,24 @@ describe('claimKeyboard', () => {
     expect(win.setFocusable).toHaveBeenCalledWith(true);
     expect(invoke).toHaveBeenCalledWith('focus_overlay');
     expect(win.setFocus).not.toHaveBeenCalled(); // refused by Windows while the game holds the foreground right
-    expect(win.setFocusable.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(invoke).mock.invocationCallOrder[0]);
+    expect(win.setFocusable.mock.invocationCallOrder[0]).toBeLessThan(callOrder('focus_overlay'));
     expect(isKeyboardClaimed()).toBe(true);
   });
 
   it('is idempotent while claimed', async () => {
     await claimKeyboard();
     await claimKeyboard();
-    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(calls('focus_overlay')).toBe(1);
   });
 
   it('backs out when the overlay could not come to the front, so it is not stuck claimed', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.mocked(invoke).mockResolvedValueOnce(false);
+    commands.focus_overlay = false;
     await claimKeyboard();
     expect(isKeyboardClaimed()).toBe(false);
     expect(win.setFocusable).toHaveBeenLastCalledWith(false);
 
+    commands.focus_overlay = true;
     await claimKeyboard(); // the next claim (e.g. a click on the panel) tries again
     expect(isKeyboardClaimed()).toBe(true);
   });
@@ -105,6 +113,22 @@ describe('releaseKeyboard', () => {
     await claimKeyboard();
     await releaseKeyboard({ focusGame: false });
     expect(invoke).not.toHaveBeenCalledWith('focus_diablo');
+  });
+
+  it('leaves the game in the background when the keyboard was claimed outside it (Settings from the tray)', async () => {
+    commands.is_diablo_focused = false;
+    await claimKeyboard();
+    await releaseKeyboard();
+    expect(win.setFocusable).toHaveBeenLastCalledWith(false);
+    expect(invoke).not.toHaveBeenCalledWith('focus_diablo');
+    expect(isKeyboardClaimed()).toBe(false);
+  });
+
+  it('still hands focus to the game on request (a hotkey copying the item under the cursor)', async () => {
+    commands.is_diablo_focused = false;
+    await claimKeyboard();
+    await releaseKeyboard({ focusGame: true });
+    expect(invoke).toHaveBeenCalledWith('focus_diablo');
   });
 
   it('does nothing when the keyboard was not claimed', async () => {

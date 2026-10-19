@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
 
-use super::{foreground, initialize_foreground_monitoring};
+use super::{diablo_running, foreground, initialize_foreground_monitoring};
 
 /// Webview event carrying the game context (`bool`); `is_diablo_focused` returns the same value.
 pub const FOCUS_EVENT: &str = "diablo-focus-changed";
@@ -21,18 +21,27 @@ pub const FOCUS_EVENT: &str = "diablo-focus-changed";
 /// when the user leaves them use it: it also sees leaving the game while the overlay never had focus.
 pub const FOREGROUND_EVENT: &str = "foreground-changed";
 
-/// Who owns the OS foreground, as far as the game context cares.
+/// Who owns the OS foreground.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Foreground {
     /// The Diablo II window.
     Diablo,
-    /// One of our own windows while Diablo II is running.
+    /// One of our own windows (the overlay), whether or not Diablo II is running.
     OwnWindow,
-    /// Another application, or one of our windows while Diablo II isn't running.
+    /// Another application.
     Other,
     /// No foreground window; carries no information.
     Unknown,
+}
+
+/// The owner as the game context sees it: our window only keeps the game context while Diablo II is
+/// running; without the game it is just another app.
+pub fn game_owner(owner: Foreground, diablo_running: bool) -> Foreground {
+    match owner {
+        Foreground::OwnWindow if !diablo_running => Foreground::Other,
+        owner => owner,
+    }
 }
 
 /// Game context after `foreground` takes the OS foreground while the context is `current`.
@@ -68,7 +77,7 @@ pub fn initialize_diablo_focus_monitoring(
             let _ = app_handle.emit(FOREGROUND_EVENT, owner);
         }
         let current = GAME_CONTEXT.load(Ordering::SeqCst);
-        let next = next_game_context(current, owner);
+        let next = next_game_context(current, game_owner(owner, diablo_running()));
         if next == current && !force_emit {
             return;
         }
@@ -123,5 +132,17 @@ mod tests {
     fn missing_foreground_window_does_not_flip_the_context() {
         assert_eq!(run(false, &[Diablo, Unknown, Diablo]), [true, true, true]);
         assert_eq!(run(false, &[Other, Unknown]), [false, false]);
+    }
+
+    #[test]
+    fn our_window_is_only_game_context_while_diablo_runs() {
+        assert_eq!(game_owner(OwnWindow, true), OwnWindow);
+        // Settings opened from the tray without the game: reported as ours, but not game context
+        assert_eq!(game_owner(OwnWindow, false), Other);
+        assert_eq!(run(true, &[game_owner(OwnWindow, false)]), [false]);
+        for owner in [Diablo, Other, Unknown] {
+            assert_eq!(game_owner(owner, false), owner);
+            assert_eq!(game_owner(owner, true), owner);
+        }
     }
 }

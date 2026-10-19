@@ -165,15 +165,11 @@ pub fn foreground() -> Foreground {
             })
             .is_some_and(|pids| pids.first() == Some(&std::process::id()));
         let name = get_window_name(conn, active_window).unwrap_or_default();
-        let diablo = find_diablo_window(conn).ok().flatten();
 
         if own_pid || name.starts_with("PD2Trader") {
-            return if diablo.is_some() {
-                Foreground::OwnWindow
-            } else {
-                Foreground::Other
-            };
+            return Foreground::OwnWindow;
         }
+        let diablo = find_diablo_window(conn).ok().flatten();
         if name.contains("Diablo II") || diablo == Some(active_window) {
             Foreground::Diablo
         } else {
@@ -183,32 +179,41 @@ pub fn foreground() -> Foreground {
     .unwrap_or(Foreground::Other)
 }
 
-/// Full rect of the monitor containing the Diablo II window (by its center), else the primary monitor.
+pub fn diablo_running() -> bool {
+    with_connection(|conn, _| find_diablo_window(conn).ok().flatten().is_some()).unwrap_or(false)
+}
+
+/// Work area (monitor minus panels/taskbar) of the monitor containing the Diablo II window (by its center), else
+/// the primary monitor's. Matches Windows, where covering the taskbar greys it out.
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
-    let monitor_rect = |monitor: &tauri::Monitor| {
-        let position = monitor.position();
-        let size = monitor.size();
+    let work_area = |monitor: &tauri::Monitor| {
+        let area = monitor.work_area();
         WindowRect {
-            x: position.x,
-            y: position.y,
-            width: size.width as i32,
-            height: size.height as i32,
+            x: area.position.x,
+            y: area.position.y,
+            width: area.size.width as i32,
+            height: area.size.height as i32,
         }
+    };
+    let contains = |monitor: &tauri::Monitor, x: i32, y: i32| {
+        let (position, size) = (monitor.position(), monitor.size());
+        x >= position.x
+            && x < position.x + size.width as i32
+            && y >= position.y
+            && y < position.y + size.height as i32
     };
 
     if let Some(d2) = get_diablo_rect(app) {
         let (cx, cy) = (d2.x + d2.width / 2, d2.y + d2.height / 2);
         let containing = app.available_monitors().ok().and_then(|monitors| {
-            monitors.iter().map(monitor_rect).find(|m| {
-                cx >= m.x && cx < m.x + m.width && cy >= m.y && cy < m.y + m.height
-            })
+            monitors.iter().find(|m| contains(m, cx, cy)).map(work_area)
         });
         if containing.is_some() {
             return containing;
         }
     }
 
-    app.primary_monitor().ok().flatten().as_ref().map(monitor_rect)
+    app.primary_monitor().ok().flatten().as_ref().map(work_area)
 }
 
 /// Best-effort: activate, raise and focus the Diablo II window (EWMH + core X11).

@@ -111,7 +111,8 @@ export const PANEL_DEFS: PanelDefs = {
     persist: true,
     keyboard: 'onPointerDown',
     keepMounted: true,
-    hideOnGameBlur: true,
+    // Usable outside the game (tray menu, game not running); it still closes when the user leaves it
+    hideOnGameBlur: false,
     closeOnBlur: true,
   },
 
@@ -125,7 +126,10 @@ export const PANEL_DEFS: PanelDefs = {
     persist: false,
     keyboard: 'onPointerDown',
     keepMounted: false,
-    hideOnGameBlur: true,
+    // Like Settings: shows outside the game (it opens after sign-in, often before the game), closes when left.
+    // The version is marked seen when it opens, so closing it this way doesn't bring it back next launch.
+    hideOnGameBlur: false,
+    closeOnBlur: true,
   },
 
   // ---- signIn (Group Settings) ----

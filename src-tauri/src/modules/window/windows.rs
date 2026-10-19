@@ -49,30 +49,49 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
     })
 }
 
+/// The overlay window (Main), the only one of ours that counts as `Foreground::OwnWindow`.
+static OVERLAY_WINDOW: AtomicIsize = AtomicIsize::new(0);
+
+pub fn set_overlay_window(hwnd: HWND) {
+    OVERLAY_WINDOW.store(hwnd, Ordering::SeqCst);
+}
+
 pub fn foreground() -> Foreground {
-    let mut foreground = unsafe { GetForegroundWindow() };
-    if foreground == 0 {
+    let mut window = unsafe { GetForegroundWindow() };
+    if window == 0 {
         // Mid-activation Windows reports no foreground window; the hook already named the one activating.
-        foreground = LAST_FOREGROUND_EVENT.load(Ordering::SeqCst);
+        window = LAST_FOREGROUND_EVENT.load(Ordering::SeqCst);
     }
-    if foreground == 0 {
-        return Foreground::Unknown;
+    let mut pid: u32 = 0;
+    if window != 0 {
+        unsafe { GetWindowThreadProcessId(window, &mut pid) };
     }
+    classify(
+        window,
+        OVERLAY_WINDOW.load(Ordering::SeqCst),
+        find_diablo_hwnd(),
+        pid == std::process::id(),
+    )
+}
 
-    let Some(diablo) = find_diablo_hwnd() else {
-        return Foreground::Other;
-    };
-    if foreground == diablo {
-        return Foreground::Diablo;
-    }
-
-    let mut foreground_pid: u32 = 0;
-    unsafe { GetWindowThreadProcessId(foreground, &mut foreground_pid) };
-    if foreground_pid == std::process::id() {
+/// Foreground owner of `window`. Our windows other than the overlay carry no information, like no window at all:
+/// the tray menu's owner window takes the foreground while the menu is open, which isn't the overlay.
+fn classify(window: HWND, overlay: HWND, diablo: Option<HWND>, ours: bool) -> Foreground {
+    if window == 0 {
+        Foreground::Unknown
+    } else if diablo == Some(window) {
+        Foreground::Diablo
+    } else if window == overlay {
         Foreground::OwnWindow
+    } else if ours {
+        Foreground::Unknown
     } else {
         Foreground::Other
     }
+}
+
+pub fn diablo_running() -> bool {
+    find_diablo_hwnd().is_some()
 }
 
 /// Gives keyboard focus back to the Diablo II window.
@@ -119,7 +138,7 @@ pub fn bring_to_foreground(hwnd: HWND) -> bool {
     }
 }
 
-fn monitor_rect(monitor: HMONITOR) -> Option<WindowRect> {
+fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
     if monitor == 0 {
         return None;
     }
@@ -128,7 +147,7 @@ fn monitor_rect(monitor: HMONITOR) -> Option<WindowRect> {
     if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
         return None;
     }
-    let r = info.rcMonitor;
+    let r = info.rcWork;
     Some(WindowRect {
         x: r.left,
         y: r.top,
@@ -137,13 +156,15 @@ fn monitor_rect(monitor: HMONITOR) -> Option<WindowRect> {
     })
 }
 
-/// Full rect (not work area) of the monitor containing Diablo II, else the primary monitor.
+/// Work area (monitor minus taskbar) of the monitor containing Diablo II, else the primary monitor. Not the full
+/// monitor rect: an always-on-top window covering the taskbar makes Windows draw it greyed out, as if behind a
+/// fullscreen app.
 pub fn get_appropriate_window_bounds(_app: &AppHandle) -> Option<WindowRect> {
     let monitor = match find_diablo_hwnd() {
         Some(hwnd) => unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) },
         None => unsafe { MonitorFromPoint(POINT { x: 0, y: 0 }, MONITOR_DEFAULTTOPRIMARY) },
     };
-    monitor_rect(monitor)
+    work_area(monitor)
 }
 
 // --- Event-driven foreground monitoring ---
@@ -193,5 +214,53 @@ pub fn cleanup_foreground_monitoring() {
             FOREGROUND_HOOK = None;
         }
         *CALLBACK.lock().unwrap() = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const OVERLAY: HWND = 10;
+    const DIABLO: HWND = 20;
+    const TRAY_MENU_OWNER: HWND = 30;
+    const BROWSER: HWND = 40;
+
+    #[test]
+    fn only_the_overlay_counts_as_our_window() {
+        assert_eq!(
+            classify(OVERLAY, OVERLAY, Some(DIABLO), true),
+            Foreground::OwnWindow
+        );
+        // The tray menu briefly takes the foreground: not the overlay, so no information
+        assert_eq!(
+            classify(TRAY_MENU_OWNER, OVERLAY, Some(DIABLO), true),
+            Foreground::Unknown
+        );
+    }
+
+    #[test]
+    fn classifies_the_game_other_apps_and_no_window() {
+        assert_eq!(
+            classify(DIABLO, OVERLAY, Some(DIABLO), false),
+            Foreground::Diablo
+        );
+        assert_eq!(
+            classify(BROWSER, OVERLAY, Some(DIABLO), false),
+            Foreground::Other
+        );
+        assert_eq!(classify(BROWSER, OVERLAY, None, false), Foreground::Other);
+        assert_eq!(
+            classify(0, OVERLAY, Some(DIABLO), false),
+            Foreground::Unknown
+        );
+    }
+
+    #[test]
+    fn the_overlay_is_ours_even_without_the_game() {
+        assert_eq!(
+            classify(OVERLAY, OVERLAY, None, true),
+            Foreground::OwnWindow
+        );
     }
 }
