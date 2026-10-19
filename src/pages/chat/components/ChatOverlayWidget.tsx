@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -27,6 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import moment from 'moment';
 import { cn } from '@/lib/utils';
 import { MessageContent } from './MessageContent';
+import { findMarketLinks, messagePreview } from '../lib/market-links';
+import { useChatListings } from '../hooks/useChatListings';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +68,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const selectedConversationRef = useRef<Conversation | null>(null);
   const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
   const processedMessagesRef = useRef<Set<string>>(new Set());
+  // Listings linked in the open conversation render as item cards.
+  const linkedListingIds = useMemo(
+    () => messages.flatMap((message) => findMarketLinks(message.content).map((link) => link.listingId)),
+    [messages],
+  );
+  const listings = useChatListings(linkedListingIds);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -567,6 +575,18 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     lastMessageCountRef.current = messages.length;
   }, [messages.length]); // Only depend on length, not the entire messages array
 
+  // Cards replace listing links once their listings load and grow the list: keep the latest message in view
+  // unless the user has scrolled up.
+  const pinnedToBottomRef = useRef(true);
+  const trackPinnedToBottom = useCallback((e: React.UIEvent) => {
+    const el = e.target as HTMLElement;
+    if (el.dataset.slot !== 'scroll-area-viewport') return;
+    pinnedToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }, []);
+  useEffect(() => {
+    if (pinnedToBottomRef.current) messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [listings]);
+
   // Automatically mark new messages as read when they arrive while conversation is open
   useEffect(() => {
     if (!selectedConversation || !currentUserId || messages.length === 0) return;
@@ -998,19 +1018,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                                     isUnread ? 'text-foreground/90' : 'text-muted-foreground',
                                   )}
                                 >
-                                  {(() => {
-                                    // Check if message contains a market listing URL
-                                    const urlMatch = latestMessage.content.match(
-                                      /https?:\/\/www\.projectdiablo2\.com\/market\/listing\/([a-f0-9]+)(?:\?display=([^"\s]+|"[^"]+"))?/i,
-                                    );
-                                    if (urlMatch) {
-                                      const displayName = urlMatch[2]
-                                        ? decodeURIComponent(urlMatch[2].replace(/^["']|["']$/g, ''))
-                                        : null;
-                                      return displayName ? `📦 ${displayName}` : '📦 Market Listing';
-                                    }
-                                    return latestMessage.content;
-                                  })()}
+                                  {messagePreview(latestMessage.content)}
                                 </span>
                               </div>
                             )}
@@ -1062,8 +1070,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="min-h-0 flex-1 overflow-hidden"
-                  ref={messagesContainerRef}>
+                <ScrollArea
+                  className="min-h-0 flex-1 overflow-hidden"
+                  ref={messagesContainerRef}
+                  onScrollCapture={trackPinnedToBottom}
+                >
                   <div className="h-full">
                     {loadingMessages ? (
                       <div aria-busy
@@ -1150,8 +1161,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                                         : 'rounded-bl-md border-transparent bg-card',
                                     )}
                                   >
-                                    <MessageContent content={message.content}
-                                      isOwnMessage={isOwnMessage} />
+                                    <MessageContent
+                                      content={message.content}
+                                      isOwnMessage={isOwnMessage}
+                                      listings={listings}
+                                    />
                                     <div className="mt-0.5 flex items-center justify-end gap-1">
                                       <span className="text-[11px] tabular-nums text-muted-foreground">
                                         {formatMessageTime(message.created_at)}

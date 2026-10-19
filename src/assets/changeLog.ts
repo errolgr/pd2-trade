@@ -6,6 +6,7 @@ export const changeLog = {
     '🆕 Price check shows a 30-day price trend, with a link to the item on pd2trader.com',
     '🆕 Choose how many days prices are averaged over (Settings → Price Check, 7 days by default)',
     '🆕 Automatic updates can be turned off (Settings → About); you still get notified, and price check shows a "Restart to update" button',
+    "🆕 Market listings linked in chat show as item cards with the item's picture, price and whether it's still listed; hover for stats and seller",
     '✨ Price check shows what the price is based on, and tags rarely traded items priced over a longer period',
     '✨ Smoother price check, quick list, chat and settings',
     '✨ Move the Net Worth ticker anywhere (drag) or pin it to any corner',
@@ -14,6 +15,7 @@ export const changeLog = {
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',
     "🔧 What's New now waits until you're signed in instead of opening next to the sign-in prompt",
+    '🔧 Listing links in the trade site\'s "I\'m interested" chat messages are clickable again',
     '🔧 Overlays no longer flicker over the game when you open Settings or sign in from outside it',
   ],
   '0.9.13': [

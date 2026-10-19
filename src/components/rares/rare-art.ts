@@ -123,6 +123,11 @@ const BASE_ART: Record<string, string> = Object.fromEntries(
   FAMILIES.flatMap(([art, ...names]) => names.map((name) => [name.toLowerCase(), art])),
 );
 
+/** Inventory art file of a weapon/armor base (any tier, case-insensitive), e.g. "Shako" → "invcap". */
+export function baseArtFile(baseName: string): string | undefined {
+  return BASE_ART[baseName.toLowerCase()];
+}
+
 /** Fallback art per slot (jewels and quivers are handled in rareArt). */
 const SLOT_ART: Partial<Record<RareSlot, string>> = {
   ring: 'invrin',
@@ -147,7 +152,7 @@ export function rareArtUrl(rare: RareAppraisal): string {
   } else if (rare.slot === 'quiver') {
     art = /bolts/i.test(rare.baseName) ? 'invcqv' : 'invqvr';
   } else {
-    art = BASE_ART[rare.baseName.toLowerCase()] ?? SLOT_ART[rare.slot] ?? 'invrin';
+    art = baseArtFile(rare.baseName) ?? SLOT_ART[rare.slot] ?? 'invrin';
   }
   return `https://pd2trader.com/assets/items/${art}.png`;
 }
