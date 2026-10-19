@@ -9,7 +9,14 @@ import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
 import { writeText } from '@/lib/browser-clipboard';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
-import { CHAT_PREFS_FILENAME, changeChatPrefs, parseChatPrefs, resetChatPrefs, setThreadPrefs } from '@/lib/chat-prefs';
+import {
+  CHAT_PREFS_FILENAME,
+  changeChatPrefs,
+  getChatPrefs,
+  parseChatPrefs,
+  resetChatPrefs,
+  setThreadPrefs,
+} from '@/lib/chat-prefs';
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
@@ -1587,5 +1594,52 @@ describe('ChatOverlayWidget overlay fit', () => {
     expect(rows().map((r) => r.textContent?.includes('bob'))).toEqual([true, false]);
     expect(lastEmittedUnread()).toBe(1);
     expect(headerUnread()).toBe('1');
+  });
+
+  it('focuses the composer for a Reply that opened the hidden panel only once it shows', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    // Whether the panel was on screen at each focus (a hidden textarea can't take focus)
+    const focusedWhileVisible: boolean[] = [];
+    const focus = vi.spyOn(HTMLTextAreaElement.prototype, 'focus').mockImplementation(() => {
+      focusedWhileVisible.push(panel.visible);
+    });
+
+    panel.visible = false;
+    await openChat({ conversationId: 'c1', reply: true });
+    expect(heading()).toBe('Alice');
+    expect(focusedWhileVisible).toEqual([]);
+
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    await flush();
+    expect(focusedWhileVisible).toEqual([true]);
+    focus.mockRestore();
+  });
+
+  it('keeps a muted person muted once they start a website conversation', async () => {
+    incomingOffers = [
+      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol' },
+    ];
+    await renderWidget([]);
+    await select('carol');
+    await chooseFromMenu(/^Mute$/);
+    await key(composer(), { key: 'Escape' });
+    expect(heading()).toBeNull();
+
+    // Their first website message starts conversation c9, unknown until the list reloads
+    const carol = { id: 'carol', username: 'carol' };
+    api.getConversations.mockResolvedValue({
+      data: [conv('c9', carol, { latest: msg('k1', 'c9', 'carol', 'hi', 0) })],
+    });
+    await fire('social/message_pushed', msg('k1', 'c9', 'carol', 'hi', 0));
+    await fire('social/message_pushed', msg('k2', 'c9', 'carol', 'still there?', 0));
+
+    expect(audio).toHaveLength(0);
+    expect(rows()).toHaveLength(1);
+    expect(within(rowFor('carol')).queryByLabelText('Muted')).not.toBeNull();
+    // Saved under the conversation too, so its socket notifications find it
+    expect(getChatPrefs().threads.c9).toEqual({ muted: true });
+    expect(lastEmittedUnread()).toBe(0);
   });
 });

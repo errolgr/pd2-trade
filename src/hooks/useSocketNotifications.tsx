@@ -297,7 +297,10 @@ export const useSocketNotifications = ({
         processedNotificationsRef.current = new Set(idsArray.slice(-100));
       }
 
-      if (!isToastEnabled(settings, 'whispers') || isThreadMuted([msg.conversation_id])) return;
+      // Muted: the conversation, or (a conversation started after muting them) the sender's website user
+      if (!isToastEnabled(settings, 'whispers') || isThreadMuted([msg.conversation_id, `user:${msg.sender_id}`])) {
+        return;
+      }
 
       const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
 

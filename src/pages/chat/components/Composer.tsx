@@ -43,11 +43,13 @@ interface ComposerProps {
   channel: ReplyChannel;
   /** Set when both channels reach the person: shows the Website/Whisper switch. */
   onChannelChange?: (channel: ReplyChannel) => void;
+  /** Compact panel: the quick replies stay on one line that scrolls sideways. */
+  compact?: boolean;
 }
 
 /** Message input of the open thread; `ref` is the textarea (focus it to start typing). */
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
-  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange },
+  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, compact = false },
   ref,
 ) {
   const { settings } = useOptions();
@@ -146,8 +148,17 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
 
   return (
     <div className="@container shrink-0 border-t border-border bg-card/50 px-3 pb-3 pt-2">
-      {/* Wraps in a narrow panel; the Website/Whisper switch drops to icons there */}
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      {/* Compact: one sideways-scrolling line (no scrollbar); the Website/Whisper switch drops to icons */}
+      <div
+        role="toolbar"
+        aria-label="Quick replies"
+        className={cn(
+          'mb-2 flex items-center gap-1.5',
+          compact
+            ? 'flex-nowrap overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'flex-wrap',
+        )}
+      >
         {onChannelChange && (
           <ToggleGroup
             type="single"
@@ -185,7 +196,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             // Keep the draft's caret/selection: the chip inserts where the user was typing
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => insertAtCaret(reply)}
-            className="rounded-full border border-border/70 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+            className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
           >
             {reply}
           </button>

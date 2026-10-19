@@ -8,7 +8,14 @@ import { useOptions } from '@/hooks/useOptions';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
 import { writeText } from '@/lib/browser-clipboard';
-import { changeChatPrefs, isThreadMuted, setThreadPrefs, useChatPrefs, type ThreadPrefs } from '@/lib/chat-prefs';
+import {
+  changeChatPrefs,
+  isThreadMuted,
+  reconcileThreadPrefs,
+  setThreadPrefs,
+  useChatPrefs,
+  type ThreadPrefs,
+} from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -131,11 +138,13 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     // conversations are the conversation ids; other threads match no conversation)
     viewingConversationId: visible ? selectedThreadId : null,
     onIncomingMessage: (message, viewing) => {
-      // Whisper sound for messages outside the conversation on screen, if enabled and not muted
-      if (viewing || !(settings?.whisperNotificationsEnabled ?? true) || isThreadMuted([message.conversation_id])) {
-        return;
-      }
-      playNotificationSound(settings?.whisperNotificationVolume ?? 70);
+      // Whisper sound for messages outside the conversation on screen, if enabled and not muted: by the thread
+      // it merged into, else (a conversation not listed yet) by the conversation or the sender's website user
+      if (viewing || !(settings?.whisperNotificationsEnabled ?? true)) return;
+      const muted =
+        findThread(threads, message.conversation_id)?.muted ??
+        isThreadMuted([message.conversation_id, `user:${message.sender_id}`]);
+      if (!muted) playNotificationSound(settings?.whisperNotificationVolume ?? 70);
     },
   });
   const { conversations, loadingConversations, conversationsLoaded, loadConversations, loadMessages, loadOlder } = chat;
@@ -153,6 +162,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       }),
     [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs],
   );
+  // Pin/mute/archive follow a thread onto ids it gained since they were set (a conversation started later), so
+  // notifications that only know a conversation id or a whisper sender find them
+  useEffect(() => {
+    changeChatPrefs((current) => reconcileThreadPrefs(current, threads.map(threadAliases)));
+  }, [threads]);
   const listed = useMemo(() => visibleThreads(threads, filter, search), [threads, filter, search]);
   const selectedThread = useMemo(() => findThread(threads, selectedThreadId), [threads, selectedThreadId]);
   // The open thread merged into another (its sender got linked, or a conversation with them appeared): follow
@@ -324,12 +338,19 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (selectedConversationId) loadMessages(selectedConversationId);
   }, [selectedConversationId, loadMessages]);
 
-  // Focus the composer when a thread is opened, and on a toast's Reply
+  // Focus the composer when a thread is opened, and on a toast's Reply; while the panel is hidden (opened
+  // with the game in the background) the focus waits until it shows
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const openedThreadId = selectedThread?.id;
+  const focusPendingRef = useRef(false);
   useEffect(() => {
-    if (openedThreadId) composerRef.current?.focus();
+    if (openedThreadId) focusPendingRef.current = true;
   }, [openedThreadId, replyVersion]);
+  useEffect(() => {
+    if (!visible || !focusPendingRef.current || !composerRef.current) return;
+    focusPendingRef.current = false;
+    composerRef.current.focus();
+  }, [visible, openedThreadId, replyVersion]);
 
   const clearDraft = (threadId: string) =>
     setDrafts((current) => {
@@ -592,6 +613,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                       channel === 'whisper' ? `Whisper *${whisperAccount}...` : `Message ${selectedThread.name}...`
                     }
                     templateVars={templateVars}
+                    compact={compact}
                     channel={channel}
                     onChannelChange={
                       websiteReachable && whisperAccount

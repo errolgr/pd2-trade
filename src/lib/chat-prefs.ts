@@ -61,6 +61,35 @@ export function setThreadPrefs(prefs: ChatPrefs, ids: readonly string[], patch: 
   return { threads };
 }
 
+/**
+ * Copies each thread's merged preferences onto every id it is known by now (`aliasGroups`: one id list per
+ * thread), so an id a thread gained after it was pinned, muted or archived (a conversation started later, a
+ * newly linked whisper sender) carries them too. Returns `prefs` itself when nothing changes.
+ */
+export function reconcileThreadPrefs(prefs: ChatPrefs, aliasGroups: readonly (readonly string[])[]): ChatPrefs {
+  let next = prefs;
+  for (const ids of aliasGroups) {
+    const merged = prefsFor(next, ids);
+    if (Object.keys(merged).length === 0) continue;
+    const behind = ids.some((id) => {
+      const saved = next.threads[id];
+      return (
+        saved?.pinnedAt !== merged.pinnedAt ||
+        !!saved?.muted !== !!merged.muted ||
+        saved?.archivedAt !== merged.archivedAt
+      );
+    });
+    if (behind) {
+      next = setThreadPrefs(next, ids, {
+        pinnedAt: merged.pinnedAt,
+        muted: merged.muted,
+        archivedAt: merged.archivedAt,
+      });
+    }
+  }
+  return next;
+}
+
 const ThreadPrefsSchema = z.object({
   pinnedAt: z.number().optional(),
   muted: z.boolean().optional(),

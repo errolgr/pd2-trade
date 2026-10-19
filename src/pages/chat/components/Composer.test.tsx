@@ -26,7 +26,15 @@ let settings: Record<string, unknown>;
 let getMarketListings: Mock;
 let onSend: Mock;
 
-function Harness({ initial = '', switchable = false }: { initial?: string; switchable?: boolean }) {
+function Harness({
+  initial = '',
+  switchable = false,
+  compact = false,
+}: {
+  initial?: string;
+  switchable?: boolean;
+  compact?: boolean;
+}) {
   const [value, setValue] = useState(initial);
   const [channel, setChannel] = useState<ReplyChannel>('website');
   return (
@@ -39,6 +47,7 @@ function Harness({ initial = '', switchable = false }: { initial?: string; switc
         templateVars={VARS}
         channel={channel}
         onChannelChange={switchable ? setChannel : undefined}
+        compact={compact}
       />
     </ItemsProvider>
   );
@@ -239,5 +248,23 @@ describe('Composer listing picker', () => {
     ]);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onSend).not.toHaveBeenCalled();
+  });
+});
+
+describe('Composer quick replies', () => {
+  const row = () => screen.getByRole('toolbar', { name: 'Quick replies' });
+
+  it('keeps the chips on one sideways-scrolling line in a compact panel, wrapping otherwise', () => {
+    render(<Harness switchable
+      compact />);
+    expect(row().className).toContain('flex-nowrap');
+    expect(row().className).toContain('overflow-x-auto');
+    expect(row().className).not.toContain('flex-wrap');
+    expect(within(row()).getByRole('button', { name: 'ty gl' }).className).toContain('shrink-0');
+    cleanup();
+
+    render(<Harness switchable />);
+    expect(row().className).toContain('flex-wrap');
+    expect(row().className).not.toContain('overflow-x-auto');
   });
 });

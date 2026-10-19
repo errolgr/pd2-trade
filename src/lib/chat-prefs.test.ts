@@ -10,6 +10,7 @@ import {
   loadChatPrefs,
   parseChatPrefs,
   prefsFor,
+  reconcileThreadPrefs,
   resetChatPrefs,
   setThreadPrefs,
 } from './chat-prefs';
@@ -65,6 +66,21 @@ describe('thread preferences', () => {
     expect(isArchived({ archivedAt: 100 }, 100)).toBe(true);
     expect(isArchived({ archivedAt: 100 }, 101)).toBe(false);
     expect(isArchived({}, 0)).toBe(false);
+  });
+
+  it("copies a thread's merged preferences onto ids it gained, and changes nothing once they match", () => {
+    let prefs = setThreadPrefs(EMPTY_PREFS, ['user:carol'], { muted: true });
+    prefs = setThreadPrefs(prefs, ['c1'], { pinnedAt: 4 });
+    const groups = [['c9', 'user:carol', 'whisper:carol'], ['c2']];
+    const next = reconcileThreadPrefs(prefs, groups);
+    expect(next.threads).toEqual({
+      c1: { pinnedAt: 4 },
+      c9: { muted: true },
+      'user:carol': { muted: true },
+      'whisper:carol': { muted: true },
+    });
+    expect(reconcileThreadPrefs(next, groups)).toBe(next);
+    expect(reconcileThreadPrefs(EMPTY_PREFS, groups)).toBe(EMPTY_PREFS);
   });
 
   it('parses a saved file, skipping malformed entries', () => {

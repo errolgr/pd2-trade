@@ -438,6 +438,13 @@ describe('useSocketNotifications chat messages', () => {
     ]);
   });
 
+  it("shows no toast for a conversation a muted person started after muting (by the sender's website user)", async () => {
+    changeChatPrefs((prefs) => setThreadPrefs(prefs, ['user:s1'], { muted: true }));
+    await renderNotifications({ isConnected: true });
+    await fire(CHAT_EVENT, { ...chat, conversation_id: 'c-new' });
+    expect(toasts()).toEqual([]);
+  });
+
   it('truncates long previews and ignores malformed messages', async () => {
     await renderNotifications({ isConnected: true });
 

@@ -87,16 +87,20 @@ export function MessageList({
   const lastRowKey = lastRow?.key;
   const [seenKey, setSeenKey] = useState(lastRowKey);
 
-  // Open at the "New" divider once its row is in, else at the bottom; then follow appended messages (not
-  // prepended pages) while at the bottom, and always after an own message.
+  // Open at the "New" divider once its row is in, else at the bottom; then follow appended messages while at
+  // the bottom, and always after an own message. Only an appended row moves the view: older pages prepended
+  // above (which shift the divider's index) never do.
   const unreadIndex = unreadKey ? rows.findIndex((row) => row.key === unreadKey) : -1;
   const positionedRef = useRef(false);
+  const followedKeyRef = useRef<string | undefined>(undefined);
   const lastRowOwn = lastRow?.entry.own;
   useEffect(() => {
+    const appended = lastRowKey !== followedKeyRef.current;
+    followedKeyRef.current = lastRowKey;
     if (unreadIndex >= 0 && !positionedRef.current) {
       positionedRef.current = true;
       virtualizer.scrollToIndex(unreadIndex, { align: 'start' });
-    } else if (lastRowKey && (atBottomRef.current || lastRowOwn)) {
+    } else if (appended && lastRowKey && (atBottomRef.current || lastRowOwn)) {
       virtualizer.scrollToEnd();
     }
   }, [unreadIndex, lastRowKey, lastRowOwn, virtualizer]);
