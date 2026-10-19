@@ -7,13 +7,6 @@ import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from './useWealthRank';
 
-const flags = vi.hoisted(() => ({ live: true }));
-
-vi.mock('@/lib/feature-flags', () => ({
-  get LEADERBOARD_LIVE() {
-    return flags.live;
-  },
-}));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getStanding: vi.fn(),
@@ -40,7 +33,6 @@ async function renderRank() {
 }
 
 beforeEach(() => {
-  flags.live = true;
   token = 'tok';
   netWorth = { owner: { isLadder: true, isHardcore: false }, currentSeasonId: 's13', priceDay: '2026-10-18' };
   vi.mocked(useOptions).mockImplementation(() => ({ settings: { pd2Token: token } }) as never);
@@ -105,7 +97,6 @@ describe('useWealthRank', () => {
   });
 
   it.each([
-    ['leaderboards are not live', () => (flags.live = false)],
     ['signed out', () => (token = undefined)],
     ['the owner is unknown', () => (netWorth.owner = null)],
   ])('does not query when %s', async (_label, setup) => {
