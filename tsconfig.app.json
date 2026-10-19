@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020", "ES2017", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "ES2017", "ESNext.Promise", "DOM", "DOM.Iterable"],
     "composite": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "jsx": "react",
-    "module": "ES2017",
+    "jsx": "react-jsx",
+    "module": "ESNext",
     "moduleResolution": "Node",
     "target": "ESNext",
     "allowSyntheticDefaultImports": true,

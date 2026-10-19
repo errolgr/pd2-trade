@@ -34,4 +34,4 @@ docs/.vitepress/dist
 .env.local
 
 # Local Agent context
-.agent/*
+.agent/*coverage/

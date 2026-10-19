@@ -154,6 +154,9 @@ npm run docs:preview
 ### 3. Testing
 
 - `npm test` runs the Vitest suite (also runs in CI on every PR and before release builds)
+- `npm run test:coverage` adds a v8 coverage report (`coverage/`); game data tables in `src/assets` and type-only files are excluded
+- Tests sit next to the code (`foo.ts` → `foo.test.ts`); DOM tests start with `// @vitest-environment happy-dom` and mock Tauri/plugin modules with `vi.mock`
+- `it.fails` / `it.skip` tests marked `// BUG:` pin known bugs; fixing the bug flips them, so convert them to plain `it` in the fix
 - Test and Tauri functionality
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)

@@ -14,5 +14,11 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.{ts,mjs}'],
     environment: 'node',
     restoreMocks: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      // Static game data tables and type-only declarations carry no logic to test.
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/assets/**', 'src/common/types/**', 'src/**/*.d.ts'],
+    },
   },
 });

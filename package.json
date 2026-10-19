@@ -26,7 +26,8 @@
     "docs:preview": "vitepress preview docs",
     "prepare": "husky",
     "test": "vitest run",
-    "verify:updater": "node scripts/verify-updater.mjs"
+    "verify:updater": "node scripts/verify-updater.mjs",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@grafana/faro-web-sdk": "^2.12.1",
@@ -96,6 +97,7 @@
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-react": "^7.37.4",
