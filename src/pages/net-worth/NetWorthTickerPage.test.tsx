@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, t
 import { MotionGlobalConfig } from 'framer-motion';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { availableMonitors } from '@tauri-apps/api/window';
 import { LogicalPosition, LogicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
@@ -16,6 +17,7 @@ import { NETWORTH_TOGGLE_PANEL_EVENT } from './overlay';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/webviewWindow', () => ({ getCurrentWebviewWindow: vi.fn() }));
+vi.mock('@tauri-apps/api/window', () => ({ availableMonitors: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({
   OptionsProvider: ({ children }: { children: React.ReactNode }) => children,
   useOptions: vi.fn(),
@@ -38,7 +40,18 @@ let settings: Partial<ISettings>;
 let netWorth: Partial<NetWorthContextValue>;
 let focusListener: ((event: { payload: boolean }) => void) | null;
 let unlisten: Mock;
-let win: { setSize: Mock; setPosition: Mock; scaleFactor: Mock };
+let win: {
+  setSize: Mock;
+  setPosition: Mock;
+  scaleFactor: Mock;
+  outerPosition: Mock;
+  startDragging: Mock;
+  onMoved: Mock;
+  onScaleChanged: Mock;
+};
+let updateSettings: Mock;
+let movedListener: ((event: { payload: { x: number; y: number } }) => void) | null;
+let scaleListener: (() => void) | null;
 
 function latest(totalHr: number): SnapshotResponse {
   return {
@@ -69,7 +82,7 @@ function session(overrides: Partial<SessionSummary>): SessionSummary {
 }
 
 function pill(): HTMLButtonElement {
-  return screen.getByTitle('Net worth — click for details') as HTMLButtonElement;
+  return screen.getByTitle('Net worth — click for details, drag to move') as HTMLButtonElement;
 }
 
 function dot(): HTMLElement {
@@ -92,7 +105,8 @@ beforeEach(() => {
   vi.setSystemTime(NOW);
   settings = {};
   netWorth = { latest: latest(12.5), status: 'ok', lastSnapshotAt: NOW - 60_000, currentSession: null };
-  vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
+  updateSettings = vi.fn();
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
   vi.mocked(useNetWorth).mockImplementation(() => netWorth as NetWorthContextValue);
   vi.mocked(useWealthRank).mockReturnValue(null);
   vi.mocked(isTauri).mockReturnValue(false);
@@ -102,10 +116,22 @@ beforeEach(() => {
     focusListener = callback as typeof focusListener;
     return unlisten;
   });
+  movedListener = null;
+  scaleListener = null;
   win = {
     setSize: vi.fn(async () => {}),
     setPosition: vi.fn(async () => {}),
     scaleFactor: vi.fn(async () => 1.5),
+    outerPosition: vi.fn(async () => ({ x: 300, y: 200 })),
+    startDragging: vi.fn(async () => {}),
+    onMoved: vi.fn(async (callback) => {
+      movedListener = callback;
+      return vi.fn();
+    }),
+    onScaleChanged: vi.fn(async (callback) => {
+      scaleListener = callback;
+      return vi.fn();
+    }),
   };
   vi.mocked(getCurrentWebviewWindow).mockReturnValue(win as never);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(PILL as DOMRect);
@@ -259,13 +285,14 @@ describe('NetWorthTicker window placement', () => {
     await flush();
     expect(win.setSize.mock.calls[0][0]).toEqual(new LogicalSize(181, 28));
     expect(vi.mocked(invoke).mock.calls[0][0]).toBe('get_diablo_rect');
-    // physical width 181 * 1.5 = 271.5; margin 12 * 1.5 = 18
-    expect(win.setPosition.mock.calls[0][0]).toEqual(new PhysicalPosition(Math.round(100 + (1920 - 271.5) / 2), 68));
+    // physical width 181 * 1.5 = 271.5 → 272; margin 12 * 1.5 = 18
+    expect(win.setPosition.mock.calls[0][0]).toEqual(new PhysicalPosition(100 + (1920 - 272) / 2, 68));
   });
 
   it.each([
     ['top-left', 100 + 18],
-    ['top-right', Math.round(100 + 1920 - 271.5 - 18)],
+    // the window is a whole number of physical pixels: 181 * 1.5 = 271.5 → 272
+    ['top-right', 100 + 1920 - 272 - 18],
   ] as const)('anchors %s with a scaled edge margin', async (anchor, x) => {
     settings = { netWorthTickerAnchor: anchor };
     render(<NetWorthTickerPage />);
@@ -280,7 +307,25 @@ describe('NetWorthTicker window placement', () => {
     const chatX = 100 + 1920 - 240 - 20;
     const chatY = 50 + 1080 - 240 - 10;
     expect(win.setPosition.mock.calls[0][0]).toEqual(new LogicalPosition(chatX + 240 - 181, chatY - 28 - 4));
-    expect(win.scaleFactor).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['bottom-left', 100 + 18],
+    ['bottom-right', 100 + 1920 - 272 - 18],
+  ] as const)('anchors %s at the bottom of the Diablo frame', async (anchor, x) => {
+    settings = { netWorthTickerAnchor: anchor };
+    render(<NetWorthTickerPage />);
+    await flush();
+    // physical height 28 * 1.5 = 42
+    expect(win.setPosition.mock.calls[0][0]).toEqual(new PhysicalPosition(x, 50 + 1080 - 42 - 18));
+  });
+
+  it('re-places when the monitor scale changes', async () => {
+    render(<NetWorthTickerPage />);
+    await flush();
+    scaleListener!();
+    await flush();
+    expect(win.setPosition).toHaveBeenCalledTimes(2);
   });
 
   it('only resizes when Diablo is not found', async () => {
@@ -332,5 +377,105 @@ describe('NetWorthTicker window placement', () => {
     await flush();
     expect(warn).toHaveBeenCalledWith('[NetWorthTicker] Failed to place ticker window:', expect.any(Error));
     expect(pill()).not.toBeNull();
+  });
+});
+
+describe('NetWorthTicker custom position and dragging', () => {
+  // One 1080p monitor at 150% with a 40px taskbar; the pill is 181x28 logical = 272x42 physical
+  const MONITOR = { workArea: { position: { x: 0, y: 0 }, size: { width: 1920, height: 1040 } }, scaleFactor: 1.5 };
+
+  beforeEach(() => {
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockResolvedValue({ x: 100, y: 50, width: 1920, height: 1080 });
+    vi.mocked(availableMonitors).mockResolvedValue([MONITOR] as never);
+  });
+
+  function drag(dx: number) {
+    fireEvent.pointerDown(pill(), { button: 0, buttons: 1, screenX: 10, screenY: 10 });
+    fireEvent.pointerMove(pill(), { buttons: 1, screenX: 10 + dx, screenY: 10 });
+  }
+
+  it.each([
+    ['restores the saved position', { x: 700, y: 400 }, new PhysicalPosition(700, 400)],
+    ['keeps a saved position on screen', { x: 1900, y: 1030 }, new PhysicalPosition(1920 - 272, 1040 - 42)],
+    ['brings it back from an unplugged monitor', { x: 4000, y: 300 }, new PhysicalPosition(1920 - 272, 300)],
+  ] as const)('%s', async (_, position, expected) => {
+    settings = { netWorthTickerAnchor: 'custom', netWorthTickerPosition: position };
+    render(<NetWorthTickerPage />);
+    await flush();
+    expect(win.setPosition.mock.calls[0][0]).toEqual(expected);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('stays where it is when switched to Custom before it was ever dragged', async () => {
+    settings = { netWorthTickerAnchor: 'custom' };
+    render(<NetWorthTickerPage />);
+    await flush();
+    expect(win.setPosition.mock.calls[0][0]).toEqual(new PhysicalPosition(300, 200));
+  });
+
+  it('starts a window drag once the press travels, and swallows the click that follows', async () => {
+    render(<NetWorthTickerPage />);
+    await flush();
+    drag(6);
+    expect(win.startDragging).toHaveBeenCalledTimes(1);
+    fireEvent.click(pill());
+    expect(emit).not.toHaveBeenCalled();
+    // The next plain click toggles the panel again
+    fireEvent.pointerDown(pill(), { button: 0, buttons: 1, screenX: 10, screenY: 10 });
+    fireEvent.click(pill());
+    expect(vi.mocked(emit).mock.calls).toEqual([[NETWORTH_TOGGLE_PANEL_EVENT]]);
+  });
+
+  it('treats a small wobble as a click', async () => {
+    render(<NetWorthTickerPage />);
+    await flush();
+    drag(2);
+    fireEvent.click(pill());
+    expect(win.startDragging).not.toHaveBeenCalled();
+    expect(vi.mocked(emit).mock.calls).toEqual([[NETWORTH_TOGGLE_PANEL_EVENT]]);
+  });
+
+  it('saves where the drag ended and switches to Custom', async () => {
+    render(<NetWorthTickerPage />);
+    await flush();
+    drag(20);
+    movedListener!({ payload: { x: 650, y: 380 } });
+    movedListener!({ payload: { x: 700, y: 400 } });
+    act(() => {
+      vi.advanceTimersByTime(399);
+    });
+    expect(updateSettings).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(updateSettings).toHaveBeenCalledExactlyOnceWith({
+      netWorthTickerAnchor: 'custom',
+      netWorthTickerPosition: { x: 700, y: 400 },
+    });
+  });
+
+  it('ignores moves it made itself', async () => {
+    render(<NetWorthTickerPage />);
+    await flush();
+    movedListener!({ payload: { x: 1, y: 2 } });
+    // A drag that has not moved yet, then the ticker's own placement move
+    drag(20);
+    const placed = win.setPosition.mock.calls[0][0] as PhysicalPosition;
+    movedListener!({ payload: { x: placed.x, y: placed.y } });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('logs a drag that could not start', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    win.startDragging.mockRejectedValue(new Error('denied'));
+    render(<NetWorthTickerPage />);
+    await flush();
+    drag(20);
+    await flush();
+    expect(warn).toHaveBeenCalledWith('[NetWorthTicker] Failed to start dragging:', expect.any(Error));
   });
 });

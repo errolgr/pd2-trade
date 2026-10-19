@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { ISettings, useOptions } from '@/hooks/useOptions';
+import { ISettings, NetWorthTickerAnchor, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -19,18 +19,29 @@ const AUTO_SNAPSHOT_OPTIONS = [
   { value: '30', label: 'Every 30 minutes' },
 ];
 
-const ANCHOR_OPTIONS: { value: NonNullable<ISettings['netWorthTickerAnchor']>; label: string }[] = [
+const ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; label: string }[] = [
   { value: 'top-left', label: 'Top left' },
   { value: 'top-center', label: 'Top center' },
   { value: 'top-right', label: 'Top right' },
+  { value: 'bottom-left', label: 'Bottom left' },
+  { value: 'bottom-right', label: 'Bottom right' },
   { value: 'above-chat', label: 'Above chat button' },
+  { value: 'custom', label: 'Custom (drag to move)' },
 ];
 
 const netWorthFormSchema = z.object({
-  netWorthTrackingEnabled: z.boolean().optional(),
+  netWorthTrackingEnabled: z.boolean(),
   netWorthAutoSnapshotMinutes: z.number().int().min(0),
   netWorthTickerEnabled: z.boolean(),
-  netWorthTickerAnchor: z.enum(['top-left', 'top-center', 'top-right', 'above-chat']),
+  netWorthTickerAnchor: z.enum([
+    'top-left',
+    'top-center',
+    'top-right',
+    'bottom-left',
+    'bottom-right',
+    'above-chat',
+    'custom',
+  ]),
   netWorthTickerOpacity: z.number().min(30).max(100),
   netWorthToastThresholdHr: z.number().min(0),
 });
@@ -39,9 +50,9 @@ type NetWorthFormValues = z.infer<typeof netWorthFormSchema>;
 
 function toFormValues(settings: ISettings | undefined): NetWorthFormValues {
   return {
-    netWorthTrackingEnabled: settings?.netWorthTrackingEnabled,
+    netWorthTrackingEnabled: settings?.netWorthTrackingEnabled !== false,
     netWorthAutoSnapshotMinutes: settings?.netWorthAutoSnapshotMinutes ?? 15,
-    netWorthTickerEnabled: settings?.netWorthTickerEnabled ?? true,
+    netWorthTickerEnabled: settings?.netWorthTickerEnabled ?? false,
     netWorthTickerAnchor: settings?.netWorthTickerAnchor ?? 'top-center',
     netWorthTickerOpacity: settings?.netWorthTickerOpacity ?? 90,
     netWorthToastThresholdHr: settings?.netWorthToastThresholdHr ?? 0.5,
@@ -108,7 +119,7 @@ export function NetWorthForm() {
                 description="Store snapshots of your net worth on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
                 control={
                   <FormControl>
-                    <Switch checked={field.value === true}
+                    <Switch checked={field.value}
                       onCheckedChange={field.onChange} />
                   </FormControl>
                 }
@@ -176,6 +187,7 @@ export function NetWorthForm() {
             render={({ field }) => (
               <SettingsRow
                 label="Ticker position"
+                description="Pin the ticker to a corner of the game, or drag it anywhere on screen (switches to Custom)."
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
@@ -247,8 +259,8 @@ export function NetWorthForm() {
                 label="Snapshot toast threshold (HR)"
                 description={
                   <>
-                    Show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth
-                    toast type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
+                    While the ticker is on, show a toast when a snapshot changes your net worth by at least this much.
+                    Toggle the Net Worth toast type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
                   </>
                 }
                 control={

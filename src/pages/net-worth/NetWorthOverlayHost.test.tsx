@@ -4,6 +4,8 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { availableMonitors } from '@tauri-apps/api/window';
+import { PhysicalPosition } from '@tauri-apps/api/dpi';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
 import { emit, listen } from '@/lib/browser-events';
@@ -20,6 +22,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
     this.hide = vi.fn(async () => {});
   }),
 }));
+vi.mock('@tauri-apps/api/window', () => ({ availableMonitors: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ emit: vi.fn(), listen: vi.fn() }));
@@ -90,7 +93,7 @@ async function fire(event: string, payload?: unknown) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  settings = { pd2Token: 'tok' };
+  settings = { pd2Token: 'tok', netWorthTickerEnabled: true };
   latest = null;
   listeners = new Map();
   unlistens = [];
@@ -181,6 +184,14 @@ describe('NetWorthOverlayHost snapshot toasts', () => {
     expect(toasts()).toHaveLength(1);
   });
 
+  it('stays quiet while the ticker is off (the default)', () => {
+    settings = { pd2Token: 'tok' };
+    const { update } = renderHost();
+    latest = snapshot(3);
+    update();
+    expect(toasts()).toEqual([]);
+  });
+
   it('toasts a change exactly at the threshold', () => {
     const { update } = renderHost();
     latest = snapshot(-0.5);
@@ -243,7 +254,9 @@ describe('NetWorthOverlayHost mini panel', () => {
   it('creates a new panel after the old one was closed', async () => {
     const first = panelHandle(true);
     const second = panelHandle(true);
-    vi.mocked(openWindowCenteredOnDiablo).mockResolvedValueOnce(first as never).mockResolvedValueOnce(second as never);
+    vi.mocked(openWindowCenteredOnDiablo)
+      .mockResolvedValueOnce(first as never)
+      .mockResolvedValueOnce(second as never);
     renderHost();
     await flush();
     await fire(NETWORTH_TOGGLE_PANEL_EVENT);
@@ -257,7 +270,9 @@ describe('NetWorthOverlayHost mini panel', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const stale = panelHandle(true);
     stale.isVisible.mockRejectedValue(new Error('window not found'));
-    vi.mocked(openWindowCenteredOnDiablo).mockResolvedValueOnce(stale as never).mockResolvedValueOnce(panelHandle(true) as never);
+    vi.mocked(openWindowCenteredOnDiablo)
+      .mockResolvedValueOnce(stale as never)
+      .mockResolvedValueOnce(panelHandle(true) as never);
     renderHost();
     await flush();
     await fire(NETWORTH_TOGGLE_PANEL_EVENT);
@@ -267,7 +282,9 @@ describe('NetWorthOverlayHost mini panel', () => {
   });
 
   it('tries again on the next click when the panel could not be opened', async () => {
-    vi.mocked(openWindowCenteredOnDiablo).mockResolvedValueOnce(null).mockResolvedValueOnce(panelHandle(true) as never);
+    vi.mocked(openWindowCenteredOnDiablo)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(panelHandle(true) as never);
     renderHost();
     await flush();
     await fire(NETWORTH_TOGGLE_PANEL_EVENT);
@@ -358,7 +375,8 @@ describe('NetWorthOverlayHost ticker visibility', () => {
 
   it.each([
     ['the ticker is disabled', { pd2Token: 'tok', netWorthTickerEnabled: false }],
-    ['signed out', {}],
+    ['the ticker was never turned on', { pd2Token: 'tok' }],
+    ['signed out', { netWorthTickerEnabled: true }],
   ])('keeps the ticker hidden when %s', async (_, s) => {
     settings = s;
     vi.mocked(invoke).mockResolvedValue(true);
@@ -438,5 +456,98 @@ describe('NetWorthOverlayHost ticker visibility', () => {
     unmount();
     await flush(1000);
     expect(ticker().hide).not.toHaveBeenCalled();
+  });
+});
+
+describe('NetWorthOverlayHost panel next to the ticker', () => {
+  // 1080p monitor at 150% with a 40px taskbar; the panel is 360x420 logical = 540x630 physical, gap 6 → 9
+  const MONITOR = { workArea: { position: { x: 0, y: 0 }, size: { width: 1920, height: 1040 } }, scaleFactor: 1.5 };
+  const TICKER_SIZE = { width: 270, height: 42 };
+
+  let tickerPosition: { x: number; y: number };
+  let tickerVisible: boolean;
+
+  async function renderWithTicker() {
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockResolvedValue(true);
+    vi.mocked(availableMonitors).mockResolvedValue([MONITOR] as never);
+    renderHost();
+    await flush();
+    Object.assign(vi.mocked(WebviewWindow).mock.instances[0], {
+      isVisible: vi.fn(async () => tickerVisible),
+      outerPosition: vi.fn(async () => tickerPosition),
+      outerSize: vi.fn(async () => TICKER_SIZE),
+    });
+  }
+
+  /** A Tauri panel window (instanceof WebviewWindow) whose `tauri://created` callback the test fires. */
+  function tauriPanel() {
+    const Ctor = WebviewWindow as unknown as new (label: string) => Record<string, Mock>;
+    const panel = new Ctor('NetWorthPanel');
+    let onCreated: (() => Promise<void>) | null = null;
+    Object.assign(panel, {
+      isVisible: vi.fn(async () => false),
+      setPosition: vi.fn(async () => {}),
+      setFocus: vi.fn(async () => {}),
+      onCloseRequested: vi.fn(),
+      once: vi.fn((event: string, callback: () => Promise<void>) => {
+        if (event === 'tauri://created') onCreated = callback;
+      }),
+    });
+    vi.mocked(openWindowCenteredOnDiablo).mockResolvedValue(panel as never);
+    return {
+      panel,
+      created: async () => {
+        await act(async () => {
+          await onCreated!();
+        });
+      },
+    };
+  }
+
+  beforeEach(() => {
+    tickerPosition = { x: 18, y: 68 };
+    tickerVisible = true;
+  });
+
+  it('opens hidden, then moves below the ticker with left edges aligned and shows', async () => {
+    await renderWithTicker();
+    const { panel, created } = tauriPanel();
+    await fire(NETWORTH_TOGGLE_PANEL_EVENT);
+    expect(vi.mocked(openWindowCenteredOnDiablo).mock.calls[0][2]).toMatchObject({ visible: false });
+    await created();
+    expect(panel.setPosition).toHaveBeenCalledWith(new PhysicalPosition(18, 68 + 42 + 9));
+    expect(panel.show).toHaveBeenCalledTimes(1);
+    expect(panel.setFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it('flips above and right-aligns when the ticker sits in the bottom-right corner', async () => {
+    tickerPosition = { x: 1920 - 270 - 18, y: 1040 - 42 - 18 };
+    await renderWithTicker();
+    const { panel, created } = tauriPanel();
+    await fire(NETWORTH_TOGGLE_PANEL_EVENT);
+    await created();
+    expect(panel.setPosition).toHaveBeenCalledWith(new PhysicalPosition(1632 + 270 - 540, 980 - 9 - 630));
+  });
+
+  it('moves a hidden panel next to the ticker again before showing it', async () => {
+    await renderWithTicker();
+    const { panel, created } = tauriPanel();
+    await fire(NETWORTH_TOGGLE_PANEL_EVENT);
+    await created();
+    panel.setPosition.mockClear();
+    tickerPosition = { x: 600, y: 300 };
+    await fire(NETWORTH_TOGGLE_PANEL_EVENT);
+    expect(panel.setPosition).toHaveBeenCalledWith(new PhysicalPosition(600, 300 + 42 + 9));
+    expect(panel.setPosition.mock.invocationCallOrder[0]).toBeLessThan(panel.show.mock.invocationCallOrder.at(-1)!);
+  });
+
+  it('opens centred on Diablo while the ticker is hidden', async () => {
+    tickerVisible = false;
+    await renderWithTicker();
+    const { panel } = tauriPanel();
+    await fire(NETWORTH_TOGGLE_PANEL_EVENT);
+    expect(vi.mocked(openWindowCenteredOnDiablo).mock.calls[0][2]).toMatchObject({ visible: true });
+    expect(panel.once).not.toHaveBeenCalled();
   });
 });

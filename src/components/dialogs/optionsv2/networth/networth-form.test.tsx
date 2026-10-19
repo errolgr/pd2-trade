@@ -59,10 +59,10 @@ describe('NetWorthForm', () => {
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
-  it('treats unset history tracking as off and applies ticker defaults', () => {
+  it('treats unset history as on and the unset ticker as off', () => {
     renderForm({});
-    expect(screen.getByRole('switch', { name: 'Save net worth history' }).getAttribute('aria-checked')).toBe('false');
-    expect(screen.getByRole('switch', { name: 'Net worth ticker' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Save net worth history' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Net worth ticker' }).getAttribute('aria-checked')).toBe('false');
     expect((screen.getByLabelText('Ticker position') as HTMLSelectElement).value).toBe('top-center');
     expect(screen.getByText(/Ticker opacity/).textContent).toContain('90%');
   });
@@ -103,6 +103,27 @@ describe('NetWorthForm', () => {
     await advance(400);
     expect(store.updateSettings).toHaveBeenCalledTimes(1);
     expect(lastSaved()).toMatchObject({ netWorthTickerAnchor: 'above-chat', netWorthTickerEnabled: false });
+  });
+
+  it('offers the four corners, top center, above chat and Custom', () => {
+    renderForm();
+    const options = [...(screen.getByLabelText('Ticker position') as HTMLSelectElement).options]
+      .map((o) => o.value)
+      .filter(Boolean);
+    expect(options).toEqual([
+      'top-left',
+      'top-center',
+      'top-right',
+      'bottom-left',
+      'bottom-right',
+      'above-chat',
+      'custom',
+    ]);
+  });
+
+  it('keeps an explicit history off', () => {
+    renderForm({ ...FULL, netWorthTrackingEnabled: false });
+    expect(screen.getByRole('switch', { name: 'Save net worth history' }).getAttribute('aria-checked')).toBe('false');
   });
 
   it('steps ticker opacity by 5 and clamps at 100', async () => {

@@ -115,14 +115,17 @@ interface ThemeSpec {
   ring: string;
   glow: string;
   charts: [string, string, string, string, string];
-  /** Alpha of the overlay panel surface (derived from `background`). */
-  surfaceAlpha?: number;
   quality?: Partial<Record<QualityToken, string>>;
   overrides?: Partial<Record<ThemeToken, string>>;
 }
 
-/** `hsl(h s% l%)` → `hsl(h s% l% / a)`. Specs only use the space-separated hsl form. */
-const withAlpha = (color: string, alpha: number) => color.replace(/\)$/, ` / ${alpha})`);
+/**
+ * `color` at the window opacity chosen in Settings → Interface → Window transparency. Panels use
+ * `--window-opacity`; popovers, tooltips and toasts (`elevated`) use the gentler `--window-opacity-elevated`
+ * so text floating over a see-through panel stays readable. Both are set by `applyWindowTransparency`.
+ */
+const atWindowOpacity = (color: string, layer: 'panel' | 'elevated' = 'panel') =>
+  `color-mix(in oklab, ${color} var(${layer === 'elevated' ? '--window-opacity-elevated' : '--window-opacity'}), transparent)`;
 
 // Tailwind v4 palette values (what the app used ad hoc before tokens existed).
 const TW = {
@@ -172,7 +175,6 @@ const LIGHT_INK = 'hsl(0 0% 100%)';
 
 function defineTheme(s: ThemeSpec): Theme {
   const dark = s.mode === 'dark';
-  const surfaceAlpha = s.surfaceAlpha ?? (dark ? 0.92 : 0.96);
   const vars: Record<ThemeToken, string> = {
     background: s.background,
     foreground: s.foreground,
@@ -212,9 +214,9 @@ function defineTheme(s: ThemeSpec): Theme {
     'warning-foreground': dark ? DARK_INK : LIGHT_INK,
     info: dark ? TW.sky400 : TW.sky700,
     'info-foreground': dark ? DARK_INK : LIGHT_INK,
-    surface: withAlpha(s.background, surfaceAlpha),
+    surface: atWindowOpacity(s.background),
     'surface-foreground': s.foreground,
-    'surface-elevated': withAlpha(s.popover, 0.98),
+    'surface-elevated': atWindowOpacity(s.popover, 'elevated'),
     glow: s.glow,
     scrim: dark ? 'hsl(0 0% 0% / 0.6)' : 'hsl(220 25% 10% / 0.35)',
     ...(dark ? DARK_QUALITY : { ...LIGHT_QUALITY, 'q-normal': s.foreground }),
@@ -255,7 +257,7 @@ const DARK_THEMES: Theme[] = [
     ring: 'hsl(240 4.9% 83.9%)',
     glow: '#dfb679',
     charts: ['hsl(220 70% 50%)', 'hsl(160 60% 45%)', 'hsl(30 80% 55%)', 'hsl(280 65% 60%)', 'hsl(340 75% 55%)'],
-    overrides: { 'surface-elevated': 'hsl(240 6% 10% / 0.98)' },
+    overrides: { 'surface-elevated': atWindowOpacity('hsl(240 6% 10%)', 'elevated') },
   }),
   defineTheme({
     id: 'burning-hells',
@@ -462,7 +464,6 @@ const DARK_THEMES: Theme[] = [
     input: 'hsl(268 8% 28%)',
     ring: 'hsl(265 85% 68%)',
     glow: 'hsl(268 90% 65%)',
-    surfaceAlpha: 0.94,
     charts: ['hsl(265 85% 68%)', 'hsl(190 80% 55%)', 'hsl(330 75% 62%)', 'hsl(45 85% 60%)', 'hsl(150 60% 52%)'],
   }),
 ];
@@ -738,6 +739,42 @@ export function applyTheme(theme: Theme, root: HTMLElement = document.documentEl
   }
 }
 
+/** Settings → Interface → Window transparency: 0% (opaque, the default) up to this many percent. */
+export const WINDOW_TRANSPARENCY_MAX = 90;
+const WINDOW_TRANSPARENCY_STORAGE_KEY = 'pd2-window-transparency';
+
+/** Clamps a saved transparency (percent) to 0..WINDOW_TRANSPARENCY_MAX; anything invalid is opaque. */
+export function clampWindowTransparency(percent: number | undefined): number {
+  if (typeof percent !== 'number' || !Number.isFinite(percent)) return 0;
+  return Math.min(WINDOW_TRANSPARENCY_MAX, Math.max(0, Math.round(percent)));
+}
+
+/**
+ * Sets `--window-opacity` (panels) and `--window-opacity-elevated` (popovers, tooltips, toasts: a third of
+ * the transparency) on `<html>` and caches the value for `initTheme`'s first paint.
+ */
+export function applyWindowTransparency(
+  percent: number | undefined,
+  root: HTMLElement = document.documentElement,
+): void {
+  const transparency = clampWindowTransparency(percent);
+  root.style.setProperty('--window-opacity', `${100 - transparency}%`);
+  root.style.setProperty('--window-opacity-elevated', `${Math.round(100 - transparency / 3)}%`);
+  try {
+    localStorage.setItem(WINDOW_TRANSPARENCY_STORAGE_KEY, String(transparency));
+  } catch {
+    // localStorage unavailable: first paint falls back to opaque.
+  }
+}
+
+function readStoredWindowTransparency(): number {
+  try {
+    return clampWindowTransparency(Number(localStorage.getItem(WINDOW_TRANSPARENCY_STORAGE_KEY) ?? 0));
+  } catch {
+    return 0;
+  }
+}
+
 function readStoredThemeId(): string | undefined {
   try {
     return localStorage.getItem(THEME_STORAGE_KEY) ?? undefined;
@@ -755,8 +792,10 @@ function readStoredThemeId(): string | undefined {
  */
 export function initTheme(): void {
   applyTheme(getTheme(readStoredThemeId()));
-  listen<{ themeId?: string }>('settings-updated', ({ payload }) => {
+  applyWindowTransparency(readStoredWindowTransparency());
+  listen<{ themeId?: string; windowTransparency?: number }>('settings-updated', ({ payload }) => {
     if (payload?.themeId) applyTheme(getTheme(payload.themeId));
+    if (payload) applyWindowTransparency(payload.windowTransparency);
   }).catch(() => {
     // Event bridge unavailable: the theme still follows on the next window load.
   });

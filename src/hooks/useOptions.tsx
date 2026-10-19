@@ -6,8 +6,17 @@ import merge from 'lodash/merge';
 import { emit, listen } from '@/lib/browser-events';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
-import { applyTheme, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
+import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
+
+export type NetWorthTickerAnchor =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'above-chat'
+  | 'custom';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -56,9 +65,11 @@ export interface ISettings {
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
   toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
   debugLoggingEnabled?: boolean;
-  netWorthTrackingEnabled?: boolean; // undefined = not yet asked; prompt once before storing history
+  netWorthTrackingEnabled?: boolean; // history snapshots on pd2trader.com; on unless explicitly turned off
   netWorthTickerEnabled?: boolean;
-  netWorthTickerAnchor?: 'top-left' | 'top-center' | 'top-right' | 'above-chat';
+  netWorthTickerAnchor?: NetWorthTickerAnchor;
+  /** Ticker window top-left in physical screen pixels, used when the anchor is 'custom' (set by dragging the ticker). */
+  netWorthTickerPosition?: { x: number; y: number };
   netWorthTickerOpacity?: number; // 0-100
   netWorthAutoSnapshotMinutes?: number; // 0 = off, otherwise >= 5
   netWorthToastThresholdHr?: number;
@@ -66,6 +77,7 @@ export interface ISettings {
   hotkeyKeySnapshot?: string; // '' = unbound
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
+  windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
 }
 
 interface OptionsContextProps {
@@ -110,7 +122,8 @@ const DEFAULT_SETTINGS: ISettings = {
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
-  netWorthTickerEnabled: true,
+  netWorthTrackingEnabled: true,
+  netWorthTickerEnabled: false,
   netWorthTickerAnchor: 'top-center',
   netWorthTickerOpacity: 90,
   netWorthAutoSnapshotMinutes: 15,
@@ -119,6 +132,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySnapshot: '',
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
+  windowTransparency: 0,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -262,6 +276,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isLoading) return;
     applyTheme(getTheme(settings.themeId));
   }, [isLoading, settings.themeId]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyWindowTransparency(settings.windowTransparency);
+  }, [isLoading, settings.windowTransparency]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

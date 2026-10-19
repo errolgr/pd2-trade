@@ -106,7 +106,14 @@ async function advance(ms: number) {
 
 async function renderHost(settings: Partial<ISettings> = {}, isLoading = false) {
   options = {
-    settings: { pd2Token: 'tok', account: 'Acc', ladder: 'ladder', mode: 'softcore', netWorthTrackingEnabled: true, ...settings } as Partial<ISettings>,
+    settings: {
+      pd2Token: 'tok',
+      account: 'Acc',
+      ladder: 'ladder',
+      mode: 'softcore',
+      netWorthTrackingEnabled: true,
+      ...settings,
+    } as Partial<ISettings>,
     isLoading,
   };
   const hook = renderHook(() => useNetWorth(), { wrapper: NetWorthProvider });
@@ -157,7 +164,6 @@ describe('NetWorthProvider status and owner', () => {
   it('is idle while settings load, then signed-out without a token or account', async () => {
     const { result, rerender } = await renderHost({ pd2Token: undefined }, true);
     expect(result.current.status).toBe('idle');
-    expect(result.current.needsConsent).toBe(false);
 
     options.isLoading = false;
     rerender();
@@ -166,21 +172,17 @@ describe('NetWorthProvider status and owner', () => {
     expect(syncSnapshot).not.toHaveBeenCalled();
   });
 
-  it('asks for consent only once settings loaded and tracking was never chosen', async () => {
-    const { result } = await renderHost({ netWorthTrackingEnabled: undefined });
-    expect(result.current.needsConsent).toBe(true);
-    expect(result.current.trackingEnabled).toBe(false);
+  it('saves history by default and respects an explicit off', async () => {
+    const { result, unmount } = await renderHost({ netWorthTrackingEnabled: undefined });
+    expect(result.current.trackingEnabled).toBe(true);
+    unmount();
+    const off = await renderHost({ netWorthTrackingEnabled: false });
+    expect(off.result.current.trackingEnabled).toBe(false);
   });
 
   it('derives the owner from account, ladder and mode', async () => {
     const { result } = await renderHost({ ladder: 'non-ladder', mode: 'hardcore' } as Partial<ISettings>);
     expect(result.current.owner).toEqual({ account: 'Acc', isLadder: false, isHardcore: true });
-  });
-
-  it('persists the tracking choice through settings', async () => {
-    const { result } = await renderHost();
-    act(() => result.current.setTrackingEnabled(false));
-    expect(updateSettings).toHaveBeenCalledWith({ netWorthTrackingEnabled: false });
   });
 });
 
@@ -223,7 +225,10 @@ describe('NetWorthProvider snapshots', () => {
     const response = snapshot('manual-snap');
     await act(async () => pending.resolve(response));
 
-    expect(syncs()).toEqual([['startup', true], ['manual', true]]);
+    expect(syncs()).toEqual([
+      ['startup', true],
+      ['manual', true],
+    ]);
     await expect(first).resolves.toBe(response);
     await expect(second).resolves.toBe(response);
     expect(result.current.status).toBe('ok');
@@ -311,7 +316,11 @@ describe('NetWorthProvider snapshots', () => {
     await renderHost();
     await act(() => requestNetWorthSnapshot('web'));
     await act(() => emit(NETWORTH_TAKE_SNAPSHOT_EVENT, {}));
-    expect(syncs()).toEqual([['startup', true], ['web', true], ['manual', true]]);
+    expect(syncs()).toEqual([
+      ['startup', true],
+      ['web', true],
+      ['manual', true],
+    ]);
   });
 });
 
@@ -376,7 +385,10 @@ describe('NetWorthProvider scheduler', () => {
     await advance(5 * MINUTE - 30_000);
     expect(syncs()).toEqual([['startup', true]]);
     await advance(30_000);
-    expect(syncs()).toEqual([['startup', true], ['interval', true]]);
+    expect(syncs()).toEqual([
+      ['startup', true],
+      ['interval', true],
+    ]);
 
     focused = false;
     await advance(20 * MINUTE);
@@ -402,7 +414,10 @@ describe('NetWorthProvider scheduler', () => {
 
     await advance(15 * MINUTE); // t=15m interval, unchanged holdings
     await advance(15 * MINUTE); // t=30m idle; last snapshot 15m ago < 30m probe spacing
-    expect(syncs()).toEqual([['startup', true], ['interval', true]]);
+    expect(syncs()).toEqual([
+      ['startup', true],
+      ['interval', true],
+    ]);
 
     await advance(15 * MINUTE); // t=45m probe, nothing stored
     expect(syncs().at(-1)).toEqual(['interval', false]);
@@ -410,7 +425,10 @@ describe('NetWorthProvider scheduler', () => {
 
     holdings = [{ key: 'ist', tab: '1', qty: 3 }];
     await advance(30 * MINUTE); // t=75m probe sees a change → stores a real snapshot
-    expect(syncs().slice(3)).toEqual([['interval', false], ['interval', true]]);
+    expect(syncs().slice(3)).toEqual([
+      ['interval', false],
+      ['interval', true],
+    ]);
 
     await advance(15 * MINUTE); // back to normal cadence
     expect(syncs().at(-1)).toEqual(['interval', true]);
@@ -450,10 +468,6 @@ describe('NetWorthProvider cross-window RPC', () => {
     bus.handlers.delete('networth:rpc-response');
     const failed = await rpc({ requestId: 'r2', method: 'startSession' });
     expect(failed).toEqual([{ requestId: 'r2', ok: false, error: 'Too many requests. Try again in a minute.' }]);
-
-    bus.handlers.delete('networth:rpc-response');
-    await rpc({ requestId: 'r3', method: 'setTrackingEnabled', enabled: false });
-    expect(updateSettings).toHaveBeenCalledWith({ netWorthTrackingEnabled: false });
   });
 
   it('ignores requests without an id and republishes state on request', async () => {
@@ -539,11 +553,15 @@ describe('ChildNetWorthProvider', () => {
 
   it('hosts its own state outside Tauri', async () => {
     vi.mocked(isTauri).mockReturnValue(false);
-    options = { settings: { pd2Token: 'tok', account: 'Acc', ladder: 'ladder' } as Partial<ISettings>, isLoading: false };
+    options = {
+      settings: { pd2Token: 'tok', account: 'Acc', ladder: 'ladder' } as Partial<ISettings>,
+      isLoading: false,
+    };
     const { result } = await renderChild();
     await flush();
 
     expect(result.current.owner).toEqual(OWNER);
-    expect(syncs()).toEqual([['startup', false]]);
+    // History is on by default
+    expect(syncs()).toEqual([['startup', true]]);
   });
 });

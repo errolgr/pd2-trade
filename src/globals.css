@@ -52,9 +52,12 @@
     --warning-foreground: hsl(240 10% 4%);
     --info: oklch(0.746 0.16 232.661);
     --info-foreground: hsl(240 10% 4%);
-    --surface: hsl(240 10% 3.9% / 0.92);
+    /* Window transparency (Settings → Interface): applyWindowTransparency in themes.ts sets both; opaque by default. */
+    --window-opacity: 100%;
+    --window-opacity-elevated: 100%;
+    --surface: color-mix(in oklab, hsl(240 10% 3.9%) var(--window-opacity), transparent);
     --surface-foreground: hsl(0 0% 98%);
-    --surface-elevated: hsl(240 6% 10% / 0.98);
+    --surface-elevated: color-mix(in oklab, hsl(240 6% 10%) var(--window-opacity-elevated), transparent);
     --glow: #dfb679;
     --scrim: hsl(0 0% 0% / 0.6);
     --q-unique: #dfb679;
