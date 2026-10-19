@@ -121,7 +121,7 @@ const AppController: React.FC = () => {
       if (await checkDiabloFocus()) openPanel('currency');
     },
     chat: () => togglePanel('chat'),
-    offers: () => togglePanel('tradeMessages'),
+    offers: () => openPanel('chat', { filter: 'selling' }),
     delist: handleDelistItem,
     snapshot: async () => {
       await takeSnapshot('manual');
@@ -143,7 +143,7 @@ const AppController: React.FC = () => {
   useAppUpdates();
   usePD2Auth();
 
-  // Chat button overlay follows its setting (chat and trade messages are keepMounted panels: no warm-up needed)
+  // Chat button overlay follows its setting (chat is a keepMounted panel: no warm-up needed)
   useEffect(() => {
     if (isLoading) return;
     if (settings.chatButtonOverlayEnabled === false) closePanel('chatButton');

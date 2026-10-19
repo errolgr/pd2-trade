@@ -8,7 +8,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
 import { findMarketLinks } from '../lib/market-links';
-import { Composer, type TemplateVars } from './Composer';
+import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -26,15 +26,20 @@ let settings: Record<string, unknown>;
 let getMarketListings: Mock;
 let onSend: Mock;
 
-function Harness({ initial = '' }: { initial?: string }) {
+function Harness({ initial = '', switchable = false }: { initial?: string; switchable?: boolean }) {
   const [value, setValue] = useState(initial);
+  const [channel, setChannel] = useState<ReplyChannel>('website');
   return (
     <ItemsProvider items={[]}>
-      <Composer value={value}
+      <Composer
+        value={value}
         onChange={setValue}
         onSend={onSend}
         placeholder="Message Alice..."
-        templateVars={VARS} />
+        templateVars={VARS}
+        channel={channel}
+        onChannelChange={switchable ? setChannel : undefined}
+      />
     </ItemsProvider>
   );
 }
@@ -111,6 +116,29 @@ describe('Composer sending', () => {
     render(<Harness initial="ty gl" />);
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onSend).toHaveBeenCalledWith('ty gl');
+  });
+
+  it('offers the Website/Whisper switch only when both reach the person; Whisper sends as a copied whisper', () => {
+    const { unmount } = render(<Harness initial="hi" />);
+    expect(screen.queryByRole('group', { name: 'Reply via' })).toBeNull();
+    unmount();
+
+    render(<Harness initial="hi"
+      switchable />);
+    const via = screen.getByRole('group', { name: 'Reply via' });
+    expect(
+      within(via)
+        .getByRole('radio', { name: /Website/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    fireEvent.click(within(via).getByRole('radio', { name: /Whisper/ }));
+    expect(
+      within(via)
+        .getByRole('radio', { name: /Whisper/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy whisper' }));
+    expect(onSend).toHaveBeenCalledWith('hi');
   });
 });
 

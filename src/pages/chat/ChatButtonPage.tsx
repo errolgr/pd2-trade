@@ -7,8 +7,8 @@ const ChatButtonPage: React.FC = () => {
   const { updateSettings } = useOptions();
   const { openPanel, togglePanel } = useOverlay();
   const unreadCount = useBadgeCount('chatUnread');
-  // One trade badge: whispers + website offers
-  const tradeOffersCount = useBadgeCount('tradeMessages') + useBadgeCount('tradeOffers');
+  // One offers badge: open trade whispers + website offers
+  const tradeOffersCount = useBadgeCount('whisperTrades') + useBadgeCount('tradeOffers');
 
   const handleDisableClick = () =>
     confirmToast({
@@ -26,7 +26,7 @@ const ChatButtonPage: React.FC = () => {
       <ChatButton
         handleClick={() => togglePanel('chat')}
         onSettingsClick={() => openPanel('settings')}
-        onTradeMessagesClick={() => togglePanel('tradeMessages')}
+        onOffersClick={() => openPanel('chat', { filter: 'selling' })}
         // Already open (e.g. mid-listing): just bring it forward instead of switching it to manage mode
         onManageListingsClick={() => openPanel('quickList', undefined, { placement: 'gameCenter', keepPayload: true })}
         onDisableClick={handleDisableClick}

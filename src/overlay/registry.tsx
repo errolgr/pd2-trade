@@ -3,7 +3,6 @@ import { QuickListPage } from '@/pages/quick-list/QuickListPage';
 import { StashValueWindow } from '@/pages/currency/StashValueWindow';
 import ChatPage from '@/pages/chat/ChatPage';
 import ChatButtonPage from '@/pages/chat/ChatButtonPage';
-import TradeMessagesPage from '@/pages/trade-messages/TradeMessagesPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import ChangelogPage from '@/pages/change-log/ChangeLogPage';
 import SignInPage from '@/pages/sign-in/SignInPage';
@@ -85,20 +84,6 @@ export const PANEL_DEFS: PanelDefs = {
     hideOnGameBlur: true,
     // the orb sits centered in the frame; only it (and the expanded fan) take clicks
     interactive: 'children',
-  },
-
-  // ---- tradeMessages (Group Chat/Trade) ----
-  tradeMessages: {
-    id: 'tradeMessages',
-    component: TradeMessagesPage,
-    size: { width: 600, height: 400 },
-    resizable: true,
-    placement: 'gameCenter',
-    persist: true,
-    keyboard: 'onPointerDown',
-    keepMounted: true,
-    hideOnGameBlur: true,
-    closeOnBlur: true,
   },
 
   // ---- settings (Group Settings) ----

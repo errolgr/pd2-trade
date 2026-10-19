@@ -1,20 +1,26 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import moment from 'moment';
-import { AlertTriangle, MessagesSquare, RotateCw, Search, SearchX, X } from 'lucide-react';
-import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
+import { AlertTriangle, Gamepad2, MessagesSquare, RotateCw, Search, SearchX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { listItem, listStagger, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { messagePreview } from '../lib/market-links';
-import { ChatAvatar, CountBadge, otherParticipant, participantName, ReadReceipt } from './chat-parts';
+import type { InboxFilter, InboxThread } from '../lib/inbox';
+import { ChatAvatar, CountBadge, ReadReceipt } from './chat-parts';
+
+const FILTERS: { value: InboxFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'selling', label: 'Selling' },
+  { value: 'buying', label: 'Buying' },
+];
 
 /** Compact relative time for the list: "now", "12m", "3:45 PM", "Yesterday", "Tue", "Mar 4". */
-function formatConversationTime(timestamp: string) {
+function formatConversationTime(timestamp: number) {
   const now = moment();
   const time = moment(timestamp);
   const minutes = now.diff(time, 'minutes');
@@ -26,9 +32,11 @@ function formatConversationTime(timestamp: string) {
   return time.format(time.isSame(now, 'year') ? 'MMM D' : 'MMM D, YY');
 }
 
+/** The inbox sidebar: one row per person (threads come newest first), with All/Selling/Buying filters and search. */
 export function ConversationList({
-  conversations,
-  currentUserId,
+  threads,
+  filter,
+  onFilterChange,
   selectedId,
   onSelect,
   loading,
@@ -36,10 +44,11 @@ export function ConversationList({
   signedIn,
   onReload,
 }: {
-  conversations: Conversation[];
-  currentUserId: string | undefined;
+  threads: InboxThread[];
+  filter: InboxFilter;
+  onFilterChange: (filter: InboxFilter) => void;
   selectedId: string | null;
-  onSelect: (conversationId: string) => void;
+  onSelect: (threadId: string) => void;
   loading: boolean;
   failed: boolean;
   signedIn: boolean;
@@ -47,24 +56,27 @@ export function ConversationList({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const query = searchQuery.toLowerCase().trim();
-  const totalUnread = conversations.reduce((total, c) => total + (c.unread_count || 0), 0);
+  const totalUnread = threads.reduce((total, thread) => total + thread.unread, 0);
 
-  // Search by participant name or latest message text; most recent message first
-  const visible = useMemo(() => {
-    const matches = query
-      ? conversations.filter((conversation) => {
-          const other = otherParticipant(conversation, currentUserId);
-          return [other?.display_name, other?.username, conversation.latest_message?.content].some((text) =>
-            text?.toLowerCase().includes(query),
-          );
-        })
-      : conversations;
-    const time = (c: Conversation) => (c.latest_message?.created_at ? Date.parse(c.latest_message.created_at) : 0);
-    return [...matches].sort((a, b) => time(b) - time(a));
-  }, [conversations, query, currentUserId]);
+  // Filter, then search by name, username, in-game account or latest message text
+  const visible = useMemo(
+    () =>
+      threads.filter(
+        (thread) =>
+          (filter === 'all' || (filter === 'selling' ? thread.selling : thread.buying)) &&
+          (!query ||
+            [
+              thread.name,
+              thread.participant?.username,
+              ...thread.people.map((person) => person.playerName),
+              thread.latest?.text,
+            ].some((text) => text?.toLowerCase().includes(query))),
+      ),
+    [threads, filter, query],
+  );
 
   let body: React.ReactNode;
-  if (loading && conversations.length === 0) {
+  if (loading && threads.length === 0) {
     body = (
       <div aria-busy
         className="space-y-0.5 p-2">
@@ -84,7 +96,7 @@ export function ConversationList({
         ))}
       </div>
     );
-  } else if (failed && conversations.length === 0) {
+  } else if (failed && threads.length === 0) {
     body = (
       <EmptyState
         compact
@@ -108,13 +120,25 @@ export function ConversationList({
         compact
         className="px-4 pt-10"
         icon={query ? <SearchX /> : <MessagesSquare />}
-        title={query ? 'No conversations match your search' : 'No conversations'}
+        title={
+          query
+            ? 'No conversations match your search'
+            : filter === 'selling'
+              ? 'Nothing you are selling right now'
+              : filter === 'buying'
+                ? 'Nothing you are buying right now'
+                : 'No conversations'
+        }
         description={
           query
             ? undefined
-            : signedIn
-              ? 'Start a chat from an offer in the Offers window.'
-              : 'Sign in to Project Diablo 2 in Settings → Account to chat.'
+            : filter === 'selling'
+              ? 'Offers on your listings and trade whispers from buyers show up here.'
+              : filter === 'buying'
+                ? 'Your offers and the trade whispers you send show up here.'
+                : signedIn
+                  ? 'Website chats and in-game whispers show up here.'
+                  : 'Sign in to Project Diablo 2 in Settings → Account to chat.'
         }
         action={
           query ? (
@@ -133,21 +157,19 @@ export function ConversationList({
         variants={listStagger}
         initial="hidden"
         animate="visible">
-        {visible.map((conversation) => {
-          const other = otherParticipant(conversation, currentUserId);
-          const name = participantName(other);
-          const latest = conversation.latest_message;
-          const selected = selectedId === conversation._id;
-          const unread = conversation.unread_count > 0;
-          const own = latest?.sender_id === currentUserId;
+        {visible.map((thread) => {
+          const { name, latest } = thread;
+          const selected = selectedId === thread.id;
+          const unread = thread.unread > 0;
+          const own = latest?.own;
           return (
             <motion.button
-              key={conversation._id}
+              key={thread.id}
               layout="position"
               variants={listItem}
               type="button"
               aria-current={selected ? 'true' : undefined}
-              onClick={() => onSelect(conversation._id)}
+              onClick={() => onSelect(thread.id)}
               className={cn(
                 'group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left outline-none',
                 'transition-colors duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -179,15 +201,24 @@ export function ConversationList({
                         unread ? 'font-semibold text-primary' : 'text-muted-foreground',
                       )}
                     >
-                      {formatConversationTime(latest.created_at)}
+                      {formatConversationTime(latest.at)}
                     </span>
                   )}
                 </div>
                 {latest && (
                   <div className="mt-0.5 flex items-center gap-1.5">
-                    {own && <ReadReceipt message={latest}
-                      readerId={other?._id}
-                      className="shrink-0" />}
+                    {latest.source === 'whisper' && (
+                      <Gamepad2
+                        role="img"
+                        aria-label="In-game whisper"
+                        className="size-3 shrink-0 text-muted-foreground/70"
+                      />
+                    )}
+                    {own && latest.message && (
+                      <ReadReceipt message={latest.message}
+                        readerId={thread.participant?._id}
+                        className="shrink-0" />
+                    )}
                     <span
                       className={cn(
                         'min-w-0 flex-1 truncate text-xs',
@@ -195,9 +226,9 @@ export function ConversationList({
                       )}
                     >
                       {own && <span className="text-muted-foreground">You: </span>}
-                      {messagePreview(latest.content)}
+                      {latest.text}
                     </span>
-                    {unread && <CountBadge count={conversation.unread_count} />}
+                    {unread && <CountBadge count={thread.unread} />}
                   </div>
                 )}
               </div>
@@ -226,6 +257,24 @@ export function ConversationList({
             )}
           </AnimatePresence>
         </div>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          aria-label="Show"
+          value={filter}
+          // Radix reports '' when the pressed item is clicked again: keep the current filter
+          onValueChange={(value) => value && onFilterChange(value as InboxFilter)}
+          className="w-full"
+        >
+          {FILTERS.map(({ value, label }) => (
+            <ToggleGroupItem key={value}
+              value={value}
+              className="h-7 text-xs">
+              {label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
         <div className="group relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors duration-(--dur-fast) group-focus-within:text-foreground" />
           <Input

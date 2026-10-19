@@ -43,7 +43,7 @@ afterEach(() => {
   cleanup();
   act(() => {
     setBadgeCount('chatUnread', 0);
-    setBadgeCount('tradeMessages', 0);
+    setBadgeCount('whisperTrades', 0);
     setBadgeCount('tradeOffers', 0);
   });
 });
@@ -63,13 +63,13 @@ describe('ChatButtonPage', () => {
 
   it('sums whisper and website offer badges into one trade badge, each source replacing its own share', () => {
     render(<ChatButtonPage />);
-    act(() => setBadgeCount('tradeMessages', 2));
+    act(() => setBadgeCount('whisperTrades', 2));
     expect(screen.getByLabelText('2 trade offers')).not.toBeNull();
 
     act(() => setBadgeCount('tradeOffers', 4));
     expect(screen.getByLabelText('6 trade offers')).not.toBeNull();
 
-    act(() => setBadgeCount('tradeMessages', 0));
+    act(() => setBadgeCount('whisperTrades', 0));
     expect(screen.getByLabelText('4 trade offers')).not.toBeNull();
   });
 
@@ -98,7 +98,8 @@ describe('ChatButtonPage', () => {
   it.each([
     ['Open PD2 Chat', 'togglePanel', ['chat']],
     ['Settings', 'openPanel', ['settings']],
-    ['Trade Messages', 'togglePanel', ['tradeMessages']],
+    // Offers: chat on the Selling filter
+    ['Offers', 'openPanel', ['chat', { filter: 'selling' }]],
     // keepPayload: an open quick list keeps the item being listed
     ['Manage Listings', 'openPanel', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
   ] as const)('%s calls %s', (name, method, args) => {

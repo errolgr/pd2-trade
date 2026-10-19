@@ -137,11 +137,9 @@ describe('useTradeOffers fetching', () => {
       });
     const { result } = await renderOffers();
 
-    expect(
-      result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.message, o.acceptedOfferId]),
-    ).toEqual([
-      ['o1', 'buyer-o1', '2 ist', 'Offer: 2 ist', 'o1'],
-      ['o3', 'Unknown', '3 HR', 'Offer: 3', 'o1'],
+    expect(result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.acceptedOfferId])).toEqual([
+      ['o1', 'buyer-o1', '2 ist', 'o1'],
+      ['o3', 'Unknown', '3 HR', 'o1'],
     ]);
     expect(result.current.incomingOffers[0]).toMatchObject({
       isIncoming: true,

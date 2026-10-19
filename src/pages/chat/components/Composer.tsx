@@ -1,6 +1,7 @@
 import React, { forwardRef, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, SendHorizontal } from 'lucide-react';
+import { ClipboardCopy, FileText, Gamepad2, Globe, SendHorizontal } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { fillTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
@@ -29,6 +30,9 @@ export interface TemplateVars {
 /** "/query" typed as the whole draft opens the template menu. */
 const SLASH_COMMAND = /^\/([^\n]*)$/;
 
+/** How a reply goes out: a website DM, or a `/w *account` command copied for the game chat. */
+export type ReplyChannel = 'website' | 'whisper';
+
 interface ComposerProps {
   value: string;
   onChange: (value: string) => void;
@@ -36,11 +40,14 @@ interface ComposerProps {
   onSend: (text: string) => void;
   placeholder: string;
   templateVars: TemplateVars;
+  channel: ReplyChannel;
+  /** Set when both channels reach the person: shows the Website/Whisper switch. */
+  onChannelChange?: (channel: ReplyChannel) => void;
 }
 
 /** Message input of the open thread; `ref` is the textarea (focus it to start typing). */
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
-  { value, onChange, onSend, placeholder, templateVars },
+  { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange },
   ref,
 ) {
   const { settings } = useOptions();
@@ -140,6 +147,30 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
   return (
     <div className="shrink-0 border-t border-border bg-card/50 px-3 pb-3 pt-2">
       <div className="mb-2 flex items-center gap-1.5">
+        {onChannelChange && (
+          <ToggleGroup
+            type="single"
+            size="sm"
+            variant="outline"
+            aria-label="Reply via"
+            value={channel}
+            onValueChange={(next) => next && onChannelChange(next as ReplyChannel)}
+            className="mr-1 shrink-0"
+          >
+            <ToggleGroupItem value="website"
+              title="Send a website message"
+              className="h-6 gap-1 px-2 text-xs">
+              <Globe className="size-3" />
+              Website
+            </ToggleGroupItem>
+            <ToggleGroupItem value="whisper"
+              title="Copy an in-game /w whisper"
+              className="h-6 gap-1 px-2 text-xs">
+              <Gamepad2 className="size-3" />
+              Whisper
+            </ToggleGroupItem>
+          </ToggleGroup>
+        )}
         {QUICK_REPLIES.map((reply) => (
           <button
             key={reply}
@@ -221,13 +252,13 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
           />
           <button
             type="button"
-            aria-label="Send"
-            title="Send (Enter)"
+            aria-label={channel === 'whisper' ? 'Copy whisper' : 'Send'}
+            title={channel === 'whisper' ? 'Copy the /w whisper to paste in game (Enter)' : 'Send (Enter)'}
             disabled={!canSend}
             onClick={send}
             className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs outline-none transition-[opacity,transform,background-color] duration-(--dur-fast) hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
           >
-            <SendHorizontal className="size-4" />
+            {channel === 'whisper' ? <ClipboardCopy className="size-4" /> : <SendHorizontal className="size-4" />}
           </button>
         </div>
       </div>

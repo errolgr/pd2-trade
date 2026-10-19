@@ -283,12 +283,12 @@ describe('AppController panels', () => {
     expect(takeSnapshot).toHaveBeenCalledWith('manual');
   });
 
-  it('chat and trade hotkeys toggle their panels', async () => {
+  it('chat hotkey toggles chat; offers hotkey opens chat on the Selling filter', async () => {
     await mount();
     await press(3);
     expect(h.overlay.togglePanel).toHaveBeenLastCalledWith('chat');
     await press(4);
-    expect(h.overlay.togglePanel).toHaveBeenLastCalledWith('tradeMessages');
+    expect(h.overlay.openPanel).toHaveBeenLastCalledWith('chat', { filter: 'selling' });
   });
 
   it('shows the chat button once settings load and closes it when the overlay gets disabled', async () => {

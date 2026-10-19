@@ -110,12 +110,11 @@ const DEFS = {
   currency: def('currency', { placement: 'screenCenter', persist: true }),
   chat: def('chat', { keepMounted: true, closeOnBlur: true }),
   chatButton: def('chatButton', { placement: 'gameBottomRight', keyboard: 'never', keepMounted: true }),
-  tradeMessages: def('tradeMessages', { keepMounted: true }),
   settings: def('settings', { closeOnBlur: true }),
   changeLog: def('changeLog'),
   signIn: def('signIn', { hideOnGameBlur: false }),
   delist: def('delist'),
-  netWorthTicker: def('netWorthTicker', { keyboard: 'never' }),
+  netWorthTicker: def('netWorthTicker', { keyboard: 'never', keepMounted: true }),
   netWorthPanel: def('netWorthPanel'),
 } satisfies PanelDefs;
 
@@ -157,7 +156,7 @@ describe('overlayReducer', () => {
   const rect = { x: 1, y: 2, width: 3, height: 4 };
 
   it('mounts only keepMounted panels, closed', () => {
-    expect(Object.keys(base.panels).sort()).toEqual(['chat', 'chatButton', 'itemSearch', 'tradeMessages']);
+    expect(Object.keys(base.panels).sort()).toEqual(['chat', 'chatButton', 'itemSearch', 'netWorthTicker']);
     expect(Object.values(base.panels).every((p) => !p!.open)).toBe(true);
   });
 
@@ -226,7 +225,7 @@ describe('computePlacement', () => {
 describe('OverlayProvider', () => {
   it('mounts keepMounted panels hidden at startup and others only when opened', () => {
     mount();
-    expect(mounts).toEqual({ itemSearch: 1, chat: 1, chatButton: 1, tradeMessages: 1 });
+    expect(mounts).toEqual({ itemSearch: 1, chat: 1, chatButton: 1, netWorthTicker: 1 });
     expect(shown('chat')).toBe(false);
     expect(frame('settings')).toBeNull();
   });
@@ -265,12 +264,12 @@ describe('OverlayProvider', () => {
   it('togglePanel closes a visible panel and opens a closed one, synchronously', () => {
     mount();
     act(() => {
-      api.togglePanel('tradeMessages');
-      expect(api.isOpen('tradeMessages')).toBe(true);
+      api.togglePanel('netWorthTicker');
+      expect(api.isOpen('netWorthTicker')).toBe(true);
     });
-    expect(shown('tradeMessages')).toBe(true);
-    act(() => api.togglePanel('tradeMessages'));
-    expect(shown('tradeMessages')).toBe(false);
+    expect(shown('netWorthTicker')).toBe(true);
+    act(() => api.togglePanel('netWorthTicker'));
+    expect(shown('netWorthTicker')).toBe(false);
   });
 
   it('hideOnGameBlur hides (without unmounting) while the game is unfocused, and toggle then re-shows', () => {
@@ -556,7 +555,7 @@ describe('closeOnBlur', () => {
     act(() => {
       api.openPanel('chat', { conversationId: 'c1' });
       api.openPanel('settings');
-      api.openPanel('tradeMessages');
+      api.openPanel('netWorthTicker');
     });
     act(() => focus.onChange!(false));
     act(() => vi.advanceTimersByTime(CLOSE_ON_BLUR_MS - 1));
@@ -565,7 +564,7 @@ describe('closeOnBlur', () => {
     act(() => vi.advanceTimersByTime(1));
     expect(api.isOpen('chat')).toBe(false);
     expect(api.isOpen('settings')).toBe(false);
-    expect(api.isOpen('tradeMessages')).toBe(true); // not a closeOnBlur panel
+    expect(api.isOpen('netWorthTicker')).toBe(true); // not a closeOnBlur panel
     // hidden, not unmounted: the conversation survives
     expect(mounts.chat).toBe(1);
     expect(screen.getByTestId('content-chat').textContent).toBe('{"conversationId":"c1"}#1');
@@ -585,19 +584,19 @@ describe('closeOnBlur', () => {
     act(() => {
       api.openPanel('chat');
       api.openPanel('settings');
-      api.openPanel('tradeMessages');
+      api.openPanel('netWorthTicker');
     });
     act(() => events.get(OUTSIDE_CLICK_EVENT)!());
     expect(api.isOpen('chat')).toBe(false);
     expect(api.isOpen('settings')).toBe(false);
-    expect(api.isOpen('tradeMessages')).toBe(true); // not a closeOnBlur panel
+    expect(api.isOpen('netWorthTicker')).toBe(true); // not a closeOnBlur panel
   });
 
   it('runs the outside-click hook only while a closeOnBlur panel is open', () => {
     tauri.on = true;
     mount();
     expect(invoke).toHaveBeenLastCalledWith('set_outside_click_watch', { enabled: false });
-    act(() => api.openPanel('tradeMessages'));
+    act(() => api.openPanel('netWorthTicker'));
     expect(invoke).not.toHaveBeenCalledWith('set_outside_click_watch', { enabled: true });
     act(() => api.openPanel('chat'));
     expect(invoke).toHaveBeenLastCalledWith('set_outside_click_watch', { enabled: true });

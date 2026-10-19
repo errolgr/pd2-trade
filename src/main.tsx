@@ -12,6 +12,7 @@ import { DialogProvider } from './hooks/useDialog';
 import { TrayProvider } from './hooks/useTray';
 import { ItemsProvider } from './hooks/useItems';
 import { NetWorthProvider } from './hooks/useNetWorth';
+import { WhisperHistoryProvider } from './hooks/useWhisperHistory';
 import { GlobalErrorHandler } from './components/GlobalErrorHandler';
 import AppController from './pages/landing/AppController';
 import DelistHandler from './pages/delist/DelistHandler';
@@ -91,13 +92,15 @@ const AppRoot: React.FC = () => (
         <TrayProvider>
           <ItemsProvider>
             <Pd2WebsiteProvider>
-              <NetWorthProvider>
-                <GlobalErrorHandler />
-                <AppController />
-                <DelistHandler />
-                <NetWorthOverlayController />
-                <OverlayRoot />
-              </NetWorthProvider>
+              <WhisperHistoryProvider>
+                <NetWorthProvider>
+                  <GlobalErrorHandler />
+                  <AppController />
+                  <DelistHandler />
+                  <NetWorthOverlayController />
+                  <OverlayRoot />
+                </NetWorthProvider>
+              </WhisperHistoryProvider>
             </Pd2WebsiteProvider>
           </ItemsProvider>
         </TrayProvider>

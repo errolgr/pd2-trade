@@ -8,6 +8,7 @@ import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { ThreadState } from '../hooks/useChatStore';
+import type { TimelineEntry } from '../lib/inbox';
 import { buildRows, MessageBubble } from './MessageBubble';
 
 /** Scrolling within this distance of the top of a thread loads the previous page. */
@@ -24,9 +25,9 @@ const SKELETON_BUBBLES = [
 ] as const;
 
 export function MessageList({
-  conversationId,
+  threadId,
+  entries,
   thread,
-  currentUserId,
   readerId,
   otherName,
   listings,
@@ -34,9 +35,11 @@ export function MessageList({
   onLoadOlder,
   onReload,
 }: {
-  conversationId: string;
+  threadId: string;
+  /** Website messages and whispers in display order. */
+  entries: TimelineEntry[];
+  /** The website conversation's loading state; whisper-only threads pass EMPTY_THREAD. */
   thread: ThreadState;
-  currentUserId: string | undefined;
   /** The other participant: own messages they have read show as Read. */
   readerId?: string;
   otherName: string;
@@ -46,11 +49,10 @@ export function MessageList({
   onReload: (conversationId: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { messages } = thread;
 
   // Variable-height virtual message list. anchorTo 'end' keeps the reading position when older pages are
   // prepended and keeps the latest message in view while pinned to the bottom (listing cards load and grow).
-  const rows = useMemo(() => buildRows(messages), [messages]);
+  const rows = useMemo(() => buildRows(entries), [entries]);
   // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -78,13 +80,13 @@ export function MessageList({
     (e: React.UIEvent) => {
       const el = e.target as HTMLElement;
       if (el.dataset.slot !== 'scroll-area-viewport') return;
-      if (el.scrollTop < LOAD_OLDER_THRESHOLD_PX) onLoadOlder(conversationId);
+      if (el.scrollTop < LOAD_OLDER_THRESHOLD_PX) onLoadOlder(threadId);
     },
-    [conversationId, onLoadOlder],
+    [threadId, onLoadOlder],
   );
 
   let placeholder: React.ReactNode = null;
-  if (messages.length === 0 && thread.loading) {
+  if (entries.length === 0 && thread.loading) {
     placeholder = (
       <div aria-busy
         className="space-y-2 p-4">
@@ -100,7 +102,7 @@ export function MessageList({
         ))}
       </div>
     );
-  } else if (messages.length === 0 && thread.failed) {
+  } else if (entries.length === 0 && thread.failed) {
     placeholder = (
       <EmptyState
         className="mx-auto mt-16 max-w-sm border-destructive/30 bg-destructive/5"
@@ -110,14 +112,14 @@ export function MessageList({
         action={
           <Button variant="outline"
             size="sm"
-            onClick={() => onReload(conversationId)}>
+            onClick={() => onReload(threadId)}>
             <RotateCw className="size-3.5" />
             Try again
           </Button>
         }
       />
     );
-  } else if (messages.length === 0) {
+  } else if (entries.length === 0) {
     placeholder = (
       <EmptyState
         className="mx-auto mt-16 max-w-sm"
@@ -151,13 +153,10 @@ export function MessageList({
                   )}
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
-                  <MessageBubble
-                    row={row}
-                    isOwnMessage={row.message.sender_id === currentUserId}
+                  <MessageBubble row={row}
                     readerId={readerId}
                     listings={listings}
-                    onRetry={onRetry}
-                  />
+                    onRetry={onRetry} />
                 </div>
               );
             })}

@@ -5,18 +5,45 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, t
 import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
-import { setBadgeCount, type PanelPayloads } from '@/overlay';
-import type { TradeMessageData } from '@/components/trade/TradeMessage';
+import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
+import { writeText } from '@/lib/browser-clipboard';
+import { exists, writeTextFile } from '@/lib/browser-fs';
+import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
+import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
+vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn(async () => {}) }));
+vi.mock('@/lib/browser-fs', () => ({
+  BaseDirectory: { AppConfig: 13 },
+  exists: vi.fn(async () => false),
+  mkdir: vi.fn(async () => {}),
+  readTextFile: vi.fn(),
+  writeTextFile: vi.fn(async () => {}),
+}));
+/** The Rust chat watcher's events (the whisper history provider listens to them). */
+const gameLog = vi.hoisted(() => new Map<string, Set<(event: { payload: unknown }) => void>>());
+vi.mock('@/lib/browser-events', () => ({
+  listen: vi.fn(async (event: string, handler: (event: { payload: unknown }) => void) => {
+    if (!gameLog.has(event)) gameLog.set(event, new Set());
+    gameLog.get(event)!.add(handler);
+    return () => gameLog.get(event)!.delete(handler);
+  }),
+}));
 /**
  * The chat panel's payload/payloadVersion/visible as usePanel() reports them; `openChat()` mimics
  * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read.
  */
 const panel = vi.hoisted(() => ({ payload: undefined as unknown, payloadVersion: 0, visible: true }));
-vi.mock('@/overlay', () => ({ setBadgeCount: vi.fn(), usePanel: () => panel }));
+vi.mock('@/overlay', () => ({
+  setBadgeCount: vi.fn(),
+  showToast: vi.fn(),
+  confirmToast: vi.fn(),
+  usePanel: () => panel,
+}));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 
 const NOW = new Date('2026-05-01T12:00:00Z');
@@ -55,7 +82,9 @@ let api: {
   deleteConversation: Mock<(conversationId: string) => Promise<boolean>>;
 };
 let messagesByConversation: Record<string, Message[]>;
-let incomingOffers: TradeMessageData[];
+let incomingOffers: TradeOffer[];
+let outgoingOffers: TradeOffer[];
+let createConversation: Mock<(participantIds: string[]) => Promise<Conversation>>;
 let audio: { src: string; volume: number }[];
 
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
@@ -125,11 +154,27 @@ async function openChat(payload: PanelPayloads['chat']) {
   await flush();
 }
 
+/** A line of the game's chat log, as the chat watcher emits it. */
+async function gameEvent(event: 'whisper-received' | 'trade-message', payload: unknown) {
+  await act(async () => {
+    for (const handler of gameLog.get(event) ?? []) handler({ payload });
+  });
+  await flush();
+}
+
+const whisperFrom = (from: string, message: string, isIncoming = true) =>
+  gameEvent('whisper-received', { isTrade: false, from, message, isJoin: false, isIncoming });
+
 async function renderWidget(conversations: Conversation[]) {
   api.getConversations.mockResolvedValue({ data: conversations });
   const onClose = vi.fn();
-  const view = render(<ChatOverlayWidget onClose={onClose} />);
-  rerenderWidget = () => view.rerender(<ChatOverlayWidget onClose={onClose} />);
+  const widget = () => (
+    <WhisperHistoryProvider>
+      <ChatOverlayWidget onClose={onClose} />
+    </WhisperHistoryProvider>
+  );
+  const view = render(widget());
+  rerenderWidget = () => view.rerender(widget());
   await flush();
   return { ...view, onClose };
 }
@@ -168,6 +213,13 @@ beforeEach(() => {
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
   incomingOffers = [];
+  outgoingOffers = [];
+  createConversation = vi.fn();
+  gameLog.clear();
+  vi.mocked(writeText).mockClear();
+  vi.mocked(writeTextFile).mockClear();
+  vi.mocked(exists).mockResolvedValue(false);
+  vi.mocked(showToast).mockClear();
   audio = [];
   api = {
     getConversations: vi.fn(),
@@ -191,7 +243,9 @@ beforeEach(() => {
         getMarketListings: noListings,
         getMarketListingsArchive: noListings,
         incomingOffers,
-        outgoingOffers: [],
+        outgoingOffers,
+        hiddenOutgoingOffers: [],
+        createConversation,
         ...api,
       }) as unknown as ReturnType<typeof usePd2Website>,
   );
@@ -317,7 +371,11 @@ describe('ChatOverlayWidget conversation list', () => {
 
   it('shows an error with a retry when loading conversations fails', async () => {
     api.getConversations.mockRejectedValue(new Error('offline'));
-    render(<ChatOverlayWidget onClose={vi.fn()} />);
+    render(
+      <WhisperHistoryProvider>
+        <ChatOverlayWidget onClose={vi.fn()} />
+      </WhisperHistoryProvider>,
+    );
     await flush();
     expect(screen.queryByText("Couldn't load conversations")).not.toBeNull();
     expect(screen.queryByText('Loading conversations...')).toBeNull();
@@ -501,8 +559,13 @@ describe('ChatOverlayWidget conversation switching', () => {
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
     const list = Promise.withResolvers<{ data: Conversation[] }>();
     api.getConversations.mockReturnValue(list.promise);
-    const view = render(<ChatOverlayWidget onClose={vi.fn()} />);
-    rerenderWidget = () => view.rerender(<ChatOverlayWidget onClose={vi.fn()} />);
+    const widget = () => (
+      <WhisperHistoryProvider>
+        <ChatOverlayWidget onClose={vi.fn()} />
+      </WhisperHistoryProvider>
+    );
+    const view = render(widget());
+    rerenderWidget = () => view.rerender(widget());
 
     await openChat({ conversationId: 'c1' });
     await act(async () => list.resolve({ data: [conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })] }));
@@ -730,7 +793,6 @@ describe('ChatOverlayWidget drafts and offers', () => {
         id: 'o1',
         isIncoming: true,
         playerName: 'alice',
-        message: 'Offer: 2 ist',
         itemName: 'Shako',
         timestamp: new Date(NOW),
         listingId: 'l1',
@@ -925,5 +987,203 @@ describe('ChatOverlayWidget message paging', () => {
     await scrollToTop();
     expect(api.getMessages.mock.calls.at(-1)).toEqual(['c1', { limit: 50, skip: 51 }]);
     expect(new Set(bubbles()).size).toBe(bubbles().length);
+  });
+});
+
+describe('ChatOverlayWidget unified inbox', () => {
+  /** Alice registered the in-game account AliceAcc. */
+  const withAccount = (conversation: Conversation, accounts: string[]) => {
+    conversation.participants[1].game = { accounts };
+    return conversation;
+  };
+  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const filterButton = (name: string) => screen.getByRole('radio', { name });
+  const sourceTags = () =>
+    Array.from(document.querySelectorAll('section [role="img"][aria-label]')).map((el) =>
+      el.getAttribute('aria-label'),
+    );
+  async function whisperAt(minutesAgo: number, from: string, message: string, isIncoming = true) {
+    vi.setSystemTime(NOW.getTime() - minutesAgo * 60_000);
+    await whisperFrom(from, message, isIncoming);
+    vi.setSystemTime(NOW);
+  }
+  async function type(text: string) {
+    await act(async () => {
+      fireEvent.change(composer(), { target: { value: text } });
+    });
+    await act(async () => {
+      fireEvent.keyDown(composer(), { key: 'Enter' });
+    });
+    await flush();
+  }
+
+  it("merges a linked sender's whispers into their website thread, interleaved by time with source tags", async () => {
+    messagesByConversation.c1 = [
+      msg('a1', 'c1', 'alice', 'website hi', 10, [ME]),
+      msg('a2', 'c1', ME, 'website reply', 2),
+    ];
+    await renderWidget([
+      withAccount(conv('c1', ALICE, { latest: msg('a2', 'c1', ME, 'website reply', 2) }), ['AliceAcc']),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    await whisperAt(5, '*aliceacc', 'whisper in between');
+
+    expect(rows().map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Alice'),
+      expect.stringContaining('bob'),
+    ]);
+    // The newest item is the website reply; the whisper counts as unread
+    expect(rowFor('Alice').textContent).toContain('website reply');
+    expect(headerUnread()).toBe('1');
+    expect(lastEmittedUnread()).toBe(1);
+
+    await select('Alice');
+    expect(bubbles()).toEqual(['website hi', 'whisper in between', 'website reply']);
+    expect(sourceTags()).toEqual(['Website message', 'In-game whisper', 'Website message']);
+    expect(headerUnread()).toBeNull();
+    expect(lastEmittedUnread()).toBe(0);
+
+    await whisperAt(0, 'AliceAcc', 'newest whisper');
+    expect(rowFor('Alice').textContent).toContain('newest whisper');
+    expect(bubbles().at(-1)).toBe('newest whisper');
+  });
+
+  it('gives an unknown sender an in-game only thread that replies by copying a /w whisper', async () => {
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await whisperAt(1, 'Zed', 'wtb shako?');
+    expect(rows().map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Zed'),
+      expect.stringContaining('Alice'),
+    ]);
+
+    await select('Zed');
+    expect(screen.queryByText('in-game only')).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Reply via' })).toBeNull();
+    expect(composer().placeholder).toBe('Whisper *Zed...');
+
+    await type('2 ist');
+    expect(writeText).toHaveBeenCalledWith('/w *Zed 2 ist');
+    expect(api.sendMessage).not.toHaveBeenCalled();
+    expect(bubbles()).toEqual(['wtb shako?', '2 ist']);
+    expect(screen.queryByText('· copied')).not.toBeNull();
+
+    // The game log showing it sent confirms the copied entry instead of adding another
+    await whisperAt(0, 'Zed', '2 ist', false);
+    expect(bubbles()).toEqual(['wtb shako?', '2 ist']);
+    expect(screen.queryByText('· copied')).toBeNull();
+
+    // Persisted, debounced
+    await flush(SAVE_DEBOUNCE_MS);
+    const saved = vi
+      .mocked(writeTextFile)
+      .mock.calls.filter(([file]) => file === WHISPER_HISTORY_FILENAME)
+      .at(-1)!;
+    expect(parseHistory(saved[1]).people.zed.messages.map((m) => [m.isIncoming, m.message])).toEqual([
+      [true, 'wtb shako?'],
+      [false, '2 ist'],
+    ]);
+  });
+
+  it('sends website DMs by default in a merged thread and whispers after switching to Whisper', async () => {
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('sent1', c, sender, content, 0));
+    await renderWidget([withAccount(conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }), ['AliceAcc'])]);
+    await select('Alice');
+
+    await type('via website');
+    expect(api.sendMessage).toHaveBeenCalledWith('c1', 'via website', ME);
+    expect(writeText).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('group', { name: 'Reply via' })).getByRole('radio', { name: /Whisper/ }));
+    });
+    await type('via game');
+    expect(writeText).toHaveBeenCalledWith('/w *AliceAcc via game');
+    expect(api.sendMessage).toHaveBeenCalledTimes(1);
+    expect(bubbles().at(-1)).toBe('via game');
+    expect(sourceTags().at(-1)).toBe('In-game whisper');
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Whisper copied' }));
+  });
+
+  it('filters the list to Selling or Buying threads, and the offers payload opens on Selling', async () => {
+    incomingOffers = [
+      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol' },
+    ];
+    outgoingOffers = [
+      { id: 'o2', isIncoming: false, playerName: 'bob', itemName: 'Ber', timestamp: new Date(NOW), userId: 'bob' },
+    ];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
+      conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+    const names = () => rows().map((r) => ['Alice', 'bob', 'carol', 'Dan'].find((n) => r.textContent?.includes(n)));
+    expect(names().sort()).toEqual(['Alice', 'Dan', 'bob', 'carol']);
+
+    await act(async () => fireEvent.click(filterButton('Selling')));
+    expect(names().sort()).toEqual(['Dan', 'carol']);
+    await act(async () => fireEvent.click(filterButton('Buying')));
+    expect(names()).toEqual(['bob']);
+    await act(async () => fireEvent.click(filterButton('All')));
+    expect(names()).toHaveLength(4);
+
+    await openChat({ filter: 'selling' });
+    expect(filterButton('Selling').getAttribute('aria-checked')).toBe('true');
+    expect(names().sort()).toEqual(['Dan', 'carol']);
+    // Opening a conversation shows the full list again
+    await openChat({ conversationId: 'c1' });
+    expect(filterButton('All').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
+    settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
+    await renderWidget([]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+    await select('Dan');
+    const deals = screen.getByRole('list', { name: 'Offers with this user' });
+    expect(deals.textContent).toContain('Arach');
+    await act(async () => {
+      fireEvent.click(within(deals).getByRole('button', { name: /Sold/ }));
+    });
+    await flush();
+    expect(writeText).toHaveBeenCalledWith('/w *Dan Sorry, Arach is sold.');
+    expect(bubbles().at(-1)).toBe('Sorry, Arach is sold.');
+
+    await act(async () => {
+      fireEvent.click(within(deals).getByRole('button', { name: /Dismiss/ }));
+    });
+    expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+  });
+
+  it('starts the conversation on the first website message to an offers-only person', async () => {
+    incomingOffers = [
+      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol' },
+    ];
+    createConversation.mockResolvedValue(conv('c9', { id: 'carol', username: 'carol' }));
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('sent1', c, sender, content, 0));
+    await renderWidget([]);
+    await select('carol');
+    expect(screen.queryByText('in-game only')).toBeNull();
+
+    await type('still for sale?');
+    expect(createConversation).toHaveBeenCalledWith([ME, 'carol']);
+    expect(api.sendMessage).toHaveBeenCalledWith('c9', 'still for sale?', ME);
+    expect(rows()).toHaveLength(1);
+    expect(bubbles()).toEqual(['still for sale?']);
   });
 });
