@@ -12,7 +12,6 @@ export const changeLog = {
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',
   ],
-  '0.9.14': ['🔧 Disabled the browser right-click menu on overlay windows'],
   '0.9.13': [
     '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',
   ],
