@@ -1,22 +1,34 @@
 import { useCallback } from 'react';
 import { ISettings } from '../useOptions';
-import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './usePD2Website';
 import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
 import qs from 'qs';
 
+const API_BASE = 'https://api.projectdiablo2.com';
+/** Conversations per request (the server's page cap). */
+export const CONVERSATION_PAGE_SIZE = 100;
+/** Messages per request: a thread opens on its newest page and loads older pages on scroll. */
+export const MESSAGE_PAGE_SIZE = 50;
+const GET_MESSAGES_TIMEOUT_MS = 15_000;
+
+export interface PageParams {
+  limit?: number;
+  skip?: number;
+}
+
 interface UseSocialActionsProps {
   settings: ISettings;
-  authData: AuthData;
   onAuthError?: () => void | Promise<void>;
 }
 
-interface UseSocialActionsReturn {
+/** List/send calls resolve null on a 401 (onAuthError has started the re-auth flow). */
+export interface SocialActions {
   deleteConversation: (conversationId: string) => Promise<void>;
-  getConversations: (participantId: string) => Promise<ConversationListResponse>;
-  getMessages: (conversationId: string) => Promise<MessageListResponse>;
-  sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
+  getConversations: (participantId: string, page?: PageParams) => Promise<ConversationListResponse | null>;
+  /** One page of a thread, newest first ($sort created_at -1); `skip` counts messages newer than the page. */
+  getMessages: (conversationId: string, page?: PageParams) => Promise<MessageListResponse | null>;
+  sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message | null>;
   markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
   createConversation: (participantIds: string[]) => Promise<any>;
 }
@@ -30,14 +42,14 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   return queryString ? `${base}?${queryString}` : base;
 }
 
-export function useSocialActions({ settings, authData, onAuthError }: UseSocialActionsProps): UseSocialActionsReturn {
+export function useSocialActions({ settings, onAuthError }: UseSocialActionsProps): SocialActions {
   const deleteConversation = useCallback(
     async (conversationId: string): Promise<void> => {
       if (!settings?.pd2Token) {
         throw new Error('No auth token available');
       }
 
-      const response = await tauriFetch(`https://api.projectdiablo2.com/social/conversation/${conversationId}`, {
+      const response = await tauriFetch(`${API_BASE}/social/conversation/${conversationId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${settings.pd2Token}`,
@@ -52,15 +64,18 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
   );
 
   const getConversations = useCallback(
-    async (participantId: string): Promise<ConversationListResponse> => {
+    async (
+      participantId: string,
+      { limit = CONVERSATION_PAGE_SIZE, skip = 0 }: PageParams = {},
+    ): Promise<ConversationListResponse | null> => {
       if (!settings?.pd2Token) {
         throw new Error('No auth token available');
       }
 
       const query = {
         participant_ids: participantId,
-        $limit: 100,
-        $skip: 0,
+        $limit: limit,
+        $skip: skip,
         $resolve: {
           participants: true,
           unreadCount: true,
@@ -70,7 +85,7 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
         },
       };
 
-      const url = buildUrlWithQuery('https://api.projectdiablo2.com/social/conversation', query);
+      const url = buildUrlWithQuery(`${API_BASE}/social/conversation`, query);
       const response = await tauriFetch(url, {
         method: 'GET',
         headers: {
@@ -84,35 +99,46 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
   );
 
   const getMessages = useCallback(
-    async (conversationId: string): Promise<MessageListResponse> => {
+    async (
+      conversationId: string,
+      { limit = MESSAGE_PAGE_SIZE, skip = 0 }: PageParams = {},
+    ): Promise<MessageListResponse | null> => {
       if (!settings?.pd2Token) {
         throw new Error('No auth token available');
       }
 
       const query = {
         conversation_id: conversationId,
-        $sort: { created_at: 1 },
-        $limit: 500,
+        $sort: { created_at: -1 },
+        $limit: limit,
+        $skip: skip,
         $resolve: {
           sender: true,
         },
       };
 
-      const url = buildUrlWithQuery('https://api.projectdiablo2.com/social/message', query);
-      const response = await tauriFetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
-        },
-      });
-
-      return await handleApiResponse(response, onAuthError);
+      const url = buildUrlWithQuery(`${API_BASE}/social/message`, query);
+      // A hung request would leave the thread on its loading state forever
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), GET_MESSAGES_TIMEOUT_MS);
+      try {
+        const response = await tauriFetch(url, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${settings.pd2Token}`,
+          },
+          signal: controller.signal,
+        });
+        return await handleApiResponse(response, onAuthError);
+      } finally {
+        clearTimeout(timeout);
+      }
     },
     [settings, onAuthError],
   );
 
   const sendMessage = useCallback(
-    async (conversationId: string, content: string, senderId: string): Promise<Message> => {
+    async (conversationId: string, content: string, senderId: string): Promise<Message | null> => {
       if (!settings?.pd2Token) {
         throw new Error('No auth token available');
       }
@@ -124,7 +150,7 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
         reader_ids: [senderId], // The sender has read their own message
       };
 
-      const response = await tauriFetch('https://api.projectdiablo2.com/social/message', {
+      const response = await tauriFetch(`${API_BASE}/social/message`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${settings.pd2Token}`,
@@ -165,7 +191,7 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
         arrayFormat: 'indices',
         encodeValuesOnly: true,
       });
-      const url = `https://api.projectdiablo2.com/social/message?${queryString}`;
+      const url = `${API_BASE}/social/message?${queryString}`;
 
       const response = await tauriFetch(url, {
         method: 'PATCH',
@@ -191,7 +217,7 @@ export function useSocialActions({ settings, authData, onAuthError }: UseSocialA
         participant_ids: participantIds,
       };
 
-      const response = await tauriFetch('https://api.projectdiablo2.com/social/conversation', {
+      const response = await tauriFetch(`${API_BASE}/social/conversation`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${settings.pd2Token}`,

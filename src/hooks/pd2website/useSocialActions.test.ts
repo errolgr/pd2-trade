@@ -30,7 +30,7 @@ function lastCall() {
 
 function social(token: string | undefined, onAuthError = vi.fn()) {
   const settings = { pd2Token: token } as ISettings;
-  const { result } = renderHook(() => useSocialActions({ settings, authData: null, onAuthError }));
+  const { result } = renderHook(() => useSocialActions({ settings, onAuthError }));
   return { actions: result.current, onAuthError };
 }
 
@@ -72,17 +72,67 @@ describe('useSocialActions', () => {
     expect(init.headers.Authorization).toBe('Bearer tok');
   });
 
-  it('getMessages requests 500 messages sorted oldest-first with senders', async () => {
+  it('getConversations pages with $limit/$skip', async () => {
+    const { actions } = social('tok');
+    await actions.getConversations('u1', { limit: 100, skip: 200 });
+    const query = qs.parse(lastCall().url.split('?')[1]);
+    expect(query).toMatchObject({ $limit: '100', $skip: '200' });
+  });
+
+  it('getMessages requests the newest page first with senders', async () => {
     const { actions } = social('tok');
     await actions.getMessages('c1');
-    const { url } = lastCall();
+    const { url, init } = lastCall();
     expect(url.split('?')[0]).toBe('https://api.projectdiablo2.com/social/message');
     expect(qs.parse(url.split('?')[1])).toEqual({
       conversation_id: 'c1',
-      $sort: { created_at: '1' },
-      $limit: '500',
+      $sort: { created_at: '-1' },
+      $limit: '50',
+      $skip: '0',
       $resolve: { sender: 'true' },
     });
+    expect(init.headers.Authorization).toBe('Bearer tok');
+  });
+
+  it('getMessages skips past already-loaded messages for older pages', async () => {
+    const { actions } = social('tok');
+    await actions.getMessages('c1', { limit: 50, skip: 100 });
+    expect(qs.parse(lastCall().url.split('?')[1])).toMatchObject({
+      $sort: { created_at: '-1' },
+      $limit: '50',
+      $skip: '100',
+    });
+  });
+
+  it('getMessages aborts a hung request after 15s', async () => {
+    vi.useFakeTimers();
+    try {
+      fetchMock.mockImplementationOnce((_url, init) => {
+        const { promise, reject } = Promise.withResolvers<Response>();
+        init!.signal!.addEventListener('abort', () => reject(new Error('aborted')));
+        return promise;
+      });
+      const { actions } = social('tok');
+      const assertion = expect(actions.getMessages('c1')).rejects.toThrow('aborted');
+      await vi.advanceTimersByTimeAsync(14_999);
+      expect(lastCall().init.signal!.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('getMessages clears its abort timer once the response arrives', async () => {
+    vi.useFakeTimers();
+    try {
+      const { actions } = social('tok');
+      await actions.getMessages('c1');
+      expect(vi.getTimerCount()).toBe(0);
+      expect(lastCall().init.signal!.aborted).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('sendMessage posts with the sender already in reader_ids', async () => {

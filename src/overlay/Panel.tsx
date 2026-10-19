@@ -18,6 +18,8 @@ export interface PanelContextValue<K extends PanelId = PanelId> {
   rect: OverlayRect;
   /** Programmatic move/resize (persisted when the panel persists). */
   setRect(r: Partial<OverlayRect>): void;
+  /** Open and actually shown (not placing, not hidden by game blur): e.g. "the user can see this content". */
+  visible: boolean;
 }
 
 const PanelContext = createContext<PanelContextValue | null>(null);
@@ -93,6 +95,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   const close = useCallback(() => closePanel(id), [closePanel, id]);
   const setRect = useCallback((r: Partial<OverlayRect>) => commitRect(id, r), [commitRect, id]);
   const rect = panel?.rect ?? { x: 0, y: 0, ...def.size };
+  const visible = isPanelVisible(def, panel, gameFocused);
 
   const ctx = useMemo<PanelContextValue>(
     () => ({
@@ -102,10 +105,11 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
       close,
       rect,
       setRect,
+      visible,
     }),
     // rect fields instead of the object: a new rect with the same values must not re-render the content
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, panel?.payload, panel?.payloadVersion, close, setRect, rect.x, rect.y, rect.width, rect.height],
+    [id, panel?.payload, panel?.payloadVersion, close, setRect, rect.x, rect.y, rect.width, rect.height, visible],
   );
 
   // Drag/resize mutate the frame's style directly and commit once on release (no per-move re-render).
@@ -176,7 +180,6 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   };
 
   if (!panel) return null;
-  const visible = isPanelVisible(def, panel, gameFocused);
   const Content = def.component;
   const childrenInteractive = def.interactive === 'children';
 

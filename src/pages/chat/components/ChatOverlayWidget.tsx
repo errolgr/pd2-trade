@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   X,
@@ -20,7 +21,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { fadeIn, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useChatApi } from '@/hooks/pd2website/useChatApi';
 import { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import { setBadgeCount, usePanel } from '@/overlay';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,8 @@ import moment from 'moment';
 import { cn } from '@/lib/utils';
 import { MessageContent } from './MessageContent';
 import { findMarketLinks, messagePreview } from '../lib/market-links';
-import { useChatListings } from '../hooks/useChatListings';
+import { useChatListings, type ChatListingState } from '../hooks/useChatListings';
+import { EMPTY_THREAD, totalUnreadCount, useChatStore, type ChatMessage } from '../hooks/useChatStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,38 +43,56 @@ interface ChatOverlayWidgetProps {
   onClose: () => void;
 }
 
+/** Scrolling within this distance of the top of a thread loads the previous page. */
+const LOAD_OLDER_THRESHOLD_PX = 120;
+/** Scrolled within this distance of the bottom counts as "pinned": growing rows keep the latest message in view. */
+const PINNED_THRESHOLD_PX = 80;
+
+interface MessageRow {
+  message: ChatMessage;
+  /** Stable across the server ack of an own send. */
+  key: string;
+  startsDay: boolean;
+  continuesGroup: boolean;
+}
+
+function buildRows(messages: ChatMessage[]): MessageRow[] {
+  return messages.map((message, index) => {
+    const previous = index > 0 ? messages[index - 1] : null;
+    const startsDay = !previous || !moment(message.created_at).isSame(previous.created_at, 'day');
+    const continuesGroup =
+      !!previous &&
+      !startsDay &&
+      previous.sender_id === message.sender_id &&
+      moment(message.created_at).diff(previous.created_at, 'minutes') < 5;
+    return { message, key: message.clientId ?? message._id, startsDay, continuesGroup };
+  });
+}
+
+/** A panel-requested conversation that is not in the list yet; `reloaded` once the list was refetched for it. */
+interface ConversationRequest {
+  conversationId: string;
+  version: number;
+  reloaded: boolean;
+}
+
 export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
-  const { authData, subscribeSocket } = usePd2Website();
-  // keepMounted panel: payload is undefined until the first openPanel('chat', ...)
-  const { payload, payloadVersion } = usePanel<'chat'>();
-  const { settings } = useOptions();
   const {
-    deleteConversation: deleteConversationApi,
+    authData,
+    subscribeSocket,
     getConversations,
     getMessages,
-    sendMessage: sendMessageApi,
+    sendMessage,
     markMessagesAsRead,
-  } = useChatApi(authData?.accessToken);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loadingConversations, setLoadingConversations] = useState(false);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+    deleteConversation,
+  } = usePd2Website();
+  // keepMounted panel: payload is undefined until the first openPanel('chat', ...)
+  const { payload, payloadVersion, visible } = usePanel<'chat'>();
+  const { settings } = useOptions();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
-  const messagesRef = useRef<Message[]>([]);
-  const selectedConversationRef = useRef<Conversation | null>(null);
-  const loadConversationsRef = useRef<(() => Promise<void>) | null>(null);
-  const processedMessagesRef = useRef<Set<string>>(new Set());
-  // Listings linked in the open conversation render as item cards.
-  const linkedListingIds = useMemo(
-    () => messages.flatMap((message) => findMarketLinks(message.content).map((link) => link.listingId)),
-    [messages],
-  );
-  const listings = useChatListings(linkedListingIds);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -91,232 +110,61 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     }
   }, []);
 
-  // Mark unread messages as read
-  const markUnreadMessagesAsRead = useCallback(
-    async (messages: Message[]) => {
-      if (!currentUserId) return;
-
-      // Use ref to get the latest selected conversation
-      const currentSelectedConversation = selectedConversationRef.current;
-      if (!currentSelectedConversation) return;
-
-      // Find messages that:
-      // 1. Are sent by the other participant (user is recipient)
-      // 2. Haven't been read by the current user yet
-      const unreadMessageIds = messages
-        .filter((message) => {
-          // User is recipient if they didn't send the message
-          const isRecipient = message.sender_id !== currentUserId;
-          // Check if message hasn't been read by current user
-          const isUnread = !message.reader_ids?.includes(currentUserId);
-          return isRecipient && isUnread;
-        })
-        .map((message) => message._id);
-
-      console.log('[ChatOverlayWidget] Found unread messages:', {
-        unreadMessageIds,
-        count: unreadMessageIds.length,
-        messages: messages.map((m) => ({
-          id: m._id,
-          sender_id: m.sender_id,
-          reader_ids: m.reader_ids,
-          isRecipient: m.sender_id !== currentUserId,
-          isUnread: !m.reader_ids?.includes(currentUserId),
-        })),
-      });
-
-      if (unreadMessageIds.length > 0) {
-        try {
-          await markMessagesAsRead(unreadMessageIds, currentUserId);
-
-          // Update the messages in cache and state to reflect read status
-          const updatedMessages = messages.map((message) => {
-            if (unreadMessageIds.includes(message._id)) {
-              return {
-                ...message,
-                reader_ids: [...(message.reader_ids || []), currentUserId],
-              };
-            }
-            return message;
-          });
-
-          // Update cache
-          messagesCacheRef.current.set(currentSelectedConversation._id, updatedMessages);
-
-          // Update state
-          setMessages(updatedMessages);
-
-          // Update conversation unread_count
-          setConversations((prev) => {
-            const updated = prev.map((conv) => {
-              if (conv._id === currentSelectedConversation._id) {
-                const oldUnreadCount = conv.unread_count || 0;
-                const newUnreadCount = Math.max(0, oldUnreadCount - unreadMessageIds.length);
-                console.log('[ChatOverlayWidget] Updating conversation unread_count:', {
-                  conversationId: conv._id,
-                  oldUnreadCount,
-                  newUnreadCount,
-                  decrementBy: unreadMessageIds.length,
-                });
-                const updatedConv = {
-                  ...conv,
-                  unread_count: newUnreadCount,
-                };
-                // Also update the selected conversation state
-                setSelectedConversation(updatedConv);
-                return updatedConv;
-              }
-              return conv;
-            });
-            console.log(
-              '[ChatOverlayWidget] Updated conversations list:',
-              updated.map((c) => ({
-                id: c._id,
-                unread_count: c.unread_count,
-              })),
-            );
-            return updated;
-          });
-        } catch (error) {
-          console.error('Failed to mark messages as read:', error);
-        }
-      } else {
-        console.log('[ChatOverlayWidget] No unread messages to mark as read');
-      }
-    },
-    [currentUserId, markMessagesAsRead],
+  const api = useMemo(
+    () => ({ getConversations, getMessages, sendMessage, markMessagesAsRead, deleteConversation }),
+    [getConversations, getMessages, sendMessage, markMessagesAsRead, deleteConversation],
   );
-
-  // Load messages for a conversation
-  const loadMessages = useCallback(
-    async (conversationId: string) => {
-      // Always set loading to true when switching conversations
-      setLoadingMessages(true);
-
-      // Check cache first - show cached messages immediately for better UX
-      const cachedMessages = messagesCacheRef.current.get(conversationId);
-      if (cachedMessages && cachedMessages.length > 0) {
-        // Use setTimeout to ensure loading state is visible briefly
-        setTimeout(() => {
-          setMessages(cachedMessages);
-          setLoadingMessages(false);
-          // Mark unread messages as read
-          markUnreadMessagesAsRead(cachedMessages);
-          // Scroll to bottom after messages load
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
-        }, 50);
-      }
-
-      // Always fetch from API to ensure we have the latest messages, then merge with cache
-      try {
-        const response = await getMessages(conversationId);
-        const apiMessages = response.data || [];
-
-        // Merge API messages with cached messages (API messages take precedence, but keep any newer cached messages)
-        const messageMap = new Map<string, Message>();
-
-        // First, add all API messages
-        apiMessages.forEach((msg) => {
-          messageMap.set(msg._id, msg);
-        });
-
-        // Then, add any cached messages that aren't in the API response (newer messages from socket)
-        if (cachedMessages) {
-          cachedMessages.forEach((msg) => {
-            if (!messageMap.has(msg._id)) {
-              messageMap.set(msg._id, msg);
-            }
-          });
-        }
-
-        // Sort by created_at
-        const mergedMessages = Array.from(messageMap.values()).sort((a, b) => {
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        });
-
-        // Update cache with merged messages
-        messagesCacheRef.current.set(conversationId, mergedMessages);
-
-        // Update state (only if we didn't already show cached messages, or if merged is different)
-        if (!cachedMessages || cachedMessages.length === 0 || mergedMessages.length !== cachedMessages.length) {
-          setMessages(mergedMessages);
-          setLoadingMessages(false);
-
-          // Mark unread messages as read
-          markUnreadMessagesAsRead(mergedMessages);
-
-          // Scroll to bottom after messages load
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
-        }
-      } catch (error) {
-        console.error('Failed to load messages:', error);
-        // If we have cached messages, keep showing them even if API fails
-        if (!cachedMessages || cachedMessages.length === 0) {
-          setLoadingMessages(false);
-        }
-      }
+  const chat = useChatStore({
+    currentUserId,
+    api,
+    subscribeSocket,
+    // Messages count as read only while their conversation is actually on screen
+    viewingConversationId: visible ? selectedConversationId : null,
+    onIncomingMessage: (_message, viewing) => {
+      // Whisper sound for messages outside the conversation on screen, if enabled
+      if (viewing || !(settings?.whisperNotificationsEnabled ?? true)) return;
+      playNotificationSound(settings?.whisperNotificationVolume ?? 70);
     },
-    [getMessages, markUnreadMessagesAsRead],
+  });
+  const { conversations, loadingConversations, conversationsLoaded, loadConversations, loadMessages, loadOlder } = chat;
+
+  const selectedConversation = conversations.find((c) => c._id === selectedConversationId) ?? null;
+  const thread = (selectedConversation && chat.threads[selectedConversation._id]) || EMPTY_THREAD;
+  const messages = thread.messages;
+
+  // Listings linked in the open conversation render as item cards.
+  const linkedListingIds = useMemo(
+    () => messages.flatMap((message) => findMarketLinks(message.content).map((link) => link.listingId)),
+    [messages],
   );
+  const listings = useChatListings(linkedListingIds);
 
-  // Load conversations
-  const loadConversations = useCallback(async () => {
-    if (!currentUserId) return;
-
-    setLoadingConversations(true);
-    try {
-      const response = await getConversations(currentUserId);
-      // Filter out conversations without a latest message
-      const conversationsWithMessages = (response.data || []).filter((conv) => conv.latest_message);
-
-      setConversations(conversationsWithMessages);
-    } catch (error) {
-      console.error('Failed to load conversations:', error);
-    } finally {
-      setLoadingConversations(false);
-    }
-  }, [currentUserId, getConversations]);
-
-  // Calculate total unread count
-  const totalUnreadCount = React.useMemo(() => {
-    const total = conversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);
-
-    return total;
-  }, [conversations]);
+  const totalUnread = totalUnreadCount(conversations);
 
   // Chat button badge
   useEffect(() => {
-    setBadgeCount('chatUnread', totalUnreadCount);
-  }, [totalUnreadCount]);
+    setBadgeCount('chatUnread', totalUnread);
+  }, [totalUnread]);
 
   // Fetch conversations on mount and when user is available
   // Guard on authData.accessToken to ensure we have a token before making API calls
   useEffect(() => {
-    console.log(
-      '[ChatOverlay] Load conversations effect, currentUserId:',
-      currentUserId,
-      'hasAccessToken:',
-      !!authData?.accessToken,
-    );
     if (currentUserId && authData?.accessToken) {
       loadConversations();
     }
   }, [currentUserId, authData?.accessToken, loadConversations]);
 
   // Select the conversation requested by openPanel('chat', { conversationId, conversation }) (every open
-  // bumps payloadVersion, so re-opening on the same conversation re-selects it)
-  useEffect(() => {
+  // bumps payloadVersion, so re-opening on the same conversation re-selects it). Adjusted during render.
+  const [handledPayloadVersion, setHandledPayloadVersion] = useState(0);
+  const [request, setRequest] = useState<ConversationRequest | null>(null);
+  if (payloadVersion !== handledPayloadVersion) {
+    setHandledPayloadVersion(payloadVersion);
     const conversationId = payload?.conversationId;
-    if (!conversationId) return;
-    const newConversation = payload.conversation as Conversation | undefined;
-
-    // A freshly created conversation (e.g. "Start chat" on an offer): inject it into the list and select it
-    if (newConversation) {
-      const formattedConversation: Conversation = {
+    const newConversation = payload?.conversation as Conversation | undefined;
+    if (conversationId && newConversation) {
+      // A freshly created conversation (e.g. "Start chat" on an offer): inject it into the list and select it
+      chat.upsertConversation({
         _id: newConversation._id,
         participant_ids: newConversation.participant_ids,
         created_at: newConversation.created_at,
@@ -325,232 +173,35 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         unread_count: 0, // New conversation has no unread messages
         participants: newConversation.participants || [],
         latest_message: undefined, // No messages yet
-      };
-      setConversations((prev) =>
-        prev.some((c) => c._id === conversationId)
-          ? prev.map((c) => (c._id === conversationId ? formattedConversation : c))
-          : [formattedConversation, ...prev],
-      );
-      setSelectedConversation(formattedConversation);
-      return;
-    }
-
-    // Otherwise select an existing conversation, waiting for / reloading the list if needed
-    const selectWhenLoaded = () =>
-      setConversations((current) => {
-        const conversation = current.find((c) => c._id === conversationId);
-        if (conversation) setSelectedConversation(conversation);
-        return current;
       });
-    setConversations((prev) => {
-      if (prev.length === 0) {
-        // Conversations aren't loaded yet: try again shortly
-        setTimeout(selectWhenLoaded, 500);
-        return prev;
-      }
-      const conversation = prev.find((c) => c._id === conversationId);
-      if (conversation) {
-        setSelectedConversation(conversation);
-      } else {
-        // Unknown conversation: reload the list and try again
-        loadConversationsRef.current?.().then(() => setTimeout(selectWhenLoaded, 500));
-      }
-      return prev;
-    });
-    // payload is read only when its version changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payloadVersion]);
-
-  // New messages pushed by the PD2 socket
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    return subscribeSocket<Message>('social/message_pushed', (newMessage) => {
-      // Atomic de-duping check: prevent duplicate processing
-      // Check if this message has already been processed
-      if (processedMessagesRef.current.has(newMessage._id)) {
-        return;
-      }
-
-      // Mark as processed immediately to prevent duplicate processing
-      processedMessagesRef.current.add(newMessage._id);
-
-      // Clean up old message IDs (keep only last 500)
-      if (processedMessagesRef.current.size > 500) {
-        const idsArray = Array.from(processedMessagesRef.current);
-        processedMessagesRef.current = new Set(idsArray.slice(-500));
-      }
-
-      // Get current selected conversation before updating conversations list
-      const currentSelectedConversation = selectedConversationRef.current;
-      const currentSelectedConversationId = currentSelectedConversation?._id;
-
-      // Update conversations list locally (avoid server call which can race with FIFO socket)
-      const isFromOtherUser = newMessage.sender_id !== currentUserId;
-      setConversations((prev) => {
-        const existingConv = prev.find((c) => c._id === newMessage.conversation_id);
-        if (existingConv) {
-          const shouldIncrementUnread =
-            isFromOtherUser && newMessage.conversation_id !== currentSelectedConversation?._id;
-          return prev.map((conv) => {
-            if (conv._id === newMessage.conversation_id) {
-              return {
-                ...conv,
-                latest_message: newMessage,
-                unread_count: shouldIncrementUnread ? (conv.unread_count || 0) + 1 : conv.unread_count,
-              };
-            }
-            return conv;
-          });
-        } else if (isFromOtherUser) {
-          // New conversation - reload from server
-          if (loadConversationsRef.current) {
-            loadConversationsRef.current();
-          }
-        }
-        return prev;
-      });
-
-      // Play notification sound if user is recipient and conversation is not currently open
-      const isCurrentConversationOpen =
-        currentSelectedConversation && newMessage.conversation_id === currentSelectedConversation._id;
-      if (newMessage.sender_id !== currentUserId && !isCurrentConversationOpen) {
-        // Play notification sound for new messages in other conversations if general notifications are enabled
-        const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
-        if (generalEnabled) {
-          const volume = settings?.whisperNotificationVolume ?? 70;
-          playNotificationSound(volume);
-        }
-      }
-
-      // Always add the new message to the cache for its conversation (even if not currently open)
-      const conversationId = newMessage.conversation_id;
-      const cachedMessagesForConversation = messagesCacheRef.current.get(conversationId) || [];
-      const messageExistsInCache = cachedMessagesForConversation.some((m) => m._id === newMessage._id);
-
-      if (!messageExistsInCache) {
-        // Add message to cache
-        const updatedCachedMessages = [...cachedMessagesForConversation, newMessage];
-        messagesCacheRef.current.set(conversationId, updatedCachedMessages);
-
-        // If this conversation is currently open, also update the state
-        if (isCurrentConversationOpen) {
-          // Use functional update to only add the new message, avoiding full re-render
-          setMessages((prev) => {
-            // Check if message already exists in state (defensive check)
-            if (prev.some((m) => m._id === newMessage._id)) {
-              return prev; // Return previous state to avoid re-render
-            }
-            return [...prev, newMessage]; // Only add the new message
-          });
-
-          // Mark as read if user is recipient
-          if (newMessage.sender_id !== currentUserId) {
-            markMessagesAsRead([newMessage._id], currentUserId)
-              .then(() => {
-                // Update message with read status in cache
-                const readUpdatedMessages = updatedCachedMessages.map((m) => {
-                  if (m._id === newMessage._id) {
-                    return {
-                      ...m,
-                      reader_ids: [...(m.reader_ids || []), currentUserId],
-                    };
-                  }
-                  return m;
-                });
-                messagesCacheRef.current.set(conversationId, readUpdatedMessages);
-
-                // Update state only if message read status changed
-                setMessages((prev) =>
-                  prev.map((m) => {
-                    if (m._id === newMessage._id && !m.reader_ids?.includes(currentUserId)) {
-                      return {
-                        ...m,
-                        reader_ids: [...(m.reader_ids || []), currentUserId],
-                      };
-                    }
-                    return m;
-                  }),
-                );
-
-                // Update conversation unread_count (only update the specific conversation)
-                // Use functional update to avoid unnecessary re-renders
-                setConversations((prev) =>
-                  prev.map((conv) => {
-                    if (conv._id === conversationId && conv.unread_count > 0) {
-                      const newUnreadCount = Math.max(0, conv.unread_count - 1);
-                      const updatedConv = {
-                        ...conv,
-                        unread_count: newUnreadCount,
-                      };
-                      // Also update the selected conversation state if it matches (defer to avoid render during state update)
-                      if (currentSelectedConversationId === conversationId) {
-                        setTimeout(() => {
-                          setSelectedConversation((prevSelected) => {
-                            if (prevSelected?._id === conversationId) {
-                              return { ...prevSelected, unread_count: newUnreadCount };
-                            }
-                            return prevSelected;
-                          });
-                        }, 0);
-                      }
-                      return updatedConv;
-                    }
-                    return conv;
-                  }),
-                );
-              })
-              .catch((error) => {
-                console.error('Failed to mark new message as read:', error);
-              });
-          }
-        }
-      }
-    });
-  }, [
-    currentUserId,
-    subscribeSocket,
-    markMessagesAsRead,
-    settings?.whisperNotificationsEnabled,
-    settings?.whisperNotificationVolume,
-  ]);
-
-  // Load conversations
-
-  // Store loadConversations in ref
-  useEffect(() => {
-    loadConversationsRef.current = loadConversations;
-  }, [loadConversations]);
-
-  // Update refs when state changes
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
-
-  useEffect(() => {
-    selectedConversationRef.current = selectedConversation;
-  }, [selectedConversation]);
-
-  // Track the last loaded conversation ID to avoid reloading on push message updates
-  const lastLoadedConversationIdRef = useRef<string | null>(null);
-
-  // Track conversation ID separately to avoid re-fetching on object reference changes
-  const selectedConversationId = selectedConversation?._id ?? null;
-
-  // Load messages when a conversation is selected
-  useEffect(() => {
-    if (selectedConversationId) {
-      if (lastLoadedConversationIdRef.current !== selectedConversationId) {
-        lastLoadedConversationIdRef.current = selectedConversationId;
-        // Clear messages immediately when switching conversations to show loading state
-        setMessages([]);
-      }
-      loadMessages(selectedConversationId);
-    } else {
-      // Clear messages when no conversation is selected
-      lastLoadedConversationIdRef.current = null;
-      setMessages([]);
+      setSelectedConversationId(conversationId);
+      setRequest(null);
+    } else if (conversationId) {
+      // Otherwise select an existing conversation, once the list has (or a reload brought) it
+      setRequest({ conversationId, version: payloadVersion, reloaded: false });
     }
+  }
+  if (request) {
+    if (conversations.some((c) => c._id === request.conversationId)) {
+      setSelectedConversationId(request.conversationId);
+      setRequest(null);
+    } else if (request.reloaded && !loadingConversations) {
+      setRequest(null); // Unknown even after a reload: give up
+    }
+  }
+  // Unknown conversation: reload the list once
+  const reloadedForVersionRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!request || !conversationsLoaded || loadingConversations) return;
+    if (reloadedForVersionRef.current === request.version) return;
+    reloadedForVersionRef.current = request.version;
+    const { version } = request;
+    loadConversations().then(() => setRequest((r) => (r?.version === version ? { ...r, reloaded: true } : r)));
+  }, [request, conversationsLoaded, loadingConversations, loadConversations]);
+
+  // Load messages when a conversation is selected (cached messages show meanwhile)
+  useEffect(() => {
+    if (selectedConversationId) loadMessages(selectedConversationId);
   }, [selectedConversationId, loadMessages]);
 
   // Focus the composer when a conversation is opened (Input is not a forwardRef component)
@@ -559,91 +210,38 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (selectedConversationId) composerRef.current?.querySelector('input')?.focus();
   }, [selectedConversationId]);
 
-  // Load messages for a conversation
+  // Variable-height virtual message list. anchorTo 'end' keeps the reading position when older pages are
+  // prepended and keeps the latest message in view while pinned to the bottom (listing cards load and grow).
+  const rows = useMemo(() => buildRows(messages), [messages]);
+  // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () =>
+      messagesContainerRef.current?.querySelector<HTMLDivElement>('[data-slot="scroll-area-viewport"]') ?? null,
+    estimateSize: (index) =>
+      60 + (rows[index].startsDay ? 28 : 0) + (index === 0 ? 0 : rows[index].continuesGroup ? 4 : 12),
+    getItemKey: (index) => rows[index].key,
+    overscan: 8,
+    paddingStart: 12,
+    paddingEnd: 12,
+    anchorTo: 'end',
+    scrollEndThreshold: PINNED_THRESHOLD_PX,
+  });
 
-  // Track the last message count to only scroll when a new message is added
-  const lastMessageCountRef = useRef(0);
-
-  // Scroll to bottom only when a new message is added (not on read status updates)
+  // Scroll to the bottom when a message is appended (not when older pages are prepended)
+  const lastRowKey = rows.at(-1)?.key;
   useEffect(() => {
-    // Only scroll if the message count increased (new message added)
-    if (messages.length > lastMessageCountRef.current) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 50);
-    }
-    lastMessageCountRef.current = messages.length;
-  }, [messages.length]); // Only depend on length, not the entire messages array
+    if (lastRowKey) virtualizer.scrollToEnd();
+  }, [lastRowKey, virtualizer]);
 
-  // Cards replace listing links once their listings load and grow the list: keep the latest message in view
-  // unless the user has scrolled up.
-  const pinnedToBottomRef = useRef(true);
-  const trackPinnedToBottom = useCallback((e: React.UIEvent) => {
-    const el = e.target as HTMLElement;
-    if (el.dataset.slot !== 'scroll-area-viewport') return;
-    pinnedToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  }, []);
-  useEffect(() => {
-    if (pinnedToBottomRef.current) messagesEndRef.current?.scrollIntoView({ block: 'end' });
-  }, [listings]);
-
-  // Automatically mark new messages as read when they arrive while conversation is open
-  useEffect(() => {
-    if (!selectedConversation || !currentUserId || messages.length === 0) return;
-
-    // Find new unread messages from the other participant
-    const newUnreadMessages = messages.filter((message) => {
-      // User is recipient if they didn't send the message
-      const isRecipient = message.sender_id !== currentUserId;
-      // Check if message hasn't been read by current user
-      const isUnread = !message.reader_ids?.includes(currentUserId);
-      return isRecipient && isUnread;
-    });
-
-    // Mark all new unread messages as read in a single batch
-    if (newUnreadMessages.length > 0) {
-      const unreadMessageIds = newUnreadMessages.map((m) => m._id);
-      markMessagesAsRead(unreadMessageIds, currentUserId)
-        .then(() => {
-          // Update the messages in cache and state to reflect read status
-          const updatedMessages = messages.map((message) => {
-            if (unreadMessageIds.includes(message._id)) {
-              return {
-                ...message,
-                reader_ids: [...(message.reader_ids || []), currentUserId],
-              };
-            }
-            return message;
-          });
-
-          // Update cache
-          messagesCacheRef.current.set(selectedConversation._id, updatedMessages);
-
-          // Update state
-          setMessages(updatedMessages);
-
-          // Update conversation unread_count
-          setConversations((prev) =>
-            prev.map((conv) => {
-              if (conv._id === selectedConversation._id) {
-                const newUnreadCount = Math.max(0, (conv.unread_count || 0) - unreadMessageIds.length);
-                const updatedConv = {
-                  ...conv,
-                  unread_count: newUnreadCount,
-                };
-                // Also update the selected conversation state
-                setSelectedConversation(updatedConv);
-                return updatedConv;
-              }
-              return conv;
-            }),
-          );
-        })
-        .catch((error) => {
-          console.error('Failed to mark new messages as read:', error);
-        });
-    }
-  }, [messages, selectedConversation, currentUserId, markMessagesAsRead]);
+  const handleMessagesScroll = useCallback(
+    (e: React.UIEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.dataset.slot !== 'scroll-area-viewport' || !selectedConversationId) return;
+      if (el.scrollTop < LOAD_OLDER_THRESHOLD_PX) loadOlder(selectedConversationId);
+    },
+    [selectedConversationId, loadOlder],
+  );
 
   // Get the other participant in a conversation
   const getOtherParticipant = useCallback(
@@ -699,101 +297,26 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     return msgTime.format('MMM D');
   };
 
-  // Format message time for chat messages
-  const formatMessageTime = (timestamp: string) => {
-    return moment(timestamp).format('h:mm A');
-  };
-
-  // Send message
-  const sendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation || !currentUserId) return;
-
+  // Send message: it shows right away as a pending bubble; a failure stays on it with a retry
+  const handleSend = () => {
     const content = messageInput.trim();
-    const conversationId = selectedConversation._id;
-
-    // Clear input immediately for better UX
+    if (!content || !selectedConversation || !currentUserId) return;
     setMessageInput('');
-
-    try {
-      const newMessage = await sendMessageApi(conversationId, content, currentUserId);
-
-      // Add message to cache
-      const cachedMessages = messagesCacheRef.current.get(conversationId) || [];
-      messagesCacheRef.current.set(conversationId, [...cachedMessages, newMessage]);
-
-      // Update messages state
-      setMessages((prev) => [...prev, newMessage]);
-
-      // Update conversation's latest_message in the conversations list
-      setConversations((prev) => {
-        const updated = prev.map((conv) => {
-          if (conv._id === conversationId) {
-            return {
-              ...conv,
-              latest_message: newMessage,
-              updated_at: newMessage.created_at,
-            };
-          }
-          return conv;
-        });
-
-        // Sort conversations by latest message time (most recent first)
-        return updated.sort((a, b) => {
-          const aTime = a.latest_message?.created_at || a.updated_at || '';
-          const bTime = b.latest_message?.created_at || b.updated_at || '';
-          return new Date(bTime).getTime() - new Date(aTime).getTime();
-        });
-      });
-
-      // Update selected conversation state
-      setSelectedConversation((prev) => {
-        if (prev && prev._id === conversationId) {
-          return {
-            ...prev,
-            latest_message: newMessage,
-            updated_at: newMessage.created_at,
-          };
-        }
-        return prev;
-      });
-
-      // Scroll to bottom after sending
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      // Restore input on error
-      setMessageInput(content);
-    }
+    chat.send(selectedConversation._id, content);
   };
 
   // Handle Enter key to send message (ignored while an IME composition is active)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      sendMessage();
+      handleSend();
     }
   };
 
   // Delete/archive conversation
   const handleDeleteConversation = async (conversationId: string) => {
-    try {
-      await deleteConversationApi(conversationId);
-
-      // Remove conversation from list
-      setConversations((prev) => prev.filter((conv) => conv._id !== conversationId));
-
-      // Clear messages from cache
-      messagesCacheRef.current.delete(conversationId);
-
-      // If the deleted conversation was selected, clear selection
-      if (selectedConversation?._id === conversationId) {
-        setSelectedConversation(null);
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error('Failed to delete conversation:', error);
+    if (await chat.deleteConversation(conversationId)) {
+      setSelectedConversationId((current) => (current === conversationId ? null : current));
     }
   };
 
@@ -837,7 +360,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Chats</h1>
                 <AnimatePresence>
-                  {totalUnreadCount > 0 && (
+                  {totalUnread > 0 && (
                     <motion.span
                       key="unread"
                       variants={popIn}
@@ -845,9 +368,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                       animate="visible"
                       exit="exit"
                       className="rounded-full bg-success px-2 py-0.5 text-xs font-semibold tabular-nums text-success-foreground"
-                      title={`${totalUnreadCount} unread`}
+                      title={`${totalUnread} unread`}
                     >
-                      {totalUnreadCount}
+                      {totalUnread}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -944,7 +467,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                           variants={listItem}
                           type="button"
                           aria-current={isSelected ? 'true' : undefined}
-                          onClick={() => setSelectedConversation(conversation)}
+                          onClick={() => {
+                            setSelectedConversationId(conversation._id);
+                            setRequest(null);
+                          }}
                           className={cn(
                             'group relative flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left outline-none',
                             'transition-colors duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -990,28 +516,13 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                             </div>
                             {latestMessage && (
                               <div className="flex items-center gap-1">
-                                {(() => {
-                                  // Show read receipt only for own messages
-                                  if (latestMessage.sender_id === currentUserId) {
-                                    const otherParticipantId = otherParticipant?._id;
-                                    const readerIds = latestMessage.reader_ids || [];
-
-                                    // Check if the other participant has read the message
-                                    const isRead = otherParticipantId && readerIds.includes(otherParticipantId);
-
-                                    if (isRead) {
-                                      // Double check = read
-                                      return <CheckCheck aria-label="Read"
-                                        className="size-3 shrink-0 text-info" />;
-                                    }
-                                    // Single check = sent/delivered
-                                    return (
-                                      <Check aria-label="Sent"
-                                        className="size-3 shrink-0 text-muted-foreground" />
-                                    );
-                                  }
-                                  return null;
-                                })()}
+                                {latestMessage.sender_id === currentUserId && (
+                                  <ReadReceipt
+                                    message={latestMessage}
+                                    readerId={otherParticipant?._id}
+                                    className="shrink-0"
+                                  />
+                                )}
                                 <span
                                   className={cn(
                                     'truncate text-xs',
@@ -1070,13 +581,13 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea
-                  className="min-h-0 flex-1 overflow-hidden"
-                  ref={messagesContainerRef}
-                  onScrollCapture={trackPinnedToBottom}
-                >
-                  <div className="h-full">
-                    {loadingMessages ? (
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                  <ScrollArea
+                    className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
+                    ref={messagesContainerRef}
+                    onScrollCapture={handleMessagesScroll}
+                  >
+                    {messages.length === 0 && thread.loading ? (
                       <div aria-busy
                         className="space-y-3 p-4">
                         <div className="flex items-center justify-center gap-2 pb-1 text-sm text-muted-foreground">
@@ -1103,83 +614,44 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         className="py-16"
                       />
                     ) : (
-                      <div className="px-4 py-3">
-                        <AnimatePresence initial={false}>
-                          {messages.map((message, index) => {
-                            const isOwnMessage = message.sender_id === currentUserId;
-                            const previous = index > 0 ? messages[index - 1] : null;
-                            const startsDay =
-                              !previous || !moment(message.created_at).isSame(previous.created_at, 'day');
-                            const continuesGroup =
-                              !!previous &&
-                              !startsDay &&
-                              previous.sender_id === message.sender_id &&
-                              moment(message.created_at).diff(previous.created_at, 'minutes') < 5;
-
-                            // Determine read receipt status for own messages
-                            let readReceiptIcon = null;
-                            if (isOwnMessage) {
-                              const otherParticipantId = selectedParticipant?._id;
-                              const readerIds = message.reader_ids || [];
-
-                              // Check if the other participant has read the message
-                              const isRead = otherParticipantId && readerIds.includes(otherParticipantId);
-
-                              readReceiptIcon = isRead ? (
-                                // Double check = read
-                                <CheckCheck aria-label="Read"
-                                  className="size-3 text-info" />
-                              ) : (
-                                // Single check = sent/delivered
-                                <Check aria-label="Sent"
-                                  className="size-3 text-muted-foreground" />
-                              );
-                            }
-
-                            return (
-                              <motion.div
-                                key={message._id}
-                                variants={fadeInUp}
-                                initial="hidden"
-                                animate="visible"
-                                exit="exit"
-                                className={continuesGroup ? 'mt-1' : index === 0 ? '' : 'mt-3'}
-                              >
-                                {startsDay && (
-                                  <div className="mb-3 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                                    <span className="h-px flex-1 bg-border" />
-                                    {formatDayLabel(message.created_at)}
-                                    <span className="h-px flex-1 bg-border" />
-                                  </div>
-                                )}
-                                <div className={cn('flex', isOwnMessage ? 'justify-end' : 'justify-start')}>
-                                  <div
-                                    className={cn(
-                                      'max-w-[70%] rounded-2xl border px-3.5 py-2 text-foreground shadow-sm',
-                                      isOwnMessage
-                                        ? 'rounded-br-md border-primary/15 bg-primary/15'
-                                        : 'rounded-bl-md border-transparent bg-card',
-                                    )}
-                                  >
-                                    <MessageContent content={message.content}
-                                      listings={listings} />
-                                    <div className="mt-0.5 flex items-center justify-end gap-1">
-                                      <span className="text-[11px] tabular-nums text-muted-foreground">
-                                        {formatMessageTime(message.created_at)}
-                                      </span>
-                                      {readReceiptIcon}
-                                    </div>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                        </AnimatePresence>
-                        <div ref={messagesEndRef} />
+                      <div className="relative w-full"
+                        style={{ height: virtualizer.getTotalSize() }}>
+                        {virtualizer.getVirtualItems().map((item) => {
+                          const row = rows[item.index];
+                          return (
+                            <div
+                              key={item.key}
+                              ref={virtualizer.measureElement}
+                              data-index={item.index}
+                              className={cn(
+                                'absolute left-0 top-0 w-full px-4',
+                                row.continuesGroup ? 'pt-1' : item.index === 0 ? '' : 'pt-3',
+                              )}
+                              style={{ transform: `translateY(${item.start}px)` }}
+                            >
+                              <MessageRowView
+                                row={row}
+                                isOwnMessage={row.message.sender_id === currentUserId}
+                                readerId={selectedParticipant?._id}
+                                listings={listings}
+                                onRetry={chat.retry}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
-                  </div>
-                </ScrollArea>
+                  </ScrollArea>
+                  {thread.loadingOlder && (
+                    <div aria-busy
+                      className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
+                      <span className="flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1 text-xs text-muted-foreground shadow-sm">
+                        <Loader2 className="size-3.5 animate-spin" />
+                        Loading older messages...
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Message Input */}
                 <div
@@ -1193,7 +665,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     placeholder="Enter message..."
                     className="flex-1"
                   />
-                  <Button onClick={sendMessage}
+                  <Button onClick={handleSend}
                     size="sm"
                     disabled={!canSend}
                     className="h-9 gap-1.5 px-3.5">
@@ -1214,6 +686,81 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         </div>
       </WindowPanel>
     </MotionConfig>
+  );
+}
+
+/** Own messages: double check once `readerId` (the other participant) has read it, else a single check. */
+function ReadReceipt({ message, readerId, className }: { message: Message; readerId?: string; className?: string }) {
+  return readerId && message.reader_ids?.includes(readerId) ? (
+    <CheckCheck aria-label="Read"
+      className={cn('size-3 text-info', className)} />
+  ) : (
+    <Check aria-label="Sent"
+      className={cn('size-3 text-muted-foreground', className)} />
+  );
+}
+
+function MessageRowView({
+  row,
+  isOwnMessage,
+  readerId,
+  listings,
+  onRetry,
+}: {
+  row: MessageRow;
+  isOwnMessage: boolean;
+  readerId?: string;
+  listings: ReadonlyMap<string, ChatListingState>;
+  onRetry: (conversationId: string, clientId: string) => void;
+}) {
+  const { message, startsDay } = row;
+  return (
+    // Only messages that arrive while open animate in; history (and rows virtualized back in) appear as-is
+    <motion.div variants={fadeInUp}
+      initial={message.live ? 'hidden' : false}
+      animate="visible">
+      {startsDay && (
+        <div className="mb-3 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {formatDayLabel(message.created_at)}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      )}
+      <div className={cn('flex', isOwnMessage ? 'justify-end' : 'justify-start')}>
+        <div
+          aria-busy={message.status === 'sending' || undefined}
+          className={cn(
+            'max-w-[70%] rounded-2xl border px-3.5 py-2 text-foreground shadow-sm transition-opacity duration-(--dur-med)',
+            isOwnMessage ? 'rounded-br-md border-primary/15 bg-primary/15' : 'rounded-bl-md border-transparent bg-card',
+            message.status === 'sending' && 'opacity-60',
+            message.status === 'failed' && 'border-destructive/40',
+          )}
+        >
+          <MessageContent content={message.content}
+            listings={listings} />
+          <div className="mt-0.5 flex items-center justify-end gap-1">
+            {message.status === 'failed' && message.clientId ? (
+              <span className="text-[11px] text-destructive">
+                Failed ·{' '}
+                <button
+                  type="button"
+                  onClick={() => onRetry(message.conversation_id, message.clientId!)}
+                  className="rounded-sm font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                >
+                  Retry
+                </button>
+              </span>
+            ) : (
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {moment(message.created_at).format('h:mm A')}
+              </span>
+            )}
+            {isOwnMessage && !message.status && <ReadReceipt message={message}
+              readerId={readerId} />}
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

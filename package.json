@@ -53,6 +53,7 @@
     "@sentry/react": "^10.27.0",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.21",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-clipboard-manager": "~2.3.0",
     "@tauri-apps/plugin-fs": "^2.3.0",

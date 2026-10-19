@@ -4,16 +4,17 @@ import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useChatApi } from '@/hooks/pd2website/useChatApi';
 import { useOptions } from '@/hooks/useOptions';
 import { setBadgeCount, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
-vi.mock('@/hooks/pd2website/useChatApi', () => ({ useChatApi: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-/** The chat panel's payload/payloadVersion as usePanel() reports them; `openChat()` mimics openPanel('chat', ...). */
-const panel = vi.hoisted(() => ({ payload: undefined as unknown, payloadVersion: 0 }));
+/**
+ * The chat panel's payload/payloadVersion/visible as usePanel() reports them; `openChat()` mimics
+ * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read.
+ */
+const panel = vi.hoisted(() => ({ payload: undefined as unknown, payloadVersion: 0, visible: true }));
 vi.mock('@/overlay', () => ({ setBadgeCount: vi.fn(), usePanel: () => panel }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 
@@ -41,8 +42,13 @@ let rerenderWidget: () => void;
 let settings: Record<string, unknown>;
 let auth: { accessToken?: string; user?: { _id: string } } | null;
 let api: {
-  getConversations: Mock<(participantId: string) => Promise<{ data: Conversation[] }>>;
-  getMessages: Mock<(conversationId: string) => Promise<{ data: Message[] }>>;
+  getConversations: Mock<
+    (
+      participantId: string,
+      page?: { limit?: number; skip?: number },
+    ) => Promise<{ data: Conversation[]; total?: number }>
+  >;
+  getMessages: Mock<(conversationId: string, page?: { limit?: number; skip?: number }) => Promise<{ data: Message[] }>>;
   sendMessage: Mock<(conversationId: string, content: string, senderId: string) => Promise<Message>>;
   markMessagesAsRead: Mock<(ids: string[], userId: string) => Promise<void>>;
   deleteConversation: Mock<(conversationId: string) => Promise<void>>;
@@ -155,13 +161,19 @@ beforeEach(() => {
   handlers = new Map();
   panel.payload = undefined;
   panel.payloadVersion = 0;
+  panel.visible = true;
   settings = {};
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
   audio = [];
   api = {
     getConversations: vi.fn(),
-    getMessages: vi.fn(async (id: string) => ({ data: messagesByConversation[id] ?? [] })),
+    // Newest first, paged like the server
+    getMessages: vi.fn(async (id: string, { limit = 50, skip = 0 } = {}) => ({
+      data: [...(messagesByConversation[id] ?? [])]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(skip, skip + limit),
+    })),
     sendMessage: vi.fn(),
     markMessagesAsRead: vi.fn(async () => {}),
     deleteConversation: vi.fn(async () => {}),
@@ -175,9 +187,9 @@ beforeEach(() => {
         subscribeSocket,
         getMarketListings: noListings,
         getMarketListingsArchive: noListings,
+        ...api,
       }) as unknown as ReturnType<typeof usePd2Website>,
   );
-  vi.mocked(useChatApi).mockImplementation(() => api as unknown as ReturnType<typeof useChatApi>);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as unknown as ReturnType<typeof useOptions>);
   vi.mocked(setBadgeCount).mockReset();
   vi.stubGlobal(
@@ -192,13 +204,19 @@ beforeEach(() => {
       }
     },
   );
-  Element.prototype.scrollIntoView = vi.fn();
-  vi.spyOn(console, 'log').mockImplementation(() => {});
+  // The virtual message list renders the rows that fit its viewport: give the viewport a height (rows measure 0).
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.dataset.slot === 'scroll-area-viewport' ? 600 : 0;
+    },
+  });
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -211,7 +229,7 @@ describe('ChatOverlayWidget conversation list', () => {
       conv('c-new', ALICE, { unread: 2, latest: msg('m2', 'c-new', 'alice', 'you there?', 3) }),
     ]);
 
-    expect(api.getConversations).toHaveBeenCalledWith(ME);
+    expect(api.getConversations).toHaveBeenCalledWith(ME, { limit: 100, skip: 0 });
     expect(rows().map((r) => r.textContent)).toEqual([
       expect.stringContaining('Alice'),
       expect.stringContaining('bob'),
@@ -375,6 +393,46 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(headerUnread()).toBe('1');
   });
 
+  it('marks cached and freshly fetched unread messages read in a single request on open', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    messagesByConversation.c2 = [msg('b1', 'c2', 'bob', 'yo', 20), msg('b2', 'c2', 'bob', 'pushed earlier', 0)];
+    await renderWidget([
+      conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }),
+      conv('c2', BOB, { unread: 1, latest: msg('b1', 'c2', 'bob', 'yo', 20) }),
+    ]);
+    // Cached before the thread is opened
+    await fire('social/message_pushed', msg('b2', 'c2', 'bob', 'pushed earlier', 0));
+    expect(headerUnread()).toBe('2');
+
+    await select('bob');
+    await act(async () => rerenderWidget());
+    await flush(200);
+
+    expect(api.markMessagesAsRead.mock.calls).toEqual([[['b1', 'b2'], ME]]);
+    expect(headerUnread()).toBeNull();
+    expect(lastEmittedUnread()).toBe(0);
+  });
+
+  it('does not re-send a mark-read that is still in flight', async () => {
+    const pending = Promise.withResolvers<void>();
+    api.markMessagesAsRead.mockReturnValue(pending.promise);
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10)];
+    await renderWidget([conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    // More triggers while the request is pending: a re-render and a new push into the open thread
+    await act(async () => rerenderWidget());
+    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'again', 0));
+
+    expect(api.markMessagesAsRead.mock.calls).toEqual([
+      [['a1'], ME],
+      [['a2'], ME],
+    ]);
+    await act(async () => pending.resolve());
+    await flush();
+    expect(api.markMessagesAsRead).toHaveBeenCalledTimes(2);
+    expect(headerUnread()).toBeNull();
+  });
+
   it('opens a conversation requested through the panel payload, injecting it when new', async () => {
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     const fresh = conv('c-new', BOB);
@@ -383,7 +441,7 @@ describe('ChatOverlayWidget conversation switching', () => {
 
     expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('bob');
     expect(screen.queryByText('Say hi to bob.')).not.toBeNull();
-    expect(api.getMessages).toHaveBeenCalledWith('c-new');
+    expect(api.getMessages).toHaveBeenCalledWith('c-new', { limit: 50, skip: 0 });
   });
 
   it('opens an existing conversation requested by id', async () => {
@@ -515,17 +573,75 @@ describe('ChatOverlayWidget composer', () => {
     expect(input.value).toBe('draft');
   });
 
-  it('restores the draft when sending fails', async () => {
-    api.sendMessage.mockRejectedValue(new Error('network'));
-    const input = await openAlice();
-    fireEvent.change(input, { target: { value: 'hello' } });
+  async function sendText(input: HTMLInputElement, text: string) {
+    fireEvent.change(input, { target: { value: text } });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Send/ }));
     });
     await flush();
+  }
+  /** The bubble element of a message in the open conversation. */
+  const bubbleOf = (text: string) =>
+    Array.from(document.querySelectorAll('section .whitespace-pre-wrap')).find((el) => el.textContent === text)!
+      .parentElement!;
 
-    expect(input.value).toBe('hello');
-    expect(bubbles()).toEqual(['hi']);
+  it('shows a pending send as a dimmed bubble until the server acknowledges it', async () => {
+    const response = Promise.withResolvers<Message>();
+    api.sendMessage.mockReturnValue(response.promise);
+    const input = await openAlice();
+    await sendText(input, 'hello');
+
+    expect(input.value).toBe('');
+    expect(bubbles()).toEqual(['hi', 'hello']);
+    expect(bubbleOf('hello').getAttribute('aria-busy')).toBe('true');
+    expect(within(bubbleOf('hello')).queryByLabelText('Sent')).toBeNull();
+
+    await act(async () => response.resolve(msg('srv1', 'c1', ME, 'hello', 0)));
+    await flush();
+    expect(bubbles()).toEqual(['hi', 'hello']);
+    expect(bubbleOf('hello').getAttribute('aria-busy')).toBeNull();
+    expect(within(bubbleOf('hello')).queryByLabelText('Sent')).not.toBeNull();
+  });
+
+  it('keeps a failed send on its bubble with a retry that resends it', async () => {
+    api.sendMessage.mockRejectedValueOnce(new Error('network'));
+    const input = await openAlice();
+    await sendText(input, 'hello');
+
+    expect(input.value).toBe('');
+    expect(bubbles()).toEqual(['hi', 'hello']);
+    expect(within(bubbleOf('hello')).queryByText(/Failed/)).not.toBeNull();
+    // The conversation preview only moves for delivered messages
+    expect(rowFor('Alice').textContent).not.toContain('hello');
+
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('srv1', c, sender, content, 0));
+    await act(async () => {
+      fireEvent.click(within(bubbleOf('hello')).getByRole('button', { name: 'Retry' }));
+    });
+    await flush();
+
+    expect(api.sendMessage.mock.calls).toEqual([
+      ['c1', 'hello', ME],
+      ['c1', 'hello', ME],
+    ]);
+    expect(bubbles()).toEqual(['hi', 'hello']);
+    expect(within(bubbleOf('hello')).queryByText(/Failed/)).toBeNull();
+    expect(rowFor('Alice').textContent).toContain('hello');
+  });
+
+  it('a socket echo of a pending send acknowledges it instead of adding a second bubble', async () => {
+    const response = Promise.withResolvers<Message>();
+    api.sendMessage.mockReturnValue(response.promise);
+    const input = await openAlice();
+    await sendText(input, 'hello');
+
+    await fire('social/message_pushed', msg('srv1', 'c1', ME, 'hello', 0));
+    expect(bubbles()).toEqual(['hi', 'hello']);
+    expect(bubbleOf('hello').getAttribute('aria-busy')).toBeNull();
+
+    await act(async () => response.resolve(msg('srv1', 'c1', ME, 'hello', 0)));
+    await flush();
+    expect(bubbles()).toEqual(['hi', 'hello']);
   });
 });
 
@@ -567,17 +683,41 @@ describe('ChatOverlayWidget socket messages', () => {
     expect(audio).toHaveLength(0);
   });
 
-  it('appends to the open conversation and marks it read without bumping unread or playing a sound', async () => {
+  it('appends to the open conversation and marks it read once, without bumping unread or playing a sound', async () => {
     await setup();
     await select('Alice');
     api.markMessagesAsRead.mockClear();
 
-    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'new while open', 0));
+    const pushed = msg('a2', 'c1', 'alice', 'new while open', 0);
+    await fire('social/message_pushed', pushed);
+    await fire('social/message_pushed', pushed);
+    await act(async () => rerenderWidget());
+    await flush();
 
     expect(bubbles()).toEqual(['hi', 'new while open']);
-    expect(api.markMessagesAsRead.mock.calls.flatMap(([ids]) => ids)).toContain('a2');
+    expect(api.markMessagesAsRead.mock.calls).toEqual([[['a2'], ME]]);
     expect(headerUnread()).toBe('1');
     expect(audio).toHaveLength(0);
+  });
+
+  it('treats the open conversation as background while the panel is hidden, and reads it when shown', async () => {
+    await setup();
+    await select('Alice');
+    api.markMessagesAsRead.mockClear();
+    panel.visible = false;
+    await act(async () => rerenderWidget());
+
+    await fire('social/message_pushed', msg('a2', 'c1', 'alice', 'while hidden', 0));
+    expect(bubbles()).toEqual(['hi', 'while hidden']);
+    expect(api.markMessagesAsRead).not.toHaveBeenCalled();
+    expect(headerUnread()).toBe('2');
+    expect(audio).toHaveLength(1);
+
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    await flush();
+    expect(api.markMessagesAsRead.mock.calls).toEqual([[['a2'], ME]]);
+    expect(headerUnread()).toBe('1');
   });
 
   it('does not count own messages echoed from another device as unread', async () => {
@@ -616,5 +756,66 @@ describe('ChatOverlayWidget socket messages', () => {
     expect(handlers.get('social/message_pushed')?.size).toBe(1);
     unmount();
     expect(handlers.get('social/message_pushed')?.size).toBe(0);
+  });
+});
+
+describe('ChatOverlayWidget message paging', () => {
+  /** `count` read messages from alice, one minute apart, oldest first ('m1' is the oldest). */
+  function history(count: number) {
+    return Array.from({ length: count }, (_, i) => msg(`m${i + 1}`, 'c1', 'alice', `line ${i + 1}`, count - i, [ME]));
+  }
+  async function scrollToTop() {
+    const viewport = document.querySelector('section [data-slot="scroll-area-viewport"]')!;
+    await act(async () => {
+      fireEvent.scroll(viewport, { target: { scrollTop: 0 } });
+    });
+    await flush();
+  }
+
+  it('opens on the newest page and loads older pages near the top until a short page', async () => {
+    messagesByConversation.c1 = history(120);
+    await renderWidget([conv('c1', ALICE, { latest: messagesByConversation.c1[119] })]);
+    await select('Alice');
+
+    expect(api.getMessages.mock.calls).toEqual([['c1', { limit: 50, skip: 0 }]]);
+    expect(bubbles()).toHaveLength(50);
+    expect(bubbles()[0]).toBe('line 71');
+    expect(bubbles().at(-1)).toBe('line 120');
+
+    await scrollToTop();
+    expect(api.getMessages.mock.calls.at(-1)).toEqual(['c1', { limit: 50, skip: 50 }]);
+    // The prepended page sits above the reading position, which stays on the previous top message
+    expect(bubbles()).toContain('line 71');
+    expect(bubbles()).not.toContain('line 21');
+
+    await scrollToTop();
+    expect(api.getMessages.mock.calls.at(-1)).toEqual(['c1', { limit: 50, skip: 100 }]);
+
+    // The last page was short: the start of the thread is reached
+    await scrollToTop();
+    expect(api.getMessages).toHaveBeenCalledTimes(3);
+    expect(new Set(bubbles()).size).toBe(bubbles().length);
+  });
+
+  it('does not page a thread whose first page was short', async () => {
+    messagesByConversation.c1 = history(3);
+    await renderWidget([conv('c1', ALICE, { latest: messagesByConversation.c1[2] })]);
+    await select('Alice');
+    await scrollToTop();
+    expect(api.getMessages).toHaveBeenCalledTimes(1);
+    expect(bubbles()).toEqual(['line 1', 'line 2', 'line 3']);
+  });
+
+  it('skips past messages pushed since the thread opened, so older pages do not repeat them', async () => {
+    messagesByConversation.c1 = history(60);
+    await renderWidget([conv('c1', ALICE, { latest: messagesByConversation.c1[59] })]);
+    await select('Alice');
+    const pushed = msg('m61', 'c1', 'alice', 'line 61', 0);
+    messagesByConversation.c1.push(pushed);
+    await fire('social/message_pushed', pushed);
+
+    await scrollToTop();
+    expect(api.getMessages.mock.calls.at(-1)).toEqual(['c1', { limit: 50, skip: 51 }]);
+    expect(new Set(bubbles()).size).toBe(bubbles().length);
   });
 });
