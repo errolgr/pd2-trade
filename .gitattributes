@@ -1,0 +1,5 @@
+# Keep node scripts LF on Windows (core.autocrlf=true) too. Vite's SSR transform only recognises an
+# LF hashbang; after `#!/usr/bin/env node\r\n` it hoists imports above the hashbang, so vitest fails
+# to load scripts/verify-updater.test.mjs ("Invalid or unexpected token"). Unix also can't run a
+# CRLF hashbang directly.
+scripts/*.mjs text eol=lf

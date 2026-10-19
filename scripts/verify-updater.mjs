@@ -151,7 +151,7 @@ export function checkConfig(root = ROOT) {
   const crateName = /^\[package\][^[]*?^name\s*=\s*"([^"]+)"/m.exec(cargoToml)?.[1];
   const crateVersion = /^\[package\][^[]*?^version\s*=\s*"([^"]+)"/m.exec(cargoToml)?.[1];
   const lockVersion = crateName
-    ? new RegExp(`\\[\\[package\\]\\]\\nname = "${crateName}"\\nversion = "([^"]+)"`).exec(read('src-tauri/Cargo.lock'))?.[1]
+    ? new RegExp(`\\[\\[package\\]\\]\\r?\\nname = "${crateName}"\\r?\\nversion = "([^"]+)"`).exec(read('src-tauri/Cargo.lock'))?.[1]
     : undefined;
   const versions = {
     'package.json': pkg.version,
