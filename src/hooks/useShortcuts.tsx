@@ -12,8 +12,11 @@ interface ShortcutConfig {
   handler: ShortcutHandler;
 }
 
-const formatShortcut = (modifier: 'ctrl' | 'alt', key: string): string => {
-  return `${modifier === 'ctrl' ? 'Control' : 'Alt'}+${key.toUpperCase()}`;
+// Right Alt is AltGr on many keyboard layouts; Windows reports it as Ctrl+Alt, so an Alt
+// shortcut also needs a Control+Alt alias to fire from the right Alt key.
+const formatShortcuts = (modifier: 'ctrl' | 'alt', key: string): string[] => {
+  const k = key.toUpperCase();
+  return modifier === 'ctrl' ? [`Control+${k}`] : [`Alt+${k}`, `Control+Alt+${k}`];
 };
 
 export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
@@ -53,24 +56,25 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 
         // Register new shortcuts in parallel
         await Promise.all(
-          shortcutsRef.current.map(async ({ modifier, key, handler }) => {
-            const shortcut = formatShortcut(modifier, key);
-            try {
-              await register(shortcut, (e) => {
-                if (e.state === 'Pressed') {
-                  handler();
-                }
-              });
-              registeredShortcuts.current.push(shortcut);
-            } catch (error: any) {
-              const msg = error ? error.toString().toLowerCase() : '';
-              if (msg.includes('already') || msg.includes('exists') || msg.includes('conflict')) {
+          shortcutsRef.current.flatMap(({ modifier, key, handler }) =>
+            formatShortcuts(modifier, key).map(async (shortcut) => {
+              try {
+                await register(shortcut, (e) => {
+                  if (e.state === 'Pressed') {
+                    handler();
+                  }
+                });
                 registeredShortcuts.current.push(shortcut);
-              } else {
-                console.error(`Failed to register shortcut ${shortcut}:`, error);
+              } catch (error: unknown) {
+                const msg = error ? String(error).toLowerCase() : '';
+                if (msg.includes('already') || msg.includes('exists') || msg.includes('conflict')) {
+                  registeredShortcuts.current.push(shortcut);
+                } else {
+                  console.error(`Failed to register shortcut ${shortcut}:`, error);
+                }
               }
-            }
-          }),
+            }),
+          ),
         );
       } catch (error) {
         console.error('Failed to load global shortcut plugin:', error);
