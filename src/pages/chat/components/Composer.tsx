@@ -198,7 +198,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </motion.div>
         )}
 
-        {/* Compact: one sideways-scrolling line (no scrollbar); the Website/Whisper switch drops to icons */}
+        {/* Compact: one sideways-scrolling line (no scrollbar). The Website/Whisper labels drop to icons only when the composer itself is under 380px wide */}
         <div
           role="toolbar"
           aria-label="Quick replies"
@@ -223,7 +223,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
                 >
                   <Globe className="size-3" />
-                  <span className="@max-[480px]:sr-only">Website</span>
+                  <span className="@max-[380px]:sr-only">Website</span>
                 </ToggleGroupItem>
               </Tip>
               <Tip label={whisperTip}>
@@ -233,7 +233,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
                 >
                   <Gamepad2 className="size-3" />
-                  <span className="@max-[480px]:sr-only">Whisper (copy)</span>
+                  <span className="@max-[380px]:sr-only">Whisper (copy)</span>
                 </ToggleGroupItem>
               </Tip>
             </ToggleGroup>

@@ -355,7 +355,7 @@ export function TraderSidebar({
                   className={actionButtonClass}
                   onClick={() => void copyAccount(whisperAccount)}>
                   <Copy className="size-3.5 shrink-0" />
-                  <span className="truncate">Copy whisper target</span>
+                  <span className="truncate">Copy whisper</span>
                 </button>
               </Tip>
             )}
