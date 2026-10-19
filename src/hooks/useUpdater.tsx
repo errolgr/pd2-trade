@@ -1,5 +1,5 @@
 // hooks/useUpdater.ts
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useDialog } from '@/hooks/useDialog';
@@ -26,14 +26,12 @@ export function useUpdater() {
     );
   };
 
-  const checkForUpdates = async (): Promise<Update> => {
-    const update = await check();
-    return update;
-  };
+  // Stable identity: useAppUpdates' periodic-check interval depends on it and would reset every render otherwise
+  const checkForUpdates = useCallback(async (): Promise<Update> => check(), []);
 
   // Function to download and install the update.
   // It uses the update object stored in state.
-  const downloadUpdate = async (updateInfo) => {
+  const downloadUpdate = async (updateInfo: Update | null) => {
     if (!updateInfo) {
       console.warn('No update available to download.');
       return;
@@ -47,14 +45,15 @@ export function useUpdater() {
     await updateInfo.downloadAndInstall((event) => {
       switch (event.event) {
         case 'Started':
-          contentLength = event.data.contentLength;
+          contentLength = event.data.contentLength ?? 0;
           break;
-        case 'Progress':
+        case 'Progress': {
           downloaded += event.data.chunkLength;
-          const newProgress = Math.min(100, Math.floor((downloaded / contentLength) * 100));
+          const newProgress = contentLength ? Math.min(100, Math.floor((downloaded / contentLength) * 100)) : 0;
           setProgress(newProgress);
           openDownloadDialog(newProgress);
           break;
+        }
         case 'Finished':
           setProgress(100);
           closeDialog();
