@@ -211,7 +211,7 @@ export const CommandMenu: React.FC = () => {
   const shouldShowCommands =
     !search.trim() ||
     'item search'.toLowerCase().includes(search.toLowerCase()) ||
-    'currency valuation'.toLowerCase().includes(search.toLowerCase()) ||
+    'net worth'.toLowerCase().includes(search.toLowerCase()) ||
     'manage listings'.toLowerCase().includes(search.toLowerCase()) ||
     'trade offers'.toLowerCase().includes(search.toLowerCase()) ||
     'chat'.toLowerCase().includes(search.toLowerCase()) ||
@@ -255,7 +255,7 @@ export const CommandMenu: React.FC = () => {
                   className="cursor-pointer"
                 >
                   <DollarSign className="mr-2 h-4 w-4" />
-                  <span>Currency Valuation</span>
+                  <span>Net Worth</span>
                   {settings?.hotkeyKeyCurrencyValuation && (
                     <CommandShortcut>
                       {formatHotkey(settings.hotkeyModifierCurrencyValuation, settings.hotkeyKeyCurrencyValuation)}

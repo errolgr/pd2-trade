@@ -287,7 +287,7 @@ export default function PrimitivesGallery() {
 
           <Section title="Window chrome">
             <WindowPanel className="h-40">
-              <WindowChrome title="Stash Value"
+              <WindowChrome title="Net Worth"
                 icon={<Coins />}
                 diabloFont
                 titleClassName="text-q-unique"

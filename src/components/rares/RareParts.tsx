@@ -27,7 +27,7 @@ import {
 } from './rares-format';
 
 /*
- * Building blocks shared by the price-check rare card and the Stash Value "Rares" tab.
+ * Building blocks shared by the price-check rare card and the Net Worth "Rares" tab.
  * Hosts mount a TooltipProvider above these.
  */
 

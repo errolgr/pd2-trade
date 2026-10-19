@@ -9,7 +9,7 @@ import { HardcoreNote, ItemStatsSection, RankDisplay, RareHistorySection } from 
 import { bandRange, hardcoreNote, marketSource, rankText, VERDICT_COLORS, VERDICT_LABELS } from './rares-format';
 
 /**
- * Body of a rare's appraisal, shared by the price-check popover and the Stash Value "Rares" rows: verdict and
+ * Body of a rare's appraisal, shared by the price-check popover and the Net Worth "Rares" rows: verdict and
  * "usually listed" tiles, the rank (Bar / Blocks per the "Rare rank display" setting), samples, "Stats on this
  * item" (open state remembered in settings) and the item's market history.
  */
@@ -24,7 +24,7 @@ export function RareAppraisalDetail({
   history: RareHistory | null;
   hardcore?: boolean;
   rule?: VerdictRule;
-  /** Stash Value: "Shared 1 · col 5, row 1", shown as a "Stash" row. */
+  /** Net Worth window: "Shared 1 · col 5, row 1", shown as a "Stash" row. */
   stashPosition?: string | null;
 }) {
   const { settings, updateSettings } = useOptions();

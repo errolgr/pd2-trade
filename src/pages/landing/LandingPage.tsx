@@ -166,7 +166,7 @@ const LandingPage: React.FC = () => {
     }
   }, [checkDiabloFocus, read, copy, keyPress, settings]);
 
-  // Open (or focus) the Stash Value window; `tab` deep-links a fresh window, an open one switches via NETWORTH_OPEN_EVENT
+  // Open (or focus) the Net Worth window; `tab` deep-links a fresh window, an open one switches via NETWORTH_OPEN_EVENT
   const showCurrencyWindow = useCallback(async (tab?: NetWorthTab) => {
     if (!currencyWindowRef.current) {
       currencyWindowRef.current = await openCenteredWindow(
@@ -206,7 +206,7 @@ const LandingPage: React.FC = () => {
     await showCurrencyWindow();
   }, [checkDiabloFocus, showCurrencyWindow]);
 
-  // Net worth surfaces (ticker, panel, toasts) ask for the Stash Value window via an app event
+  // Net worth surfaces (ticker, panel, toasts) ask for the Net Worth window via an app event
   useEffect(() => {
     const unlisten = listen<{ tab?: NetWorthTab }>(NETWORTH_OPEN_EVENT, ({ payload }) => {
       showCurrencyWindow(payload?.tab);

@@ -24,11 +24,11 @@ export const WindowTitles = config.titles as {
   readonly QuickList: 'PD2Trader: QuickList';
   readonly ItemSearch: 'PD2Trader: Item Search';
   readonly Settings: 'PD2Trader: Settings';
-  readonly Currency: 'PD2Trader: Currency';
+  readonly Currency: 'PD2Trader: Net Worth';
   readonly Toast: 'PD2Trader: Toast';
   readonly SignIn: 'PD2Trader: Sign In';
   readonly Delist: 'PD2Trader: Delist';
   readonly NetWorthTicker: 'PD2Trader: Net Worth Ticker';
-  readonly NetWorthPanel: 'PD2Trader: Net Worth';
+  readonly NetWorthPanel: 'PD2Trader: Net Worth Panel';
   readonly PREFIX: 'PD2Trader';
 };

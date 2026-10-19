@@ -60,7 +60,7 @@ Before you begin, ensure you have the following installed:
 - **Prettier** - Code formatting
 - **Sentry** - Error tracking and monitoring
 - **Grafana Faro** - Usage metrics, web vitals and traces (enabled when `VITE_FARO_URL` is set at build time, see ARCHITECTURE.md)
-- **Feature flags** - `VITE_LEADERBOARD_LIVE=true` at build time shows the leaderboard wealth rank on Stash Value and the net worth ticker (off until Season 14, see `src/lib/feature-flags.ts`)
+- **Feature flags** - `VITE_LEADERBOARD_LIVE=true` at build time shows the leaderboard wealth rank on the Net Worth window and the net worth ticker (off until Season 14, see `src/lib/feature-flags.ts`)
 
 ## 📁 Project Structure
 
