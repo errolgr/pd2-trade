@@ -19,15 +19,19 @@ import { listingArtUrl } from '../lib/listing-art';
  * the item card and the plain link MessageContent falls back to when a listing can't be looked up.
  */
 export const listingPillClass = cn(
-  'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/70 bg-background/50 px-1.5 py-px align-middle text-sm',
+  'mx-0.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/70 bg-background/50 py-0.5 pr-2 pl-0.5 align-middle text-sm',
   'transition-[border-color,background-color,transform] duration-(--dur-fast) ease-out hover:border-info/40 hover:bg-accent/40',
   'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
 );
 
+/** Thumbnail tile at the pill's start, a shade off the pill so the art reads as its own slot. */
+export const listingIconBoxClass =
+  'flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-muted/70';
+
 /** Same footprint as a loaded pill, so the sentence doesn't reflow much when the listing arrives. */
 export function ListingCardSkeleton() {
   return <Skeleton aria-label="Loading listing"
-    className="mx-0.5 inline-block h-6 w-36 align-middle" />;
+    className="mx-0.5 inline-block h-[30px] w-36 align-middle" />;
 }
 
 function ItemArt({ listing }: { listing: MarketListingEntry }) {
@@ -120,10 +124,10 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
           onMouseLeave={() => setOpen(false)}
           className={listingPillClass}
         >
-          <span className={cn('flex size-5 shrink-0 items-center justify-center', !listed && 'opacity-50 grayscale')}>
+          <span className={cn(listingIconBoxClass, !listed && 'opacity-50 grayscale')}>
             <ItemArt listing={listing} />
           </span>
-          <span className={cn('truncate font-medium', nameColor(listing))}>{listing.item.name}</span>
+          <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
           <span className="shrink-0 tabular-nums text-muted-foreground">
             {listing.hr_price ? `${listing.hr_price} HR` : listing.price || 'No price'}
           </span>

@@ -3,7 +3,8 @@ import { openUrl } from '@/lib/browser-opener';
 import { ExternalLink } from 'lucide-react';
 import { parseMessage } from '../lib/market-links';
 import type { ChatListingState } from '../hooks/useChatListings';
-import { ListingCard, ListingCardSkeleton, listingPillClass } from './ListingCard';
+import { cn } from '@/lib/utils';
+import { ListingCard, ListingCardSkeleton, listingIconBoxClass, listingPillClass } from './ListingCard';
 
 interface MessageContentProps {
   content: string;
@@ -42,10 +43,10 @@ export function MessageContent({ content, listings }: MessageContentProps) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
+            <span className={cn(listingIconBoxClass, 'text-muted-foreground')}>
               <ExternalLink className="size-3.5" />
             </span>
-            <span className="truncate font-medium text-info">{segment.content}</span>
+            <span className="truncate font-semibold text-info">{segment.content}</span>
           </a>
         );
       })}
