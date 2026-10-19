@@ -135,7 +135,6 @@ const AppController: React.FC = () => {
 
   useAppUpdates();
   usePD2Auth();
-  useChangelog();
 
   // Chat button overlay follows its setting (chat and trade messages are keepMounted panels: no warm-up needed)
   useEffect(() => {
@@ -157,7 +156,13 @@ const AppController: React.FC = () => {
     };
   }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory, isLoading]);
 
-  return null;
+  return <WhatsNewOnUpgrade />;
 };
+
+/** Its own component: What's New watches the sign-in panel, which re-renders on every overlay state change. */
+function WhatsNewOnUpgrade() {
+  useChangelog();
+  return null;
+}
 
 export default AppController;

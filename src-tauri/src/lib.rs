@@ -89,14 +89,14 @@ pub fn run() {
             // The builder takes logical units; snap to the exact physical monitor rect.
             let _ = commands::update_window_bounds(app.app_handle().clone());
 
-            // Diablo focus monitoring (emits `diablo-focus-changed`); re-fit the overlay to
-            // the monitor Diablo is on.
+            // Game focus context (emits `diablo-focus-changed`, see window::focus); re-fit the overlay
+            // to the monitor Diablo is on.
             let app_handle_bounds = app.app_handle().clone();
             window::initialize_diablo_focus_monitoring(
                 app.app_handle().clone(),
-                Some(Box::new(move |_is_focused| {
+                Box::new(move |_in_game| {
                     let _ = commands::update_window_bounds(app_handle_bounds.clone());
-                })),
+                }),
             );
 
             #[cfg(debug_assertions)]

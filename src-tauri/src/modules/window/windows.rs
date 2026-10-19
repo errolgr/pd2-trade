@@ -1,7 +1,7 @@
-use super::WindowRect;
+use super::{Foreground, WindowRect};
 use std::sync::Mutex;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 
 use windows_sys::Win32::{
     Foundation::{HWND, POINT, RECT},
@@ -47,29 +47,26 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
     })
 }
 
-pub fn is_diablo_focused() -> bool {
-    // 1. Check if Diablo II window was found
-    let Some(hwnd) = find_diablo_hwnd() else {
-        return false;
-    };
-
+pub fn foreground() -> Foreground {
     let foreground = unsafe { GetForegroundWindow() };
-
-    // 2. Check if Diablo II is the foreground window
-    if hwnd == foreground {
-        return true;
+    if foreground == 0 {
+        return Foreground::Unknown;
     }
 
-    // 3. Check if the foreground window belongs to THIS application (PID check)
-    // This prevents flickering when interacting with overlays (Chat, Settings, etc.)
+    let Some(diablo) = find_diablo_hwnd() else {
+        return Foreground::Other;
+    };
+    if foreground == diablo {
+        return Foreground::Diablo;
+    }
+
     let mut foreground_pid: u32 = 0;
     unsafe { GetWindowThreadProcessId(foreground, &mut foreground_pid) };
-
     if foreground_pid == std::process::id() {
-        return true;
+        Foreground::OwnWindow
+    } else {
+        Foreground::Other
     }
-
-    false
 }
 
 /// Gives keyboard focus back to the Diablo II window.
@@ -146,51 +143,6 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
         FOREGROUND_HOOK = Some(hook);
         *CALLBACK.lock().unwrap() = Some(Box::new(callback));
     }
-}
-
-static DIABLO_FOCUS_STATE: Mutex<Option<bool>> = Mutex::new(None);
-
-pub fn initialize_diablo_focus_monitoring(
-    app_handle: AppHandle,
-    on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
-) {
-    let initial_focus_state = is_diablo_focused();
-
-    // Store initial state
-    *DIABLO_FOCUS_STATE.lock().unwrap() = Some(initial_focus_state);
-
-    // Emit initial state
-    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
-
-    // Call optional callback with initial state
-    if let Some(ref callback) = on_focus_change {
-        callback(initial_focus_state);
-    }
-
-    initialize_foreground_monitoring(move || {
-        let current_focus_state = is_diablo_focused();
-        let mut last_state: std::sync::MutexGuard<'_, Option<bool>> = DIABLO_FOCUS_STATE.lock().unwrap();
-
-        if let Some(last) = *last_state {
-            if current_focus_state != last {
-                *last_state = Some(current_focus_state);
-                let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
-
-                // Call optional callback when focus changes
-                if let Some(callback) = &on_focus_change {
-                    callback(current_focus_state);
-                }
-            }
-        } else {
-            *last_state = Some(current_focus_state);
-            let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
-
-            // Call optional callback
-            if let Some(callback) = &on_focus_change {
-                callback(current_focus_state);
-            }
-        }
-    });
 }
 
 pub fn cleanup_foreground_monitoring() {

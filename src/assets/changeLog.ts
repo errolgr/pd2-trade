@@ -13,6 +13,8 @@ export const changeLog = {
     '✨ Anonymous usage stats help us improve the app',
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',
+    "🔧 What's New now waits until you're signed in instead of opening next to the sign-in prompt",
+    '🔧 Overlays no longer flicker over the game when you open Settings or sign in from outside it',
   ],
   '0.9.13': [
     '🔧 Fixed fill stat value not applying margin to magic, rare, and crafted items — now creates a proper range from the single value',

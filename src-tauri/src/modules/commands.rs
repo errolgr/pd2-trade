@@ -12,9 +12,11 @@ pub fn press_key(sequence: String) -> Result<(), String> {
     keyboard::press_key(sequence)
 }
 
+/// Game context, not raw focus: true while Diablo II is in front or our overlay was focused from it
+/// (see `window::focus`). Same value as the `diablo-focus-changed` event.
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
-    window::is_diablo_focused()
+    window::is_game_context()
 }
 
 #[tauri::command]

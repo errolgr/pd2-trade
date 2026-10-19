@@ -209,6 +209,11 @@ export function useOverlayInternals(): OverlayInternals {
   return ctx;
 }
 
+/** Reactive `isOpen`: re-renders the caller on every overlay state change, so keep it to light components. */
+export function usePanelOpen(id: PanelId): boolean {
+  return !!useOverlayInternals().state.panels[id]?.open;
+}
+
 export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.ReactNode }> = ({ defs, children }) => {
   const [state, setState] = useState(() => initialOverlayState(defs));
   const stateRef = useRef(state);
