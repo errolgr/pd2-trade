@@ -120,12 +120,11 @@ function ListingDetails({ listing, listed }: { listing: MarketListingEntry; list
 }
 
 /**
- * A listing linked in chat, inline in the sentence: thumbnail, name, stash tab and whether it's still listed;
- * price, base, stats, seller, mode and age live in the hover popover.
+ * A listing linked in chat, inline in the sentence: thumbnail, name and whether it's still listed;
+ * price, stash location, base, stats, seller, mode and age live in the hover popover.
  */
 export function ListingCard({ listing, listed, url }: { listing: MarketListingEntry; listed: boolean; url: string }) {
   const [open, setOpen] = useState(false);
-  const stash = stashLabel(listing);
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
@@ -145,7 +144,6 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
             <ItemArt listing={listing} />
           </span>
           <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
-          {stash && <span className="shrink-0 text-xs text-muted-foreground">{stash}</span>}
           {!listed && (
             <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Unlisted

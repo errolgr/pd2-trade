@@ -6,7 +6,7 @@ export const changeLog = {
     '🆕 Price check shows a 30-day price trend, with a link to the item on pd2trader.com',
     '🆕 Choose how many days prices are averaged over (Settings → Price Check, 7 days by default)',
     '🆕 Automatic updates can be turned off (Settings → About); you still get notified, and price check shows a "Restart to update" button',
-    "🆕 Market listings linked in chat show inline with the item's picture, stash tab and whether it's still listed; hover for price, stats and seller",
+    "🆕 Market listings linked in chat show inline with the item's picture and whether it's still listed; hover for price, stash location, stats and seller",
     '✨ Price check shows what the price is based on, and tags rarely traded items priced over a longer period',
     '✨ Smoother price check, quick list, chat and settings',
     '✨ Move the Net Worth ticker anywhere (drag) or pin it to any corner',

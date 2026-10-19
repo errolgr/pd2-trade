@@ -178,13 +178,11 @@ describe('MessageContent listing cards', () => {
     expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('shows a listed item with its art and stash tab, keeps the price for the popover, and opens on click', () => {
+  it('shows a listed item with its art, keeps price and stash for the popover, and opens on click', () => {
     renderWith({ status: 'listed', listing: listing() });
     const card = screen.getByRole('link');
     expect(card.getAttribute('href')).toBe(URL);
-    expect(within(card).getByText('Ohm Rune')).not.toBeNull();
-    expect(within(card).getByText('Shared 3')).not.toBeNull();
-    expect(within(card).queryByText('75 wss')).toBeNull();
+    expect(card.textContent).toBe('Ohm Rune');
     expect(card.querySelector('img')!.getAttribute('src')).toBe('/runes/Ohm_Rune.png');
     expect(within(card).queryByText('Unlisted')).toBeNull();
 
