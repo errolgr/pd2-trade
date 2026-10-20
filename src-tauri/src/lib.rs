@@ -82,11 +82,16 @@ pub fn run() {
             .skip_taskbar(true)
             .build()?;
 
+            // The foreground tracking tells the overlay apart from our other windows (tray menu owner).
+            #[cfg(target_os = "windows")]
+            if let Ok(hwnd) = main_window.hwnd() {
+                window::set_overlay_window(hwnd.0 as isize);
+            }
             // Click-through until the frontend reports its interactive rects.
             if let Err(e) = region::apply_region(&main_window, &[]) {
                 eprintln!("Failed to seed empty interactive region: {}", e);
             }
-            // The builder takes logical units; snap to the exact physical monitor rect.
+            // The builder takes logical units; snap to the exact physical work-area rect.
             let _ = commands::update_window_bounds(app.app_handle().clone());
 
             // Game focus context (emits `diablo-focus-changed`, see window::focus); re-fit the overlay

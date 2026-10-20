@@ -154,13 +154,17 @@ export function undoToast({ title, description, duration, onUndo }: UndoToastOpt
   return () => toast.dismiss(id);
 }
 
-/** Sonner toaster pinned to the bottom-right corner of the game rect. Rendered by OverlayRoot. */
+/**
+ * Sonner toaster pinned to the bottom-right corner of the game rect while in game, otherwise of the overlay
+ * (the screen's work area, just above the taskbar). Rendered by OverlayRoot.
+ */
 export function ToastLayer() {
-  const { gameRect } = useOverlay();
+  const { gameRect, gameFocused } = useOverlay();
+  const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
 
   const offset = {
-    right: Math.max(0, window.innerWidth - (gameRect.x + gameRect.width)) + TOAST_MARGIN,
-    bottom: Math.max(0, window.innerHeight - (gameRect.y + gameRect.height)) + TOAST_MARGIN,
+    right: Math.max(0, window.innerWidth - (anchor.x + anchor.width)) + TOAST_MARGIN,
+    bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 
   return (

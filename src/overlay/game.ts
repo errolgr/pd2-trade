@@ -72,11 +72,14 @@ async function fetchGameRect(): Promise<OverlayRect> {
 
 /**
  * Game rect (CSS px relative to the overlay; the viewport when there is no game / in a browser) and
- * debounced game focus: false only after GAME_BLUR_DEBOUNCE_MS of neither Diablo nor Main being foreground.
+ * debounced game focus: false only after GAME_BLUR_DEBOUNCE_MS outside the game context (Rust window::focus:
+ * Diablo in front, or the overlay entered from it). The overlay having focus on its own isn't the game: Settings
+ * opened from the tray takes focus to type without bringing the in-game panels back.
  */
 export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } {
   const [gameRect, setGameRect] = useState<OverlayRect>(viewportRect);
-  const [gameFocused, setGameFocused] = useState(true);
+  // Tauri: hidden until the game context is known, so in-game panels don't flash at startup outside the game
+  const [gameFocused, setGameFocused] = useState(() => !isTauri());
   const rectRef = useRef(gameRect);
 
   useEffect(() => {
@@ -101,8 +104,7 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
       };
     }
 
-    let diabloFocused = true;
-    let mainFocused = false;
+    let inGame = false;
     let blurTimer: ReturnType<typeof setTimeout> | undefined;
     let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -120,8 +122,7 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
     };
     const updateFocus = () => {
       if (disposed) return;
-      const focused = diabloFocused || mainFocused;
-      if (focused) {
+      if (inGame) {
         clearTimeout(blurTimer);
         blurTimer = undefined;
         setGameFocused(true);
@@ -129,7 +130,7 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
       } else if (!blurTimer) {
         blurTimer = setTimeout(() => {
           blurTimer = undefined;
-          if (disposed || diabloFocused || mainFocused) return;
+          if (disposed || inGame) return;
           setGameFocused(false);
           setRefreshing(false);
         }, GAME_BLUR_DEBOUNCE_MS);
@@ -139,25 +140,19 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
     refreshRect();
     invoke<boolean>('is_diablo_focused')
       .then((focused) => {
-        diabloFocused = focused;
+        inGame = focused;
         updateFocus();
       })
       .catch(() => updateFocus());
 
     track(
       listen<boolean>('diablo-focus-changed', ({ payload }) => {
-        diabloFocused = payload;
+        inGame = payload;
         updateFocus();
         refreshRect();
       }),
     );
     const win = getCurrentWindow();
-    track(
-      win.onFocusChanged(({ payload }) => {
-        mainFocused = payload;
-        updateFocus();
-      }),
-    );
     track(win.onMoved(refreshRect));
     track(win.onResized(refreshRect));
 

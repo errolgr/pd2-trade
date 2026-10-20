@@ -16,6 +16,8 @@ let handoffAt = 0;
 const HANDOFF_BLUR_MS = 1000;
 /** Last known foreground owner: the Rust hook's reports, plus our own successful focus_overlay. */
 let foregroundOwner: ForegroundOwner | null = null;
+/** The keyboard was claimed while the user was in the game, so releasing it hands focus back to the game. */
+let claimedFromGame = false;
 
 export function isKeyboardClaimed(): boolean {
   return claimed;
@@ -28,6 +30,8 @@ export async function claimKeyboard(): Promise<void> {
   // the user's next click into the game.
   handoffAt = 0;
   try {
+    // Settings opened from the tray while in another app must not pull the game forward when it lets go
+    claimedFromGame = await invoke<boolean>('is_diablo_focused');
     const win = getCurrentWindow();
     await win.setFocusable(true);
     // Not win.setFocus(): Windows refuses it while the game holds the foreground right (after a global hotkey
@@ -47,8 +51,11 @@ export async function claimKeyboard(): Promise<void> {
   }
 }
 
-/** Give the keyboard back: Main becomes non-focusable again and (by default) Diablo II is focused. */
-export async function releaseKeyboard({ focusGame = true }: { focusGame?: boolean } = {}): Promise<void> {
+/**
+ * Give the keyboard back: Main becomes non-focusable again and, when it was claimed in the game (or `focusGame`),
+ * Diablo II is focused.
+ */
+export async function releaseKeyboard({ focusGame = claimedFromGame }: { focusGame?: boolean } = {}): Promise<void> {
   if (!isTauri() || !claimed) return;
   claimed = false;
   handoffAt = Date.now();
@@ -116,4 +123,5 @@ export function resetKeyboardStateForTests(): void {
   claimed = false;
   handoffAt = 0;
   foregroundOwner = null;
+  claimedFromGame = false;
 }

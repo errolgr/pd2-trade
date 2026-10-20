@@ -35,7 +35,7 @@ const AppController: React.FC = () => {
   // Socket notifications (offers and whispers) - exactly one instance, here
   useSocketNotifications({ settings, whisperNotificationsEnabled: true });
 
-  // Launch toast
+  // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
     const timer = setTimeout(() => showToast('is now running in the background...'), 2000);
     return () => clearTimeout(timer);
@@ -59,7 +59,7 @@ const AppController: React.FC = () => {
       // reached the game: hand focus back and let the game take the foreground before copying.
       const handedBack = isKeyboardClaimed();
       if (handedBack) {
-        await releaseKeyboard();
+        await releaseKeyboard({ focusGame: true });
         await sleep(50);
       }
       const savedClipboard = await read();
