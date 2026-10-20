@@ -10,14 +10,15 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { ClipboardCopy, FileText, Gamepad2, Globe, Package, SendHorizontal, X } from 'lucide-react';
+import { ClipboardCopy, FileText, Gamepad2, Globe, Package, SendHorizontal, Settings2, X } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ChatListingState } from '../hooks/useChatListings';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
-import { fillTemplate } from '@/lib/message-templates';
+import { fillTemplate, isChatTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useOverlay } from '@/overlay';
 import { useChatListings } from '../hooks/useChatListings';
 import {
   hasLooseLinks,
@@ -36,8 +37,8 @@ import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 /** One-click phrases inserted into the draft (never sent directly). */
 export const QUICK_REPLIES = ['Still available?', 'Sold, sorry', 'Inv me', 'ty gl'] as const;
 
-/** The message templates from Settings → Chat offered by the "/" menu. */
-const TEMPLATES = [
+/** The offer message templates from Settings → Chat, offered by the "/" menu after the user's own templates. */
+const OFFER_TEMPLATES = [
   { key: 'acceptOfferMessageTemplate', label: 'Offer accepted' },
   { key: 'rejectOfferMessageTemplate', label: 'Offer declined' },
   { key: 'soldOfferMessageTemplate', label: 'Item sold' },
@@ -150,6 +151,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   ref,
 ) {
   const { settings } = useOptions();
+  const { openPanel } = useOverlay();
   const editorRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const [pillStore] = useState(createPillStore);
@@ -223,7 +225,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (link) edit(value.slice(0, link.start) + value.slice(link.end), link.start);
   };
 
-  // Template menu
+  // Template menu: the user's own templates, then the offer templates, then "Manage templates…"
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const slash = SLASH_COMMAND.exec(value);
@@ -235,19 +237,40 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       itemName: templateVars.itemName,
       price: templateVars.price,
     };
-    return TEMPLATES.flatMap(({ key, label }) => {
+    const custom = (settings?.chatTemplates ?? [])
+      .filter(isChatTemplate)
+      .flatMap(({ id, name, text }) =>
+        text.trim() ? [{ key: `custom:${id}`, label: name, text: fillTemplate(text, vars) }] : [],
+      );
+    const offers = OFFER_TEMPLATES.flatMap(({ key, label }) => {
       const template = settings?.[key];
       return typeof template === 'string' && template.trim()
-        ? [{ key, label, text: fillTemplate(template, vars) }]
+        ? [{ key: `offer:${key}`, label, text: fillTemplate(template, vars) }]
         : [];
     });
+    return [...custom, ...offers];
   }, [settings, templateVars]);
   const query = slash?.[1].toLowerCase().trim() ?? '';
   const matches = slash
     ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
     : [];
-  const menuOpen = !!slash && dismissedAt !== value && matches.length > 0;
-  const activeIndex = Math.min(active, matches.length - 1);
+  // A bare "/" always opens it (with no templates yet it offers "Manage templates…"); "/text" only on a match
+  const menuOpen = !!slash && dismissedAt !== value && (matches.length > 0 || query === '');
+  // "Manage templates…" is the last option
+  const manageIndex = matches.length;
+  const activeIndex = Math.min(active, manageIndex);
+
+  // Keep the option chosen with the arrow keys in view (a long template list scrolls)
+  useLayoutEffect(() => {
+    if (menuOpen) document.getElementById(`${menuId}-${activeIndex}`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [menuOpen, menuId, activeIndex]);
+
+  /** Opens Settings → Chat; the "/" typed to get here is dropped. */
+  const manageTemplates = () => {
+    lastSelectionRef.current = null;
+    onChange('');
+    openPanel('settings', { section: 'Chat' });
+  };
 
   const send = () => {
     const message = spaceOutLinks(value).trim();
@@ -265,11 +288,15 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const step = e.key === 'ArrowDown' ? 1 : -1;
-        setActive((activeIndex + step + matches.length) % matches.length);
+        setActive((activeIndex + step + manageIndex + 1) % (manageIndex + 1));
         return;
       }
       if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
         e.preventDefault();
+        if (activeIndex === manageIndex) {
+          manageTemplates();
+          return;
+        }
         const { text: filled } = matches[activeIndex];
         edit(filled, filled.length);
         return;
@@ -328,7 +355,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             <ul id={menuId}
               role="listbox"
               aria-label="Message templates"
-              className="p-1">
+              className="max-h-72 overflow-y-auto p-1">
               {matches.map((t, i) => (
                 <li
                   key={t.key}
@@ -347,6 +374,32 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   <div className="truncate text-xs text-muted-foreground">{t.text}</div>
                 </li>
               ))}
+              {matches.length === 0 ? (
+                <li role="presentation"
+                  className="px-2.5 py-1.5 text-xs text-muted-foreground">
+                  No templates yet
+                </li>
+              ) : (
+                <li role="presentation"
+                  aria-hidden
+                  className="mx-1 my-1 h-px bg-border" />
+              )}
+              <li
+                id={`${menuId}-${manageIndex}`}
+                role="option"
+                aria-selected={activeIndex === manageIndex}
+                onMouseDown={(e) => e.preventDefault()}
+                onMouseEnter={() => setActive(manageIndex)}
+                onClick={manageTemplates}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-(--dur-fast)',
+                  activeIndex === manageIndex ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <Settings2 aria-hidden
+                  className="size-3.5 shrink-0" />
+                Manage templates…
+              </li>
             </ul>
           </motion.div>
         )}

@@ -7,12 +7,18 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
+import type * as Overlay from '@/overlay';
 import { findMarketLinks } from '../lib/market-links';
 import { pasteText, placeCaret, typeAtCaret, typeDraft } from './composer-test-utils';
 import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+const openPanel = vi.hoisted(() => vi.fn());
+vi.mock('@/overlay', async (importOriginal) => ({
+  ...(await importOriginal<typeof Overlay>()),
+  useOverlay: () => ({ openPanel }),
+}));
 // Market prices of attached listings (their hover popover): none known
 vi.mock('@/pages/currency/lib/price-api', () => ({ fetchMultipleItemPrices: vi.fn(async () => new Map()) }));
 
@@ -72,6 +78,7 @@ beforeEach(() => {
     soldOfferMessageTemplate: 'The {itemName} is sold.',
   };
   onSend = vi.fn();
+  openPanel.mockClear();
   getMarketListings = vi.fn(async () => ({
     total: 2,
     limit: 50,
@@ -149,6 +156,8 @@ describe('Composer sending', () => {
 });
 
 describe('Composer templates', () => {
+  const MANAGE = 'Manage templates…';
+
   it('opens on "/" with the labelled templates filled in, filters as you type and inserts on Enter', () => {
     render(<Harness />);
     type('/');
@@ -156,10 +165,11 @@ describe('Composer templates', () => {
       'Offer acceptedAccepted Shako for 2 HR. Game: ',
       'Offer declinedSorry AliceAcc, declined.',
       'Item soldThe Shako is sold.',
+      MANAGE,
     ]);
 
     type('/sold');
-    expect(options()).toEqual(['Item soldThe Shako is sold.']);
+    expect(options()).toEqual(['Item soldThe Shako is sold.', MANAGE]);
     fireEvent.keyDown(editor(), { key: 'Enter' });
 
     expect(editor().textContent).toBe('The Shako is sold.');
@@ -175,6 +185,8 @@ describe('Composer templates', () => {
     fireEvent.keyDown(editor(), { key: 'ArrowDown' });
     fireEvent.keyDown(editor(), { key: 'ArrowUp' });
     expect(screen.getByRole('option', { selected: true }).textContent).toContain('Item sold');
+    // Down past "Manage templates…" wraps to the top
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' });
     fireEvent.keyDown(editor(), { key: 'ArrowDown' });
     fireEvent.keyDown(editor(), { key: 'Tab' });
     expect(editor().textContent).toBe('Accepted Shako for 2 HR. Game: ');
@@ -184,13 +196,65 @@ describe('Composer templates', () => {
     settings.rejectOfferMessageTemplate = '';
     render(<Harness />);
     type('/');
-    expect(options()).toHaveLength(2);
+    expect(options()).toHaveLength(3);
     fireEvent.keyDown(editor(), { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(editor().textContent).toBe('/');
 
     type('/x');
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it("lists the user's own templates first, filled from the thread, filtered by name or text", () => {
+    settings.chatTemplates = [
+      { id: 'a', name: 'Still available?', text: 'Hi, is your {itemName} still available?' },
+      { id: 'b', name: 'Haggle', text: 'Would you take {price}, {accountName}?' },
+      { id: 'c', name: 'Blank', text: '   ' },
+    ];
+    render(<Harness />);
+    type('/');
+    expect(options()).toEqual([
+      'Still available?Hi, is your Shako still available?',
+      'HaggleWould you take 2 HR, AliceAcc?',
+      'Offer acceptedAccepted Shako for 2 HR. Game: ',
+      'Offer declinedSorry AliceAcc, declined.',
+      'Item soldThe Shako is sold.',
+      MANAGE,
+    ]);
+
+    // By name
+    type('/hag');
+    expect(options()).toEqual(['HaggleWould you take 2 HR, AliceAcc?', MANAGE]);
+    // By (filled) text
+    type('/aliceacc');
+    expect(options()).toEqual([
+      'HaggleWould you take 2 HR, AliceAcc?',
+      'Offer declinedSorry AliceAcc, declined.',
+      MANAGE,
+    ]);
+    fireEvent.click(screen.getByRole('option', { name: /Haggle/ }));
+    expect(editor().textContent).toBe('Would you take 2 HR, AliceAcc?');
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it('"Manage templates…" opens Settings on the Chat section and drops the "/"', () => {
+    render(<Harness />);
+    type('/');
+    fireEvent.click(screen.getByRole('option', { name: MANAGE }));
+    expect(openPanel).toHaveBeenCalledWith('settings', { section: 'Chat' });
+    expect(editor().textContent).toBe('');
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('offers "Manage templates…" on "/" even without any templates, also by keyboard', () => {
+    settings = { mode: 'hardcore', ladder: 'ladder', chatTemplates: [] };
+    render(<Harness />);
+    type('/');
+    expect(options()).toEqual([MANAGE]);
+    expect(screen.queryByText('No templates yet')).not.toBeNull();
+    fireEvent.keyDown(editor(), { key: 'Enter' });
+    expect(openPanel).toHaveBeenCalledWith('settings', { section: 'Chat' });
+    expect(onSend).not.toHaveBeenCalled();
   });
 });
 

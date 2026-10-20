@@ -116,6 +116,23 @@ describe('SettingsLayout navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it('opens on the section asked for, and switches to it on every re-open', () => {
+    vi.mocked(usePanel).mockReturnValue({ close, payload: { section: 'Chat' }, payloadVersion: 1 } as never);
+    const view = renderLayout();
+    expect(selected()).toEqual(['Chat']);
+    expect(panelText()).toBe('chat-body');
+
+    fireEvent.click(tab('Hotkeys'));
+    // Re-opened without a section: stays where the user was
+    vi.mocked(usePanel).mockReturnValue({ close, payload: undefined, payloadVersion: 2 } as never);
+    view.rerender(<SettingsLayout />);
+    expect(selected()).toEqual(['Hotkeys']);
+
+    vi.mocked(usePanel).mockReturnValue({ close, payload: { section: 'Chat' }, payloadVersion: 3 } as never);
+    view.rerender(<SettingsLayout />);
+    expect(selected()).toEqual(['Chat']);
+  });
 });
 
 describe('SettingsLayout saved indicator', () => {

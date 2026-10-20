@@ -90,33 +90,39 @@ function useSavedFlash() {
   return saved;
 }
 
+const findSection = (section: SettingsSectionId | undefined) =>
+  section ? sidebarNavItems.find((i) => i.title === section) : undefined;
+
 export default function SettingsLayout() {
-  const [selectedItem, setSelectedItem] = useState<INavItem>(sidebarNavItems[0]);
+  // keepMounted panel: every openPanel('settings', { section }) switches to that section
+  const { close, payload, payloadVersion } = usePanel<'settings'>();
+  const [selectedItem, setSelectedItem] = useState<INavItem>(() => findSection(payload?.section) ?? sidebarNavItems[0]);
+  const [seenVersion, setSeenVersion] = useState(payloadVersion);
+  if (payloadVersion !== seenVersion) {
+    setSeenVersion(payloadVersion);
+    const requested = findSection(payload?.section);
+    if (requested) setSelectedItem(requested);
+  }
   const tabRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const saved = useSavedFlash();
-  const { close } = usePanel();
 
-  const select = React.useCallback((item: INavItem) => {
-    setSelectedItem(item);
-    // Each section starts at the top instead of inheriting the previous scroll offset.
+  // Each section starts at the top instead of inheriting the previous scroll offset.
+  React.useLayoutEffect(() => {
     scrollRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]')?.scrollTo({ top: 0 });
-  }, []);
+  }, [selectedItem]);
 
-  const goTo = React.useCallback(
-    (section: SettingsSectionId) => {
-      const item = sidebarNavItems.find((i) => i.title === section);
-      if (item) select(item);
-    },
-    [select],
-  );
+  const goTo = React.useCallback((section: SettingsSectionId) => {
+    const item = findSection(section);
+    if (item) setSelectedItem(item);
+  }, []);
 
   const onNavKeyDown = (e: React.KeyboardEvent, index: number) => {
     const next = NAV_KEYS[e.key];
     if (!next) return;
     e.preventDefault();
     const target = next(index, sidebarNavItems.length);
-    select(sidebarNavItems[target]);
+    setSelectedItem(sidebarNavItems[target]);
     tabRefs.current[target]?.focus();
   };
 
@@ -162,7 +168,7 @@ export default function SettingsLayout() {
                       aria-selected={active}
                       aria-controls="settings-panel"
                       tabIndex={active ? 0 : -1}
-                      onClick={() => select(item)}
+                      onClick={() => setSelectedItem(item)}
                       onKeyDown={(e) => onNavKeyDown(e, index)}
                       className={cn(
                         'group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-sm font-medium outline-none',
