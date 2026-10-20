@@ -370,7 +370,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 <ToggleGroupItem
                   value="website"
                   aria-label="Website"
-                  className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
+                  className={cn('h-6 flex-none gap-1 px-2 text-xs', segmentItemClass)}
                 >
                   <Globe className="size-3" />
                   <span className="@max-[380px]:sr-only">Website</span>
@@ -380,7 +380,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 <ToggleGroupItem
                   value="whisper"
                   aria-label="Whisper (copy)"
-                  className={cn('h-6 gap-1 px-2 text-xs', segmentItemClass)}
+                  className={cn('h-6 flex-none gap-1 px-2 text-xs', segmentItemClass)}
                 >
                   <Gamepad2 className="size-3" />
                   <span className="@max-[380px]:sr-only">Whisper (copy)</span>
