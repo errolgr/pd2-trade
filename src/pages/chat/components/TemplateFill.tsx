@@ -54,63 +54,69 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
           onCancel();
         }
       }}
-      className="flex max-h-80 flex-col gap-2.5 overflow-y-auto p-3"
+      className="flex max-h-72 flex-col gap-2 overflow-y-auto px-3 py-2"
     >
-      {placeholders.map((name, index) => (
-        <div key={name}
-          className="flex flex-col gap-1">
-          <label htmlFor={`${id}-${index}`}
-            className="text-xs font-medium text-foreground">
-            {name}
-          </label>
-          <Input
-            id={`${id}-${index}`}
-            ref={(el) => {
-              inputs.current[index] = el;
-            }}
-            value={answers[name]}
-            onChange={(e) => setAnswers((current) => ({ ...current, [name]: e.target.value }))}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
-              e.preventDefault();
-              if (e.ctrlKey || e.metaKey || index === placeholders.length - 1) insert();
-              else inputs.current[index + 1]?.focus();
-            }}
-            autoFocus={index === 0}
-            autoComplete="off"
-            className="h-8 text-sm"
-          />
-        </div>
-      ))}
+      {/* One compact row per placeholder: name on the left, field on the right; two per row when there's room */}
+      <div className="grid grid-cols-1 gap-x-3 gap-y-1.5 @[420px]:grid-cols-2">
+        {placeholders.map((name, index) => (
+          <div key={name}
+            className="flex min-w-0 items-center gap-2">
+            <label
+              htmlFor={`${id}-${index}`}
+              className="max-w-24 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
+            >
+              {`{${name}}`}
+            </label>
+            <Input
+              id={`${id}-${index}`}
+              ref={(el) => {
+                inputs.current[index] = el;
+              }}
+              aria-label={name}
+              value={answers[name]}
+              onChange={(e) => setAnswers((current) => ({ ...current, [name]: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+                e.preventDefault();
+                if (e.ctrlKey || e.metaKey || index === placeholders.length - 1) insert();
+                else inputs.current[index + 1]?.focus();
+              }}
+              autoFocus={index === 0}
+              autoComplete="off"
+              className="h-7 min-w-0 flex-1 px-2 text-xs"
+            />
+          </div>
+        ))}
+      </div>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-foreground">Preview</span>
+      {/* Preview and actions on one line */}
+      <div className="flex items-center gap-2">
         <p
           aria-label="Preview"
-          className="whitespace-pre-wrap break-words rounded-md border border-border/70 bg-muted/40 px-2.5 py-1.5 text-sm text-foreground"
+          title={preview}
+          className="min-w-0 flex-1 truncate rounded-md bg-muted/40 px-2 py-1 text-xs text-foreground/90"
         >
           {preview}
         </p>
-        {blank.length > 0 && (
-          <p className="text-[11px] text-muted-foreground">
-            Left empty, inserted blank: {blank.map((name) => `{${name}}`).join(' ')}
-          </p>
-        )}
-      </div>
-
-      <div className="flex gap-1.5">
         <Button type="submit"
-          size="sm">
+          size="sm"
+          className="h-7 px-2.5 text-xs">
           <CornerDownLeft />
           Insert
         </Button>
         <Button type="button"
           variant="ghost"
           size="sm"
+          className="h-7 px-2 text-xs"
           onClick={onCancel}>
           Cancel
         </Button>
       </div>
+      {blank.length > 0 && (
+        <p className="-mt-1 text-[11px] text-muted-foreground">
+          Left empty, inserted blank: {blank.map((name) => `{${name}}`).join(' ')}
+        </p>
+      )}
     </form>
   );
 }

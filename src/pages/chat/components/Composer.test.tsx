@@ -434,7 +434,7 @@ describe('Composer template management', () => {
 describe('Composer template placeholders', () => {
   const fields = () =>
     within(screen.getByRole('form', { name: /^Fill in/ })).getAllByRole('textbox') as HTMLInputElement[];
-  const labels = () => fields().map((f) => f.labels?.[0]?.textContent);
+  const labels = () => fields().map((f) => f.getAttribute('aria-label'));
   const preview = () => screen.getByLabelText('Preview').textContent;
   const fill = (input: HTMLInputElement, value: string) => fireEvent.change(input, { target: { value } });
 
