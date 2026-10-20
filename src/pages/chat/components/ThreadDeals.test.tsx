@@ -77,6 +77,7 @@ function renderDeals({
       hiddenOffers={hiddenOffers}
       whisperTrades={whisperTrades}
       listingIds={listingIds}
+      now={Date.parse('2026-10-05T00:03:00Z')}
       onCounter={onCounter}
       onSendWebsite={onSendWebsite}
       onWhisper={onWhisper}
@@ -137,8 +138,9 @@ describe('ThreadDeals website offers', () => {
     fireEvent.click(button(/2 more/));
     const expanded = rows().map((row) => row.textContent ?? '');
     expect(expanded).toHaveLength(3);
-    expect(expanded.some((row) => row.startsWith('BuyingBer Rune1 ber'))).toBe(true);
-    expect(expanded.some((row) => row.startsWith('SellingArachnid Mesh2 ist'))).toBe(true);
+    // Each row says whose offer it is and how fresh, then the item and the offered price
+    expect(expanded.some((row) => /^Your offer · .*Ber Rune1 ber/.test(row))).toBe(true);
+    expect(expanded.some((row) => /^New offer · 3m agoArachnid Mesh2 ist/.test(row))).toBe(true);
     expect(expanded.some((row) => row.includes('Mara'))).toBe(false);
   });
 
@@ -187,7 +189,18 @@ describe('ThreadDeals website offers', () => {
 
   it('deletes the listing after confirmation and refreshes the offers', async () => {
     renderDeals({ offers: [offer({ listingId: 'l1' })] });
-    fireEvent.click(button(/Delete listing/));
+    // A rare, destructive action: in the row's ⋯ menu
+    expect(screen.queryByRole('button', { name: /Delete listing/ })).toBeNull();
+    await act(async () => {
+      fireEvent.pointerDown(button('More actions for Harlequin Crest'), {
+        button: 0,
+        ctrlKey: false,
+        pointerType: 'mouse',
+      });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /Delete listing/ }));
+    });
     expect(actions.deleteMarketListing).not.toHaveBeenCalled();
     const options = vi.mocked(confirmToast).mock.calls[0][0] as ConfirmToastOptions;
     expect(options.description).toContain('Harlequin Crest');
@@ -264,7 +277,7 @@ describe('ThreadDeals trade whispers', () => {
 
   it('only offers Dismiss on a trade whisper you sent', () => {
     renderDeals({ whisperTrades: [{ person, trade: trade({ isIncoming: false }) }], listingIds: [] });
-    expect(rows()[0].textContent).toMatch(/^Buying/);
+    expect(rows()[0].textContent).toMatch(/^your in-game offer · /);
     expect(screen.queryByRole('button', { name: /Accept|Reject|Sold/ })).toBeNull();
     expect(button(/Dismiss/)).not.toBeNull();
   });

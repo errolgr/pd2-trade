@@ -630,6 +630,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                       )}
                       whisperTrades={openTrades}
                       listingIds={linkedListingIds}
+                      now={now}
                       onCounter={(text) => {
                         setDrafts((current) => ({ ...current, [selectedThread.id]: text }));
                         composerRef.current?.focus();
