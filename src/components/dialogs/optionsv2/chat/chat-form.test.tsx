@@ -199,7 +199,9 @@ describe('ChatForm message templates', () => {
   it('explains how templates are used and lists the custom ones before the offer templates', () => {
     renderForm({ chatTemplates: MINE });
     expect(
-      screen.queryByText(/in a chat message to use these\. Tokens fill in from the conversation\./),
+      screen.queryByText(
+        /in a chat message to use these\. Tokens fill in from the conversation; any other \{name\} is asked for/,
+      ),
     ).not.toBeNull();
     expect(listed()).toEqual(['Still available?', 'Price check', 'Inv me']);
     expect(screen.getByLabelText('Accept Offer Message Template')).toBeTruthy();
@@ -298,5 +300,26 @@ describe('ChatForm message templates', () => {
     textInput().setSelectionRange(17, 22);
     fireEvent.click(chip('{itemName}'));
     expect(textInput().value).toBe('Hi {accountName} {itemName}');
+  });
+
+  it('shows which placeholders a template will ask for when used, for custom and offer templates', () => {
+    renderForm({ chatTemplates: [], rejectOfferMessageTemplate: 'No, {reason}' });
+    expect(screen.getByText(/Asks when used in chat:/).textContent).toBe('Asks when used in chat: {reason}');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add template' }));
+    fireEvent.change(textInput(), { target: { value: 'join {game} / {pw} as {accountName}' } });
+    expect(screen.getByText(/Asks when used:/).textContent).toBe('Asks when used: {game} {pw}');
+  });
+
+  it('stars and unstars a template (its chip above the chat message box)', () => {
+    renderForm({ chatTemplates: [MINE[0], { ...MINE[1], favorite: true }] });
+    const star = screen.getByRole('button', { name: 'Star Still available?' });
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(star);
+    expect(savedTemplates()?.[0]).toEqual({ ...MINE[0], favorite: true });
+    expect(screen.getByRole('button', { name: 'Unstar Still available?' }).getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unstar Price check' }));
+    expect(savedTemplates()?.[1]).toEqual({ ...MINE[1], favorite: false });
   });
 });

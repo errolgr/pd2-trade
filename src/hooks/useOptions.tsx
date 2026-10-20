@@ -63,6 +63,7 @@ export interface ISettings {
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
   chatTemplates?: ChatTemplate[]; // The user's own chat message templates ("/" in the chat composer), in menu order
+  favoriteOfferTemplates?: ('acceptOfferMessageTemplate' | 'rejectOfferMessageTemplate' | 'soldOfferMessageTemplate')[]; // Offer templates starred as chips above the chat composer
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
   toastPopupsEnabled?: boolean; // Master toggle for toast popups

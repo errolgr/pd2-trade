@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { templatePlaceholders } from '@/lib/message-templates';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 
@@ -469,6 +470,7 @@ export function ChatForm() {
                   <PlaceholderHint
                     action="accepting an offer"
                     tokens={['{gameInfo}', ...COMMON_TOKENS]}
+                    text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
                   />
                 }
@@ -497,6 +499,7 @@ export function ChatForm() {
                   <PlaceholderHint
                     action="rejecting an offer"
                     tokens={COMMON_TOKENS}
+                    text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
                   />
                 }
@@ -523,6 +526,7 @@ export function ChatForm() {
                   <PlaceholderHint
                     action="marking an item as sold"
                     tokens={COMMON_TOKENS}
+                    text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
                   />
                 }
@@ -544,16 +548,22 @@ export function ChatForm() {
   );
 }
 
-/** "Customize the message copied when …" with clickable placeholder chips that append the token. */
+/**
+ * "Customize the message copied when …" with clickable placeholder chips that append the token, and the
+ * custom placeholders the template asks for when used from the chat's "/" menu.
+ */
 function PlaceholderHint({
   action,
   tokens,
+  text,
   onInsert,
 }: {
   action: string;
   tokens: string[];
+  text: string;
   onInsert: (token: string) => void;
 }) {
+  const asks = templatePlaceholders(text);
   return (
     <span className="flex flex-col gap-1.5">
       <span>Customize the message copied when {action}. Available placeholders:</span>
@@ -570,6 +580,7 @@ function PlaceholderHint({
           </button>
         ))}
       </span>
+      {asks.length > 0 && <span>Asks when used in chat: {asks.map((name) => `{${name}}`).join(' ')}</span>}
     </span>
   );
 }

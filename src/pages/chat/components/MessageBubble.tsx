@@ -145,16 +145,7 @@ export function MessageBubble({
         >
           <MessageContent content={entry.content}
             listings={listings} />
-          <div
-            className={cn(
-              'flex items-center justify-end gap-1 text-[10px] leading-4 tabular-nums text-muted-foreground',
-              // Inside a group only the last bubble keeps its time; the others show it on hover
-              groupContinues &&
-                !message?.status &&
-                !entry.copied &&
-                'h-0 overflow-hidden opacity-0 group-hover/msg:h-4 group-hover/msg:opacity-100',
-            )}
-          >
+          <div className="flex items-center justify-end gap-1 text-[10px] leading-4 tabular-nums text-muted-foreground">
             {failed && message.clientId ? (
               <span className="flex items-center gap-1 text-destructive">
                 <AlertCircle className="size-3" />
