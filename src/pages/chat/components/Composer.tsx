@@ -691,27 +691,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               </Tip>
             </ToggleGroup>
           )}
-          {QUICK_REPLIES.map((reply) => (
-            <button
-              key={reply}
-              type="button"
-              // Keep the draft's caret/selection: the chip inserts where the user was typing
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => insertAtCaret(reply)}
-              className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color,transform] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
-            >
-              {reply}
-            </button>
-          ))}
-          <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
-            <kbd className="font-sans font-semibold">/</kbd> templates ·{' '}
-            <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
-          </span>
-        </div>
-
-        <div className="flex items-end gap-1 p-1.5">
-          <ListingPicker onPick={insertListing}
-            onClosed={() => editorRef.current?.focus()} />
           <Tip label="Message templates (or type /)">
             <button
               type="button"
@@ -732,11 +711,35 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 }
                 focusEditor();
               }}
-              className={cn(iconButton, menuOpen && 'bg-accent text-accent-foreground')}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/50 px-2 py-0.5 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+                menuOpen && 'border-primary/40 bg-primary/10 text-foreground',
+              )}
             >
-              <FileText className="size-4" />
+              <kbd className="font-sans font-semibold">/</kbd>
+              <FileText className="size-3" />
             </button>
           </Tip>
+          {QUICK_REPLIES.map((reply) => (
+            <button
+              key={reply}
+              type="button"
+              // Keep the draft's caret/selection: the chip inserts where the user was typing
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insertAtCaret(reply)}
+              className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color,transform] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+            >
+              {reply}
+            </button>
+          ))}
+          <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
+            <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+          </span>
+        </div>
+
+        <div className="flex items-end gap-1 p-1.5">
+          <ListingPicker onPick={insertListing}
+            onClosed={() => editorRef.current?.focus()} />
           <div className="relative min-w-0 flex-1 self-center">
             {value === '' && (
               <span
