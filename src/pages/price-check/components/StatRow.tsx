@@ -95,19 +95,26 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    // py-0.5 leaves a gap between the highlight and the divider; the divider is inset by the highlight's
-    // corner radius (rounded-md = 6px) so its ends line up with the highlight's straight edges.
+    // Table rows with rounded highlights. Runs of selected rows join into one seamless block (inner corners
+    // square, no line between them); lines touching a highlight are hidden so none sticks out.
     <div
       data-active={isActive || undefined}
-      className="relative py-0.5 not-first:before:absolute not-first:before:inset-x-1.5 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border/70"
+      className={cn(
+        'not-first:border-t not-first:border-border/70',
+        'data-active:border-t-transparent [[data-active]+&]:border-t-transparent',
+        '[[data-active]+&[data-active]]:border-t-0',
+        '[[data-active]+&[data-active]]:*:rounded-t-none [&[data-active]:has(+[data-active])]:*:rounded-b-none',
+      )}
     >
       <label
         key={statKey}
         className={cn(
-          'flex min-h-9 flex-row items-center justify-between gap-2 rounded-md px-2 py-1',
+          'flex min-h-10 flex-row items-center justify-between gap-2 rounded-md px-2.5 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
-          isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
-          !isActive && rare?.stars && 'bg-glow/8 hover:bg-glow/12',
+          isActive
+            ? 'bg-linear-to-r from-glow/16 via-glow/7 to-glow/2 shadow-[inset_3px_0_0_var(--glow)]'
+            : !isUnknown && 'hover:bg-foreground/4',
+          !isActive && rare?.stars && 'bg-glow/6 hover:bg-glow/10',
           nested && 'pl-8',
           isUnknown && 'cursor-not-allowed',
         )}

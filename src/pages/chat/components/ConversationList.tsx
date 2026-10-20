@@ -204,13 +204,11 @@ export function ConversationList({
           const linkedId = latestLinkedId(thread);
           const linkedState = linkedId ? rowListings.get(linkedId) : undefined;
           const linked = linkedState && 'listing' in linkedState ? linkedState.listing : undefined;
-          const offer = linked
-            ? undefined
-            : thread.offers
-                .filter((o) => offerStatus(o) === 'open')
-                .reduce<
-                  (typeof thread.offers)[number] | undefined
-                >((a, b) => (a && a.timestamp >= b.timestamp ? a : b), undefined);
+          const offer = thread.offers
+            .filter((o) => offerStatus(o) === 'open')
+            .reduce<
+              (typeof thread.offers)[number] | undefined
+            >((a, b) => (a && a.timestamp >= b.timestamp ? a : b), undefined);
           const presence = presenceOf(thread.userId)?.kind;
           return (
             <motion.li
@@ -296,6 +294,13 @@ export function ConversationList({
                           readerId={thread.participant?._id}
                           className="shrink-0" />
                       )}
+                      {linked && (
+                        <ListingThumb
+                          listing={linked}
+                          className="size-4 rounded-[4px]"
+                          artClassName="max-h-3.5 max-w-3.5"
+                        />
+                      )}
                       <span
                         className={cn(
                           'min-w-0 flex-1 truncate text-xs',
@@ -303,8 +308,26 @@ export function ConversationList({
                         )}
                       >
                         {own && <span className="text-muted-foreground">You: </span>}
-                        {latest.text}
+                        {linked ? latest.text.replace(/^📦 /, '') : latest.text}
                       </span>
+                      {offer && (
+                        <span
+                          title={offer.isIncoming ? 'Their open offer on your listing' : 'Your open offer'}
+                          className={cn(
+                            'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums',
+                            offer.isIncoming ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
+                          )}
+                        >
+                          {offer.isIncoming ? (
+                            <ArrowUpRight aria-hidden
+                              className="size-2.5 shrink-0" />
+                          ) : (
+                            <ArrowDownLeft aria-hidden
+                              className="size-2.5 shrink-0" />
+                          )}
+                          <span className="truncate">{offer.price ?? 'Offer'}</span>
+                        </span>
+                      )}
                       {unread && (
                         <CountBadge
                           count={thread.unread}
@@ -314,26 +337,6 @@ export function ConversationList({
                     </span>
                   )}
                 </span>
-                {linked && (
-                  <ListingThumb listing={linked}
-                    className="size-9 rounded-lg"
-                    artClassName="max-h-8 max-w-8" />
-                )}
-                {offer && (
-                  <span
-                    title={offer.isIncoming ? 'Their open offer on your listing' : 'Your open offer'}
-                    className="flex max-w-24 shrink-0 items-center gap-0.5 rounded-md border border-info/30 bg-info/10 px-1.5 py-0.5 text-[10px] font-semibold text-info"
-                  >
-                    {offer.isIncoming ? (
-                      <ArrowUpRight aria-hidden
-                        className="size-3 shrink-0" />
-                    ) : (
-                      <ArrowDownLeft aria-hidden
-                        className="size-3 shrink-0" />
-                    )}
-                    <span className="truncate">{`Offer · ${offer.price ?? '?'}`}</span>
-                  </span>
-                )}
               </button>
             </motion.li>
           );

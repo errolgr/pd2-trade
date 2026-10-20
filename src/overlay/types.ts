@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
+import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
 
 export type PanelId =
   | 'itemSearch'
@@ -39,7 +40,8 @@ export interface PanelPayloads {
       }
     | undefined;
   chatButton: undefined;
-  settings: undefined;
+  /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat). */
+  settings: { section?: SettingsSectionId } | undefined;
   changeLog: undefined;
   signIn: undefined;
   /** Market listings matching the delisted item (2+; the user picks which one to remove). */

@@ -2,12 +2,13 @@ import * as React from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
-import merge from 'lodash/merge';
+import mergeWith from 'lodash/mergeWith';
 import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
+import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
 
 export type NetWorthTickerAnchor =
@@ -61,6 +62,7 @@ export interface ISettings {
   acceptOfferMessageTemplate?: string; // Custom message template for accepting offers (without /w *{accountName})
   rejectOfferMessageTemplate?: string; // Custom message template for rejecting offers (without /w *{accountName})
   soldOfferMessageTemplate?: string; // Custom message template for sold items (without /w *{accountName})
+  chatTemplates?: ChatTemplate[]; // The user's own chat message templates ("/" in the chat composer), in menu order
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
@@ -126,6 +128,7 @@ const DEFAULT_SETTINGS: ISettings = {
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
   soldOfferMessageTemplate: 'The item has been sold.',
+  chatTemplates: DEFAULT_CHAT_TEMPLATES,
   netWorthTrackingEnabled: true,
   netWorthTickerEnabled: false,
   netWorthTickerAnchor: 'top-center',
@@ -203,8 +206,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
         const parsed = JSON.parse(file);
 
-        // Deep merge parsed into a copy of the defaults
-        const merged = merge({}, DEFAULT_SETTINGS, parsed);
+        // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
+        // would merge them by index, bringing back removed toast types or deleted chat templates).
+        const merged: ISettings = mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
+          Array.isArray(saved) ? saved : undefined,
+        );
 
         const mergedJson = JSON.stringify(merged, null, 2);
 

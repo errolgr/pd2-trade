@@ -22,8 +22,9 @@ export const characterUrl = (characterName: string) =>
 export const segmentedClass = 'gap-0.5 rounded-lg bg-muted/60 p-0.5 ring-1 ring-inset ring-border/60';
 export const segmentItemClass = cn(
   'rounded-md text-muted-foreground transition-[background-color,color,box-shadow] duration-(--dur-fast)',
-  'hover:bg-background/40 hover:text-foreground data-[state=on]:bg-card data-[state=on]:text-foreground',
-  'data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-border/70',
+  // aria-checked, not data-state: a tooltip trigger wrapping the item overwrites data-state with its own
+  'hover:bg-background/40 hover:text-foreground aria-checked:bg-primary/15 aria-checked:text-foreground',
+  'aria-checked:shadow-sm aria-checked:ring-1 aria-checked:ring-primary/30',
 );
 
 /** Soft tint (lists, bubbles) and solid gradient (profile card) per theme chart colour. */

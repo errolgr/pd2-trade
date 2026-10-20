@@ -73,6 +73,8 @@ vi.mock('@/overlay', () => ({
     };
   },
   usePanel: () => panel,
+  // The composer's "Manage templates…"
+  useOverlay: () => ({ openPanel: vi.fn() }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 

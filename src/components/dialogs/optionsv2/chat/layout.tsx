@@ -5,7 +5,7 @@ import { ChatForm } from './chat-form';
 export default function SettingsChat() {
   return (
     <SettingsSection title="Chat"
-      description="Configure chat and whisper notification settings.">
+      description="Configure chat and whisper notifications, and your message templates.">
       <ChatForm />
     </SettingsSection>
   );

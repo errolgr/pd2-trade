@@ -132,13 +132,33 @@ describe('OptionsProvider loading', () => {
     expect(state.files.get('settings.json')).toBe('{not json');
   });
 
-  // BUG: src/hooks/useOptions.tsx:191 deep-merges with lodash/merge, which merges arrays by index.
-  // A user who disables toast types (e.g. keeps only ['whispers', 'trade']) gets the trailing defaults
-  // ('joins', 'offers', 'networth') re-enabled on every load.
-  it.fails('preserves a shortened toastPopupTypes list across reloads', async () => {
+  it('preserves a shortened toastPopupTypes list across reloads', async () => {
     state.files.set('settings.json', JSON.stringify({ toastPopupTypes: ['whispers', 'trade'] }));
     const { result } = await renderLoaded();
     expect(result.current.settings.toastPopupTypes).toEqual(['whispers', 'trade']);
+  });
+
+  it('gives settings from before custom chat templates the default templates, and saves them', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings.chatTemplates?.map((t) => t.name)).toEqual([
+      'Still available?',
+      'Price check',
+      'Inv me',
+    ]);
+    expect(savedSettings().chatTemplates).toEqual(result.current.settings.chatTemplates);
+  });
+
+  it("keeps the user's own chat templates as saved: edited, reordered, deleted or none at all", async () => {
+    const mine = [{ id: 'a', name: 'Hi', text: 'Hi {accountName}' }];
+    state.files.set('settings.json', JSON.stringify({ chatTemplates: mine }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings.chatTemplates).toEqual(mine);
+    cleanup();
+
+    state.files.set('settings.json', JSON.stringify({ chatTemplates: [] }));
+    const reloaded = await renderLoaded();
+    expect(reloaded.result.current.settings.chatTemplates).toEqual([]);
   });
 });
 

@@ -15,6 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { ChatTemplatesEditor } from './chat-templates-editor';
 
 const TOAST_TYPES = [
   { id: 'whispers', label: 'Whispers' },
@@ -326,14 +327,16 @@ export function ChatForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Ignore list"
+        <SettingsGroup
+          title="Ignore list"
           aside={
             ignoreList.length > 0 && (
               <span className="text-xs tabular-nums text-muted-foreground">
                 {ignoreList.length} player{ignoreList.length === 1 ? '' : 's'}
               </span>
             )
-          }>
+          }
+        >
           <FormField
             control={form.control}
             name="whisperIgnoreList"
@@ -376,12 +379,14 @@ export function ChatForm() {
                   <div className="flex min-h-[44px] flex-wrap gap-2 rounded-md border border-border/70 bg-background/40 p-2">
                     <AnimatePresence initial={false}>
                       {ignoreList.map((playerName) => (
-                        <motion.div key={playerName}
+                        <motion.div
+                          key={playerName}
                           layout
                           variants={popIn}
                           initial="hidden"
                           animate="visible"
-                          exit="exit">
+                          exit="exit"
+                        >
                           <Badge variant="secondary"
                             className="flex items-center gap-1 py-1 pr-1 pl-2.5">
                             {playerName}
@@ -451,7 +456,8 @@ export function ChatForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Offer message templates">
+        <SettingsGroup title="Message templates">
+          <ChatTemplatesEditor />
           <FormField
             control={form.control}
             name="acceptOfferMessageTemplate"
