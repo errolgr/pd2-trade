@@ -73,30 +73,15 @@ export const STATUS_CLASS: Record<DealStatus, string> = {
 };
 
 /**
- * A deal row's colour: offers to you (selling) green, yours (buying) blue, accepted in the theme's primary,
- * settled or hidden ones muted. `banner`: the wide row's tint; `rail`: the narrow row's status bar.
+ * A deal row's status colour (its left rail, status line and fallback icon): offers to you (selling) green,
+ * yours (buying) blue, accepted in the theme's primary, settled or hidden ones muted.
  */
 type Tone = 'selling' | 'buying' | 'accepted' | 'settled';
-const TONE: Record<Tone, { banner: string; text: string; rail: string; box: string }> = {
-  selling: {
-    banner: 'border-success/45 bg-success/12',
-    text: 'text-success',
-    rail: 'bg-success',
-    box: 'border-success/30 bg-success/10',
-  },
-  buying: { banner: 'border-info/45 bg-info/12', text: 'text-info', rail: 'bg-info', box: 'border-info/30 bg-info/10' },
-  accepted: {
-    banner: 'border-primary/45 bg-primary/12',
-    text: 'text-primary',
-    rail: 'bg-primary',
-    box: 'border-primary/30 bg-primary/10',
-  },
-  settled: {
-    banner: 'border-border bg-muted/40',
-    text: 'text-muted-foreground',
-    rail: 'bg-muted-foreground/50',
-    box: 'border-border/60 bg-muted/60',
-  },
+const TONE: Record<Tone, { text: string; rail: string }> = {
+  selling: { text: 'text-success', rail: 'bg-success' },
+  buying: { text: 'text-info', rail: 'bg-info' },
+  accepted: { text: 'text-primary', rail: 'bg-primary' },
+  settled: { text: 'text-muted-foreground', rail: 'bg-muted-foreground/50' },
 };
 
 const DEFAULT_TEMPLATES = {
@@ -105,8 +90,8 @@ const DEFAULT_TEMPLATES = {
   soldOfferMessageTemplate: 'The item has been sold.',
 } as const;
 
-// Below 560px of strip width (@max-[559px]) rows fall back to a compact rail: status bar, no market line,
-// icon-only actions with tooltips.
+// Below 560px of strip width (@max-[559px]) rows drop the asking/market line and actions go icon-only
+// (with tooltips).
 
 const actionClass = cn(
   'inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-semibold outline-none transition-[background-color,color,border-color,transform] duration-(--dur-fast) active:scale-[0.97]',
@@ -114,7 +99,7 @@ const actionClass = cn(
   '@max-[559px]:h-6 @max-[559px]:px-1.5',
 );
 
-/** Action labels drop to icon-only (with a tooltip; the label stays the accessible name) in the rail. */
+/** Action labels drop to icon-only (with a tooltip; the label stays the accessible name) when narrow. */
 const actionLabelClass = '@max-[559px]:sr-only';
 
 /** filled: the main action. outline: secondary. destructive: red text. muted: housekeeping. */
@@ -237,8 +222,7 @@ function AcceptButton({
 }
 
 /**
- * Deals with the person of the open thread, pinned at the top as tinted banners (a compact rail when the
- * strip is narrow): website offers (on listings linked in the thread, any status, first; then their other
+ * Deals with the person of the open thread, pinned at the top as quiet cards with a status-coloured rail: website offers (on listings linked in the thread, any status, first; then their other
  * open offers; outgoing offers the user hid last) and open trade whispers. Renders nothing without any.
  */
 export function ThreadDeals({
@@ -573,30 +557,18 @@ export function ThreadDeals({
             <li
               key={`${deal.kind}:${deal.id}`}
               className={cn(
-                'relative flex min-h-14 min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border px-2.5 py-2 shadow-xs',
-                colors.banner,
-                // The rail: a status bar on a quiet card instead of the tinted banner
-                '@max-[559px]:min-h-11 @max-[559px]:gap-2 @max-[559px]:border-border/70 @max-[559px]:bg-card/70 @max-[559px]:py-1.5 @max-[559px]:pl-3',
+                'relative flex min-h-14 min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border border-border',
+                'bg-linear-to-b from-card to-card/85 py-2 pr-2.5 pl-3.5 shadow-xs',
               )}
             >
-              <span
-                aria-hidden
-                className={cn('absolute inset-y-0 left-0 hidden w-1', colors.rail, '@max-[559px]:block')}
-              />
+              <span aria-hidden
+                className={cn('absolute inset-y-0 left-0 w-1', colors.rail)} />
               {listing ? (
-                <ListingThumb
-                  listing={listing}
-                  className={cn('size-9 rounded-lg', colors.box, '@max-[559px]:size-7')}
-                  artClassName="max-h-8 max-w-8 @max-[559px]:max-h-6 @max-[559px]:max-w-6"
-                />
+                <ListingThumb listing={listing}
+                  className="size-9 rounded-lg"
+                  artClassName="max-h-8 max-w-8" />
               ) : (
-                <span
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg border',
-                    colors.box,
-                    '@max-[559px]:size-7',
-                  )}
-                >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-linear-to-b from-muted/80 to-muted/40">
                   <Fallback className={cn('size-4', colors.text)} />
                 </span>
               )}
@@ -619,9 +591,7 @@ export function ThreadDeals({
               {price && (
                 <span
                   className={cn(
-                    'shrink-0 whitespace-nowrap text-lg font-extrabold tabular-nums leading-none',
-                    colors.text,
-                    '@max-[559px]:text-base',
+                    'shrink-0 whitespace-nowrap text-lg font-extrabold tabular-nums leading-none text-foreground',
                   )}
                 >
                   {price}
