@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openUrl } from '@/lib/browser-opener';
+import { ItemsProvider } from '@/hooks/useItems';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { ChatListingState } from '../hooks/useChatListings';
 import { MessageContent } from './MessageContent';
 
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
@@ -11,9 +14,8 @@ const LISTING = 'https://www.projectdiablo2.com/market/listing/0123456789abcdef'
 afterEach(cleanup);
 
 /** Rendered segments in order: plain text spans as strings, links as { text, href }. */
-function segments(content: string, isOwnMessage = false) {
-  const { container } = render(<MessageContent content={content}
-    isOwnMessage={isOwnMessage} />);
+function segments(content: string) {
+  const { container } = render(<MessageContent content={content} />);
   const root = container.firstElementChild!;
   return Array.from(root.children).map((el) =>
     el.tagName === 'A' ? { text: el.textContent, href: el.getAttribute('href') } : el.textContent,
@@ -50,6 +52,14 @@ describe('MessageContent', () => {
   it('matches the host case-insensitively and accepts http', () => {
     const url = 'http://WWW.ProjectDiablo2.com/market/listing/ABCDEF12';
     expect(segments(url)).toEqual([{ text: 'Market Listing ABCDEF12...', href: url }]);
+  });
+
+  it("links the site's own interest message, which uses the bare projectdiablo2.com host", () => {
+    const url = 'https://projectdiablo2.com/market/listing/6a0bf54e6c42aba37528aeb6?display="Ohm Rune"';
+    expect(segments(`Hi, I'm interested in your ${url}`)).toEqual([
+      "Hi, I'm interested in your ",
+      { text: 'Ohm Rune', href: url },
+    ]);
   });
 
   it('ignores listing URLs on other hosts and non-hex ids', () => {
@@ -106,8 +116,7 @@ describe('MessageContent', () => {
     const parentClick = vi.fn();
     const { getByText } = render(
       <div onClick={parentClick}>
-        <MessageContent content={url}
-          isOwnMessage />
+        <MessageContent content={url} />
       </div>,
     );
     const link = getByText('Shako').closest('a')!;
@@ -122,12 +131,81 @@ describe('MessageContent', () => {
     expect(vi.mocked(openUrl)).toHaveBeenCalledWith(url);
   });
 
-  // BUG: MessageContent.tsx:47 calls decodeURIComponent on the raw display param without a try/catch.
-  // A chat message containing a malformed escape (e.g. "?display=100%") throws URIError during render,
-  // which unmounts the whole chat window since there is no error boundary.
-  it.fails('renders a listing URL whose display name has a malformed percent escape', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('keeps a display name with a malformed percent escape as typed instead of crashing', () => {
     const url = `${LISTING}?display=100%`;
     expect(segments(url)).toEqual([{ text: '100%', href: url }]);
+  });
+});
+
+describe('MessageContent listing cards', () => {
+  const ID = '6a0bf54e6c42aba37528aeb6';
+  const URL = `https://projectdiablo2.com/market/listing/${ID}?display="Ohm Rune"`;
+  const listing = (over: Partial<MarketListingEntry> = {}) =>
+    ({
+      _id: ID,
+      hr_price: 0,
+      price: '75 wss',
+      bumped_at: '2026-05-19T05:29:49.989Z',
+      is_ladder: true,
+      is_hardcore: false,
+      user: { username: 'drakehz' },
+      item: {
+        name: 'Ohm Rune',
+        quality: { id: 2, name: 'Normal' },
+        base: { name: 'Ohm Rune' },
+        modifiers: [],
+        socket_count: 0,
+        item_level: 96,
+        location: { storage: 'Shared Stash', stash_page: 3 },
+        requirements: { level: 57 },
+      },
+      ...over,
+    }) as unknown as MarketListingEntry;
+
+  function renderWith(state: ChatListingState | undefined) {
+    const listings = new Map<string, ChatListingState>(state ? [[ID, state]] : []);
+    return render(
+      <ItemsProvider items={[]}>
+        <MessageContent content={`Hi, I'm interested in your ${URL}`}
+          listings={listings} />
+      </ItemsProvider>,
+    );
+  }
+
+  it('shows a placeholder card while the listing loads', () => {
+    renderWith({ status: 'loading' });
+    expect(screen.getByLabelText('Loading listing')).not.toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('shows a listed item with its art, keeps price and stash for the popover, and opens on click', () => {
+    renderWith({ status: 'listed', listing: listing() });
+    const card = screen.getByRole('link');
+    expect(card.getAttribute('href')).toBe(URL);
+    expect(card.textContent).toBe('Ohm Rune');
+    expect(card.querySelector('img')!.getAttribute('src')).toBe('/runes/Ohm_Rune.png');
+    expect(within(card).queryByText('Unlisted')).toBeNull();
+
+    fireEvent.click(card);
+    expect(vi.mocked(openUrl)).toHaveBeenCalledWith(URL);
+  });
+
+  it('tags archived listings as unlisted', () => {
+    renderWith({ status: 'unlisted', listing: listing() });
+    expect(within(screen.getByRole('link')).getByText('Unlisted')).not.toBeNull();
+  });
+
+  it('falls back to the link chip when the listing does not exist or was not looked up', () => {
+    renderWith({ status: 'missing' });
+    expect(screen.getByRole('link').textContent).toBe('Ohm Rune');
+    cleanup();
+    renderWith(undefined);
+    expect(screen.getByRole('link').textContent).toBe('Ohm Rune');
+  });
+
+  it('swaps the art for a placeholder icon when the image fails to load', () => {
+    renderWith({ status: 'listed', listing: listing() });
+    fireEvent.error(screen.getByRole('link').querySelector('img')!);
+    expect(screen.getByRole('link').querySelector('img')).toBeNull();
   });
 });

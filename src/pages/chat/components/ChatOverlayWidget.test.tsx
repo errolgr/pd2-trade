@@ -166,8 +166,16 @@ beforeEach(() => {
     markMessagesAsRead: vi.fn(async () => {}),
     deleteConversation: vi.fn(async () => {}),
   };
+  // Linked listings resolve to nothing, so listing links stay link chips in these tests.
+  const noListings = async () => ({ total: 0, limit: 0, skip: 0, data: [] });
   vi.mocked(usePd2Website).mockImplementation(
-    () => ({ authData: auth, subscribeSocket }) as unknown as ReturnType<typeof usePd2Website>,
+    () =>
+      ({
+        authData: auth,
+        subscribeSocket,
+        getMarketListings: noListings,
+        getMarketListingsArchive: noListings,
+      }) as unknown as ReturnType<typeof usePd2Website>,
   );
   vi.mocked(useChatApi).mockImplementation(() => api as unknown as ReturnType<typeof useChatApi>);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as unknown as ReturnType<typeof useOptions>);
