@@ -8,6 +8,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
 import { findMarketLinks } from '../lib/market-links';
+import { pasteText, placeCaret, typeAtCaret, typeDraft } from './composer-test-utils';
 import { Composer, type ReplyChannel, type TemplateVars } from './Composer';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
@@ -46,12 +47,11 @@ function Harness({ initial = '', switchable = false }: { initial?: string; switc
   );
 }
 
-const textarea = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+const editor = () => screen.getByRole('textbox', { name: 'Message' });
 const options = () => screen.queryAllByRole('option').map((o) => o.textContent);
 
 function type(value: string, caret = value.length) {
-  fireEvent.change(textarea(), { target: { value } });
-  textarea().setSelectionRange(caret, caret);
+  typeDraft(editor(), value, caret);
 }
 
 function listing(id: string, name: string, hr_price: number, base = name): MarketListingEntry {
@@ -90,18 +90,22 @@ describe('Composer sending', () => {
   it('sends the trimmed text on Enter and clears the draft', () => {
     render(<Harness />);
     type('  2 ist?  ');
-    fireEvent.keyDown(textarea(), { key: 'Enter' });
+    fireEvent.keyDown(editor(), { key: 'Enter' });
     expect(onSend).toHaveBeenCalledWith('2 ist?');
-    expect(textarea().value).toBe('');
+    expect(editor().textContent).toBe('');
   });
 
-  it('leaves Shift+Enter to insert a newline, and does not send blank text', () => {
+  it('puts a newline in on Shift+Enter, and does not send blank text', () => {
     render(<Harness />);
     type('line one');
-    // Not prevented: the textarea inserts the newline itself
-    expect(fireEvent.keyDown(textarea(), { key: 'Enter', shiftKey: true })).toBe(true);
+    fireEvent.keyDown(editor(), { key: 'Enter', shiftKey: true });
+    typeAtCaret(editor(), 'two');
+    fireEvent.keyDown(editor(), { key: 'Enter' });
+    expect(onSend).toHaveBeenCalledWith('line one\ntwo');
+    onSend.mockClear();
+
     type('   ');
-    fireEvent.keyDown(textarea(), { key: 'Enter' });
+    fireEvent.keyDown(editor(), { key: 'Enter' });
     expect(onSend).not.toHaveBeenCalled();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -109,9 +113,9 @@ describe('Composer sending', () => {
   it('ignores Enter while an IME composition is active', () => {
     render(<Harness />);
     type('にほん');
-    expect(fireEvent.keyDown(textarea(), { key: 'Enter', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(editor(), { key: 'Enter', isComposing: true })).toBe(true);
     expect(onSend).not.toHaveBeenCalled();
-    expect(textarea().value).toBe('にほん');
+    expect(editor().textContent).toBe('にほん');
   });
 
   it('sends with the Send button', () => {
@@ -156,9 +160,9 @@ describe('Composer templates', () => {
 
     type('/sold');
     expect(options()).toEqual(['Item soldThe Shako is sold.']);
-    fireEvent.keyDown(textarea(), { key: 'Enter' });
+    fireEvent.keyDown(editor(), { key: 'Enter' });
 
-    expect(textarea().value).toBe('The Shako is sold.');
+    expect(editor().textContent).toBe('The Shako is sold.');
     expect(onSend).not.toHaveBeenCalled();
     expect(screen.queryByRole('listbox')).toBeNull();
   });
@@ -166,14 +170,14 @@ describe('Composer templates', () => {
   it('moves the choice with the arrow keys and picks with Tab', () => {
     render(<Harness />);
     type('/');
-    fireEvent.keyDown(textarea(), { key: 'ArrowDown' });
-    fireEvent.keyDown(textarea(), { key: 'ArrowDown' });
-    fireEvent.keyDown(textarea(), { key: 'ArrowDown' });
-    fireEvent.keyDown(textarea(), { key: 'ArrowUp' });
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' });
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' });
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' });
+    fireEvent.keyDown(editor(), { key: 'ArrowUp' });
     expect(screen.getByRole('option', { selected: true }).textContent).toContain('Item sold');
-    fireEvent.keyDown(textarea(), { key: 'ArrowDown' });
-    fireEvent.keyDown(textarea(), { key: 'Tab' });
-    expect(textarea().value).toBe('Accepted Shako for 2 HR. Game: ');
+    fireEvent.keyDown(editor(), { key: 'ArrowDown' });
+    fireEvent.keyDown(editor(), { key: 'Tab' });
+    expect(editor().textContent).toBe('Accepted Shako for 2 HR. Game: ');
   });
 
   it('closes on Escape, and only offers templates the user has set', () => {
@@ -181,9 +185,9 @@ describe('Composer templates', () => {
     render(<Harness />);
     type('/');
     expect(options()).toHaveLength(2);
-    fireEvent.keyDown(textarea(), { key: 'Escape' });
+    fireEvent.keyDown(editor(), { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
-    expect(textarea().value).toBe('/');
+    expect(editor().textContent).toBe('/');
 
     type('/x');
     expect(screen.queryByRole('listbox')).toBeNull();
@@ -195,7 +199,7 @@ describe('Composer quick replies', () => {
     render(<Harness />);
     type('hi  pls', 3);
     fireEvent.click(screen.getByRole('button', { name: 'Inv me' }));
-    expect(textarea().value).toBe('hi Inv me pls');
+    expect(editor().textContent).toBe('hi Inv me pls');
     expect(onSend).not.toHaveBeenCalled();
   });
 });
@@ -227,55 +231,75 @@ describe('Composer listing picker', () => {
   });
 
   const URL = 'https://www.projectdiablo2.com/market/listing/aa11?display="Harlequin Crest"';
-  const attachments = () => screen.queryByRole('list', { name: 'Attached listings' });
-  /** Lets the attached listings' lookup settle. */
+  /** The pill of a listing inside the editor. */
+  const pill = (name: string) => within(editor()).queryByText(name);
+  /** Lets the linked listings' lookup settle. */
   const settle = () => act(async () => {});
+  const sendNow = () => fireEvent.keyDown(editor(), { key: 'Enter' });
 
-  it('attaches a picked listing as a pill, never as text, and sends its link after the text', async () => {
+  it('links a picked listing inline at the caret, as a pill, sending its link in that place', async () => {
     render(<Harness />);
-    type('want this?');
+    type('want this? ok', 10);
     const picker = await openPicker();
     await act(async () => {
       fireEvent.click(within(picker).getByRole('button', { name: /Harlequin Crest/ }));
     });
     await settle();
 
-    expect(textarea().value).toBe('want this?');
-    expect(within(attachments()!).getByText('Harlequin Crest')).not.toBeNull();
+    expect(pill('Harlequin Crest')).not.toBeNull();
+    expect(editor().textContent).toBe('want this? Harlequin Crest ok');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onSend).not.toHaveBeenCalled();
 
-    // Editing the text keeps the attachment
-    type('want this? ok');
-    expect(attachments()).not.toBeNull();
-    fireEvent.keyDown(textarea(), { key: 'Enter' });
-    expect(onSend).toHaveBeenCalledWith(`want this? ok ${URL}`);
+    sendNow();
+    expect(onSend).toHaveBeenCalledWith(`want this? ${URL} ok`);
     expect(findMarketLinks(onSend.mock.calls[0][0])).toEqual([
       expect.objectContaining({ listingId: 'aa11', displayName: 'Harlequin Crest', url: URL }),
     ]);
-    expect(attachments()).toBeNull();
+    expect(editor().textContent).toBe('');
   });
 
-  it('drops a removed attachment from the message', async () => {
-    render(<Harness initial={`hi ${URL}`} />);
+  it('removes a whole link with Backspace after its pill, or with its ×', async () => {
+    const { unmount } = render(<Harness initial={`hi ${URL}`} />);
     await settle();
-    expect(textarea().value).toBe('hi');
+    expect(editor().textContent).toBe('hi Harlequin Crest');
+    editor().focus();
+    placeCaret(editor(), editor().childNodes.length);
+    fireEvent.keyDown(editor(), { key: 'Backspace' });
+    expect(pill('Harlequin Crest')).toBeNull();
+    sendNow();
+    expect(onSend).toHaveBeenLastCalledWith('hi');
+    unmount();
+
+    render(<Harness initial={`hi ${URL} there`} />);
+    await settle();
     fireEvent.click(screen.getByRole('button', { name: 'Remove Harlequin Crest' }));
-    expect(attachments()).toBeNull();
-    fireEvent.keyDown(textarea(), { key: 'Enter' });
-    expect(onSend).toHaveBeenCalledWith('hi');
+    expect(pill('Harlequin Crest')).toBeNull();
+    sendNow();
+    expect(onSend).toHaveBeenLastCalledWith('hi  there');
   });
 
-  it('turns a pasted listing link into an attachment, and sends a link alone', async () => {
+  it('turns a listing link pasted mid-text into an inline pill', async () => {
     render(<Harness />);
-    type(`look ${URL} here`);
+    type('look here', 5);
+    pasteText(editor(), `${URL} `);
     await settle();
-    expect(textarea().value).toBe('look here');
-    expect(within(attachments()!).getByText('Harlequin Crest')).not.toBeNull();
+    expect(editor().textContent).toBe('look Harlequin Crest here');
+    expect(editor().textContent).not.toContain('https');
+    sendNow();
+    expect(onSend).toHaveBeenCalledWith(`look ${URL} here`);
+  });
 
-    type('');
-    expect(textarea().value).toBe('');
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(onSend).toHaveBeenCalledWith(URL);
+  it('keeps pills in place while typing around them', async () => {
+    render(<Harness initial={URL} />);
+    await settle();
+    editor().focus();
+    placeCaret(editor(), editor().childNodes.length);
+    typeAtCaret(editor(), ' for 2 ist');
+    placeCaret(editor(), 0);
+    typeAtCaret(editor(), 'wts ');
+    expect(editor().textContent).toBe('wts Harlequin Crest for 2 ist');
+    sendNow();
+    expect(onSend).toHaveBeenCalledWith(`wts ${URL} for 2 ist`);
   });
 });

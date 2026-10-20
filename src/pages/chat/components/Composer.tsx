@@ -1,14 +1,34 @@
-import React, { forwardRef, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { ClipboardCopy, FileText, Gamepad2, Globe, Package, SendHorizontal, X } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { ChatListingState } from '../hooks/useChatListings';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { fillTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
-import { joinDraft, splitDraft } from '../lib/market-links';
+import {
+  hasLooseLinks,
+  pillInfo,
+  pillNodes,
+  renderDraft,
+  selectionOffsets,
+  serializeEditor,
+  setCaret,
+} from '../lib/draft-editor';
+import { findMarketLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
 import { ListingPicker, listingMessageUrl } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
@@ -52,65 +72,161 @@ interface ComposerProps {
   whisperTarget?: string;
 }
 
-/** The composer's handle: focus it, or attach a listing (the trader sidebar's market). */
+/** The composer's handle: focus it, or link a listing at the caret (the trader sidebar's market). */
 export interface ComposerHandle {
   focus: () => void;
-  attach: (listing: MarketListingEntry) => void;
+  insertListing: (listing: MarketListingEntry) => void;
 }
 
-/** Message input of the open thread, a floating card: channel switch, quick replies, listing picker, input. */
+/** The editor's pill nodes, for React to render the item pills into (one store per composer). */
+function createPillStore() {
+  let nodes: HTMLElement[] = [];
+  const listeners = new Set<() => void>();
+  return {
+    get: () => nodes,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    /** Publishes the editor's current pill nodes, when they changed. */
+    sync: (editor: HTMLElement) => {
+      const next = pillNodes(editor);
+      if (next.length === nodes.length && next.every((node, i) => node === nodes[i])) return;
+      nodes = next;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
+/** A listing link inline in the draft: the chat's item pill (a name pill until looked up), removable. */
+function DraftPill({
+  url,
+  state,
+  onRemove,
+}: {
+  url: string;
+  state: ChatListingState | undefined;
+  onRemove: () => void;
+}) {
+  const listing = state && 'listing' in state ? state.listing : undefined;
+  const name = listing?.item.name ?? findMarketLinks(url)[0]?.displayName ?? 'Market listing';
+  return (
+    <span className="group/pill relative inline-flex max-w-full">
+      {listing ? (
+        <ListingCard listing={listing}
+          listed={state?.status === 'listed'}
+          url={url} />
+      ) : (
+        <span aria-busy={state?.status === 'loading' || undefined}
+          className={listingPillClass}>
+          <span className={listingIconBoxClass}>
+            <Package className="size-3.5 text-muted-foreground" />
+          </span>
+          <span className="truncate font-semibold text-info">{name}</span>
+        </span>
+      )}
+      <button
+        type="button"
+        aria-label={`Remove ${name}`}
+        // Keep the caret in the editor
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onRemove}
+        className="absolute -top-1.5 -right-0.5 inline-flex size-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-xs outline-none transition-[opacity,background-color,color] duration-(--dur-fast) group-hover/pill:opacity-100 hover:bg-destructive hover:text-destructive-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60"
+      >
+        <X className="size-2.5" />
+      </button>
+    </span>
+  );
+}
+
+/**
+ * Message input of the open thread, a floating card: channel switch, quick replies, listing picker and an
+ * inline editor where listing links show as item pills right where they were put (see lib/draft-editor).
+ */
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
   { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget },
   ref,
 ) {
   const { settings } = useOptions();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  const [pillStore] = useState(createPillStore);
+  const pills = useSyncExternalStore(pillStore.subscribe, pillStore.get);
+  const links = useMemo(() => findMarketLinks(value), [value]);
+  const listings = useChatListings(links.map((link) => link.listingId));
 
-  // The draft is text plus attached listing links: the textarea edits the text, the links show as pills
-  const { text, links } = useMemo(() => splitDraft(value), [value]);
-  const urls = links.map((link) => link.url);
-  const attached = useChatListings(links.map((link) => link.listingId));
-
-  // Caret position to restore once a programmatic edit (insert, template, pasted link) is rendered
+  // Draft offset for the caret once a programmatic edit (insert, template, pill, newline) is rendered
   const caretRef = useRef<number | null>(null);
-  useLayoutEffect(() => {
-    const caret = caretRef.current;
-    if (caret === null) return;
-    caretRef.current = null;
-    textareaRef.current?.setSelectionRange(caret, caret);
-  }, [value]);
+  // Where the caret was when the editor lost focus (the picker and the sidebar insert there)
+  const lastSelectionRef = useRef<[number, number] | null>(null);
 
-  /** Replaces the text (keeping the attachments) and puts the caret at `caret`. */
-  const replaceText = (next: string, caret: number) => {
+  // The editor shows the draft: rebuilt when the draft changed other than by typing in it (a thread opened,
+  // a template, a pill, Counter) or when typing/pasting left a listing URL as text (it becomes a pill)
+  useLayoutEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const focused = editor.ownerDocument.activeElement === editor;
+    if (serializeEditor(editor) !== value || hasLooseLinks(editor)) {
+      const typedCaret = focused ? selectionOffsets(editor)?.[1] : undefined;
+      renderDraft(editor, value);
+      const caret =
+        caretRef.current ?? (typedCaret !== undefined && serializeEditor(editor) === value ? typedCaret : value.length);
+      if (focused || caretRef.current !== null) setCaret(editor, caret);
+    } else if (caretRef.current !== null) {
+      setCaret(editor, caretRef.current);
+    }
+    caretRef.current = null;
+    pillStore.sync(editor);
+  }, [value, pillStore]);
+
+  /** Applies a programmatic edit of the draft and puts the caret at `caret`. */
+  const edit = (next: string, caret: number) => {
     caretRef.current = caret;
-    onChange(joinDraft(next, urls));
-    textareaRef.current?.focus();
+    onChange(next);
+    editorRef.current?.focus();
+  };
+
+  /** The selection as draft offsets: live while focused, else where it was left (end of draft by default). */
+  const selection = (): [number, number] => {
+    const editor = editorRef.current;
+    const live = editor && editor.ownerDocument.activeElement === editor ? selectionOffsets(editor) : null;
+    const [start, end] = live ?? lastSelectionRef.current ?? [value.length, value.length];
+    return [Math.min(start, value.length), Math.min(end, value.length)];
   };
 
   /** Insert at the caret (replacing a selection), padded with spaces so it doesn't glue onto words. */
   const insertAtCaret = (insert: string) => {
-    const el = textareaRef.current;
-    const start = el?.selectionStart ?? text.length;
-    const end = el?.selectionEnd ?? text.length;
-    const before = text.slice(0, start);
-    const after = text.slice(end);
+    const [start, end] = selection();
+    const before = value.slice(0, start);
+    const after = value.slice(end);
     const head = `${before}${before && !/\s$/.test(before) ? ' ' : ''}${insert}${after && !/^\s/.test(after) ? ' ' : ''}`;
-    replaceText(head + after, head.length);
+    lastSelectionRef.current = null;
+    edit(head + after, head.length);
   };
 
-  /** Attaches a listing (once) as a pill; it is sent as its link after the text. */
-  const attach = (listing: MarketListingEntry) => {
-    const url = listingMessageUrl(listing);
-    if (!urls.includes(url)) onChange(joinDraft(text, [...urls, url]));
-    textareaRef.current?.focus();
+  const insertListing = (listing: MarketListingEntry) => insertAtCaret(listingMessageUrl(listing));
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
+      if (!selectionOffsets(editor)) setCaret(editor, value.length);
+    },
+    insertListing,
+  }));
+
+  /** Removes the `index`-th listing link of the draft. */
+  const removeLink = (index: number) => {
+    const link = links[index];
+    if (link) edit(value.slice(0, link.start) + value.slice(link.end), link.start);
   };
-  useImperativeHandle(ref, () => ({ focus: () => textareaRef.current?.focus(), attach }));
 
   // Template menu
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
   const [active, setActive] = useState(0);
-  const slash = SLASH_COMMAND.exec(text);
+  const slash = SLASH_COMMAND.exec(value);
   const templates = useMemo(() => {
     const vars = {
       gameInfo: templateVars.gameInfo,
@@ -130,17 +246,19 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const matches = slash
     ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
     : [];
-  const menuOpen = !!slash && dismissedAt !== text && matches.length > 0;
+  const menuOpen = !!slash && dismissedAt !== value && matches.length > 0;
   const activeIndex = Math.min(active, matches.length - 1);
 
   const send = () => {
     const message = value.trim();
     if (!message) return;
     onSend(message);
+    lastSelectionRef.current = null;
+    caretRef.current = 0;
     onChange('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     // Keys finishing an IME composition belong to the composition
     if (e.nativeEvent.isComposing) return;
     if (menuOpen) {
@@ -153,19 +271,39 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
         e.preventDefault();
         const { text: filled } = matches[activeIndex];
-        replaceText(filled, filled.length);
+        edit(filled, filled.length);
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setDismissedAt(text);
+        setDismissedAt(value);
         return;
       }
     }
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      send();
+      if (!e.shiftKey) {
+        send();
+        return;
+      }
+      // A newline in the text (never a browser-made block)
+      const [start, end] = selection();
+      edit(`${value.slice(0, start)}\n${value.slice(end)}`, start + 1);
+      return;
     }
+    // A pill is one unit: Backspace/Delete next to it removes the whole link
+    if ((e.key === 'Backspace' || e.key === 'Delete') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      const [start, end] = selection();
+      if (start !== end) return;
+      const index = links.findIndex((link) => (e.key === 'Backspace' ? link.end === start : link.start === start));
+      if (index >= 0) {
+        e.preventDefault();
+        removeLink(index);
+      }
+      return;
+    }
+    // Plain text only: no bold/italic/underline markup
+    if ((e.ctrlKey || e.metaKey) && ['b', 'i', 'u'].includes(e.key.toLowerCase())) e.preventDefault();
   };
 
   const canSend = value.trim().length > 0;
@@ -199,7 +337,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   aria-selected={i === activeIndex}
                   onMouseDown={(e) => e.preventDefault()}
                   onMouseEnter={() => setActive(i)}
-                  onClick={() => replaceText(t.text, t.text.length)}
+                  onClick={() => edit(t.text, t.text.length)}
                   className={cn(
                     'cursor-pointer rounded-md px-2.5 py-1.5 transition-colors duration-(--dur-fast)',
                     i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
@@ -268,76 +406,66 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </span>
         </div>
 
-        {links.length > 0 && (
-          <ul aria-label="Attached listings"
-            className="flex flex-wrap gap-x-1 gap-y-2 px-2 pt-2.5">
-            {links.map((link, index) => {
-              const state = attached.get(link.listingId);
-              const listing = state && 'listing' in state ? state.listing : undefined;
-              const name = listing?.item.name ?? link.displayName ?? 'Market listing';
-              return (
-                <li key={`${link.url}:${index}`}
-                  className="relative inline-flex max-w-full pr-1.5">
-                  {listing ? (
-                    <ListingCard listing={listing}
-                      listed={state?.status === 'listed'}
-                      url={link.url} />
-                  ) : (
-                    // Still loading, or not found: the name the link carries
-                    <span aria-busy={state?.status === 'loading' || undefined}
-                      className={listingPillClass}>
-                      <span className={listingIconBoxClass}>
-                        <Package className="size-3.5 text-muted-foreground" />
-                      </span>
-                      <span className="truncate font-semibold text-info">{name}</span>
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${name}`}
-                    onClick={() => {
-                      onChange(
-                        joinDraft(
-                          text,
-                          urls.filter((_, i) => i !== index),
-                        ),
-                      );
-                      textareaRef.current?.focus();
-                    }}
-                    className="absolute -top-1.5 right-0 inline-flex size-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-xs outline-none transition-colors duration-(--dur-fast) hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
-                  >
-                    <X className="size-2.5" />
-                  </button>
-                </li>
+        <div className="flex items-end gap-1 p-1.5">
+          <ListingPicker onPick={insertListing}
+            onClosed={() => editorRef.current?.focus()} />
+          <div className="relative min-w-0 flex-1 self-center">
+            {value === '' && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-1.5 top-1.5 truncate text-sm leading-5 text-muted-foreground"
+              >
+                {placeholder}
+              </span>
+            )}
+            <div
+              ref={editorRef}
+              role="textbox"
+              aria-multiline="true"
+              aria-label="Message"
+              aria-placeholder={placeholder}
+              aria-controls={menuOpen ? menuId : undefined}
+              aria-activedescendant={menuOpen ? `${menuId}-${activeIndex}` : undefined}
+              contentEditable
+              tabIndex={0}
+              spellCheck
+              onInput={() => {
+                const editor = editorRef.current;
+                if (!editor) return;
+                setActive(0);
+                pillStore.sync(editor);
+                onChange(serializeEditor(editor));
+              }}
+              onKeyDown={handleKeyDown}
+              onBlur={() => {
+                const editor = editorRef.current;
+                lastSelectionRef.current = editor ? selectionOffsets(editor) : null;
+              }}
+              onPaste={(e) => {
+                // Plain text only (never pasted markup); listing URLs in it become pills
+                e.preventDefault();
+                const pasted = e.clipboardData.getData('text/plain').replace(/\r\n?/g, '\n');
+                const [start, end] = selection();
+                edit(value.slice(0, start) + pasted + value.slice(end), start + pasted.length);
+              }}
+              onDrop={(e) => e.preventDefault()}
+              // 1–6 lines: grows with its content, then scrolls
+              className="max-h-[8.25rem] min-h-8 overflow-y-auto whitespace-pre-wrap break-words px-1.5 py-1.5 text-sm leading-5 text-foreground outline-none"
+            />
+            {pills.map((node, index) => {
+              const { url, key } = pillInfo(node);
+              const listingId = findMarketLinks(url)[0]?.listingId;
+              return createPortal(
+                <DraftPill
+                  url={url}
+                  state={listingId ? listings.get(listingId) : undefined}
+                  onRemove={() => removeLink(index)}
+                />,
+                node,
+                key,
               );
             })}
-          </ul>
-        )}
-
-        <div className="flex items-end gap-1 p-1.5">
-          <ListingPicker onPick={attach}
-            onClosed={() => textareaRef.current?.focus()} />
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={text}
-            onChange={(e) => {
-              setActive(0);
-              // A listing link typed or pasted in becomes an attachment, the caret staying where it was
-              const typed = splitDraft(e.target.value);
-              if (typed.links.length > 0) {
-                caretRef.current = splitDraft(e.target.value.slice(0, e.target.selectionStart)).text.length;
-              }
-              onChange(joinDraft(typed.text, [...urls, ...typed.links.map((link) => link.url)]));
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            aria-label="Message"
-            aria-controls={menuOpen ? menuId : undefined}
-            aria-activedescendant={menuOpen ? `${menuId}-${activeIndex}` : undefined}
-            // 1–6 lines: grows with its content, then scrolls
-            className="field-sizing-content max-h-[8.25rem] min-h-8 flex-1 resize-none self-center bg-transparent px-1.5 py-1.5 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground"
-          />
+          </div>
           <Tip label={channel === 'whisper' ? `${whisperTip} (Enter)` : 'Send (Enter)'}>
             <button
               type="button"

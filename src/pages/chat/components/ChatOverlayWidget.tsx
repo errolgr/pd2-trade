@@ -402,7 +402,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   /** Links one of their listings in the draft (the sidebar's market); the slide-over makes way for it. */
   const insertListing = (listing: MarketListingEntry) => {
-    composerRef.current?.attach(listing);
+    composerRef.current?.insertListing(listing);
     if (!wide) setTraderOverlay(false);
   };
 

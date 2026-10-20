@@ -23,6 +23,7 @@ import {
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import ChatOverlayWidget from './ChatOverlayWidget';
+import { typeDraft } from './composer-test-utils';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -225,7 +226,10 @@ const lastEmittedUnread = () =>
     .mock.calls.filter(([key]) => key === 'chatUnread')
     .at(-1)?.[1];
 /** Message bubble texts in the open conversation, in order. */
-const bubbles = () => Array.from(document.querySelectorAll('section .whitespace-pre-wrap')).map((el) => el.textContent);
+const bubbles = () =>
+  Array.from(document.querySelectorAll('section [data-slot="scroll-area-viewport"] .whitespace-pre-wrap')).map(
+    (el) => el.textContent,
+  );
 
 async function select(name: string) {
   await act(async () => {
@@ -721,7 +725,7 @@ describe('ChatOverlayWidget composer', () => {
       conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
     ]);
     await select('Alice');
-    return screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+    return screen.getByRole('textbox', { name: 'Message' });
   }
 
   it('sends trimmed text on Enter, appends it and moves the conversation to the top', async () => {
@@ -729,14 +733,14 @@ describe('ChatOverlayWidget composer', () => {
     const input = await openAlice();
     expect(rows()[0].textContent).toContain('bob');
 
-    fireEvent.change(input, { target: { value: '  sure, 2 ist  ' } });
+    typeDraft(input, '  sure, 2 ist  ');
     await act(async () => {
       fireEvent.keyDown(input, { key: 'Enter' });
     });
     await flush(200);
 
     expect(api.sendMessage).toHaveBeenCalledWith('c1', 'sure, 2 ist', ME);
-    expect(input.value).toBe('');
+    expect(input.textContent).toBe('');
     expect(bubbles()).toEqual(['hi', 'sure, 2 ist']);
     expect(rows()[0].textContent).toContain('Alice');
     expect(within(rows()[0] as HTMLElement).queryByLabelText('Sent')).not.toBeNull();
@@ -746,20 +750,21 @@ describe('ChatOverlayWidget composer', () => {
     const input = await openAlice();
     const send = screen.getByRole('button', { name: /Send/ }) as HTMLButtonElement;
 
-    fireEvent.change(input, { target: { value: '   ' } });
+    typeDraft(input, '   ');
     expect(send.disabled).toBe(true);
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    fireEvent.change(input, { target: { value: 'draft' } });
+    typeDraft(input, 'draft');
+    // Shift+Enter starts a new line
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
     await flush();
 
     expect(api.sendMessage).not.toHaveBeenCalled();
-    expect(input.value).toBe('draft');
+    expect(input.textContent).toBe('draft\n');
   });
 
-  async function sendText(input: HTMLTextAreaElement, text: string) {
-    fireEvent.change(input, { target: { value: text } });
+  async function sendText(input: HTMLElement, text: string) {
+    typeDraft(input, text);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Send/ }));
     });
@@ -767,8 +772,9 @@ describe('ChatOverlayWidget composer', () => {
   }
   /** The bubble element of a message in the open conversation. */
   const bubbleOf = (text: string) =>
-    Array.from(document.querySelectorAll('section .whitespace-pre-wrap')).find((el) => el.textContent === text)!
-      .parentElement!;
+    Array.from(document.querySelectorAll('section [data-slot="scroll-area-viewport"] .whitespace-pre-wrap')).find(
+      (el) => el.textContent === text,
+    )!.parentElement!;
 
   it('shows a pending send as a dimmed bubble until the server acknowledges it', async () => {
     const response = Promise.withResolvers<Message>();
@@ -776,7 +782,7 @@ describe('ChatOverlayWidget composer', () => {
     const input = await openAlice();
     await sendText(input, 'hello');
 
-    expect(input.value).toBe('');
+    expect(input.textContent).toBe('');
     expect(bubbles()).toEqual(['hi', 'hello']);
     expect(bubbleOf('hello').getAttribute('aria-busy')).toBe('true');
     expect(within(bubbleOf('hello')).queryByLabelText('Sent')).toBeNull();
@@ -793,7 +799,7 @@ describe('ChatOverlayWidget composer', () => {
     const input = await openAlice();
     await sendText(input, 'hello');
 
-    expect(input.value).toBe('');
+    expect(input.textContent).toBe('');
     expect(bubbles()).toEqual(['hi', 'hello']);
     expect(within(bubbleOf('hello')).queryByText(/Failed/)).not.toBeNull();
     // The conversation preview only moves for delivered messages
@@ -839,16 +845,16 @@ describe('ChatOverlayWidget drafts and offers', () => {
       conv('c2', BOB, { latest: msg('b1', 'c2', 'bob', 'yo', 5) }),
     ]);
   }
-  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const composer = () => screen.getByRole('textbox', { name: 'Message' });
 
   it("keeps each conversation's unsent text when switching threads and hiding the panel", async () => {
     await openBoth();
     await select('Alice');
-    fireEvent.change(composer(), { target: { value: 'half-typed offer' } });
+    typeDraft(composer(), 'half-typed offer');
 
     await select('bob');
-    expect(composer().value).toBe('');
-    fireEvent.change(composer(), { target: { value: 'for bob' } });
+    expect(composer().textContent).toBe('');
+    typeDraft(composer(), 'for bob');
 
     panel.visible = false;
     await act(async () => rerenderWidget());
@@ -856,29 +862,29 @@ describe('ChatOverlayWidget drafts and offers', () => {
     await act(async () => rerenderWidget());
 
     await select('Alice');
-    expect(composer().value).toBe('half-typed offer');
+    expect(composer().textContent).toBe('half-typed offer');
     await select('bob');
-    expect(composer().value).toBe('for bob');
+    expect(composer().textContent).toBe('for bob');
     expect(api.sendMessage).not.toHaveBeenCalled();
   });
 
-  it("keeps a thread's attached listings with its draft when switching threads", async () => {
+  it("keeps a thread's inline listing pills with its draft when switching threads", async () => {
     const url = 'https://www.projectdiablo2.com/market/listing/dd01?display="Griffon\'s Eye"';
     await openBoth();
     await select('Alice');
-    // A pasted listing link becomes an attachment
+    // A typed or pasted listing link becomes an inline pill (named by its link until looked up)
     await act(async () => {
-      fireEvent.change(composer(), { target: { value: `how about ${url}` } });
+      typeDraft(composer(), `how about ${url} ok?`);
     });
-    const attachments = () => screen.queryByRole('list', { name: 'Attached listings' });
-    expect(composer().value).toBe('how about');
-    expect(within(attachments()!).getByText("Griffon's Eye")).not.toBeNull();
+    const pill = () => within(composer()).queryByText("Griffon's Eye");
+    expect(composer().textContent).toBe("how about Griffon's Eye ok?");
+    expect(pill()).not.toBeNull();
 
     await select('bob');
-    expect(attachments()).toBeNull();
+    expect(pill()).toBeNull();
     await select('Alice');
-    expect(composer().value).toBe('how about');
-    expect(within(attachments()!).getByText("Griffon's Eye")).not.toBeNull();
+    expect(composer().textContent).toBe("how about Griffon's Eye ok?");
+    expect(pill()).not.toBeNull();
   });
 
   it('pins offers with the other participant above the thread; Counter puts a reply in the composer', async () => {
@@ -904,7 +910,7 @@ describe('ChatOverlayWidget drafts and offers', () => {
     await act(async () => {
       fireEvent.click(within(deals).getByRole('button', { name: /Counter/ }));
     });
-    expect(composer().value).toBe('Counter for Shako: ');
+    expect(composer().textContent).toBe('Counter for Shako: ');
     expect(document.activeElement).toBe(composer());
   });
 });
@@ -1090,7 +1096,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     conversation.participants[1].game = { accounts };
     return conversation;
   };
-  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const composer = () => screen.getByRole('textbox', { name: 'Message' });
   const filterButton = (name: string) => screen.getByRole('radio', { name });
   const sourceTags = () =>
     Array.from(document.querySelectorAll('section [role="img"][aria-label]')).map((el) =>
@@ -1103,7 +1109,7 @@ describe('ChatOverlayWidget unified inbox', () => {
   }
   async function type(text: string) {
     await act(async () => {
-      fireEvent.change(composer(), { target: { value: text } });
+      typeDraft(composer(), text);
     });
     await act(async () => {
       fireEvent.keyDown(composer(), { key: 'Enter' });
@@ -1153,7 +1159,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     await select('Zed');
     expect(screen.queryByText('in-game only')).not.toBeNull();
     expect(screen.queryByRole('group', { name: 'Reply via' })).toBeNull();
-    expect(composer().placeholder).toBe('Whisper *Zed — copied for in-game chat');
+    expect(composer().getAttribute('aria-placeholder')).toBe('Whisper *Zed — copied for in-game chat');
 
     await type('2 ist');
     expect(writeText).toHaveBeenCalledWith('/w *Zed 2 ist');
@@ -1285,7 +1291,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     await renderWidget([]);
     await whisperAt(1, 'Zed', 'wtb shako?');
     await select('Zed');
-    fireEvent.change(composer(), { target: { value: 'half typed' } });
+    typeDraft(composer(), 'half typed');
 
     // A website conversation with Zed (account registered) appears while his whisper thread is open
     const first = msg('z1', 'c9', 'zed', 'hi from the site', 0);
@@ -1299,7 +1305,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(rows()).toHaveLength(1);
     expect(rowFor('zedweb').querySelector('[aria-current]')?.getAttribute('aria-current')).toBe('true');
     expect(bubbles()).toEqual(['wtb shako?', 'hi from the site']);
-    expect(composer().value).toBe('half typed');
+    expect(composer().textContent).toBe('half typed');
     expect(api.markMessagesAsRead.mock.calls).toEqual([[['z1'], ME]]);
     expect(headerUnread()).toBeNull();
     const sounds = audio.length;
@@ -1351,7 +1357,7 @@ describe('ChatOverlayWidget unified inbox', () => {
 });
 
 describe('ChatOverlayWidget overlay fit', () => {
-  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const composer = () => screen.getByRole('textbox', { name: 'Message' });
   const filterButton = (name: string) => screen.getByRole('radio', { name });
   const heading = () => screen.queryByRole('heading', { level: 3 })?.textContent ?? null;
   const jumpButton = () => screen.queryByRole('button', { name: /Jump to latest/ });
@@ -1496,7 +1502,7 @@ describe('ChatOverlayWidget overlay fit', () => {
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
     await select('Alice');
 
-    fireEvent.change(composer(), { target: { value: '/' } });
+    typeDraft(composer(), '/');
     expect(screen.queryByRole('listbox', { name: 'Message templates' })).not.toBeNull();
     await key(composer(), { key: 'Escape' });
     expect(screen.queryByRole('listbox', { name: 'Message templates' })).toBeNull();
@@ -1512,7 +1518,7 @@ describe('ChatOverlayWidget overlay fit', () => {
     await resize(400);
     await select('Alice');
     expect(rows()).toHaveLength(0);
-    fireEvent.change(composer(), { target: { value: '' } });
+    typeDraft(composer(), '');
     await key(composer(), { key: 'Escape' });
     expect(heading()).toBeNull();
     expect(rows()).toHaveLength(1);
@@ -1635,10 +1641,10 @@ describe('ChatOverlayWidget overlay fit', () => {
   it('focuses the composer for a Reply that opened the hidden panel only once it shows', async () => {
     messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
     await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
-    // Whether the panel was on screen at each focus (a hidden textarea can't take focus)
+    // Whether the panel was on screen at each focus of the composer (a hidden one can't take focus)
     const focusedWhileVisible: boolean[] = [];
-    const focus = vi.spyOn(HTMLTextAreaElement.prototype, 'focus').mockImplementation(() => {
-      focusedWhileVisible.push(panel.visible);
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute('aria-label') === 'Message') focusedWhileVisible.push(panel.visible);
     });
 
     panel.visible = false;
@@ -1681,7 +1687,7 @@ describe('ChatOverlayWidget overlay fit', () => {
 });
 
 describe('ChatOverlayWidget trader sidebar', () => {
-  const composer = () => screen.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
+  const composer = () => screen.getByRole('textbox', { name: 'Message' });
   const sidebar = () => screen.queryByRole('complementary', { name: 'Trader' });
   const heading = () => screen.queryByRole('heading', { level: 3 })?.textContent ?? null;
   const savedPrefs = () =>
@@ -1816,13 +1822,12 @@ describe('ChatOverlayWidget trader sidebar', () => {
     expect(heading()).toBe('Nia');
 
     await act(async () => {
-      fireEvent.change(composer(), { target: { value: 'how much for' } });
+      typeDraft(composer(), 'how much for');
     });
     await click(within(sidebar()!).getByRole('button', { name: 'Link Harlequin Crest in your message' }));
-    // Attached as a pill (by the name its link carries until it is looked up), not as URL text
-    expect(composer().value).toBe('how much for');
-    const attached = screen.getByRole('list', { name: 'Attached listings' });
-    expect(within(attached).getByText('Harlequin Crest')).not.toBeNull();
+    // Linked inline at the caret as a pill (by the name its link carries until looked up), not as URL text
+    expect(composer().textContent).toBe('how much for Harlequin Crest');
+    expect(within(composer()).getByText('Harlequin Crest')).not.toBeNull();
     // The slide-over made way for the composer
     expect(sidebar()).toBeNull();
 
