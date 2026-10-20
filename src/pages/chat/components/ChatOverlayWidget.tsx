@@ -670,7 +670,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     placeholder={
                       channel === 'whisper'
                         ? `Whisper *${whisperAccount} — copied for in-game chat`
-                        : `Message ${selectedThread.name}...`
+                        : `Message ${selectedThread.name}…  (/ for templates)`
                     }
                     templateVars={templateVars}
                     channel={channel}
