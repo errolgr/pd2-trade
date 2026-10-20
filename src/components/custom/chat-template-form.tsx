@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { ChatTemplateDraft } from '@/hooks/useChatTemplates';
-import { CHAT_TEMPLATE_TEXT_MAX, CHAT_TEMPLATE_TOKENS, chatTemplateSchema } from '@/lib/message-templates';
+import {
+  CHAT_TEMPLATE_TEXT_MAX,
+  CHAT_TEMPLATE_TOKENS,
+  chatTemplateSchema,
+  templatePlaceholders,
+} from '@/lib/message-templates';
 import { cn } from '@/lib/utils';
 
 type FieldErrors = Partial<Record<'name' | 'text', string>>;
@@ -50,6 +55,8 @@ export function ChatTemplateForm({
   const textRef = useRef<HTMLTextAreaElement>(null);
   // Caret to restore in the text once an inserted token is rendered
   const caretRef = useRef<number | null>(null);
+  // The placeholders this text will ask for when used
+  const asks = templatePlaceholders(text);
 
   useLayoutEffect(() => {
     const textarea = textRef.current;
@@ -157,7 +164,7 @@ export function ChatTemplateForm({
           rows={3}
           placeholder="e.g. Hi, is your {itemName} still available?"
           aria-invalid={errors.text ? true : undefined}
-          aria-describedby={errors.text ? `${id}-text-error` : `${id}-tokens`}
+          aria-describedby={errors.text ? `${id}-text-error` : `${id}-tokens ${id}-asks`}
           autoFocus={fixedName}
           className="min-h-16 font-mono text-sm"
         />
@@ -185,6 +192,22 @@ export function ChatTemplateForm({
             </button>
           ))}
         </div>
+        <p id={`${id}-asks`}
+          className="text-[11px] leading-relaxed text-muted-foreground">
+          {asks.length > 0 ? (
+            <>
+              Asks when used:
+              {asks.map((name) => (
+                <React.Fragment key={name}>
+                  {' '}
+                  <code className="rounded bg-primary/12 px-1 py-px font-mono text-primary">{`{${name}}`}</code>
+                </React.Fragment>
+              ))}
+            </>
+          ) : (
+            'Any other {name} is asked for when the template is used.'
+          )}
+        </p>
       </div>
 
       <div className="flex gap-1.5">

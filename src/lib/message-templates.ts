@@ -1,16 +1,46 @@
 import { z } from 'zod';
 
+/** A `{name}` in a template: a token filled from the conversation, or a placeholder asked for on use. */
+const TEMPLATE_FIELD = /\{([A-Za-z0-9_ -]{1,24})\}/g;
+
+/** Tokens filled automatically from the conversation; any other `{name}` is asked for when the template is used. */
+export const RESERVED_TEMPLATE_TOKENS: readonly string[] = [
+  'accountName',
+  'characterName',
+  'itemName',
+  'price',
+  'gameInfo',
+];
+
 /**
- * Fills `{token}` placeholders in a user-editable message template (Options → Chat). Tokens listed in `vars`
- * are replaced everywhere they appear, a missing value with ''; tokens not in `vars` stay as typed.
+ * Fills a user-editable message template (Settings → Chat, the chat's "/" menu) in one pass: `{token}`s listed
+ * in `vars` everywhere they appear (a missing value with ''), then the user's answers to its custom
+ * placeholders (`{game}`, `{pw}`, by trimmed name). Values go in literally (never expanded again); anything
+ * else stays as typed.
  */
 export function fillTemplate(
   template: string,
   vars: Readonly<Record<string, string | number | null | undefined>>,
+  answers: Readonly<Record<string, string>> = {},
 ): string {
-  return template.replace(/\{(\w+)\}/g, (token, name: string) =>
-    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name] ?? '') : token,
-  );
+  return template.replace(TEMPLATE_FIELD, (field, raw: string) => {
+    if (/^\w+$/.test(raw) && Object.prototype.hasOwnProperty.call(vars, raw)) return String(vars[raw] ?? '');
+    const name = raw.trim();
+    return name && Object.prototype.hasOwnProperty.call(answers, name) ? answers[name] : field;
+  });
+}
+
+/**
+ * The custom placeholders of a template — every `{name}` (letters, digits, `_`, `-` and spaces, up to 24) that
+ * isn't a reserved token — trimmed, deduped, in order of first appearance.
+ */
+export function templatePlaceholders(template: string): string[] {
+  const names: string[] = [];
+  for (const [, raw] of template.matchAll(TEMPLATE_FIELD)) {
+    const name = raw.trim();
+    if (name && !RESERVED_TEMPLATE_TOKENS.includes(name) && !names.includes(name)) names.push(name);
+  }
+  return names;
 }
 
 /** A user-defined chat message template, offered by the composer's "/" menu (Settings → Chat). */

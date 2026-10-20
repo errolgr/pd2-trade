@@ -24,7 +24,8 @@ export function ChatTemplatesEditor() {
     <div className="flex flex-col gap-3 px-4 py-3.5">
       <p className="text-[13px] leading-relaxed text-muted-foreground">
         Type <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-[11px]">/</kbd> in a
-        chat message to use these. Tokens fill in from the conversation.
+        chat message to use these. Tokens fill in from the conversation; any other {'{name}'} is asked for when you use
+        the template.
       </p>
 
       {templates.length > 0 ? (

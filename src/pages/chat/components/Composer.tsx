@@ -31,7 +31,7 @@ import { ChatTemplateForm } from '@/components/custom/chat-template-form';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useChatTemplates, type ChatTemplateDraft } from '@/hooks/useChatTemplates';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
-import { CHAT_TEMPLATE_TOKENS, fillTemplate } from '@/lib/message-templates';
+import { CHAT_TEMPLATE_TOKENS, fillTemplate, templatePlaceholders } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { undoToast, useOverlay } from '@/overlay';
@@ -49,6 +49,7 @@ import { findMarketLinks, spaceOutLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
 import { ListingPicker, listingMessageUrl } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
+import { TemplateFill } from './TemplateFill';
 
 /** One-click phrases inserted into the draft (never sent directly). */
 export const QUICK_REPLIES = ['Still available?', 'Sold, sorry', 'Inv me', 'ty gl'] as const;
@@ -64,11 +65,16 @@ type OfferTemplateKey = (typeof OFFER_TEMPLATES)[number]['key'];
 /** Tokens of the "Offer accepted" template: the chat template tokens plus the game to join. */
 const ACCEPT_OFFER_TOKENS = [{ token: '{gameInfo}', description: 'The game you are in' }, ...CHAT_TEMPLATE_TOKENS];
 
-/** A template the "/" menu offers, `text` filled in; `source` is what Edit/Delete work on. */
+/**
+ * A template the "/" menu offers: `text` with the conversation's tokens filled in, `raw` as written and the
+ * custom `placeholders` it asks for; `source` is what Edit/Delete work on.
+ */
 interface MenuTemplate {
   key: string;
   label: string;
   text: string;
+  raw: string;
+  placeholders: string[];
   source: { kind: 'custom'; id: string } | { kind: 'offer'; key: OfferTemplateKey; label: string };
 }
 
@@ -279,30 +285,41 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
   const [browsing, setBrowsing] = useState(false);
   const [form, setForm] = useState<MenuForm | null>(null);
+  // The template whose placeholders are being filled in before it goes in
+  const [filling, setFilling] = useState<MenuTemplate | null>(null);
   const [active, setActive] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const slash = SLASH_COMMAND.exec(value);
-  const templates = useMemo(() => {
-    const vars = {
+  // Every token gets a value ('' when the conversation has none)
+  const vars = useMemo(
+    () => ({
       gameInfo: templateVars.gameInfo,
       accountName: templateVars.accountName,
       characterName: templateVars.characterName,
       itemName: templateVars.itemName,
       price: templateVars.price,
-    };
-    const custom = chatTemplates.templates.flatMap(({ id, name, text }): MenuTemplate[] =>
-      text.trim()
-        ? [{ key: `custom:${id}`, label: name, text: fillTemplate(text, vars), source: { kind: 'custom', id } }]
-        : [],
-    );
-    const offers = OFFER_TEMPLATES.flatMap(({ key, label }): MenuTemplate[] => {
-      const template = settings?.[key];
-      return typeof template === 'string' && template.trim()
-        ? [{ key: `offer:${key}`, label, text: fillTemplate(template, vars), source: { kind: 'offer', key, label } }]
-        : [];
-    });
-    return [...custom, ...offers];
-  }, [chatTemplates.templates, settings, templateVars]);
+    }),
+    [templateVars],
+  );
+  const templates = useMemo((): MenuTemplate[] => {
+    const written: Pick<MenuTemplate, 'key' | 'label' | 'raw' | 'source'>[] = [
+      ...chatTemplates.templates.map(({ id, name, text }) => ({
+        key: `custom:${id}`,
+        label: name,
+        raw: text,
+        source: { kind: 'custom' as const, id },
+      })),
+      ...OFFER_TEMPLATES.map(({ key, label }) => ({
+        key: `offer:${key}`,
+        label,
+        raw: settings?.[key] ?? '',
+        source: { kind: 'offer' as const, key, label },
+      })),
+    ];
+    return written
+      .filter((t) => typeof t.raw === 'string' && t.raw.trim())
+      .map((t) => ({ ...t, text: fillTemplate(t.raw, vars), placeholders: templatePlaceholders(t.raw) }));
+  }, [chatTemplates.templates, settings, vars]);
   const query = slash?.[1].toLowerCase().trim() ?? '';
   const matches = slash
     ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
@@ -323,12 +340,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               submitLabel: 'Save',
             }
           : null;
-  const menuOpen = listOpen || formSetup !== null;
+  const menuOpen = listOpen || formSetup !== null || filling !== null;
   const actions: MenuAction[] = [...(!slash && value.trim() ? (['save'] as const) : []), 'new', 'manage'];
   const optionCount = matches.length + actions.length;
   const activeIndex = Math.min(active, optionCount - 1);
   const activeTemplate: MenuTemplate | undefined = matches[activeIndex];
-  const listShown = listOpen && !formSetup;
+  const listShown = listOpen && !formSetup && !filling;
 
   // Keep the option chosen with the arrow keys in view (a long template list scrolls)
   useLayoutEffect(() => {
@@ -343,11 +360,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     setCaret(editor, Math.min(lastSelectionRef.current?.[1] ?? value.length, value.length));
   };
 
-  /** Puts a template's text in: replaces the "/query" draft, or goes in at the caret (Templates button). */
-  const pickTemplate = (text: string) => {
+  /** Puts a filled template in: replaces the "/query" draft, or goes in at the caret (Templates button). */
+  const insertTemplate = (text: string) => {
     setBrowsing(false);
     if (slash) edit(text, text.length);
     else insertAtCaret(text);
+  };
+
+  /** A template with custom placeholders asks for them first; others go in right away. */
+  const pickTemplate = (template: MenuTemplate) => {
+    if (template.placeholders.length > 0) setFilling(template);
+    else insertTemplate(template.text);
   };
 
   /** Opens Settings → Chat; a "/" typed to get here is dropped. */
@@ -423,7 +446,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       }
       if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
         e.preventDefault();
-        if (activeTemplate) pickTemplate(activeTemplate.text);
+        if (activeTemplate) pickTemplate(activeTemplate);
         else runAction(actions[activeIndex - matches.length]);
         return;
       }
@@ -493,9 +516,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               <span className="ml-auto truncate font-normal normal-case tracking-normal">
                 {formSetup
                   ? 'Ctrl+Enter to save · Esc to go back'
-                  : activeTemplate
-                    ? `↑↓ choose · Enter insert · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
-                    : '↑↓ to choose · Enter to select'}
+                  : filling
+                    ? 'Enter to insert · Esc to go back'
+                    : activeTemplate
+                      ? `↑↓ choose · Enter insert · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
+                      : '↑↓ to choose · Enter to select'}
               </span>
             </div>
             {formSetup ? (
@@ -512,6 +537,22 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 onCancel={closeForm}
                 className="max-h-80 overflow-y-auto"
               />
+            ) : filling ? (
+              <TemplateFill
+                key={filling.key}
+                label={filling.label}
+                template={filling.raw}
+                placeholders={filling.placeholders}
+                vars={vars}
+                onInsert={(text) => {
+                  setFilling(null);
+                  insertTemplate(text);
+                }}
+                onCancel={() => {
+                  setFilling(null);
+                  focusEditor();
+                }}
+              />
             ) : (
               <ul id={menuId}
                 role="listbox"
@@ -525,7 +566,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                     aria-selected={i === activeIndex}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={() => setActive(i)}
-                    onClick={() => pickTemplate(t.text)}
+                    onClick={() => pickTemplate(t)}
                     className={cn(
                       'group/template flex cursor-pointer items-start gap-2 rounded-md py-1.5 pr-1.5 pl-2.5 transition-colors duration-(--dur-fast)',
                       i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
@@ -683,6 +724,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   if (slash) setDismissedAt(value);
                   setBrowsing(false);
                   setForm(null);
+                  setFilling(null);
                 } else {
                   setDismissedAt(null);
                   setActive(0);

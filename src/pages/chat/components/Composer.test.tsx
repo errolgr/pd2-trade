@@ -431,6 +431,105 @@ describe('Composer template management', () => {
   });
 });
 
+describe('Composer template placeholders', () => {
+  const fields = () =>
+    within(screen.getByRole('form', { name: /^Fill in/ })).getAllByRole('textbox') as HTMLInputElement[];
+  const labels = () => fields().map((f) => f.labels?.[0]?.textContent);
+  const preview = () => screen.getByLabelText('Preview').textContent;
+  const fill = (input: HTMLInputElement, value: string) => fireEvent.change(input, { target: { value } });
+
+  it('asks for the custom placeholders first, deduped in order, with a live preview; Enter walks to the end', () => {
+    settings.chatTemplates = [
+      { id: 'g', name: 'Game', text: '{itemName} is yours, join {game} / { pw }, {game}!' },
+      { id: 'h', name: 'Hi', text: 'hi {accountName}' },
+    ];
+    render(<Harness />);
+    type('/game');
+    fireEvent.keyDown(editor(), { key: 'Enter' });
+
+    // Not inserted yet: the menu shows the fill-in form instead of the list
+    expect(editor().textContent).toBe('/game');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(labels()).toEqual(['game', 'pw']);
+    expect(document.activeElement).toBe(fields()[0]);
+    expect(preview()).toBe('Shako is yours, join  / , !');
+    expect(screen.getByText(/Left empty, inserted blank: \{game\} \{pw\}/)).toBeTruthy();
+
+    fill(fields()[0], 'Baal-12 {price}');
+    expect(preview()).toBe('Shako is yours, join Baal-12 {price} / , Baal-12 {price}!');
+    fireEvent.keyDown(fields()[0], { key: 'Enter' });
+    expect(document.activeElement).toBe(fields()[1]);
+    fill(fields()[1], '1');
+    expect(screen.queryByText(/Left empty/)).toBeNull();
+    fireEvent.keyDown(fields()[1], { key: 'Enter' });
+
+    // Values go in literally
+    expect(editor().textContent).toBe('Shako is yours, join Baal-12 {price} / 1, Baal-12 {price}!');
+    expect(screen.queryByRole('form')).toBeNull();
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it('Esc goes back to the list without inserting; templates without placeholders go in right away', () => {
+    settings.chatTemplates = [
+      { id: 'r', name: 'Room', text: 'come to {room}' },
+      { id: 'h', name: 'Hi', text: 'hi {accountName}' },
+    ];
+    render(<Harness />);
+    type('/');
+    fireEvent.click(screen.getByRole('option', { name: /Room/ }));
+    const esc = fireEvent.keyDown(fields()[0], { key: 'Escape' });
+    expect(esc).toBe(false);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(document.activeElement).toBe(editor());
+    expect(editor().textContent).toBe('/');
+
+    fireEvent.click(screen.getByRole('option', { name: /^Hi/ }));
+    expect(screen.queryByRole('form')).toBeNull();
+    expect(editor().textContent).toBe('hi AliceAcc');
+  });
+
+  it('remembers the answers for the session and offers them again', () => {
+    settings.chatTemplates = [
+      { id: 'a', name: 'Join', text: 'join {lobby}/{secret}' },
+      { id: 'b', name: 'Rejoin', text: 'back in {lobby} ({secret})' },
+    ];
+    render(<Harness />);
+    type('/join');
+    fireEvent.keyDown(editor(), { key: 'Enter' });
+    fill(fields()[0], 'baal-7');
+    fill(fields()[1], 'x');
+    fireEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    expect(editor().textContent).toBe('join baal-7/x');
+
+    type('/rejoin');
+    fireEvent.keyDown(editor(), { key: 'Enter' });
+    expect(fields().map((f) => f.value)).toEqual(['baal-7', 'x']);
+    expect(preview()).toBe('back in baal-7 (x)');
+  });
+
+  it('from the Templates button the filled message goes in at the caret; Ctrl+Enter inserts from any field', () => {
+    settings.chatTemplates = [{ id: 'a', name: 'Pw', text: 'pw {passcode} {spot}' }];
+    render(<Harness />);
+    type('ok  ty', 3);
+    fireEvent.click(screen.getByRole('button', { name: 'Message templates' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Pw/ }));
+    fill(fields()[0], '42');
+    fireEvent.keyDown(fields()[0], { key: 'Enter', ctrlKey: true });
+    expect(editor().textContent).toBe('ok pw 42  ty');
+  });
+
+  it('shows the placeholders a template will ask for while it is written', () => {
+    render(<Harness />);
+    type('/');
+    fireEvent.click(screen.getByRole('option', { name: 'New template' }));
+    expect(screen.getByText(/Any other \{name\} is asked for/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Message', { selector: 'textarea' }), {
+      target: { value: 'join {game} {itemName} {pw} {game}' },
+    });
+    expect(screen.getByText(/Asks when used:/).textContent).toBe('Asks when used: {game} {pw}');
+  });
+});
+
 describe('Composer quick replies', () => {
   it('inserts a chip at the caret without sending', () => {
     render(<Harness />);
