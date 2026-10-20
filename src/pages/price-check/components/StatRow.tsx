@@ -95,16 +95,16 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    // py-0.5 keeps a gap between the highlights of neighbouring rows.
+    // Table rows: full-width lines between rows; selected = accent tint + 3px left bar, hover = faint tint.
     <div data-active={isActive || undefined}
-      className="py-0.5">
+      className="not-first:border-t not-first:border-border/70">
       <label
         key={statKey}
         className={cn(
-          'flex min-h-9 flex-row items-center justify-between gap-2 rounded-md px-2 py-1',
+          'flex min-h-10 flex-row items-center justify-between gap-2 px-2.5 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
-          isActive ? 'bg-accent/60 shadow-[inset_2px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-accent/40',
-          !isActive && rare?.stars && 'bg-glow/8 hover:bg-glow/12',
+          isActive ? 'bg-glow/8 shadow-[inset_3px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-foreground/4',
+          !isActive && rare?.stars && 'bg-glow/6 hover:bg-glow/10',
           nested && 'pl-8',
           isUnknown && 'cursor-not-allowed',
         )}
