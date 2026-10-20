@@ -762,34 +762,21 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               <FileText className="size-3" />
             </button>
           </Tip>
-          {/* The starred templates, in template order; each picks its template like the "/" menu does */}
+          {/* The starred templates, in template order; each picks its template like the "/" menu does.
+              Unpinning is only done by unstarring the template (in the "/" menu or Settings). */}
           {favorites.length > 0 ? (
             favorites.map((t) => (
-              <span
+              <button
                 key={t.key}
-                className="group/chip inline-flex shrink-0 items-center rounded-full border border-border/70 bg-background/50 text-xs text-muted-foreground transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-within:border-primary/40"
+                type="button"
+                title={t.text}
+                // Keep the draft's caret/selection: the chip inserts where the user was typing
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pickTemplate(t)}
+                className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
               >
-                <button
-                  type="button"
-                  title={t.text}
-                  // Keep the draft's caret/selection: the chip inserts where the user was typing
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => pickTemplate(t)}
-                  className="whitespace-nowrap rounded-full py-0.5 pr-1 pl-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
-                >
-                  {t.label}
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Unpin ${t.label}`}
-                  title="Remove from here (unstars it; the template stays)"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => toggleFavorite(t)}
-                  className="mr-1 inline-flex size-3.5 items-center justify-center rounded-full opacity-0 outline-none transition-opacity duration-(--dur-fast) hover:bg-foreground/10 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60 group-hover/chip:opacity-100 group-focus-within/chip:opacity-100"
-                >
-                  <X className="size-2.5" />
-                </button>
-              </span>
+                {t.label}
+              </button>
             ))
           ) : (
             <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground/80">

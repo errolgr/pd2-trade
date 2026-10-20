@@ -568,15 +568,6 @@ describe('Composer starred templates', () => {
     expect(editor().textContent).toBe('hey join baal-3');
   });
 
-  it('× takes a chip off the row; the template stays', () => {
-    render(<Harness />);
-    fireEvent.click(within(row()).getByRole('button', { name: 'Unpin Inv me' }));
-    expect(savedTemplates()).toEqual([STARRED[0], STARRED[1], { ...STARRED[2], favorite: false }, STARRED[3]]);
-    expect(chips()).toEqual(['Still available?', 'Game']);
-    type('/');
-    expect(options()).toContain('Inv meSure, inv me.');
-  });
-
   it('stars a template from the "/" menu (click or Ctrl+S), offer templates too, and shows its chip', () => {
     render(<Harness />);
     type('/price');
