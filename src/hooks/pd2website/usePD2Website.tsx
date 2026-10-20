@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
-import { useSocialActions } from './useSocialActions';
-import { useTradeOffers } from '../useTradeOffers';
+import { useSocialActions, type SocialActions } from './useSocialActions';
+import { useTradeOffers, type TradeOffer } from '../useTradeOffers';
 import { useSocket, type SubscribeSocket } from './useSocket';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
@@ -14,8 +14,6 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
-import { TradeMessageData } from '@/components/trade/TradeMessage';
 import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -50,7 +48,7 @@ export class AccountMismatchError extends Error {
   }
 }
 
-interface Pd2WebsiteContextType {
+interface Pd2WebsiteContextType extends SocialActions {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
     stashItem: GameStashItem,
@@ -65,17 +63,11 @@ interface Pd2WebsiteContextType {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
-  deleteConversation: (conversationId: string) => Promise<void>;
-  getConversations: (participantId: string) => Promise<ConversationListResponse>;
-  getMessages: (conversationId: string) => Promise<MessageListResponse>;
-  sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
-  markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
-  createConversation: (participantIds: string[]) => Promise<any>;
-  incomingOffers: TradeMessageData[];
-  outgoingOffers: TradeMessageData[];
-  hiddenOutgoingOffers: TradeMessageData[];
+  incomingOffers: TradeOffer[];
+  outgoingOffers: TradeOffer[];
+  hiddenOutgoingOffers: TradeOffer[];
   loading: boolean;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   revokeOffer: (offerId: string) => Promise<void>;
   acceptOffer: (listingId: string, offerId: string) => Promise<void>;
   rejectOffer: (offerId: string) => Promise<void>;
@@ -207,7 +199,6 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } =
     useSocialActions({
       settings,
-      authData,
       onAuthError: handleAuthenticationError,
     });
 

@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openUrl } from '@/lib/browser-opener';
 import { ItemsProvider } from '@/hooks/useItems';
+import { useOptions } from '@/hooks/useOptions';
+import { fetchMultipleItemPrices, type AveragePriceResponse } from '@/pages/currency/lib/price-api';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ChatListingState } from '../hooks/useChatListings';
 import { MessageContent } from './MessageContent';
 
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
+vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+vi.mock('@/pages/currency/lib/price-api', () => ({ fetchMultipleItemPrices: vi.fn() }));
 
 const LISTING = 'https://www.projectdiablo2.com/market/listing/0123456789abcdef';
 
@@ -162,6 +166,11 @@ describe('MessageContent listing cards', () => {
       ...over,
     }) as unknown as MarketListingEntry;
 
+  beforeEach(() => {
+    vi.mocked(useOptions).mockReturnValue({ settings: {} } as never);
+    vi.mocked(fetchMultipleItemPrices).mockResolvedValue(new Map());
+  });
+
   function renderWith(state: ChatListingState | undefined) {
     const listings = new Map<string, ChatListingState>(state ? [[ID, state]] : []);
     return render(
@@ -207,5 +216,25 @@ describe('MessageContent listing cards', () => {
     renderWith({ status: 'listed', listing: listing() });
     fireEvent.error(screen.getByRole('link').querySelector('img')!);
     expect(screen.getByRole('link').querySelector('img')).toBeNull();
+  });
+
+  it('shows the market price and how the asking price compares in the popover', async () => {
+    vi.mocked(fetchMultipleItemPrices).mockResolvedValue(
+      new Map([['r27', { baseCode: 'r27', medianPrice: 1, movingAverage7Days: 1.25 } as AveragePriceResponse]]),
+    );
+    const ohm = listing({ hr_price: 1 });
+    ohm.item.base_code = 'r27';
+    renderWith({ status: 'listed', listing: ohm });
+
+    fireEvent.mouseEnter(screen.getByRole('link'));
+    const market = await screen.findByText('Market:');
+    expect(market.parentElement!.textContent).toBe('Market:1.25 HR · 7d20% under market');
+  });
+
+  it('leaves the market row out when the item has no market price', async () => {
+    renderWith({ status: 'listed', listing: listing({ hr_price: 1 }) });
+    fireEvent.mouseEnter(screen.getByRole('link'));
+    await screen.findByText('Price:');
+    expect(screen.queryByText('Market:')).toBeNull();
   });
 });

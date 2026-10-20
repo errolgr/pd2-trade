@@ -68,6 +68,11 @@ describe('fetchEconomyData', () => {
     expect(data.Runes['Jah Rune'].dataByIngestionDate[0].price).toBe(1.8);
   });
 
+  it('returns empty runes when the batch request fails', async () => {
+    vi.mocked(fetchMultipleItemPrices).mockResolvedValue(null);
+    expect(await fetchEconomyData()).toEqual({ Runes: {} });
+  });
+
   it('returns empty runes when the price API throws', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(fetchMultipleItemPrices).mockRejectedValue(new Error('down'));

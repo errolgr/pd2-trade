@@ -28,6 +28,7 @@ vi.mock('./hooks/useDialog', () => ({ DialogProvider: wrap('dialog') }));
 vi.mock('./hooks/useTray', () => ({ TrayProvider: wrap('tray') }));
 vi.mock('./hooks/useItems', () => ({ ItemsProvider: wrap('items') }));
 vi.mock('./hooks/useNetWorth', () => ({ NetWorthProvider: wrap('networth') }));
+vi.mock('./hooks/useWhisperHistory', () => ({ WhisperHistoryProvider: wrap('whispers') }));
 vi.mock('./overlay', () => ({ OverlayProvider: wrap('overlay'), OverlayRoot: () => <p>overlay-root</p> }));
 vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
@@ -70,7 +71,7 @@ describe('main routing', () => {
   it('mounts every provider once around the app controller, handlers and overlay root', async () => {
     const { root } = await boot('/');
     // Overlay sits above the domain providers: Tray, Pd2Website and NetWorth open panels through it.
-    const chain = ['dialog', 'options', 'overlay', 'tray', 'items', 'pd2website', 'networth'];
+    const chain = ['dialog', 'options', 'overlay', 'tray', 'items', 'pd2website', 'whispers', 'networth'];
     let node: Element | null = root;
     for (const name of chain) {
       node = node!.querySelector(`:scope > [data-wrapper="${name}"]`);

@@ -47,14 +47,14 @@ describe('ChatButton', () => {
     render(<ChatButton handleClick={vi.fn()}
       onSettingsClick={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeNull();
-    expect(screen.queryByRole('button', { name: 'Trade Messages' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Offers' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Manage Listings' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Disable Overlay' })).toBeNull();
   });
 
   it('shows no badges when counts are zero', () => {
     render(<ChatButton handleClick={vi.fn()}
-      onTradeMessagesClick={vi.fn()} />);
+      onOffersClick={vi.fn()} />);
     expect(screen.queryByLabelText(/unread messages$/)).toBeNull();
     expect(tradeBadge()).toBeNull();
   });
@@ -114,9 +114,9 @@ describe('ChatButton', () => {
 
   it('moves the trade offers badge from the main orb to the trade button while expanded', async () => {
     render(<ChatButton handleClick={vi.fn()}
-      onTradeMessagesClick={vi.fn()}
+      onOffersClick={vi.fn()}
       tradeOffersCount={3} />);
-    const tradeButton = screen.getByRole('button', { name: 'Trade Messages' });
+    const tradeButton = screen.getByRole('button', { name: 'Offers' });
 
     expect(tradeBadge()!.parentElement).toBe(mainButton().parentElement);
 
@@ -150,19 +150,19 @@ describe('ChatButton', () => {
 
   it('routes fan buttons to their handlers', () => {
     const onSettingsClick = vi.fn();
-    const onTradeMessagesClick = vi.fn();
+    const onOffersClick = vi.fn();
     const onManageListingsClick = vi.fn();
     render(
       <ChatButton
         handleClick={vi.fn()}
         onSettingsClick={onSettingsClick}
-        onTradeMessagesClick={onTradeMessagesClick}
+        onOffersClick={onOffersClick}
         onManageListingsClick={onManageListingsClick}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Trade Messages' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
     fireEvent.click(screen.getByRole('button', { name: 'Manage Listings' }));
-    expect(onTradeMessagesClick).toHaveBeenCalledTimes(1);
+    expect(onOffersClick).toHaveBeenCalledTimes(1);
     expect(onManageListingsClick).toHaveBeenCalledTimes(1);
     expect(onSettingsClick).not.toHaveBeenCalled();
   });

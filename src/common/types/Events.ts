@@ -7,6 +7,8 @@ export enum ToastActionType {
 export interface CustomToastPayload {
   title?: string;
   description?: string;
+  /** ms; sonner's default when unset. */
+  duration?: number;
   action?: {
     label: string;
     type: ToastActionType;

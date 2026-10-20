@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { InboxFilter } from '@/pages/chat/lib/inbox';
 
 export type PanelId =
   | 'itemSearch'
@@ -8,7 +9,6 @@ export type PanelId =
   | 'currency'
   | 'chat'
   | 'chatButton'
-  | 'tradeMessages'
   | 'settings'
   | 'changeLog'
   | 'signIn'
@@ -22,9 +22,23 @@ export interface PanelPayloads {
   /** item = encodeItemForQuickList(raw); undefined = manage mode */
   quickList: { item?: string; error?: 'not_shared_stash' } | undefined;
   currency: { tab?: NetWorthTab } | undefined;
-  chat: { conversationId?: string; conversation?: unknown } | undefined;
+  /**
+   * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a
+   * thread by any id it is known by (e.g. `whisper:<name>` of a whisper sender); newestUnread: the newest
+   * thread with unread messages; reply: focus the composer; filter: the conversation list filter to show (the
+   * offers hotkey opens 'selling').
+   */
+  chat:
+    | {
+        conversationId?: string;
+        conversation?: unknown;
+        threadId?: string;
+        newestUnread?: boolean;
+        reply?: boolean;
+        filter?: InboxFilter;
+      }
+    | undefined;
   chatButton: undefined;
-  tradeMessages: undefined;
   settings: undefined;
   changeLog: undefined;
   signIn: undefined;

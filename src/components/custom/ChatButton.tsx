@@ -7,7 +7,7 @@ import { popIn } from '@/lib/motion';
 interface ChatButtonProps {
   handleClick: () => void;
   onSettingsClick?: () => void;
-  onTradeMessagesClick?: () => void;
+  onOffersClick?: () => void;
   onManageListingsClick?: () => void;
   onDisableClick?: () => void;
   unreadCount?: number;
@@ -55,7 +55,7 @@ const CountBadge: React.FC<{ count: number; className: string; label: string }> 
 export const ChatButton: React.FC<ChatButtonProps> = ({
   handleClick,
   onSettingsClick,
-  onTradeMessagesClick,
+  onOffersClick,
   onManageListingsClick,
   onDisableClick,
   unreadCount = 0,
@@ -162,16 +162,16 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             </button>
           )}
 
-          {/* Trade Messages Button Circle */}
-          {onTradeMessagesClick && (
+          {/* Offers Button Circle (chat on the Selling filter) */}
+          {onOffersClick && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
               style={fanStyle('trade')}>
               <button
                 type="button"
-                onClick={onTradeMessagesClick}
+                onClick={onOffersClick}
                 className={cn(orb, 'relative top-auto left-auto translate-x-0 translate-y-0', itemSize)}
-                aria-label="Trade Messages"
-                title="Trade Messages"
+                aria-label="Offers"
+                title="Offers"
               >
                 <ShoppingBag className={cn(iconSize, iconTransition)} />
               </button>

@@ -24,7 +24,7 @@ export async function fetchEconomyData(config: PriceApiConfig = {}): Promise<Eco
 
     const runePrices = await fetchMultipleItemPrices(runeItems, effectiveConfig);
 
-    runePrices.forEach((price) => {
+    runePrices?.forEach((price) => {
       const runeName = price.itemName;
       if (runeName) {
         results.Runes[runeName] = {

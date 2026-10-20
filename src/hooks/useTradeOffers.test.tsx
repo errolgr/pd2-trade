@@ -137,11 +137,9 @@ describe('useTradeOffers fetching', () => {
       });
     const { result } = await renderOffers();
 
-    expect(
-      result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.message, o.acceptedOfferId]),
-    ).toEqual([
-      ['o1', 'buyer-o1', '2 ist', 'Offer: 2 ist', 'o1'],
-      ['o3', 'Unknown', '3 HR', 'Offer: 3', 'o1'],
+    expect(result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.acceptedOfferId])).toEqual([
+      ['o1', 'buyer-o1', '2 ist', 'o1'],
+      ['o3', 'Unknown', '3 HR', 'o1'],
     ]);
     expect(result.current.incomingOffers[0]).toMatchObject({
       isIncoming: true,
@@ -160,17 +158,31 @@ describe('useTradeOffers fetching', () => {
           outgoingOffer('a'),
           outgoingOffer('b', {
             listing: undefined,
-            listing_archive: { _id: 'arch', item: { name: 'Arach' }, user: { _id: 's', username: 'Seller' } },
+            listing_archive: {
+              _id: 'arch',
+              accepted_offer_id: 'b',
+              item: { name: 'Arach' },
+              user: { _id: 's', username: 'Seller' },
+            },
           }),
+          outgoingOffer('c', { rejected: true }),
         ],
       });
     const { result } = await renderOffers();
 
     expect(
-      result.current.outgoingOffers.map((o) => [o.id, o.isIncoming, o.playerName, o.itemName, o.listingId]),
+      result.current.outgoingOffers.map((o) => [
+        o.id,
+        o.isIncoming,
+        o.playerName,
+        o.itemName,
+        o.listingId,
+        o.acceptedOfferId,
+        o.listingClosed,
+      ]),
     ).toEqual([
-      ['a', false, 'seller-a', 'Item a', 'listing-a'],
-      ['b', false, 'Seller', 'Arach', 'arch'],
+      ['a', false, 'seller-a', 'Item a', 'listing-a', undefined, false],
+      ['b', false, 'Seller', 'Arach', 'arch', 'b', true],
     ]);
   });
 
@@ -322,6 +334,34 @@ describe('useTradeOffers actions', () => {
     expect(toasts()).toEqual([
       { title: 'Offer Accepted', description: "You accepted buyer-o1's offer on Shako", variant: 'success' },
     ]);
+  });
+
+  it('settles an accept only once the refetched offers show it', async () => {
+    let accepted = false;
+    const refetch = Promise.withResolvers<void>();
+    api.incoming = async () => {
+      if (accepted) await refetch.promise;
+      return apiResponse({
+        data: [incomingListing([websiteOffer('o1')], accepted ? { accepted_offer_id: 'o1' } : {})],
+      });
+    };
+    const { result } = await renderOffers();
+    accepted = true;
+
+    let settled = false;
+    let accept!: Promise<void>;
+    await act(async () => {
+      accept = result.current.acceptOffer('L1', 'o1').then(() => {
+        settled = true;
+      });
+    });
+    expect(settled).toBe(false);
+
+    await act(async () => {
+      refetch.resolve();
+      await accept;
+    });
+    expect(result.current.incomingOffers[0].acceptedOfferId).toBe('o1');
   });
 
   it('rethrows and shows an error toast when accepting fails', async () => {

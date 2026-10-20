@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from 'react';
 
-export type BadgeKey = 'chatUnread' | 'tradeMessages' | 'tradeOffers';
+/** chatUnread: website + whisper unread; whisperTrades: open trade whispers; tradeOffers: website offers. */
+export type BadgeKey = 'chatUnread' | 'whisperTrades' | 'tradeOffers';
 
-const counts: Record<BadgeKey, number> = { chatUnread: 0, tradeMessages: 0, tradeOffers: 0 };
+const counts: Record<BadgeKey, number> = { chatUnread: 0, whisperTrades: 0, tradeOffers: 0 };
 const subscribers = new Set<() => void>();
 
 export function setBadgeCount(key: BadgeKey, n: number): void {

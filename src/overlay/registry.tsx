@@ -3,7 +3,6 @@ import { QuickListPage } from '@/pages/quick-list/QuickListPage';
 import { StashValueWindow } from '@/pages/currency/StashValueWindow';
 import ChatPage from '@/pages/chat/ChatPage';
 import ChatButtonPage from '@/pages/chat/ChatButtonPage';
-import TradeMessagesPage from '@/pages/trade-messages/TradeMessagesPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import ChangelogPage from '@/pages/change-log/ChangeLogPage';
 import SignInPage from '@/pages/sign-in/SignInPage';
@@ -62,8 +61,11 @@ export const PANEL_DEFS: PanelDefs = {
   chat: {
     id: 'chat',
     component: ChatPage,
-    size: { width: 1000, height: 700 },
-    resizable: false,
+    // Opens wide: conversation list | thread | Trader sidebar (from 1020px); narrower it drops the sidebar to a
+    // slide-over, below 640px to one column (the list or a thread). Clamped to the screen.
+    size: { width: 1100, height: 720 },
+    minSize: { width: 360, height: 480 },
+    resizable: true,
     placement: 'gameCenter',
     persist: true,
     keyboard: 'onPointerDown',
@@ -85,20 +87,6 @@ export const PANEL_DEFS: PanelDefs = {
     hideOnGameBlur: true,
     // the orb sits centered in the frame; only it (and the expanded fan) take clicks
     interactive: 'children',
-  },
-
-  // ---- tradeMessages (Group Chat/Trade) ----
-  tradeMessages: {
-    id: 'tradeMessages',
-    component: TradeMessagesPage,
-    size: { width: 600, height: 400 },
-    resizable: true,
-    placement: 'gameCenter',
-    persist: true,
-    keyboard: 'onPointerDown',
-    keepMounted: true,
-    hideOnGameBlur: true,
-    closeOnBlur: true,
   },
 
   // ---- settings (Group Settings) ----

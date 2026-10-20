@@ -120,7 +120,7 @@ describe('fetchItemPriceByName', () => {
 describe('fetchMultipleItemPrices', () => {
   it('does not hit the network for an empty list', async () => {
     const result = await fetchMultipleItemPrices([]);
-    expect(result.size).toBe(0);
+    expect(result?.size).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -137,25 +137,25 @@ describe('fetchMultipleItemPrices', () => {
     expect(init?.method).toBe('POST');
     expect(JSON.parse(init?.body as string)).toEqual({ baseCodes: ['r30', 'r31', 'r33'], isLadder: true, hours: 24 });
 
-    expect(result.get('r30')?.medianPrice).toBe(1);
-    expect(result.get('r31')?.medianPrice).toBe(2);
-    expect(result.has('r33')).toBe(false);
+    expect(result!.get('r30')?.medianPrice).toBe(1);
+    expect(result!.get('r31')?.medianPrice).toBe(2);
+    expect(result!.has('r33')).toBe(false);
   });
 
-  it('returns an empty map for a malformed batch body', async () => {
+  it('returns null for a malformed batch body', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, { data: 'nope' }));
-    expect((await fetchMultipleItemPrices([{ baseCode: 'r30' }])).size).toBe(0);
+    expect(await fetchMultipleItemPrices([{ baseCode: 'r30' }])).toBeNull();
     expect(report).not.toHaveBeenCalled();
   });
 
-  it('returns an empty map and reports on HTTP and network errors (no per-item fallback)', async () => {
+  it('returns null and reports on HTTP and network errors (no per-item fallback)', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(500, {}, 'err'));
-    expect((await fetchMultipleItemPrices([{ baseCode: 'r30' }, { baseCode: 'r31' }])).size).toBe(0);
+    expect(await fetchMultipleItemPrices([{ baseCode: 'r30' }, { baseCode: 'r31' }])).toBeNull();
     expect(report.mock.calls[0][2]).toBe('item-prices/average/batch');
     expect(report.mock.calls[0][3]).toBe(500);
 
     fetchMock.mockRejectedValueOnce(new Error('down'));
-    expect((await fetchMultipleItemPrices([{ baseCode: 'r30' }])).size).toBe(0);
+    expect(await fetchMultipleItemPrices([{ baseCode: 'r30' }])).toBeNull();
     expect(report).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

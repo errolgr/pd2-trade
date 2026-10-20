@@ -115,8 +115,8 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeyChat',
   },
   {
-    label: 'Offers Window',
-    description: 'Show or hide your trade offers.',
+    label: 'Offers',
+    description: 'Open chat on the people you are selling to.',
     modifier: 'hotkeyModifierOffers',
     key: 'hotkeyKeyOffers',
   },
@@ -220,9 +220,11 @@ export function HotkeyForm() {
                               value={modField.value as string}>
                               <TabsList className="h-8"
                                 aria-label={`${row.label} modifier`}>
-                                <TabsTrigger value={'ctrl'}
+                                <TabsTrigger
+                                  value={'ctrl'}
                                   className="px-2.5"
-                                  onClick={() => modField.onChange('ctrl')}>
+                                  onClick={() => modField.onChange('ctrl')}
+                                >
                                   Ctrl
                                 </TabsTrigger>
                                 <TabsTrigger value={'alt'}

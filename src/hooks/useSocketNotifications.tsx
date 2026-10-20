@@ -6,6 +6,9 @@ import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { ISettings } from './useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
 import { showToast } from '@/overlay';
+import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
+import { normalizeName as personKey } from '@/lib/whisper-history';
+import { whisperThreadId } from '@/pages/chat/lib/identity';
 
 interface SystemNotification {
   _id: string;
@@ -69,6 +72,8 @@ export const useSocketNotifications = ({
 }: UseSocketNotificationsProps) => {
   const { isConnected, subscribeSocket, refresh: refreshOffers } = usePd2Website();
   const processedNotificationsRef = useRef<Set<string>>(new Set());
+  // Muted chat threads get no sound and no toast
+  useEffect(loadChatPrefs, []);
 
   // Listen for offer received notifications via socket
   useEffect(() => {
@@ -142,6 +147,15 @@ export const useSocketNotifications = ({
             return;
           }
 
+          // Their chat thread (a whisper sender's thread id, see lib/chat-prefs) is muted
+          const threadId = whisperThreadId(personKey(whisper.from));
+          if (isThreadMuted([threadId])) return;
+          const reply = {
+            label: 'Reply',
+            type: ToastActionType.OPEN_CHAT_CONVERSATION,
+            data: { threadId },
+          };
+
           // Handle join messages separately
           if (whisper.isJoin) {
             // Only notify if join notifications are enabled and Diablo is not focused
@@ -212,13 +226,12 @@ export const useSocketNotifications = ({
 
               // Show toast with item name only if Diablo is not focused
               if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
-                const toastPayload: GenericToastPayload = {
+                showToast({
                   title: 'Trade Whisper',
                   description: `${whisper.from}: ${whisper.itemName}`,
                   duration: 5000,
-                  variant: 'success',
-                };
-                showToast(toastPayload);
+                  action: reply,
+                });
               }
             }
             return; // Trade whispers handled
@@ -233,13 +246,12 @@ export const useSocketNotifications = ({
 
             // Show toast when tabbed out of Diablo
             if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
-              const toastPayload: GenericToastPayload = {
+              showToast({
                 title: `Whisper from ${whisper.from}`,
                 description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
                 duration: 5000,
-                variant: 'default',
-              };
-              showToast(toastPayload);
+                action: reply,
+              });
             }
           }
         });
@@ -285,15 +297,19 @@ export const useSocketNotifications = ({
         processedNotificationsRef.current = new Set(idsArray.slice(-100));
       }
 
-      if (!isToastEnabled(settings, 'whispers')) return;
+      // Muted: the conversation, or (a conversation started after muting them) the sender's website user
+      if (!isToastEnabled(settings, 'whispers') || isThreadMuted([msg.conversation_id, `user:${msg.sender_id}`])) {
+        return;
+      }
 
       const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
 
+      // Toasts can't take typing: Reply opens the conversation with the composer focused
       showToast({
         title: 'New Chat Message',
         description: messagePreview,
         action: {
-          label: 'Open Chat',
+          label: 'Reply',
           type: ToastActionType.OPEN_CHAT_CONVERSATION,
           data: { conversationId: msg.conversation_id },
         },

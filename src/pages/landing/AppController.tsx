@@ -10,7 +10,14 @@ import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
-import { isKeyboardClaimed, releaseKeyboard, showToast, useOverlay, type PanelPayloads } from '@/overlay';
+import {
+  getBadgeCount,
+  isKeyboardClaimed,
+  releaseKeyboard,
+  showToast,
+  useOverlay,
+  type PanelPayloads,
+} from '@/overlay';
 import { useDelist } from '@/pages/delist/DelistHandler';
 
 /**
@@ -120,8 +127,9 @@ const AppController: React.FC = () => {
     currency: async () => {
       if (await checkDiabloFocus()) openPanel('currency');
     },
-    chat: () => togglePanel('chat'),
-    offers: () => togglePanel('tradeMessages'),
+    // Opening with unread messages lands on the newest unread thread (the badge leaves out muted ones)
+    chat: () => (getBadgeCount('chatUnread') > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat')),
+    offers: () => openPanel('chat', { filter: 'selling' }),
     delist: handleDelistItem,
     snapshot: async () => {
       await takeSnapshot('manual');
@@ -143,7 +151,7 @@ const AppController: React.FC = () => {
   useAppUpdates();
   usePD2Auth();
 
-  // Chat button overlay follows its setting (chat and trade messages are keepMounted panels: no warm-up needed)
+  // Chat button overlay follows its setting (chat is a keepMounted panel: no warm-up needed)
   useEffect(() => {
     if (isLoading) return;
     if (settings.chatButtonOverlayEnabled === false) closePanel('chatButton');
