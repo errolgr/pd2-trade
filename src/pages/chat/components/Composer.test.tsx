@@ -530,13 +530,76 @@ describe('Composer template placeholders', () => {
   });
 });
 
-describe('Composer quick replies', () => {
-  it('inserts a chip at the caret without sending', () => {
+describe('Composer starred templates', () => {
+  const STARRED = [
+    { id: 'a', name: 'Still available?', text: 'Hi, is your {itemName} still available?', favorite: true },
+    { id: 'p', name: 'Price check', text: 'Would you take {price}?' },
+    { id: 'i', name: 'Inv me', text: 'Sure, inv me.', favorite: true },
+    { id: 'g', name: 'Game', text: 'join {room}', favorite: true },
+  ];
+  const row = () => screen.getByRole('toolbar', { name: 'Quick replies' });
+  const chips = () =>
+    within(row())
+      .queryAllByRole('button')
+      .map((b) => b.textContent)
+      .filter((t) => t && t !== '/');
+  const savedTemplates = () => store!.updateSettings.mock.calls.at(-1)?.[0].chatTemplates;
+
+  beforeEach(() => {
+    settings.chatTemplates = STARRED;
+  });
+
+  it('shows the starred templates as chips, in template order; a chip inserts its filled text at the caret', () => {
     render(<Harness />);
-    type('hi  pls', 3);
-    fireEvent.click(screen.getByRole('button', { name: 'Inv me' }));
-    expect(editor().textContent).toBe('hi Inv me pls');
+    expect(chips()).toEqual(['Still available?', 'Inv me', 'Game']);
+    type('ok  ty', 3);
+    fireEvent.click(within(row()).getByRole('button', { name: 'Still available?' }));
+    expect(editor().textContent).toBe('ok Hi, is your Shako still available? ty');
     expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it('a chip with placeholders asks for them first', () => {
+    render(<Harness />);
+    type('hey');
+    fireEvent.click(within(row()).getByRole('button', { name: 'Game' }));
+    const field = screen.getByLabelText('room') as HTMLInputElement;
+    fireEvent.change(field, { target: { value: 'baal-3' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(editor().textContent).toBe('hey join baal-3');
+  });
+
+  it('× takes a chip off the row; the template stays', () => {
+    render(<Harness />);
+    fireEvent.click(within(row()).getByRole('button', { name: 'Unpin Inv me' }));
+    expect(savedTemplates()).toEqual([STARRED[0], STARRED[1], { ...STARRED[2], favorite: false }, STARRED[3]]);
+    expect(chips()).toEqual(['Still available?', 'Game']);
+    type('/');
+    expect(options()).toContain('Inv meSure, inv me.');
+  });
+
+  it('stars a template from the "/" menu (click or Ctrl+S), offer templates too, and shows its chip', () => {
+    render(<Harness />);
+    type('/price');
+    expect(screen.getByRole('button', { name: 'Star Price check' }).getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(screen.getByRole('button', { name: 'Star Price check' }));
+    expect(savedTemplates()?.[1]).toEqual({ ...STARRED[1], favorite: true });
+    expect(chips()).toEqual(['Still available?', 'Price check', 'Inv me', 'Game']);
+    expect(screen.getByRole('button', { name: 'Unstar Price check' }).getAttribute('aria-pressed')).toBe('true');
+
+    type('/sold');
+    expect(screen.getByText(/Ctrl\+S star/)).toBeTruthy();
+    fireEvent.keyDown(editor(), { key: 's', ctrlKey: true });
+    expect(store!.updateSettings).toHaveBeenLastCalledWith({ favoriteOfferTemplates: ['soldOfferMessageTemplate'] });
+    expect(chips()).toEqual(['Still available?', 'Price check', 'Inv me', 'Game', 'Item sold']);
+    fireEvent.keyDown(editor(), { key: 's', ctrlKey: true });
+    expect(store!.updateSettings).toHaveBeenLastCalledWith({ favoriteOfferTemplates: [] });
+  });
+
+  it('without starred templates the row only explains how to pin some', () => {
+    settings.chatTemplates = [STARRED[1]];
+    render(<Harness />);
+    expect(chips()).toEqual([]);
+    expect(within(row()).getByText('★ Star templates to pin them here')).toBeTruthy();
   });
 });
 

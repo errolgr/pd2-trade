@@ -31,8 +31,9 @@ export function useChatTemplates() {
       save([...latest.current, created]);
       return created;
     },
-    update: (id: string, draft: ChatTemplateDraft) =>
-      save(latest.current.map((t) => (t.id === id ? { ...t, ...draft } : t))),
+    /** Changes a template's name/text, or stars/unstars it (`favorite`). */
+    update: (id: string, changes: Partial<Omit<ChatTemplate, 'id'>>) =>
+      save(latest.current.map((t) => (t.id === id ? { ...t, ...changes } : t))),
     /** Deletes a template; returns it and where it was, for `restore`. */
     remove: (id: string): { template: ChatTemplate; index: number } | null => {
       const index = latest.current.findIndex((t) => t.id === id);

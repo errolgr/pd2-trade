@@ -141,15 +141,17 @@ describe('OptionsProvider loading', () => {
   it('gives settings from before custom chat templates the default templates, and saves them', async () => {
     state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
     const { result } = await renderLoaded();
-    expect(result.current.settings.chatTemplates?.map((t) => t.name)).toEqual([
-      'Still available?',
-      'Price check',
-      'Inv me',
+    expect(result.current.settings.chatTemplates?.map((t) => [t.name, !!t.favorite])).toEqual([
+      ['Still available?', true],
+      ['Sold, sorry', true],
+      ['Inv me', true],
+      ['ty gl', true],
+      ['Price check', false],
     ]);
     expect(savedSettings().chatTemplates).toEqual(result.current.settings.chatTemplates);
   });
 
-  it("keeps the user's own chat templates as saved: edited, reordered, deleted or none at all", async () => {
+  it("keeps the user's own chat templates as saved (none starred for them), edited, deleted or none", async () => {
     const mine = [{ id: 'a', name: 'Hi', text: 'Hi {accountName}' }];
     state.files.set('settings.json', JSON.stringify({ chatTemplates: mine }));
     const { result } = await renderLoaded();

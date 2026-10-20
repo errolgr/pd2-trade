@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, FileText, Pencil, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileText, Pencil, Plus, Star, X } from 'lucide-react';
 import { ChatTemplateForm } from '@/components/custom/chat-template-form';
 import { Button } from '@/components/ui/button';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
@@ -25,7 +25,7 @@ export function ChatTemplatesEditor() {
       <p className="text-[13px] leading-relaxed text-muted-foreground">
         Type <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-[11px]">/</kbd> in a
         chat message to use these. Tokens fill in from the conversation; any other {'{name}'} is asked for when you use
-        the template.
+        the template. Star one to pin it as a chip above the chat message box.
       </p>
 
       {templates.length > 0 ? (
@@ -64,6 +64,20 @@ export function ChatTemplatesEditor() {
                       />
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100 group-focus-within/template:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => update(template.id, { favorite: !template.favorite })}
+                        aria-label={`${template.favorite ? 'Unstar' : 'Star'} ${template.name}`}
+                        aria-pressed={!!template.favorite}
+                        title={
+                          template.favorite
+                            ? 'Starred: shown above the chat message box'
+                            : 'Star: show it above the chat message box'
+                        }
+                        className={cn(rowAction, template.favorite && 'text-warning hover:text-warning')}
+                      >
+                        <Star className={cn(template.favorite && 'fill-current')} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => move(index, -1)}

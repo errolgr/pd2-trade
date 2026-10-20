@@ -310,4 +310,16 @@ describe('ChatForm message templates', () => {
     fireEvent.change(textInput(), { target: { value: 'join {game} / {pw} as {accountName}' } });
     expect(screen.getByText(/Asks when used:/).textContent).toBe('Asks when used: {game} {pw}');
   });
+
+  it('stars and unstars a template (its chip above the chat message box)', () => {
+    renderForm({ chatTemplates: [MINE[0], { ...MINE[1], favorite: true }] });
+    const star = screen.getByRole('button', { name: 'Star Still available?' });
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(star);
+    expect(savedTemplates()?.[0]).toEqual({ ...MINE[0], favorite: true });
+    expect(screen.getByRole('button', { name: 'Unstar Still available?' }).getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unstar Price check' }));
+    expect(savedTemplates()?.[1]).toEqual({ ...MINE[1], favorite: false });
+  });
 });

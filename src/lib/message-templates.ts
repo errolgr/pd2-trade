@@ -48,6 +48,8 @@ export interface ChatTemplate {
   id: string;
   name: string;
   text: string;
+  /** Starred: shown as a one-click chip above the chat composer. */
+  favorite?: boolean;
 }
 
 export const CHAT_TEMPLATE_NAME_MAX = 40;
@@ -77,9 +79,16 @@ export const CHAT_TEMPLATE_TOKENS = [
 
 /** The templates new installs (and settings files from before custom templates) start with. */
 export const DEFAULT_CHAT_TEMPLATES: ChatTemplate[] = [
-  { id: 'default-still-available', name: 'Still available?', text: 'Hi, is your {itemName} still available?' },
+  {
+    id: 'default-still-available',
+    name: 'Still available?',
+    text: 'Hi, is your {itemName} still available?',
+    favorite: true,
+  },
+  { id: 'default-sold', name: 'Sold, sorry', text: "Sorry, it's sold.", favorite: true },
+  { id: 'default-inv-me', name: 'Inv me', text: 'Sure, inv me when you are ready.', favorite: true },
+  { id: 'default-ty-gl', name: 'ty gl', text: 'ty gl', favorite: true },
   { id: 'default-price-check', name: 'Price check', text: 'Would you take {price} for {itemName}?' },
-  { id: 'default-inv-me', name: 'Inv me', text: 'Sure, inv me when you are ready.' },
 ];
 
 /** Guards entries read from the settings file (hand-edited or corrupt files). */

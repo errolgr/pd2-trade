@@ -20,6 +20,7 @@ import {
   Pencil,
   Plus,
   SendHorizontal,
+  Star,
   Settings2,
   Trash2,
   X,
@@ -51,9 +52,6 @@ import { ListingPicker, listingMessageUrl } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 import { TemplateFill } from './TemplateFill';
 
-/** One-click phrases inserted into the draft (never sent directly). */
-export const QUICK_REPLIES = ['Still available?', 'Sold, sorry', 'Inv me', 'ty gl'] as const;
-
 /** The offer message templates from Settings → Chat, offered by the "/" menu after the user's own templates. */
 const OFFER_TEMPLATES = [
   { key: 'acceptOfferMessageTemplate', label: 'Offer accepted' },
@@ -75,6 +73,8 @@ interface MenuTemplate {
   text: string;
   raw: string;
   placeholders: string[];
+  /** Starred: a chip above the composer. */
+  favorite: boolean;
   source: { kind: 'custom'; id: string } | { kind: 'offer'; key: OfferTemplateKey; label: string };
 }
 
@@ -94,8 +94,6 @@ const TEMPLATE_UNDO_MS = 6000;
 
 const rowAction =
   'inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:bg-background/70 hover:text-foreground [&_svg]:size-3.5';
-const iconButton =
-  'inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60';
 
 /** Values for the template tokens; every token is filled, unknown ones with ''. */
 export interface TemplateVars {
@@ -302,18 +300,20 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     [templateVars],
   );
   const templates = useMemo((): MenuTemplate[] => {
-    const written: Pick<MenuTemplate, 'key' | 'label' | 'raw' | 'source'>[] = [
-      ...chatTemplates.templates.map(({ id, name, text }) => ({
+    const written: Pick<MenuTemplate, 'key' | 'label' | 'raw' | 'source' | 'favorite'>[] = [
+      ...chatTemplates.templates.map(({ id, name, text, favorite }) => ({
         key: `custom:${id}`,
         label: name,
         raw: text,
         source: { kind: 'custom' as const, id },
+        favorite: !!favorite,
       })),
       ...OFFER_TEMPLATES.map(({ key, label }) => ({
         key: `offer:${key}`,
         label,
         raw: settings?.[key] ?? '',
         source: { kind: 'offer' as const, key, label },
+        favorite: (settings?.favoriteOfferTemplates ?? []).includes(key),
       })),
     ];
     return written
@@ -346,6 +346,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const activeIndex = Math.min(active, optionCount - 1);
   const activeTemplate: MenuTemplate | undefined = matches[activeIndex];
   const listShown = listOpen && !formSetup && !filling;
+  const favorites = templates.filter((t) => t.favorite);
 
   // Keep the option chosen with the arrow keys in view (a long template list scrolls)
   useLayoutEffect(() => {
@@ -371,6 +372,19 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const pickTemplate = (template: MenuTemplate) => {
     if (template.placeholders.length > 0) setFilling(template);
     else insertTemplate(template.text);
+  };
+
+  /** Stars a template (a chip above the composer) or unstars it. */
+  const toggleFavorite = (template: MenuTemplate) => {
+    if (template.source.kind === 'custom') {
+      chatTemplates.update(template.source.id, { favorite: !template.favorite });
+      return;
+    }
+    const key = template.source.key;
+    const starred = settings?.favoriteOfferTemplates ?? [];
+    updateSettings({
+      favoriteOfferTemplates: template.favorite ? starred.filter((k) => k !== key) : [...starred, key],
+    });
   };
 
   /** Opens Settings → Chat; a "/" typed to get here is dropped. */
@@ -456,8 +470,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         setBrowsing(false);
         return;
       }
-      // Ctrl/Cmd+E edits the chosen template, Ctrl/Cmd+D deletes it (one of the user's own)
+      // Ctrl/Cmd+S stars the chosen template, Ctrl/Cmd+E edits it, Ctrl/Cmd+D deletes it (one of the user's own)
       const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey ? e.key.toLowerCase() : '';
+      if (activeTemplate && shortcut === 's') {
+        e.preventDefault();
+        toggleFavorite(activeTemplate);
+        return;
+      }
       if (activeTemplate && shortcut === 'e') {
         e.preventDefault();
         setForm(activeTemplate.source);
@@ -519,7 +538,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   : filling
                     ? 'Enter to insert · Esc to go back'
                     : activeTemplate
-                      ? `↑↓ choose · Enter insert · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
+                      ? `↑↓ choose · Enter insert · Ctrl+S ${activeTemplate.favorite ? 'unstar' : 'star'} · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
                       : '↑↓ to choose · Enter to select'}
               </span>
             </div>
@@ -576,7 +595,30 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       <div className="text-sm font-medium">{t.label}</div>
                       <div className="truncate text-xs text-muted-foreground">{t.text}</div>
                     </div>
-                    {/* Mouse shortcuts for Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
+                    {/* Mouse shortcuts for Ctrl+S / Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={`${t.favorite ? 'Unstar' : 'Star'} ${t.label}`}
+                        aria-pressed={t.favorite}
+                        title={`${t.favorite ? 'Unstar' : 'Star: show it above the message box'} (Ctrl+S)`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(t);
+                        }}
+                        className={cn(
+                          rowAction,
+                          'transition-[color,background-color,opacity]',
+                          t.favorite
+                            ? 'text-warning'
+                            : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
+                        )}
+                      >
+                        <Star className={cn(t.favorite && 'fill-current')} />
+                      </button>
+                    </div>
                     <div
                       className={cn(
                         'flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100',
@@ -720,18 +762,40 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               <FileText className="size-3" />
             </button>
           </Tip>
-          {QUICK_REPLIES.map((reply) => (
-            <button
-              key={reply}
-              type="button"
-              // Keep the draft's caret/selection: the chip inserts where the user was typing
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => insertAtCaret(reply)}
-              className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color,transform] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
-            >
-              {reply}
-            </button>
-          ))}
+          {/* The starred templates, in template order; each picks its template like the "/" menu does */}
+          {favorites.length > 0 ? (
+            favorites.map((t) => (
+              <span
+                key={t.key}
+                className="group/chip inline-flex shrink-0 items-center rounded-full border border-border/70 bg-background/50 text-xs text-muted-foreground transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-within:border-primary/40"
+              >
+                <button
+                  type="button"
+                  title={t.text}
+                  // Keep the draft's caret/selection: the chip inserts where the user was typing
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickTemplate(t)}
+                  className="whitespace-nowrap rounded-full py-0.5 pr-1 pl-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+                >
+                  {t.label}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Unpin ${t.label}`}
+                  title="Remove from here (unstars it; the template stays)"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => toggleFavorite(t)}
+                  className="mr-1 inline-flex size-3.5 items-center justify-center rounded-full opacity-0 outline-none transition-opacity duration-(--dur-fast) hover:bg-foreground/10 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60 group-hover/chip:opacity-100 group-focus-within/chip:opacity-100"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </span>
+            ))
+          ) : (
+            <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground/80">
+              ★ Star templates to pin them here
+            </span>
+          )}
           <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
             <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
           </span>
