@@ -8,7 +8,7 @@ export const changeLog = {
     '🆕 Automatic updates can be turned off (Settings → About); you still get notified, and price check shows a "Restart to update" button',
     "🆕 Market listings linked in chat show inline with the item's picture and whether it's still listed; hover for price, stash location, stats and seller",
     '🆕 Chat: write multi-line messages (Shift+Enter for a new line), type / to insert one of your message templates, tap a quick reply, or link one of your listings with the 📦 button; unsent text is kept per conversation',
-    '🆕 Chat: create your own message templates (Settings → Chat → Message templates) — name them, use {itemName}, {price}, {accountName} or {characterName}, reorder them and pick them with / in a message; "Manage templates…" in the / menu takes you there',
+    '🆕 Chat: create your own message templates with {itemName}, {price}, {accountName} or {characterName} and pick them with / in a message or the templates button — add, edit or delete them right in that menu, save the message you are writing as one, or reorder them in Settings → Chat',
     '🆕 Chat: offers with the person you are chatting with are pinned at the top of the thread — accept, counter, decline, unaccept or revoke without leaving the chat',
     '🆕 Chat: hovering a linked listing shows its market price and how the asking price compares (e.g. "12% under market")',
     '🆕 Chat: one thread per person — in-game whispers from a player whose account is linked on the website show in the same conversation (tagged website or in-game), and you can reply as a website message or as a copied /w whisper',

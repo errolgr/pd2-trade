@@ -10,15 +10,31 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { ClipboardCopy, FileText, Gamepad2, Globe, Package, SendHorizontal, Settings2, X } from 'lucide-react';
+import {
+  BookmarkPlus,
+  ClipboardCopy,
+  FileText,
+  Gamepad2,
+  Globe,
+  Package,
+  Pencil,
+  Plus,
+  SendHorizontal,
+  Settings2,
+  Trash2,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ChatListingState } from '../hooks/useChatListings';
+import { ChatTemplateForm } from '@/components/custom/chat-template-form';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useChatTemplates, type ChatTemplateDraft } from '@/hooks/useChatTemplates';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
-import { fillTemplate, isChatTemplate } from '@/lib/message-templates';
+import { CHAT_TEMPLATE_TOKENS, fillTemplate } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { useOverlay } from '@/overlay';
+import { undoToast, useOverlay } from '@/overlay';
 import { useChatListings } from '../hooks/useChatListings';
 import {
   hasLooseLinks,
@@ -43,6 +59,37 @@ const OFFER_TEMPLATES = [
   { key: 'rejectOfferMessageTemplate', label: 'Offer declined' },
   { key: 'soldOfferMessageTemplate', label: 'Item sold' },
 ] as const satisfies readonly { key: keyof ISettings; label: string }[];
+type OfferTemplateKey = (typeof OFFER_TEMPLATES)[number]['key'];
+
+/** Tokens of the "Offer accepted" template: the chat template tokens plus the game to join. */
+const ACCEPT_OFFER_TOKENS = [{ token: '{gameInfo}', description: 'The game you are in' }, ...CHAT_TEMPLATE_TOKENS];
+
+/** A template the "/" menu offers, `text` filled in; `source` is what Edit/Delete work on. */
+interface MenuTemplate {
+  key: string;
+  label: string;
+  text: string;
+  source: { kind: 'custom'; id: string } | { kind: 'offer'; key: OfferTemplateKey; label: string };
+}
+
+/** The template form open in the "/" menu: a new template, or editing one of the listed ones. */
+type MenuForm = { kind: 'new'; label: string; initial: ChatTemplateDraft } | MenuTemplate['source'];
+
+/** The menu's options after the templates. */
+type MenuAction = 'save' | 'new' | 'manage';
+const MENU_ACTIONS: Record<MenuAction, { label: string; icon: LucideIcon }> = {
+  save: { label: 'Save message as template', icon: BookmarkPlus },
+  new: { label: 'New template', icon: Plus },
+  manage: { label: 'Manage templates…', icon: Settings2 },
+};
+
+/** How long a deleted template can be restored. */
+const TEMPLATE_UNDO_MS = 6000;
+
+const rowAction =
+  'inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:bg-background/70 hover:text-foreground [&_svg]:size-3.5';
+const iconButton =
+  'inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60';
 
 /** Values for the template tokens; every token is filled, unknown ones with ''. */
 export interface TemplateVars {
@@ -150,7 +197,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget },
   ref,
 ) {
-  const { settings } = useOptions();
+  const { settings, updateSettings } = useOptions();
+  const chatTemplates = useChatTemplates();
   const { openPanel } = useOverlay();
   const editorRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -225,9 +273,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (link) edit(value.slice(0, link.start) + value.slice(link.end), link.start);
   };
 
-  // Template menu: the user's own templates, then the offer templates, then "Manage templates…"
+  // Template menu, opened by "/" as the whole draft (filters by what follows) or the Templates button: the
+  // user's own templates, the offer templates, then "Save message as template" (with a draft), "New template"
+  // and "Manage templates…". Templates are added, edited and deleted right in it: the form replaces the list.
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
+  const [browsing, setBrowsing] = useState(false);
+  const [form, setForm] = useState<MenuForm | null>(null);
   const [active, setActive] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
   const slash = SLASH_COMMAND.exec(value);
   const templates = useMemo(() => {
     const vars = {
@@ -237,39 +290,116 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       itemName: templateVars.itemName,
       price: templateVars.price,
     };
-    const custom = (settings?.chatTemplates ?? [])
-      .filter(isChatTemplate)
-      .flatMap(({ id, name, text }) =>
-        text.trim() ? [{ key: `custom:${id}`, label: name, text: fillTemplate(text, vars) }] : [],
-      );
-    const offers = OFFER_TEMPLATES.flatMap(({ key, label }) => {
+    const custom = chatTemplates.templates.flatMap(({ id, name, text }): MenuTemplate[] =>
+      text.trim()
+        ? [{ key: `custom:${id}`, label: name, text: fillTemplate(text, vars), source: { kind: 'custom', id } }]
+        : [],
+    );
+    const offers = OFFER_TEMPLATES.flatMap(({ key, label }): MenuTemplate[] => {
       const template = settings?.[key];
       return typeof template === 'string' && template.trim()
-        ? [{ key: `offer:${key}`, label, text: fillTemplate(template, vars) }]
+        ? [{ key: `offer:${key}`, label, text: fillTemplate(template, vars), source: { kind: 'offer', key, label } }]
         : [];
     });
     return [...custom, ...offers];
-  }, [settings, templateVars]);
+  }, [chatTemplates.templates, settings, templateVars]);
   const query = slash?.[1].toLowerCase().trim() ?? '';
   const matches = slash
     ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
-    : [];
-  // A bare "/" always opens it (with no templates yet it offers "Manage templates…"); "/text" only on a match
-  const menuOpen = !!slash && dismissedAt !== value && (matches.length > 0 || query === '');
-  // "Manage templates…" is the last option
-  const manageIndex = matches.length;
-  const activeIndex = Math.min(active, manageIndex);
+    : templates;
+  // A bare "/" always opens it (with no templates yet it offers "New template"); "/text" only on a match
+  const listOpen = slash ? dismissedAt !== value && (matches.length > 0 || query === '') : browsing;
+  const editedTemplate = form?.kind === 'custom' ? chatTemplates.templates.find((t) => t.id === form.id) : undefined;
+  // The open form's title and starting values (a template deleted elsewhere meanwhile closes its form)
+  const formSetup =
+    form?.kind === 'new'
+      ? { label: form.label, initial: form.initial, submitLabel: 'Add template' }
+      : form?.kind === 'custom' && editedTemplate
+        ? { label: `Edit ${editedTemplate.name}`, initial: editedTemplate, submitLabel: 'Save' }
+        : form?.kind === 'offer'
+          ? {
+              label: `Edit ${form.label}`,
+              initial: { name: form.label, text: settings?.[form.key] ?? '' },
+              submitLabel: 'Save',
+            }
+          : null;
+  const menuOpen = listOpen || formSetup !== null;
+  const actions: MenuAction[] = [...(!slash && value.trim() ? (['save'] as const) : []), 'new', 'manage'];
+  const optionCount = matches.length + actions.length;
+  const activeIndex = Math.min(active, optionCount - 1);
+  const activeTemplate: MenuTemplate | undefined = matches[activeIndex];
+  const listShown = listOpen && !formSetup;
 
   // Keep the option chosen with the arrow keys in view (a long template list scrolls)
   useLayoutEffect(() => {
-    if (menuOpen) document.getElementById(`${menuId}-${activeIndex}`)?.scrollIntoView?.({ block: 'nearest' });
-  }, [menuOpen, menuId, activeIndex]);
+    if (listShown) document.getElementById(`${menuId}-${activeIndex}`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [listShown, menuId, activeIndex]);
 
-  /** Opens Settings → Chat; the "/" typed to get here is dropped. */
+  /** Back to typing: focuses the editor with the caret where it was left (end of the draft by default). */
+  const focusEditor = () => {
+    const editor = editorRef.current;
+    if (!editor || editor.ownerDocument.activeElement === editor) return;
+    editor.focus();
+    setCaret(editor, Math.min(lastSelectionRef.current?.[1] ?? value.length, value.length));
+  };
+
+  /** Puts a template's text in: replaces the "/query" draft, or goes in at the caret (Templates button). */
+  const pickTemplate = (text: string) => {
+    setBrowsing(false);
+    if (slash) edit(text, text.length);
+    else insertAtCaret(text);
+  };
+
+  /** Opens Settings → Chat; a "/" typed to get here is dropped. */
   const manageTemplates = () => {
-    lastSelectionRef.current = null;
-    onChange('');
+    setBrowsing(false);
+    if (slash) {
+      lastSelectionRef.current = null;
+      onChange('');
+    }
     openPanel('settings', { section: 'Chat' });
+  };
+
+  const runAction = (action: MenuAction) => {
+    if (action === 'manage') manageTemplates();
+    else if (action === 'new') setForm({ kind: 'new', label: 'New template', initial: { name: '', text: '' } });
+    else {
+      // Listing links stay in as their URLs
+      setForm({
+        kind: 'new',
+        label: 'Save message as template',
+        initial: { name: '', text: spaceOutLinks(value).trim() },
+      });
+    }
+  };
+
+  /** Deletes one of the user's templates right away, with an Undo. */
+  const deleteTemplate = (id: string) => {
+    const removed = chatTemplates.remove(id);
+    if (!removed) return;
+    undoToast({
+      title: 'Template deleted',
+      description: `Your template "${removed.template.name}".`,
+      duration: TEMPLATE_UNDO_MS,
+      onUndo: () => chatTemplates.restore(removed.template, removed.index),
+    });
+  };
+
+  /** Leaves the template form for the list, typing in the message again. */
+  const closeForm = () => {
+    setForm(null);
+    focusEditor();
+  };
+
+  const saveForm = (draft: ChatTemplateDraft) => {
+    if (form?.kind === 'new') chatTemplates.add(draft);
+    else if (form?.kind === 'custom') chatTemplates.update(form.id, draft);
+    else if (form?.kind === 'offer') {
+      const patch: Partial<ISettings> = {};
+      patch[form.key] = draft.text;
+      updateSettings(patch);
+    }
+    closeForm();
   };
 
   const send = () => {
@@ -284,26 +414,35 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     // Keys finishing an IME composition belong to the composition
     if (e.nativeEvent.isComposing) return;
-    if (menuOpen) {
+    if (listShown) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const step = e.key === 'ArrowDown' ? 1 : -1;
-        setActive((activeIndex + step + manageIndex + 1) % (manageIndex + 1));
+        setActive((activeIndex + step + optionCount) % optionCount);
         return;
       }
       if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
         e.preventDefault();
-        if (activeIndex === manageIndex) {
-          manageTemplates();
-          return;
-        }
-        const { text: filled } = matches[activeIndex];
-        edit(filled, filled.length);
+        if (activeTemplate) pickTemplate(activeTemplate.text);
+        else runAction(actions[activeIndex - matches.length]);
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setDismissedAt(value);
+        if (slash) setDismissedAt(value);
+        setBrowsing(false);
+        return;
+      }
+      // Ctrl/Cmd+E edits the chosen template, Ctrl/Cmd+D deletes it (one of the user's own)
+      const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey ? e.key.toLowerCase() : '';
+      if (activeTemplate && shortcut === 'e') {
+        e.preventDefault();
+        setForm(activeTemplate.source);
+        return;
+      }
+      if (activeTemplate?.source.kind === 'custom' && shortcut === 'd') {
+        e.preventDefault();
+        deleteTemplate(activeTemplate.source.id);
         return;
       }
     }
@@ -342,65 +481,135 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {menuOpen && (
           <motion.div
             key="templates"
+            ref={menuRef}
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
             className="absolute inset-x-0 bottom-full z-20 mb-2 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-panel"
           >
             <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <FileText className="size-3" />
-              Templates
-              <span className="ml-auto font-normal normal-case tracking-normal">↑↓ to choose · Enter to insert</span>
+              <FileText className="size-3 shrink-0" />
+              <span className="shrink-0">Templates</span>
+              <span className="ml-auto truncate font-normal normal-case tracking-normal">
+                {formSetup
+                  ? 'Ctrl+Enter to save · Esc to go back'
+                  : activeTemplate
+                    ? `↑↓ choose · Enter insert · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
+                    : '↑↓ to choose · Enter to select'}
+              </span>
             </div>
-            <ul id={menuId}
-              role="listbox"
-              aria-label="Message templates"
-              className="max-h-72 overflow-y-auto p-1">
-              {matches.map((t, i) => (
-                <li
-                  key={t.key}
-                  id={`${menuId}-${i}`}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onMouseEnter={() => setActive(i)}
-                  onClick={() => edit(t.text, t.text.length)}
-                  className={cn(
-                    'cursor-pointer rounded-md px-2.5 py-1.5 transition-colors duration-(--dur-fast)',
-                    i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
-                  )}
-                >
-                  <div className="text-sm font-medium">{t.label}</div>
-                  <div className="truncate text-xs text-muted-foreground">{t.text}</div>
-                </li>
-              ))}
-              {matches.length === 0 ? (
-                <li role="presentation"
-                  className="px-2.5 py-1.5 text-xs text-muted-foreground">
-                  No templates yet
-                </li>
-              ) : (
-                <li role="presentation"
-                  aria-hidden
-                  className="mx-1 my-1 h-px bg-border" />
-              )}
-              <li
-                id={`${menuId}-${manageIndex}`}
-                role="option"
-                aria-selected={activeIndex === manageIndex}
-                onMouseDown={(e) => e.preventDefault()}
-                onMouseEnter={() => setActive(manageIndex)}
-                onClick={manageTemplates}
-                className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-(--dur-fast)',
-                  activeIndex === manageIndex ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+            {formSetup ? (
+              <ChatTemplateForm
+                key={formSetup.label}
+                label={formSetup.label}
+                initial={formSetup.initial}
+                submitLabel={formSetup.submitLabel}
+                fixedName={form?.kind === 'offer'}
+                tokens={
+                  form?.kind === 'offer' && form.key === 'acceptOfferMessageTemplate' ? ACCEPT_OFFER_TOKENS : undefined
+                }
+                onSubmit={saveForm}
+                onCancel={closeForm}
+                className="max-h-80 overflow-y-auto"
+              />
+            ) : (
+              <ul id={menuId}
+                role="listbox"
+                aria-label="Message templates"
+                className="max-h-72 overflow-y-auto p-1">
+                {matches.map((t, i) => (
+                  <li
+                    key={t.key}
+                    id={`${menuId}-${i}`}
+                    role="option"
+                    aria-selected={i === activeIndex}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => pickTemplate(t.text)}
+                    className={cn(
+                      'group/template flex cursor-pointer items-start gap-2 rounded-md py-1.5 pr-1.5 pl-2.5 transition-colors duration-(--dur-fast)',
+                      i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium">{t.label}</div>
+                      <div className="truncate text-xs text-muted-foreground">{t.text}</div>
+                    </div>
+                    {/* Mouse shortcuts for Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
+                    <div
+                      className={cn(
+                        'flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100',
+                        i === activeIndex && 'opacity-100',
+                      )}
+                    >
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={`Edit ${t.label}`}
+                        title="Edit (Ctrl+E)"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setForm(t.source);
+                        }}
+                        className={rowAction}
+                      >
+                        <Pencil />
+                      </button>
+                      {t.source.kind === 'custom' && (
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          aria-label={`Delete ${t.label}`}
+                          title="Delete (Ctrl+D)"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (t.source.kind === 'custom') deleteTemplate(t.source.id);
+                          }}
+                          className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
+                        >
+                          <Trash2 />
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+                {matches.length === 0 ? (
+                  <li role="presentation"
+                    className="px-2.5 py-1.5 text-xs text-muted-foreground">
+                    No templates yet
+                  </li>
+                ) : (
+                  <li role="presentation"
+                    aria-hidden
+                    className="mx-1 my-1 h-px bg-border" />
                 )}
-              >
-                <Settings2 aria-hidden
-                  className="size-3.5 shrink-0" />
-                Manage templates…
-              </li>
-            </ul>
+                {actions.map((action, j) => {
+                  const i = matches.length + j;
+                  const { label, icon: Icon } = MENU_ACTIONS[action];
+                  return (
+                    <li
+                      key={action}
+                      id={`${menuId}-${i}`}
+                      role="option"
+                      aria-selected={i === activeIndex}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setActive(i)}
+                      onClick={() => runAction(action)}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-(--dur-fast)',
+                        i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      <Icon aria-hidden
+                        className="size-3.5 shrink-0" />
+                      {label}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </motion.div>
         )}
 
@@ -462,6 +671,30 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <div className="flex items-end gap-1 p-1.5">
           <ListingPicker onPick={insertListing}
             onClosed={() => editorRef.current?.focus()} />
+          <Tip label="Message templates (or type /)">
+            <button
+              type="button"
+              aria-label="Message templates"
+              aria-expanded={menuOpen}
+              // Keep the draft's caret: a template picked from here goes in where the user was typing
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (menuOpen) {
+                  if (slash) setDismissedAt(value);
+                  setBrowsing(false);
+                  setForm(null);
+                } else {
+                  setDismissedAt(null);
+                  setActive(0);
+                  setBrowsing(true);
+                }
+                focusEditor();
+              }}
+              className={cn(iconButton, menuOpen && 'bg-accent text-accent-foreground')}
+            >
+              <FileText className="size-4" />
+            </button>
+          </Tip>
           <div className="relative min-w-0 flex-1 self-center">
             {value === '' && (
               <span
@@ -477,8 +710,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               aria-multiline="true"
               aria-label="Message"
               aria-placeholder={placeholder}
-              aria-controls={menuOpen ? menuId : undefined}
-              aria-activedescendant={menuOpen ? `${menuId}-${activeIndex}` : undefined}
+              aria-controls={listShown ? menuId : undefined}
+              aria-activedescendant={listShown ? `${menuId}-${activeIndex}` : undefined}
               contentEditable
               tabIndex={0}
               spellCheck
@@ -486,13 +719,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 const editor = editorRef.current;
                 if (!editor) return;
                 setActive(0);
+                // Typing goes on with the message (the Templates button's menu closes; "/" opens it again)
+                setBrowsing(false);
                 pillStore.sync(editor);
                 onChange(serializeEditor(editor));
               }}
               onKeyDown={handleKeyDown}
-              onBlur={() => {
+              onBlur={(e) => {
                 const editor = editorRef.current;
                 lastSelectionRef.current = editor ? selectionOffsets(editor) : null;
+                // Clicking away closes the Templates button's menu; its own form keeps it open
+                if (!menuRef.current?.contains(e.relatedTarget as Node | null)) setBrowsing(false);
               }}
               onPaste={(e) => {
                 // Plain text only (never pasted markup); listing URLs in it become pills
