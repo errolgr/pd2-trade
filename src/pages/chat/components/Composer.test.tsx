@@ -302,4 +302,11 @@ describe('Composer listing picker', () => {
     sendNow();
     expect(onSend).toHaveBeenCalledWith(`wts ${URL} for 2 ist`);
   });
+
+  it('sends a space between a link and text typed right against its pill', async () => {
+    render(<Harness initial={`look${URL}hello`} />);
+    await settle();
+    sendNow();
+    expect(onSend).toHaveBeenCalledWith(`look ${URL} hello`);
+  });
 });

@@ -40,6 +40,23 @@ export function findMarketLinks(text: string): MarketLink[] {
 }
 
 /**
+ * The message with a space between each listing link and any text it touches, so the link reads as its own
+ * word in the receiver's chat (the composer shows pills flush against typed text).
+ */
+export function spaceOutLinks(text: string): string {
+  let out = '';
+  let last = 0;
+  for (const { start, end, url } of findMarketLinks(text)) {
+    out += text.slice(last, start);
+    if (out && !/\s$/.test(out)) out += ' ';
+    out += url;
+    if (end < text.length && !/^\s/.test(text.slice(end))) out += ' ';
+    last = end;
+  }
+  return out + text.slice(last);
+}
+
+/**
  * Splits a message into text and listing links. When the display name already appears before its URL
  * ("interested in your Shako https://…?display=Shako") that mention becomes the link and the raw URL is dropped.
  */

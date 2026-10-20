@@ -36,7 +36,7 @@ export function renderDraft(editor: HTMLElement, draft: string): void {
     pill.contentEditable = 'false';
     pill.setAttribute(URL_ATTR, link.url);
     pill.setAttribute(KEY_ATTR, String(++pillSeq));
-    pill.className = 'mx-px inline-block align-middle';
+    pill.className = 'mx-1 inline-block align-middle';
     nodes.push(pill);
     last = link.end;
   }

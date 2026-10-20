@@ -28,7 +28,7 @@ import {
   serializeEditor,
   setCaret,
 } from '../lib/draft-editor';
-import { findMarketLinks } from '../lib/market-links';
+import { findMarketLinks, spaceOutLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
 import { ListingPicker, listingMessageUrl } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
@@ -250,7 +250,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const activeIndex = Math.min(active, matches.length - 1);
 
   const send = () => {
-    const message = value.trim();
+    const message = spaceOutLinks(value).trim();
     if (!message) return;
     onSend(message);
     lastSelectionRef.current = null;
