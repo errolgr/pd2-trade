@@ -95,13 +95,22 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    // Table rows: full-width lines between rows; selected = accent tint + 3px left bar, hover = faint tint.
-    <div data-active={isActive || undefined}
-      className="not-first:border-t not-first:border-border/70">
+    // Table rows with rounded highlights. Runs of selected rows join into one block (inner corners square,
+    // the line between them kept); lines touching a highlight's rounded edge are hidden so none sticks out.
+    <div
+      data-active={isActive || undefined}
+      className={cn(
+        'not-first:border-t not-first:border-border/70',
+        'data-active:border-t-transparent [[data-active]+&]:border-t-transparent',
+        'has-[>label:hover]:border-t-transparent [:has(>label:hover)+&]:border-t-transparent',
+        '[[data-active]+&[data-active]]:border-t-border/70',
+        '[[data-active]+&[data-active]]:*:rounded-t-none [&[data-active]:has(+[data-active])]:*:rounded-b-none',
+      )}
+    >
       <label
         key={statKey}
         className={cn(
-          'flex min-h-10 flex-row items-center justify-between gap-2 px-2.5 py-1',
+          'flex min-h-10 flex-row items-center justify-between gap-2 rounded-md px-2.5 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
           isActive ? 'bg-glow/8 shadow-[inset_3px_0_0_var(--glow)]' : !isUnknown && 'hover:bg-foreground/4',
           !isActive && rare?.stars && 'bg-glow/6 hover:bg-glow/10',
