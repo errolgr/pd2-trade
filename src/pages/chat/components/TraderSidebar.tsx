@@ -263,64 +263,64 @@ export function TraderSidebar({
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="space-y-5 p-3">
           {/* Profile card */}
-          <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-linear-to-b from-primary/12 via-card to-card p-4 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-border/70 bg-linear-to-br from-primary/10 via-card to-card p-3 shadow-sm">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
             />
-            <div className="flex flex-col items-center text-center">
+            <div className="flex items-center gap-3">
               <ChatAvatar
                 name={thread.name}
                 solid
                 presence={profile.status === 'ready' ? profile.presence.kind : undefined}
-                className="size-16 text-2xl shadow-md"
+                className="size-11 shrink-0 text-lg shadow-sm"
               />
-              <h4 className="mt-2.5 max-w-full truncate text-base font-semibold leading-tight text-foreground">
-                {thread.name}
-              </h4>
-              {username ? (
-                <button
-                  type="button"
-                  onClick={() => openUrl(profileUrl(username))}
-                  className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/60"
-                >
-                  <span className="truncate">@{username}</span>
-                  <ExternalLink aria-hidden
-                    className="size-3 shrink-0" />
-                </button>
-              ) : (
-                <span className="mt-0.5 text-xs text-muted-foreground">Not linked to a website account</span>
-              )}
-              <div className="mt-2 flex flex-col items-center gap-1 text-xs text-muted-foreground">
-                {presence}
-                {joined?.isValid() && (
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays aria-hidden
-                      className="size-3" />
-                    Joined {joined.format('MMM YYYY')}
-                  </span>
+              <div className="min-w-0 flex-1">
+                <h4 className="truncate text-sm font-semibold leading-tight text-foreground">{thread.name}</h4>
+                {username ? (
+                  <button
+                    type="button"
+                    onClick={() => openUrl(profileUrl(username))}
+                    className="inline-flex max-w-full items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    <span className="truncate">@{username}</span>
+                    <ExternalLink aria-hidden
+                      className="size-3 shrink-0" />
+                  </button>
+                ) : (
+                  <span className="block truncate text-xs text-muted-foreground">Not linked to a website account</span>
                 )}
-              </div>
-              {accounts.length > 0 && (
-                <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                  {accounts.map((account) => (
-                    <Tip key={account}
-                      label={`In-game account. Click to copy *${account} for /w in the game chat.`}>
-                      <button
-                        type="button"
-                        aria-label={`Copy *${account}`}
-                        onClick={() => void copyAccount(account)}
-                        className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-[11px] font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
-                      >
-                        <Gamepad2 aria-hidden
-                          className="size-3 shrink-0 text-muted-foreground" />
-                        <span className="truncate">*{account}</span>
-                      </button>
-                    </Tip>
-                  ))}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                  {presence}
+                  {joined?.isValid() && (
+                    <span className="flex items-center gap-1">
+                      <CalendarDays aria-hidden
+                        className="size-3" />
+                      Joined {joined.format('MMM YYYY')}
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+            {accounts.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {accounts.map((account) => (
+                  <Tip key={account}
+                    label={`In-game account. Click to copy *${account} for /w in the game chat.`}>
+                    <button
+                      type="button"
+                      aria-label={`Copy *${account}`}
+                      onClick={() => void copyAccount(account)}
+                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-[11px] font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
+                    >
+                      <Gamepad2 aria-hidden
+                        className="size-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">*{account}</span>
+                    </button>
+                  </Tip>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
