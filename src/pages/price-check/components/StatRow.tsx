@@ -95,18 +95,9 @@ export const StatRow: React.FC<StatRowProps> = ({
   );
 
   return (
-    // py-0.5 leaves a gap between the highlight and the divider; the divider is inset by the highlight's
-    // corner radius (rounded-md = 6px). Dividers touching a hovered or selected row fade out, so the wider
-    // line never shows next to a highlight and two selected neighbours keep their gap.
-    <div
-      data-active={isActive || undefined}
-      className={cn(
-        'relative py-0.5 not-first:before:absolute not-first:before:inset-x-1.5 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border/70',
-        'before:transition-opacity before:duration-(--dur-fast)',
-        'data-active:before:opacity-0 has-[>label:hover]:before:opacity-0',
-        '[[data-active]+&]:before:opacity-0 [:has(>label:hover)+&]:before:opacity-0',
-      )}
-    >
+    // py-0.5 keeps a gap between the highlights of neighbouring rows.
+    <div data-active={isActive || undefined}
+      className="py-0.5">
       <label
         key={statKey}
         className={cn(
