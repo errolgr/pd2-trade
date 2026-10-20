@@ -79,8 +79,8 @@ function Section({
 }
 
 const actionButtonClass = cn(
-  'inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-border/70 bg-background/50 px-2 text-xs font-medium text-foreground shadow-xs outline-none',
-  'transition-[background-color,border-color,transform] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring/60',
+  'inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground outline-none',
+  'transition-[background-color,color,transform] duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring/60',
 );
 
 /** One of their listings in the market grid: hover for details, click to link it in the composer. */
@@ -321,44 +321,62 @@ export function TraderSidebar({
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {username && (
-              <>
-                <button type="button"
-                  className={actionButtonClass}
-                  onClick={() => openUrl(profileUrl(username))}>
-                  <UserRound className="size-3.5 shrink-0" />
-                  <span className="truncate">View profile</span>
-                </button>
-                <button type="button"
-                  className={actionButtonClass}
-                  onClick={() => openUrl(marketUrl(username))}>
-                  <Store className="size-3.5 shrink-0" />
-                  <span className="truncate">Their market</span>
-                </button>
-              </>
-            )}
-            {characterName && (
-              <button type="button"
-                className={actionButtonClass}
-                onClick={() => openUrl(characterUrl(characterName))}>
-                <Swords className="size-3.5 shrink-0" />
-                <span className="truncate">View character</span>
-              </button>
-            )}
-            {whisperAccount && (
-              <Tip label={`Copies *${whisperAccount}: type /w and paste it in the game chat`}>
-                <button type="button"
-                  className={actionButtonClass}
-                  onClick={() => void copyAccount(whisperAccount)}>
-                  <Copy className="size-3.5 shrink-0" />
-                  <span className="truncate">Copy whisper</span>
-                </button>
-              </Tip>
-            )}
+            {/* Actions: a footer section of the card, one row */}
+            <div className="-mx-3 -mb-3 mt-3 flex gap-0.5 border-t border-border/60 bg-background/30 p-1">
+              {username && (
+                <>
+                  <Tip label="View their profile on projectdiablo2.com">
+                    <button
+                      type="button"
+                      aria-label="View profile"
+                      className={actionButtonClass}
+                      onClick={() => openUrl(profileUrl(username))}
+                    >
+                      <UserRound className="size-3.5 shrink-0" />
+                      <span className="truncate">Profile</span>
+                    </button>
+                  </Tip>
+                  <Tip label="Their market listings on projectdiablo2.com">
+                    <button
+                      type="button"
+                      aria-label="Their market"
+                      className={actionButtonClass}
+                      onClick={() => openUrl(marketUrl(username))}
+                    >
+                      <Store className="size-3.5 shrink-0" />
+                      <span className="truncate">Market</span>
+                    </button>
+                  </Tip>
+                </>
+              )}
+              {characterName && (
+                <Tip label="View character">
+                  <button
+                    type="button"
+                    aria-label="View character"
+                    className={actionButtonClass}
+                    onClick={() => openUrl(characterUrl(characterName))}
+                  >
+                    <Swords className="size-3.5 shrink-0" />
+                    <span className="truncate">Character</span>
+                  </button>
+                </Tip>
+              )}
+              {whisperAccount && (
+                <Tip label={`Copies *${whisperAccount}: type /w and paste it in the game chat`}>
+                  <button
+                    type="button"
+                    aria-label="Copy whisper target"
+                    className={actionButtonClass}
+                    onClick={() => void copyAccount(whisperAccount)}
+                  >
+                    <Copy className="size-3.5 shrink-0" />
+                    <span className="truncate">Whisper</span>
+                  </button>
+                </Tip>
+              )}
+            </div>
           </div>
 
           {/* Trade with you */}
