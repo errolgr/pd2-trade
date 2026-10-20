@@ -102,7 +102,6 @@ export const StatRow: React.FC<StatRowProps> = ({
       className={cn(
         'not-first:border-t not-first:border-border/70',
         'data-active:border-t-transparent [[data-active]+&]:border-t-transparent',
-        'has-[>label:hover]:border-t-transparent [:has(>label:hover)+&]:border-t-transparent',
         '[[data-active]+&[data-active]]:border-t-border/70',
         '[[data-active]+&[data-active]]:*:rounded-t-none [&[data-active]:has(+[data-active])]:*:rounded-b-none',
       )}
