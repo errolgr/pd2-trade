@@ -595,30 +595,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       <div className="text-sm font-medium">{t.label}</div>
                       <div className="truncate text-xs text-muted-foreground">{t.text}</div>
                     </div>
-                    {/* Mouse shortcuts for Ctrl+S / Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        aria-label={`${t.favorite ? 'Unstar' : 'Star'} ${t.label}`}
-                        aria-pressed={t.favorite}
-                        title={`${t.favorite ? 'Unstar' : 'Star: show it above the message box'} (Ctrl+S)`}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(t);
-                        }}
-                        className={cn(
-                          rowAction,
-                          'transition-[color,background-color,opacity]',
-                          t.favorite
-                            ? 'text-warning'
-                            : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
-                        )}
-                      >
-                        <Star className={cn(t.favorite && 'fill-current')} />
-                      </button>
-                    </div>
                     <div
                       className={cn(
                         'flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100',
@@ -655,6 +631,30 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                           <Trash2 />
                         </button>
                       )}
+                    </div>
+                    {/* Mouse shortcuts for Ctrl+S / Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={`${t.favorite ? 'Unstar' : 'Star'} ${t.label}`}
+                        aria-pressed={t.favorite}
+                        title={`${t.favorite ? 'Unstar' : 'Star: show it above the message box'} (Ctrl+S)`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(t);
+                        }}
+                        className={cn(
+                          rowAction,
+                          'transition-[color,background-color,opacity]',
+                          t.favorite
+                            ? 'text-warning'
+                            : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
+                        )}
+                      >
+                        <Star className={cn(t.favorite && 'fill-current')} />
+                      </button>
                     </div>
                   </li>
                 ))}
