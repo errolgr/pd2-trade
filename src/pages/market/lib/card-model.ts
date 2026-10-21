@@ -134,6 +134,9 @@ export function multipliedLabel(mod: Modifier, count: number): string | null {
 
 const modsKey = (mods: Modifier[] | undefined) => JSON.stringify((mods ?? []).map((m) => [m.name, m.values]));
 
+/** Socket items whose only bonus is an item flag, which PD2 does not list as a modifier. */
+const FLAG_ONLY_BONUS: Record<string, string> = { 'Zod Rune': 'Indestructible' };
+
 /** Group socketed items by name + exact mods, in order of first socket. */
 export function groupSockets(socketed: ItemDetail[]): { groups: SocketGroup[]; socketGroups: number[] } {
   const groups: SocketGroup[] = [];
@@ -161,6 +164,10 @@ export function groupSockets(socketed: ItemDetail[]): { groups: SocketGroup[]; s
   for (const group of groups) {
     const count = group.items.length;
     group.lines = group.mods.map((m) => ({ each: m.label, total: count > 1 ? multipliedLabel(m, count) : null }));
+    // PD2 sends no modifiers for flag-only bonuses (Zod's Indestructible lives on the parent item)
+    if (group.lines.length === 0 && FLAG_ONLY_BONUS[group.name]) {
+      group.lines = [{ each: FLAG_ONLY_BONUS[group.name], total: null }];
+    }
     const sameName = groups.filter((g) => g.name === group.name).length > 1;
     if (sameName || /Facet/.test(group.name)) group.subtitle = facetSubtitle(group.mods);
   }

@@ -598,24 +598,29 @@ function SocketSection({
                   className="size-1.5 shrink-0 self-center rounded-full"
                   style={{ background: seriesColor(group) }}
                 />
-                <span className={cn('truncate font-semibold', itemNameColor(group.items[0]))}>
-                  {`${group.items.length} × ${group.name}`}
+                <span className={cn('truncate text-[12px] font-semibold', itemNameColor(group.items[0]))}>
+                  {group.items.length > 1 ? `${group.items.length} × ${group.name}` : group.name}
                 </span>
                 {values[g] !== null && (
                   <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{`~${formatStat(values[g] ?? 0)} HR`}</span>
                 )}
               </div>
-              {group.subtitle && <div className="text-[10px] text-muted-foreground">{group.subtitle}</div>}
-              {group.lines.map((l, i) => (
-                <div
-                  key={i}
-                  className="truncate text-q-magic"
-                  title={l.total ? `${l.each} each · ${l.total} total` : l.each}
-                >
-                  {l.each}
-                  {l.total && <span className="text-muted-foreground">{` each · ${l.total} total`}</span>}
-                </div>
-              ))}
+              {group.subtitle && <div className="pl-3 text-[10px] text-muted-foreground">{group.subtitle}</div>}
+              <div className="mt-0.5 space-y-px border-l border-border/60 pl-2 ml-[3px]">
+                {group.lines.map((l, i) => (
+                  <div
+                    key={i}
+                    className="truncate text-[11px] text-q-magic/80"
+                    title={l.total ? `${l.each} each · ${l.total} total` : l.each}
+                  >
+                    {l.each}
+                    {l.total && <span className="text-muted-foreground">{` each · ${l.total} total`}</span>}
+                  </div>
+                ))}
+                {group.lines.length === 0 && (
+                  <div className="text-[11px] italic text-muted-foreground">No bonus listed by PD2</div>
+                )}
+              </div>
             </div>
           ))}
         </div>

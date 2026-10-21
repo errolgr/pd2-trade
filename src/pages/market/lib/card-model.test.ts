@@ -226,6 +226,13 @@ describe('buildCardModel', () => {
     expect(model.emptySockets).toBe(2);
     expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 200, sources: [] });
   });
+
+  it('lists Zod as Indestructible although PD2 sends it without modifiers', () => {
+    const pike = item({ name: 'Matriarchal Pike', socket_count: 2, socketed: [socket('Zod Rune', []), ohm()] });
+    const { groups } = buildCardModel(pike);
+    expect(groups[0]).toMatchObject({ name: 'Zod Rune', lines: [{ each: 'Indestructible', total: null }] });
+    expect(groups[1].lines).toEqual([{ each: '+45% Enhanced Damage', total: null }]);
+  });
 });
 
 describe('card-model helpers', () => {
