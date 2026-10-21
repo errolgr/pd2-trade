@@ -8,7 +8,7 @@ import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
-import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, SOCKET_SERIES, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
@@ -152,25 +152,6 @@ export function ResultCards({
   );
 }
 
-/** Theme variable of the item's quality colour (rune colour for runes and runewords). */
-function qualityVar(item: Pick<ItemDetail, 'is_runeword' | 'name' | 'quality'>): string {
-  if (item.is_runeword || / Rune$/.test(item.name)) return '--q-rune';
-  switch (item.quality?.name) {
-    case 'Unique':
-      return '--q-unique';
-    case 'Set':
-      return '--q-set';
-    case 'Rare':
-      return '--q-rare';
-    case 'Magic':
-      return '--q-magic';
-    case 'Crafted':
-      return '--q-crafted';
-    default:
-      return '--q-normal';
-  }
-}
-
 const seriesColor = (group: Pick<SocketGroup, 'series'>) => `var(${SOCKET_SERIES[group.series]})`;
 /** "Ohm" for "Ohm Rune"; jewels and gems keep their name. */
 const shortName = (name: string) => name.replace(/ Rune$/, '');
@@ -239,7 +220,6 @@ const ResultCard = React.memo(function ResultCard({
     else if (!archived) void actions.copyWhisper();
   }, [command, onToggleFavorite, listing, archived, actions]);
 
-  const qVar = qualityVar(item);
   const price = formatHrPrice(listing.hr_price);
   const quality = item.is_runeword ? 'Runeword' : (item.quality?.name ?? '');
   const handType = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
@@ -260,21 +240,13 @@ const ResultCard = React.memo(function ResultCard({
       onClick={() => onSelect(listing._id)}
       onDoubleClick={() => onOpen(listing._id)}
       className={cn(
-        'cursor-default overflow-hidden rounded-lg border shadow-xs transition-[border-color,box-shadow] duration-(--dur-fast)',
-        selected ? 'border-primary ring-2 ring-primary/40' : 'border-border/70 hover:border-ring/50',
+        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
+        selected ? 'border-primary' : 'border-border/60 hover:border-border',
       )}
-      style={{
-        background: `linear-gradient(135deg, color-mix(in oklab, var(${qVar}) 13%, var(--card)) 0%, var(--card) 45%)`,
-      }}
     >
       {/* 1. Header */}
       <header className="flex gap-3 p-3 pb-2">
-        <div
-          className="flex h-[76px] w-16 shrink-0 items-center justify-center rounded-md border border-border/60"
-          style={{
-            background: `radial-gradient(circle at 50% 45%, color-mix(in oklab, var(${qVar}) 38%, transparent), transparent 72%)`,
-          }}
-        >
+        <div className="flex h-[76px] w-16 shrink-0 items-center justify-center rounded-md border border-border/50">
           <ListingThumb
             listing={listing}
             className="size-full border-0 bg-none shadow-none"
@@ -290,21 +262,12 @@ const ResultCard = React.memo(function ResultCard({
           </h3>
           {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {quality && (
-              <span
-                className={cn(pill, 'border-current/30', itemNameColor(item))}
-                style={{ background: `color-mix(in oklab, var(${qVar}) 12%, transparent)` }}
-              >
-                {quality}
-              </span>
-            )}
+            {quality && <span className={cn(pill, 'border-border/70', itemNameColor(item))}>{quality}</span>}
             {item.socket_count > 0 && (
-              <span className={cn(pill, 'border-border bg-secondary/60')}>{`${item.socket_count}os`}</span>
+              <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`${item.socket_count}os`}</span>
             )}
-            {item.corrupted && (
-              <span className={cn(pill, 'border-destructive/40 bg-destructive/15 text-q-corrupted')}>Corrupted</span>
-            )}
-            {item.is_ethereal && <span className={cn(pill, 'border-info/35 bg-info/10 text-info')}>Ethereal</span>}
+            {item.corrupted && <span className={cn(pill, 'border-border/70 text-q-corrupted')}>Corrupted</span>}
+            {item.is_ethereal && <span className={cn(pill, 'border-border/70 text-muted-foreground')}>Ethereal</span>}
             {item.item_level > 0 && (
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`ilvl ${item.item_level}`}</span>
             )}
@@ -314,7 +277,7 @@ const ResultCard = React.memo(function ResultCard({
           <span
             className={cn(
               'max-w-full truncate font-bold tabular-nums',
-              price ? 'text-xl text-q-gold' : 'text-sm text-foreground',
+              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
             )}
             title={listing.price || undefined}
           >
@@ -397,7 +360,7 @@ const ResultCard = React.memo(function ResultCard({
               <span
                 key={key}
                 title={statWithValue(key, row.pseudo[key] ?? 0)}
-                className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-info/10 px-1.5 text-[11px] tabular-nums text-info"
+                className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
               >
                 <Sigma className="size-3" />
                 {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
@@ -487,18 +450,15 @@ function SourceTag({
   index: number;
   onHover: (g: number | null) => void;
 }) {
-  const color = seriesColor(group);
   return (
     <span
       onMouseEnter={() => onHover(index)}
       onMouseLeave={() => onHover(null)}
-      className="mx-0.5 inline-flex h-4 items-center rounded-sm border px-1 align-middle text-[10px] font-medium leading-none"
-      style={{
-        borderColor: `color-mix(in oklab, ${color} 55%, transparent)`,
-        color,
-        background: `color-mix(in oklab, ${color} 10%, transparent)`,
-      }}
+      className="mx-0.5 inline-flex h-4 items-center gap-1 rounded-sm border border-border/70 px-1 align-middle text-[10px] font-medium leading-none text-muted-foreground"
     >
+      <span aria-hidden
+        className="size-1.5 rounded-full"
+        style={{ background: seriesColor(group) }} />
       {`${shortName(group.name)}${group.items.length > 1 ? `×${group.items.length}` : ''}`}
     </span>
   );
@@ -549,16 +509,13 @@ function ModLine({
     <div
       className={cn(
         'relative flex min-h-6 items-center gap-2 overflow-hidden rounded-sm px-2 py-0.5 text-[13px] transition-colors duration-(--dur-fast)',
-        highlighted && 'bg-accent/60',
+        highlighted && 'bg-muted/60',
       )}
     >
       {rollPct !== null && (
         <span
           aria-hidden
-          className={cn(
-            'absolute inset-y-0 left-0 rounded-sm bg-linear-to-r',
-            rollPct === 100 ? 'from-success/5 to-success/20' : 'from-primary/5 to-primary/15',
-          )}
+          className="absolute inset-y-0 left-0 rounded-sm bg-foreground/[0.05]"
           style={{ width: `${Math.max(rollPct, 2)}%` }}
         />
       )}
@@ -576,9 +533,7 @@ function ModLine({
         {breakdown && <span className="text-xs font-normal text-muted-foreground">{breakdown}</span>}
       </span>
       {rollPct === 100 ? (
-        <span className="relative shrink-0 rounded-full bg-success/15 px-1.5 text-[10px] font-bold tracking-wider text-success">
-          PERFECT
-        </span>
+        <span className="relative shrink-0 text-[10px] font-semibold tracking-wider text-success">PERFECT</span>
       ) : rollPct !== null ? (
         <span className="relative shrink-0 text-[11px] tabular-nums text-muted-foreground">{`${rollPct}%`}</span>
       ) : matched ? (
@@ -614,17 +569,16 @@ function SocketSection({
     <section className="border-t border-border/50 px-3 py-2"
       onMouseLeave={() => onHover(null)}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-q-gold">{`Socketed (${filled})`}</span>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{`Socketed (${filled})`}</span>
         <span className="flex items-center gap-1">
           {socketGroups.map((g, socket) => (
             <span
               key={socket}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'flex size-7 items-center justify-center rounded-full border-2 bg-background/60 transition-transform duration-(--dur-fast)',
-                hovered === g && 'scale-110',
+                'flex size-7 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
+                hovered === g ? 'border-foreground/50' : 'border-border',
               )}
-              style={{ borderColor: seriesColor(groups[g]) }}
               title={groups[g].name}
             >
               <ListingThumb
@@ -636,7 +590,7 @@ function SocketSection({
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
             <span key={`empty-${i}`}
-              className="size-7 rounded-full border-2 border-dashed border-border" />
+              className="size-7 rounded-full border border-dashed border-border" />
           ))}
         </span>
         {emptySockets > 0 && (
@@ -654,15 +608,16 @@ function SocketSection({
               key={group.key}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'min-w-0 rounded-md border border-l-[3px] bg-background/40 px-2 py-1 text-[11px] transition-colors duration-(--dur-fast)',
-                hovered === g && 'bg-accent/50',
+                'min-w-0 rounded-md border border-border/60 px-2 py-1 text-[11px] transition-colors duration-(--dur-fast)',
+                hovered === g && 'bg-muted/50',
               )}
-              style={{
-                borderColor: `color-mix(in oklab, ${seriesColor(group)} 35%, transparent)`,
-                borderLeftColor: seriesColor(group),
-              }}
             >
               <div className="flex items-baseline gap-1.5">
+                <span
+                  aria-hidden
+                  className="size-1.5 shrink-0 self-center rounded-full"
+                  style={{ background: seriesColor(group) }}
+                />
                 <span className={cn('truncate font-semibold', itemNameColor(group.items[0]))}>
                   {`${group.items.length} × ${group.name}`}
                 </span>
