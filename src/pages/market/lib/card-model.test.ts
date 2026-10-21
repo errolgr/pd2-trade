@@ -7,7 +7,6 @@ import {
   modMatchesStatKey,
   multipliedLabel,
   perLevelLabel,
-  rollPercent,
 } from './card-model';
 
 // Fixtures trimmed from live api.projectdiablo2.com market listings (2026-10-21).
@@ -44,25 +43,20 @@ const windforce = item({
 const byName = (model: ReturnType<typeof buildCardModel>, name: string) => model.mods.find((m) => m.mod.name === name)!;
 
 describe('buildCardModel', () => {
-  it('Windforce: 530% ED = 350 own roll (PERFECT) + 180 from 4 × Ohm', () => {
+  it('Windforce: 530% ED = 350 own roll + 180 from 4 × Ohm', () => {
     const model = buildCardModel(windforce);
     expect(model.groups).toHaveLength(1);
     expect(model.groups[0]).toMatchObject({ name: 'Ohm Rune', sockets: [0, 1, 2, 3], series: 0 });
     expect(model.groups[0].lines).toEqual([{ each: '+45% Enhanced Damage', total: '+180% Enhanced Damage' }]);
 
     const ed = byName(model, 'maxdamage_percent');
-    expect(ed).toMatchObject({ own: 350, ownKind: 'roll', rollPct: 100, socketOnly: false });
+    expect(ed).toMatchObject({ own: 350, ownKind: 'roll', socketOnly: false });
     expect(ed.sources).toEqual([{ group: 0, amount: 180 }]);
 
-    expect(byName(model, 'manadrainmindam')).toMatchObject({ own: 8, rollPct: 100, sources: [] });
-    expect(byName(model, 'item_fasterattackrate')).toMatchObject({
-      ownKind: 'corruption',
-      corrupted: true,
-      rollPct: null,
-    });
+    expect(byName(model, 'manadrainmindam')).toMatchObject({ own: 8, sources: [] });
+    expect(byName(model, 'item_fasterattackrate')).toMatchObject({ ownKind: 'corruption', corrupted: true });
     expect(byName(model, 'item_maxdamage_perlevel')).toMatchObject({ perLevel: true, label: '+16 to Maximum Damage' });
     expect(model.mods.some((m) => m.mod.name === 'corrupted')).toBe(false);
-    expect(model.overallRoll).toBe(100);
     expect(model.emptySockets).toBe(0);
   });
 
@@ -128,7 +122,7 @@ describe('buildCardModel', () => {
     ]);
   });
 
-  it('jewels: partial and socket-only lines, own part outside the range gets no roll %', () => {
+  it('jewels: partial and socket-only lines', () => {
     const veil = item({
       name: 'Veil of Steel',
       socket_count: 3,
@@ -152,8 +146,8 @@ describe('buildCardModel', () => {
       ],
     });
     const model = buildCardModel(veil);
-    // 116 − 28 − 17 = 71 (matches the API's own value) → 37% of [60, 90]
-    expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 71, rollPct: 37 });
+    // 116 − 28 − 17 = 71 (matches the API's own value)
+    expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 71, ownKind: 'roll' });
     expect(byName(model, 'tohit')).toMatchObject({ socketOnly: true, sources: [{ group: 0, amount: 100 }] });
     expect(byName(model, 'lightresist')).toMatchObject({
       own: 32,
@@ -169,7 +163,10 @@ describe('buildCardModel', () => {
       modifiers: [mod('maxdamage_percent', [453, 413], '+453% Enhanced Damage', { min: 252, max: 400 })],
       socketed: [socket('Ruby Jewel of Freedom', [mod('maxdamage_percent', [40, 40], '+40% Enhanced Damage')])],
     });
-    expect(byName(buildCardModel(hydra), 'maxdamage_percent')).toMatchObject({ own: 413, rollPct: null });
+    expect(byName(buildCardModel(hydra), 'maxdamage_percent')).toMatchObject({
+      own: 413,
+      sources: [{ group: 0, amount: 40 }],
+    });
   });
 
   it('names the corruption part of a line a rune adds to', () => {
@@ -191,11 +188,7 @@ describe('buildCardModel', () => {
       ],
       socketed: [ohm(), ohm()],
     });
-    expect(byName(buildCardModel(pike), 'maxdamage_percent')).toMatchObject({
-      own: 532,
-      ownKind: 'base',
-      rollPct: null,
-    });
+    expect(byName(buildCardModel(pike), 'maxdamage_percent')).toMatchObject({ own: 532, ownKind: 'base' });
   });
 
   it('runewords keep their bonuses: runes listed, nothing credited', () => {
@@ -219,7 +212,6 @@ describe('buildCardModel', () => {
     expect(model.groups.map((g) => `${g.items.length}×${g.name}`)).toEqual(['2×Ber Rune', '1×Mal Rune', '1×Ist Rune']);
     expect(model.socketGroups).toEqual([0, 1, 0, 2]);
     expect(model.mods.every((m) => m.sources.length === 0)).toBe(true);
-    expect(byName(model, 'maxdamage_percent').rollPct).toBe(40);
     expect(byName(model, 'item_vitality_perlevel')).toMatchObject({ perLevel: true, label: '+0.5 to Vitality' });
   });
 
@@ -232,19 +224,11 @@ describe('buildCardModel', () => {
     const model = buildCardModel(bare);
     expect(model.groups).toEqual([]);
     expect(model.emptySockets).toBe(2);
-    expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 200, rollPct: 100, sources: [] });
+    expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 200, sources: [] });
   });
 });
 
 describe('card-model helpers', () => {
-  it('rollPercent', () => {
-    expect(rollPercent(350, 275, 350)).toBe(100);
-    expect(rollPercent(275, 275, 350)).toBe(0);
-    expect(rollPercent(5, 5, 5)).toBeNull();
-    expect(rollPercent(401, 252, 400)).toBeNull();
-    expect(rollPercent(10, undefined, 20)).toBeNull();
-  });
-
   it('amountIndex', () => {
     expect(amountIndex(mod('strength', [20], ''))).toBe(0);
     expect(amountIndex(mod('maxdamage_percent', [530, 350], ''))).toBe(0);

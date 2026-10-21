@@ -36,15 +36,6 @@ function sameLine(a: Pick<Modifier, 'name' | 'values'>, b: Pick<Modifier, 'name'
   return a.values.slice(0, index).every((v, i) => b.values[i] === v);
 }
 
-/** Roll position of `value` in [min, max] as 0–100, or null without a range / outside it. */
-export function rollPercent(value: number, min: number | undefined, max: number | undefined): number | null {
-  if (typeof min !== 'number' || typeof max !== 'number' || min === max) return null;
-  const lo = Math.min(min, max);
-  const hi = Math.max(min, max);
-  if (value < lo || value > hi) return null;
-  return Math.round(((value - lo) / (hi - lo)) * 100);
-}
-
 const PER_LEVEL = /\s*\(Based on Character Level\)/i;
 
 /** "+16 to Maximum Damage (Based on Character Level)" → label without the suffix, flagged per level. */
@@ -97,8 +88,6 @@ export interface CardMod {
   ownKind: 'roll' | 'corruption' | 'base' | null;
   /** The line comes from sockets only. */
   socketOnly: boolean;
-  /** Roll % of the item's OWN part in [min, max]; null without a range or when the split is unknown. */
-  rollPct: number | null;
 }
 
 export interface CardModel {
@@ -107,8 +96,6 @@ export interface CardModel {
   /** Socket index → group index (socket order). */
   socketGroups: number[];
   emptySockets: number;
-  /** Mean roll % of the ranged lines, or null without any. */
-  overallRoll: number | null;
 }
 
 const ELEMENTS: [RegExp, string][] = [
@@ -228,23 +215,19 @@ export function buildCardModel(item: ItemDetail): CardModel {
   const mods = orderedMods(item).map((mod): CardMod => {
     const { label, perLevel } = perLevelLabel(mod.label);
     const split = splitMod(mod, groups, attribute);
-    const rollPct = split.own !== null && split.ownKind === 'roll' ? rollPercent(split.own, mod.min, mod.max) : null;
     return {
       mod,
       label,
       perLevel,
       corrupted: mod.corrupted === true || !!item.corruptions?.includes(mod.name),
       ...split,
-      rollPct,
     };
   });
 
-  const rolls = mods.map((m) => m.rollPct).filter((p): p is number => p !== null);
   return {
     mods,
     groups,
     socketGroups,
     emptySockets: Math.max(0, (item.socket_count ?? 0) - socketed.length),
-    overallRoll: rolls.length ? Math.round(rolls.reduce((s, p) => s + p, 0) / rolls.length) : null,
   };
 }

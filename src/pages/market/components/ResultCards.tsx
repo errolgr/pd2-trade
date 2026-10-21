@@ -321,16 +321,6 @@ const ResultCard = React.memo(function ResultCard({
           {req?.dexterity > 0 && <span className={cn(pill, 'border-border/70')}>{`Dex ${req.dexterity}`}</span>}
         </span>
         <span className="ml-auto flex items-center gap-3">
-          {model.overallRoll !== null && (
-            <span
-              className={cn(
-                'tabular-nums',
-                model.overallRoll === 100 ? 'font-semibold text-success' : 'text-muted-foreground',
-              )}
-            >
-              {model.overallRoll === 100 ? 'Overall roll 100% · perfect' : `Overall roll ${model.overallRoll}%`}
-            </span>
-          )}
           {showScore && row.score !== null && (
             <span
               className="font-semibold tabular-nums text-primary"
@@ -477,7 +467,8 @@ function ModLine({
   highlighted: boolean;
   onHoverGroup: (g: number | null) => void;
 }) {
-  const { mod, own, ownKind, sources, socketOnly, rollPct } = line;
+  const { mod, own, ownKind, sources, socketOnly } = line;
+  const hasRange = mod.min !== undefined && mod.max !== undefined && mod.min !== mod.max;
   const tags = sources.map((s, i) => (
     <React.Fragment key={s.group}>
       {i > 0 && ' + '}
@@ -512,13 +503,6 @@ function ModLine({
         highlighted && 'bg-muted/60',
       )}
     >
-      {rollPct !== null && (
-        <span
-          aria-hidden
-          className="absolute inset-y-0 left-0 rounded-sm bg-foreground/[0.05]"
-          style={{ width: `${Math.max(rollPct, 2)}%` }}
-        />
-      )}
       {matched && <span aria-hidden
         className="absolute inset-y-0.5 left-0 w-[3px] rounded-full bg-primary" />}
       <span
@@ -529,16 +513,12 @@ function ModLine({
         )}
       >
         {line.label}
+        {/* The breakdown already carries the range when sockets/corruption add to the roll */}
+        {hasRange && !breakdown && <span className="text-muted-foreground">{` [${mod.min} – ${mod.max}]`}</span>}
         {line.perLevel && <span className="text-muted-foreground"> per level</span>}
         {breakdown && <span className="text-xs font-normal text-muted-foreground">{breakdown}</span>}
       </span>
-      {rollPct === 100 ? (
-        <span className="relative shrink-0 text-[10px] font-semibold tracking-wider text-success">PERFECT</span>
-      ) : rollPct !== null ? (
-        <span className="relative shrink-0 text-[11px] tabular-nums text-muted-foreground">{`${rollPct}%`}</span>
-      ) : matched ? (
-        <span className="relative shrink-0 text-[11px] text-primary">✓ filter</span>
-      ) : null}
+      {matched && <span className="relative shrink-0 text-[11px] text-primary">✓ filter</span>}
     </div>
   );
 }
