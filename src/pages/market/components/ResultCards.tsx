@@ -413,35 +413,37 @@ const ResultCard = React.memo(function ResultCard({
         </span>
       </div>
 
-      {/* 3. Mods, in game order */}
-      <div className="space-y-px border-t border-border/50 px-1.5 py-1.5">
-        {model.mods.map((m, i) => (
-          <ModLine
-            key={`${m.mod.name}-${i}`}
-            item={item}
-            line={m}
-            groups={model.groups}
-            groupListings={groupListings}
-            matched={statKeys.some((key) => modMatchesStatKey(m.mod, key))}
-            highlighted={hovered !== null && m.sources.some((s) => s.group === hovered)}
-            onHoverGroup={setHovered}
-          />
-        ))}
-        {pseudoKeys.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-1.5 pt-1">
-            {pseudoKeys.map((key) => (
-              <span
-                key={key}
-                title={statWithValue(key, row.pseudo[key] ?? 0)}
-                className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
-              >
-                <Sigma className="size-3" />
-                {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* 3. Mods, in game order (runes, keys etc. have none: no empty block) */}
+      {(model.mods.length > 0 || pseudoKeys.length > 0) && (
+        <div className="space-y-px border-t border-border/50 px-1.5 py-1.5">
+          {model.mods.map((m, i) => (
+            <ModLine
+              key={`${m.mod.name}-${i}`}
+              item={item}
+              line={m}
+              groups={model.groups}
+              groupListings={groupListings}
+              matched={statKeys.some((key) => modMatchesStatKey(m.mod, key))}
+              highlighted={hovered !== null && m.sources.some((s) => s.group === hovered)}
+              onHoverGroup={setHovered}
+            />
+          ))}
+          {pseudoKeys.length > 0 && (
+            <div className="flex flex-wrap gap-1 px-1.5 pt-1">
+              {pseudoKeys.map((key) => (
+                <span
+                  key={key}
+                  title={statWithValue(key, row.pseudo[key] ?? 0)}
+                  className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
+                >
+                  <Sigma className="size-3" />
+                  {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Socketed (only when a socketed item lists a bonus; the `Nos` pill covers the rest) */}
       {model.showSockets && (
