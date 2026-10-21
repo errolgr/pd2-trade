@@ -18,7 +18,7 @@ import type { MarketApi } from '../lib/types';
 import { NumberInput, fieldInputClass } from './controls';
 
 /** Icon-only action button (tooltip via title). */
-export const iconActionClass = 'size-6 p-0 text-muted-foreground hover:text-foreground';
+export const iconActionClass = 'size-7 p-0 text-muted-foreground hover:text-foreground';
 
 /**
  * Make offer: the site's offer form (offer text + optional HR value) in a popover; the website without
@@ -55,7 +55,7 @@ export function OfferButton({
   const button = (
     <Button
       size="sm"
-      className={dense ? 'h-6 gap-1 px-2 text-[11px]' : 'h-8 text-xs'}
+      className={dense ? 'h-7 px-2.5 text-xs' : 'h-8 text-xs'}
       onClick={createOffer ? undefined : onWebsite}
     >
       <HandCoins className="size-3.5" />
@@ -146,10 +146,7 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
       <Button
         variant={variant}
         size="sm"
-        className={cn(
-          'flex-1 rounded-r-none',
-          dense ? 'h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground' : 'h-8 text-xs',
-        )}
+        className={cn('flex-1 rounded-r-none text-xs', dense ? 'h-7 px-2.5' : 'h-8')}
         title="Copy /w whisper (W)"
         onClick={() => void copyWhisper()}
       >
@@ -161,10 +158,7 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
           <Button
             variant={variant}
             size="sm"
-            className={cn(
-              'rounded-l-none border-l-0 p-0',
-              dense ? 'h-6 w-5 text-muted-foreground' : 'h-8 w-6 border-l border-border/60',
-            )}
+            className={cn('rounded-l-none border-l-0 p-0', dense ? 'h-7 w-5' : 'h-8 w-6 border-l border-border/60')}
             aria-label="Whisper with a template"
             title="Whisper with a template"
           >

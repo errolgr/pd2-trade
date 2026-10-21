@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Bell, ExternalLink, Heart, Loader2, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
+import {
+  Bell,
+  Clock,
+  ExternalLink,
+  Gamepad2,
+  Heart,
+  Loader2,
+  MessageSquare,
+  Shield,
+  Sigma,
+  Swords,
+  X,
+} from 'lucide-react';
+import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -445,18 +458,41 @@ const ResultCard = React.memo(function ResultCard({
       )}
 
       {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
-      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/60 bg-background/30 px-2 py-1 text-[11px]">
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] leading-none text-muted-foreground">
-          <OnlineDots listing={listing}
-            className="-mr-0.5 scale-90" />
-          {account && <span className="font-semibold text-foreground">{account}</span>}
-          {item.character_id && <span>{`In game as ${item.character_id}`}</span>}
-          <span className="text-muted-foreground/60">·</span>
-          <span className="tabular-nums">{listingAge(listing)}</span>
-          <span className="text-muted-foreground/60">·</span>
-          <span>{`${listing.is_hardcore ? 'HC' : 'SC'} ${listing.is_ladder ? 'Ladder' : 'NL'}`}</span>
+      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 bg-background/30 px-3 py-1.5 text-xs">
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
+          {/* Who: presence + account, with the character they're on */}
+          <span className="inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-2 pr-2.5">
+            <OnlineDots listing={listing} />
+            {account && <span className="truncate font-semibold text-foreground">{account}</span>}
+            {item.character_id && (
+              <>
+                <span aria-hidden
+                  className="h-3 w-px bg-border" />
+                <span
+                  className="inline-flex min-w-0 items-center gap-1 text-muted-foreground"
+                  title={`In game as ${item.character_id}`}
+                >
+                  <Gamepad2
+                    className={cn('size-3 shrink-0', isUserOnlineIngame(listing.user_last_ingame) && 'text-success')}
+                  />
+                  <span className="truncate">{item.character_id}</span>
+                </span>
+              </>
+            )}
+          </span>
+          {/* When / where */}
+          <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 tabular-nums"
+              title="Last bumped">
+              <Clock className="size-3" />
+              {listingAge(listing)}
+            </span>
+            <span className="rounded border border-border/60 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide">
+              {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
+            </span>
+          </span>
         </span>
-        <span className="flex shrink-0 items-center gap-0.5"
+        <span className="flex shrink-0 items-center gap-1"
           onDoubleClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
