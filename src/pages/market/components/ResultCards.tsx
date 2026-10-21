@@ -445,17 +445,18 @@ const ResultCard = React.memo(function ResultCard({
       )}
 
       {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
-      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/40 bg-background/30 px-3 py-1.5 text-xs">
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/60 bg-background/30 px-2 py-1 text-[11px]">
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] leading-none text-muted-foreground">
           <OnlineDots listing={listing}
-            className="-mr-0.5" />
-          {account && <span className="text-xs font-semibold text-foreground">{account}</span>}
+            className="-mr-0.5 scale-90" />
+          {account && <span className="font-semibold text-foreground">{account}</span>}
           {item.character_id && <span>{`In game as ${item.character_id}`}</span>}
+          <span className="text-muted-foreground/60">·</span>
           <span className="tabular-nums">{listingAge(listing)}</span>
-          <span aria-hidden>·</span>
-          <span>{`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'NL'}`}</span>
+          <span className="text-muted-foreground/60">·</span>
+          <span>{`${listing.is_hardcore ? 'HC' : 'SC'} ${listing.is_ladder ? 'Ladder' : 'NL'}`}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-1"
+        <span className="flex shrink-0 items-center gap-0.5"
           onDoubleClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
