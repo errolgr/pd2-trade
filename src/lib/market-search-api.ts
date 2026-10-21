@@ -70,15 +70,18 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
         dexMin: f.requirements.dexMin,
         dexMax: f.requirements.dexMax,
       },
-      stats: f.stats.map((s) => ({
-        id: s.id,
-        kind: s.kind,
-        key: s.key,
-        min: s.min,
-        max: s.max,
-        weight: s.weight,
-        enabled: s.enabled,
-      })),
+      // A row added before its stat is picked has no key yet: the service would reject it
+      stats: f.stats
+        .filter((s) => s.key.trim() !== '')
+        .map((s) => ({
+          id: s.id,
+          kind: s.kind,
+          key: s.key,
+          min: s.min,
+          max: s.max,
+          weight: s.weight,
+          enabled: s.enabled,
+        })),
       corruptions: f.corruptions,
       maxAgeDays: f.maxAgeDays,
       sort: { by: f.sort.by, dir: f.sort.dir, key: f.sort.by === 'stat' ? f.sort.key : undefined },

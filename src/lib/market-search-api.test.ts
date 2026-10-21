@@ -135,4 +135,14 @@ describe('marketSearchBody', () => {
     const stat = marketSearchBody(mergeFilters(base, { sort: { by: 'stat', key: 'maxhp', dir: 'desc' } }), 0, 25);
     expect(stat.filters.sort).toEqual({ by: 'stat', key: 'maxhp', dir: 'desc' });
   });
+
+  it('leaves out stat rows whose stat has not been picked yet', () => {
+    const f = mergeFilters(base, {
+      stats: [
+        { id: 'a', kind: 'mod', key: '', enabled: true },
+        { id: 'b', kind: 'mod', key: 'item_fastercastrate', enabled: true },
+      ],
+    });
+    expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
+  });
 });
