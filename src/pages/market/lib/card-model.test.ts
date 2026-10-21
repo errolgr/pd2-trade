@@ -46,7 +46,8 @@ describe('buildCardModel', () => {
   it('Windforce: 530% ED = 350 own roll + 180 from 4 × Ohm', () => {
     const model = buildCardModel(windforce);
     expect(model.groups).toHaveLength(1);
-    expect(model.groups[0]).toMatchObject({ name: 'Ohm Rune', sockets: [0, 1, 2, 3], series: 0 });
+    expect(model.groups[0]).toMatchObject({ name: 'Ohm Rune', sockets: [0, 1, 2, 3], element: null });
+    expect(model.showSockets).toBe(true);
     expect(model.groups[0].lines).toEqual([{ each: '+45% Enhanced Damage', total: '+180% Enhanced Damage' }]);
 
     const ed = byName(model, 'maxdamage_percent');
@@ -81,9 +82,9 @@ describe('buildCardModel', () => {
       socketed: [facet(4), facet(3)],
     });
     const model = buildCardModel(javelin);
-    expect(model.groups.map((g) => [g.name, g.subtitle, g.series])).toEqual([
-      ['Rainbow Facet', 'Lightning · on level-up', 0],
-      ['Rainbow Facet', 'Lightning · on level-up', 1],
+    expect(model.groups.map((g) => [g.name, g.subtitle, g.element])).toEqual([
+      ['Rainbow Facet', 'Lightning · on level-up', 'lightning'],
+      ['Rainbow Facet', 'Lightning · on level-up', 'lightning'],
     ]);
     expect(model.socketGroups).toEqual([0, 1]);
     expect(byName(model, 'item_skillonlevelup')).toMatchObject({
@@ -224,6 +225,7 @@ describe('buildCardModel', () => {
     const model = buildCardModel(bare);
     expect(model.groups).toEqual([]);
     expect(model.emptySockets).toBe(2);
+    expect(model.showSockets).toBe(false);
     expect(byName(model, 'maxdamage_percent')).toMatchObject({ own: 200, sources: [] });
   });
 
@@ -232,6 +234,13 @@ describe('buildCardModel', () => {
     const { groups } = buildCardModel(pike);
     expect(groups[0]).toMatchObject({ name: 'Zod Rune', lines: [{ each: 'Indestructible', total: null }] });
     expect(groups[1].lines).toEqual([{ each: '+45% Enhanced Damage', total: null }]);
+  });
+
+  it('hides the Socketed section when no socketed item lists a bonus', () => {
+    const unlisted = item({ socket_count: 2, socketed: [socket('Mystery Rune', []), socket('Mystery Rune', [])] });
+    const model = buildCardModel(unlisted);
+    expect(model.groups).toHaveLength(1);
+    expect(model.showSockets).toBe(false);
   });
 });
 

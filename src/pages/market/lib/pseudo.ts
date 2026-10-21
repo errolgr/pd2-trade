@@ -43,8 +43,8 @@ const MANA_PER_ENERGY = 2;
 const ELEMENTS = ['fire', 'cold', 'ltng', 'pois', 'mag'] as const;
 
 /**
- * Computed stats over a listing's modifiers. Server queries can't express these, so they force pool mode
- * when used as filters. Every compute returns 0 when the item has none of the inputs.
+ * Computed stats over a listing's modifiers, the same definitions the market service filters and sorts on
+ * (computed here for favorites and deep links). Every compute returns 0 when the item has none of the inputs.
  */
 export const PSEUDO_STATS: PseudoDef[] = [
   {

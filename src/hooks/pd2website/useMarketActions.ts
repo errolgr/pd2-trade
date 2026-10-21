@@ -7,8 +7,9 @@ import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketList
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketApi, MarketFavorite } from '@/pages/market/lib/types';
 import { fetch as tauriFetch } from '@/lib/browser-http';
+import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
-import { handleApiResponse } from './usePD2Website';
+import { AuthenticationError, handleApiResponse } from './usePD2Website';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -27,6 +28,7 @@ interface UseMarketActionsReturn {
   addFavorite: MarketApi['addFavorite'];
   removeFavorite: MarketApi['removeFavorite'];
   findUsers: MarketApi['findUsers'];
+  getListing: MarketApi['getListing'];
   createOffer: NonNullable<MarketApi['createOffer']>;
   /** The market browser's API surface, stable while the token is. */
   marketApi: MarketApi;
@@ -295,8 +297,33 @@ export function useMarketActions({
     [settings.pd2Token, onAuthError],
   );
 
+  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it
+  const getListing = useCallback(
+    async (listingId: string): Promise<MarketListingEntry | null> => {
+      const query = { $resolve: { user: { in_game_account: true } } };
+      const url = buildUrlWithQuery(
+        `https://api.projectdiablo2.com/market/listing/${encodeURIComponent(listingId)}`,
+        query,
+      );
+      const response = await tauriFetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+        },
+      });
+      if (response.status === 404) return null;
+      const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, { listingId });
+      // 401: re-authentication started; that isn't "gone"
+      if (!listing) throw new AuthenticationError('Sign in to PD2 to check this listing');
+      return listing;
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
   const marketApi = useMemo<MarketApi>(
     () => ({
+      searchListings: searchMarketListings,
+      getListing,
       getMarketListings,
       getMarketListingsArchive,
       getFavorites,
@@ -305,7 +332,16 @@ export function useMarketActions({
       findUsers,
       createOffer,
     }),
-    [getMarketListings, getMarketListingsArchive, getFavorites, addFavorite, removeFavorite, findUsers, createOffer],
+    [
+      getListing,
+      getMarketListings,
+      getMarketListingsArchive,
+      getFavorites,
+      addFavorite,
+      removeFavorite,
+      findUsers,
+      createOffer,
+    ],
   );
 
   return {
@@ -320,6 +356,7 @@ export function useMarketActions({
     addFavorite,
     removeFavorite,
     findUsers,
+    getListing,
     createOffer,
     marketApi,
   };

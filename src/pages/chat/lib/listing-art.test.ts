@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { allItems } from '@/assets/items';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { listingArtCandidates, listingArtUrl } from './listing-art';
+import { jewelElement, listingArtCandidates, listingArtUrl } from './listing-art';
 
 const itemsByKey = createItemsMapByKey(allItems);
 const art = (name: string, quality: string, baseName?: string) =>
@@ -57,5 +57,41 @@ describe('listingArtCandidates', () => {
   it('keeps bundled art as the only candidate, and none when nothing matches', () => {
     expect(listingArtCandidates(item('Ohm Rune', 'Normal', 'Ohm Rune'), itemsByKey)).toEqual(['/runes/Ohm_Rune.png']);
     expect(listingArtCandidates(item('Mystery Thing', 'Normal', 'Mystery Thing'), itemsByKey)).toEqual([]);
+  });
+});
+
+describe('jewel art', () => {
+  const jewel = (name: string, quality: string, graphic_id: unknown, modifiers: { name: string }[] = []) =>
+    ({
+      name,
+      quality: { id: 0, name: quality },
+      base: { name: 'Jewel', type_code: 'jewl' },
+      base_code: 'jew',
+      graphic_id,
+      modifiers,
+    }) as unknown as ItemDetail;
+  const url = (file: string) => `https://pd2trader.com/assets/items/${file}.png`;
+
+  it('draws jewels as the site does: invgswe + (graphic_id + 1)', () => {
+    expect(listingArtUrl(jewel('Ruby Jewel of Fervor', 'Magic', 0), itemsByKey)).toBe(url('invgswe1'));
+    expect(listingArtUrl(jewel('Jewel', 'Rare', 5), itemsByKey)).toBe(url('invgswe6'));
+    // No (or an unknown) graphic id: the plain white jewel
+    expect(listingArtUrl(jewel('Jewel', 'Rare', false), itemsByKey)).toBe(url('invgswe'));
+    expect(listingArtUrl(jewel('Jewel', 'Rare', 9), itemsByKey)).toBe(url('invgswe'));
+  });
+
+  it('draws Rainbow Facets by element, whatever their graphic id', () => {
+    const facet = (mod: string) => jewel('Rainbow Facet', 'Unique', 3, [{ name: 'item_skillondeath' }, { name: mod }]);
+    expect(listingArtUrl(facet('passive_fire_mastery'), itemsByKey)).toBe(url('invgsre'));
+    expect(listingArtUrl(facet('passive_cold_pierce'), itemsByKey)).toBe(url('invgsbe'));
+    expect(listingArtUrl(facet('passive_ltng_mastery'), itemsByKey)).toBe(url('invgsye'));
+    expect(listingArtUrl(facet('passive_pois_mastery'), itemsByKey)).toBe(url('invgsge'));
+    expect(listingArtUrl(jewel('Rainbow Facet', 'Unique', 3), itemsByKey)).toBe(url('invgswe'));
+  });
+
+  it('reads the element from mod names', () => {
+    expect(jewelElement([{ name: 'lightmindam' }])).toBe('lightning');
+    expect(jewelElement([{ name: 'item_lightradius' }])).toBeNull();
+    expect(jewelElement(undefined)).toBeNull();
   });
 });

@@ -22,18 +22,21 @@ export const iconActionClass = 'size-7 p-0 text-muted-foreground hover:text-fore
 
 /**
  * Make offer: the site's offer form (offer text + optional HR value) in a popover; the website without
- * createOffer. `dense`: card footer size. `openNonce`: a changed value opens the form (the card's O hotkey).
+ * createOffer. `ensureFresh` re-checks the listing on PD2 before sending (useListingActions). `dense`: card
+ * footer size. `openNonce`: a changed value opens the form (the card's O hotkey).
  */
 export function OfferButton({
   api,
   listing,
   onWebsite,
+  ensureFresh,
   dense = false,
   openNonce,
 }: {
   api: MarketApi | null;
   listing: MarketListingEntry;
   onWebsite: () => void;
+  ensureFresh: ListingActions['ensureFresh'];
   dense?: boolean;
   openNonce?: number;
 }) {
@@ -65,6 +68,8 @@ export function OfferButton({
     if (!price.trim() || sending) return;
     setSending(true);
     try {
+      // Gone or repriced since it was shown: the toast says so; a repeat send after a change goes ahead
+      if (!(await ensureFresh())) return;
       const created = await createOffer(listing._id, { price: price.trim(), hrPrice: hr && hr > 0 ? hr : undefined });
       if (created === null) return; // 401: the sign-in flow takes over
       showToast({ title: 'Offer sent', description: `${price.trim()} for ${listing.item.name}`, variant: 'success' });

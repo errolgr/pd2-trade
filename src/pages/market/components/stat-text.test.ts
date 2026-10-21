@@ -5,7 +5,8 @@ describe('stat text', () => {
   it('names templates without their placeholder', () => {
     expect(templateName('+{X}% Total Fire Resistance')).toBe('Total Fire Resistance');
     expect(templateName('+{X} Faster Cast Rate')).toBe('Faster Cast Rate');
-    expect(templateName('-{X}% to Enemy Resistance (best element)')).toBe('to Enemy Resistance (best element)');
+    expect(templateName('-{X}% to Enemy Resistance (best element)')).toBe('Enemy Resistance (best element)');
+    expect(templateName('+{X} to Strength')).toBe('Strength');
     expect(templateName('Regenerate Mana +{X}')).toBe('Regenerate Mana');
     expect(statName('pseudo_fire_res')).toBe('Total Fire Resistance');
     expect(statName('unknown_key')).toBe('unknown_key');

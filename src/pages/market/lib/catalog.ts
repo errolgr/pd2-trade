@@ -76,20 +76,6 @@ export const CLASSES: { value: CharClass; label: string }[] = [
 ];
 
 /**
- * Class-only item types. The site's Class requirement select is hidden and its `item.class_specifics` value
- * never matches (the field is numeric), so the class filter narrows `item.base.type_code` instead.
- */
-export const CLASS_TYPE_CODES: Record<CharClass, string[]> = {
-  amazon: ['abow', 'ajav', 'aspe'],
-  assassin: ['h2h', 'h2h2'],
-  barbarian: ['phlm'],
-  druid: ['pelt'],
-  necromancer: ['head'],
-  paladin: ['ashd'],
-  sorceress: ['orb'],
-};
-
-/**
  * Values seen in live `item.corruptions` (modifier names of the corruption roll), most common first. Labels
  * are the property templates without the roll.
  */

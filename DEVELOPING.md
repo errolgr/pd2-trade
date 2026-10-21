@@ -101,6 +101,17 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### Pointing at a local backend
+
+Search, deal badges, price history, saved-search alerts and the rest of the pd2trader.com API go to `BACKEND_URL` (`src/lib/pkce.ts`): `VITE_BACKEND_URL` when set at build/dev time, else `https://pd2trader.com`. To run against a local pd2-price-crawler (`npm run start:dev` there, port 3000 by default):
+
+```bash
+VITE_BACKEND_URL=http://localhost:3000 npm run tauri dev
+# or put VITE_BACKEND_URL=http://localhost:3000 in .env.local (gitignored)
+```
+
+The market browser has no PD2 fallback for search: with the backend stopped it shows "Market service unavailable". PD2 calls (favorites, offers, the freshness check before an offer/whisper) still go to `api.projectdiablo2.com`.
+
 ### Documentation
 
 ```bash

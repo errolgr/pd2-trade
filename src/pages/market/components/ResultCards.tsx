@@ -1,22 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ExternalLink, Heart, Loader2, MessageSquare, Shield, Sigma, Swords } from 'lucide-react';
+import { Bell, ExternalLink, Heart, Loader2, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
-import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
-import { buildCardModel, modMatchesStatKey, SOCKET_SERIES, type CardMod, type SocketGroup } from '../lib/card-model';
+import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
 import { OnlineDots, formatHrPrice } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
+import { AddAllModsButton, ModMenu } from './ModMenu';
 
 const ESTIMATED_CARD_HEIGHT = 340;
 const GAP = 8;
@@ -29,6 +32,13 @@ export interface CardCommand {
   id: string;
   action: 'offer' | 'whisper' | 'favorite';
   nonce: number;
+}
+
+/** An alert listing pinned at the top of the cards ("From alert: <search>"). */
+export interface CardPin {
+  id: string;
+  searchName?: string;
+  onDismiss: () => void;
 }
 
 export interface ResultCardsProps {
@@ -49,6 +59,8 @@ export interface ResultCardsProps {
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
+  /** An alert's listing pinned above the results (not in them): labelled and dismissable. */
+  pinned?: CardPin | null;
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
@@ -69,6 +81,7 @@ export function ResultCards({
   archived,
   api,
   command,
+  pinned,
   hasMore,
   loadingMore,
   onLoadMore,
@@ -136,6 +149,7 @@ export function ResultCards({
                 api={api}
                 // Only the selected card gets hotkeys (the others keep their memoized props)
                 command={command && command.id === id ? command : null}
+                pin={pinned && pinned.id === id ? pinned : null}
               />
             </div>
           );
@@ -152,9 +166,31 @@ export function ResultCards({
   );
 }
 
-const seriesColor = (group: Pick<SocketGroup, 'series'>) => `var(${SOCKET_SERIES[group.series]})`;
 /** "Ohm" for "Ohm Rune"; jewels and gems keep their name. */
 const shortName = (name: string) => name.replace(/ Rune$/, '');
+/** Most socket icons a breakdown stacks (the tooltip lists every source). */
+const MAX_STACK_ICONS = 6;
+
+/** Rainbow Facet names in their element's colour (the game's elemental hues; themes have no element tokens). */
+const ELEMENT_TEXT: Record<JewelElement, string> = {
+  fire: 'text-[#ff7043]',
+  cold: 'text-[#6aa8ff]',
+  lightning: 'text-[#f2cf4a]',
+  poison: 'text-[#62c75f]',
+};
+const groupNameColor = (group: SocketGroup) =>
+  group.element ? ELEMENT_TEXT[group.element] : itemNameColor(group.items[0]);
+
+/** A socketable's art in a small ring; `className` overrides the 14px size. */
+function SocketIcon({ listing, className }: { listing: MarketListingEntry; className?: string }) {
+  return (
+    <ListingThumb
+      listing={listing}
+      className={cn('size-3.5 rounded-full border border-border bg-muted/80 shadow-none ring-1 ring-card', className)}
+      artClassName="max-h-[85%] max-w-[85%]"
+    />
+  );
+}
 
 const pill = 'inline-flex h-5 items-center rounded-full border px-2 text-[10px] font-medium leading-none';
 
@@ -172,6 +208,7 @@ const ResultCard = React.memo(function ResultCard({
   archived,
   api,
   command,
+  pin,
 }: {
   row: ScoredListing;
   selected: boolean;
@@ -186,6 +223,7 @@ const ResultCard = React.memo(function ResultCard({
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
+  pin: CardPin | null;
 }) {
   const { listing } = row;
   const { item } = listing;
@@ -242,8 +280,30 @@ const ResultCard = React.memo(function ResultCard({
       className={cn(
         'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
         selected ? 'border-primary' : 'border-border/60 hover:border-border',
+        pin && 'ring-2 ring-primary/30',
       )}
     >
+      {pin && (
+        <div className="flex items-center gap-1.5 border-b border-primary/30 bg-primary/10 px-3 py-1 text-[11px] text-primary">
+          <Bell className="size-3 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">
+            {pin.searchName ? `From alert: ${pin.searchName}` : 'From alert'}
+            <span className="text-muted-foreground"> · not in the current results</span>
+          </span>
+          <button
+            type="button"
+            aria-label="Dismiss alert listing"
+            title="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              pin.onDismiss();
+            }}
+            className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+      )}
       {/* 1. Header */}
       <header className="flex gap-3 p-3 pb-2">
         <div className="flex h-[76px] w-16 shrink-0 items-center justify-center rounded-md border border-border/50">
@@ -271,6 +331,14 @@ const ResultCard = React.memo(function ResultCard({
             {item.item_level > 0 && (
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`ilvl ${item.item_level}`}</span>
             )}
+            <AddAllModsButton
+              item={item}
+              label="Filter all mods"
+              className={cn(
+                pill,
+                'cursor-pointer gap-1 border-dashed border-border/70 text-muted-foreground hover:border-border hover:text-foreground',
+              )}
+            />
           </div>
         </div>
         <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
@@ -337,8 +405,10 @@ const ResultCard = React.memo(function ResultCard({
         {model.mods.map((m, i) => (
           <ModLine
             key={`${m.mod.name}-${i}`}
+            item={item}
             line={m}
             groups={model.groups}
+            groupListings={groupListings}
             matched={statKeys.some((key) => modMatchesStatKey(m.mod, key))}
             highlighted={hovered !== null && m.sources.some((s) => s.group === hovered)}
             onHoverGroup={setHovered}
@@ -360,9 +430,10 @@ const ResultCard = React.memo(function ResultCard({
         )}
       </div>
 
-      {/* 4. Socketed */}
-      {(model.groups.length > 0 || model.emptySockets > 0) && (
+      {/* 4. Socketed (only when a socketed item lists a bonus; the `Nos` pill covers the rest) */}
+      {model.showSockets && (
         <SocketSection
+          item={item}
           groupListings={groupListings}
           groups={model.groups}
           socketGroups={model.socketGroups}
@@ -373,13 +444,15 @@ const ResultCard = React.memo(function ResultCard({
         />
       )}
 
-      {/* 5. Footer */}
-      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/50 px-3 py-2 text-xs">
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 text-muted-foreground">
-          <OnlineDots listing={listing} />
-          {account && <span className="font-semibold text-foreground">{account}</span>}
+      {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
+      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/40 bg-background/30 px-3 py-1.5 text-xs">
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+          <OnlineDots listing={listing}
+            className="-mr-0.5" />
+          {account && <span className="text-xs font-semibold text-foreground">{account}</span>}
           {item.character_id && <span>{`In game as ${item.character_id}`}</span>}
           <span className="tabular-nums">{listingAge(listing)}</span>
+          <span aria-hidden>·</span>
           <span>{`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'NL'}`}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1"
@@ -418,11 +491,14 @@ const ResultCard = React.memo(function ResultCard({
           {!archived && <WhisperButton actions={actions}
             dense />}
           {!archived && (
-            <OfferButton api={api}
+            <OfferButton
+              api={api}
               listing={listing}
               onWebsite={actions.openWebsite}
               dense
-              openNonce={offerNonce} />
+              openNonce={offerNonce}
+              ensureFresh={actions.ensureFresh}
+            />
           )}
         </span>
       </footer>
@@ -430,74 +506,104 @@ const ResultCard = React.memo(function ResultCard({
   );
 });
 
-/** A socket group's tag in a mod breakdown ("Ohm×2"), in the group's series colour. */
-function SourceTag({
-  group,
-  index,
-  onHover,
-}: {
-  group: SocketGroup;
-  index: number;
-  onHover: (g: number | null) => void;
-}) {
-  return (
-    <span
-      onMouseEnter={() => onHover(index)}
-      onMouseLeave={() => onHover(null)}
-      className="mx-0.5 inline-flex h-4 items-center gap-1 rounded-sm border border-border/70 px-1 align-middle text-[10px] font-medium leading-none text-muted-foreground"
-    >
-      <span aria-hidden
-        className="size-1.5 rounded-full"
-        style={{ background: seriesColor(group) }} />
-      {`${shortName(group.name)}${group.items.length > 1 ? `×${group.items.length}` : ''}`}
-    </span>
-  );
-}
-
-function ModLine({
+/**
+ * What sockets add to a line, compact: `413 + 235` (or `80 corr + 20`, or `from`) and an overlapping stack of the
+ * contributing socketables' icons; the tooltip lists each source with its amount.
+ */
+function SourceSuffix({
   line,
   groups,
-  matched,
-  highlighted,
+  groupListings,
   onHoverGroup,
 }: {
   line: CardMod;
   groups: SocketGroup[];
+  groupListings: MarketListingEntry[];
+  onHoverGroup: (g: number | null) => void;
+}) {
+  const { mod, own, ownKind, sources, socketOnly } = line;
+  const added = sources.reduce((sum, s) => sum + s.amount, 0);
+  const ownText = own === null ? '' : ownKind === 'corruption' ? `${formatStat(own)} corr` : formatStat(own);
+  const icons = sources.flatMap((s) => groups[s.group].items.map(() => s.group)).slice(0, MAX_STACK_ICONS);
+  const ownLabel =
+    own === null || socketOnly
+      ? null
+      : ownKind === 'roll'
+        ? `${formatStat(own)} roll [${mod.min} – ${mod.max}]`
+        : ownKind === 'corruption'
+          ? `${formatStat(own)} corruption`
+          : `${formatStat(own)} item`;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          className="ml-1.5 inline-flex items-center gap-1 rounded-sm align-middle text-xs font-normal text-muted-foreground outline-none tabular-nums focus-visible:ring-2 focus-visible:ring-ring/60"
+        >
+          {socketOnly ? 'from' : `${ownText} + ${formatStat(added)}`}
+          <span className="inline-flex items-center pl-0.5">
+            {icons.map((g, i) => (
+              <span
+                key={i}
+                className={cn(i > 0 && '-ml-1')}
+                onMouseEnter={() => onHoverGroup(g)}
+                onMouseLeave={() => onHoverGroup(null)}
+              >
+                <SocketIcon listing={groupListings[g]} />
+              </span>
+            ))}
+          </span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top"
+        align="start"
+        className="space-y-1 text-[11px]">
+        {ownLabel && <div className="text-muted-foreground">{ownLabel}</div>}
+        {sources.map((s) => {
+          const group = groups[s.group];
+          return (
+            <div key={s.group}
+              className="flex items-center gap-1.5">
+              <SocketIcon listing={groupListings[s.group]}
+                className="size-4" />
+              <span className={groupNameColor(group)}>
+                {`${group.items.length > 1 ? `${group.items.length} × ` : ''}${shortName(group.name)}`}
+              </span>
+              <span className="ml-auto pl-3 font-semibold tabular-nums">{`+${formatStat(s.amount)}`}</span>
+            </div>
+          );
+        })}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function ModLine({
+  item,
+  line,
+  groups,
+  groupListings,
+  matched,
+  highlighted,
+  onHoverGroup,
+}: {
+  item: ItemDetail;
+  line: CardMod;
+  groups: SocketGroup[];
+  groupListings: MarketListingEntry[];
   matched: boolean;
   highlighted: boolean;
   onHoverGroup: (g: number | null) => void;
 }) {
-  const { mod, own, ownKind, sources, socketOnly } = line;
+  const { mod, own, sources, socketOnly } = line;
   const hasRange = mod.min !== undefined && mod.max !== undefined && mod.min !== mod.max;
-  const tags = sources.map((s, i) => (
-    <React.Fragment key={s.group}>
-      {i > 0 && ' + '}
-      {!socketOnly && `${formatStat(s.amount)} `}
-      <SourceTag group={groups[s.group]}
-        index={s.group}
-        onHover={onHoverGroup} />
-    </React.Fragment>
-  ));
-  let breakdown: React.ReactNode = null;
-  if (socketOnly) {
-    breakdown = <> from {tags}</>;
-  } else if (sources.length && own !== null) {
-    const ownText =
-      ownKind === 'roll'
-        ? `${formatStat(own)} roll [${mod.min} – ${mod.max}]`
-        : ownKind === 'corruption'
-          ? `${formatStat(own)} corruption`
-          : formatStat(own);
-    breakdown = (
-      <>
-        {` = ${ownText} + `}
-        {tags}
-      </>
-    );
-  }
+  const split = sources.length > 0 && (socketOnly || own !== null);
 
   return (
-    <div
+    <ModMenu
+      mod={mod}
+      item={item}
       className={cn(
         'relative flex min-h-6 items-center gap-2 overflow-hidden rounded-sm px-2 py-0.5 text-[13px] transition-colors duration-(--dur-fast)',
         highlighted && 'bg-muted/60',
@@ -513,17 +619,22 @@ function ModLine({
         )}
       >
         {line.label}
-        {/* The breakdown already carries the range when sockets/corruption add to the roll */}
-        {hasRange && !breakdown && <span className="text-muted-foreground">{` [${mod.min} – ${mod.max}]`}</span>}
+        {hasRange && <span className="text-muted-foreground">{` [${mod.min} – ${mod.max}]`}</span>}
         {line.perLevel && <span className="text-muted-foreground"> per level</span>}
-        {breakdown && <span className="text-xs font-normal text-muted-foreground">{breakdown}</span>}
+        {split && (
+          <SourceSuffix line={line}
+            groups={groups}
+            groupListings={groupListings}
+            onHoverGroup={onHoverGroup} />
+        )}
       </span>
       {matched && <span className="relative shrink-0 text-[11px] text-primary">✓ filter</span>}
-    </div>
+    </ModMenu>
   );
 }
 
 function SocketSection({
+  item,
   groupListings,
   groups,
   socketGroups,
@@ -532,6 +643,8 @@ function SocketSection({
   onHover,
   groupHr,
 }: {
+  /** The listed item (its pseudo totals feed the line menus). */
+  item: ItemDetail;
   /** The card's listing with each group's item swapped in (art + prices). */
   groupListings: MarketListingEntry[];
   groups: SocketGroup[];
@@ -556,7 +669,7 @@ function SocketSection({
               key={socket}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'flex size-7 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
+                'flex size-8 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
                 hovered === g ? 'border-foreground/50' : 'border-border',
               )}
               title={groups[g].name}
@@ -564,13 +677,13 @@ function SocketSection({
               <ListingThumb
                 listing={groupListings[g]}
                 className="size-full rounded-full border-0 bg-none shadow-none"
-                artClassName="max-h-5 max-w-5"
+                artClassName="max-h-6 max-w-6"
               />
             </span>
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
             <span key={`empty-${i}`}
-              className="size-7 rounded-full border border-dashed border-border" />
+              className="size-8 rounded-full border border-dashed border-border" />
           ))}
         </span>
         {emptySockets > 0 && (
@@ -592,35 +705,46 @@ function SocketSection({
                 hovered === g && 'bg-muted/50',
               )}
             >
-              <div className="flex items-baseline gap-1.5">
-                <span
-                  aria-hidden
-                  className="size-1.5 shrink-0 self-center rounded-full"
-                  style={{ background: seriesColor(group) }}
-                />
-                <span className={cn('truncate text-[12px] font-semibold', itemNameColor(group.items[0]))}>
+              <div className="flex items-center gap-1.5">
+                <SocketIcon listing={groupListings[g]}
+                  className="size-5" />
+                <span className={cn('truncate text-[12px] font-semibold', groupNameColor(group))}>
                   {group.items.length > 1 ? `${group.items.length} × ${group.name}` : group.name}
                 </span>
                 {values[g] !== null && (
                   <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{`~${formatStat(values[g] ?? 0)} HR`}</span>
                 )}
               </div>
-              {group.subtitle && <div className="pl-3 text-[10px] text-muted-foreground">{group.subtitle}</div>}
-              <div className="mt-0.5 space-y-px border-l border-border/60 pl-2 ml-[3px]">
-                {group.lines.map((l, i) => (
-                  <div
-                    key={i}
-                    className="truncate text-[11px] text-q-magic/80"
-                    title={l.total ? `${l.each} each · ${l.total} total` : l.each}
-                  >
-                    {l.each}
-                    {l.total && <span className="text-muted-foreground">{` each · ${l.total} total`}</span>}
-                  </div>
-                ))}
-                {group.lines.length === 0 && (
-                  <div className="text-[11px] italic text-muted-foreground">No bonus listed by PD2</div>
-                )}
-              </div>
+              {group.subtitle && <div className="pl-[26px] text-[10px] text-muted-foreground">{group.subtitle}</div>}
+              {group.lines.length > 0 && (
+                <div className="mt-0.5 ml-[9px] space-y-px border-l border-border/60 pl-2">
+                  {group.lines.map((l, i) => {
+                    const text = (
+                      <>
+                        {l.each}
+                        {l.total && <span className="text-muted-foreground">{` each · ${l.total} total`}</span>}
+                      </>
+                    );
+                    const lineClass = 'truncate rounded-sm text-[11px] text-q-magic/80';
+                    // Flag-only lines (Zod's Indestructible) have no mod to filter on
+                    const mod = group.mods[i];
+                    return mod ? (
+                      <ModMenu key={i}
+                        mod={mod}
+                        item={item}
+                        socketLine
+                        className={lineClass}>
+                        {text}
+                      </ModMenu>
+                    ) : (
+                      <div key={i}
+                        className={lineClass}>
+                        {text}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>

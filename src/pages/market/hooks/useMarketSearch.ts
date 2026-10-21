@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isPoolMode } from '../lib/query';
-import { DEFAULT_POOL_SIZE, runSearch, sortScored } from '../lib/search';
-import { scoreListing } from '../lib/scoring';
+import { MarketBackendError } from '@/lib/market-search-api';
+import { runSearch } from '../lib/search';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
 
-/** Rows per server page (server mode) — the list loads the next page when scrolled to the end. */
+/** Rows per page — the list loads the next page when scrolled to the end. */
 export const MARKET_PAGE_SIZE = 25;
 const DEFAULT_DEBOUNCE_MS = 350;
 const CACHE_TTL_MS = 60_000;
@@ -14,19 +13,15 @@ export type MarketSearchStatus = 'idle' | 'loading' | 'ready' | 'error' | 'auth'
 
 export interface MarketSearchState {
   status: MarketSearchStatus;
-  /** Every row loaded so far (server mode: pages appended; pool mode: the ranked pool). */
+  /** Every row loaded so far (pages appended). */
   items: ScoredListing[];
   total: number;
-  mode: 'server' | 'pool';
-  truncated: boolean;
-  /** Pool scan progress while loading. */
-  progress: { fetched: number; total: number } | null;
   /** The filters `items` were searched with (set once ready); compare with the current filters. */
   filters: MarketFilters | null;
-  /** The filters of the last search that actually ran (fetched or served from cache); re-ranks keep it. */
+  /** The filters of the last search that actually ran (fetched or served from cache). */
   ranFilters: MarketFilters | null;
   error: string | null;
-  /** A next server page is being fetched. */
+  /** A next page is being fetched. */
   loadingMore: boolean;
   hasMore: boolean;
 }
@@ -35,9 +30,6 @@ const IDLE: MarketSearchState = {
   status: 'idle',
   items: [],
   total: 0,
-  mode: 'server',
-  truncated: false,
-  progress: null,
   error: null,
   loadingMore: false,
   hasMore: false,
@@ -71,43 +63,24 @@ export function clearMarketSearchCache() {
   cache.clear();
 }
 
-/** Filters minus everything that only re-ranks (weights, client sort) — what the fetched pool depends on. */
-function poolKey(f: MarketFilters): string {
-  const clientSort = f.sort.by === 'score' || f.sort.by === 'value';
-  return JSON.stringify({
-    ...f,
-    sellerName: undefined,
-    stats: f.stats.map(({ weight: _weight, id: _id, ...rest }) => rest),
-    sort: clientSort ? 'client' : f.sort,
-  });
-}
-
 function queryKey(f: MarketFilters, page: number): string {
   return `${JSON.stringify({ ...f, sellerName: undefined, stats: f.stats.map(({ id: _id, ...rest }) => rest) })}#${page}`;
 }
 
-/** Re-score (and for client sorts re-order) already fetched rows after a weight/sort-only change. */
-export function rescore(items: ScoredListing[], f: MarketFilters): ScoredListing[] {
-  return sortScored(
-    items.map((row) => ({ ...row, ...scoreListing(row.listing, f.stats, row.pseudo) })),
-    f.sort,
-  );
-}
-
-function errorStatus(e: unknown): number | undefined {
-  if (typeof e === 'object' && e !== null && 'status' in e) return Number(e.status);
-  return undefined;
-}
-
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
 
-function errorMessage(e: unknown): string {
-  if (errorStatus(e) === 429) return 'The market API is rate limiting requests. Try again in a moment.';
+/** What the results pane says when a search fails; retry is the pane's refresh. */
+export function searchErrorMessage(e: unknown): string {
+  if (e instanceof MarketBackendError) {
+    if (e.kind === 'rate-limited') return 'Too many market searches. Try again in a moment.';
+    if (e.kind === 'invalid') return `The market service rejected these filters: ${e.message}`;
+    return 'Market service unavailable. Retry in a moment.';
+  }
   return e instanceof Error ? e.message.split('\n')[0] : 'Search failed';
 }
 
 export interface MarketSearch extends MarketSearchState {
-  /** Server mode: append the next page. */
+  /** Append the next page. */
   loadMore: () => Promise<void>;
   /** Refetch now, bypassing the cache. */
   refresh: () => void;
@@ -115,8 +88,8 @@ export interface MarketSearch extends MarketSearchState {
 
 /**
  * Debounced market search: every `filters` change aborts the in-flight search and runs `runSearch` after
- * `debounceMs`. Results are cached per query (60 s); weight-only (and score/value sort-only) changes re-rank
- * the rows already fetched instead of refetching. `filters: null` keeps the hook idle.
+ * `debounceMs`. The market service filters and ranks (weights and stat sorts included), so any change refetches;
+ * results are cached per query (60 s). `filters: null` keeps the hook idle.
  */
 export function useMarketSearch(
   api: MarketApi | null,
@@ -126,8 +99,6 @@ export function useMarketSearch(
   const [state, setState] = useState<MarketSearchState>(IDLE);
   const abortRef = useRef<AbortController | null>(null);
   const pageRef = useRef(0);
-  /** Filters + pool key of the rows in `state.items`; set only while they are complete (status 'ready'). */
-  const loadedRef = useRef<{ filters: MarketFilters; poolKey: string } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const forceRef = useRef(false);
 
@@ -136,85 +107,51 @@ export function useMarketSearch(
     abortRef.current = null;
     if (!filters || !api) {
       setState(IDLE);
-      loadedRef.current = null;
       return;
     }
     if (!signedIn) {
       setState({ ...IDLE, status: 'auth' });
-      loadedRef.current = null;
       return;
     }
 
     const force = forceRef.current;
     forceRef.current = false;
-    const key = poolKey(filters);
-    const loaded = loadedRef.current;
-    const pool = isPoolMode(filters);
-    // Only weights / client sort changed: re-rank what we have
-    if (!force && loaded && loaded.poolKey === key && pool === isPoolMode(loaded.filters)) {
-      loadedRef.current = { filters, poolKey: key };
-      setState((s) => ({ ...s, filters, items: rescore(s.items, filters) }));
-      return;
-    }
-    loadedRef.current = null;
-
-    const cached = force ? null : cacheGet(queryKey(filters, 0));
-    if (cached) {
+    const show = (result: SearchResult) => {
       pageRef.current = 0;
-      loadedRef.current = { filters, poolKey: key };
       setState({
         ...IDLE,
         status: 'ready',
         filters,
         ranFilters: filters,
-        items: cached.items,
-        total: cached.total,
-        mode: cached.mode,
-        truncated: cached.truncated,
-        hasMore: cached.mode === 'server' && cached.items.length < cached.total,
+        items: result.items,
+        total: result.total,
+        hasMore: result.items.length < result.total,
       });
+    };
+
+    const cached = force ? null : cacheGet(queryKey(filters, 0));
+    if (cached) {
+      show(cached);
       return;
     }
 
     const controller = new AbortController();
     abortRef.current = controller;
-    setState((s) => ({ ...IDLE, status: 'loading', mode: pool ? 'pool' : 'server', items: s.items }));
+    setState((s) => ({ ...IDLE, status: 'loading', items: s.items }));
     const timer = window.setTimeout(
       async () => {
         try {
           const result = await runSearch(api, filters, {
             page: 0,
             pageSize: MARKET_PAGE_SIZE,
-            poolSize: DEFAULT_POOL_SIZE,
             signal: controller.signal,
-            onProgress: (fetched, total) => {
-              if (!controller.signal.aborted) setState((s) => ({ ...s, progress: { fetched, total } }));
-            },
           });
           if (controller.signal.aborted) return;
           cacheSet(queryKey(filters, 0), result);
-          pageRef.current = 0;
-          loadedRef.current = { filters, poolKey: key };
-          setState({
-            ...IDLE,
-            status: 'ready',
-            filters,
-            ranFilters: filters,
-            items: result.items,
-            total: result.total,
-            mode: result.mode,
-            truncated: result.truncated,
-            hasMore: result.mode === 'server' && result.items.length < result.total,
-          });
+          show(result);
         } catch (e) {
           if (controller.signal.aborted || isAbort(e)) return;
-          loadedRef.current = null;
-          const status = errorStatus(e);
-          setState({
-            ...IDLE,
-            status: status === 401 ? 'auth' : 'error',
-            error: status === 401 ? null : errorMessage(e),
-          });
+          setState({ ...IDLE, status: 'error', error: searchErrorMessage(e) });
         }
       },
       force ? 0 : debounceMs,
@@ -225,9 +162,8 @@ export function useMarketSearch(
     };
   }, [api, filters, signedIn, debounceMs, reloadToken]);
 
-  /** Server mode: append the next page. */
   const loadMore = useCallback(async () => {
-    if (!api || !filters || state.mode !== 'server' || !state.hasMore || state.loadingMore) return;
+    if (!api || !filters || !state.hasMore || state.loadingMore) return;
     const page = pageRef.current + 1;
     const controller = abortRef.current ?? new AbortController();
     abortRef.current = controller;
@@ -241,6 +177,7 @@ export function useMarketSearch(
       cacheSet(key, result);
       pageRef.current = page;
       setState((s) => {
+        // A bump between pages can move a listing onto the next page too
         const seen = new Set(s.items.map((row) => row.listing._id));
         const items = [...s.items, ...result.items.filter((row) => !seen.has(row.listing._id))];
         return {
@@ -253,11 +190,10 @@ export function useMarketSearch(
       });
     } catch (e) {
       if (controller.signal.aborted || isAbort(e)) return;
-      setState((s) => ({ ...s, loadingMore: false, error: errorMessage(e) }));
+      setState((s) => ({ ...s, loadingMore: false, error: searchErrorMessage(e) }));
     }
-  }, [api, filters, state.mode, state.hasMore, state.loadingMore]);
+  }, [api, filters, state.hasMore, state.loadingMore]);
 
-  /** Refetch now, bypassing the cache. */
   const refresh = useCallback(() => {
     forceRef.current = true;
     setReloadToken((t) => t + 1);

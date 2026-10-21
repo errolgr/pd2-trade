@@ -24,6 +24,14 @@ export interface MarketListingEntry {
   created_by_id: string;
   updated_by_id: string;
   user: UserSummary;
+  /** Set once the seller accepted an offer (the listing is sold). */
+  accepted_offer_id?: string | null;
+  /** Market service rows: seller on the website / in game when the listing was last seen. */
+  online?: boolean;
+  in_game?: boolean;
+  /** Market service archive rows: what it sold for, when known. */
+  sell_price?: string;
+  sell_hr_price?: number;
 }
 
 export interface ItemDetail {

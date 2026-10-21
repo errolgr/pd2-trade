@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
+import { ModMenu } from './ModMenu';
 
 /** Name colour: rune colour for runes/runewords, else the quality colour. */
 export const itemNameColor = (item: Pick<ItemDetail, 'is_runeword' | 'name' | 'quality'>) =>
@@ -15,15 +16,20 @@ export function displayMods(item: Pick<ItemDetail, 'modifiers'>): Modifier[] {
 const isCorruptedMod = (item: ItemDetail, mod: Modifier) =>
   mod.corrupted === true || !!item.corruptions?.includes(mod.name);
 
+/** A mod line; on the market page it opens the filter/sort menu (ModMenu). */
 function ModLine({ item, mod }: { item: ItemDetail; mod: Modifier }) {
   const range = mod.min != null && mod.max != null && mod.min !== mod.max;
   return (
-    <div className={cn('text-q-magic', isCorruptedMod(item, mod) && 'text-q-corrupted')}>
+    <ModMenu
+      mod={mod}
+      item={item}
+      className={cn('rounded-sm text-q-magic', isCorruptedMod(item, mod) && 'text-q-corrupted')}
+    >
       {mod.label}
       {range && (
         <span className="ml-1 text-[11px] text-muted-foreground tabular-nums">{`[${mod.min} - ${mod.max}]`}</span>
       )}
-    </div>
+    </ModMenu>
   );
 }
 
@@ -110,10 +116,15 @@ export function ItemTooltip({
             <div key={`${s.name}-${i}`}>
               <div className={cn('font-medium', itemNameColor(s))}>{s.name}</div>
               {displayMods(s).map((mod, j) => (
-                <div key={`${mod.name}-${j}`}
-                  className="pl-2 text-[11px] text-muted-foreground">
+                <ModMenu
+                  key={`${mod.name}-${j}`}
+                  mod={mod}
+                  item={item}
+                  socketLine
+                  className="rounded-sm pl-2 text-[11px] text-muted-foreground"
+                >
                   {mod.label}
-                </div>
+                </ModMenu>
               ))}
             </div>
           ))}

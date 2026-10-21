@@ -8,7 +8,7 @@ import type { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { useMarketActions } from './useMarketActions';
-import { RateLimitError } from './usePD2Website';
+import { AuthenticationError } from './usePD2Website';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
@@ -272,23 +272,29 @@ describe('market browser API', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('getListing reads one listing with its seller; 404 is null, 401 is an error (not "gone")', async () => {
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
+    const { actions, onAuthError } = market();
+    await expect(actions.getListing('L1')).resolves.toEqual({ _id: 'L1', price: '2 hr' });
+    expect(lastCall().url).toBe(
+      'https://api.projectdiablo2.com/market/listing/L1?$resolve[user][in_game_account]=true',
+    );
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(404, { name: 'NotFound' }));
+    await expect(actions.getListing('L1')).resolves.toBeNull();
+    expect(reportApiError).not.toHaveBeenCalled();
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(401, { message: 'expired' }));
+    await expect(actions.getListing('L1')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(onAuthError).toHaveBeenCalledTimes(1);
+  });
+
   it('createOffer posts what the site posts: listing, offer text and HR value', async () => {
     const { actions } = market();
     await actions.createOffer('L1', { price: '2 ist', hrPrice: 0.5 });
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/offer');
     expect(lastCall().init.method).toBe('POST');
     expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', offer: '2 ist', hr_offer: 0.5 });
-  });
-
-  it('a 429 throws a RateLimitError carrying Retry-After', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ...fakeResponse(429, 'slow down'),
-      headers: new Headers({ 'retry-after': '7' }),
-    } as unknown as Response);
-    const { actions } = market();
-    const error = await actions.getMarketListings({}).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(RateLimitError);
-    expect(error).toMatchObject({ status: 429, retryAfterMs: 7000, message: expect.stringMatching(/^API Error: 429/) });
   });
 
   it('marketApi exposes the same functions and stays stable across renders', () => {

@@ -2,25 +2,16 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
-import { isPoolMode } from '../lib/query';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult, StatFilter } from '../lib/types';
-import { clearMarketSearchCache, MARKET_PAGE_SIZE, rescore, useMarketSearch } from './useMarketSearch';
+import { clearMarketSearchCache, MARKET_PAGE_SIZE, searchErrorMessage, useMarketSearch } from './useMarketSearch';
 import type * as SearchModule from '../lib/search';
 
+vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('../lib/search', async (importOriginal) => ({
   ...(await importOriginal<typeof SearchModule>()),
   runSearch: vi.fn(),
-}));
-vi.mock('../lib/query', () => ({ isPoolMode: vi.fn() }));
-// score = Σ weight × pseudo[key]: enough to see re-ranking without the real stat tables
-vi.mock('../lib/scoring', () => ({
-  scoreListing: (listing: MarketListingEntry, stats: StatFilter[], pseudo: Record<string, number>) => {
-    const weighted = stats.filter((s) => s.enabled && s.weight);
-    if (!weighted.length) return { score: null, value: null };
-    const score = weighted.reduce((sum, s) => sum + (s.weight ?? 0) * (pseudo[s.key] ?? 0), 0);
-    return { score, value: listing.hr_price > 0 ? score / listing.hr_price : null };
-  },
 }));
 
 const api = {} as MarketApi;
@@ -45,9 +36,9 @@ const filters = (over: Partial<MarketFilters> = {}): MarketFilters => ({
   ...over,
 });
 
-const row = (id: string, pseudo: Record<string, number> = {}, hr = 1): ScoredListing => ({
-  listing: { _id: id, hr_price: hr } as MarketListingEntry,
-  pseudo,
+const row = (id: string): ScoredListing => ({
+  listing: { _id: id, hr_price: 1 } as MarketListingEntry,
+  pseudo: {},
   score: null,
   value: null,
 });
@@ -56,19 +47,17 @@ const result = (items: ScoredListing[], over: Partial<SearchResult> = {}): Searc
   items,
   total: items.length,
   fetched: items.length,
-  truncated: false,
   mode: 'server',
   ...over,
 });
 
 beforeEach(() => {
   clearMarketSearchCache();
-  vi.mocked(isPoolMode).mockImplementation((f: MarketFilters) => f.sort.by === 'score' || f.sort.by === 'value');
+  vi.mocked(runSearch).mockReset();
 });
 
 afterEach(() => {
   cleanup();
-  vi.useRealTimers();
 });
 
 describe('useMarketSearch', () => {
@@ -80,9 +69,7 @@ describe('useMarketSearch', () => {
     });
     const { result: hook, rerender } = renderHook(
       ({ f }) => useMarketSearch(api, f, { signedIn: true, debounceMs: 20 }),
-      {
-        initialProps: { f: filters({ itemName: 'a' }) },
-      },
+      { initialProps: { f: filters({ itemName: 'a' }) } },
     );
     rerender({ f: filters({ itemName: 'b' }) });
     rerender({ f: filters({ itemName: 'c' }) });
@@ -96,12 +83,9 @@ describe('useMarketSearch', () => {
 
   it('serves a repeated query from the cache and refetches on refresh', async () => {
     vi.mocked(runSearch).mockResolvedValue(result([row('1')]));
-    const f = filters({ itemName: 'Shako' });
     const { result: hook, rerender } = renderHook(
       ({ f }) => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }),
-      {
-        initialProps: { f },
-      },
+      { initialProps: { f: filters({ itemName: 'Shako' }) } },
     );
     await waitFor(() => expect(hook.current.status).toBe('ready'));
     rerender({ f: filters({ itemName: 'Other' }) });
@@ -114,58 +98,58 @@ describe('useMarketSearch', () => {
     await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(3));
   });
 
-  it('re-ranks fetched rows instead of refetching when only weights change', async () => {
-    vi.mocked(runSearch).mockResolvedValue(
-      result([row('fire', { res: 10, life: 50 }), row('life', { res: 40, life: 5 })], { mode: 'pool' }),
-    );
-    const stat = (weight: number): StatFilter => ({ id: 's', kind: 'pseudo', key: 'res', weight, enabled: true });
-    const life = (weight: number): StatFilter => ({ id: 'l', kind: 'pseudo', key: 'life', weight, enabled: true });
-    const sort = { by: 'score' as const, dir: 'desc' as const };
+  it('refetches when only weights or a stat sort change: the service ranks', async () => {
+    vi.mocked(runSearch).mockResolvedValue(result([row('1')]));
+    const weight = (w: number): StatFilter => ({
+      id: 's',
+      kind: 'pseudo',
+      key: 'pseudo_total_res',
+      weight: w,
+      enabled: true,
+    });
     const { result: hook, rerender } = renderHook(
       ({ f }) => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }),
-      {
-        initialProps: { f: filters({ sort, stats: [stat(1), life(0)] }) },
-      },
+      { initialProps: { f: filters({ stats: [weight(1)], sort: { by: 'score', dir: 'desc' } }) } },
     );
     await waitFor(() => expect(hook.current.status).toBe('ready'));
-
-    rerender({ f: filters({ sort, stats: [stat(0), life(1)] }) });
-    await waitFor(() => expect(hook.current.items[0].listing._id).toBe('fire'));
-    expect(hook.current.items[0].score).toBe(50);
-    expect(runSearch).toHaveBeenCalledTimes(1);
+    rerender({ f: filters({ stats: [weight(2)], sort: { by: 'score', dir: 'desc' } }) });
+    await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(2));
+    rerender({ f: filters({ stats: [weight(2)], sort: { by: 'stat', key: 'pseudo_life', dir: 'desc' } }) });
+    await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(runSearch).mock.calls[2][1].sort).toEqual({ by: 'stat', key: 'pseudo_life', dir: 'desc' });
   });
 
-  it('appends server pages on loadMore', async () => {
+  it('appends pages on loadMore', async () => {
     vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => result([row(`p${opts!.page}`)], { total: 2 }));
     const f = filters();
     const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
     await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    expect(vi.mocked(runSearch).mock.calls[0][2]).toMatchObject({ page: 0, pageSize: MARKET_PAGE_SIZE });
     await act(() => hook.current.loadMore());
     expect(hook.current.items.map((r) => r.listing._id)).toEqual(['p0', 'p1']);
     expect(hook.current.hasMore).toBe(false);
     expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: MARKET_PAGE_SIZE });
   });
 
-  it('reports sign-in and errors', async () => {
+  it('asks to sign in when signed out, and says the service is unavailable when it is', async () => {
     const f = filters();
     const { result: signedOut } = renderHook(() => useMarketSearch(api, f, { signedIn: false }));
     expect(signedOut.current.status).toBe('auth');
 
-    vi.mocked(runSearch).mockRejectedValue(Object.assign(new Error('API Error: 429 Too Many'), { status: 429 }));
+    vi.mocked(runSearch).mockRejectedValue(new MarketBackendError('down', 'unavailable', 503));
     const g = filters({ itemName: 'x' });
     const { result: hook } = renderHook(() => useMarketSearch(api, g, { signedIn: true, debounceMs: 0 }));
     await waitFor(() => expect(hook.current.status).toBe('error'));
-    expect(hook.current.error).toMatch(/rate limiting/);
+    expect(hook.current.error).toBe('Market service unavailable. Retry in a moment.');
   });
 });
 
-describe('rescore', () => {
-  it('orders by value ascending with unknown values last', () => {
-    const f = filters({
-      sort: { by: 'value', dir: 'asc' },
-      stats: [{ id: 's', kind: 'pseudo', key: 'res', weight: 1, enabled: true }],
-    });
-    const rows = rescore([row('a', { res: 10 }, 1), row('b', { res: 10 }, 0), row('c', { res: 10 }, 5)], f);
-    expect(rows.map((r) => r.listing._id)).toEqual(['c', 'a', 'b']);
+describe('searchErrorMessage', () => {
+  it('words each market service failure', () => {
+    expect(searchErrorMessage(new MarketBackendError('x', 'rate-limited', 429))).toMatch(/Too many market searches/);
+    expect(searchErrorMessage(new MarketBackendError('filters.stats[0].key is bad', 'invalid', 400))).toBe(
+      'The market service rejected these filters: filters.stats[0].key is bad',
+    );
+    expect(searchErrorMessage(new Error('boom\nstack'))).toBe('boom');
   });
 });

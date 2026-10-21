@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookmarkPlus, ChevronDown, Sigma, Sparkles, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,8 @@ export interface StatFiltersProps {
   searchRef?: React.Ref<HTMLInputElement>;
   /** Remember a weight the user typed as the default for that stat. */
   onWeightChange?: (key: string, weight: number | undefined) => void;
+  /** A row just added/updated from a mod menu: scrolled into view and highlighted (`nonce`: each request). */
+  highlight?: { id: string; nonce: number } | null;
 }
 
 /** Stats section: one search over mods + pseudo stats, rows with min/max/weight/enable, presets. */
@@ -87,8 +89,16 @@ export function StatFilters({
   weighted,
   searchRef,
   onWeightChange,
+  highlight,
 }: StatFiltersProps) {
   const [query, setQuery] = useState('');
+  const listRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    if (!highlight) return;
+    listRef.current
+      ?.querySelector(`[data-stat-id="${CSS.escape(highlight.id)}"]`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [highlight]);
   const suggestions = useMemo(() => (query.trim() ? searchStats(query, MAX_SUGGESTIONS) : []), [query]);
 
   const add = (choice: StatChoice) => {
@@ -134,12 +144,20 @@ export function StatFilters({
       </div>
 
       {stats.length > 0 && (
-        <ul className="divide-y divide-border/50 overflow-hidden rounded-md border border-border/60">
+        <ul ref={listRef}
+          className="divide-y divide-border/50 overflow-hidden rounded-md border border-border/60">
           {stats.map((s) => {
             const name = statName(s.key);
             return (
-              <li key={s.id}
-                className={cn('space-y-1 px-1.5 py-1', !s.enabled && 'opacity-55')}>
+              <li
+                key={s.id}
+                data-stat-id={s.id}
+                className={cn(
+                  'space-y-1 px-1.5 py-1 transition-colors duration-(--dur-med)',
+                  !s.enabled && 'opacity-55',
+                  highlight?.id === s.id && 'bg-primary/10 ring-1 ring-inset ring-primary/40',
+                )}
+              >
                 <div className="flex min-w-0 items-center gap-1.5">
                   <Checkbox
                     checked={s.enabled}

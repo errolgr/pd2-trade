@@ -10,13 +10,16 @@ export type OnlineFilter = 'all' | 'online' | 'offline';
 export type Rarity = 'Normal' | 'Superior' | 'Magic' | 'Rare' | 'Crafted' | 'Set' | 'Unique' | 'Runeword';
 export type CharClass = 'amazon' | 'assassin' | 'barbarian' | 'druid' | 'necromancer' | 'paladin' | 'sorceress';
 
-/** Client-side sorts (`score`, `value`) force pool mode; `bumped`/`price` are server-side. */
-export type SortBy = 'bumped' | 'price' | 'score' | 'value';
+/**
+ * Result order, all applied by the market service over every match: `bumped` (newest bump), `price` (HR price;
+ * unpriced listings excluded), `score`/`value` (stat-weighted score, score per HR), `stat` (`sort.key`'s value).
+ */
+export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
 export interface StatFilter {
   /** Stable row id (uuid) for React keys / editing. */
   id: string;
-  /** `mod` = PD2 modifier name (server-filterable); `pseudo` = computed client-side. */
+  /** `mod` = PD2 property key; `pseudo` = a computed pseudo stat (both filtered by the market service). */
   kind: 'mod' | 'pseudo';
   /** PD2 modifier name (e.g. `item_fastercastrate`) or pseudo id (e.g. `pseudo_total_res`). */
   key: string;
@@ -73,7 +76,8 @@ export interface MarketFilters {
   corruptions: string[];
   /** updated_at window; site default 3. */
   maxAgeDays: number;
-  sort: { by: SortBy; dir: 'asc' | 'desc' };
+  /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
+  sort: { by: SortBy; dir: 'asc' | 'desc'; key?: string };
 }
 
 export interface StatOption {
@@ -116,27 +120,31 @@ export interface ScoredListing {
 }
 
 export interface SearchOptions {
-  /** Pool mode cap (pseudo filters or client sort). Default 200. */
-  poolSize?: number;
-  /** Server page size. */
+  /** Results per page (1–100). Default 25. */
   pageSize?: number;
-  /** Server-paged mode: 0-based page. */
+  /** 0-based page. */
   page?: number;
   signal?: AbortSignal;
-  onProgress?: (fetched: number, total: number) => void;
 }
 
 export interface SearchResult {
+  /** One page, filtered and ordered by the market service. */
   items: ScoredListing[];
-  /** Server total for the raw (server-filterable) query. */
+  /** Matches across all pages. */
   total: number;
-  /** Listings pulled from the server. */
+  /** Listings on this page. */
   fetched: number;
-  /** Pool mode hit poolSize before exhausting total. */
-  truncated: boolean;
-  /** `server`: items are one server page; `pool`: items are the full filtered+ranked pool. */
-  mode: 'server' | 'pool';
+  mode: 'server';
 }
+
+/** Whether a listing still stands as shown, checked against PD2 before acting on it. */
+export type ListingFreshness =
+  | { status: 'ok'; listing: MarketListingEntry }
+  | { status: 'gone' }
+  /** Price note, HR price or item differ from what was shown; `listing` is the current one. */
+  | { status: 'changed'; listing: MarketListingEntry }
+  /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
+  | { status: 'unknown' };
 
 export interface MarketFavorite {
   _id: string;
@@ -148,11 +156,22 @@ export interface MarketFavorite {
 }
 
 /**
- * PD2 API surface the market lib needs; implemented by useMarketActions (`usePd2Website().marketApi`). Like every
- * PD2 call in the overlay, methods resolve null on 401 (re-authentication has started) and throw otherwise; a 429
- * throws an error with `status === 429` and `retryAfterMs` (see lib/rate-limit).
+ * What the market browser talks to: the pd2trader market service for search, PD2 (with the user's token) for
+ * everything else; implemented by useMarketActions (`usePd2Website().marketApi`). Like every PD2 call in the
+ * overlay, the PD2 methods resolve null on 401 (re-authentication has started) and throw otherwise.
  */
 export interface MarketApi {
+  /**
+   * Listing search on the market service (`POST {BACKEND_URL}/api/market/search`). Rejects with
+   * MarketBackendError (`@/lib/market-search-api`) when the service is down, slow (8 s), rate limiting or
+   * rejects the filters; an AbortError when `signal` aborts.
+   */
+  searchListings: (
+    filters: MarketFilters,
+    opts: { page: number; limit: number; signal?: AbortSignal },
+  ) => Promise<{ items: ScoredListing[]; total: number }>;
+  /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
+  getListing: (listingId: string) => Promise<MarketListingEntry | null>;
   getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;

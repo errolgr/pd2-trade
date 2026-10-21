@@ -11,13 +11,15 @@ const PLACEHOLDER = /[+-]?\{X\}%?/g;
 /** Number shown for a score/stat total: integers stay integers, else one decimal. */
 export const formatStat = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
-/** A template without its placeholder: "+{X}% Total Fire Resistance" → "Total Fire Resistance". */
+/** A template without its placeholder: "+{X}% Total Fire Resistance" → "Total Fire Resistance", "+{X} to Strength" → "Strength". */
 export function templateName(template: string): string {
   return (
     template
       .replace(PLACEHOLDER, ' ')
       .replace(/\s+/g, ' ')
       .replace(/^\W+(?=\w)/, '')
+      // "+{X} to Strength": the leading "to" belonged to the value
+      .replace(/^to\s+/i, '')
       .trim() || template
   );
 }

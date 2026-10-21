@@ -3,7 +3,7 @@ import { newStatFilter } from './defaults';
 import type { MarketFilters, StatPreset } from './types';
 
 /**
- * Starting points for common searches. Bounds filter (pseudo bounds run client-side over the pool); weights
+ * Starting points for common searches. Bounds filter (pseudo bounds too, on the market service); weights
  * rank (see scoreListing — points per point of stat, so 1 skill ≈ 10 FCR here).
  */
 export const BUILT_IN_PRESETS: StatPreset[] = [

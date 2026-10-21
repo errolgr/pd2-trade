@@ -19,13 +19,14 @@ import {
   fieldInputClass,
 } from './controls';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
+import { statName } from './stat-text';
 
 const AGE_OPTIONS = [1, 3, 7, 14, 30, 90].map((d) => ({ value: String(d), label: d === 1 ? '1 day' : `${d} days` }));
 const SORT_OPTIONS: { value: SortBy; label: string; title: string }[] = [
   { value: 'bumped', label: 'Bump', title: 'Last bumped' },
   { value: 'price', label: 'Price', title: 'Price in HR (listings with an HR price only)' },
-  { value: 'score', label: 'Score', title: 'Σ weight × stat value (scans up to 200 listings)' },
-  { value: 'value', label: 'Value', title: 'Score per HR (scans up to 200 listings)' },
+  { value: 'score', label: 'Score', title: 'Σ weight × stat value' },
+  { value: 'value', label: 'Value', title: 'Score per HR' },
 ];
 const ONLINE_OPTIONS: { value: OnlineFilter; label: string }[] = [
   { value: 'all', label: 'Any' },
@@ -129,9 +130,25 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
               label="Sort by"
               value={f.sort.by}
               options={SORT_OPTIONS}
-              onChange={(by) => set({ sort: { ...f.sort, by } })}
+              onChange={(by) => set({ sort: { by, dir: f.sort.dir } })}
             />
           </Field>
+          {f.sort.by === 'stat' && f.sort.key && (
+            <Field label="">
+              <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
+                <span className="truncate">{`Stat: ${statName(f.sort.key)}`}</span>
+                <button
+                  type="button"
+                  aria-label="Stop sorting by this stat"
+                  title="Stop sorting by this stat"
+                  onClick={() => set({ sort: { by: 'bumped', dir: 'desc' } })}
+                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            </Field>
+          )}
           <Field label="Order">
             <Segmented
               label="Sort order"

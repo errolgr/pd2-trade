@@ -16,6 +16,7 @@ import { formatStat, statWithValue } from './stat-text';
 import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
+import { AddAllModsButton } from './ModMenu';
 
 export interface ListingDetailProps {
   row: ScoredListing;
@@ -59,6 +60,10 @@ export function ListingDetail({
           {archived ? 'Sold / delisted' : 'Listed'}
           {` · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'} ${listing.is_hardcore ? 'HC' : 'SC'} · ${listingAge(listing)}`}
         </span>
+        <AddAllModsButton
+          item={listing.item}
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+        />
         <Button
           variant="ghost"
           size="sm"
@@ -134,9 +139,12 @@ export function ListingDetail({
       </ScrollArea>
 
       <div className="grid grid-cols-2 gap-1.5 border-t border-border p-2.5">
-        {!archived && <OfferButton api={api}
-          listing={listing}
-          onWebsite={actions.openWebsite} />}
+        {!archived && (
+          <OfferButton api={api}
+            listing={listing}
+            onWebsite={actions.openWebsite}
+            ensureFresh={actions.ensureFresh} />
+        )}
         {!archived && <WhisperButton actions={actions} />}
         <Button variant="outline"
           size="sm"

@@ -14,7 +14,6 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
-import { parseRetryAfter } from '@/pages/market/lib/rate-limit';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
@@ -47,19 +46,6 @@ export class AccountMismatchError extends Error {
     super(message);
     this.name = 'AccountMismatchError';
     Object.setPrototypeOf(this, AccountMismatchError.prototype);
-  }
-}
-
-/** HTTP 429 from the PD2 API. `retryAfterMs` comes from the Retry-After header when the server sent one. */
-export class RateLimitError extends Error {
-  readonly status = 429;
-  constructor(
-    message: string,
-    public retryAfterMs: number | null = null,
-  ) {
-    super(message);
-    this.name = 'RateLimitError';
-    Object.setPrototypeOf(this, RateLimitError.prototype);
   }
 }
 
@@ -396,12 +382,8 @@ export async function handleApiResponse(
       );
     }
 
-    // Create error with context (429s carry their Retry-After so callers can back off)
-    const message = `API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`;
-    const error =
-      response.status === 429
-        ? new RateLimitError(message, parseRetryAfter(response.headers?.get('retry-after')))
-        : new Error(message);
+    // Create error with context
+    const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
 
     // Prepare additional context including query
     const additionalContext: Record<string, any> = {

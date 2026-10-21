@@ -1,6 +1,6 @@
 /**
  * GENERATED from the projectdiablo2.com market bundle (2026-10-21): the Trade filter's Type and Base
- * selects, verbatim. Grouped types use the site's JSON `$in` code strings (parsed by buildListingQuery).
+ * selects, verbatim. Grouped types use the site's JSON `$in` code strings (the market service parses them).
  * Regenerate rather than hand-edit.
  */
 

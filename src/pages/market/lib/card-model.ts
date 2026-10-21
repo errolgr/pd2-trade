@@ -1,4 +1,5 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
 import { parseStatKey } from './stats';
 
 /*
@@ -10,9 +11,6 @@ import { parseStatKey } from './stats';
  * - Two-value damage pairs (`firedam [19, 14]`, `lightmindam [2, 74]`) don't sum consistently, so they are
  *   never attributed: no split is better than a wrong one.
  */
-
-/** Series colours for socket groups (theme chart tokens); ring, row and source tags of a group share one. */
-export const SOCKET_SERIES = ['--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5', '--info'] as const;
 
 /** Mods whose leading values are params (skill, level, class, tab…) and whose LAST value is the amount. */
 const PARAM_MODS =
@@ -63,8 +61,8 @@ export interface SocketGroup {
   mods: Modifier[];
   /** Tells same-named groups apart: element / trigger ("Fire · on death"). */
   subtitle: string | null;
-  /** Index into SOCKET_SERIES. */
-  series: number;
+  /** Rainbow Facets: their element (art and name colour). */
+  element: JewelElement | null;
   /** Per mod: its label for one item and, for 2+, the summed label ("+90% Enhanced Damage"). */
   lines: { each: string; total: string | null }[];
 }
@@ -96,14 +94,16 @@ export interface CardModel {
   /** Socket index → group index (socket order). */
   socketGroups: number[];
   emptySockets: number;
+  /** Some socketed item lists a bonus: the card shows its Socketed section (else the `Nos` pill says enough). */
+  showSockets: boolean;
 }
 
-const ELEMENTS: [RegExp, string][] = [
-  [/fire/, 'Fire'],
-  [/cold/, 'Cold'],
-  [/ltng|light(?!radius)/, 'Lightning'],
-  [/pois/, 'Poison'],
-];
+const ELEMENT_LABELS: Record<JewelElement, string> = {
+  fire: 'Fire',
+  cold: 'Cold',
+  lightning: 'Lightning',
+  poison: 'Poison',
+};
 const TRIGGERS: [RegExp, string][] = [
   [/skillondeath/, 'on death'],
   [/skillonlevelup/, 'on level-up'],
@@ -114,10 +114,10 @@ const TRIGGERS: [RegExp, string][] = [
 ];
 
 function facetSubtitle(mods: Modifier[]): string | null {
+  const element = jewelElement(mods);
   const names = mods.map((m) => m.name).join(' ');
-  const element = ELEMENTS.find(([re]) => re.test(names))?.[1];
   const trigger = TRIGGERS.find(([re]) => re.test(names))?.[1];
-  const parts = [element, trigger].filter(Boolean);
+  const parts = [element && ELEMENT_LABELS[element], trigger].filter(Boolean);
   return parts.length ? parts.join(' · ') : null;
 }
 
@@ -153,7 +153,7 @@ export function groupSockets(socketed: ItemDetail[]): { groups: SocketGroup[]; s
         sockets: [],
         mods: (item.modifiers ?? []).filter((m) => m.name !== 'corrupted'),
         subtitle: null,
-        series: index % SOCKET_SERIES.length,
+        element: item.name === 'Rainbow Facet' ? jewelElement(item.modifiers) : null,
         lines: [],
       });
     }
@@ -236,5 +236,6 @@ export function buildCardModel(item: ItemDetail): CardModel {
     groups,
     socketGroups,
     emptySockets: Math.max(0, (item.socket_count ?? 0) - socketed.length),
+    showSockets: groups.some((g) => g.lines.length > 0),
   };
 }
