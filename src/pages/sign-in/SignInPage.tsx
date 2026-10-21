@@ -6,12 +6,11 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
-import appIcon from '@/assets/img.png';
 import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { WindowPanel } from '@/components/custom/window-chrome';
-import { fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
+import { fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 const TRUST_POINTS = [
@@ -20,7 +19,7 @@ const TRUST_POINTS = [
   { icon: Eye, label: 'Read-only stash' },
 ] as const;
 
-/** Themed backdrop: accent bloom behind the medallion and a hairline highlight along the top edge. */
+/** Themed backdrop: accent bloom behind the header and a hairline highlight along the top edge. */
 function Backdrop() {
   return (
     <div aria-hidden
@@ -31,31 +30,11 @@ function Backdrop() {
   );
 }
 
-/** App rune icon + "PD2 Trader" wordmark with a one-line lead-in; shared by both views. (The PD2 logo itself only appears on
- * the OAuth button: this is a third-party app, not an official PD2 one.) */
+/** "PD2 Trader" wordmark with a one-line lead-in; shared by both views. No logo up here: the PD2 logo only appears on the
+ * OAuth button, since this is a third-party app, not an official PD2 one. */
 function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead: string; compact?: boolean }) {
   return (
     <div className="relative flex shrink-0 flex-col items-center text-center">
-      <motion.div variants={popIn}
-        initial="hidden"
-        animate="visible"
-        className="relative mb-4">
-        <div aria-hidden
-          className="absolute -inset-3 rounded-full bg-glow/25 blur-xl" />
-        <div
-          className={cn(
-            'relative flex items-center justify-center rounded-2xl border border-glow/40 bg-surface-elevated shadow-glow',
-            compact ? 'size-12' : 'size-16',
-          )}
-        >
-          <img
-            src={appIcon}
-            alt=""
-            draggable={false}
-            className={cn('object-contain', compact ? 'size-8' : 'size-11')}
-          />
-        </div>
-      </motion.div>
       <motion.div variants={fadeInUp}
         initial="hidden"
         animate="visible"

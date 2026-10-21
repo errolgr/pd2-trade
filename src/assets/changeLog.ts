@@ -28,7 +28,7 @@ export const changeLog = {
     '✨ Redesigned chat: a roomier window with richer conversation rows (online dot, item thumbnail or offer), avatars on message groups and a floating composer; resize it and it adapts down to one column',
     "🆕 Chat: a Trader panel beside the conversation shows who you're talking to — online status, join date, in-game accounts, offers and items between you and their market (click an item to link it); open their Project Diablo 2 profile from their name",
     '✨ Chat: "Whisper (copy)" makes clear a whisper is copied as /w *account … for you to paste in the game chat',
-    '✨ Redesigned sign-in window: PD2 medallion, what the login does and does not access, and clearer progress while the browser is open',
+    '✨ Redesigned sign-in window: what the login does and does not access, and clearer progress while the browser is open',
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',
     "🔧 What's New now waits until you're signed in instead of opening next to the sign-in prompt",

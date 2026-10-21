@@ -124,7 +124,7 @@ export const PANEL_DEFS: PanelDefs = {
   signIn: {
     id: 'signIn',
     component: SignInPage,
-    size: { width: 440, height: 400 },
+    size: { width: 440, height: 340 },
     resizable: false,
     placement: 'screenCenter',
     persist: false,
