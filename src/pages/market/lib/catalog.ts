@@ -1,4 +1,5 @@
 import { runeWords, setItems, uniqueItems } from '@/assets/items';
+import { modifierByName } from '@/assets/modifiers';
 import { SITE_BASE_NAMES, SITE_ITEM_TYPES } from './catalog.data';
 import { statLabel } from './stats';
 import type { CharClass, Rarity } from './types';
@@ -77,7 +78,7 @@ export const CLASSES: { value: CharClass; label: string }[] = [
 
 /**
  * Values seen in live `item.corruptions` (modifier names of the corruption roll), most common first. Labels
- * are the property templates without the roll.
+ * are the property templates without the roll. `dmg%` is left out: it always comes with `maxdamage_percent`.
  */
 const CORRUPTION_KEYS = [
   'item_numsockets',
@@ -130,6 +131,21 @@ const CORRUPTION_KEYS = [
   'curse_resistance',
   'item_req_percent',
   'item_lightradius',
+  'dmg-max',
+  'curse_effectiveness',
+  'item_thorns_perlevel',
+  'passive_fire_mastery',
+  'passive_cold_mastery',
+  'passive_ltng_mastery',
+  'passive_pois_mastery',
+  'item_demon_tohit',
+  'item_demondamage_percent',
+  'item_undead_tohit',
+  'item_undeaddamage_percent',
+  'item_fractionaltargetac',
+  'item_damagetargetac',
+  'maxmana',
+  'item_addexperience',
 ];
 
 const CORRUPTION_LABELS: Record<string, string> = {
@@ -138,19 +154,30 @@ const CORRUPTION_LABELS: Record<string, string> = {
   indestruct: 'Indestructible',
 };
 
+/** Corruption values that aren't property keys, mapped to the property they roll. */
+const CORRUPTION_PROPERTY: Record<string, string> = {
+  'dmg-max': 'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage',
+};
+
+/** The property's label template (else the modifier's own label) without the roll. */
+function corruptionLabel(value: string): string {
+  if (CORRUPTION_LABELS[value]) return CORRUPTION_LABELS[value];
+  const key = CORRUPTION_PROPERTY[value] ?? value;
+  const template = statLabel(key);
+  const modLabel = modifierByName[key]?.description?.label;
+  const own = modLabel && 'positive' in modLabel ? modLabel.positive : undefined;
+  const text = template !== key ? template : (own ?? key);
+  return text
+    .replace(/[+-]?\{X\}%?/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export const CORRUPTION_OPTIONS: { value: string; label: string }[] = [
-  ...CORRUPTION_KEYS.map((value) => ({
-    value,
-    label:
-      CORRUPTION_LABELS[value] ??
-      statLabel(value)
-        .replace(/[+-]?\{X\}%?/g, '')
-        .replace(/\s+/g, ' ')
-        .trim(),
-  })),
-  { value: 'transform_dye', label: CORRUPTION_LABELS.transform_dye },
-  { value: 'indestruct', label: CORRUPTION_LABELS.indestruct },
-];
+  ...CORRUPTION_KEYS,
+  'transform_dye',
+  'indestruct',
+].map((value) => ({ value, label: corruptionLabel(value) }));
 
 export interface ItemNameOption {
   name: string;

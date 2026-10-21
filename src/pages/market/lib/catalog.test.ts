@@ -57,6 +57,16 @@ describe('catalog', () => {
   it('labels corruption options without the roll', () => {
     expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'item_fastercastrate', label: 'Faster Cast Rate' });
     expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'item_numsockets', label: 'Sockets' });
+    // Not a property key: labelled by the property it rolls
+    expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'dmg-max', label: 'to Maximum Damage' });
+    // No site property: the modifier's own label
+    expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'item_demon_tohit', label: 'to Attack Rating against Demons' });
+    expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'passive_ltng_mastery', label: 'to Lightning Skill Damage' });
+    expect(CORRUPTION_OPTIONS).toContainEqual({ value: 'curse_effectiveness', label: 'Curse Resistance' });
+    expect(CORRUPTION_OPTIONS.map((o) => o.value)).not.toContain('dmg%');
+    // Every option reads as words, never a raw key, and none repeats
+    for (const o of CORRUPTION_OPTIONS) expect(o.label).not.toMatch(/_|\{X\}/);
+    expect(new Set(CORRUPTION_OPTIONS.map((o) => o.value)).size).toBe(CORRUPTION_OPTIONS.length);
   });
 });
 
