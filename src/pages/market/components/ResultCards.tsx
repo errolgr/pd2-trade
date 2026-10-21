@@ -328,8 +328,8 @@ const ResultCard = React.memo(function ResultCard({
       onClick={() => onSelect(listing._id)}
       onDoubleClick={() => onOpen(listing._id)}
       className={cn(
-        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-[border-color,transform,box-shadow] duration-(--dur-fast) ease-out motion-safe:hover:-translate-y-px',
-        selected ? 'border-primary' : 'border-border/60 hover:border-border hover:shadow-sm',
+        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
+        selected ? 'border-primary' : 'border-border/60 hover:border-border',
         pin && 'ring-2 ring-primary/30',
       )}
     >
