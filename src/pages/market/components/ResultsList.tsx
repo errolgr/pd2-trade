@@ -20,10 +20,10 @@ const ROW_HEIGHT = 58;
 const LOAD_MORE_AHEAD = 6;
 const SUMMARY_MODS = 4;
 
-/** "2.5" / "0.75" (HR amount only); null when the listing has no HR price (note only). */
-export function formatHrAmount(hr: number): string | null {
+/** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
+export function formatHrPrice(hr: number): string | null {
   if (!(hr > 0)) return null;
-  return String(hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100);
+  return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
 }
 
 /** A failed next-page load (see useMarketSearch). */
@@ -207,7 +207,7 @@ const ResultRow = React.memo(function ResultRow({
 }) {
   const { listing } = row;
   const { item } = listing;
-  const amount = formatHrAmount(listing.hr_price);
+  const price = formatHrPrice(listing.hr_price);
   const summary = displayMods(item)
     .slice(0, SUMMARY_MODS)
     .map((m) => m.label)
@@ -264,18 +264,12 @@ const ResultRow = React.memo(function ResultRow({
         <div className="flex items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
-          {amount ? (
-            <span className="flex items-baseline gap-0.5 tabular-nums"
-              title={listing.price || undefined}>
-              <span className="text-sm font-bold text-foreground">{amount}</span>
-              <span className="text-[10px] font-semibold text-q-gold">HR</span>
-            </span>
-          ) : (
-            <span className="text-xs font-semibold text-muted-foreground"
-              title={listing.price || undefined}>
-              {listing.price ? 'Offer' : '—'}
-            </span>
-          )}
+          <span
+            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
+            title={listing.price || undefined}
+          >
+            {price ?? (listing.price ? 'Offer' : '—')}
+          </span>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <span className="max-w-16 truncate">{listing.user?.username}</span>

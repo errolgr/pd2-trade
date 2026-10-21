@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
+import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
@@ -19,8 +20,7 @@ import { listingAge, sellerAccount } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
-import { LoadMoreFooter, type LoadMoreState, OnlineDots } from './ResultsList';
-import { PriceBlock } from './PriceBlock';
+import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
@@ -293,6 +293,7 @@ const ResultCard = React.memo(function ResultCard({
     else if (command.action === 'whisper' && !archived) void actions.copyWhisper();
   }, [command, takeCommand, onToggleFavorite, listing, archived, actions]);
 
+  const price = formatHrPrice(listing.hr_price);
   const quality = item.is_runeword ? 'Runeword' : (item.quality?.name ?? '');
   const handType = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
   const subtitle = [
@@ -375,9 +376,24 @@ const ResultCard = React.memo(function ResultCard({
             />
           </div>
         </div>
-        <PriceBlock listing={listing}
-          deal={deal}
-          className="min-w-24 max-w-[40%] shrink-0 self-start" />
+        <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
+          <span
+            className={cn(
+              'max-w-full truncate font-bold tabular-nums',
+              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
+            )}
+            title={listing.price || undefined}
+          >
+            {price ?? (listing.price || 'No price')}
+          </span>
+          {price && listing.price && (
+            <span className="max-w-full truncate text-[11px] text-muted-foreground"
+              title={listing.price}>
+              {`note: "${listing.price}"`}
+            </span>
+          )}
+          <DealBadge deal={deal} />
+        </div>
       </header>
 
       {/* 2. Stats strip */}
