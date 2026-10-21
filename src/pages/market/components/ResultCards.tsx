@@ -458,7 +458,7 @@ const ResultCard = React.memo(function ResultCard({
       )}
 
       {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
-      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 bg-background/30 px-3 py-1.5 text-xs">
+      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 bg-foreground/[0.045] px-3 py-1.5 text-xs">
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
           {/* Who: presence + account, with the character they're on */}
           <span className="inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-2 pr-2.5">
