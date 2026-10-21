@@ -1,13 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Loader2, RotateCcw, X } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, Loader2, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, CORRUPTION_OPTIONS, ITEM_TYPES, RARITIES, basesForType, itemNameOptions } from '../lib/catalog';
 import { DEFAULT_MAX_AGE_DAYS, withSource } from '../lib/defaults';
-import type { MarketApi, MarketFilters, OnlineFilter, SortBy } from '../lib/types';
+import type { MarketApi, MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import {
   Autocomplete,
   Field,
@@ -26,6 +34,63 @@ const SORT_OPTIONS: { value: SortBy; label: string; title: string }[] = [
   { value: 'bumped', label: 'Bumped', title: 'Last bumped' },
   { value: 'price', label: 'Price', title: 'Price in HR (listings with an HR price only)' },
 ];
+
+const rarityColor = (r: Rarity) => (r === 'Runeword' ? 'text-q-rune' : qualityColor(r));
+
+/** Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. */
+function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarity[]) => void }) {
+  const summary =
+    value.length === 0 ? (
+      <span className="text-muted-foreground">Any</span>
+    ) : value.length <= 2 ? (
+      RARITIES.filter((r) => value.includes(r)).map((r, i) => (
+        <React.Fragment key={r}>
+          {i > 0 && <span className="text-muted-foreground">, </span>}
+          <span className={rarityColor(r)}>{r}</span>
+        </React.Fragment>
+      ))
+    ) : (
+      `${value.length} selected`
+    );
+  return (
+    <Field label="Rarity">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Rarity"
+          className="flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:border-ring [&[data-state=open]>svg]:rotate-180"
+        >
+          <span className="min-w-0 truncate">{summary}</span>
+          <ChevronDown className="size-4 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start"
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-40">
+          {RARITIES.map((r) => (
+            <DropdownMenuCheckboxItem
+              key={r}
+              checked={value.includes(r)}
+              // Stay open: several rarities are usually picked in a row
+              onSelect={(e) => e.preventDefault()}
+              onCheckedChange={(on) => onChange(on ? [...value, r] : value.filter((x) => x !== r))}
+              className={cn('text-xs', rarityColor(r))}
+            >
+              {r}
+            </DropdownMenuCheckboxItem>
+          ))}
+          {value.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-xs text-muted-foreground"
+                onSelect={() => onChange([])}>
+                Any rarity
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Field>
+  );
+}
+
 const ONLINE_OPTIONS: { value: OnlineFilter; label: string }[] = [
   { value: 'all', label: 'Any' },
   { value: 'online', label: 'Online' },
@@ -107,30 +172,8 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
             options={bases.map((b) => ({ value: b.code, label: b.label }))}
             onChange={(baseCode) => set({ baseCode })}
           />
-          <Field label="Rarity">
-            <div className="flex flex-wrap gap-1">
-              {RARITIES.map((r) => {
-                const on = f.rarity.includes(r);
-                return (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => set({ rarity: on ? f.rarity.filter((x) => x !== r) : [...f.rarity, r] })}
-                    className={cn(
-                      'h-6 rounded-md border px-1.5 text-[11px] font-medium outline-none transition-[background-color,border-color] duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-                      on
-                        ? 'border-ring/60 bg-accent'
-                        : 'border-border/60 bg-background/40 opacity-75 hover:opacity-100',
-                      r === 'Runeword' ? 'text-q-rune' : qualityColor(r),
-                    )}
-                  >
-                    {r}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
+          <RarityField value={f.rarity}
+            onChange={(rarity) => set({ rarity })} />
           <SelectField
             label="Class"
             value={req.class}
@@ -188,7 +231,7 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
                 value={f.ladder ? 'l' : 'nl'}
                 onChange={(v) => set({ ladder: v === 'l' })}
                 options={[
-                  { value: 'l', label: 'Ladder' },
+                  { value: 'l', label: 'L', title: 'Ladder' },
                   { value: 'nl', label: 'NL', title: 'Non-ladder' },
                 ]}
               />

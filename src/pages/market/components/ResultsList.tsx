@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import moment from 'moment';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, Loader2, Sigma } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,10 +20,57 @@ const ROW_HEIGHT = 58;
 const LOAD_MORE_AHEAD = 6;
 const SUMMARY_MODS = 4;
 
-/** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
-export function formatHrPrice(hr: number): string | null {
+/** "2.5" / "0.75" (HR amount only); null when the listing has no HR price (note only). */
+export function formatHrAmount(hr: number): string | null {
   if (!(hr > 0)) return null;
-  return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
+  return String(hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100);
+}
+
+/** A failed next-page load (see useMarketSearch). */
+export interface LoadMoreState {
+  error: string | null;
+  /** Rate limited: Retry stays disabled until then (epoch ms). */
+  retryAt: number | null;
+  onRetry: () => void;
+}
+
+/** Under the results: "Loading more…", or "Couldn't load more · Retry" after a failed page. */
+export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreState & { loading: boolean }) {
+  // Rate limited: Retry unlocks when `retryAt` has passed (the timer marks it; no clock read during render)
+  const [unlockedAt, setUnlockedAt] = useState<number | null>(null);
+  const waiting = retryAt !== null && unlockedAt !== retryAt;
+  useEffect(() => {
+    if (retryAt === null) return;
+    const timer = window.setTimeout(() => setUnlockedAt(retryAt), Math.max(0, retryAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [retryAt]);
+
+  if (loading) {
+    return (
+      <div aria-busy
+        className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+        <Loader2 className="size-3.5 animate-spin" />
+        Loading more…
+      </div>
+    );
+  }
+  if (!error) return null;
+  return (
+    <div role="status"
+      className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
+      <span title={error}>{"Couldn't load more"}</span>
+      <span aria-hidden>·</span>
+      <button
+        type="button"
+        disabled={waiting}
+        title={waiting && retryAt !== null ? `Rate limited until ${moment(retryAt).format('LT')}` : error}
+        onClick={onRetry}
+        className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+      >
+        Retry
+      </button>
+    </div>
+  );
 }
 
 /** Site and in-game presence dots of a listing's seller. */
@@ -54,6 +102,8 @@ export interface ResultsListProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** A failed next page: the footer offers Retry instead of loading on scroll. */
+  loadMore: LoadMoreState;
   /** Entrance animations of this result set (rows enter once; see EnterOnce). */
   enter: EnterTracker;
   footer?: React.ReactNode;
@@ -70,6 +120,7 @@ export function ResultsList({
   hasMore,
   loadingMore,
   onLoadMore,
+  loadMore,
   enter,
   footer,
 }: ResultsListProps) {
@@ -132,13 +183,8 @@ export function ResultsList({
           );
         })}
       </div>
-      {loadingMore && (
-        <div aria-busy
-          className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" />
-          Loading more…
-        </div>
-      )}
+      <LoadMoreFooter loading={loadingMore}
+        {...loadMore} />
       {footer}
     </ScrollArea>
   );
@@ -161,7 +207,7 @@ const ResultRow = React.memo(function ResultRow({
 }) {
   const { listing } = row;
   const { item } = listing;
-  const price = formatHrPrice(listing.hr_price);
+  const amount = formatHrAmount(listing.hr_price);
   const summary = displayMods(item)
     .slice(0, SUMMARY_MODS)
     .map((m) => m.label)
@@ -218,12 +264,18 @@ const ResultRow = React.memo(function ResultRow({
         <div className="flex items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
-          <span
-            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price ? 'Offer' : '—')}
-          </span>
+          {amount ? (
+            <span className="flex items-baseline gap-0.5 tabular-nums"
+              title={listing.price || undefined}>
+              <span className="text-sm font-bold text-foreground">{amount}</span>
+              <span className="text-[10px] font-semibold text-q-gold">HR</span>
+            </span>
+          ) : (
+            <span className="text-xs font-semibold text-muted-foreground"
+              title={listing.price || undefined}>
+              {listing.price ? 'Offer' : '—'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <span className="max-w-16 truncate">{listing.user?.username}</span>

@@ -22,12 +22,13 @@ import { scoreListings } from './lib/search';
 import { type MarketSearch, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
 import { FilterSidebar } from './components/FilterSidebar';
-import { ResultsList } from './components/ResultsList';
+import { type LoadMoreState, ResultsList } from './components/ResultsList';
 import { type CardCommand, ResultCards } from './components/ResultCards';
+import { useCardCommand } from './hooks/useCardCommand';
 import { ListingDetail } from './components/ListingDetail';
 import { SavedSearches } from './components/SavedSearches';
 import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
-import { mergeStatFilter } from './lib/mod-keys';
+import { mergeStatFilters } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
 import { fetchMarketListing } from './alerts/saved-search-api';
 import { useEnterTracker } from './components/EnterOnce';
@@ -220,8 +221,14 @@ const MarketBrowserPage: React.FC = () => {
     setSelectedId(id);
     setExtraRow(null);
   }, []);
-  /** Hotkey for the selected card (O offer, W whisper, F favorite). */
-  const [cardCommand, setCardCommand] = useState<CardCommand | null>(null);
+  /** Hotkeys for the selected card (O offer, W whisper, F favorite). */
+  const cardCommands = useCardCommand();
+  /** A failed next page (search tab only): the lists' footer offers Retry. */
+  const loadMore: LoadMoreState = {
+    error: tab === 'search' ? search.loadMoreError : null,
+    retryAt: search.loadMoreRetryAt,
+    onRetry: () => void search.retryLoadMore(),
+  };
   /** Stat row a mod menu just added/updated: the sidebar scrolls to and highlights it. */
   const [statHighlight, setStatHighlight] = useState<{ id: string; nonce: number } | null>(null);
   const changeViewMode = (mode: MarketViewMode) => {
@@ -260,22 +267,16 @@ const MarketBrowserPage: React.FC = () => {
     return {
       addFilters: (rows, description) => {
         if (rows.length === 0) return;
-        let stats = filters.stats;
-        let touched = '';
-        for (const row of rows) {
-          const merged = mergeStatFilter(stats, row);
-          stats = merged.stats;
-          touched = merged.id;
-        }
-        const before = filters;
-        setFilters({ ...filters, stats });
+        const merge = mergeStatFilters(filters.stats, rows);
+        setFilters({ ...filters, stats: merge.stats });
         setTab('search');
-        setStatHighlight({ id: touched, nonce: Date.now() });
+        setStatHighlight({ id: merge.id, nonce: Date.now() });
         undoToast({
           title: rows.length > 1 ? `Added ${rows.length} filters` : 'Added filter',
           description,
           duration: 6000,
-          onUndo: () => setFilters(before),
+          // Only this merge is reverted; edits made since (other rows, item, price…) stay
+          onUndo: () => setFilters((cur) => cur && { ...cur, stats: merge.undo(cur.stats) }),
         });
       },
       sortByStat: (key, dir) => {
@@ -333,11 +334,7 @@ const MarketBrowserPage: React.FC = () => {
       setDetailOpen(true);
     } else if (cards && selectedId && CARD_HOTKEYS[e.key.toLowerCase()] && !e.shiftKey) {
       e.preventDefault();
-      setCardCommand({
-        id: selectedId,
-        action: CARD_HOTKEYS[e.key.toLowerCase()],
-        nonce: (cardCommand?.nonce ?? 0) + 1,
-      });
+      cardCommands.issue(selectedId, CARD_HOTKEYS[e.key.toLowerCase()]);
     }
   };
 
@@ -393,24 +390,25 @@ const MarketBrowserPage: React.FC = () => {
                       })}
                     </TabsList>
                   </Tabs>
-                  {tab !== 'saved' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="size-7 p-0"
-                      aria-label="Refresh"
-                      title="Refresh"
-                      onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
-                    >
-                      <RefreshCw
-                        className={cn(
-                          'size-3.5',
-                          (tab === 'favorites' ? favorites.status === 'loading' : search.status === 'loading') &&
-                            'animate-spin',
-                        )}
-                      />
-                    </Button>
-                  )}
+                  {/* Kept in place (hidden) on Saved so the tabs don't jump sideways when switching. */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn('size-7 p-0', tab === 'saved' && 'invisible')}
+                    aria-label="Refresh"
+                    aria-hidden={tab === 'saved' || undefined}
+                    tabIndex={tab === 'saved' ? -1 : undefined}
+                    title="Refresh"
+                    onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
+                  >
+                    <RefreshCw
+                      className={cn(
+                        'size-3.5',
+                        (tab === 'favorites' ? favorites.status === 'loading' : search.status === 'loading') &&
+                          'animate-spin',
+                      )}
+                    />
+                  </Button>
                 </>
               }
             />
@@ -500,7 +498,8 @@ const MarketBrowserPage: React.FC = () => {
                                   onSelect={selectCard}
                                   onOpen={selectListing}
                                   statKeys={statKeys}
-                                  command={cardCommand}
+                                  command={cardCommands.command}
+                                  takeCommand={cardCommands.take}
                                   deals={deals}
                                   pseudoKeys={pseudoKeys}
                                   favoriteIds={favoriteIds}
@@ -510,6 +509,7 @@ const MarketBrowserPage: React.FC = () => {
                                   hasMore={tab === 'search' && search.hasMore}
                                   loadingMore={tab === 'search' && search.loadingMore}
                                   onLoadMore={search.loadMore}
+                                  loadMore={loadMore}
                                 />
                               ) : (
                                 <ResultsList
@@ -523,6 +523,7 @@ const MarketBrowserPage: React.FC = () => {
                                   hasMore={tab === 'search' && search.hasMore}
                                   loadingMore={tab === 'search' && search.loadingMore}
                                   onLoadMore={search.loadMore}
+                                  loadMore={loadMore}
                                 />
                               )}
                             </motion.div>

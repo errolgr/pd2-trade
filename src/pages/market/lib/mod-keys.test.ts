@@ -6,6 +6,7 @@ import {
   fillMargin,
   isUsefulFilterLine,
   mergeStatFilter,
+  mergeStatFilters,
   modStatValue,
   modToStatKey,
   modsAsFilters,
@@ -79,6 +80,45 @@ describe('mergeStatFilter', () => {
       id: 'new',
       stats: [{ id: 'a' }, { id: 'b' }, { id: 'new', key: 'strength', enabled: true }],
     });
+  });
+});
+
+describe('mergeStatFilters undo', () => {
+  const base: StatFilter[] = [
+    { id: 'a', kind: 'mod', key: 'item_fastercastrate', min: 10, enabled: true },
+    { id: 'b', kind: 'pseudo', key: 'pseudo_total_res', min: 80, enabled: true },
+  ];
+  let n = 0;
+  const newId = () => `new${++n}`;
+
+  it('reverts only its own rows and keeps edits made after the merge', () => {
+    const merge = mergeStatFilters(
+      base,
+      [
+        { kind: 'mod', key: 'item_fastercastrate', min: 20 },
+        { kind: 'mod', key: 'strength', min: 15 },
+      ],
+      newId,
+    );
+    expect(merge.stats.map((s) => s.id)).toEqual(['a', 'b', merge.id]);
+    // Meanwhile the user edits an unrelated row and adds one of their own
+    const current: StatFilter[] = [
+      merge.stats[0],
+      { ...merge.stats[1], min: 120 },
+      merge.stats[2],
+      { id: 'mine', kind: 'mod', key: 'dexterity', min: 5, enabled: true },
+    ];
+    expect(merge.undo(current)).toEqual([
+      base[0],
+      { ...base[1], min: 120 },
+      { id: 'mine', kind: 'mod', key: 'dexterity', min: 5, enabled: true },
+    ]);
+  });
+
+  it('keeps a merged row the user changed since, and survives rows removed in between', () => {
+    const merge = mergeStatFilters(base, [{ kind: 'mod', key: 'item_fastercastrate', min: 20 }], newId);
+    expect(merge.undo([{ ...merge.stats[0], min: 25 }])).toEqual([{ ...merge.stats[0], min: 25 }]);
+    expect(merge.undo([merge.stats[1]])).toEqual([base[1]]);
   });
 });
 

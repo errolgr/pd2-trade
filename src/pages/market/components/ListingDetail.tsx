@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
 import { SellerCard } from '@/pages/market/enrich/SellerCard';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
@@ -15,7 +14,7 @@ import type { MarketApi, ScoredListing } from '../lib/types';
 import { statWithValue } from './stat-text';
 import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
-import { formatHrPrice } from './ResultsList';
+import { PriceBlock } from './PriceBlock';
 import { AddAllModsButton } from './ModMenu';
 
 export interface ListingDetailProps {
@@ -50,7 +49,6 @@ export function ListingDetail({
 }: ListingDetailProps) {
   const { listing } = row;
   const actions = useListingActions(listing);
-  const price = formatHrPrice(listing.hr_price);
 
   return (
     <aside aria-label="Listing detail"
@@ -102,17 +100,11 @@ export function ListingDetail({
             </div>
           )}
 
+          <PriceBlock listing={listing}
+            deal={deal}
+            align="start" />
           <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className={cn('text-base font-bold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}>
-                {price ?? 'No HR price'}
-              </span>
-              <DealBadge deal={deal} />
-            </div>
-            {listing.price && (
-              <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">{listing.price}</p>
-            )}
-            <div className="mt-1 text-[11px] text-muted-foreground"
+            <div className="text-[11px] text-muted-foreground"
               title={moment(listing.bumped_at).format('LLL')}>
               {`Bumped ${moment(listing.bumped_at).fromNow()} · listed ${moment(listing.created_at).fromNow()}`}
             </div>

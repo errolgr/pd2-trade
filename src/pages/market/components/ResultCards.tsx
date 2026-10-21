@@ -2,19 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import {
-  Bell,
-  Clock,
-  ExternalLink,
-  Gamepad2,
-  Heart,
-  Loader2,
-  MessageSquare,
-  Shield,
-  Sigma,
-  Swords,
-  X,
-} from 'lucide-react';
+import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,7 +10,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
-import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
@@ -32,7 +19,8 @@ import { listingAge, sellerAccount } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
-import { OnlineDots, formatHrPrice } from './ResultsList';
+import { LoadMoreFooter, type LoadMoreState, OnlineDots } from './ResultsList';
+import { PriceBlock } from './PriceBlock';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
@@ -75,6 +63,8 @@ export interface ResultCardsProps {
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
+  /** Claims a command nonce for running (true once per nonce; see useCardCommand). */
+  takeCommand: (nonce: number) => boolean;
   /** An alert's listing pinned above the results (not in them): labelled and dismissable. */
   pinned?: CardPin | null;
   /** Listings that just matched a live alert of this (watched) search: a one-time soft glow. */
@@ -84,6 +74,8 @@ export interface ResultCardsProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** A failed next page: the footer offers Retry instead of loading on scroll. */
+  loadMore: LoadMoreState;
 }
 
 /** Full-width result cards, one per row, virtualized (cards vary in height, so each is measured). */
@@ -100,12 +92,14 @@ export function ResultCards({
   archived,
   api,
   command,
+  takeCommand,
   pinned,
   glowIds,
   enter,
   hasMore,
   loadingMore,
   onLoadMore,
+  loadMore,
 }: ResultCardsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   /** Glows already played (`nonce:id`): a card scrolled back into view doesn't glow again. */
@@ -175,6 +169,7 @@ export function ResultCards({
                   api={api}
                   // Only the selected card gets hotkeys (the others keep their memoized props)
                   command={command && command.id === id ? command : null}
+                  takeCommand={takeCommand}
                   pin={pinned && pinned.id === id ? pinned : null}
                 />
                 {glowIds.ids.has(id) && (
@@ -189,13 +184,8 @@ export function ResultCards({
           );
         })}
       </div>
-      {loadingMore && (
-        <div aria-busy
-          className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" />
-          Loading more…
-        </div>
-      )}
+      <LoadMoreFooter loading={loadingMore}
+        {...loadMore} />
     </ScrollArea>
   );
 }
@@ -259,6 +249,7 @@ const ResultCard = React.memo(function ResultCard({
   archived,
   api,
   command,
+  takeCommand,
   pin,
 }: {
   row: ScoredListing;
@@ -273,6 +264,7 @@ const ResultCard = React.memo(function ResultCard({
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
+  takeCommand: (nonce: number) => boolean;
   pin: CardPin | null;
 }) {
   const { listing } = row;
@@ -292,23 +284,15 @@ const ResultCard = React.memo(function ResultCard({
     return price ? price.hr * model.groups[i].items.length : null;
   };
 
-  // Hotkeys for the selected card. The offer form opens through its nonce (adjusted during render); favorite
-  // and whisper run once per command nonce.
-  const [seenOfferNonce, setSeenOfferNonce] = useState<number | null>(null);
-  const [offerNonce, setOfferNonce] = useState<number | undefined>(undefined);
-  if (command?.action === 'offer' && command.nonce !== seenOfferNonce) {
-    setSeenOfferNonce(command.nonce);
-    if (!archived) setOfferNonce(command.nonce);
-  }
-  const handledNonce = useRef<number | null>(null);
+  // Hotkeys for the selected card, each run once: the page hands out every command nonce once (takeCommand,
+  // which also clears it), so a card that remounts can't replay it. O opens the offer form through the
+  // nonce's change (OfferButton ignores the nonce it mounts with).
   useEffect(() => {
-    if (!command || command.action === 'offer' || command.nonce === handledNonce.current) return;
-    handledNonce.current = command.nonce;
+    if (!command || !takeCommand(command.nonce)) return;
     if (command.action === 'favorite') onToggleFavorite(listing);
-    else if (!archived) void actions.copyWhisper();
-  }, [command, onToggleFavorite, listing, archived, actions]);
+    else if (command.action === 'whisper' && !archived) void actions.copyWhisper();
+  }, [command, takeCommand, onToggleFavorite, listing, archived, actions]);
 
-  const price = formatHrPrice(listing.hr_price);
   const quality = item.is_runeword ? 'Runeword' : (item.quality?.name ?? '');
   const handType = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
   const subtitle = [
@@ -391,24 +375,9 @@ const ResultCard = React.memo(function ResultCard({
             />
           </div>
         </div>
-        <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
-          <span
-            className={cn(
-              'max-w-full truncate font-bold tabular-nums',
-              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
-            )}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price || 'No price')}
-          </span>
-          {price && listing.price && (
-            <span className="max-w-full truncate text-[11px] text-muted-foreground"
-              title={listing.price}>
-              {`note: "${listing.price}"`}
-            </span>
-          )}
-          <DealBadge deal={deal} />
-        </div>
+        <PriceBlock listing={listing}
+          deal={deal}
+          className="min-w-24 max-w-[40%] shrink-0 self-start" />
       </header>
 
       {/* 2. Stats strip */}
@@ -562,7 +531,7 @@ const ResultCard = React.memo(function ResultCard({
               listing={listing}
               onWebsite={actions.openWebsite}
               dense
-              openNonce={offerNonce}
+              openNonce={command?.action === 'offer' ? command.nonce : undefined}
               ensureFresh={actions.ensureFresh}
             />
           )}
