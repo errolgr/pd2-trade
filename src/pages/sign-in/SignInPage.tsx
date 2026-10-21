@@ -6,12 +6,66 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
-import { X, Check, ChevronRight, Loader2 } from 'lucide-react';
+import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { WindowPanel } from '@/components/custom/window-chrome';
-import { fadeInUp, listItem, listStagger } from '@/lib/motion';
+import { fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+
+const TRUST_POINTS = [
+  { icon: ShieldCheck, label: 'Official PD2 login' },
+  { icon: KeyRound, label: 'No password shared' },
+  { icon: Eye, label: 'Read-only stash' },
+] as const;
+
+/** Themed backdrop: accent bloom behind the medallion and a hairline highlight along the top edge. */
+function Backdrop() {
+  return (
+    <div aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute -top-28 left-1/2 size-72 -translate-x-1/2 rounded-full bg-glow/15 blur-3xl" />
+      <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-glow/60 to-transparent" />
+    </div>
+  );
+}
+
+/** PD2 medallion + "PD2 Trader" wordmark with a one-line lead-in; shared by both views. */
+function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead: string; compact?: boolean }) {
+  return (
+    <div className="relative flex shrink-0 flex-col items-center text-center">
+      <motion.div variants={popIn}
+        initial="hidden"
+        animate="visible"
+        className="relative mb-4">
+        <div aria-hidden
+          className="absolute -inset-3 rounded-full bg-glow/25 blur-xl" />
+        <img
+          src={pd2Logo}
+          alt=""
+          draggable={false}
+          className={cn(
+            'relative rounded-full ring-2 ring-glow/60 ring-offset-2 ring-offset-surface shadow-glow',
+            compact ? 'size-12' : 'size-16',
+          )}
+        />
+      </motion.div>
+      <motion.div variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col items-center gap-1">
+        <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</span>
+        <h1
+          className={cn('font-bold leading-none tracking-wide', compact ? 'text-2xl' : 'text-[28px]')}
+          style={{ fontFamily: 'DiabloFont' }}
+        >
+          PD2 Trader
+        </h1>
+        <p className="mt-1.5 max-w-[19rem] text-sm leading-snug text-muted-foreground">{lead}</p>
+      </motion.div>
+    </div>
+  );
+}
 
 function SignInContent() {
   const { startOAuthFlow } = useOAuth();
@@ -98,23 +152,18 @@ function SignInContent() {
   // Account selection view
   if (accounts && accounts.length > 1) {
     return (
-      <WindowPanel
-        className="relative h-full w-full items-center justify-center gap-4 px-8 py-5 select-none"
-        data-panel-drag
-      >
+      <WindowPanel className="relative h-full w-full gap-4 px-8 pt-7 pb-5 select-none"
+        data-panel-drag>
+        <Backdrop />
         {closeButton}
 
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-shrink-0 flex-col items-center gap-1.5 text-center"
-        >
-          <h1 className="text-lg font-semibold tracking-tight">Sign in to PD2 Trader</h1>
-          <p className="text-sm text-muted-foreground">Multiple accounts found. Select which one to use.</p>
-        </motion.div>
+        <BrandHeader
+          compact
+          eyebrow="Almost there"
+          lead="Several game accounts are linked to this login. Pick the one to trade with."
+        />
 
-        <ScrollArea className="w-full max-w-xs min-h-0 flex-1"
+        <ScrollArea className="relative w-full min-h-0 flex-1"
           data-no-drag>
           <motion.div
             className="flex flex-col gap-2 p-0.5"
@@ -140,8 +189,8 @@ function SignInContent() {
                     'transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-(--dur-fast) ease-out',
                     'focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-[0.98]',
                     isSelected
-                      ? 'border-primary bg-primary/10 shadow-glow'
-                      : 'border-border bg-card/60 hover:border-primary/60 hover:bg-accent disabled:opacity-50',
+                      ? 'border-glow/60 bg-glow/10 shadow-glow'
+                      : 'border-border bg-surface-elevated hover:border-glow/50 hover:bg-accent disabled:opacity-50',
                   )}
                 >
                   <span
@@ -149,8 +198,8 @@ function SignInContent() {
                     className={cn(
                       'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold uppercase transition-colors duration-(--dur-fast)',
                       isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground group-hover:bg-primary/15 group-hover:text-foreground',
+                        ? 'bg-glow text-background'
+                        : 'bg-muted text-muted-foreground group-hover:bg-glow/20 group-hover:text-foreground',
                     )}
                   >
                     {account.charAt(0)}
@@ -172,52 +221,84 @@ function SignInContent() {
 
   // Sign in view
   return (
-    <WindowPanel className="relative h-full w-full items-center justify-center gap-5 px-8 select-none"
-      data-panel-drag>
+    <WindowPanel
+      className="relative h-full w-full items-center justify-center gap-6 px-8 py-7 select-none"
+      data-panel-drag
+    >
+      <Backdrop />
       {closeButton}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-20 mx-auto h-40 w-64 rounded-full bg-primary/15 blur-3xl"
+
+      <BrandHeader
+        eyebrow="Sign in to"
+        lead="Link your Project Diablo 2 account to price check, list items and chat in-game."
       />
-      <motion.div
-        variants={fadeInUp}
+
+      <motion.ul
+        variants={listStagger}
         initial="hidden"
         animate="visible"
-        className="relative flex flex-col items-center gap-1.5 text-center"
+        className="relative flex items-center justify-center gap-x-4"
+        aria-label="How sign-in works"
       >
-        <h1 className="text-xl font-semibold tracking-tight">Sign in to PD2 Trader</h1>
-        <p className="text-sm text-muted-foreground">
-          Connect your Project Diablo 2 account to access trading features.
-        </p>
-      </motion.div>
+        {TRUST_POINTS.map(({ icon: Icon, label }) => (
+          <motion.li
+            key={label}
+            variants={listItem}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-muted-foreground"
+          >
+            <Icon aria-hidden
+              className="size-3 text-glow" />
+            {label}
+          </motion.li>
+        ))}
+      </motion.ul>
 
       <motion.div
         variants={fadeInUp}
         initial="hidden"
         animate="visible"
-        transition={{ delay: 0.05 }}
-        className="relative flex w-full max-w-xs flex-col items-center gap-2"
+        transition={{ delay: 0.08 }}
+        className="relative flex w-full max-w-xs flex-col items-center gap-1.5"
       >
-        <Button onClick={handleSignIn}
+        <Button
+          onClick={handleSignIn}
           disabled={loading}
           aria-busy={loading}
           size="lg"
-          className="w-full gap-2.5">
-          {loading ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            <img src={pd2Logo}
-              alt=""
-              className="size-5 rounded-full ring-1 ring-primary-foreground/30" />
+          className="group h-11 w-full justify-between px-4 text-[15px] shadow-glow disabled:opacity-100"
+        >
+          <span className="inline-flex items-center gap-2.5">
+            {loading ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <img
+                src={pd2Logo}
+                alt=""
+                draggable={false}
+                className="size-5 rounded-full ring-1 ring-primary-foreground/30"
+              />
+            )}
+            {loading ? 'Opening browser…' : 'Sign in with PD2'}
+          </span>
+          {!loading && (
+            <ArrowRight className="size-4 opacity-60 transition-[opacity,transform] duration-(--dur-fast) group-hover:translate-x-0.5 group-hover:opacity-100" />
           )}
-          {loading ? 'Opening browser...' : 'Sign in with PD2'}
         </Button>
 
-        <Button variant="ghost"
+        <p className="h-4 text-[11px] text-muted-foreground"
+          aria-live="polite">
+          {loading
+            ? 'Finish signing in in your browser, then come back here.'
+            : 'Opens projectdiablo2.com in your browser.'}
+        </p>
+
+        <Button
+          variant="ghost"
           size="sm"
           onClick={handleLater}
           disabled={loading}
-          className="text-muted-foreground">
+          className="text-muted-foreground hover:text-foreground"
+        >
           Later
         </Button>
       </motion.div>
