@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookmarkPlus, ChevronDown, Sigma, Sparkles, Trash2, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import { DUR, EASE_OUT } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,34 +25,26 @@ const MAX_SUGGESTIONS = 40;
 type StatChoice = StatOption | PseudoDef;
 const choiceKey = (choice: StatChoice) => (isPseudo(choice) ? choice.id : choice.key);
 
-/** "Min [  ]" — a stat bound/weight input with its caption inside the row's second line. */
+/** "Min [  ]" — a stat bound input with its caption inside the row's second line. */
 function StatNumber({
   label,
   name,
   value,
   onChange,
-  step,
-  muted,
-  title,
 }: {
-  label: string;
+  label: 'Min' | 'Max';
   name: string;
   value: number | undefined;
   onChange: (v: number | undefined) => void;
-  step?: number;
-  muted?: boolean;
-  title?: string;
 }) {
   return (
-    <label className="flex min-w-0 items-center gap-1"
-      title={title}>
+    <label className="flex min-w-0 items-center gap-1">
       <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <NumberInput
-        ariaLabel={`${name} ${label === 'Wt' ? 'weight' : label.toLowerCase()}`}
+        ariaLabel={`${name} ${label.toLowerCase()}`}
         value={value}
-        step={step}
         onChange={onChange}
-        className={cn('h-6 px-1 text-center', muted && 'text-muted-foreground')}
+        className="h-6 px-1 text-center"
       />
     </label>
   );
@@ -65,18 +58,12 @@ export interface StatFiltersProps {
   onApplyPreset: (preset: StatPreset) => void;
   onSavePreset: (name: string) => void;
   onRemovePreset: (preset: StatPreset) => void;
-  /** User's remembered weight per stat key, used for newly added rows. */
-  defaultWeight: (key: string) => number | undefined;
-  /** Weights only matter for score/value sorts; rows say so otherwise. */
-  weighted: boolean;
   searchRef?: React.Ref<HTMLInputElement>;
-  /** Remember a weight the user typed as the default for that stat. */
-  onWeightChange?: (key: string, weight: number | undefined) => void;
   /** A row just added/updated from a mod menu: scrolled into view and highlighted (`nonce`: each request). */
   highlight?: { id: string; nonce: number } | null;
 }
 
-/** Stats section: one search over mods + pseudo stats, rows with min/max/weight/enable, presets. */
+/** Stats section: one search over mods + pseudo stats, rows with min/max/enable, presets. */
 export function StatFilters({
   stats,
   onChange,
@@ -85,10 +72,7 @@ export function StatFilters({
   onApplyPreset,
   onSavePreset,
   onRemovePreset,
-  defaultWeight,
-  weighted,
   searchRef,
-  onWeightChange,
   highlight,
 }: StatFiltersProps) {
   const [query, setQuery] = useState('');
@@ -104,7 +88,7 @@ export function StatFilters({
   const add = (choice: StatChoice) => {
     const key = choiceKey(choice);
     setQuery('');
-    onChange([...stats, newStatFilter({ kind: isPseudo(choice) ? 'pseudo' : 'mod', key, weight: defaultWeight(key) })]);
+    onChange([...stats, newStatFilter({ kind: isPseudo(choice) ? 'pseudo' : 'mod', key })]);
   };
   const update = (id: string, changes: Partial<StatFilter>) =>
     onChange(stats.map((s) => (s.id === id ? { ...s, ...changes } : s)));
@@ -146,67 +130,68 @@ export function StatFilters({
       {stats.length > 0 && (
         <ul ref={listRef}
           className="divide-y divide-border/50 overflow-hidden rounded-md border border-border/60">
-          {stats.map((s) => {
-            const name = statName(s.key);
-            return (
-              <li
-                key={s.id}
-                data-stat-id={s.id}
-                className={cn(
-                  'space-y-1 px-1.5 py-1 transition-colors duration-(--dur-med)',
-                  !s.enabled && 'opacity-55',
-                  highlight?.id === s.id && 'bg-primary/10 ring-1 ring-inset ring-primary/40',
-                )}
-              >
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <Checkbox
-                    checked={s.enabled}
-                    aria-label={`${s.enabled ? 'Disable' : 'Enable'} ${name}`}
-                    onCheckedChange={(v) => update(s.id, { enabled: v === true })}
-                    className="size-3.5"
-                  />
-                  {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
-                    aria-label="Pseudo stat" />}
-                  <span className="min-w-0 flex-1 truncate text-xs"
-                    title={name}>
-                    {name}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${name}`}
-                    onClick={() => onChange(stats.filter((x) => x.id !== s.id))}
-                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-1 pl-5">
-                  <StatNumber label="Min"
-                    name={name}
-                    value={s.min}
-                    onChange={(min) => update(s.id, { min })} />
-                  <StatNumber label="Max"
-                    name={name}
-                    value={s.max}
-                    onChange={(max) => update(s.id, { max })} />
-                  <StatNumber
-                    label="Wt"
-                    title={
-                      weighted ? 'Weight: score = Σ weight × value' : 'Weight (used when sorting by Score or Value)'
-                    }
-                    name={name}
-                    value={s.weight}
-                    step={0.5}
-                    muted={!weighted}
-                    onChange={(weight) => {
-                      update(s.id, { weight });
-                      onWeightChange?.(s.key, weight);
-                    }}
-                  />
-                </div>
-              </li>
-            );
-          })}
+          <AnimatePresence initial={false}>
+            {stats.map((s) => {
+              const name = statName(s.key);
+              return (
+                <motion.li
+                  key={s.id}
+                  data-stat-id={s.id}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: s.enabled ? 1 : 0.55, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: DUR.med, ease: EASE_OUT }}
+                  className="relative overflow-hidden"
+                >
+                  {/* A row just added/updated from a mod menu pulses once */}
+                  {highlight?.id === s.id && (
+                    <motion.span
+                      key={highlight.nonce}
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 bg-primary/15 ring-1 ring-inset ring-primary/50"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 1, 0] }}
+                      transition={{ duration: 1.4, times: [0, 0.15, 0.6, 1], ease: 'easeOut' }}
+                    />
+                  )}
+                  <div className="relative space-y-1 px-1.5 py-1">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Checkbox
+                        checked={s.enabled}
+                        aria-label={`${s.enabled ? 'Disable' : 'Enable'} ${name}`}
+                        onCheckedChange={(v) => update(s.id, { enabled: v === true })}
+                        className="size-3.5"
+                      />
+                      {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
+                        aria-label="Pseudo stat" />}
+                      <span className="min-w-0 flex-1 truncate text-xs"
+                        title={name}>
+                        {name}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${name}`}
+                        onClick={() => onChange(stats.filter((x) => x.id !== s.id))}
+                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 pl-5">
+                      <StatNumber label="Min"
+                        name={name}
+                        value={s.min}
+                        onChange={(min) => update(s.id, { min })} />
+                      <StatNumber label="Max"
+                        name={name}
+                        value={s.max}
+                        onChange={(max) => update(s.id, { max })} />
+                    </div>
+                  </div>
+                </motion.li>
+              );
+            })}
+          </AnimatePresence>
         </ul>
       )}
       {stats.length === 0 && (

@@ -86,9 +86,11 @@ export function ModMenu({
           {children}
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start"
-        className="w-72 text-xs"
-        onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuContent
+        align="start"
+        className="w-72 origin-(--radix-dropdown-menu-content-transform-origin) text-xs"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DropdownMenuLabel className="truncate text-[11px] text-muted-foreground">{name}</DropdownMenuLabel>
         {key && value !== null && (
           <>

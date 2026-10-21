@@ -1,6 +1,8 @@
-import React from 'react';
-import { Eye, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, Eye, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EASE_OUT, springSnappy } from '@/lib/motion';
 import { showToast } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import { isPendingSearch, useMarketStore } from '@/pages/market/store/useMarketStore';
@@ -18,6 +20,13 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
   const archive = filters?.source === 'archive';
   const busy = (watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
   const disabled = !filters || signedOut || (archive && !watching) || !!busy;
+  // One soft pulse when watching starts (not when the panel opens on a watched search)
+  const [pulses, setPulses] = useState(0);
+  const [wasWatching, setWasWatching] = useState(!!watching);
+  if (!!watching !== wasWatching) {
+    setWasWatching(!!watching);
+    if (watching) setPulses((n) => n + 1);
+  }
 
   const toggle = () => {
     if (!filters) return;
@@ -63,14 +72,44 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
       disabled={disabled}
       onClick={toggle}
       className={cn(
-        'inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-[11px] font-medium text-muted-foreground outline-none',
+        'relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-[11px] font-medium text-muted-foreground outline-none',
         'transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
         'disabled:pointer-events-none disabled:opacity-50',
         watching && 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
         className,
       )}
     >
-      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
+      {pulses > 0 && (
+        <motion.span
+          key={pulses}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary/60"
+          initial={{ opacity: 0.9, scale: 1 }}
+          animate={{ opacity: 0, scale: 1.25 }}
+          transition={{ duration: 0.6, ease: EASE_OUT }}
+        />
+      )}
+      <span className="relative inline-flex size-3.5 items-center justify-center">
+        <AnimatePresence initial={false}
+          mode="popLayout">
+          <motion.span
+            key={busy ? 'busy' : watching ? 'bell' : 'eye'}
+            className="inline-flex"
+            initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
+            transition={springSnappy}
+          >
+            {busy ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : watching ? (
+              <Bell className="size-3.5" />
+            ) : (
+              <Eye className="size-3.5" />
+            )}
+          </motion.span>
+        </AnimatePresence>
+      </span>
       {watching ? 'Watching' : 'Watch'}
     </button>
   );

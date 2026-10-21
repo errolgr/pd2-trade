@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { motion } from 'framer-motion';
+import { DUR, EASE_OUT } from '@/lib/motion';
 import {
   Bell,
   Clock,
@@ -33,6 +35,8 @@ import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
 import { OnlineDots, formatHrPrice } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
+import { EnterOnce, type EnterTracker } from './EnterOnce';
+import type { AlertGlow } from '../hooks/useLiveAlertGlow';
 
 const ESTIMATED_CARD_HEIGHT = 340;
 const GAP = 8;
@@ -65,7 +69,6 @@ export interface ResultCardsProps {
   pseudoKeys: string[];
   /** Enabled mod filter keys: matching lines are marked. */
   statKeys: string[];
-  showScore: boolean;
   favoriteIds: Set<string>;
   onToggleFavorite: (listing: MarketListingEntry) => void;
   /** Sold archive: no offer/whisper. */
@@ -74,6 +77,10 @@ export interface ResultCardsProps {
   command: CardCommand | null;
   /** An alert's listing pinned above the results (not in them): labelled and dismissable. */
   pinned?: CardPin | null;
+  /** Listings that just matched a live alert of this (watched) search: a one-time soft glow. */
+  glowIds: AlertGlow;
+  /** Entrance animations of this result set (cards enter once; see EnterOnce). */
+  enter: EnterTracker;
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
@@ -88,18 +95,21 @@ export function ResultCards({
   deals,
   pseudoKeys,
   statKeys,
-  showScore,
   favoriteIds,
   onToggleFavorite,
   archived,
   api,
   command,
   pinned,
+  glowIds,
+  enter,
   hasMore,
   loadingMore,
   onLoadMore,
 }: ResultCardsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  /** Glows already played (`nonce:id`): a card scrolled back into view doesn't glow again. */
+  const playedGlows = useRef(new Set<string>());
   // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -141,29 +151,40 @@ export function ResultCards({
           const id = row.listing._id;
           return (
             <div
-              key={item.key}
+              key={`${enter.generation}:${item.key}`}
               ref={virtualizer.measureElement}
               data-index={item.index}
               className="absolute left-0 top-0 w-full"
               style={{ transform: `translateY(${item.start}px)`, paddingInline: PADDING }}
             >
-              <ResultCard
-                row={row}
-                selected={id === selectedId}
-                onSelect={onSelect}
-                onOpen={onOpen}
-                deal={deals.get(id)}
-                pseudoKeys={pseudoKeys}
-                statKeys={statKeys}
-                showScore={showScore}
-                favorite={favoriteIds.has(id)}
-                onToggleFavorite={onToggleFavorite}
-                archived={archived}
-                api={api}
-                // Only the selected card gets hotkeys (the others keep their memoized props)
-                command={command && command.id === id ? command : null}
-                pin={pinned && pinned.id === id ? pinned : null}
-              />
+              <EnterOnce tracker={enter}
+                id={id}
+                index={item.index}
+                className="relative">
+                <ResultCard
+                  row={row}
+                  selected={id === selectedId}
+                  onSelect={onSelect}
+                  onOpen={onOpen}
+                  deal={deals.get(id)}
+                  pseudoKeys={pseudoKeys}
+                  statKeys={statKeys}
+                  favorite={favoriteIds.has(id)}
+                  onToggleFavorite={onToggleFavorite}
+                  archived={archived}
+                  api={api}
+                  // Only the selected card gets hotkeys (the others keep their memoized props)
+                  command={command && command.id === id ? command : null}
+                  pin={pinned && pinned.id === id ? pinned : null}
+                />
+                {glowIds.ids.has(id) && (
+                  <GlowOnce
+                    key={`${glowIds.nonce}:${id}`}
+                    glowKey={`${glowIds.nonce}:${id}`}
+                    played={playedGlows.current}
+                  />
+                )}
+              </EnterOnce>
             </div>
           );
         })}
@@ -176,6 +197,24 @@ export function ResultCards({
         </div>
       )}
     </ScrollArea>
+  );
+}
+
+/** A soft accent glow over a card that just matched a live alert; plays once per alert (not on remount). */
+function GlowOnce({ glowKey, played }: { glowKey: string; played: Set<string> }) {
+  const [show] = useState(() => !played.has(glowKey));
+  useEffect(() => {
+    played.add(glowKey);
+  }, [played, glowKey]);
+  if (!show) return null;
+  return (
+    <motion.span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 rounded-lg bg-primary/5 ring-2 ring-primary/50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 1, 0] }}
+      transition={{ duration: 2.4, times: [0, 0.12, 0.55, 1], ease: 'easeOut' }}
+    />
   );
 }
 
@@ -215,7 +254,6 @@ const ResultCard = React.memo(function ResultCard({
   deal,
   pseudoKeys,
   statKeys,
-  showScore,
   favorite,
   onToggleFavorite,
   archived,
@@ -230,7 +268,6 @@ const ResultCard = React.memo(function ResultCard({
   deal: Deal | undefined;
   pseudoKeys: string[];
   statKeys: string[];
-  showScore: boolean;
   favorite: boolean;
   onToggleFavorite: (listing: MarketListingEntry) => void;
   archived: boolean;
@@ -291,8 +328,8 @@ const ResultCard = React.memo(function ResultCard({
       onClick={() => onSelect(listing._id)}
       onDoubleClick={() => onOpen(listing._id)}
       className={cn(
-        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
-        selected ? 'border-primary' : 'border-border/60 hover:border-border',
+        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-[border-color,transform,box-shadow] duration-(--dur-fast) ease-out motion-safe:hover:-translate-y-px',
+        selected ? 'border-primary' : 'border-border/60 hover:border-border hover:shadow-sm',
         pin && 'ring-2 ring-primary/30',
       )}
     >
@@ -401,16 +438,6 @@ const ResultCard = React.memo(function ResultCard({
           {req?.strength > 0 && <span className={cn(pill, 'border-border/70')}>{`Str ${req.strength}`}</span>}
           {req?.dexterity > 0 && <span className={cn(pill, 'border-border/70')}>{`Dex ${req.dexterity}`}</span>}
         </span>
-        <span className="ml-auto flex items-center gap-3">
-          {showScore && row.score !== null && (
-            <span
-              className="font-semibold tabular-nums text-primary"
-              title={row.value !== null ? `Value ${formatStat(row.value)} per HR` : undefined}
-            >
-              {`Score ${formatStat(row.score)}`}
-            </span>
-          )}
-        </span>
       </div>
 
       {/* 3. Mods, in game order (runes, keys etc. have none: no empty block) */}
@@ -505,7 +532,7 @@ const ResultCard = React.memo(function ResultCard({
             title={favorite ? 'Remove from favorites (F)' : 'Add to favorites (F)'}
             onClick={() => onToggleFavorite(listing)}
           >
-            <Heart className={cn('size-3.5', favorite && 'fill-current')} />
+            <HeartPop favorite={favorite} />
           </Button>
           <Button
             variant="ghost"
@@ -544,6 +571,27 @@ const ResultCard = React.memo(function ResultCard({
     </article>
   );
 });
+
+/** The favorite heart; it pops once (scale bounce) when turned on, not on mount. */
+function HeartPop({ favorite }: { favorite: boolean }) {
+  const [pops, setPops] = useState(0);
+  const [last, setLast] = useState(favorite);
+  if (favorite !== last) {
+    setLast(favorite);
+    if (favorite) setPops((n) => n + 1);
+  }
+  return (
+    <motion.span
+      key={pops}
+      className="inline-flex"
+      initial={false}
+      animate={pops ? { scale: [1, 1.35, 1] } : undefined}
+      transition={{ duration: DUR.slow, ease: EASE_OUT }}
+    >
+      <Heart className={cn('size-3.5', favorite && 'fill-current')} />
+    </motion.span>
+  );
+}
 
 /**
  * What sockets add to a line, compact: `413 + 235` (or `80 corr + 20`, or `from`) and an overlapping stack of the
@@ -708,7 +756,7 @@ function SocketSection({
               key={socket}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
+                'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-[border-color,transform] duration-(--dur-fast) ease-out motion-safe:hover:scale-110',
                 hovered === g ? 'border-foreground/50' : 'border-border',
               )}
               title={groups[g].name}

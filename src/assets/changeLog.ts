@@ -1,6 +1,6 @@
 export const changeLog = {
   '0.10.0': [
-    '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game — every site filter plus combined stats like total resists or total life, built-in and your own stat presets, and sorting by weighted stats or value per HR',
+    '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game — every site filter plus combined stats like total resists or total life, built-in and your own stat presets, and click any mod on a listing to filter or sort by it',
     '🆕 Market Watch: press Watch on any market search and get a popup with a sound (Settings → Chat → Sound) whenever a new listing matches it, even with the market closed; saved searches and watches now live with your account on pd2trader.com (your existing ones move over on sign-in). Browse sold listings and your site favorites too',
     '🆕 "Open in market" in price check carries the item and the stats you picked into the market browser; "Browse all listings" in the chat Trader panel shows everything that seller has listed',
     '🆕 Fresh new look for every window, plus 20 color themes (Settings → Interface)',

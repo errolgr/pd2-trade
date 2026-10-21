@@ -1,6 +1,8 @@
 import React, { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { DUR, EASE_OUT } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,12 +56,21 @@ export function Section({
         </button>
         {actions}
       </div>
-      {open && (
-        <div id={id}
-          className="space-y-1.5 px-2.5 pb-2.5">
-          {children}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="body"
+            id={id}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: DUR.med, ease: EASE_OUT }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-1.5 px-2.5 pb-2.5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -45,6 +45,21 @@ export function mergeFilters(base: MarketFilters, partial?: Partial<MarketFilter
   return merged;
 }
 
+/**
+ * Filters stored before stat weights were removed (saved searches, the last search, payloads): weights are
+ * dropped and the score/value sorts they fed fall back to the newest bumps.
+ */
+export function withoutWeights(f: MarketFilters): MarketFilters {
+  const weighted = f.stats.some((s) => s.weight !== undefined);
+  const scoreSort = f.sort.by === 'score' || f.sort.by === 'value';
+  if (!weighted && !scoreSort) return f;
+  return {
+    ...f,
+    stats: weighted ? f.stats.map(({ weight: _weight, ...row }) => row) : f.stats,
+    sort: scoreSort ? { by: 'bumped', dir: 'desc' } : f.sort,
+  };
+}
+
 /** Switch between live listings and the sold archive, moving the age window along when it is at its default. */
 export function withSource(f: MarketFilters, source: MarketFilters['source']): MarketFilters {
   if (f.source === source) return f;

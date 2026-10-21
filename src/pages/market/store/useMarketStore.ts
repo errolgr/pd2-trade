@@ -40,8 +40,6 @@ export type MarketViewMode = 'rows' | 'cards';
 export interface MarketLocalPrefs {
   userPresets: StatPreset[];
   lastFilters: MarketFilters | null;
-  /** Default weight per stat key for the stat-weighted sort. */
-  statWeights: Record<string, number>;
   /** Master switch for saved-search alerts (no stream, no popups when off). */
   alertsEnabled: boolean;
   /** Results layout: compact rows (+ detail pane) or self-contained cards. */
@@ -66,7 +64,6 @@ export type MarketPrefs = MarketLocalPrefs & SavedSearchState;
 export const EMPTY_LOCAL_PREFS: MarketLocalPrefs = {
   userPresets: [],
   lastFilters: null,
-  statWeights: {},
   alertsEnabled: true,
   viewMode: 'rows',
   legacySavedSearches: [],
@@ -111,13 +108,11 @@ export function parseMarketPrefs(text: string): MarketLocalPrefs {
   if (!raw || typeof raw !== 'object') return EMPTY_LOCAL_PREFS;
   const file = raw as Record<string, unknown>;
   const lastFilters = FiltersSchema.safeParse(file.lastFilters);
-  const weights = z.record(z.string(), z.number()).safeParse(file.statWeights);
   return {
     userPresets: entries(file.userPresets, PresetSchema).map(
       (p) => ({ ...p, builtIn: false }) as unknown as StatPreset,
     ),
     lastFilters: lastFilters.success ? (lastFilters.data as unknown as MarketFilters) : null,
-    statWeights: weights.success ? weights.data : {},
     alertsEnabled: file.alertsEnabled !== false,
     viewMode: file.viewMode === 'cards' ? 'cards' : 'rows',
     legacySavedSearches: entries(file.savedSearches, SavedSearchSchema).map((s) => ({
@@ -465,16 +460,6 @@ export const marketStoreActions = {
     changeMarketPrefs((prefs) =>
       JSON.stringify(prefs.lastFilters) === JSON.stringify(filters) ? prefs : { ...prefs, lastFilters: filters },
     );
-  },
-  /** undefined/0 removes the default weight. */
-  setStatWeight(key: string, weight: number | undefined): void {
-    changeMarketPrefs((prefs) => {
-      const statWeights = { ...prefs.statWeights };
-      if (weight) statWeights[key] = weight;
-      else if (key in statWeights) delete statWeights[key];
-      else return prefs;
-      return { ...prefs, statWeights };
-    });
   },
   setAlertsEnabled(on: boolean): void {
     changeMarketPrefs((prefs) => (prefs.alertsEnabled === on ? prefs : { ...prefs, alertsEnabled: on }));

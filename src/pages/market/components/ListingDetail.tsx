@@ -12,7 +12,7 @@ import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import { useListingActions } from '../hooks/useListingActions';
 import { listingAge } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
-import { formatStat, statWithValue } from './stat-text';
+import { statWithValue } from './stat-text';
 import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
@@ -111,17 +111,6 @@ export function ListingDetail({
             </div>
             {listing.price && (
               <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">{listing.price}</p>
-            )}
-            {row.score != null && (
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                Score <span className="font-semibold text-foreground tabular-nums">{formatStat(row.score)}</span>
-                {row.value != null && (
-                  <>
-                    {' · '}Value{' '}
-                    <span className="font-semibold text-foreground tabular-nums">{formatStat(row.value)}</span>/HR
-                  </>
-                )}
-              </div>
             )}
             <div className="mt-1 text-[11px] text-muted-foreground"
               title={moment(listing.bumped_at).format('LLL')}>

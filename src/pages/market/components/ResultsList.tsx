@@ -9,9 +9,10 @@ import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingAge } from '../lib/listing';
-import { formatStat, statWithValue } from './stat-text';
+import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
 import { displayMods, itemNameColor } from './ItemTooltip';
+import { EnterOnce, type EnterTracker } from './EnterOnce';
 
 const ROW_HEIGHT = 58;
 /** Rows from the end at which the next server page is requested. */
@@ -49,12 +50,12 @@ export interface ResultsListProps {
   deals: ReadonlyMap<string, Deal>;
   /** Enabled pseudo stat keys: their totals show on each row. */
   pseudoKeys: string[];
-  /** Weighted stats are active: show the score column. */
-  showScore: boolean;
   favoriteIds: Set<string>;
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** Entrance animations of this result set (rows enter once; see EnterOnce). */
+  enter: EnterTracker;
   footer?: React.ReactNode;
 }
 
@@ -65,11 +66,11 @@ export function ResultsList({
   onSelect,
   deals,
   pseudoKeys,
-  showScore,
   favoriteIds,
   hasMore,
   loadingMore,
   onLoadMore,
+  enter,
   footer,
 }: ResultsListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,17 +110,25 @@ export function ResultsList({
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index];
           return (
-            <ResultRow
-              key={item.key}
-              row={row}
+            <div
+              key={`${enter.generation}:${item.key}`}
+              className="absolute left-0 top-0 w-full"
               style={{ transform: `translateY(${item.start}px)`, height: ROW_HEIGHT }}
-              selected={row.listing._id === selectedId}
-              onSelect={onSelect}
-              deal={deals.get(row.listing._id)}
-              pseudoKeys={pseudoKeys}
-              showScore={showScore}
-              favorite={favoriteIds.has(row.listing._id)}
-            />
+            >
+              <EnterOnce tracker={enter}
+                id={row.listing._id}
+                index={item.index}
+                className="h-full">
+                <ResultRow
+                  row={row}
+                  selected={row.listing._id === selectedId}
+                  onSelect={onSelect}
+                  deal={deals.get(row.listing._id)}
+                  pseudoKeys={pseudoKeys}
+                  favorite={favoriteIds.has(row.listing._id)}
+                />
+              </EnterOnce>
+            </div>
           );
         })}
       </div>
@@ -137,21 +146,17 @@ export function ResultsList({
 
 const ResultRow = React.memo(function ResultRow({
   row,
-  style,
   selected,
   onSelect,
   deal,
   pseudoKeys,
-  showScore,
   favorite,
 }: {
   row: ScoredListing;
-  style: React.CSSProperties;
   selected: boolean;
   onSelect: (id: string) => void;
   deal: Deal | undefined;
   pseudoKeys: string[];
-  showScore: boolean;
   favorite: boolean;
 }) {
   const { listing } = row;
@@ -168,9 +173,8 @@ const ResultRow = React.memo(function ResultRow({
       aria-selected={selected}
       data-listing-id={listing._id}
       onClick={() => onSelect(listing._id)}
-      style={style}
       className={cn(
-        'absolute left-0 top-0 flex w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-fast)',
+        'flex h-full w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-med)',
         selected ? 'bg-accent/70 shadow-[inset_2px_0_0_var(--primary)]' : 'hover:bg-accent/30',
       )}
     >
@@ -209,16 +213,6 @@ const ResultRow = React.memo(function ResultRow({
           </div>
         )}
       </div>
-
-      {showScore && (
-        <div
-          className="w-12 shrink-0 text-right"
-          title={row.value != null ? `Value ${formatStat(row.value)} per HR` : undefined}
-        >
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
-          <div className="text-xs font-semibold tabular-nums">{row.score != null ? formatStat(row.score) : '—'}</div>
-        </div>
-      )}
 
       <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
         <div className="flex items-center gap-1.5">

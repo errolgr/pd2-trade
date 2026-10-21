@@ -11,6 +11,8 @@ import type * as SavedSearchApi from './saved-search-api';
 import { WatchButton } from './WatchButton';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+// happy-dom rejects cancelled WAAPI animations (the Watch icon swap): render motion.* as plain elements
+vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
   exists: vi.fn(async () => false),

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AlertTriangle, Heart, LayoutGrid, List, LogIn, RefreshCw, SearchX, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DUR, EASE_OUT, fadeIn, slideInRight, springSnappy } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +15,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMarketStore';
-import { defaultFilters, mergeFilters, withSource } from './lib/defaults';
+import { defaultFilters, mergeFilters, withSource, withoutWeights } from './lib/defaults';
 import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { scoreListings } from './lib/search';
@@ -29,6 +30,8 @@ import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
 import { mergeStatFilter } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
 import { fetchMarketListing } from './alerts/saved-search-api';
+import { useEnterTracker } from './components/EnterOnce';
+import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
 const CARD_HOTKEYS: Record<string, CardCommand['action']> = { o: 'offer', w: 'whisper', f: 'favorite' };
@@ -38,6 +41,7 @@ const isTextEntry = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 const SKELETON_ROWS = 8;
+const SKELETON_CARDS = 3;
 
 /** `market` panel: filters | results | detail, with Favorites and Saved searches tabs. */
 const MarketBrowserPage: React.FC = () => {
@@ -79,9 +83,9 @@ const MarketBrowserPage: React.FC = () => {
     setHandledVersion(payloadVersion);
     const saved = payload?.savedSearchId ? store.savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
     let next: MarketFilters | null = null;
-    if (saved) next = saved.filters;
-    else if (payload?.filters) next = mergeFilters(defaultFilters(mode), payload.filters);
-    else if (!filters) next = store.lastFilters ?? defaultFilters(mode);
+    if (saved) next = withoutWeights(saved.filters);
+    else if (payload?.filters) next = withoutWeights(mergeFilters(defaultFilters(mode), payload.filters));
+    else if (!filters) next = withoutWeights(store.lastFilters ?? defaultFilters(mode));
     if (next) {
       setFilters(next);
       setSelectedId(null);
@@ -182,11 +186,17 @@ const MarketBrowserPage: React.FC = () => {
   }, [pinned, rows, tab]);
   const dismissPinned = useCallback(() => setPinned(null), []);
 
+  // Entrance of a fresh result set (a search ran, the favorites loaded); appended pages don't change the key
+  const resultKey = tab === 'search' ? search.ranFilters : tab === 'favorites' ? favorites.favorites : null;
+  const shownIds = useMemo(() => (cards ? cardRows : rows).map((r) => r.listing._id), [cards, cardRows, rows]);
+  const enter = useEnterTracker(resultKey, shownIds);
+  /** Cards that just matched a live alert of the current (watched) search: a one-time soft glow. */
+  const glowIds = useLiveAlertGlow(filters, store.savedSearches);
+
   const pseudoKeys = useMemo(
     () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
     [filters?.stats],
   );
-  const showScore = (filters?.stats ?? []).some((s) => s.enabled && !!s.weight);
   const statKeys = useMemo(
     () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'mod').map((s) => s.key),
     [filters?.stats],
@@ -240,8 +250,6 @@ const MarketBrowserPage: React.FC = () => {
       showToast({ title: 'Preset saved', description: name, variant: 'success' });
     },
     onRemovePreset: (preset: StatPreset) => store.removePreset(preset.id),
-    defaultWeight: (key: string) => store.statWeights[key],
-    onWeightChange: (key: string, weight: number | undefined) => store.setStatWeight(key, weight),
     searchRef: statSearchRef,
     highlight: statHighlight,
   };
@@ -353,28 +361,36 @@ const MarketBrowserPage: React.FC = () => {
                   <Tabs value={tab}
                     onValueChange={(v) => setTab(v as MarketTab)}>
                     <TabsList className="h-7 p-0.5">
-                      <TabsTrigger value="search"
-                        className="h-6 px-2.5 text-xs">
-                        Search
-                      </TabsTrigger>
-                      <TabsTrigger value="favorites"
-                        className="h-6 px-2.5 text-xs">
-                        Favorites
-                        {favorites.favorites.length > 0 && (
-                          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
-                            {favorites.favorites.length}
-                          </span>
-                        )}
-                      </TabsTrigger>
-                      <TabsTrigger value="saved"
-                        className="h-6 px-2.5 text-xs">
-                        Saved
-                        {store.savedSearches.length > 0 && (
-                          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
-                            {store.savedSearches.length}
-                          </span>
-                        )}
-                      </TabsTrigger>
+                      {(['search', 'favorites', 'saved'] as const).map((value) => {
+                        const count =
+                          value === 'favorites'
+                            ? favorites.favorites.length
+                            : value === 'saved'
+                              ? store.savedSearches.length
+                              : 0;
+                        return (
+                          <TabsTrigger
+                            key={value}
+                            value={value}
+                            className="h-6 px-2.5 text-xs after:hidden data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                          >
+                            {tab === value && (
+                              <motion.span
+                                layoutId="market-tab-active"
+                                transition={springSnappy}
+                                aria-hidden
+                                className="absolute inset-0 rounded-md bg-background shadow-sm"
+                              />
+                            )}
+                            <span className="relative">
+                              {value === 'search' ? 'Search' : value === 'favorites' ? 'Favorites' : 'Saved'}
+                              {count > 0 && (
+                                <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">{count}</span>
+                              )}
+                            </span>
+                          </TabsTrigger>
+                        );
+                      })}
                     </TabsList>
                   </Tabs>
                   {tab !== 'saved' && (
@@ -419,94 +435,135 @@ const MarketBrowserPage: React.FC = () => {
                 )}
 
                 <main className="flex min-w-0 flex-1 flex-col">
-                  {tab === 'saved' ? (
-                    <SavedSearches
-                      store={store}
-                      current={filters}
-                      onRun={(s) => {
-                        setFilters(s.filters);
-                        setTab('search');
-                        setDetailOpen(false);
-                      }}
-                    />
-                  ) : (
-                    <ResultsPane
-                      tab={tab}
-                      signedIn={signedIn}
-                      search={search}
-                      favorites={favorites}
-                      rows={cards ? cardRows : rows}
-                      onSignIn={() => openPanel('signIn')}
-                      toolbar={
-                        <>
-                          {tab === 'search' && <WatchButton filters={filters} />}
-                          <ViewModeToggle value={viewMode}
-                            onChange={changeViewMode} />
-                        </>
-                      }
+                  <AnimatePresence mode="wait"
+                    initial={false}>
+                    <motion.div
+                      key={tab}
+                      variants={fadeIn}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="flex min-h-0 flex-1 flex-col"
                     >
-                      {cards ? (
-                        <ResultCards
-                          rows={cardRows}
-                          pinned={
-                            pinned && tab === 'search'
-                              ? { id: pinned.row.listing._id, searchName: pinned.searchName, onDismiss: dismissPinned }
-                              : null
-                          }
-                          selectedId={selectedId}
-                          onSelect={selectCard}
-                          onOpen={selectListing}
-                          statKeys={statKeys}
-                          command={cardCommand}
-                          deals={deals}
-                          pseudoKeys={pseudoKeys}
-                          showScore={showScore}
-                          favoriteIds={favoriteIds}
-                          onToggleFavorite={toggleFavorite}
-                          archived={archived}
-                          api={marketApi ?? null}
-                          hasMore={tab === 'search' && search.hasMore}
-                          loadingMore={tab === 'search' && search.loadingMore}
-                          onLoadMore={search.loadMore}
+                      {tab === 'saved' ? (
+                        <SavedSearches
+                          store={store}
+                          current={filters}
+                          onRun={(s) => {
+                            setFilters(withoutWeights(s.filters));
+                            setTab('search');
+                            setDetailOpen(false);
+                          }}
                         />
                       ) : (
-                        <ResultsList
-                          rows={rows}
-                          selectedId={selectedId}
-                          onSelect={selectListing}
-                          deals={deals}
-                          pseudoKeys={pseudoKeys}
-                          showScore={showScore}
-                          favoriteIds={favoriteIds}
-                          hasMore={tab === 'search' && search.hasMore}
-                          loadingMore={tab === 'search' && search.loadingMore}
-                          onLoadMore={search.loadMore}
-                        />
+                        <ResultsPane
+                          tab={tab}
+                          cards={cards}
+                          signedIn={signedIn}
+                          search={search}
+                          favorites={favorites}
+                          rows={cards ? cardRows : rows}
+                          onSignIn={() => openPanel('signIn')}
+                          toolbar={
+                            <>
+                              {tab === 'search' && <WatchButton filters={filters} />}
+                              <ViewModeToggle value={viewMode}
+                                onChange={changeViewMode} />
+                            </>
+                          }
+                        >
+                          <AnimatePresence mode="wait"
+                            initial={false}>
+                            <motion.div
+                              key={viewMode}
+                              variants={fadeIn}
+                              initial="hidden"
+                              animate="visible"
+                              exit="exit"
+                              className="flex min-h-0 flex-1 flex-col"
+                            >
+                              {cards ? (
+                                <ResultCards
+                                  rows={cardRows}
+                                  enter={enter}
+                                  pinned={
+                                    pinned && tab === 'search'
+                                      ? {
+                                          id: pinned.row.listing._id,
+                                          searchName: pinned.searchName,
+                                          onDismiss: dismissPinned,
+                                        }
+                                      : null
+                                  }
+                                  glowIds={glowIds}
+                                  selectedId={selectedId}
+                                  onSelect={selectCard}
+                                  onOpen={selectListing}
+                                  statKeys={statKeys}
+                                  command={cardCommand}
+                                  deals={deals}
+                                  pseudoKeys={pseudoKeys}
+                                  favoriteIds={favoriteIds}
+                                  onToggleFavorite={toggleFavorite}
+                                  archived={archived}
+                                  api={marketApi ?? null}
+                                  hasMore={tab === 'search' && search.hasMore}
+                                  loadingMore={tab === 'search' && search.loadingMore}
+                                  onLoadMore={search.loadMore}
+                                />
+                              ) : (
+                                <ResultsList
+                                  rows={rows}
+                                  enter={enter}
+                                  selectedId={selectedId}
+                                  onSelect={selectListing}
+                                  deals={deals}
+                                  pseudoKeys={pseudoKeys}
+                                  favoriteIds={favoriteIds}
+                                  hasMore={tab === 'search' && search.hasMore}
+                                  loadingMore={tab === 'search' && search.loadingMore}
+                                  onLoadMore={search.loadMore}
+                                />
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        </ResultsPane>
                       )}
-                    </ResultsPane>
-                  )}
+                    </motion.div>
+                  </AnimatePresence>
                 </main>
 
-                {detailRow && tab !== 'saved' && (
-                  <div className="w-[380px] shrink-0">
-                    <ListingDetail
-                      row={detailRow}
-                      deal={deals.get(detailRow.listing._id)}
-                      api={marketApi ?? null}
-                      archived={archived}
-                      favorite={favoriteIds.has(detailRow.listing._id)}
-                      onToggleFavorite={toggleFavorite}
-                      onClose={() => setDetailOpen(false)}
-                      onBrowseSeller={browseSeller}
-                      onSelectListing={(l) => {
-                        setSelectedId(l._id);
-                        setDetailOpen(true);
-                        setExtraRow(rows.some((r) => r.listing._id === l._id) ? null : scoreListings([l], filters)[0]);
-                      }}
-                      pseudoKeys={pseudoKeys}
-                    />
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {detailRow && tab !== 'saved' && (
+                    <motion.div
+                      key="detail"
+                      variants={slideInRight}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="w-[380px] shrink-0"
+                    >
+                      <ListingDetail
+                        row={detailRow}
+                        deal={deals.get(detailRow.listing._id)}
+                        api={marketApi ?? null}
+                        archived={archived}
+                        favorite={favoriteIds.has(detailRow.listing._id)}
+                        onToggleFavorite={toggleFavorite}
+                        onClose={() => setDetailOpen(false)}
+                        onBrowseSeller={browseSeller}
+                        onSelectListing={(l) => {
+                          setSelectedId(l._id);
+                          setDetailOpen(true);
+                          setExtraRow(
+                            rows.some((r) => r.listing._id === l._id) ? null : scoreListings([l], filters)[0],
+                          );
+                        }}
+                        pseudoKeys={pseudoKeys}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </WindowPanel>
@@ -538,11 +595,19 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
           title={o.label}
           onClick={() => onChange(o.mode)}
           className={cn(
-            'inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-            value === o.mode && 'bg-accent text-accent-foreground shadow-xs',
+            'relative inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+            value === o.mode && 'text-accent-foreground',
           )}
         >
-          {o.icon}
+          {value === o.mode && (
+            <motion.span
+              layoutId="market-view-active"
+              transition={springSnappy}
+              aria-hidden
+              className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
+            />
+          )}
+          <span className="relative">{o.icon}</span>
         </button>
       ))}
     </div>
@@ -552,6 +617,7 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
 /** Status strip + the results, or the empty / error / sign-in / loading state in their place. */
 function ResultsPane({
   tab,
+  cards,
   signedIn,
   search,
   favorites,
@@ -561,6 +627,8 @@ function ResultsPane({
   children,
 }: {
   tab: MarketTab;
+  /** Cards view: card-shaped loading skeletons. */
+  cards: boolean;
   signedIn: boolean;
   search: MarketSearch;
   favorites: MarketFavorites;
@@ -625,7 +693,28 @@ function ResultsPane({
       />
     );
   } else if (loading && rows.length === 0) {
-    body = (
+    body = cards ? (
+      <div aria-busy
+        className="space-y-2 p-2">
+        {Array.from({ length: SKELETON_CARDS }, (_, i) => (
+          <div key={i}
+            className="space-y-2 rounded-lg border border-border/50 p-3">
+            <div className="flex gap-3">
+              <Skeleton className="h-[76px] w-16 shrink-0" />
+              <div className="flex-1 space-y-2 pt-1">
+                <Skeleton className="h-3.5 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              <Skeleton className="h-6 w-16" />
+            </div>
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-3 w-3/5" />
+          </div>
+        ))}
+      </div>
+    ) : (
       <div aria-busy
         className="space-y-1 p-2">
         {Array.from({ length: SKELETON_ROWS }, (_, i) => (
@@ -653,16 +742,42 @@ function ResultsPane({
       );
   }
 
+  // A refetch with the previous rows still shown: thin indeterminate bar under the header, rows dimmed
+  const refetching = loading && rows.length > 0;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground">
+      <div className="relative flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground">
         {status}
         {error && rows.length > 0 && <span className="min-w-0 truncate text-destructive">{error}</span>}
         <span className="ml-auto" />
         {toolbar}
+        <AnimatePresence>
+          {refetching && (
+            <motion.div
+              key="refetch"
+              role="progressbar"
+              aria-label="Refreshing results"
+              className="absolute inset-x-0 -bottom-px h-0.5 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: DUR.fast }}
+            >
+              <motion.div
+                className="h-full w-1/3 rounded-full bg-primary/70"
+                initial={{ x: '-100%' }}
+                animate={{ x: '300%' }}
+                transition={{ duration: 1.1, ease: EASE_OUT, repeat: Infinity }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       <div
-        className={cn('flex min-h-0 flex-1 flex-col', loading && rows.length > 0 && 'opacity-70 transition-opacity')}
+        className={cn(
+          'flex min-h-0 flex-1 flex-col transition-opacity duration-(--dur-med)',
+          refetching && 'opacity-70',
+        )}
       >
         {body}
       </div>

@@ -12,6 +12,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { showToast } from '@/overlay';
 import { syncSavedSearches, useMarketStore } from '@/pages/market/store/useMarketStore';
+import { publishMarketAlerts } from './alert-events';
 import { alertToasts } from './alert-logic';
 import { runAlertStream } from './alert-stream';
 import { listMarketAlerts, type MarketAlert, openAlertStream } from './saved-search-api';
@@ -43,6 +44,8 @@ export function useMarketAlerts(): void {
     const onAlerts = (alerts: MarketAlert[]) => {
       alertToasts(alerts).forEach((toast) => showToast(toast));
       if (sound.current.enabled) playNotificationSound(sound.current.volume);
+      // The open market panel lights up matching cards of the watched search on screen
+      publishMarketAlerts(alerts);
     };
     void runAlertStream({
       token,

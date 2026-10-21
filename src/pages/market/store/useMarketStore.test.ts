@@ -96,7 +96,7 @@ describe('local preferences (market-prefs.json)', () => {
     expect(parseMarketPrefs('null')).toEqual(EMPTY_LOCAL_PREFS);
   });
 
-  it('reads presets, last search, weights, switches and the legacy saved searches', () => {
+  it('reads presets, last search, switches and the legacy saved searches (stat weights of old files are dropped)', () => {
     const prefs = parseMarketPrefs(
       JSON.stringify({
         savedSearches: [
@@ -112,12 +112,8 @@ describe('local preferences (market-prefs.json)', () => {
     );
     expect(prefs.legacySavedSearches.map((s) => s.id)).toEqual(['s1']);
     expect(prefs.userPresets).toMatchObject([{ id: 'p1', builtIn: false }]);
-    expect(prefs).toMatchObject({
-      lastFilters: { itemName: 'Spirit' },
-      statWeights: { item_fastercastrate: 2 },
-      alertsEnabled: false,
-      viewMode: 'cards',
-    });
+    expect(prefs).toMatchObject({ lastFilters: { itemName: 'Spirit' }, alertsEnabled: false, viewMode: 'cards' });
+    expect(prefs).not.toHaveProperty('statWeights');
   });
 
   it('replays changes made before the file was read over it', async () => {
@@ -130,18 +126,16 @@ describe('local preferences (market-prefs.json)', () => {
     expect(written().at(-1)).toMatchObject({ alertsEnabled: false, viewMode: 'cards' });
   });
 
-  it('keeps user presets, stat weights and the last search', async () => {
+  it('keeps user presets and the last search', async () => {
     await loadFrom({});
     const preset = actions.addPreset({
       name: 'Caster',
       stats: [{ kind: 'mod', key: 'item_fastercastrate', enabled: true }],
     });
-    actions.setStatWeight('item_fastercastrate', 2);
     actions.setLastFilters(filters('Spirit'));
     await flush();
     expect(written().at(-1)).toMatchObject({
       userPresets: [{ id: preset.id, name: 'Caster' }],
-      statWeights: { item_fastercastrate: 2 },
       lastFilters: { itemName: 'Spirit' },
       savedSearches: [],
     });

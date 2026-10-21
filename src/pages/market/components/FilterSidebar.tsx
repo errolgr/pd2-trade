@@ -23,10 +23,8 @@ import { statName } from './stat-text';
 
 const AGE_OPTIONS = [1, 3, 7, 14, 30, 90].map((d) => ({ value: String(d), label: d === 1 ? '1 day' : `${d} days` }));
 const SORT_OPTIONS: { value: SortBy; label: string; title: string }[] = [
-  { value: 'bumped', label: 'Bump', title: 'Last bumped' },
+  { value: 'bumped', label: 'Bumped', title: 'Last bumped' },
   { value: 'price', label: 'Price', title: 'Price in HR (listings with an HR price only)' },
-  { value: 'score', label: 'Score', title: 'Σ weight × stat value' },
-  { value: 'value', label: 'Value', title: 'Score per HR' },
 ];
 const ONLINE_OPTIONS: { value: OnlineFilter; label: string }[] = [
   { value: 'all', label: 'Any' },
@@ -44,7 +42,7 @@ export interface FilterSidebarProps {
   /** Back to the defaults (keeps mode/source). */
   onReset: () => void;
   api: MarketApi | null;
-  stats: Omit<StatFiltersProps, 'stats' | 'onChange' | 'weighted'>;
+  stats: Omit<StatFiltersProps, 'stats' | 'onChange'>;
 }
 
 /** Every site filter, dense and collapsible, plus the stats section. */
@@ -82,12 +80,94 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <Section title="Stats"
           active={f.stats.filter((s) => s.enabled).length}>
-          <StatFilters
-            {...stats}
+          <StatFilters {...stats}
             stats={f.stats}
-            onChange={(next) => set({ stats: next })}
-            weighted={f.sort.by === 'score' || f.sort.by === 'value'}
+            onChange={(next) => set({ stats: next })} />
+        </Section>
+
+        <Section
+          title="Item"
+          active={countDefined(f.itemName, f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
+        >
+          <Field label="Name">
+            <ItemNameInput value={f.itemName}
+              onChange={(itemName) => set({ itemName })} />
+          </Field>
+          <SelectField
+            label="Type"
+            value={f.typeCode}
+            options={ITEM_TYPES.map((t) => ({ value: t.code, label: t.label }))}
+            onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
           />
+          <SelectField
+            label="Base"
+            value={f.baseCode}
+            disabled={!f.typeCode}
+            anyLabel={f.typeCode ? 'Any' : 'Pick a type first'}
+            options={bases.map((b) => ({ value: b.code, label: b.label }))}
+            onChange={(baseCode) => set({ baseCode })}
+          />
+          <Field label="Rarity">
+            <div className="flex flex-wrap gap-1">
+              {RARITIES.map((r) => {
+                const on = f.rarity.includes(r);
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => set({ rarity: on ? f.rarity.filter((x) => x !== r) : [...f.rarity, r] })}
+                    className={cn(
+                      'h-6 rounded-md border px-1.5 text-[11px] font-medium outline-none transition-[background-color,border-color] duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+                      on
+                        ? 'border-ring/60 bg-accent'
+                        : 'border-border/60 bg-background/40 opacity-75 hover:opacity-100',
+                      r === 'Runeword' ? 'text-q-rune' : qualityColor(r),
+                    )}
+                  >
+                    {r}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          <SelectField
+            label="Class"
+            value={req.class}
+            options={CLASSES.map((c) => ({ value: c.value, label: c.label }))}
+            onChange={(v) => setReq({ class: CLASSES.find((c) => c.value === v)?.value })}
+          />
+        </Section>
+
+        <Section
+          title="Properties"
+          active={
+            countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax) +
+            f.corruptions.length
+          }
+        >
+          <TriField label="Ethereal"
+            value={f.ethereal}
+            onChange={(ethereal) => set({ ethereal })} />
+          <TriField label="Corrupted"
+            value={f.corrupted}
+            onChange={(corrupted) => set({ corrupted })} />
+          <TriField label="Desecrated"
+            value={f.desecrated}
+            onChange={(desecrated) => set({ desecrated })} />
+          <TriField label="Identified"
+            value={f.identified}
+            onChange={(identified) => set({ identified })} />
+          <RangeField
+            label="Sockets"
+            min={f.socketsMin}
+            max={f.socketsMax}
+            onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
+          />
+          <Field label="Corruptions">
+            <CorruptionsInput value={f.corruptions}
+              onChange={(corruptions) => set({ corruptions })} />
+          </Field>
         </Section>
 
         <Section title="Listing"
@@ -177,91 +257,6 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
                 },
               ]}
             />
-          </Field>
-        </Section>
-
-        <Section
-          title="Item"
-          active={countDefined(f.itemName, f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
-        >
-          <Field label="Name">
-            <ItemNameInput value={f.itemName}
-              onChange={(itemName) => set({ itemName })} />
-          </Field>
-          <SelectField
-            label="Type"
-            value={f.typeCode}
-            options={ITEM_TYPES.map((t) => ({ value: t.code, label: t.label }))}
-            onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
-          />
-          <SelectField
-            label="Base"
-            value={f.baseCode}
-            disabled={!f.typeCode}
-            anyLabel={f.typeCode ? 'Any' : 'Pick a type first'}
-            options={bases.map((b) => ({ value: b.code, label: b.label }))}
-            onChange={(baseCode) => set({ baseCode })}
-          />
-          <Field label="Rarity">
-            <div className="flex flex-wrap gap-1">
-              {RARITIES.map((r) => {
-                const on = f.rarity.includes(r);
-                return (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => set({ rarity: on ? f.rarity.filter((x) => x !== r) : [...f.rarity, r] })}
-                    className={cn(
-                      'h-6 rounded-md border px-1.5 text-[11px] font-medium outline-none transition-[background-color,border-color] duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-                      on
-                        ? 'border-ring/60 bg-accent'
-                        : 'border-border/60 bg-background/40 opacity-75 hover:opacity-100',
-                      r === 'Runeword' ? 'text-q-rune' : qualityColor(r),
-                    )}
-                  >
-                    {r}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-          <SelectField
-            label="Class"
-            value={req.class}
-            options={CLASSES.map((c) => ({ value: c.value, label: c.label }))}
-            onChange={(v) => setReq({ class: CLASSES.find((c) => c.value === v)?.value })}
-          />
-        </Section>
-
-        <Section
-          title="Properties"
-          active={
-            countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax) +
-            f.corruptions.length
-          }
-        >
-          <TriField label="Ethereal"
-            value={f.ethereal}
-            onChange={(ethereal) => set({ ethereal })} />
-          <TriField label="Corrupted"
-            value={f.corrupted}
-            onChange={(corrupted) => set({ corrupted })} />
-          <TriField label="Desecrated"
-            value={f.desecrated}
-            onChange={(desecrated) => set({ desecrated })} />
-          <TriField label="Identified"
-            value={f.identified}
-            onChange={(identified) => set({ identified })} />
-          <RangeField
-            label="Sockets"
-            min={f.socketsMin}
-            max={f.socketsMax}
-            onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
-          />
-          <Field label="Corruptions">
-            <CorruptionsInput value={f.corruptions}
-              onChange={(corruptions) => set({ corruptions })} />
           </Field>
         </Section>
 
