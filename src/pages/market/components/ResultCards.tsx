@@ -670,7 +670,7 @@ function SocketSection({
               key={socket}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'flex size-8 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
+                'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-colors duration-(--dur-fast)',
                 hovered === g ? 'border-foreground/50' : 'border-border',
               )}
               title={groups[g].name}
@@ -678,13 +678,13 @@ function SocketSection({
               <ListingThumb
                 listing={groupListings[g]}
                 className="size-full rounded-full border-0 bg-none shadow-none"
-                artClassName="max-h-6 max-w-6"
+                artClassName="max-h-[18px] max-w-[18px]"
               />
             </span>
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
             <span key={`empty-${i}`}
-              className="size-8 rounded-full border border-dashed border-border" />
+              className="size-6 rounded-full border border-dashed border-border" />
           ))}
         </span>
         {emptySockets > 0 && (
@@ -708,7 +708,7 @@ function SocketSection({
             >
               <div className="flex items-center gap-1.5">
                 <SocketIcon listing={groupListings[g]}
-                  className="size-5" />
+                  className="size-7" />
                 <span className={cn('truncate text-[12px] font-semibold', groupNameColor(group))}>
                   {group.items.length > 1 ? `${group.items.length} × ${group.name}` : group.name}
                 </span>
