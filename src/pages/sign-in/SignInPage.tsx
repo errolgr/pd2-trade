@@ -6,6 +6,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
+import appIcon from '@/assets/img.png';
 import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,8 @@ function Backdrop() {
   );
 }
 
-/** PD2 medallion + "PD2 Trader" wordmark with a one-line lead-in; shared by both views. */
+/** App rune icon + "PD2 Trader" wordmark with a one-line lead-in; shared by both views. (The PD2 logo itself only appears on
+ * the OAuth button: this is a third-party app, not an official PD2 one.) */
 function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead: string; compact?: boolean }) {
   return (
     <div className="relative flex shrink-0 flex-col items-center text-center">
@@ -40,15 +42,19 @@ function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead
         className="relative mb-4">
         <div aria-hidden
           className="absolute -inset-3 rounded-full bg-glow/25 blur-xl" />
-        <img
-          src={pd2Logo}
-          alt=""
-          draggable={false}
+        <div
           className={cn(
-            'relative rounded-full ring-2 ring-glow/60 ring-offset-2 ring-offset-surface shadow-glow',
+            'relative flex items-center justify-center rounded-2xl border border-glow/40 bg-surface-elevated shadow-glow',
             compact ? 'size-12' : 'size-16',
           )}
-        />
+        >
+          <img
+            src={appIcon}
+            alt=""
+            draggable={false}
+            className={cn('object-contain', compact ? 'size-8' : 'size-11')}
+          />
+        </div>
       </motion.div>
       <motion.div variants={fadeInUp}
         initial="hidden"
