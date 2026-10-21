@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, Bookmark, Check, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { showToast, undoToast } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import type { MarketStore } from '@/pages/market/store/useMarketStore';
+import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
 import { statName } from './stat-text';
 import type { MarketFilters, SavedSearch } from '../lib/types';
@@ -39,6 +39,11 @@ export interface SavedSearchesProps {
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const [name, setName] = useState('');
   const alerting = store.savedSearches.filter((s) => s.alert).length;
+  const synced = store.syncStatus === 'ready';
+  // Opening the tab retries a failed load right away
+  useEffect(() => {
+    retrySavedSearchSync();
+  }, []);
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,10 +87,13 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           onChange={(e) => setName(e.target.value)}
           className={cn(fieldInputClass, 'flex-1')}
         />
-        <Button type="submit"
+        <Button
+          type="submit"
           size="sm"
           className="h-7 px-2.5 text-xs"
-          disabled={!name.trim()}>
+          disabled={!name.trim() || !synced}
+          title={synced ? undefined : 'Saving needs your saved searches loaded from pd2trader.com first'}
+        >
           <Plus className="size-3.5" />
           Save
         </Button>
@@ -118,7 +126,16 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           className="m-4"
           icon={<Bookmark />}
           title="Couldn't load saved searches"
-          description="pd2trader.com did not answer. They load again when you sign in or reopen the overlay."
+          description="pd2trader.com did not answer. Retrying automatically; saving and Watch are paused until they load."
+          action={
+            <Button size="sm"
+              variant="outline"
+              className="h-7 px-2.5 text-xs"
+              onClick={retrySavedSearchSync}>
+              <RotateCw className="size-3.5" />
+              Retry now
+            </Button>
+          }
         />
       ) : store.savedSearches.length === 0 ? (
         <EmptyState

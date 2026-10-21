@@ -249,12 +249,17 @@ const statusOf = (error: unknown) =>
 
 export interface LegacyUploadApi {
   create: (search: { name: string; filters: MarketFilters; alert: boolean }) => Promise<unknown>;
+  /** A search is done with (uploaded, or dropped for good): forget it locally right away. */
+  settle: (search: SavedSearch) => void;
+  /** Checked before each upload: false stops (the rest stay for the next sign-in). */
+  shouldContinue?: () => boolean;
 }
 
 /**
- * Uploads saved searches from before the server kept them, oldest first. Returns the ones to keep locally for
- * the next sign-in (the server was unreachable) and how many were dropped (invalid, or over the caps). An alert
- * over the alert cap (409) or not allowed (400) is retried without it.
+ * Uploads saved searches from before the server kept them, oldest first, settling each one as soon as the server
+ * has it (or refused it for good) so an interrupted run never uploads it twice. Returns the ones to keep locally
+ * for the next sign-in (the server was unreachable) and how many were uploaded / dropped (invalid, or over the
+ * caps). An alert over the alert cap (409) or not allowed (400) is retried without it.
  */
 export async function uploadLegacySearches(
   legacy: readonly SavedSearch[],
@@ -264,6 +269,7 @@ export async function uploadLegacySearches(
   let uploaded = 0;
   let dropped = 0;
   for (let i = 0; i < queue.length; i++) {
+    if (api.shouldContinue && !api.shouldContinue()) return { remaining: queue.slice(i), uploaded, dropped };
     const search = queue[i];
     const body = { name: search.name.slice(0, 80), filters: search.filters, alert: search.alert };
     try {
@@ -275,14 +281,17 @@ export async function uploadLegacySearches(
         await api.create({ ...body, alert: false });
       }
       uploaded++;
+      api.settle(search);
     } catch (error) {
       const status = statusOf(error);
       if (status === 400) {
         dropped++;
+        api.settle(search);
         continue;
       }
       if (status === 409) {
         // Saved-search cap: none of the rest fit either
+        for (const rest of queue.slice(i)) api.settle(rest);
         dropped += queue.length - i;
         return { remaining: [], uploaded, dropped };
       }
@@ -293,52 +302,95 @@ export async function uploadLegacySearches(
   return { remaining: [], uploaded, dropped };
 }
 
+/** One legacy upload at a time: a new sign-in waits for a running one instead of uploading the same searches. */
+let migration: Promise<void> = Promise.resolve();
+
+async function migrateLegacySearches(owner: { token: string }): Promise<void> {
+  if (local.legacySavedSearches.length === 0) return;
+  const { uploaded, dropped } = await uploadLegacySearches(local.legacySavedSearches, {
+    create: (body) => createSavedSearch(owner.token, body),
+    // Persisted per search, whatever happens to the session afterwards
+    settle: (search) =>
+      changeMarketPrefs((prefs) => ({
+        ...prefs,
+        legacySavedSearches: prefs.legacySavedSearches.filter((s) => s.id !== search.id),
+      })),
+    shouldContinue: () => session === owner,
+  });
+  if (session === owner && (uploaded > 0 || dropped > 0)) {
+    showToast({
+      title: 'Saved searches moved to your account',
+      description:
+        dropped > 0
+          ? `${uploaded} moved; ${dropped} could not be (invalid or over the ${remote.limits.maxSearches} search limit).`
+          : `${uploaded} saved search${uploaded === 1 ? '' : 'es'} now follow you on every device.`,
+      variant: dropped > 0 ? 'warning' : 'success',
+    });
+  }
+}
+
+/** Retries of a failed list: 2 s, 4 s … 60 s (± jitter) while the same token is signed in. */
+export const SYNC_RETRY_BASE_MS = 2_000;
+export const SYNC_RETRY_MAX_MS = 60_000;
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let retryAttempt = 0;
+
+/** Lists the session's saved searches; on failure, `error` and a retry with backoff. */
+async function listForSession(owner: { token: string; generation: number }): Promise<void> {
+  clearTimeout(retryTimer);
+  try {
+    const { items, limits } = await listSavedSearches(owner.token);
+    if (session !== owner) return;
+    retryAttempt = 0;
+    // Keep searches created while the list was loading (still pending)
+    const pending = remote.savedSearches.filter(isPendingSearch);
+    publishRemote({ savedSearches: [...pending, ...items], syncStatus: 'ready', limits: limits ?? DEFAULT_LIMITS });
+  } catch (error) {
+    if (session !== owner) return;
+    console.warn('[market] listing saved searches failed:', error);
+    publishRemote({ ...remote, syncStatus: 'error' });
+    const delay = Math.min(SYNC_RETRY_MAX_MS, SYNC_RETRY_BASE_MS * 2 ** retryAttempt) * (0.5 + Math.random());
+    retryAttempt++;
+    retryTimer = setTimeout(() => {
+      if (session === owner) void listForSession(owner);
+    }, delay);
+  }
+}
+
 /**
  * Follows the sign-in: with a token, uploads legacy local saved searches once, then lists the user's saved
- * searches; without one, clears them. Calling again with the same token does nothing (unless the last list failed).
+ * searches (retrying with backoff while that fails); without one, clears them. Calling again with the same token
+ * does nothing.
  */
 export function syncSavedSearches(token: string | null): void {
   if (!token) {
     session = null;
+    clearTimeout(retryTimer);
     if (remote !== SIGNED_OUT) publishRemote(SIGNED_OUT);
     return;
   }
-  if (session?.token === token && remote.syncStatus !== 'error') return;
+  if (session?.token === token) return;
   const owner = { token, generation: ++generation };
   session = owner;
+  retryAttempt = 0;
   publishRemote({ savedSearches: [], syncStatus: 'loading', limits: remote.limits });
   void (async () => {
     await loadMarketPrefs();
+    migration = migration
+      .then(() => (session === owner ? migrateLegacySearches(owner) : undefined))
+      .catch((error) => console.warn('[market] moving saved searches failed:', error));
+    await migration;
     if (session !== owner) return;
-    if (local.legacySavedSearches.length > 0) {
-      const { remaining, uploaded, dropped } = await uploadLegacySearches(local.legacySavedSearches, {
-        create: (body) => createSavedSearch(token, body),
-      });
-      if (session !== owner) return;
-      changeMarketPrefs((prefs) => ({ ...prefs, legacySavedSearches: remaining }));
-      if (uploaded > 0 || dropped > 0) {
-        showToast({
-          title: 'Saved searches moved to your account',
-          description:
-            dropped > 0
-              ? `${uploaded} moved; ${dropped} could not be (invalid or over the ${remote.limits.maxSearches} search limit).`
-              : `${uploaded} saved search${uploaded === 1 ? '' : 'es'} now follow you on every device.`,
-          variant: dropped > 0 ? 'warning' : 'success',
-        });
-      }
-    }
-    try {
-      const { items, limits } = await listSavedSearches(token);
-      if (session !== owner) return;
-      // Keep searches created while the list was loading (still pending)
-      const pending = remote.savedSearches.filter(isPendingSearch);
-      publishRemote({ savedSearches: [...pending, ...items], syncStatus: 'ready', limits: limits ?? DEFAULT_LIMITS });
-    } catch (error) {
-      if (session !== owner) return;
-      console.warn('[market] listing saved searches failed:', error);
-      publishRemote({ ...remote, syncStatus: 'error' });
-    }
+    await listForSession(owner);
   })();
+}
+
+/** A failed list: try again now (the panel or Saved tab was shown, or Retry pressed). */
+export function retrySavedSearchSync(): void {
+  if (session && remote.syncStatus === 'error') {
+    publishRemote({ ...remote, syncStatus: 'loading' });
+    void listForSession(session);
+  }
 }
 
 const alertingCount = () => remote.savedSearches.filter((s) => s.alert).length;
@@ -352,10 +404,23 @@ const capMessage = (what: 'searches' | 'alerting', limits: SavedSearchLimits) =>
 export const marketStoreActions = {
   /**
    * Saves a search on the server (shown right away as pending). `name` omitted: the server derives one.
-   * Returns the pending entry, or null when refused (signed out, or over a cap: a toast says why).
+   * Returns the pending entry, or null when refused (signed out, saved searches not loaded yet, or over a cap: a
+   * toast says why).
    */
   saveSearch(name: string | undefined, filters: MarketFilters, alert = false): SavedSearch | null {
     const { limits } = remote;
+    // Until the list is in, a save could duplicate a search the user already has
+    if (session && remote.syncStatus !== 'ready') {
+      showToast({
+        title: 'Saved searches',
+        description:
+          remote.syncStatus === 'error'
+            ? "Your saved searches couldn't be loaded from pd2trader.com yet. Try again in a moment."
+            : 'Your saved searches are still loading.',
+        variant: 'warning',
+      });
+      return null;
+    }
     if (session && remote.savedSearches.length >= limits.maxSearches) {
       showToast({ title: 'Too many saved searches', description: capMessage('searches', limits), variant: 'warning' });
       return null;
@@ -498,6 +563,9 @@ export function resetMarketPrefs(): void {
   local = EMPTY_LOCAL_PREFS;
   remote = SIGNED_OUT;
   session = null;
+  clearTimeout(retryTimer);
+  retryAttempt = 0;
+  migration = Promise.resolve();
   loadState = 'idle';
   loadPromise = null;
   early = [];

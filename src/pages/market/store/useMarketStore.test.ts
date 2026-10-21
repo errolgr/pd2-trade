@@ -19,6 +19,9 @@ import {
   marketStoreActions as actions,
   parseMarketPrefs,
   resetMarketPrefs,
+  retrySavedSearchSync,
+  SYNC_RETRY_BASE_MS,
+  SYNC_RETRY_MAX_MS,
   syncSavedSearches,
   uploadLegacySearches,
 } from './useMarketStore';
@@ -154,14 +157,56 @@ describe('server saved searches', () => {
     expect(getMarketPrefs()).toMatchObject({ syncStatus: 'signedOut', savedSearches: [] });
   });
 
-  it('marks a failed list as error and retries it on the next sync', async () => {
+  it('retries a failed list with backoff while the same token is signed in', async () => {
     await loadFrom({});
-    vi.mocked(listSavedSearches).mockRejectedValueOnce(new Error('offline'));
+    vi.mocked(listSavedSearches)
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ items: [server('a')], limits: LIMITS });
     syncSavedSearches('tok');
     await flush();
     expect(getMarketPrefs().syncStatus).toBe('error');
-    await signIn([server('a')]);
+    // Same token again (any re-render) does not restart it; the backoff does
+    syncSavedSearches('tok');
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 1.5);
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    expect(getMarketPrefs().syncStatus).toBe('error');
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 2 * 1.5);
+    expect(listSavedSearches).toHaveBeenCalledTimes(3);
+    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'ready', savedSearches: [{ id: 'a' }] });
+  });
+
+  it('retries right away when asked (panel shown, Retry), and stops retrying when signed out', async () => {
+    await loadFrom({});
+    vi.mocked(listSavedSearches)
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ items: [], limits: LIMITS });
+    syncSavedSearches('tok');
+    await flush();
+    retrySavedSearchSync();
+    expect(getMarketPrefs().syncStatus).toBe('loading');
+    await flush();
     expect(getMarketPrefs().syncStatus).toBe('ready');
+
+    vi.mocked(listSavedSearches).mockReset().mockRejectedValue(new Error('offline'));
+    syncSavedSearches(null);
+    syncSavedSearches('tok2');
+    await flush();
+    syncSavedSearches(null);
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MAX_MS * 2);
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to save until the list is in (no duplicates of searches it has not seen)', async () => {
+    await loadFrom({});
+    vi.mocked(listSavedSearches).mockRejectedValue(new Error('offline'));
+    syncSavedSearches('tok');
+    await flush();
+    expect(actions.saveSearch('x', filters('x'), true)).toBeNull();
+    expect(createSavedSearch).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
   });
 
   it('shows a new search right away and swaps in the server copy', async () => {
@@ -290,6 +335,7 @@ describe('migration of local saved searches', () => {
   });
 
   it('keeps an alert over the cap as a plain search, drops invalid ones and the rest past the search cap', async () => {
+    const settle = vi.fn();
     const create = vi
       .fn()
       .mockRejectedValueOnce(api409()) // a: alert over the cap
@@ -303,16 +349,76 @@ describe('migration of local saved searches', () => {
         legacy('c', '2026-10-21T03:00:00Z'),
         legacy('d', '2026-10-21T04:00:00Z'),
       ],
-      { create },
+      { create, settle },
     );
     expect(create.mock.calls[1][0]).toMatchObject({ name: 'a', alert: false });
     expect(result).toEqual({ remaining: [], uploaded: 1, dropped: 3 });
+    expect(settle.mock.calls.map(([s]) => s.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('keeps the rest for next time when the server is unreachable', async () => {
     const create = vi.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('offline'));
     const b = legacy('b', '2026-10-21T02:00:00Z');
-    const result = await uploadLegacySearches([legacy('a', '2026-10-21T01:00:00Z'), b], { create });
+    const settle = vi.fn();
+    const result = await uploadLegacySearches([legacy('a', '2026-10-21T01:00:00Z'), b], { create, settle });
     expect(result).toEqual({ remaining: [b], uploaded: 1, dropped: 0 });
+    expect(settle.mock.calls.map(([s]) => s.id)).toEqual(['a']);
+  });
+
+  it('persists each upload at once, so a sign-out mid-way never uploads one twice', async () => {
+    await loadFrom({
+      savedSearches: [
+        legacy('a', '2026-10-21T01:00:00Z'),
+        legacy('b', '2026-10-21T02:00:00Z'),
+        legacy('c', '2026-10-21T03:00:00Z'),
+      ],
+    });
+    let finishB!: () => void;
+    vi.mocked(createSavedSearch).mockImplementation(async (_t, body) => {
+      if (body.name === 'b') await new Promise<void>((r) => (finishB = r));
+      return server(body.name!);
+    });
+    vi.mocked(listSavedSearches).mockResolvedValue({ items: [], limits: LIMITS });
+    syncSavedSearches('tok');
+    await flush();
+    // a is on the server and gone from the file; b is uploading when the user signs out
+    expect(
+      written()
+        .at(-1)
+        .savedSearches.map((s: SavedSearch) => s.id),
+    ).toEqual(['b', 'c']);
+    syncSavedSearches(null);
+    finishB();
+    await flush();
+    // b finished (persisted although the session ended); c was not started
+    expect(
+      written()
+        .at(-1)
+        .savedSearches.map((s: SavedSearch) => s.id),
+    ).toEqual(['c']);
+    expect(vi.mocked(createSavedSearch).mock.calls.map(([, body]) => body.name)).toEqual(['a', 'b']);
+
+    await signIn();
+    expect(vi.mocked(createSavedSearch).mock.calls.map(([, body]) => body.name)).toEqual(['a', 'b', 'c']);
+    expect(getMarketPrefs().legacySavedSearches).toEqual([]);
+  });
+
+  it('runs one upload at a time: a quick re-sign-in waits instead of uploading the same searches', async () => {
+    await loadFrom({ savedSearches: [legacy('a', '2026-10-21T01:00:00Z')] });
+    let finishA!: () => void;
+    vi.mocked(createSavedSearch).mockImplementation(async (_t, body) => {
+      await new Promise<void>((r) => (finishA = r));
+      return server(body.name!);
+    });
+    vi.mocked(listSavedSearches).mockResolvedValue({ items: [], limits: LIMITS });
+    syncSavedSearches('tok');
+    await flush();
+    syncSavedSearches('tok2');
+    await flush();
+    expect(createSavedSearch).toHaveBeenCalledTimes(1);
+    finishA();
+    await flush();
+    expect(createSavedSearch).toHaveBeenCalledTimes(1);
+    expect(getMarketPrefs()).toMatchObject({ legacySavedSearches: [], syncStatus: 'ready' });
   });
 });

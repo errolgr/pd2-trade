@@ -10,7 +10,8 @@ import { createSavedSearch, listSavedSearches, SavedSearchApiError, updateSavedS
 import type * as SavedSearchApi from './saved-search-api';
 import { WatchButton } from './WatchButton';
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+const panel = vi.hoisted(() => ({ visible: true }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => panel }));
 // happy-dom rejects cancelled WAAPI animations (the Watch icon swap): render motion.* as plain elements
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@/lib/browser-fs', () => ({
@@ -56,6 +57,8 @@ beforeEach(() => {
   vi.mocked(showToast).mockClear();
   vi.mocked(createSavedSearch).mockReset();
   vi.mocked(updateSavedSearch).mockReset();
+  vi.mocked(listSavedSearches).mockReset();
+  panel.visible = true;
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
@@ -129,5 +132,24 @@ describe('WatchButton', () => {
     rerender(<WatchButton filters={{ ...shako(), source: 'archive' }} />);
     expect((button() as HTMLButtonElement).disabled).toBe(true);
     expect(button().getAttribute('aria-label')).toBe('Sold listings cannot be watched');
+  });
+
+  it('is disabled (saying why) while the saved searches failed to load, and retries when the panel shows', async () => {
+    panel.visible = false;
+    vi.mocked(listSavedSearches).mockRejectedValueOnce(new Error('offline'));
+    const { rerender } = render(<WatchButton filters={shako()} />);
+    await act(async () => syncSavedSearches('tok'));
+    await settle();
+    expect((button() as HTMLButtonElement).disabled).toBe(true);
+    expect(button().getAttribute('title')).toMatch(/couldn't be loaded/);
+    fireEvent.click(button());
+    expect(createSavedSearch).not.toHaveBeenCalled();
+
+    vi.mocked(listSavedSearches).mockResolvedValue({ items: [serverCopy('w1', true)], limits: LIMITS });
+    panel.visible = true;
+    rerender(<WatchButton filters={shako()} />);
+    await settle();
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    expect(button().textContent).toContain('Watching');
   });
 });

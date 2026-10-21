@@ -24,6 +24,13 @@ export interface MarketSearchState {
   /** A next page is being fetched. */
   loadingMore: boolean;
   hasMore: boolean;
+  /**
+   * The last next-page fetch failed. Automatic loading (scrolling to the end) stops until `retryLoadMore`, a
+   * refresh or a filter change, so a failing service isn't hammered.
+   */
+  loadMoreError: string | null;
+  /** Rate limited: `retryLoadMore` does nothing before this time (epoch ms). */
+  loadMoreRetryAt: number | null;
 }
 
 const IDLE: MarketSearchState = {
@@ -33,6 +40,8 @@ const IDLE: MarketSearchState = {
   error: null,
   loadingMore: false,
   hasMore: false,
+  loadMoreError: null,
+  loadMoreRetryAt: null,
   filters: null,
   ranFilters: null,
 };
@@ -79,9 +88,14 @@ export function searchErrorMessage(e: unknown): string {
   return e instanceof Error ? e.message.split('\n')[0] : 'Search failed';
 }
 
+/** Wait before retrying a page when a 429 named no Retry-After. */
+const DEFAULT_RETRY_AFTER_MS = 5000;
+
 export interface MarketSearch extends MarketSearchState {
-  /** Append the next page. */
+  /** Append the next page; does nothing while `loadMoreError` is set. */
   loadMore: () => Promise<void>;
+  /** The footer's Retry: clears `loadMoreError` and fetches the next page (once `loadMoreRetryAt` passed). */
+  retryLoadMore: () => Promise<void>;
   /** Refetch now, bypassing the cache. */
   refresh: () => void;
 }
@@ -162,42 +176,57 @@ export function useMarketSearch(
     };
   }, [api, filters, signedIn, debounceMs, reloadToken]);
 
-  const loadMore = useCallback(async () => {
-    if (!api || !filters || !state.hasMore || state.loadingMore) return;
-    const page = pageRef.current + 1;
-    const controller = abortRef.current ?? new AbortController();
-    abortRef.current = controller;
-    setState((s) => ({ ...s, loadingMore: true }));
-    try {
-      const key = queryKey(filters, page);
-      const result =
-        cacheGet(key) ??
-        (await runSearch(api, filters, { page, pageSize: MARKET_PAGE_SIZE, signal: controller.signal }));
-      if (controller.signal.aborted) return;
-      cacheSet(key, result);
-      pageRef.current = page;
-      setState((s) => {
-        // A bump between pages can move a listing onto the next page too
-        const seen = new Set(s.items.map((row) => row.listing._id));
-        const items = [...s.items, ...result.items.filter((row) => !seen.has(row.listing._id))];
-        return {
+  const fetchMore = useCallback(
+    async (retry: boolean) => {
+      if (!api || !filters || !state.hasMore || state.loadingMore) return;
+      if (state.loadMoreError && (!retry || (state.loadMoreRetryAt ?? 0) > Date.now())) return;
+      const page = pageRef.current + 1;
+      const controller = abortRef.current ?? new AbortController();
+      abortRef.current = controller;
+      setState((s) => ({ ...s, loadingMore: true, loadMoreError: null, loadMoreRetryAt: null }));
+      try {
+        const key = queryKey(filters, page);
+        const result =
+          cacheGet(key) ??
+          (await runSearch(api, filters, { page, pageSize: MARKET_PAGE_SIZE, signal: controller.signal }));
+        if (controller.signal.aborted) return;
+        cacheSet(key, result);
+        pageRef.current = page;
+        setState((s) => {
+          // A bump between pages can move a listing onto the next page too
+          const seen = new Set(s.items.map((row) => row.listing._id));
+          const items = [...s.items, ...result.items.filter((row) => !seen.has(row.listing._id))];
+          return {
+            ...s,
+            items,
+            total: result.total,
+            loadingMore: false,
+            hasMore: result.items.length > 0 && items.length < result.total,
+          };
+        });
+      } catch (e) {
+        if (controller.signal.aborted || isAbort(e)) return;
+        const retryAfterMs =
+          e instanceof MarketBackendError && e.kind === 'rate-limited'
+            ? (e.retryAfterMs ?? DEFAULT_RETRY_AFTER_MS)
+            : null;
+        setState((s) => ({
           ...s,
-          items,
-          total: result.total,
           loadingMore: false,
-          hasMore: result.items.length > 0 && items.length < result.total,
-        };
-      });
-    } catch (e) {
-      if (controller.signal.aborted || isAbort(e)) return;
-      setState((s) => ({ ...s, loadingMore: false, error: searchErrorMessage(e) }));
-    }
-  }, [api, filters, state.hasMore, state.loadingMore]);
+          loadMoreError: searchErrorMessage(e),
+          loadMoreRetryAt: retryAfterMs === null ? null : Date.now() + retryAfterMs,
+        }));
+      }
+    },
+    [api, filters, state.hasMore, state.loadingMore, state.loadMoreError, state.loadMoreRetryAt],
+  );
+  const loadMore = useCallback(() => fetchMore(false), [fetchMore]);
+  const retryLoadMore = useCallback(() => fetchMore(true), [fetchMore]);
 
   const refresh = useCallback(() => {
     forceRef.current = true;
     setReloadToken((t) => t + 1);
   }, []);
 
-  return { ...state, loadMore, refresh };
+  return { ...state, loadMore, retryLoadMore, refresh };
 }

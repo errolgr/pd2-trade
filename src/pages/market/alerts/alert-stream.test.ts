@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  abortableSleep,
   createSseParser,
   MAX_RECONNECT_MS,
   reconnectDelay,
@@ -122,11 +123,18 @@ describe('takeUnseen / reconnectDelay', () => {
     expect(seen.size).toBe(SEEN_ALERTS_CAP);
   });
 
+  const mid = () => 0.5;
   it('backs off exponentially from the server retry, capped, and honours Retry-After', () => {
-    expect(reconnectDelay(0, 3000, null)).toBe(3000);
-    expect(reconnectDelay(2, 3000, null)).toBe(12_000);
-    expect(reconnectDelay(10, 3000, null)).toBe(MAX_RECONNECT_MS);
-    expect(reconnectDelay(0, 3000, 120_000)).toBe(120_000);
+    expect(reconnectDelay(0, 3000, null, mid)).toBe(3000);
+    expect(reconnectDelay(2, 3000, null, mid)).toBe(12_000);
+    expect(reconnectDelay(10, 3000, null, mid)).toBe(MAX_RECONNECT_MS);
+    expect(reconnectDelay(0, 3000, 120_000, mid)).toBe(120_000);
+  });
+
+  it('spreads reconnects by a random 0.5-1.5x so dropped clients do not return together', () => {
+    expect(reconnectDelay(1, 3000, null, () => 0)).toBe(3000);
+    expect(reconnectDelay(1, 3000, null, () => 0.999)).toBe(Math.round(6000 * 1.499));
+    expect(reconnectDelay(10, 3000, null, () => 0)).toBe(MAX_RECONNECT_MS / 2);
   });
 });
 
@@ -164,6 +172,7 @@ describe('runAlertStream', () => {
       sleep: async (ms) => {
         sleeps.push(ms);
       },
+      random: () => 0.5,
     });
     await flush();
     await flush();
@@ -245,5 +254,84 @@ describe('runAlertStream', () => {
     next.end();
     await vi.advanceTimersByTimeAsync(0);
     await done;
+  });
+});
+
+describe('runAlertStream backoff', () => {
+  /** Streams that accept, say hello, and drop. */
+  const dropping = () => streamResponse([hello('2026-10-21T08:00:00Z')], true).response;
+
+  it('keeps backing off when the server accepts and drops right away (no reset on hello)', async () => {
+    const sleeps: number[] = [];
+    const controller = new AbortController();
+    const open = vi.fn().mockImplementation(async () => {
+      if (open.mock.calls.length >= 4) controller.abort();
+      return dropping();
+    });
+    await runAlertStream({
+      token: 'tok',
+      open,
+      catchUp: vi.fn().mockResolvedValue([]),
+      onAlerts: vi.fn(),
+      onUnauthorized: vi.fn(),
+      signal: controller.signal,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+      },
+      random: () => 0.5,
+      now: () => 0,
+    });
+    expect(sleeps).toEqual([1000, 2000, 4000]);
+  });
+
+  it('starts the backoff over after a connection that stayed up 30 s', async () => {
+    const sleeps: number[] = [];
+    const controller = new AbortController();
+    const open = vi.fn().mockImplementation(async () => {
+      if (open.mock.calls.length >= 4) controller.abort();
+      return dropping();
+    });
+    // now(): at each connect, then when its drop is handled; the 3rd connection lived 30 s
+    const now = vi
+      .fn(() => 0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(30_000);
+    await runAlertStream({
+      token: 'tok',
+      open,
+      catchUp: vi.fn().mockResolvedValue([]),
+      onAlerts: vi.fn(),
+      onUnauthorized: vi.fn(),
+      signal: controller.signal,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+      },
+      random: () => 0.5,
+      now,
+    });
+    expect(sleeps).toEqual([1000, 2000, 1000]);
+  });
+});
+
+describe('abortableSleep', () => {
+  it('removes its abort listener when the timer fires, and resolves early on abort', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    const done = vi.fn();
+    void abortableSleep(1000, controller.signal).then(done);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(done).toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+
+    const early = vi.fn();
+    void abortableSleep(60_000, controller.signal).then(early);
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(early).toHaveBeenCalled();
   });
 });

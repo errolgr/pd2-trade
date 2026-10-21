@@ -63,11 +63,22 @@ export const MAX_RECONNECT_MS = 60_000;
 /** Server heartbeat is 25 s: no bytes for this long means a dead connection. */
 export const STREAM_IDLE_TIMEOUT_MS = 70_000;
 
-/** Wait before reconnect `attempt` (0-based): exponential from the server's `retry`, capped; a Retry-After wins. */
-export function reconnectDelay(attempt: number, serverRetryMs: number, retryAfterMs: number | null): number {
+/** A connection that stayed up this long was healthy: the next reconnect starts the backoff over. */
+export const STABLE_CONNECTION_MS = 30_000;
+
+/**
+ * Wait before reconnect `attempt` (0-based): exponential from the server's `retry`, capped, times a random
+ * 0.5-1.5 (so clients dropped together, e.g. by a deploy, don't come back together); a Retry-After is the floor.
+ */
+export function reconnectDelay(
+  attempt: number,
+  serverRetryMs: number,
+  retryAfterMs: number | null,
+  random: () => number = Math.random,
+): number {
   const base = Math.max(MIN_RECONNECT_MS, serverRetryMs);
-  const backoff = Math.min(MAX_RECONNECT_MS, base * 2 ** attempt);
-  return Math.max(backoff, retryAfterMs ?? 0);
+  const backoff = Math.min(MAX_RECONNECT_MS, base * 2 ** attempt) * (0.5 + random());
+  return Math.round(Math.max(backoff, retryAfterMs ?? 0));
 }
 
 /** Marks alerts seen; returns the unseen ones, oldest first. */
@@ -95,20 +106,25 @@ export interface AlertStreamOptions {
   seen?: Set<string>;
   sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
   idleTimeoutMs?: number;
+  /** Tests: jitter source and clock. */
+  random?: () => number;
+  now?: () => number;
 }
 
-const defaultSleep = (ms: number, signal: AbortSignal) =>
-  new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        resolve();
-      },
-      { once: true },
-    );
+/** Resolves after `ms`, or as soon as `signal` aborts; leaves no listener on `signal` behind either way. */
+export function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener('abort', onAbort, { once: true });
   });
+}
 
 const statusOf = (error: unknown) =>
   error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
@@ -123,7 +139,9 @@ const retryAfterOf = (error: unknown) =>
  */
 export async function runAlertStream(options: AlertStreamOptions): Promise<void> {
   const { token, open, catchUp, onAlerts, onUnauthorized, signal } = options;
-  const sleep = options.sleep ?? defaultSleep;
+  const sleep = options.sleep ?? abortableSleep;
+  const random = options.random ?? Math.random;
+  const now = options.now ?? Date.now;
   const idleTimeoutMs = options.idleTimeoutMs ?? STREAM_IDLE_TIMEOUT_MS;
   const seen = options.seen ?? new Set<string>();
   /** Newest matchedAt seen (or the first hello's serverTime): where a reconnect catches up from. */
@@ -146,7 +164,6 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
   };
 
   const onHello = async (data: string) => {
-    attempt = 0;
     if (since) {
       try {
         deliver(await catchUp(token, since), 'catch-up');
@@ -170,12 +187,15 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
     signal.addEventListener('abort', abortConnection);
     let retryAfterMs: number | null = null;
     let idle: ReturnType<typeof setTimeout> | undefined;
+    /** When the stream was accepted; null when it never was. */
+    let connectedAt: number | null = null;
     const resetIdle = () => {
       clearTimeout(idle);
       idle = setTimeout(() => connection.abort(), idleTimeoutMs);
     };
     try {
       const response = await open(token, connection.signal);
+      connectedAt = now();
       const reader = response.body?.getReader();
       if (!reader) throw new Error('Alert stream has no body');
       // Some fetch implementations don't fail a pending read on abort: cancel it so the loop wakes up
@@ -213,7 +233,9 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
       connection.abort();
     }
     if (signal.aborted || stopped) return;
-    await sleep(reconnectDelay(attempt, serverRetryMs, retryAfterMs), signal);
+    // Only a connection that stayed up resets the backoff (accept-then-drop keeps backing off)
+    if (connectedAt !== null && now() - connectedAt >= STABLE_CONNECTION_MS) attempt = 0;
+    await sleep(reconnectDelay(attempt, serverRetryMs, retryAfterMs, random), signal);
     attempt++;
   }
 }

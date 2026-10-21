@@ -142,6 +142,63 @@ describe('useMarketSearch', () => {
     await waitFor(() => expect(hook.current.status).toBe('error'));
     expect(hook.current.error).toBe('Market service unavailable. Retry in a moment.');
   });
+
+  it('a failed next page stops automatic loading until Retry, and Retry waits out a rate limit', async () => {
+    let failNext: Error | null = new MarketBackendError('slow down', 'rate-limited', 429, 3000);
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => {
+      if (opts!.page! > 0 && failNext) throw failNext;
+      return result([row(`p${opts!.page}`)], { total: 3 });
+    });
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+
+    await act(() => hook.current.loadMore());
+    expect(hook.current).toMatchObject({ loadingMore: false, hasMore: true, status: 'ready' });
+    expect(hook.current.loadMoreError).toMatch(/Too many market searches/);
+    expect(hook.current.loadMoreRetryAt).toBeGreaterThan(Date.now() + 2000);
+
+    // The list's end-of-scroll effect calls loadMore again after every loadingMore flip: no request now
+    await act(() => hook.current.loadMore());
+    await act(() => hook.current.loadMore());
+    expect(runSearch).toHaveBeenCalledTimes(2);
+    // Retry before Retry-After passed is ignored too
+    await act(() => hook.current.retryLoadMore());
+    expect(runSearch).toHaveBeenCalledTimes(2);
+
+    const now = Date.now();
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(now + 3001);
+    failNext = null;
+    await act(() => hook.current.retryLoadMore());
+    spy.mockRestore();
+    expect(runSearch).toHaveBeenCalledTimes(3);
+    expect(hook.current.loadMoreError).toBeNull();
+    expect(hook.current.items.map((r) => r.listing._id)).toEqual(['p0', 'p1']);
+  });
+
+  it('an unavailable next page can be retried at once, and a refresh clears the error', async () => {
+    let fail = true;
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => {
+      if (opts!.page! > 0 && fail) throw new MarketBackendError('down', 'unavailable', 503);
+      return result([row(`p${opts!.page}`)], { total: 3 });
+    });
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    await act(() => hook.current.loadMore());
+    expect(hook.current).toMatchObject({
+      loadMoreError: 'Market service unavailable. Retry in a moment.',
+      loadMoreRetryAt: null,
+    });
+
+    act(() => hook.current.refresh());
+    await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(hook.current.status).toBe('ready'));
+    expect(hook.current.loadMoreError).toBeNull();
+    fail = false;
+    await act(() => hook.current.loadMore());
+    expect(hook.current.items.map((r) => r.listing._id)).toEqual(['p0', 'p1']);
+  });
 });
 
 describe('searchErrorMessage', () => {

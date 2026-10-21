@@ -28,8 +28,11 @@ export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): Ma
   const [error, setError] = useState<string | null>(null);
   /** Listing ids with a toggle in flight (a second click waits). */
   const pending = useRef(new Set<string>());
+  /** Bumped per load (and on sign-out / account switch): an older load's results are dropped. */
+  const loadId = useRef(0);
 
   const load = useCallback(async () => {
+    const id = ++loadId.current;
     if (!api || !signedIn) {
       setFavorites([]);
       setStatus('idle');
@@ -41,6 +44,7 @@ export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): Ma
       const all: MarketFavorite[] = [];
       for (let skip = 0; skip < FAVORITES_MAX; skip += FAVORITES_PAGE) {
         const page = await api.getFavorites({ limit: FAVORITES_PAGE, skip });
+        if (id !== loadId.current) return;
         if (!page) break; // 401: the auth flow takes over
         all.push(...page.data);
         if (page.data.length < FAVORITES_PAGE || all.length >= page.total) break;
@@ -48,11 +52,13 @@ export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): Ma
       setFavorites(all);
       setStatus('ready');
     } catch (e) {
+      if (id !== loadId.current) return;
       setError(e instanceof Error ? e.message.split('\n')[0] : 'Could not load favorites');
       setStatus('error');
     }
   }, [api, signedIn]);
 
+  // A new api (account) or sign-in state re-runs load, which supersedes any load still in flight
   useEffect(() => {
     void load();
   }, [load]);
