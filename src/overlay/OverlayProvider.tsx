@@ -15,6 +15,7 @@ import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
 import { setToastBridge } from './toast';
 import { installDevHook } from './dev';
+import { browserLaunchFromUrl } from './browser-launch';
 import type { OpenOptions, OverlayRect, PanelDef, PanelDefs, PanelId, PanelPayloads, Placement } from './types';
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -415,6 +416,15 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     () => installDevHook({ openPanel, closePanel, togglePanel, isOpen, getState: () => stateRef.current }),
     [openPanel, closePanel, togglePanel, isOpen],
   );
+
+  // Browser mode has no hotkeys: `/market` or `?panel=<id>` (optionally `&item=<name>`) opens a panel on load.
+  const launchedRef = useRef(false);
+  useEffect(() => {
+    if (launchedRef.current || isTauri()) return;
+    launchedRef.current = true;
+    const launch = browserLaunchFromUrl(window.location, Object.keys(defs));
+    if (launch) openPanel(launch.id, launch.payload);
+  }, [defs, openPanel]);
 
   return (
     <OverlayContext.Provider value={api}>
