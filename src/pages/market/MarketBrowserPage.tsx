@@ -1,0 +1,595 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
+import { AlertTriangle, Heart, LayoutGrid, List, LogIn, RefreshCw, SearchX, Store } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { showToast, useOverlay, usePanel } from '@/overlay';
+import { useOptions } from '@/hooks/useOptions';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
+import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMarketStore';
+import { defaultFilters, mergeFilters, withSource } from './lib/defaults';
+import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
+import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
+import { DEFAULT_POOL_SIZE, scoreListings } from './lib/search';
+import { type MarketSearch, useMarketSearch } from './hooks/useMarketSearch';
+import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
+import { FilterSidebar } from './components/FilterSidebar';
+import { ResultsList } from './components/ResultsList';
+import { type CardCommand, ResultCards } from './components/ResultCards';
+import { ListingDetail } from './components/ListingDetail';
+import { SavedSearches } from './components/SavedSearches';
+
+/** Card hotkeys (lowercase key → action on the selected card). */
+const CARD_HOTKEYS: Record<string, CardCommand['action']> = { o: 'offer', w: 'whisper', f: 'favorite' };
+
+/** Typing into a field: the panel's shortcuts stand aside. */
+const isTextEntry = (target: EventTarget | null) =>
+  target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
+const SKELETON_ROWS = 8;
+
+/** `market` panel: filters | results | detail, with Favorites and Saved searches tabs. */
+const MarketBrowserPage: React.FC = () => {
+  const { payload, payloadVersion, close, visible } = usePanel<'market'>();
+  const { openPanel } = useOverlay();
+  const { settings } = useOptions();
+  const { marketApi } = usePd2Website();
+  const store = useMarketStore();
+  const { viewMode } = store;
+  const cards = viewMode === 'cards';
+  const signedIn = !!settings?.pd2Token;
+  const mode = useMemo(
+    () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
+    [settings?.mode, settings?.ladder],
+  );
+
+  const [tab, setTab] = useState<MarketTab>('search');
+  const [filters, setFilters] = useState<MarketFilters | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  /** A listing shown in the detail pane that is not in the list (picked from the seller card). */
+  const [extraRow, setExtraRow] = useState<ScoredListing | null>(null);
+  /** focusListingId of the last open, until the fresh search for it lands (`searched`: it has started). */
+  const [pendingFocus, setPendingFocus] = useState<{ id: string; searched: boolean } | null>(null);
+  const statSearchRef = useRef<HTMLInputElement>(null);
+
+  // keepMounted: nothing is fetched until the panel was first shown
+  const [activated, setActivated] = useState(false);
+  if (visible && !activated) setActivated(true);
+
+  // Apply openPanel('market', payload) once the saved state is loaded (saved searches, last filters).
+  // Adjusted during render, like the chat panel's payload handling.
+  const [handledVersion, setHandledVersion] = useState(-1);
+  if (store.loaded && handledVersion !== payloadVersion) {
+    setHandledVersion(payloadVersion);
+    const saved = payload?.savedSearchId ? store.savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
+    let next: MarketFilters | null = null;
+    if (saved) next = saved.filters;
+    else if (payload?.filters) next = mergeFilters(defaultFilters(mode), payload.filters);
+    else if (!filters) next = store.lastFilters ?? defaultFilters(mode);
+    if (next) {
+      setFilters(next);
+      setSelectedId(null);
+      setDetailOpen(false);
+      setExtraRow(null);
+    }
+    if (payload?.tab) setTab(payload.tab);
+    else if (saved || payload?.filters) setTab('search');
+    setPendingFocus(payload?.focusListingId ? { id: payload.focusListingId, searched: false } : null);
+  }
+
+  const search = useMarketSearch(marketApi ?? null, activated ? filters : null, { signedIn });
+  const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
+
+  // Remember the last search that actually ran (not per keystroke / re-rank: each call writes market-prefs.json)
+  const { setLastFilters } = store;
+  useEffect(() => {
+    if (search.ranFilters) setLastFilters(search.ranFilters);
+  }, [search.ranFilters, setLastFilters]);
+
+  const favoriteIds = useMemo(() => new Set(favorites.favorites.map((f) => f.listing_id)), [favorites.favorites]);
+  const { toggle: toggleFavoriteAsync } = favorites;
+  const toggleFavorite = useCallback((l: MarketListingEntry) => void toggleFavoriteAsync(l), [toggleFavoriteAsync]);
+  const favoriteRows = useMemo(
+    () =>
+      filters
+        ? scoreListings(
+            favorites.favorites.flatMap((f) => (f.listing ? [f.listing] : [])),
+            filters,
+          )
+        : [],
+    [favorites.favorites, filters],
+  );
+
+  const rows = useMemo(
+    () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? search.items : []),
+    [tab, favoriteRows, search.items],
+  );
+  const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
+  const deals = useDealIndicators(listings);
+
+  // focusListingId (alert toasts): refetch (the cache predates the new listing), then select it if present
+  const { refresh } = search;
+  const focusRequested = !!pendingFocus && !pendingFocus.searched;
+  useEffect(() => {
+    if (focusRequested) refresh();
+  }, [focusRequested, refresh]);
+  // Adjusted during render: mark the refetch as started, then select the listing once it landed
+  if (pendingFocus) {
+    if (search.status === 'loading') {
+      if (!pendingFocus.searched) setPendingFocus({ ...pendingFocus, searched: true });
+    } else if (search.status === 'error' || search.status === 'auth') {
+      setPendingFocus(null);
+    } else if (pendingFocus.searched && filters && search.filters === filters) {
+      setPendingFocus(null);
+      if (search.items.some((r) => r.listing._id === pendingFocus.id)) {
+        setSelectedId(pendingFocus.id);
+        // Cards are self-contained: just select (and scroll to) it
+        setDetailOpen(viewMode === 'rows');
+        setExtraRow(null);
+      }
+    }
+  }
+
+  const pseudoKeys = useMemo(
+    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
+    [filters?.stats],
+  );
+  const showScore = (filters?.stats ?? []).some((s) => s.enabled && !!s.weight);
+  const statKeys = useMemo(
+    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'mod').map((s) => s.key),
+    [filters?.stats],
+  );
+  /** Sold archive results: no offer/whisper (the item is gone). */
+  const archived = tab === 'search' && filters?.source === 'archive';
+
+  const detailRow =
+    (detailOpen &&
+      selectedId &&
+      (rows.find((r) => r.listing._id === selectedId) ?? (extraRow?.listing._id === selectedId ? extraRow : null))) ||
+    null;
+
+  const selectListing = useCallback((id: string) => {
+    setSelectedId(id);
+    setDetailOpen(true);
+    setExtraRow(null);
+  }, []);
+  /** Cards: a click only selects; the card itself has everything the detail pane would. */
+  const selectCard = useCallback((id: string) => {
+    setSelectedId(id);
+    setExtraRow(null);
+  }, []);
+  /** Hotkey for the selected card (O offer, W whisper, F favorite). */
+  const [cardCommand, setCardCommand] = useState<CardCommand | null>(null);
+  const changeViewMode = (mode: MarketViewMode) => {
+    store.setViewMode(mode);
+    setDetailOpen(mode === 'rows' && !!selectedId);
+  };
+
+  /** Defaults for the current realm and source (Clear, "browse seller"). */
+  const freshFilters = (f: MarketFilters) =>
+    withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }), f.source);
+  const resetFilters = () => filters && setFilters(freshFilters(filters));
+
+  const presets = {
+    builtInPresets: BUILT_IN_PRESETS,
+    userPresets: store.userPresets,
+    onApplyPreset: (preset: StatPreset) => filters && setFilters(applyPreset(filters, preset)),
+    onSavePreset: (name: string) => {
+      if (!filters) return;
+      store.addPreset({
+        name,
+        stats: filters.stats.map(({ id: _id, ...rest }) => rest),
+        typeCodes: filters.typeCode ? [filters.typeCode] : undefined,
+        itemName: filters.itemName,
+        rarity: filters.rarity.length ? filters.rarity : undefined,
+      });
+      showToast({ title: 'Preset saved', description: name, variant: 'success' });
+    },
+    onRemovePreset: (preset: StatPreset) => store.removePreset(preset.id),
+    defaultWeight: (key: string) => store.statWeights[key],
+    onWeightChange: (key: string, weight: number | undefined) => store.setStatWeight(key, weight),
+    searchRef: statSearchRef,
+  };
+
+  const browseSeller = (listing: MarketListingEntry) => {
+    if (!filters) return;
+    setFilters(
+      mergeFilters(freshFilters(filters), { sellerUserId: listing.user_id, sellerName: listing.user?.username }),
+    );
+    setTab('search');
+    setDetailOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || !(e.target instanceof HTMLElement)) return;
+    // Menus, selects and popovers handle their own keys (Escape closes just them)
+    if (e.target.closest('[data-radix-popper-content-wrapper]')) return;
+    const typing = isTextEntry(e.target);
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (typing) {
+        e.target.blur();
+        e.currentTarget.focus();
+      } else if (detailOpen) setDetailOpen(false);
+      else close();
+      return;
+    }
+    if (typing) return;
+    // Arrows/Enter drive the list unless a control (button, switch…) has focus
+    const onList = e.target === e.currentTarget || !!e.target.closest('[role=listbox]');
+    if (e.key === '/' && tab === 'search') {
+      e.preventDefault();
+      statSearchRef.current?.focus();
+    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && onList && rows.length > 0) {
+      e.preventDefault();
+      const index = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      const next = index < 0 ? (step > 0 ? 0 : rows.length - 1) : Math.min(Math.max(index + step, 0), rows.length - 1);
+      setSelectedId(rows[next].listing._id);
+      setExtraRow(null);
+    } else if (e.key === 'Enter' && onList && selectedId) {
+      e.preventDefault();
+      setDetailOpen(true);
+    } else if (cards && selectedId && CARD_HOTKEYS[e.key.toLowerCase()] && !e.shiftKey) {
+      e.preventDefault();
+      setCardCommand({
+        id: selectedId,
+        action: CARD_HOTKEYS[e.key.toLowerCase()],
+        nonce: (cardCommand?.nonce ?? 0) + 1,
+      });
+    }
+  };
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider delayDuration={300}>
+        <WindowPanel
+          animate
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          className="relative z-10 h-full w-full outline-none"
+        >
+          <WindowChrome
+            title="Market"
+            icon={<Store className="text-primary" />}
+            onClose={close}
+            closeLabel="Close market"
+            actions={
+              <>
+                <Tabs value={tab}
+                  onValueChange={(v) => setTab(v as MarketTab)}>
+                  <TabsList className="h-7 p-0.5">
+                    <TabsTrigger value="search"
+                      className="h-6 px-2.5 text-xs">
+                      Search
+                    </TabsTrigger>
+                    <TabsTrigger value="favorites"
+                      className="h-6 px-2.5 text-xs">
+                      Favorites
+                      {favorites.favorites.length > 0 && (
+                        <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+                          {favorites.favorites.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="saved"
+                      className="h-6 px-2.5 text-xs">
+                      Saved
+                      {store.savedSearches.length > 0 && (
+                        <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+                          {store.savedSearches.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                {tab !== 'saved' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="size-7 p-0"
+                    aria-label="Refresh"
+                    title="Refresh"
+                    onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
+                  >
+                    <RefreshCw
+                      className={cn(
+                        'size-3.5',
+                        (tab === 'favorites' ? favorites.status === 'loading' : search.status === 'loading') &&
+                          'animate-spin',
+                      )}
+                    />
+                  </Button>
+                )}
+              </>
+            }
+          />
+
+          {!filters ? (
+            <div className="flex-1 space-y-2 p-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-2/3" />
+            </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              {tab === 'search' && (
+                <div className="w-[300px] shrink-0">
+                  <FilterSidebar
+                    filters={filters}
+                    onChange={setFilters}
+                    onReset={resetFilters}
+                    api={marketApi ?? null}
+                    stats={presets}
+                  />
+                </div>
+              )}
+
+              <main className="flex min-w-0 flex-1 flex-col">
+                {tab === 'saved' ? (
+                  <SavedSearches
+                    store={store}
+                    current={filters}
+                    onRun={(s) => {
+                      setFilters(s.filters);
+                      setTab('search');
+                      setDetailOpen(false);
+                    }}
+                  />
+                ) : (
+                  <ResultsPane
+                    tab={tab}
+                    signedIn={signedIn}
+                    search={search}
+                    favorites={favorites}
+                    rows={rows}
+                    onSignIn={() => openPanel('signIn')}
+                    toolbar={<ViewModeToggle value={viewMode}
+                      onChange={changeViewMode} />}
+                  >
+                    {cards ? (
+                      <ResultCards
+                        rows={rows}
+                        selectedId={selectedId}
+                        onSelect={selectCard}
+                        onOpen={selectListing}
+                        statKeys={statKeys}
+                        command={cardCommand}
+                        deals={deals}
+                        pseudoKeys={pseudoKeys}
+                        showScore={showScore}
+                        favoriteIds={favoriteIds}
+                        onToggleFavorite={toggleFavorite}
+                        archived={archived}
+                        api={marketApi ?? null}
+                        hasMore={tab === 'search' && search.hasMore}
+                        loadingMore={tab === 'search' && search.loadingMore}
+                        onLoadMore={search.loadMore}
+                      />
+                    ) : (
+                      <ResultsList
+                        rows={rows}
+                        selectedId={selectedId}
+                        onSelect={selectListing}
+                        deals={deals}
+                        pseudoKeys={pseudoKeys}
+                        showScore={showScore}
+                        favoriteIds={favoriteIds}
+                        hasMore={tab === 'search' && search.hasMore}
+                        loadingMore={tab === 'search' && search.loadingMore}
+                        onLoadMore={search.loadMore}
+                      />
+                    )}
+                  </ResultsPane>
+                )}
+              </main>
+
+              {detailRow && tab !== 'saved' && (
+                <div className="w-[380px] shrink-0">
+                  <ListingDetail
+                    row={detailRow}
+                    deal={deals.get(detailRow.listing._id)}
+                    api={marketApi ?? null}
+                    archived={archived}
+                    favorite={favoriteIds.has(detailRow.listing._id)}
+                    onToggleFavorite={toggleFavorite}
+                    onClose={() => setDetailOpen(false)}
+                    onBrowseSeller={browseSeller}
+                    onSelectListing={(l) => {
+                      setSelectedId(l._id);
+                      setDetailOpen(true);
+                      setExtraRow(rows.some((r) => r.listing._id === l._id) ? null : scoreListings([l], filters)[0]);
+                    }}
+                    pseudoKeys={pseudoKeys}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </WindowPanel>
+      </TooltipProvider>
+    </MotionConfig>
+  );
+};
+
+/** Rows | Cards switch of the results header (icon segmented control). */
+function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: (mode: MarketViewMode) => void }) {
+  const options: { mode: MarketViewMode; label: string; icon: React.ReactNode }[] = [
+    { mode: 'rows', label: 'Rows (with detail pane)', icon: <List className="size-3.5" /> },
+    { mode: 'cards', label: 'Cards (everything on the card)', icon: <LayoutGrid className="size-3.5" /> },
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Results view"
+      className="flex h-6 shrink-0 rounded-md border border-input bg-background/40 p-0.5"
+    >
+      {options.map((o) => (
+        <button
+          key={o.mode}
+          type="button"
+          role="radio"
+          aria-checked={value === o.mode}
+          aria-label={o.label}
+          title={o.label}
+          onClick={() => onChange(o.mode)}
+          className={cn(
+            'inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+            value === o.mode && 'bg-accent text-accent-foreground shadow-xs',
+          )}
+        >
+          {o.icon}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Status strip + the results, or the empty / error / sign-in / loading state in their place. */
+function ResultsPane({
+  tab,
+  signedIn,
+  search,
+  favorites,
+  rows,
+  onSignIn,
+  toolbar,
+  children,
+}: {
+  tab: MarketTab;
+  signedIn: boolean;
+  search: MarketSearch;
+  favorites: MarketFavorites;
+  rows: ScoredListing[];
+  onSignIn: () => void;
+  /** Right end of the status strip (view toggle). */
+  toolbar: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  if (!signedIn || (tab === 'search' && search.status === 'auth')) {
+    return (
+      <EmptyState
+        className="m-6"
+        icon={<LogIn />}
+        title="Sign in to browse the market"
+        description="Listings come straight from projectdiablo2.com with your account."
+        action={
+          <Button size="sm"
+            onClick={onSignIn}>
+            Sign in
+          </Button>
+        }
+      />
+    );
+  }
+
+  const loading = tab === 'search' ? search.status === 'loading' : favorites.status === 'loading';
+  const error =
+    tab === 'search'
+      ? search.status === 'error'
+        ? search.error
+        : null
+      : favorites.status === 'error'
+        ? favorites.error
+        : null;
+  const retry = tab === 'search' ? search.refresh : () => void favorites.reload();
+
+  let status: React.ReactNode;
+  if (tab === 'favorites') {
+    status = `${rows.length} favorite${rows.length === 1 ? '' : 's'}`;
+  } else if (search.mode === 'pool' && search.status === 'loading' && search.progress) {
+    const { fetched, total } = search.progress;
+    const target = Math.min(total, DEFAULT_POOL_SIZE) || 1;
+    status = (
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="shrink-0 tabular-nums">{`Scanning ${fetched}/${target}`}</span>
+        <Progress value={(fetched / target) * 100}
+          className="h-1 max-w-48 flex-1" />
+      </span>
+    );
+  } else if (search.status === 'ready') {
+    status =
+      search.mode === 'pool'
+        ? `${rows.length} match${rows.length === 1 ? '' : 'es'} · ranked from ${Math.min(search.total, DEFAULT_POOL_SIZE)} of ${search.total} listings`
+        : `${search.total.toLocaleString()} listing${search.total === 1 ? '' : 's'}`;
+  } else if (loading) {
+    status = 'Searching…';
+  }
+
+  let body: React.ReactNode = children;
+  if (error && rows.length === 0) {
+    body = (
+      <EmptyState
+        className="m-6 border-destructive/30 bg-destructive/5"
+        icon={<AlertTriangle />}
+        title="Search failed"
+        description={error}
+        action={
+          <Button size="sm"
+            variant="outline"
+            onClick={retry}>
+            Try again
+          </Button>
+        }
+      />
+    );
+  } else if (loading && rows.length === 0) {
+    body = (
+      <div aria-busy
+        className="space-y-1 p-2">
+        {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+          <Skeleton key={i}
+            className="h-[52px] w-full" />
+        ))}
+      </div>
+    );
+  } else if (!loading && rows.length === 0) {
+    body =
+      tab === 'favorites' ? (
+        <EmptyState
+          className="m-6"
+          icon={<Heart />}
+          title="No favorites yet"
+          description="Heart a listing to keep it here; favorites sync with projectdiablo2.com."
+        />
+      ) : (
+        <EmptyState
+          className="m-6"
+          icon={<SearchX />}
+          title="No listings match"
+          description="Loosen a filter, widen the age window or switch the mode."
+        />
+      );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground">
+        {status}
+        {error && rows.length > 0 && <span className="min-w-0 truncate text-destructive">{error}</span>}
+        <span className="ml-auto" />
+        {toolbar}
+      </div>
+      {tab === 'search' && search.truncated && search.status === 'ready' && (
+        <div className="shrink-0 border-b border-warning/30 bg-warning/10 px-2.5 py-1 text-[11px] text-warning">
+          {`Only the newest ${DEFAULT_POOL_SIZE} of ${search.total} listings were scanned for stat filters and ranking — narrow the type, rarity or name for complete results.`}
+        </div>
+      )}
+      <div
+        className={cn('flex min-h-0 flex-1 flex-col', loading && rows.length > 0 && 'opacity-70 transition-opacity')}
+      >
+        {body}
+      </div>
+    </div>
+  );
+}
+
+export default MarketBrowserPage;

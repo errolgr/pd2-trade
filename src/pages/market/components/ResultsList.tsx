@@ -1,0 +1,242 @@
+import React, { useEffect, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Heart, Loader2, Sigma } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { isUserOnlineIngame } from '@/lib/user-online-status';
+import { ListingThumb } from '@/pages/chat/components/ListingCard';
+import { DealBadge } from '@/pages/market/enrich/DealBadge';
+import type { Deal } from '@/pages/market/enrich/useDealIndicators';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { listingAge } from '../lib/listing';
+import { formatStat, statWithValue } from './stat-text';
+import type { ScoredListing } from '../lib/types';
+import { displayMods, itemNameColor } from './ItemTooltip';
+
+const ROW_HEIGHT = 58;
+/** Rows from the end at which the next server page is requested. */
+const LOAD_MORE_AHEAD = 6;
+const SUMMARY_MODS = 4;
+
+/** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
+export function formatHrPrice(hr: number): string | null {
+  if (!(hr > 0)) return null;
+  return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
+}
+
+/** Site and in-game presence dots of a listing's seller. */
+export function OnlineDots({ listing, className }: { listing: MarketListingEntry; className?: string }) {
+  const site = isUserOnlineIngame(listing.user_last_online);
+  const game = isUserOnlineIngame(listing.user_last_ingame);
+  return (
+    <span
+      className={cn('inline-flex items-center gap-0.5', className)}
+      title={`${site ? 'Online' : 'Offline'} on the site · ${game ? 'in game' : 'not in game'}`}
+    >
+      <span className={cn('size-1.5 rounded-full', site ? 'bg-info' : 'bg-muted-foreground/35')} />
+      <span
+        className={cn('size-1.5 rounded-full', game ? 'bg-success ring-2 ring-success/25' : 'bg-muted-foreground/35')}
+      />
+    </span>
+  );
+}
+
+export interface ResultsListProps {
+  rows: ScoredListing[];
+  selectedId: string | null;
+  /** Click: select the row and show it in the detail pane. */
+  onSelect: (listingId: string) => void;
+  deals: ReadonlyMap<string, Deal>;
+  /** Enabled pseudo stat keys: their totals show on each row. */
+  pseudoKeys: string[];
+  /** Weighted stats are active: show the score column. */
+  showScore: boolean;
+  favoriteIds: Set<string>;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+  footer?: React.ReactNode;
+}
+
+/** Virtualized compact listing rows. */
+export function ResultsList({
+  rows,
+  selectedId,
+  onSelect,
+  deals,
+  pseudoKeys,
+  showScore,
+  favoriteIds,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+  footer,
+}: ResultsListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () =>
+      containerRef.current?.querySelector<HTMLDivElement>('[data-slot="scroll-area-viewport"]') ?? null,
+    estimateSize: () => ROW_HEIGHT,
+    getItemKey: (index) => rows[index].listing._id,
+    overscan: 10,
+  });
+
+  // Keep the keyboard selection in view
+  const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
+  useEffect(() => {
+    if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
+  }, [selectedIndex, virtualizer]);
+
+  // Infinite load: the last rendered row is near the end
+  const lastVisible = virtualizer.getVirtualItems().at(-1)?.index ?? -1;
+  useEffect(() => {
+    if (hasMore && !loadingMore && rows.length > 0 && lastVisible >= rows.length - LOAD_MORE_AHEAD) onLoadMore();
+  }, [hasMore, loadingMore, lastVisible, rows.length, onLoadMore]);
+
+  return (
+    <ScrollArea
+      ref={containerRef}
+      className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
+    >
+      <div
+        role="listbox"
+        aria-label="Listings"
+        className="relative w-full"
+        style={{ height: virtualizer.getTotalSize() }}
+      >
+        {virtualizer.getVirtualItems().map((item) => {
+          const row = rows[item.index];
+          return (
+            <ResultRow
+              key={item.key}
+              row={row}
+              style={{ transform: `translateY(${item.start}px)`, height: ROW_HEIGHT }}
+              selected={row.listing._id === selectedId}
+              onSelect={onSelect}
+              deal={deals.get(row.listing._id)}
+              pseudoKeys={pseudoKeys}
+              showScore={showScore}
+              favorite={favoriteIds.has(row.listing._id)}
+            />
+          );
+        })}
+      </div>
+      {loadingMore && (
+        <div aria-busy
+          className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" />
+          Loading more…
+        </div>
+      )}
+      {footer}
+    </ScrollArea>
+  );
+}
+
+const ResultRow = React.memo(function ResultRow({
+  row,
+  style,
+  selected,
+  onSelect,
+  deal,
+  pseudoKeys,
+  showScore,
+  favorite,
+}: {
+  row: ScoredListing;
+  style: React.CSSProperties;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  deal: Deal | undefined;
+  pseudoKeys: string[];
+  showScore: boolean;
+  favorite: boolean;
+}) {
+  const { listing } = row;
+  const { item } = listing;
+  const price = formatHrPrice(listing.hr_price);
+  const summary = displayMods(item)
+    .slice(0, SUMMARY_MODS)
+    .map((m) => m.label)
+    .join(' · ');
+  const base = item.base?.name && item.base.name !== item.name ? item.base.name : null;
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      data-listing-id={listing._id}
+      onClick={() => onSelect(listing._id)}
+      style={style}
+      className={cn(
+        'absolute left-0 top-0 flex w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-fast)',
+        selected ? 'bg-accent/70 shadow-[inset_2px_0_0_var(--primary)]' : 'hover:bg-accent/30',
+      )}
+    >
+      <ListingThumb listing={listing}
+        className="size-10"
+        artClassName="max-h-9 max-w-9" />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
+          {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
+          {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
+          {item.socket_count > 0 && (
+            <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
+          )}
+          {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
+          {favorite && <Heart className="size-3 shrink-0 fill-destructive text-destructive"
+            aria-label="Favorite" />}
+        </div>
+        <div className="truncate text-[11px] leading-4 text-muted-foreground"
+          title={summary}>
+          {summary || '\u00a0'}
+        </div>
+        {pseudoKeys.length > 0 && (
+          <div className="flex min-w-0 gap-1 overflow-hidden">
+            {pseudoKeys.map((key) => (
+              <span
+                key={key}
+                title={statWithValue(key, row.pseudo[key] ?? 0)}
+                className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info"
+              >
+                <Sigma className="size-2.5 shrink-0" />
+                <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showScore && (
+        <div
+          className="w-12 shrink-0 text-right"
+          title={row.value != null ? `Value ${formatStat(row.value)} per HR` : undefined}
+        >
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
+          <div className="text-xs font-semibold tabular-nums">{row.score != null ? formatStat(row.score) : '—'}</div>
+        </div>
+      )}
+
+      <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <DealBadge deal={deal}
+            compact />
+          <span
+            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
+            title={listing.price || undefined}
+          >
+            {price ?? (listing.price ? 'Offer' : '—')}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span className="max-w-16 truncate">{listing.user?.username}</span>
+          <OnlineDots listing={listing} />
+          <span className="tabular-nums">{listingAge(listing)}</span>
+        </div>
+      </div>
+    </div>
+  );
+});

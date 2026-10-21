@@ -8,6 +8,7 @@ import type { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { useMarketActions } from './useMarketActions';
+import { RateLimitError } from './usePD2Website';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
@@ -185,9 +186,7 @@ describe('listing queries', () => {
   });
 
   it('reports non-auth failures with the serialized query as context', async () => {
-    fetchMock.mockResolvedValueOnce(
-      fakeResponse(500, { name: 'GeneralError', code: 500, className: 'general-error' }),
-    );
+    fetchMock.mockResolvedValueOnce(fakeResponse(500, { name: 'GeneralError', code: 500, className: 'general-error' }));
     const { actions } = market();
     await expect(actions.getMarketListings(query as never)).rejects.toThrow(/^API Error: 500/);
     expect(reportApiError).toHaveBeenCalledWith(expect.any(Error), 'pd2-api', '/market/listing', 500, {
@@ -226,12 +225,88 @@ describe('listing mutations', () => {
     await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 404');
   });
 
-  it('bumpAllMarketListings PATCHes all of the user\'s listings with the current time', async () => {
+  it("bumpAllMarketListings PATCHes all of the user's listings with the current time", async () => {
     const { actions } = market();
     await actions.bumpAllMarketListings('user-1');
     const { url, init } = lastCall();
     expect(url).toBe('https://api.projectdiablo2.com/market/listing?user_id=user-1');
     expect(init.method).toBe('PATCH');
     expect(JSON.parse(init.body as string)).toEqual({ bumped_at: NOW.toISOString() });
+  });
+});
+
+describe('market browser API', () => {
+  it('getFavorites pages newest first with each listing and its seller resolved', async () => {
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { total: 0, data: [] }));
+    const { actions } = market();
+    await expect(actions.getFavorites({ limit: 20, skip: 40 })).resolves.toEqual({ total: 0, data: [] });
+    expect(lastCall().url).toBe(
+      'https://api.projectdiablo2.com/market/favorite?$limit=20&$skip=40&$sort[updated_at]=-1' +
+        '&$resolve[listing][user]=true',
+    );
+    expect(lastCall().init.method).toBe('GET');
+  });
+
+  it('addFavorite posts the listing and seller; removeFavorite deletes by favorite id', async () => {
+    const { actions } = market();
+    await actions.addFavorite('L1', 'S1');
+    expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/favorite');
+    expect(lastCall().init.method).toBe('POST');
+    expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', seller_id: 'S1' });
+
+    await actions.removeFavorite('F1');
+    expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/favorite/F1');
+    expect(lastCall().init.method).toBe('DELETE');
+  });
+
+  it('findUsers looks a username up exactly and returns only id and name', async () => {
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(200, { total: 1, data: [{ _id: 'u9', username: 'Seller', game: { accounts: ['x'] } }] }),
+    );
+    const { actions } = market();
+    await expect(actions.findUsers('  Seller ')).resolves.toEqual([{ _id: 'u9', username: 'Seller' }]);
+    expect(lastCall().url).toBe('https://api.projectdiablo2.com/security/user?username=Seller&$limit=1');
+
+    fetchMock.mockClear();
+    await expect(actions.findUsers('  ')).resolves.toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('createOffer posts what the site posts: listing, offer text and HR value', async () => {
+    const { actions } = market();
+    await actions.createOffer('L1', { price: '2 ist', hrPrice: 0.5 });
+    expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/offer');
+    expect(lastCall().init.method).toBe('POST');
+    expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', offer: '2 ist', hr_offer: 0.5 });
+  });
+
+  it('a 429 throws a RateLimitError carrying Retry-After', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ...fakeResponse(429, 'slow down'),
+      headers: new Headers({ 'retry-after': '7' }),
+    } as unknown as Response);
+    const { actions } = market();
+    const error = await actions.getMarketListings({}).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect(error).toMatchObject({ status: 429, retryAfterMs: 7000, message: expect.stringMatching(/^API Error: 429/) });
+  });
+
+  it('marketApi exposes the same functions and stays stable across renders', () => {
+    const { result, rerender } = renderHook(() =>
+      useMarketActions({
+        settings: baseSettings,
+        authData,
+        fetchAndCacheStash: vi.fn(),
+        findItemsByName: vi.fn(),
+        stashCache: { current: null },
+        CACHE_TTL: TTL,
+      }),
+    );
+    const first = result.current.marketApi;
+    expect(first.getMarketListings).toBe(result.current.getMarketListings);
+    expect(first.findUsers).toBe(result.current.findUsers);
+    expect(first.createOffer).toBe(result.current.createOffer);
+    rerender();
+    expect(result.current.marketApi).toBe(first);
   });
 });

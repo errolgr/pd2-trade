@@ -402,8 +402,12 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   }, [closeDismissablePanels]);
 
   useEffect(() => {
-    // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away
-    setToastBridge({ openChat: (payload) => openPanel('chat', payload, { focus: true }) });
+    // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away.
+    // A market alert's View: the market browser opens on the saved search, focused on the new listing.
+    setToastBridge({
+      openChat: (payload) => openPanel('chat', payload, { focus: true }),
+      openMarket: (payload) => openPanel('market', payload),
+    });
     return () => setToastBridge(null);
   }, [openPanel]);
 

@@ -180,7 +180,7 @@ describe('showToast action toasts', () => {
 
   it('Reply opens chat on the conversation or whisper thread with the composer focused', async () => {
     const openChat = vi.fn();
-    setToastBridge({ openChat });
+    setToastBridge({ openChat, openMarket: vi.fn() });
     await renderLayer();
     await show(() =>
       showToast({
@@ -201,6 +201,25 @@ describe('showToast action toasts', () => {
     );
     await click(within(toastEl('wtb')!).getByText('Reply'));
     expect(openChat).toHaveBeenLastCalledWith({ conversationId: undefined, threadId: 'whisper:zed', reply: true });
+  });
+
+  it('a market alert action opens the market panel with its payload', async () => {
+    const openMarket = vi.fn();
+    setToastBridge({ openChat: vi.fn(), openMarket });
+    await renderLayer();
+    await show(() =>
+      showToast({
+        title: 'Market alert',
+        description: '1 new: Shako',
+        action: {
+          label: 'View',
+          type: ToastActionType.OPEN_MARKET_PANEL,
+          data: { savedSearchId: 's1', focusListingId: 'l1', tab: 'search' },
+        },
+      }),
+    );
+    await click(screen.getByText('View'));
+    expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'l1', tab: 'search' });
   });
 
   it('installs the update from the action button', async () => {

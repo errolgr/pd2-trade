@@ -1,5 +1,8 @@
 export const changeLog = {
   '0.10.0': [
+    '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game — every site filter plus combined stats like total resists or total life, built-in and your own stat presets, and sorting by weighted stats or value per HR',
+    '🆕 Market browser: save searches and get a popup within seconds when a new listing matches (up to 10 searches), browse sold listings and your site favorites',
+    '🆕 "Open in market" in price check carries the item and the stats you picked into the market browser; "Browse all listings" in the chat Trader panel shows everything that seller has listed',
     '🆕 Fresh new look for every window, plus 20 color themes (Settings → Interface)',
     '🆕 Net Worth (was Stash Value, Ctrl+X): tabs per item type, history charts and an in-game ticker',
     '🆕 Rare appraisal: Keep / Check / Vendor for your rares in price check and a Rares tab in Net Worth — the ? next to Verdict explains it',

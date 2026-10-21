@@ -16,6 +16,7 @@ export type ToastPayload = string | GenericToastPayload | CustomToastPayload;
 /** Toast actions that open panels go through the overlay; OverlayProvider installs this bridge. */
 interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
+  openMarket(payload: PanelPayloads['market']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -38,6 +39,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
         break;
       }
+      case ToastActionType.OPEN_MARKET_PANEL:
+        bridge?.openMarket(action.data);
+        break;
       case ToastActionType.UPDATE_AVAILABLE:
         await installUpdateAndRelaunch();
         break;

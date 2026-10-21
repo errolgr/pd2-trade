@@ -82,6 +82,8 @@ export interface ISettings {
   netWorthToastThresholdHr?: number;
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
+  hotkeyModifierMarket?: 'ctrl' | 'alt';
+  hotkeyKeyMarket?: string; // '' = unbound
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
@@ -138,10 +140,37 @@ const DEFAULT_SETTINGS: ISettings = {
   netWorthToastThresholdHr: 0.5,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
+  hotkeyModifierMarket: 'ctrl',
+  hotkeyKeyMarket: 'm',
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
 };
+
+/** The hotkeys besides the market one, as [modifier field, key field]. */
+const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+  ['hotkeyModifier', 'hotkeyKey'],
+  ['hotkeyModifierListItem', 'hotkeyKeyListItem'],
+  ['hotkeyModifierSettings', 'hotkeyKeySettings'],
+  ['hotkeyModifierCurrencyValuation', 'hotkeyKeyCurrencyValuation'],
+  ['hotkeyModifierChat', 'hotkeyKeyChat'],
+  ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
+  ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
+  ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+];
+
+/**
+ * Settings saved before the market hotkey existed get the default Ctrl+M, unless the user already bound that
+ * combo to another hotkey: then the market hotkey starts unbound rather than stealing it.
+ */
+export function migrateMarketHotkey(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
+  if (saved?.hotkeyKeyMarket !== undefined) return merged;
+  const combo = `${merged.hotkeyModifierMarket}+${merged.hotkeyKeyMarket?.toLowerCase()}`;
+  const taken = OTHER_HOTKEYS.some(
+    ([modifier, key]) => `${merged[modifier] ?? 'ctrl'}+${String(merged[key] ?? '').toLowerCase()}` === combo,
+  );
+  return taken ? { ...merged, hotkeyKeyMarket: '' } : merged;
+}
 
 const SETTINGS_FILENAME = 'settings.json';
 const SETTINGS_DIR = BaseDirectory.AppConfig;
@@ -209,8 +238,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
         // would merge them by index, bringing back removed toast types or deleted chat templates).
-        const merged: ISettings = mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
-          Array.isArray(saved) ? saved : undefined,
+        const merged: ISettings = migrateMarketHotkey(
+          parsed,
+          mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
+            Array.isArray(saved) ? saved : undefined,
+          ),
         );
 
         const mergedJson = JSON.stringify(merged, null, 2);

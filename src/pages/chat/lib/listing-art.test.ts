@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { allItems } from '@/assets/items';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { listingArtUrl } from './listing-art';
+import { listingArtCandidates, listingArtUrl } from './listing-art';
 
 const itemsByKey = createItemsMapByKey(allItems);
 const art = (name: string, quality: string, baseName?: string) =>
@@ -35,5 +35,27 @@ describe('listingArtUrl', () => {
 
   it('returns null when nothing matches', () => {
     expect(art('Mystery Thing', 'Normal', 'Mystery Thing')).toBeNull();
+  });
+
+  it('finds uniques whose database key differs from the listed name', () => {
+    // key "Eschuta's temper", name "Eschuta's Temper"; its base (Eldritch Orb) has no base art
+    expect(art("Eschuta's Temper", 'Unique', 'Eldritch Orb')).toBe('https://pd2trader.com/assets/items/invob2.png');
+  });
+});
+
+describe('listingArtCandidates', () => {
+  const item = (name: string, quality: string, baseName: string) =>
+    ({ name, quality: { id: 0, name: quality }, base: { name: baseName } }) as ItemDetail;
+
+  it('falls back from pd2trader.com art to the same file on projectdiablo2.com', () => {
+    expect(listingArtCandidates(item('Doom Band', 'Rare', 'Ring'), itemsByKey)).toEqual([
+      'https://pd2trader.com/assets/items/invrin.png',
+      'https://projectdiablo2.com/image/items/invrin.png',
+    ]);
+  });
+
+  it('keeps bundled art as the only candidate, and none when nothing matches', () => {
+    expect(listingArtCandidates(item('Ohm Rune', 'Normal', 'Ohm Rune'), itemsByKey)).toEqual(['/runes/Ohm_Rune.png']);
+    expect(listingArtCandidates(item('Mystery Thing', 'Normal', 'Mystery Thing'), itemsByKey)).toEqual([]);
   });
 });

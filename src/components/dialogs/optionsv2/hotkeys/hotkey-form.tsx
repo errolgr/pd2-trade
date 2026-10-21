@@ -59,6 +59,11 @@ const hotkeyFormSchema = z
       .string()
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
+    hotkeyModifierMarket: z.enum(['ctrl', 'alt']),
+    hotkeyKeyMarket: z
+      .string()
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
   })
   .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
@@ -133,6 +138,13 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeySnapshot',
     optional: true,
   },
+  {
+    label: 'Market',
+    description: 'Show or hide the market browser.',
+    modifier: 'hotkeyModifierMarket',
+    key: 'hotkeyKeyMarket',
+    optional: true,
+  },
 ];
 
 export function HotkeyForm() {
@@ -157,6 +169,8 @@ export function HotkeyForm() {
       hotkeyKeyDelist: 'u',
       hotkeyModifierSnapshot: 'ctrl',
       hotkeyKeySnapshot: '',
+      hotkeyModifierMarket: 'ctrl',
+      hotkeyKeyMarket: 'm',
     },
   });
 
@@ -179,7 +193,7 @@ export function HotkeyForm() {
   }, [form, updateSettings]);
 
   if (isLoading || !settings) {
-    return <SettingsSkeleton rows={8} />;
+    return <SettingsSkeleton rows={HOTKEY_ROWS.length} />;
   }
 
   const values = form.watch();
@@ -271,7 +285,7 @@ export function HotkeyForm() {
             );
           })}
         </SettingsGroup>
-        <SettingsHint>Leave the snapshot key empty to keep it unbound.</SettingsHint>
+        <SettingsHint>Leave the snapshot or market key empty to keep it unbound.</SettingsHint>
       </div>
     </Form>
   );

@@ -29,6 +29,7 @@ import {
   SettingsIcon,
   ShieldIcon,
   SquareArrowOutUpRight,
+  Store,
   TrendingDown,
   TrendingUp,
   UserIcon,
@@ -48,6 +49,7 @@ import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
+import { priceCheckToMarketFilters } from '@/pages/market/store/priceCheckFilters';
 import { RunePricePopover } from './RunePricePopover';
 import { getStatKey } from '../lib/utils';
 import moment from 'moment';
@@ -1018,6 +1020,26 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   };
 
+  // Same search in the in-game market browser (pool search, pseudo stats, alerts)
+  const openInMarket = () => {
+    trackEvent('item_overlay_open_in_market', { archived: searchArchived });
+    const marketFilters = priceCheckToMarketFilters({
+      item,
+      pd2Item,
+      selected,
+      filters,
+      settings,
+      statMapper,
+      archive: searchArchived,
+      searchMode: shouldUseToggle ? searchMode : 0,
+      matchedItemType,
+      corruptedState,
+      corruptionNames: selectedCorruptionNames,
+      qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+    });
+    openPanel('market', { filters: marketFilters, tab: 'search' });
+  };
+
   const openPd2Trader = () => openUrl(getPd2TraderUrl());
 
   const isUniqueOrSet = item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set;
@@ -1448,6 +1470,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Open this search on projectdiablo2.com</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      aria-label="Open in market"
+                      className="cursor-pointer border-l border-primary-foreground/15 px-3"
+                      onClick={openInMarket}
+                    >
+                      <Store />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Open in market</TooltipContent>
                 </Tooltip>
               </ButtonGroup>
 

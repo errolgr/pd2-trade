@@ -116,6 +116,7 @@ const DEFS = {
   delist: def('delist'),
   netWorthTicker: def('netWorthTicker', { keyboard: 'never', keepMounted: true }),
   netWorthPanel: def('netWorthPanel'),
+  market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;

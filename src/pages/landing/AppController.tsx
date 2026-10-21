@@ -19,6 +19,7 @@ import {
   type PanelPayloads,
 } from '@/overlay';
 import { useDelist } from '@/pages/delist/DelistHandler';
+import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
 
 /**
  * App-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket
@@ -34,6 +35,9 @@ const AppController: React.FC = () => {
 
   // Socket notifications (offers and whispers) - exactly one instance, here
   useSocketNotifications({ settings, whisperNotificationsEnabled: true });
+
+  // Saved-search alerts (15 s poll) - exactly one instance, here
+  useMarketAlerts();
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
@@ -134,6 +138,8 @@ const AppController: React.FC = () => {
     snapshot: async () => {
       await takeSnapshot('manual');
     },
+    // Closed: reopens on the search it was showing (keepMounted)
+    market: () => togglePanel('market'),
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -146,7 +152,8 @@ const AppController: React.FC = () => {
   const onOffers = useCallback(() => hotkeysRef.current.offers(), []);
   const onDelist = useCallback(() => hotkeysRef.current.delist(), []);
   const onSnapshot = useCallback(() => hotkeysRef.current.snapshot(), []);
-  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot);
+  const onMarket = useCallback(() => hotkeysRef.current.market(), []);
+  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot, onMarket);
 
   useAppUpdates();
   usePD2Auth();

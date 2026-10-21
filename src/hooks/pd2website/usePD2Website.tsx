@@ -12,7 +12,9 @@ import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import type { MarketApi } from '@/pages/market/lib/types';
+import { parseRetryAfter } from '@/pages/market/lib/rate-limit';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
@@ -48,6 +50,19 @@ export class AccountMismatchError extends Error {
   }
 }
 
+/** HTTP 429 from the PD2 API. `retryAfterMs` comes from the Retry-After header when the server sent one. */
+export class RateLimitError extends Error {
+  readonly status = 429;
+  constructor(
+    message: string,
+    public retryAfterMs: number | null = null,
+  ) {
+    super(message);
+    this.name = 'RateLimitError';
+    Object.setPrototypeOf(this, RateLimitError.prototype);
+  }
+}
+
 interface Pd2WebsiteContextType extends SocialActions {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
@@ -56,8 +71,10 @@ interface Pd2WebsiteContextType extends SocialActions {
     note: string,
     type: 'exact' | 'note',
   ) => Promise<MarketListingEntry>;
-  getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
-  getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  getMarketListings: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
+  getMarketListingsArchive: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
+  /** The market browser's PD2 surface (listings, archive, favorites, seller lookup, offers); stable per token. */
+  marketApi: MarketApi;
   deleteMarketListing: (listingId: string) => Promise<void>;
   bumpAllMarketListings: (userId: string) => Promise<void>;
   authData: AuthData;
@@ -185,6 +202,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
+    marketApi,
   } = useMarketActions({
     settings,
     authData,
@@ -290,6 +308,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         bumpAllMarketListings,
         getMarketListings,
         getMarketListingsArchive,
+        marketApi,
         authData,
         updateMarketListing,
         updateItemByHash,
@@ -377,8 +396,12 @@ export async function handleApiResponse(
       );
     }
 
-    // Create error with context
-    const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
+    // Create error with context (429s carry their Retry-After so callers can back off)
+    const message = `API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`;
+    const error =
+      response.status === 429
+        ? new RateLimitError(message, parseRetryAfter(response.headers?.get('retry-after')))
+        : new Error(message);
 
     // Prepare additional context including query
     const additionalContext: Record<string, any> = {

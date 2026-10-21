@@ -60,6 +60,14 @@ export interface ItemDetail {
   account_id: string;
   is_hardcore: boolean;
   is_ladder: boolean;
+  /** Gems/runes/jewels in the sockets, as full items. */
+  socketed?: ItemDetail[];
+  defense?: { base: number; total: number };
+  durability?: Durability;
+  /** The item's final damage (after its mods), per grip. */
+  damage?: { one_handed?: MinMax; two_handed?: MinMax };
+  /** Character holding the item. */
+  character_id?: string;
 }
 
 export interface BaseItem {
@@ -137,6 +145,9 @@ export interface Modifier {
   label: string;
   priority: number;
   corrupted?: boolean;
+  /** The mod's roll range, when it has one. */
+  min?: number;
+  max?: number;
 }
 
 export interface Location {

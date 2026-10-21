@@ -10,6 +10,7 @@ import { DelistPage } from '@/pages/delist/DelistPage';
 import NetWorthTickerPage from '@/pages/net-worth/NetWorthTickerPage';
 import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
+import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -171,5 +172,21 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'onPointerDown',
     keepMounted: false,
     hideOnGameBlur: true,
+  },
+
+  // ---- market (Group Market) ----
+  market: {
+    id: 'market',
+    component: MarketBrowserPage,
+    // Split pane: filters | results | detail. Clamped to the screen.
+    size: { width: 1400, height: 860 },
+    minSize: { width: 980, height: 560 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: true, // search results and filters survive closing (like chat)
+    hideOnGameBlur: true,
+    closeOnBlur: true,
   },
 };
