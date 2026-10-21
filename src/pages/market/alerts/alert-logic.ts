@@ -1,85 +1,82 @@
 /**
- * Saved-search alerts, the pure part: which searches poll, what counts as a new match (seeded silently on the
- * first poll, deduped by listing id), the backoff after rate limits and the toast text. `useMarketAlerts` runs it.
+ * Saved-search alerts, the pure part: the popup text of a `market.alert` and how a batch of them shows, and
+ * which saved search a "Watch" of some filters is (`watchKey`).
  */
-import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { ToastActionType, type CustomToastPayload } from '@/common/types/Events';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
-import { MAX_ALERT_SEARCHES, type MarketPrefs } from '@/pages/market/store/useMarketStore';
+import type { MarketAlert } from './saved-search-api';
 
-export const ALERT_POLL_MS = 15_000;
-/** Newest listings fetched per search and poll (room for client-side pseudo filters to find matches). */
-export const ALERT_PAGE_SIZE = 50;
-/** Listing ids remembered per search; older ones fall off (they are long past the first page by then). */
-export const SEEN_CAP = 500;
-export const MAX_BACKOFF_MS = 5 * 60_000;
+/** More alerts than this at once (a catch-up after a reconnect) show as one summary popup. */
+export const MAX_ALERT_TOASTS = 3;
 
-export interface SeenState {
-  /** The filters the ids were seen under; a changed search seeds again instead of alerting on everything. */
-  fingerprint: string;
-  ids: Set<string>;
+/** "Harlequin Crest — 1.5 HR" (listing text is shown as plain text). */
+export function alertListingText(alert: MarketAlert): string {
+  const { listing } = alert;
+  const item = (listing?.name || listing?.baseName || 'Item').slice(0, 60);
+  const price =
+    listing?.hrPrice != null && listing.hrPrice > 0
+      ? `${listing.hrPrice} HR`
+      : (listing?.price ?? '').trim().slice(0, 40) || 'no price';
+  return `${item} — ${price}`;
 }
 
-/** The searches that poll: alerting ones, at most MAX_ALERT_SEARCHES, none while alerts are off. */
-export function alertingSearches(prefs: Pick<MarketPrefs, 'savedSearches' | 'alertsEnabled'>): SavedSearch[] {
-  if (!prefs.alertsEnabled) return [];
-  return prefs.savedSearches.filter((s) => s.alert).slice(0, MAX_ALERT_SEARCHES);
-}
+const viewAction = (alert: MarketAlert): CustomToastPayload['action'] => ({
+  label: 'View',
+  type: ToastActionType.OPEN_MARKET_PANEL,
+  data: { savedSearchId: alert.savedSearchId, focusListingId: alert.listingId, tab: 'search' },
+});
 
-/** Stable identity of a search's filters (stat row ids excluded: they don't change what matches). */
-export function filtersFingerprint(filters: MarketFilters): string {
-  return JSON.stringify({ ...filters, stats: filters.stats.map(({ id: _id, ...rest }) => rest) });
+/** The popups for new alerts (oldest first): one each, or one summary when there are many. */
+export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[] {
+  if (alerts.length === 0) return [];
+  if (alerts.length > MAX_ALERT_TOASTS) {
+    const newest = alerts[alerts.length - 1];
+    return [
+      {
+        title: 'Market watch',
+        description: `${alerts.length} new matches. Newest: ${newest.savedSearchName}: ${alertListingText(newest)}`,
+        action: viewAction(newest),
+      },
+    ];
+  }
+  return alerts.map((alert) => ({
+    title: 'Market watch',
+    description: `${alert.savedSearchName}: ${alertListingText(alert)}`,
+    action: viewAction(alert),
+  }));
 }
 
 /**
- * The listings of this poll that are new matches. The first poll of a search (or after its filters changed)
- * only records what is already listed. Every fetched id is remembered, matching or not, so nothing alerts twice.
+ * What a watch matches on: the filters minus what alerts ignore or the server fills in (sort, age window, stat
+ * row ids/weights, disabled stats, empty fields, order of rarities and corruptions). Equal keys = same watch.
  */
-export function diffListings(
-  prev: SeenState | undefined,
-  fingerprint: string,
-  listings: readonly MarketListingEntry[],
-  matches: (listing: MarketListingEntry) => boolean,
-): { next: SeenState; fresh: MarketListingEntry[] } {
-  if (!prev || prev.fingerprint !== fingerprint) {
-    return { next: { fingerprint, ids: capIds(new Set(listings.map((l) => l._id))) }, fresh: [] };
-  }
-  const fresh = listings.filter((l) => !prev.ids.has(l._id) && matches(l));
-  if (listings.every((l) => prev.ids.has(l._id))) return { next: prev, fresh };
-  const ids = new Set(prev.ids);
-  // Re-insert so the newest listings are the last to fall off the cap
-  for (const listing of [...listings].reverse()) {
-    ids.delete(listing._id);
-    ids.add(listing._id);
-  }
-  return { next: { fingerprint, ids: capIds(ids) }, fresh };
+export function watchKey(filters: MarketFilters): string {
+  const { sort: _sort, maxAgeDays: _age, stats, rarity, corruptions, requirements, ...rest } = filters;
+  const present = (value: unknown) => value !== undefined && value !== null && value !== '';
+  const clean = (record: Record<string, unknown>) =>
+    Object.fromEntries(
+      Object.entries(record)
+        .filter(([, value]) => present(value))
+        .sort(([a], [b]) => a.localeCompare(b)),
+    );
+  return JSON.stringify({
+    ...clean(rest),
+    rarity: [...(rarity ?? [])].sort(),
+    corruptions: [...new Set(corruptions ?? [])].sort(),
+    requirements: clean({ ...(requirements ?? {}) }),
+    stats: (stats ?? [])
+      .filter((s) => s.enabled !== false)
+      .map((s) => clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max }))
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+  });
 }
 
-function capIds(ids: Set<string>): Set<string> {
-  if (ids.size <= SEEN_CAP) return ids;
-  return new Set([...ids].slice(ids.size - SEEN_CAP));
-}
-
-/**
- * Wait before the next poll after a rate limit: the server's retry-after or double the previous wait
- * (from the poll interval), whichever is longer, capped at MAX_BACKOFF_MS.
- */
-export function rateLimitBackoff(previousMs: number, retryAfterMs: number): number {
-  return Math.min(MAX_BACKOFF_MS, Math.max(retryAfterMs, Math.max(previousMs, ALERT_POLL_MS) * 2));
-}
-
-/** "2 new: Shako search — Harlequin Crest 1.5 HR" (the newest match). Listing text is shown as plain text. */
-export function alertToastText(
-  search: SavedSearch,
-  fresh: readonly MarketListingEntry[],
-): {
-  title: string;
-  description: string;
-} {
-  const newest = fresh[0];
-  const item = newest.item?.name || newest.item?.base?.name || 'Item';
-  const price = newest.hr_price > 0 ? `${newest.hr_price} HR` : (newest.price ?? '').trim().slice(0, 40);
-  return {
-    title: 'Market alert',
-    description: `${fresh.length} new: ${search.name} — ${item}${price ? ` ${price}` : ''}`,
-  };
+/** The alerting saved search watching `filters`, if any (else a saved, not alerting, one with them). */
+export function findWatch(
+  searches: readonly SavedSearch[],
+  filters: MarketFilters,
+): { watching: SavedSearch | null; saved: SavedSearch | null } {
+  const key = watchKey(filters);
+  const same = searches.filter((s) => watchKey(s.filters) === key);
+  return { watching: same.find((s) => s.alert) ?? null, saved: same.find((s) => !s.alert) ?? null };
 }

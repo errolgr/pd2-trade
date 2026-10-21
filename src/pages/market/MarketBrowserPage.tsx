@@ -26,6 +26,8 @@ import { ResultsList } from './components/ResultsList';
 import { type CardCommand, ResultCards } from './components/ResultCards';
 import { ListingDetail } from './components/ListingDetail';
 import { SavedSearches } from './components/SavedSearches';
+import { WatchButton } from './alerts/WatchButton';
+import { fetchMarketListing } from './alerts/saved-search-api';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
 const CARD_HOTKEYS: Record<string, CardCommand['action']> = { o: 'offer', w: 'whisper', f: 'favorite' };
@@ -59,6 +61,8 @@ const MarketBrowserPage: React.FC = () => {
   const [extraRow, setExtraRow] = useState<ScoredListing | null>(null);
   /** focusListingId of the last open, until the fresh search for it lands (`searched`: it has started). */
   const [pendingFocus, setPendingFocus] = useState<{ id: string; searched: boolean } | null>(null);
+  /** An alert's listing that was not in the refreshed results: fetched from pd2trader.com for the detail pane. */
+  const [missingFocus, setMissingFocus] = useState<string | null>(null);
   const statSearchRef = useRef<HTMLInputElement>(null);
 
   // keepMounted: nothing is fetched until the panel was first shown
@@ -135,9 +139,29 @@ const MarketBrowserPage: React.FC = () => {
         // Cards are self-contained: just select (and scroll to) it
         setDetailOpen(viewMode === 'rows');
         setExtraRow(null);
+      } else {
+        // An alert's listing outside the results (another page, or sold since): show it on its own
+        setMissingFocus(pendingFocus.id);
       }
     }
   }
+  useEffect(() => {
+    if (!missingFocus || !filters) return;
+    let cancelled = false;
+    fetchMarketListing(missingFocus)
+      .then((listing) => {
+        if (cancelled || !listing) return;
+        const [row] = scoreListings([listing], filters);
+        setExtraRow(row);
+        setSelectedId(listing._id);
+        setDetailOpen(true);
+      })
+      .catch((error) => console.warn('[market] alert listing lookup failed:', error))
+      .finally(() => !cancelled && setMissingFocus(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [missingFocus, filters]);
 
   const pseudoKeys = useMemo(
     () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
@@ -352,8 +376,13 @@ const MarketBrowserPage: React.FC = () => {
                     favorites={favorites}
                     rows={rows}
                     onSignIn={() => openPanel('signIn')}
-                    toolbar={<ViewModeToggle value={viewMode}
-                      onChange={changeViewMode} />}
+                    toolbar={
+                      <>
+                        {tab === 'search' && <WatchButton filters={filters} />}
+                        <ViewModeToggle value={viewMode}
+                          onChange={changeViewMode} />
+                      </>
+                    }
                   >
                     {cards ? (
                       <ResultCards

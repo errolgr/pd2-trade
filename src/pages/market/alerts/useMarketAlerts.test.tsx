@@ -1,126 +1,184 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { exists, readTextFile } from '@/lib/browser-fs';
+import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { showToast } from '@/overlay';
-import { defaultFilters } from '@/pages/market/lib/defaults';
+import type { SavedSearch } from '@/pages/market/lib/types';
 import { resetMarketPrefs } from '@/pages/market/store/useMarketStore';
-import { ALERT_POLL_MS } from './alert-logic';
+import { listMarketAlerts, listSavedSearches, openAlertStream, type MarketAlert } from './saved-search-api';
+import type * as SavedSearchApi from './saved-search-api';
 import { useMarketAlerts } from './useMarketAlerts';
 
 const h = vi.hoisted(() => ({
-  settings: { pd2Token: 'tok', mode: 'softcore', ladder: 'ladder' } as Record<string, unknown>,
-  /** The backend sign-in (`/api/auth/oauth/me`); null when it failed or is still pending. */
-  authData: null as unknown,
-  getMarketListings: vi.fn(),
+  settings: {} as Record<string, unknown>,
 }));
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  usePd2Website: () => ({ authData: h.authData, marketApi: { getMarketListings: h.getMarketListings } }),
-}));
+vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
-  exists: vi.fn(async () => true),
+  exists: vi.fn(async () => false),
   mkdir: vi.fn(async () => {}),
   readTextFile: vi.fn(),
   writeTextFile: vi.fn(async () => {}),
 }));
+vi.mock('./saved-search-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof SavedSearchApi>()),
+  listSavedSearches: vi.fn(),
+  listMarketAlerts: vi.fn(async () => ({ items: [] })),
+  openAlertStream: vi.fn(),
+}));
 
-const listing = (id: string) =>
-  ({
-    _id: id,
-    hr_price: 1,
-    price: '',
-    item: { name: 'Spirit', base: { name: 'Monarch' }, modifiers: [] },
-  }) as unknown as MarketListingEntry;
-const page = (...ids: string[]): MarketListingResult => ({
-  total: ids.length,
-  limit: 50,
-  skip: 0,
-  data: ids.map(listing),
+const search = (id: string, alert: boolean): SavedSearch => ({
+  id,
+  name: id,
+  filters: { source: 'live', itemName: 'Harlequin Crest', stats: [] } as unknown as SavedSearch['filters'],
+  alert,
+  createdAt: '2026-10-21T00:00:00Z',
 });
 
-function savePrefs(alertsEnabled = true) {
-  const filters = { ...defaultFilters({ hardcore: false, ladder: true }), itemName: 'Spirit' };
-  vi.mocked(readTextFile).mockResolvedValue(
-    JSON.stringify({
-      savedSearches: [{ id: 's1', name: 'Spirit', filters, alert: true, createdAt: '2026-10-21T00:00:00Z' }],
-      alertsEnabled,
+const alert: MarketAlert = {
+  id: 'al1',
+  savedSearchId: 's1',
+  savedSearchName: 'Cheap Shako',
+  listingId: 'l1',
+  matchedAt: '2026-10-21T08:01:00Z',
+  listing: {
+    id: 'l1',
+    isLadder: true,
+    isHardcore: false,
+    name: 'Harlequin Crest',
+    baseName: 'Shako',
+    baseCode: 'uap',
+    typeCode: 'helm',
+    quality: 'Unique',
+    price: '2 ist',
+    hrPrice: 0.5,
+    bumpedAt: null,
+    seller: 'Gheed',
+    status: 'active',
+    soldHr: null,
+  },
+};
+
+/** An open stream that sends `text` and stays open. */
+const stream = (text: string) =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(new TextEncoder().encode(text));
+      },
     }),
   );
-}
+const HELLO = 'event: hello\ndata: {"serverTime":"2026-10-21T08:00:00Z"}\n\n';
+const ALERT = `event: market.alert\ndata: ${JSON.stringify(alert)}\n\n`;
 
-const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+const settle = () => act(() => vi.advanceTimersByTimeAsync(0));
 
 beforeEach(() => {
   vi.useFakeTimers();
   resetMarketPrefs();
-  vi.mocked(exists).mockResolvedValue(true);
+  vi.mocked(exists).mockResolvedValue(false);
+  vi.mocked(readTextFile).mockReset();
   vi.mocked(showToast).mockClear();
-  h.getMarketListings.mockReset();
-  h.settings = { pd2Token: 'tok', mode: 'softcore', ladder: 'ladder' };
-  h.authData = null;
+  vi.mocked(playNotificationSound).mockClear();
+  vi.mocked(openAlertStream).mockReset();
+  vi.mocked(listMarketAlerts).mockClear();
+  vi.mocked(listSavedSearches).mockReset();
+  h.settings = { pd2Token: 'tok' };
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('useMarketAlerts', () => {
-  it('polls with just a PD2 token (the backend sign-in may never succeed), seeding silently, then toasts new matches', async () => {
-    savePrefs();
-    h.getMarketListings.mockResolvedValueOnce(page('a', 'b')).mockResolvedValue(page('c', 'a', 'b'));
+  it('syncs the saved searches and pops a toast with the alert sound for each new match', async () => {
+    h.settings = { pd2Token: 'tok', marketAlertVolume: 40 };
+    vi.mocked(listSavedSearches).mockResolvedValue({
+      items: [search('s1', true)],
+      limits: { maxSearches: 25, maxAlerting: 10 },
+    });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO + ALERT + ALERT));
     renderHook(() => useMarketAlerts());
-    await advance(0);
-    await advance(0);
+    await settle();
+    await settle();
 
-    expect(h.getMarketListings).toHaveBeenCalledTimes(1);
-    expect(h.getMarketListings.mock.calls[0][0]).toMatchObject({ 'item.name': 'Spirit', $limit: 50 });
-    expect(showToast).not.toHaveBeenCalled();
-
-    await advance(ALERT_POLL_MS);
-    expect(h.getMarketListings).toHaveBeenCalledTimes(2);
+    expect(listSavedSearches).toHaveBeenCalledWith('tok');
+    expect(openAlertStream).toHaveBeenCalledWith('tok', expect.any(AbortSignal));
     expect(showToast).toHaveBeenCalledTimes(1);
     expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({
-      action: { data: { savedSearchId: 's1', focusListingId: 'c' } },
+      description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
+      action: { data: { savedSearchId: 's1', focusListingId: 'l1' } },
     });
-
-    await advance(ALERT_POLL_MS);
-    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(playNotificationSound).toHaveBeenCalledWith(40);
   });
 
-  it('does not poll when signed out or with alerts off', async () => {
-    savePrefs(false);
-    h.getMarketListings.mockResolvedValue(page('a'));
+  it('stays quiet when the alert sound is off', async () => {
+    h.settings = { pd2Token: 'tok', marketAlertSoundEnabled: false };
+    vi.mocked(listSavedSearches).mockResolvedValue({
+      items: [search('s1', true)],
+      limits: { maxSearches: 25, maxAlerting: 10 },
+    });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO + ALERT));
     renderHook(() => useMarketAlerts());
-    await advance(ALERT_POLL_MS * 2);
-    expect(h.getMarketListings).not.toHaveBeenCalled();
+    await settle();
+    await settle();
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(playNotificationSound).not.toHaveBeenCalled();
+  });
 
-    cleanup();
-    resetMarketPrefs();
-    savePrefs(true);
-    h.settings = { ...h.settings, pd2Token: undefined };
+  it('opens no stream without a watched search, with alerts off, or signed out', async () => {
+    vi.mocked(listSavedSearches).mockResolvedValue({
+      items: [search('s1', false)],
+      limits: { maxSearches: 25, maxAlerting: 10 },
+    });
     renderHook(() => useMarketAlerts());
-    await advance(ALERT_POLL_MS * 2);
-    expect(h.getMarketListings).not.toHaveBeenCalled();
+    await settle();
+    expect(openAlertStream).not.toHaveBeenCalled();
+    cleanup();
+
+    resetMarketPrefs();
+    vi.mocked(exists).mockResolvedValue(true);
+    vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ alertsEnabled: false }));
+    vi.mocked(listSavedSearches).mockResolvedValue({
+      items: [search('s1', true)],
+      limits: { maxSearches: 25, maxAlerting: 10 },
+    });
+    renderHook(() => useMarketAlerts());
+    await settle();
+    expect(openAlertStream).not.toHaveBeenCalled();
+    cleanup();
+
+    resetMarketPrefs();
+    h.settings = {};
+    renderHook(() => useMarketAlerts());
+    await settle();
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    expect(openAlertStream).not.toHaveBeenCalled();
   });
 
   it('stops after a 401 until the token changes', async () => {
-    savePrefs();
-    h.getMarketListings.mockResolvedValue(null);
+    vi.mocked(listSavedSearches).mockResolvedValue({
+      items: [search('s1', true)],
+      limits: { maxSearches: 25, maxAlerting: 10 },
+    });
+    vi.mocked(openAlertStream).mockRejectedValue(Object.assign(new Error('expired'), { status: 401 }));
     const { rerender } = renderHook(() => useMarketAlerts());
-    await advance(0);
-    await advance(ALERT_POLL_MS * 3);
-    expect(h.getMarketListings).toHaveBeenCalledTimes(1);
+    await settle();
+    await act(() => vi.advanceTimersByTimeAsync(120_000));
+    expect(openAlertStream).toHaveBeenCalledTimes(1);
 
-    h.getMarketListings.mockResolvedValue(page('a'));
-    h.settings = { ...h.settings, pd2Token: 'tok2' };
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    h.settings = { pd2Token: 'tok2' };
     rerender();
-    await advance(0);
-    expect(h.getMarketListings).toHaveBeenCalledTimes(2);
+    await settle();
+    await settle();
+    expect(openAlertStream).toHaveBeenLastCalledWith('tok2', expect.any(AbortSignal));
   });
 });

@@ -1,122 +1,107 @@
 import { describe, expect, it } from 'vitest';
-import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { ToastActionType } from '@/common/types/Events';
+import { defaultFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
-import {
-  ALERT_POLL_MS,
-  alertingSearches,
-  alertToastText,
-  diffListings,
-  filtersFingerprint,
-  MAX_BACKOFF_MS,
-  rateLimitBackoff,
-  SEEN_CAP,
-} from './alert-logic';
+import { alertListingText, alertToasts, findWatch, MAX_ALERT_TOASTS, watchKey } from './alert-logic';
+import type { MarketAlert } from './saved-search-api';
 
-const listing = (id: string, over: Partial<MarketListingEntry> = {}) =>
-  ({
-    _id: id,
-    hr_price: 0,
-    price: 'offers',
-    item: { name: 'Harlequin Crest', base: { name: 'Shako' } },
-    ...over,
-  }) as unknown as MarketListingEntry;
-
-const filters = (over: Partial<MarketFilters> = {}) =>
-  ({ source: 'live', itemName: 'Harlequin Crest', stats: [], ...over }) as unknown as MarketFilters;
-
-const search = (id: string, alert: boolean, name = `search ${id}`): SavedSearch => ({
+const alert = (id: string, over: Partial<MarketAlert['listing']> = {}): MarketAlert => ({
   id,
-  name,
-  filters: filters(),
+  savedSearchId: 's1',
+  savedSearchName: 'Cheap Shako',
+  listingId: `l-${id}`,
+  matchedAt: '2026-10-21T08:01:00Z',
+  listing: {
+    id: `l-${id}`,
+    isLadder: true,
+    isHardcore: false,
+    name: 'Harlequin Crest',
+    baseName: 'Shako',
+    baseCode: 'uap',
+    typeCode: 'helm',
+    quality: 'Unique',
+    price: '2 ist',
+    hrPrice: 0.5,
+    bumpedAt: null,
+    seller: 'Gheed',
+    status: 'active',
+    soldHr: null,
+    ...over,
+  },
+});
+
+const base = (): MarketFilters => ({
+  ...defaultFilters({ hardcore: false, ladder: true }),
+  itemName: 'Harlequin Crest',
+});
+const search = (id: string, filters: MarketFilters, alert: boolean): SavedSearch => ({
+  id,
+  name: id,
+  filters,
   alert,
   createdAt: '2026-10-21T00:00:00Z',
 });
 
-const all = () => true;
-
-describe('diffListings', () => {
-  it('seeds silently on the first poll', () => {
-    const { next, fresh } = diffListings(undefined, 'f', [listing('a'), listing('b')], all);
-    expect(fresh).toEqual([]);
-    expect([...next.ids].sort()).toEqual(['a', 'b']);
+describe('alert popups', () => {
+  it('shows "<search>: <item> — <price>" with a View action on the listing', () => {
+    expect(alertToasts([alert('a')])).toEqual([
+      {
+        title: 'Market watch',
+        description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
+        action: {
+          label: 'View',
+          type: ToastActionType.OPEN_MARKET_PANEL,
+          data: { savedSearchId: 's1', focusListingId: 'l-a', tab: 'search' },
+        },
+      },
+    ]);
   });
 
-  it('alerts only on unseen matching listings, and never twice', () => {
-    const seeded = diffListings(undefined, 'f', [listing('a')], all).next;
-    const first = diffListings(seeded, 'f', [listing('c'), listing('b'), listing('a')], (l) => l._id !== 'b');
-    expect(first.fresh.map((l) => l._id)).toEqual(['c']);
-
-    const again = diffListings(first.next, 'f', [listing('c'), listing('b'), listing('a')], all);
-    expect(again.fresh).toEqual([]);
+  it('falls back to the base name and the price note', () => {
+    expect(alertListingText(alert('a', { name: null, hrPrice: null, price: '  wug  ' }))).toBe('Shako — wug');
+    expect(alertListingText(alert('a', { hrPrice: 0, price: null }))).toBe('Harlequin Crest — no price');
   });
 
-  it('does not alert later on a listing that did not match when first seen', () => {
-    const seeded = diffListings(undefined, 'f', [], all).next;
-    const first = diffListings(seeded, 'f', [listing('x')], () => false);
-    expect(first.fresh).toEqual([]);
-    expect(diffListings(first.next, 'f', [listing('x')], all).fresh).toEqual([]);
-  });
-
-  it('seeds again (no alerts) when the search filters changed', () => {
-    const seeded = diffListings(undefined, 'f1', [listing('a')], all).next;
-    const changed = diffListings(seeded, 'f2', [listing('a'), listing('b')], all);
-    expect(changed.fresh).toEqual([]);
-    expect(changed.next.fingerprint).toBe('f2');
-    expect(changed.next.ids.has('b')).toBe(true);
-  });
-
-  it('keeps the state as is when nothing new came in', () => {
-    const seeded = diffListings(undefined, 'f', [listing('a')], all).next;
-    expect(diffListings(seeded, 'f', [listing('a')], all).next).toBe(seeded);
-  });
-
-  it('caps remembered ids, dropping the oldest first', () => {
-    const many = Array.from({ length: SEEN_CAP }, (_, i) => listing(`old${i}`));
-    const seeded = diffListings(undefined, 'f', many, all).next;
-    const { next, fresh } = diffListings(seeded, 'f', [listing('new')], all);
-    expect(fresh.map((l) => l._id)).toEqual(['new']);
-    expect(next.ids.size).toBe(SEEN_CAP);
-    expect(next.ids.has('new')).toBe(true);
-    expect(next.ids.has('old0')).toBe(false);
+  it('sums up a big catch-up in one popup on the newest alert', () => {
+    const many = Array.from({ length: MAX_ALERT_TOASTS + 2 }, (_, i) => alert(`a${i}`));
+    const toasts = alertToasts(many);
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0].description).toMatch(/^5 new matches\. Newest: Cheap Shako: /);
+    expect(toasts[0].action?.data.focusListingId).toBe(`l-a${many.length - 1}`);
   });
 });
 
-describe('alertingSearches', () => {
-  it('polls only alerting searches, at most 10, none while alerts are off', () => {
-    const searches = [search('off', false), ...Array.from({ length: 12 }, (_, i) => search(`s${i}`, true))];
-    const polled = alertingSearches({ savedSearches: searches, alertsEnabled: true });
-    expect(polled).toHaveLength(10);
-    expect(polled.map((s) => s.id)).not.toContain('off');
-    expect(alertingSearches({ savedSearches: searches, alertsEnabled: false })).toEqual([]);
-  });
-});
+describe('watchKey / findWatch', () => {
+  const stat = { id: 'r1', kind: 'mod' as const, key: 'item_fastercastrate', min: 20, enabled: true };
 
-describe('filtersFingerprint', () => {
-  it('ignores stat row ids but not stat values', () => {
-    const stat = { kind: 'mod' as const, key: 'item_fastercastrate', min: 20, enabled: true };
-    const a = filtersFingerprint(filters({ stats: [{ ...stat, id: '1' }] }));
-    expect(filtersFingerprint(filters({ stats: [{ ...stat, id: '2' }] }))).toBe(a);
-    expect(filtersFingerprint(filters({ stats: [{ ...stat, id: '1', min: 10 }] }))).not.toBe(a);
-  });
-});
-
-describe('rateLimitBackoff', () => {
-  it('doubles from the poll interval, honours a longer retry-after, and caps', () => {
-    expect(rateLimitBackoff(0, 5000)).toBe(ALERT_POLL_MS * 2);
-    expect(rateLimitBackoff(ALERT_POLL_MS * 2, 5000)).toBe(ALERT_POLL_MS * 4);
-    expect(rateLimitBackoff(0, 120_000)).toBe(120_000);
-    expect(rateLimitBackoff(MAX_BACKOFF_MS, 5000)).toBe(MAX_BACKOFF_MS);
-  });
-});
-
-describe('alertToastText', () => {
-  it('names the search, the newest item and its price', () => {
-    const text = alertToastText(search('s', true, 'Cheap shakos'), [listing('a', { hr_price: 1.5 }), listing('b')]);
-    expect(text).toEqual({ title: 'Market alert', description: '2 new: Cheap shakos — Harlequin Crest 1.5 HR' });
+  it('treats filters the server normalized as the same watch', () => {
+    const mine: MarketFilters = { ...base(), rarity: ['Unique', 'Set'], stats: [stat], priceText: '' };
+    const server: MarketFilters = {
+      ...base(),
+      rarity: ['Set', 'Unique'],
+      stats: [
+        { ...stat, id: '0', weight: 2 },
+        { id: '1', kind: 'mod', key: 'item_allskills', enabled: false },
+      ],
+      maxAgeDays: 30,
+      sort: { by: 'price', dir: 'asc' },
+    };
+    expect(watchKey(server)).toBe(watchKey(mine));
   });
 
-  it('falls back to the price note when there is no HR price', () => {
-    const text = alertToastText(search('s', true, 'S'), [listing('a', { price: '  2 ist  ' })]);
-    expect(text.description).toBe('1 new: S — Harlequin Crest 2 ist');
+  it('tells different searches apart', () => {
+    expect(watchKey({ ...base(), stats: [{ ...stat, min: 10 }] })).not.toBe(watchKey({ ...base(), stats: [stat] }));
+    expect(watchKey({ ...base(), hardcore: true })).not.toBe(watchKey(base()));
+    expect(watchKey({ ...base(), hrMax: 1 })).not.toBe(watchKey(base()));
+  });
+
+  it('finds the alerting search for the filters, else a saved one to turn on', () => {
+    const watched = search('w', base(), true);
+    const other = search('o', { ...base(), itemName: 'Spirit' }, true);
+    expect(findWatch([other, watched], base())).toEqual({ watching: watched, saved: null });
+
+    const saved = search('s', base(), false);
+    expect(findWatch([other, saved], base())).toEqual({ watching: null, saved });
+    expect(findWatch([other], base())).toEqual({ watching: null, saved: null });
   });
 });

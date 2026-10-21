@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { showToast, undoToast } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import { MAX_ALERT_SEARCHES, type MarketStore } from '@/pages/market/store/useMarketStore';
+import type { MarketStore } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
 import { statName } from './stat-text';
 import type { MarketFilters, SavedSearch } from '../lib/types';
@@ -44,7 +44,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    store.saveSearch(trimmed, current);
+    if (!store.saveSearch(trimmed, current)) return;
     setName('');
     showToast({ title: 'Search saved', description: trimmed, variant: 'success' });
   };
@@ -64,7 +64,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     if (!store.setSearchAlert(search.id, on)) {
       showToast({
         title: 'Too many alerts',
-        description: `Up to ${MAX_ALERT_SEARCHES} saved searches can alert at once. Turn one off first.`,
+        description: `Up to ${store.limits.maxAlerting} saved searches can alert at once. Turn one off first.`,
         variant: 'warning',
       });
     }
@@ -91,7 +91,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
         </Button>
       </form>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <span>{`${alerting}/${MAX_ALERT_SEARCHES} alerting · checked every 15 s while the overlay runs`}</span>
+        <span>{`${alerting}/${store.limits.maxAlerting} alerting · popups for new matches while the overlay runs`}</span>
         <label className="flex items-center gap-1.5">
           Alerts
           <Switch
@@ -102,12 +102,30 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           />
         </label>
       </div>
-      {store.savedSearches.length === 0 ? (
+      {store.syncStatus === 'signedOut' ? (
+        <EmptyState
+          className="m-4"
+          icon={<Bookmark />}
+          title="Sign in to save searches"
+          description="Saved searches and watches are kept with your PD2 account on pd2trader.com."
+        />
+      ) : store.syncStatus === 'loading' && store.savedSearches.length === 0 ? (
+        <EmptyState className="m-4"
+          icon={<Bookmark />}
+          title="Loading saved searches…" />
+      ) : store.syncStatus === 'error' && store.savedSearches.length === 0 ? (
+        <EmptyState
+          className="m-4"
+          icon={<Bookmark />}
+          title="Couldn't load saved searches"
+          description="pd2trader.com did not answer. They load again when you sign in or reopen the overlay."
+        />
+      ) : store.savedSearches.length === 0 ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
           title="No saved searches"
-          description="Set up filters on the Search tab, then save them here to rerun with a click or get toasts for new listings."
+          description="Set up filters on the Search tab, then save them here (or press Watch) to rerun with a click or get popups for new listings."
         />
       ) : (
         <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
