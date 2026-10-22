@@ -112,8 +112,6 @@ export function isPanelVisible(def: PanelDef, panel: PanelState | undefined, gam
 const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' | 'gameBottomRight' =>
   placement === 'gameCenter' || placement === 'gameRight' || placement === 'gameBottomRight';
 
-export const GAME_BOTTOM_RIGHT_MARGIN = { right: 20, bottom: 10 };
-
 /** Placement → rect (CSS px), clamped fully into the viewport. `cursor` must be provided for 'cursor'. */
 export function computePlacement(
   placement: Placement,
@@ -134,11 +132,7 @@ export function computePlacement(
         rect = { x: game.x + game.width - size.width, y: game.y, width: size.width, height: game.height };
         break;
       case 'gameBottomRight':
-        rect = {
-          x: game.x + game.width - size.width - GAME_BOTTOM_RIGHT_MARGIN.right,
-          y: game.y + game.height - size.height - GAME_BOTTOM_RIGHT_MARGIN.bottom,
-          ...size,
-        };
+        rect = { x: game.x + game.width - size.width, y: game.y + game.height - size.height, ...size };
         break;
       case 'screenCenter':
         rect = {

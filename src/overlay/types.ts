@@ -70,7 +70,7 @@ export interface OverlayRect {
 export type Placement =
   | 'gameCenter' // centered on the game rect
   | 'gameRight' // right-aligned to game rect, full game height (item search)
-  | 'gameBottomRight' // x = game.right - w - 20, y = game.bottom - h - 10 (chat button)
+  | 'gameBottomRight' // flush on the game rect's bottom-right corner (chat dock frame)
   | 'screenCenter' // centered on the overlay (= monitor)
   | 'cursor' // top-left at the current OS cursor (clamped)
   | { x: number; y: number }; // CSS px relative to overlay

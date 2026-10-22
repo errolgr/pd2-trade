@@ -1,5 +1,6 @@
 import type { NetWorthTickerAnchor } from '@/hooks/useOptions';
 import type { OverlayRect } from '@/overlay';
+import { chatDockRect } from '@/pages/chat/chat-dock';
 
 /** Formats an HR amount for compact overlay display (1 decimal under 1000, none above). */
 export function formatHr(value: number): string {
@@ -16,8 +17,8 @@ export const NET_WORTH_PANEL_SIZE = { width: 360, height: 420 };
 
 /** Gap (px) between the ticker and the edges of the game. */
 const TICKER_EDGE_MARGIN = 12;
-/** The chat button panel's default spot: 240px frame, 20px from the game's right edge, 10px from its bottom. */
-const CHAT_BUTTON_FRAME = { size: 240, right: 20, bottom: 10 };
+/** Gap (px) between the ticker and the chat dock below it ('above-chat'). */
+const CHAT_DOCK_GAP = 4;
 
 /** Moves `rect` the least distance needed to lie fully inside `area` (top-left wins if it is larger). */
 export function clampToArea(rect: OverlayRect, area: OverlayRect): { x: number; y: number } {
@@ -28,7 +29,7 @@ export function clampToArea(rect: OverlayRect, area: OverlayRect): { x: number; 
 
 /**
  * Top-left (overlay px) of a `size` ticker at `anchor` on the game rect: a corner or top center inset by
- * TICKER_EDGE_MARGIN, or right-aligned just above the chat button's default spot.
+ * TICKER_EDGE_MARGIN, or right-aligned just above the chat dock.
  */
 export function tickerPosition(
   anchor: Exclude<NetWorthTickerAnchor, 'custom'>,
@@ -36,9 +37,11 @@ export function tickerPosition(
   game: OverlayRect,
 ): { x: number; y: number } {
   if (anchor === 'above-chat') {
-    const chatRight = game.x + game.width - CHAT_BUTTON_FRAME.right;
-    const chatTop = game.y + game.height - CHAT_BUTTON_FRAME.size - CHAT_BUTTON_FRAME.bottom;
-    return { x: Math.round(chatRight - size.width), y: Math.round(chatTop - size.height - 4) };
+    const dock = chatDockRect(game);
+    return {
+      x: Math.round(dock.x + dock.width - size.width),
+      y: Math.round(dock.y - size.height - CHAT_DOCK_GAP),
+    };
   }
   const x = anchor.endsWith('left')
     ? game.x + TICKER_EDGE_MARGIN
