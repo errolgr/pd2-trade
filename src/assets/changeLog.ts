@@ -2,7 +2,6 @@ export const changeLog = {
   '0.10.0': [
     '🆕 Fresh new look for every window, 20 color themes and a transparency setting (Settings → Interface)',
     '🆕 Net Worth (was Stash Value, Ctrl+X): tabs per item type, history charts and an in-game ticker you can drag or pin to any corner',
-    '🆕 Net Worth history is saved to your pd2trader.com account by default; turn it off in Settings → Net Worth',
     '🆕 Rare appraisal: Keep / Check / Vendor for your rares in price check and a Rares tab in Net Worth — the ? next to Verdict explains it',
     '🆕 Price check: 30-day price trend, a link to the item on pd2trader.com, what the price is based on, and tags for rarely traded items priced over a longer period',
     '🆕 Choose how many days prices are averaged over (Settings → Price Check, 7 days by default)',
@@ -16,7 +15,6 @@ export const changeLog = {
     '✨ Chat: long conversations open instantly, failed messages stay with a Retry, and "Whisper (copy)" explains the /w copy',
     '✨ Redesigned sign-in window: what the login does and does not access, and clearer progress',
     '✨ Smoother price check, quick list, chat and settings',
-    '✨ Usage stats help us improve the app',
     '🔧 Prices now use your chosen period instead of the whole season',
     '🔧 Steadier price check rows, fewer silent sign-outs, double actions and cut-off lists',
     "🔧 What's New waits until you're signed in",
