@@ -20,7 +20,7 @@ jobs:
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
     steps:
@@ -155,7 +155,7 @@ jobs:
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     needs: [create-release, build-tauri]
     steps:
       - uses: actions/checkout@v4
@@ -191,7 +191,7 @@ jobs:
   ########################################################################
   verify-live-update:
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     needs: [publish-release]
     steps:
       - uses: actions/checkout@v4
@@ -218,7 +218,7 @@ jobs:
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     needs: [verify-live-update]
     steps:
       - uses: actions/checkout@v4
