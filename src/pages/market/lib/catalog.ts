@@ -177,21 +177,46 @@ export function corruptionOption(value: string): CorruptionOption {
 export interface ItemNameOption {
   name: string;
   quality: 'Unique' | 'Set' | 'Runeword' | 'Base';
+  /** Equipment slot / type for the suggestion ("Helm", "Ring", "Bow"); absent for runewords and unknown bases. */
+  slot?: string;
+}
+
+/** Catalog types named by their member base instead ("Ring" rather than "Jewelry"). */
+const SLOT_BY_BASE_NAME: Record<string, true> = { Jewelry: true };
+const SLOT_RENAMES: Record<string, string> = { Armor: 'Body Armor' };
+
+/** Base code and base name → slot label, from the site's Type/Base catalog. */
+const SLOTS: Map<string, string> = (() => {
+  const map = new Map<string, string>();
+  for (const type of SITE_ITEM_TYPES) {
+    for (const base of type.bases) {
+      const slot = SLOT_BY_BASE_NAME[type.label] ? base.label : (SLOT_RENAMES[type.label] ?? type.label);
+      for (const code of optionCodes(base.code)) if (!map.has(code)) map.set(code, slot);
+      if (!map.has(base.label)) map.set(base.label, slot);
+    }
+  }
+  return map;
+})();
+
+/** Slot label, or undefined when it would only repeat the name ("Ring" for Ring). */
+function slotFor(key: string | undefined, name: string): string | undefined {
+  const slot = key ? SLOTS.get(key) : undefined;
+  return slot && slot !== name ? slot : undefined;
 }
 
 /** The site's item-name autocomplete: uniques, sets, runewords, then bases and a few misc items. */
 const ITEM_NAMES: ItemNameOption[] = (() => {
   const seen = new Set<string>();
   const out: ItemNameOption[] = [];
-  const add = (name: string | undefined, quality: ItemNameOption['quality']) => {
+  const add = (name: string | undefined, quality: ItemNameOption['quality'], slot?: string) => {
     if (!name || seen.has(name)) return;
     seen.add(name);
-    out.push({ name, quality });
+    out.push(slot ? { name, quality, slot } : { name, quality });
   };
-  for (const item of uniqueItems) add(item.name, 'Unique');
-  for (const item of setItems) add(item.name, 'Set');
+  for (const item of uniqueItems) add(item.name, 'Unique', slotFor(item.base_code, item.name));
+  for (const item of setItems) add(item.name, 'Set', slotFor(item.base_code, item.name));
   for (const item of runeWords) add(item.name, 'Runeword');
-  for (const name of SITE_BASE_NAMES) add(name, 'Base');
+  for (const name of SITE_BASE_NAMES) add(name, 'Base', slotFor(name, name));
   for (const name of [
     'Horadric Navigator',
     'Horadric Almanac',

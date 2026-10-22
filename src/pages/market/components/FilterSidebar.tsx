@@ -442,7 +442,9 @@ function ItemNameInput({ value, onChange }: { value: string | undefined; onChang
             >
               {o.name}
             </span>
-            <span className="shrink-0 text-[10px] text-muted-foreground">{o.quality}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground">
+              {o.slot ? `${o.slot} · ${o.quality}` : o.quality}
+            </span>
           </span>
         )}
       />

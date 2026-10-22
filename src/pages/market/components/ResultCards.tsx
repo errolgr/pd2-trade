@@ -15,7 +15,7 @@ import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
-import { buildCardModel, itemSlotLabel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
+import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
@@ -289,10 +289,10 @@ const ResultCard = React.memo(function ResultCard({
 
   const price = formatHrPrice(listing.hr_price);
   const quality = item.is_runeword ? 'Runeword' : (item.quality?.name ?? '');
-  const slot = itemSlotLabel(item);
+  const handType = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
   const subtitle = [
     [quality, item.base?.name && item.base.name !== item.name ? item.base.name : null].filter(Boolean).join(' '),
-    slot,
+    [handType, item.base?.type].filter(Boolean).join(' '),
   ]
     .filter(Boolean)
     .join(' · ');

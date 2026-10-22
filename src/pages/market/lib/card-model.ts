@@ -1,26 +1,6 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
-import { findTypeOption, optionCodes } from './catalog';
 import { parseStatKey } from './stats';
-
-/** Catalog type labels that read wrong as an equipment slot. */
-const SLOT_RENAMES: Record<string, string> = { Armor: 'Body Armor' };
-
-/**
- * The item's slot / type as a short label ("Helm", "Ring", "Grand Charm", "Two-Hand Sword"): the site catalog's
- * Type label for its `base.type_code`; grouped types (Jewelry, Charm…) name the member by its base ("Ring").
- * Null when unknown or when the title already says it.
- */
-export function itemSlotLabel(item: Pick<ItemDetail, 'name' | 'base' | 'damage'>): string | null {
-  const typeCode = item.base?.type_code;
-  const type = typeCode ? findTypeOption(typeCode) : null;
-  if (!type) return null;
-  const grouped = optionCodes(type.code).length > 1 || type.code.startsWith('{');
-  const label = grouped ? item.base?.name : (SLOT_RENAMES[type.label] ?? type.label);
-  if (!label || item.name.toLowerCase().includes(label.toLowerCase())) return null;
-  const hand = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
-  return hand && !grouped ? `${hand} ${label}` : label;
-}
 
 /*
  * Pure view model of the full-width result card: socketed items grouped, each item mod split into the item's own

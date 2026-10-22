@@ -9,7 +9,6 @@ import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { itemSlotLabel } from '../lib/card-model';
 import { listingAge } from '../lib/listing';
 import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
@@ -214,7 +213,6 @@ const ResultRow = React.memo(function ResultRow({
     .map((m) => m.label)
     .join(' · ');
   const base = item.base?.name && item.base.name !== item.name ? item.base.name : null;
-  const slot = itemSlotLabel(item);
   return (
     <div
       role="option"
@@ -234,7 +232,6 @@ const ResultRow = React.memo(function ResultRow({
         <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
           {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
-          {slot && <span className="shrink-0 text-[10px] text-muted-foreground/70">{slot}</span>}
           {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
           {item.socket_count > 0 && (
             <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
