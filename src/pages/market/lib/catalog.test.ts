@@ -46,9 +46,12 @@ describe('catalog', () => {
   it('suggests item names: prefix first, then word starts, then substrings', () => {
     const names = itemNameOptions('shako').map((o) => o.name);
     expect(names[0]).toBe('Shako');
-    expect(itemNameOptions('harlequin')).toEqual([{ name: 'Harlequin Crest', quality: 'Unique' }]);
+    expect(itemNameOptions('harlequin')).toEqual([{ name: 'Harlequin Crest', quality: 'Unique', slot: 'Helm' }]);
     expect(itemNameOptions('enigma')[0]).toEqual({ name: 'Enigma', quality: 'Runeword' });
-    expect(itemNameOptions('ber')[0]).toEqual({ name: 'Ber Rune', quality: 'Base' });
+    expect(itemNameOptions('ber')[0]).toMatchObject({ name: 'Ber Rune', quality: 'Base' });
+    expect(itemNameOptions('stone of jordan')[0].slot).toBe('Ring');
+    expect(itemNameOptions('mage plate')[0].slot).toBe('Body Armor');
+    expect(itemNameOptions('enigma')[0]).not.toHaveProperty('slot');
     expect(itemNameOptions('  ')).toEqual([]);
     expect(itemNameOptions('a', 5)).toHaveLength(5);
   });
