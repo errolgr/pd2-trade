@@ -82,13 +82,13 @@ export const PANEL_DEFS: PanelDefs = {
     component: ChatButtonPage,
     size: CHAT_DOCK_FRAME,
     resizable: false,
-    // flush on the game's bottom-right corner (the dock's dead zone); fixed there, never dragged
-    placement: 'gameBottomRight',
+    // a full-height strip on the game's right edge: the tab slides along it (ChatButtonPage), the frame never moves
+    placement: 'gameRight',
     persist: false,
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
-    // click-through frame: only the pill (and its open menu) take clicks
+    // click-through frame: only the tab (and its open menu) take clicks
     interactive: 'children',
   },
 

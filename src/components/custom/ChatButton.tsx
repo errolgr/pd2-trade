@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { popIn, scaleIn } from '@/lib/motion';
 
 interface ChatButtonProps {
-  /** Pill size (CSS px); everything inside scales with its width. */
+  /** Tab size (CSS px); everything inside scales with its width. */
   size: { width: number; height: number };
   onChatClick: () => void;
   onOffersClick: () => void;
@@ -28,9 +28,14 @@ interface ChatButtonProps {
   onDisableClick?: () => void;
   unreadCount?: number;
   tradeOffersCount?: number;
+  /** Called while the tab is dragged with the vertical travel (px) since the press. Omitted: not draggable. */
+  onDrag?: (dy: number) => void;
+  onDragEnd?: () => void;
+  /** Open the menu below the tab instead of above it (the tab is near the top). */
+  menuBelow?: boolean;
 }
 
-/** Moving the pointer from the pill to the menu crosses a small gap: only close after this long outside both. */
+/** Moving the pointer from the tab to the menu crosses a small gap: only close after this long outside both. */
 const LEAVE_GRACE_MS = 400;
 
 const formatCount = (count: number) => (count > 99 ? '99+' : String(count));
@@ -69,10 +74,14 @@ interface MenuEntry {
   badge?: { count: number; className: string };
 }
 
+/** Pointer travel (px) before a press on the tab becomes a drag instead of a click. */
+const DRAG_THRESHOLD = 4;
+
 /**
- * The chat dock: a vertical pill (chat · offers · menu caret) parked on a dead zone of the game's HUD. Nothing opens on
- * hover: a stray pointer passing over it mid-fight does nothing, only clicks do. The caret opens a menu of the other
- * windows. A new message or offer pulses the pill once.
+ * The chat dock: a tab (chat · offers · menu caret) flush on the game's right edge, flat side against it. Nothing
+ * opens on hover: a stray pointer passing over it mid-fight does nothing, only clicks do. Dragging the tab slides it
+ * along the edge (`onDrag` gets the vertical travel). The caret opens a menu of the other windows, above the tab or
+ * below it (`menuBelow`) near the top. A new message or offer pulses the tab once.
  */
 export const ChatButton: React.FC<ChatButtonProps> = ({
   size,
@@ -86,6 +95,9 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   onDisableClick,
   unreadCount = 0,
   tradeOffersCount = 0,
+  onDrag,
+  onDragEnd,
+  menuBelow = false,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const leaveTimer = useRef<number | undefined>(undefined);
@@ -109,6 +121,47 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const pick = (action: () => void) => () => {
     setMenuOpen(false);
     action();
+  };
+
+  // Press → drag past the threshold → onDrag(dy); the click that ends a drag is swallowed. Moves are tracked on the
+  // window: a quick drag leaves the tab before the threshold, and pointer capture would retarget the buttons' clicks.
+  const drag = useRef({ onDrag, onDragEnd });
+  useEffect(() => {
+    drag.current = { onDrag, onDragEnd };
+  });
+  const swallowClick = useRef(false);
+  const onTabPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !onDrag) return;
+    const startY = e.clientY;
+    let dragging = false;
+    const onMove = (ev: PointerEvent) => {
+      const dy = ev.clientY - startY;
+      if (!dragging && Math.abs(dy) < DRAG_THRESHOLD) return;
+      if (!dragging) {
+        dragging = true;
+        setMenuOpen(false);
+      }
+      drag.current.onDrag?.(dy);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      if (!dragging) return;
+      // The click (if any) follows this pointerup in the same task: swallow it, then stop swallowing
+      swallowClick.current = true;
+      window.setTimeout(() => (swallowClick.current = false));
+      drag.current.onDragEnd?.();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+  const onTabClickCapture = (e: React.MouseEvent) => {
+    if (!swallowClick.current) return;
+    swallowClick.current = false;
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const w = size.width;
@@ -158,7 +211,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             <motion.span
               key={pulse}
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-glow"
+              className="pointer-events-none absolute inset-0 rounded-l-xl ring-2 ring-glow"
               initial={{ opacity: 0.9, scale: 1 }}
               animate={{ opacity: 0, scale: 1.35 }}
               transition={{ duration: 0.9, ease: 'easeOut' }}
@@ -166,7 +219,12 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           )}
         </AnimatePresence>
 
-        <div className="flex h-full w-full flex-col overflow-hidden rounded-full border border-border bg-surface shadow-panel backdrop-blur-md">
+        <div
+          title={onDrag ? 'Drag to move' : undefined}
+          className="flex h-full w-full touch-none flex-col overflow-hidden rounded-l-xl border border-r-0 border-border bg-surface shadow-panel backdrop-blur-md"
+          onPointerDown={onTabPointerDown}
+          onClickCapture={onTabClickCapture}
+        >
           <button type="button"
             onClick={onChatClick}
             className={segment}
@@ -216,7 +274,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           >
             <ChevronUp
               style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
-              className={cn('transition-transform duration-(--dur-med)', menuOpen && 'rotate-180')}
+              className={cn('transition-transform duration-(--dur-med)', menuOpen !== menuBelow && 'rotate-180')}
             />
           </button>
         </div>
@@ -230,8 +288,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               initial="hidden"
               animate="visible"
               exit="exit"
-              style={{ transformOrigin: 'bottom right' }}
-              className="absolute right-0 bottom-full mb-1.5 w-52 rounded-lg border border-border bg-surface p-1 text-sm text-surface-foreground shadow-panel backdrop-blur-md"
+              style={{ transformOrigin: menuBelow ? 'top right' : 'bottom right' }}
+              className={cn(
+                'absolute right-0 w-52 rounded-lg border border-border bg-surface p-1 text-sm text-surface-foreground shadow-panel backdrop-blur-md',
+                menuBelow ? 'top-full mt-1.5' : 'bottom-full mb-1.5',
+              )}
             >
               {entries.map(
                 ({ label, icon: Icon, onClick, badge: count }) =>
