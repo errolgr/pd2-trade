@@ -85,7 +85,7 @@ export function ItemNameSearch({
   const basis = basisLabel(endDate ? 'season' : windowLabel(settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS));
 
   return (
-    <div className="relative w-80 cursor-text">
+    <div className="relative w-[min(24rem,40vw)] cursor-text">
       <Search
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -103,7 +103,6 @@ export function ItemNameSearch({
         optionKey={optionKey}
         onPick={(o) => onChange(o.name)}
         className={cn('h-7 pr-6 pl-7', value && 'text-foreground')}
-        contentClassName="w-96"
         renderOption={(o) => {
           const priced = !!namePriceCode(o.name, o.quality);
           const price = prices.get(optionKey(o));

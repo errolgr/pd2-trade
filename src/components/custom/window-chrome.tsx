@@ -10,6 +10,8 @@ interface WindowChromeProps {
   icon?: React.ReactNode;
   /** Right-side controls rendered before the close button. */
   actions?: React.ReactNode;
+  /** Centred in the bar regardless of the title / actions widths (e.g. a search field). */
+  center?: React.ReactNode;
   onClose?: () => void;
   className?: string;
   titleClassName?: string;
@@ -28,6 +30,7 @@ function WindowChrome({
   title,
   icon,
   actions,
+  center,
   onClose,
   className,
   titleClassName,
@@ -45,7 +48,7 @@ function WindowChrome({
       {...drag}
       data-slot="window-chrome"
       className={cn(
-        'flex h-10 shrink-0 select-none items-center gap-2 border-b border-border px-2.5 text-surface-foreground',
+        'relative flex h-10 shrink-0 select-none items-center gap-2 border-b border-border px-2.5 text-surface-foreground',
         dragRegion && 'cursor-grab active:cursor-grabbing',
         className,
       )}
@@ -60,6 +63,11 @@ function WindowChrome({
       >
         {title}
       </div>
+      {center && (
+        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 cursor-default items-center">
+          {center}
+        </div>
+      )}
       {actions && <div className="flex shrink-0 cursor-default items-center gap-1">{actions}</div>}
       {onClose && (
         <button
