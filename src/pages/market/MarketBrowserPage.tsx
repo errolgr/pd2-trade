@@ -351,17 +351,20 @@ const MarketBrowserPage: React.FC = () => {
               icon={<Store className="text-primary" />}
               onClose={close}
               closeLabel="Close market"
+              center={
+                tab === 'search' &&
+                filters && (
+                  <ItemNameSearch
+                    value={filters.itemName}
+                    onChange={(itemName) => setFilters({ ...filters, itemName })}
+                    ladder={filters.ladder}
+                    hardcore={filters.hardcore}
+                    inputRef={nameSearchRef}
+                  />
+                )
+              }
               actions={
                 <>
-                  {tab === 'search' && filters && (
-                    <ItemNameSearch
-                      value={filters.itemName}
-                      onChange={(itemName) => setFilters({ ...filters, itemName })}
-                      ladder={filters.ladder}
-                      hardcore={filters.hardcore}
-                      inputRef={nameSearchRef}
-                    />
-                  )}
                   <Tabs value={tab}
                     onValueChange={(v) => setTab(v as MarketTab)}>
                     <TabsList className="h-7 p-0.5">
