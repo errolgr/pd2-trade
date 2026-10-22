@@ -219,7 +219,7 @@ export function StatFilters({
         <Autocomplete<StatChoice>
           inputRef={searchRef}
           ariaLabel="Add a stat filter"
-          placeholder="Add stat…  ( / )"
+          placeholder="Add stat…  ( ? )"
           value={query}
           onQuery={setQuery}
           options={suggestions}
@@ -363,7 +363,9 @@ function PresetMenu({
           </>
         )}
         {user.length === 0 && builtIn.length === 0 && (
-          <p className="px-2 py-1.5 text-xs text-muted-foreground">No presets. Save the current stats with the bookmark.</p>
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">
+            No presets. Save the current stats with the bookmark.
+          </p>
         )}
         {onRestore && (
           <>

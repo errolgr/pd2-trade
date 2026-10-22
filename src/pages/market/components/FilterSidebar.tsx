@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,19 +13,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, ITEM_TYPES, RARITIES, basesForType, itemNameOptions } from '../lib/catalog';
+import { CLASSES, ITEM_TYPES, RARITIES, basesForType } from '../lib/catalog';
 import { DEFAULT_MAX_AGE_DAYS, MAX_FILTER_TEXT, MAX_SELLER_NAME, withSource } from '../lib/defaults';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
-import {
-  Autocomplete,
-  Field,
-  RangeField,
-  Section,
-  Segmented,
-  SelectField,
-  TriField,
-  fieldInputClass,
-} from './controls';
+import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
 
@@ -96,7 +87,6 @@ const ONLINE_OPTIONS: { value: OnlineFilter; label: string }[] = [
   { value: 'online', label: 'Online' },
   { value: 'offline', label: 'Offline' },
 ];
-const NAME_SUGGESTIONS = 30;
 
 const countDefined = (...values: unknown[]) =>
   values.filter((v) => v !== undefined && v !== '' && v !== 'any' && v !== 'all').length;
@@ -116,7 +106,14 @@ export interface FilterSidebarProps {
 const OPEN_BY_DEFAULT = new Set(['Stats', 'Item']);
 
 /** Every site filter, dense and collapsible, plus the stats section. */
-export function FilterSidebar({ filters: f, onChange, onReset, stats, sectionsOpen, onSectionOpen }: FilterSidebarProps) {
+export function FilterSidebar({
+  filters: f,
+  onChange,
+  onReset,
+  stats,
+  sectionsOpen,
+  onSectionOpen,
+}: FilterSidebarProps) {
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
   const section = (title: string) => ({
     title,
@@ -177,12 +174,8 @@ export function FilterSidebar({ filters: f, onChange, onReset, stats, sectionsOp
 
         <Section
           {...section('Item')}
-          active={countDefined(f.itemName, f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
+          active={countDefined(f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
         >
-          <Field label="Name">
-            <ItemNameInput value={f.itemName}
-              onChange={(itemName) => set({ itemName })} />
-          </Field>
           <SelectField
             label="Type"
             value={f.typeCode}
@@ -352,8 +345,10 @@ export function FilterSidebar({ filters: f, onChange, onReset, stats, sectionsOp
             onChange={(hasBuyout) => set({ hasBuyout })} />
         </Section>
 
-        <Section {...section('Seller')}
-          active={countDefined(f.sellerUserId ?? f.sellerName, f.userOnlineSite, f.userOnlineGame)}>
+        <Section
+          {...section('Seller')}
+          active={countDefined(f.sellerUserId ?? f.sellerName, f.userOnlineSite, f.userOnlineGame)}
+        >
           <Field label="Seller"
             htmlFor="market-seller">
             <SellerInput
@@ -408,52 +403,6 @@ export function FilterSidebar({ filters: f, onChange, onReset, stats, sectionsOp
   );
 }
 
-/** Exact item name, site parity: free text shows suggestions; the filter applies once one is picked. */
-function ItemNameInput({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
-  const [text, setText] = useState(value ?? '');
-  // A new value from outside (preset, payload, Clear) replaces the typed text
-  const [shownValue, setShownValue] = useState(value);
-  if (shownValue !== value) {
-    setShownValue(value);
-    setText(value ?? '');
-  }
-  const options = useMemo(() => itemNameOptions(text, NAME_SUGGESTIONS), [text]);
-  return (
-    <div className="relative">
-      <Autocomplete
-        ariaLabel="Item name"
-        placeholder="Harlequin Crest…"
-        value={text}
-        onQuery={(q) => {
-          setText(q);
-          if (!q.trim()) onChange(undefined);
-        }}
-        options={options}
-        optionKey={(o) => `${o.quality}:${o.name}`}
-        onPick={(o) => onChange(o.name)}
-        className={cn('pr-6', value && 'text-foreground')}
-        renderOption={(o) => (
-          <span className="flex items-center gap-2">
-            <span
-              className={cn(
-                'min-w-0 flex-1 truncate',
-                o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
-              )}
-            >
-              {o.name}
-            </span>
-            <span className="shrink-0 text-[10px] text-muted-foreground">
-              {o.slot ? `${o.slot} · ${o.quality}` : o.quality}
-            </span>
-          </span>
-        )}
-      />
-      {value && <ClearButton label="Clear item name"
-        onClick={() => onChange(undefined)} />}
-    </div>
-  );
-}
-
 /**
  * Seller name: the website username or an in-game account, matched exactly (any case) by the market service.
  * Typing applies it like the other text filters and replaces a seller picked with "browse seller" (by id).
@@ -481,18 +430,5 @@ function SellerInput({
       {(name || userId) && <ClearButton label="Clear seller"
         onClick={() => onChange(undefined, undefined)} />}
     </div>
-  );
-}
-
-function ClearButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground"
-    >
-      <X className="size-3" />
-    </button>
   );
 }

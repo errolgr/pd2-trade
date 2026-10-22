@@ -22,6 +22,7 @@ import { scoreListings } from './lib/search';
 import { type MarketSearch, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
 import { FilterSidebar } from './components/FilterSidebar';
+import { ItemNameSearch } from './components/ItemNameSearch';
 import { type LoadMoreState, ResultsList } from './components/ResultsList';
 import { type CardCommand, ResultCards } from './components/ResultCards';
 import { useCardCommand } from './hooks/useCardCommand';
@@ -72,6 +73,7 @@ const MarketBrowserPage: React.FC = () => {
   /** Cards view: that fetched alert listing, pinned above the results ("From alert: <search>"). */
   const [pinned, setPinned] = useState<{ row: ScoredListing; searchName?: string } | null>(null);
   const statSearchRef = useRef<HTMLInputElement>(null);
+  const nameSearchRef = useRef<HTMLInputElement>(null);
 
   // keepMounted: nothing is fetched until the panel was first shown
   const [activated, setActivated] = useState(false);
@@ -313,9 +315,10 @@ const MarketBrowserPage: React.FC = () => {
     const navRows = cards ? cardRows : rows;
     // Arrows/Enter drive the list unless a control (button, switch…) has focus
     const onList = e.target === e.currentTarget || !!e.target.closest('[role=listbox]');
-    if (e.key === '/' && tab === 'search') {
+    // "/" item name, "?" (Shift+/) add a stat
+    if ((e.key === '/' || e.key === '?') && tab === 'search') {
       e.preventDefault();
-      statSearchRef.current?.focus();
+      (e.key === '/' ? nameSearchRef : statSearchRef).current?.focus();
     } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && onList && navRows.length > 0) {
       e.preventDefault();
       const index = selectedId ? navRows.findIndex((r) => r.listing._id === selectedId) : -1;
@@ -350,6 +353,15 @@ const MarketBrowserPage: React.FC = () => {
               closeLabel="Close market"
               actions={
                 <>
+                  {tab === 'search' && filters && (
+                    <ItemNameSearch
+                      value={filters.itemName}
+                      onChange={(itemName) => setFilters({ ...filters, itemName })}
+                      ladder={filters.ladder}
+                      hardcore={filters.hardcore}
+                      inputRef={nameSearchRef}
+                    />
+                  )}
                   <Tabs value={tab}
                     onValueChange={(v) => setTab(v as MarketTab)}>
                     <TabsList className="h-7 p-0.5">

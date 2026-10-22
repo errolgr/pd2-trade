@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
@@ -296,6 +296,8 @@ export function Autocomplete<T>({
   loading,
   className,
   onKeyDown,
+  contentClassName,
+  footer,
 }: {
   value: string;
   onQuery: (q: string) => void;
@@ -309,6 +311,10 @@ export function Autocomplete<T>({
   loading?: boolean;
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  /** Extra classes for the dropdown (e.g. wider than the input). */
+  contentClassName?: string;
+  /** Shown under the options while the list is open. */
+  footer?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -366,7 +372,7 @@ export function Autocomplete<T>({
         onCloseAutoFocus={(e) => e.preventDefault()}
         // The input keeps focus; a click in the list must not blur it before the pick lands
         onMouseDown={(e) => e.preventDefault()}
-        className="w-(--radix-popover-trigger-width) min-w-56 p-1"
+        className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', contentClassName)}
       >
         <ul id={listId}
           role="listbox"
@@ -389,7 +395,22 @@ export function Autocomplete<T>({
             </li>
           ))}
         </ul>
+        {footer}
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** ✕ inside the right edge of a text field (the field needs `relative` and right padding). */
+export function ClearButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground"
+    >
+      <X className="size-3" />
+    </button>
   );
 }
