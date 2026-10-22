@@ -11,7 +11,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     permissions:
       pages: write
       id-token: write

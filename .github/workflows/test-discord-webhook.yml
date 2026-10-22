@@ -7,7 +7,7 @@ jobs:
   test-discord-notification:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64, pd2-trade]
     steps:
       - uses: actions/checkout@v4
         with:
