@@ -24,15 +24,15 @@ export const OPEN_TRADE_MS = 24 * 60 * 60 * 1000;
 /** Changes are written to disk once they stop for this long. */
 export const SAVE_DEBOUNCE_MS = 1000;
 
-/** `trade-message` from the Rust chat watcher (a "Hi, I'm interested in your…" whisper). */
+/** `trade-message` from the Rust chat watcher (a "Hi, I'm interested in your…" whisper); Rust `None` arrives as null. */
 export interface TradeMessageEvent {
   isIncoming: boolean;
   playerName: string;
-  accountName?: string;
-  characterName?: string;
+  accountName?: string | null;
+  characterName?: string | null;
   message: string;
-  itemName?: string;
-  price?: string;
+  itemName?: string | null;
+  price?: string | null;
 }
 
 /** `whisper-received` from the Rust chat watcher; `from` is the account name when the log shows one. */
@@ -189,8 +189,8 @@ export function recordTrade(history: WhisperHistory, event: TradeMessageEvent, n
     id: nextId(now),
     isIncoming: event.isIncoming,
     message: event.message,
-    itemName: event.itemName,
-    price: event.price,
+    itemName: event.itemName ?? undefined,
+    price: event.price ?? undefined,
     timestamp: now,
   };
   return withPerson(history, { ...withMessage, trades: [...withMessage.trades, trade] });
@@ -269,8 +269,15 @@ const TradeSchema = z.object({
   id: z.string(),
   isIncoming: z.boolean(),
   message: z.string(),
-  itemName: z.string().optional(),
-  price: z.string().optional(),
+  // Nullish: files written before recordTrade mapped the watcher's null to undefined.
+  itemName: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? undefined),
+  price: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? undefined),
   timestamp: z.number(),
   dismissed: z.literal(true).optional(),
 });

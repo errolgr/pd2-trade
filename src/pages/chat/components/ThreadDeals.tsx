@@ -30,7 +30,7 @@ import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { fillTemplate } from '@/lib/message-templates';
 import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
-import { confirmToast } from '@/overlay';
+import { confirmToast, showToast } from '@/overlay';
 import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
 import { useListingMarketPrices } from '../hooks/useListingMarketPrices';
@@ -246,8 +246,8 @@ export function ThreadDeals({
   /** Epoch ms, for "3m ago". */
   now: number;
   onCounter: (text: string) => void;
-  /** Sends a website message in this thread (the accept message with game info). */
-  onSendWebsite: (text: string) => Promise<void>;
+  /** Sends a website message in this thread (the accept message with game info); resolves whether it was delivered. */
+  onSendWebsite: (text: string) => Promise<boolean>;
   /** Copies `/w *<person> <text>` and records it. */
   onWhisper: (person: WhisperPerson, text: string) => void;
   onDismissTrade: (person: WhisperPerson, tradeId: string) => void;
@@ -420,7 +420,7 @@ export function ThreadDeals({
             onAccept={(gameInfo) =>
               run(offer.id, async () => {
                 if (gameInfo) {
-                  await onSendWebsite(
+                  const sent = await onSendWebsite(
                     template('acceptOfferMessageTemplate', {
                       gameInfo,
                       accountName: offer.accountName,
@@ -428,6 +428,15 @@ export function ThreadDeals({
                       price: offer.price,
                     }),
                   );
+                  // The buyer needs the game info: never accept without it reaching them.
+                  if (!sent) {
+                    showToast({
+                      title: 'Offer not accepted',
+                      description: "The game info wasn't sent. Retry the message, then accept.",
+                      variant: 'error',
+                    });
+                    return;
+                  }
                 }
                 await acceptOffer(listingId, offer.id);
               })
