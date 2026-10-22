@@ -44,6 +44,7 @@ vi.mock('@/hooks/useAppUpdates', () => ({ useAppUpdates: vi.fn() }));
 vi.mock('@/hooks/usePD2Auth', () => ({ usePD2Auth: vi.fn() }));
 vi.mock('@/hooks/useChangelog', () => ({ useChangelog: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ useSocketNotifications: vi.fn() }));
+vi.mock('@/pages/market/alerts/useMarketAlerts', () => ({ useMarketAlerts: vi.fn() }));
 const delistItem = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => ({ delistItem }) }));
 // Item parsing has its own tests; here "ITEM…" is a valid item and "…stash…" marks it as in the shared stash.
@@ -267,6 +268,12 @@ describe('AppController hotkey registration', () => {
     expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', {
       text: encodeItem('ITEM copied by the hotkey itself'),
     });
+  });
+
+  it('market hotkey toggles the market panel', async () => {
+    await mount();
+    await press(7);
+    expect(h.overlay.togglePanel).toHaveBeenCalledWith('market');
   });
 });
 

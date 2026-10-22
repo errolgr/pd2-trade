@@ -12,7 +12,7 @@ import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { listingArtUrl } from '../lib/listing-art';
+import { listingArtCandidates } from '../lib/listing-art';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 
 /**
@@ -35,16 +35,24 @@ export function ListingCardSkeleton() {
     className="mx-0.5 inline-block h-[30px] w-36 align-middle" />;
 }
 
-/** The item's picture (its type's icon as a fallback, a package when none loads); size it with `className`. */
+/**
+ * The item's picture (its type's icon as a fallback, a package when none loads); size it with `className`.
+ * A URL that fails to load moves on to the next candidate (pd2trader.com, then projectdiablo2.com).
+ */
 function ItemArt({ listing, className = 'max-h-5 max-w-5' }: { listing: MarketListingEntry; className?: string }) {
   const { itemsMapByKey } = useItems();
-  const [failed, setFailed] = useState(false);
-  const src = listingArtUrl(listing.item, itemsMapByKey);
-  if (!src || failed) return <Package className="size-3.5 text-muted-foreground" />;
-  return <img src={src}
-    alt=""
-    className={cn('object-contain', className)}
-    onError={() => setFailed(true)} />;
+  const candidates = listingArtCandidates(listing.item, itemsMapByKey);
+  const [failed, setFailed] = useState<string[]>([]);
+  const src = candidates.find((url) => !failed.includes(url));
+  if (!src) return <Package className="size-3.5 text-muted-foreground" />;
+  return (
+    <img
+      src={src}
+      alt=""
+      className={cn('object-contain', className)}
+      onError={() => setFailed((list) => [...list, src])}
+    />
+  );
 }
 
 /** A listing's picture on its own tile (pickers, the trader sidebar, conversation rows). */

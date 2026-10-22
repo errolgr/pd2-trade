@@ -112,6 +112,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const [search, setSearch] = useState('');
   // Unsent text per thread; the panel stays mounted while hidden, so drafts survive hiding it
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // Website users opened from the market (openPanel('chat', { userId })): a thread even before any message
+  const [contacts, setContacts] = useState<{ userId: string; name: string }[]>([]);
   // Reply channel picked per thread (default: website when it reaches them, else whisper)
   const [channels, setChannels] = useState<Record<string, ReplyChannel>>({});
   // Conversations deleted but still undoable: hidden now, deleted on the website once the undo window closes
@@ -173,8 +175,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         offers: [...incomingOffers, ...outgoingOffers],
         now,
         prefs,
+        contacts,
       }),
-    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs],
+    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs, contacts],
   );
   // Pin/mute/archive follow a thread onto ids it gained since they were set (a conversation started later), so
   // notifications that only know a conversation id or a whisper sender find them
@@ -287,8 +290,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     }
   }, [currentUserId, signedIn, loadConversations]);
 
-  // Apply openPanel('chat', { conversationId, conversation, threadId, newestUnread, reply, filter }) (every open
-  // bumps payloadVersion, so re-opening on the same conversation re-selects it). Adjusted during render.
+  // Apply openPanel('chat', { conversationId, conversation, threadId, newestUnread, reply, filter, userId, draft })
+  // (every open bumps payloadVersion, so re-opening on the same conversation re-selects it). Adjusted during render.
   const [handledPayloadVersion, setHandledPayloadVersion] = useState(0);
   const [request, setRequest] = useState<ConversationRequest | null>(null);
   // The open that asked to focus the composer (a toast's Reply)
@@ -305,7 +308,22 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
             InboxThread | undefined
           >((a, b) => (a && (a.latest?.at ?? 0) >= (b.latest?.at ?? 0) ? a : b), undefined)
       : undefined;
-    const threadId = payload?.threadId ?? newestUnread?.id;
+    // A website user (a market seller): their thread, else a new one whose first website message starts the
+    // conversation
+    const contact = payload?.userId ? { userId: payload.userId, name: payload.userName || 'Seller' } : undefined;
+    const contactAlias = contact && `user:${contact.userId}`;
+    const contactThreadId = contactAlias && (findThread(threads, contactAlias)?.id ?? contactAlias);
+    if (contact && !threads.some((t) => t.userId === contact.userId)) {
+      setContacts((current) => (current.some((c) => c.userId === contact.userId) ? current : [...current, contact]));
+    }
+    const draft = payload?.draft;
+    if (contactThreadId && draft) {
+      setDrafts((current) => {
+        const unsent = current[contactThreadId]?.trim();
+        return { ...current, [contactThreadId]: unsent ? `${unsent}\n${draft}` : draft };
+      });
+    }
+    const threadId = payload?.threadId ?? contactThreadId ?? newestUnread?.id;
     // A requested conversation shows in the full list; a filter (offers hotkey) applies as asked
     if (payload?.filter) setFilter(payload.filter);
     else if (conversationId || threadId) setFilter('all');

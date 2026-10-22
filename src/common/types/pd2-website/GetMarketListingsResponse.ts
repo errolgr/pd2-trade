@@ -24,6 +24,14 @@ export interface MarketListingEntry {
   created_by_id: string;
   updated_by_id: string;
   user: UserSummary;
+  /** Set once the seller accepted an offer (the listing is sold). */
+  accepted_offer_id?: string | null;
+  /** Market service rows: seller on the website / in game when the listing was last seen. */
+  online?: boolean;
+  in_game?: boolean;
+  /** Market service archive rows: what it sold for, when known. */
+  sell_price?: string;
+  sell_hr_price?: number;
 }
 
 export interface ItemDetail {
@@ -60,6 +68,14 @@ export interface ItemDetail {
   account_id: string;
   is_hardcore: boolean;
   is_ladder: boolean;
+  /** Gems/runes/jewels in the sockets, as full items. */
+  socketed?: ItemDetail[];
+  defense?: { base: number; total: number };
+  durability?: Durability;
+  /** The item's final damage (after its mods), per grip. */
+  damage?: { one_handed?: MinMax; two_handed?: MinMax };
+  /** Character holding the item. */
+  character_id?: string;
 }
 
 export interface BaseItem {
@@ -137,6 +153,9 @@ export interface Modifier {
   label: string;
   priority: number;
   corrupted?: boolean;
+  /** The mod's roll range, when it has one. */
+  min?: number;
+  max?: number;
 }
 
 export interface Location {

@@ -12,7 +12,8 @@ import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import type { MarketApi } from '@/pages/market/lib/types';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
@@ -56,8 +57,10 @@ interface Pd2WebsiteContextType extends SocialActions {
     note: string,
     type: 'exact' | 'note',
   ) => Promise<MarketListingEntry>;
-  getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
-  getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  getMarketListings: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
+  getMarketListingsArchive: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
+  /** The market browser's PD2 surface (listings, archive, favorites, seller lookup, offers); stable per token. */
+  marketApi: MarketApi;
   deleteMarketListing: (listingId: string) => Promise<void>;
   bumpAllMarketListings: (userId: string) => Promise<void>;
   authData: AuthData;
@@ -185,6 +188,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
+    marketApi,
   } = useMarketActions({
     settings,
     authData,
@@ -290,6 +294,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         bumpAllMarketListings,
         getMarketListings,
         getMarketListingsArchive,
+        marketApi,
         authData,
         updateMarketListing,
         updateItemByHash,

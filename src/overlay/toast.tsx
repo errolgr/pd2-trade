@@ -5,7 +5,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
-import { useOverlay } from './OverlayProvider';
+import { chatDockMetrics } from '@/pages/chat/chat-dock';
+import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 
 const DEFAULT_TITLE = 'PD2 Trader';
@@ -16,6 +17,7 @@ export type ToastPayload = string | GenericToastPayload | CustomToastPayload;
 /** Toast actions that open panels go through the overlay; OverlayProvider installs this bridge. */
 interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
+  openMarket(payload: PanelPayloads['market']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -38,6 +40,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
         break;
       }
+      case ToastActionType.OPEN_MARKET_PANEL:
+        bridge?.openMarket(action.data);
+        break;
       case ToastActionType.UPDATE_AVAILABLE:
         await installUpdateAndRelaunch();
         break;
@@ -156,14 +161,19 @@ export function undoToast({ title, description, duration, onUndo }: UndoToastOpt
 
 /**
  * Sonner toaster pinned to the bottom-right corner of the game rect while in game, otherwise of the overlay
- * (the screen's work area, just above the taskbar). Rendered by OverlayRoot.
+ * (the screen's work area, just above the taskbar). In game the stack starts left of the chat dock, so a new-message
+ * toast never hides the dock's badges. Rendered by OverlayRoot.
  */
 export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
+  const dockShown = usePanelOpen('chatButton') && gameFocused;
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+  const dock = chatDockMetrics(gameRect.height);
 
   const offset = {
-    right: Math.max(0, window.innerWidth - (anchor.x + anchor.width)) + TOAST_MARGIN,
+    right:
+      Math.max(0, window.innerWidth - (anchor.x + anchor.width)) +
+      (dockShown ? dock.inset + dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
     bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 

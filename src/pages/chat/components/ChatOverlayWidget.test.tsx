@@ -1099,6 +1099,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     return conversation;
   };
   const composer = () => screen.getByRole('textbox', { name: 'Message' });
+  const heading = () => screen.queryByRole('heading', { level: 3 })?.textContent ?? null;
   const filterButton = (name: string) => screen.getByRole('radio', { name });
   const sourceTags = () =>
     Array.from(document.querySelectorAll('section [role="img"][aria-label]')).map((el) =>
@@ -1287,6 +1288,35 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(api.sendMessage).toHaveBeenCalledWith('c9', 'still for sale?', ME);
     expect(rows()).toHaveLength(1);
     expect(bubbles()).toEqual(['still for sale?']);
+  });
+
+  it('opens a market seller with no history as a new thread with the draft; the first send starts it', async () => {
+    createConversation.mockResolvedValue(conv('c9', { id: 'erin', username: 'erin' }));
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('sent1', c, sender, content, 0));
+    await renderWidget([]);
+    await openChat({ userId: 'erin', userName: 'erin', draft: 'Hi, is this still available?', reply: true });
+    expect(heading()).toBe('erin');
+    expect(composer().textContent).toBe('Hi, is this still available?');
+    expect(document.activeElement).toBe(composer());
+
+    await act(async () => {
+      fireEvent.keyDown(composer(), { key: 'Enter' });
+    });
+    await flush();
+    expect(createConversation).toHaveBeenCalledWith([ME, 'erin']);
+    expect(api.sendMessage).toHaveBeenCalledWith('c9', 'Hi, is this still available?', ME);
+  });
+
+  it("opens a market seller's existing conversation, adding the draft after unsent text", async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    typeDraft(composer(), 'half typed');
+    await openChat({ userId: 'alice', userName: 'alice', draft: 'listing link' });
+    expect(heading()).toBe('Alice');
+    expect(composer().textContent).toContain('half typed');
+    expect(composer().textContent).toContain('listing link');
+    expect(rows()).toHaveLength(1);
   });
 
   it('follows the open whisper thread into the conversation it merges with: reads it, keeps the draft', async () => {

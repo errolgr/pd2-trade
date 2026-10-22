@@ -1,7 +1,16 @@
 export const changeLog = {
   '0.10.0': [
+<<<<<<< HEAD
     '🆕 Fresh new look for every window, 20 color themes and a transparency setting (Settings → Interface)',
     '🆕 Net Worth (was Stash Value, Ctrl+X): tabs per item type, history charts and an in-game ticker you can drag or pin to any corner',
+=======
+    '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game — every site filter plus combined stats like total resists or total life, built-in and your own stat presets, and click any mod on a listing to filter or sort by it',
+    '🆕 Market Watch: press Watch on any market search and get a popup with a sound (Settings → Chat → Sound) whenever a new listing matches it, even with the market closed; saved searches and watches now live with your account on pd2trader.com (your existing ones move over on sign-in). Browse sold listings and your site favorites too',
+    '🆕 "Open in market" in price check carries the item and the stats you picked into the market browser; "Browse all listings" in the chat Trader panel shows everything that seller has listed',
+    "✨ New chat dock: a slim pill on the statue beside the mana orb (or in the black bar when the game doesn't fill the screen), so teleport clicks never hit it — chat and offers with their counts, and ˄ for the market browser, net worth, stash value, listings and settings",
+    '🆕 Fresh new look for every window, plus 20 color themes (Settings → Interface)',
+    '🆕 Net Worth (was Stash Value, Ctrl+X): tabs per item type, history charts and an in-game ticker',
+>>>>>>> origin/main
     '🆕 Rare appraisal: Keep / Check / Vendor for your rares in price check and a Rares tab in Net Worth — the ? next to Verdict explains it',
     '🆕 Price check: 30-day price trend, a link to the item on pd2trader.com, what the price is based on, and tags for rarely traded items priced over a longer period',
     '🆕 Choose how many days prices are averaged over (Settings → Price Check, 7 days by default)',

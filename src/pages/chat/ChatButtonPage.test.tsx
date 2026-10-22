@@ -30,7 +30,8 @@ afterAll(() => {
 });
 
 const updateSettings = vi.fn();
-const overlay = { openPanel: vi.fn(), togglePanel: vi.fn() };
+// A 1920x1080 game: the dock is 43x118, 9px in from the corner (x 1868, y 953)
+const overlay = { openPanel: vi.fn(), togglePanel: vi.fn(), gameRect: { x: 0, y: 0, width: 1920, height: 1080 } };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -83,7 +84,8 @@ describe('ChatButtonPage', () => {
     });
     render(<ChatButtonPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disable Overlay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Disable overlay' }));
     expect(confirmToast).toHaveBeenCalledTimes(1);
     expect(updateSettings).not.toHaveBeenCalled();
 
@@ -95,16 +97,29 @@ describe('ChatButtonPage', () => {
     expect(order).toEqual(['update {"chatButtonOverlayEnabled":false}', 'showToast']);
   });
 
-  it.each([
-    ['Open PD2 Chat', 'togglePanel', ['chat']],
-    ['Settings', 'openPanel', ['settings']],
-    // Offers: chat on the Selling filter
-    ['Offers', 'openPanel', ['chat', { filter: 'selling' }]],
-    // keepPayload: an open quick list keeps the item being listed
-    ['Manage Listings', 'openPanel', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
-  ] as const)('%s calls %s', (name, method, args) => {
+  it('opens chat from the pill, on the newest unread thread when there is one', () => {
     render(<ChatButtonPage />);
-    fireEvent.click(screen.getByRole('button', { name }));
-    expect(overlay[method].mock.calls).toEqual([args]);
+    fireEvent.click(screen.getByRole('button', { name: 'Open PD2 Chat' }));
+    act(() => setBadgeCount('chatUnread', 2));
+    fireEvent.click(screen.getByRole('button', { name: 'Open PD2 Chat' }));
+    expect(overlay.togglePanel.mock.calls).toEqual([['chat'], ['chat', { newestUnread: true }]]);
+  });
+
+  it.each([
+    ['Market browser', ['market']],
+    // Beside the dock: right edges aligned, above it (no room below)
+    ['Net worth', ['netWorthPanel', undefined, { placement: { x: 1551, y: 525 } }]],
+    ['Stash value', ['currency']],
+    // Offers: chat on the Selling filter
+    ['Offers', ['chat', { filter: 'selling' }]],
+    // keepPayload: an open quick list keeps the item being listed
+    ['Manage listings', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
+    ['Settings', ['settings']],
+  ] as const)('menu: %s opens its window and closes the menu', (name, args) => {
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name }));
+    expect(overlay.openPanel.mock.calls).toEqual([args]);
+    expect(screen.getByRole('button', { name: 'More' }).getAttribute('aria-expanded')).toBe('false');
   });
 });

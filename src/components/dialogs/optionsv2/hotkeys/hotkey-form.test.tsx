@@ -25,6 +25,8 @@ const HOTKEYS: Partial<ISettings> = {
   hotkeyKeyDelist: 'u',
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
+  hotkeyModifierMarket: 'ctrl',
+  hotkeyKeyMarket: 'm',
 };
 
 let store: OptionsStore;
@@ -81,6 +83,12 @@ describe('HotkeyForm', () => {
     renderForm({ ...HOTKEYS, hotkeyKeySnapshot: 'n' });
     type('Net Worth Snapshot', '');
     expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeySnapshot).toBe('');
+  });
+
+  it('lets the market key be cleared to unbind it', () => {
+    renderForm(HOTKEYS);
+    type('Market', '');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeyMarket).toBe('');
   });
 
   it('warns on both rows when two actions share a combo, and clears once resolved', () => {

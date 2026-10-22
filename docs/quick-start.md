@@ -11,14 +11,15 @@ All that remains is to parse text in PD2 Trader and show to you in a fancy way.
 
 - Default hotkeys
   {:.no-list}
-    - Press `Ctrl + D` to check the price of the item
-    - Press `Ctrl + L` to list an item for trade
-    - Press `Ctrl + O` to open settings
-    - Press `Ctrl + X` to open stash valutation tab
+  - Press `Ctrl + D` to check the price of the item
+  - Press `Ctrl + L` to list an item for trade
+  - Press `Ctrl + O` to open settings
+  - Press `Ctrl + X` to open stash valutation tab
+  - Press `Ctrl + M` to open the market browser
 
 - Settings
-   - Ladder/Hardcore toggle can be found in the settings by visting the system tray icon and clicking "Settings"
+  - Ladder/Hardcore toggle can be found in the settings by visting the system tray icon and clicking "Settings"
 - Other
-    - The app can be closed by visiting the system tray icon and clicking "Quit"
+  - The app can be closed by visiting the system tray icon and clicking "Quit"
 
 ---

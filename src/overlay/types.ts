@@ -3,6 +3,7 @@ import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
+import type { MarketPanelPayload } from '@/pages/market/lib/types';
 
 export type PanelId =
   | 'itemSearch'
@@ -15,7 +16,8 @@ export type PanelId =
   | 'signIn'
   | 'delist'
   | 'netWorthTicker'
-  | 'netWorthPanel';
+  | 'netWorthPanel'
+  | 'market';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -27,7 +29,9 @@ export interface PanelPayloads {
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a
    * thread by any id it is known by (e.g. `whisper:<name>` of a whisper sender); newestUnread: the newest
    * thread with unread messages; reply: focus the composer; filter: the conversation list filter to show (the
-   * offers hotkey opens 'selling').
+   * offers hotkey opens 'selling'). userId/userName: a website user to message (e.g. a market seller): their
+   * thread, or a new one whose first website message starts the conversation. draft: text put in that thread's
+   * composer (after any unsent text).
    */
   chat:
     | {
@@ -37,6 +41,9 @@ export interface PanelPayloads {
         newestUnread?: boolean;
         reply?: boolean;
         filter?: InboxFilter;
+        userId?: string;
+        userName?: string;
+        draft?: string;
       }
     | undefined;
   chatButton: undefined;
@@ -48,6 +55,8 @@ export interface PanelPayloads {
   delist: { listings: MarketListingEntry[] };
   netWorthTicker: undefined;
   netWorthPanel: undefined;
+  /** Filters to search right away (merged over defaults), a saved search to run, a listing to focus. */
+  market: MarketPanelPayload | undefined;
 }
 
 /** CSS px relative to the overlay viewport. */
@@ -61,7 +70,7 @@ export interface OverlayRect {
 export type Placement =
   | 'gameCenter' // centered on the game rect
   | 'gameRight' // right-aligned to game rect, full game height (item search)
-  | 'gameBottomRight' // x = game.right - w - 20, y = game.bottom - h - 10 (chat button)
+  | 'gameBottomRight' // flush on the game rect's bottom-right corner (chat dock frame)
   | 'screenCenter' // centered on the overlay (= monitor)
   | 'cursor' // top-left at the current OS cursor (clamped)
   | { x: number; y: number }; // CSS px relative to overlay

@@ -2,6 +2,8 @@ export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
   OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
+  /** data: MarketPanelPayload (e.g. a saved search's alert: { savedSearchId, focusListingId }). */
+  OPEN_MARKET_PANEL = 'OPEN_MARKET_PANEL',
 }
 
 export interface CustomToastPayload {

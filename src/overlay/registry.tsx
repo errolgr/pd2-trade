@@ -10,6 +10,8 @@ import { DelistPage } from '@/pages/delist/DelistPage';
 import NetWorthTickerPage from '@/pages/net-worth/NetWorthTickerPage';
 import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
+import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
+import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -78,14 +80,15 @@ export const PANEL_DEFS: PanelDefs = {
   chatButton: {
     id: 'chatButton',
     component: ChatButtonPage,
-    size: { width: 240, height: 240 },
+    size: CHAT_DOCK_FRAME,
     resizable: false,
+    // flush on the game's bottom-right corner (the dock's dead zone); fixed there, never dragged
     placement: 'gameBottomRight',
-    persist: true,
+    persist: false,
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
-    // the orb sits centered in the frame; only it (and the expanded fan) take clicks
+    // click-through frame: only the pill (and its open menu) take clicks
     interactive: 'children',
   },
 
@@ -171,5 +174,21 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'onPointerDown',
     keepMounted: false,
     hideOnGameBlur: true,
+  },
+
+  // ---- market (Group Market) ----
+  market: {
+    id: 'market',
+    component: MarketBrowserPage,
+    // Split pane: filters | results | detail. Clamped to the screen.
+    size: { width: 1400, height: 860 },
+    minSize: { width: 980, height: 560 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: true, // search results and filters survive closing (like chat)
+    hideOnGameBlur: true,
+    closeOnBlur: true,
   },
 };

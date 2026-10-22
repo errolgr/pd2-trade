@@ -15,6 +15,7 @@ import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
 import { setToastBridge } from './toast';
 import { installDevHook } from './dev';
+import { browserLaunchFromUrl } from './browser-launch';
 import type { OpenOptions, OverlayRect, PanelDef, PanelDefs, PanelId, PanelPayloads, Placement } from './types';
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -111,8 +112,6 @@ export function isPanelVisible(def: PanelDef, panel: PanelState | undefined, gam
 const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' | 'gameBottomRight' =>
   placement === 'gameCenter' || placement === 'gameRight' || placement === 'gameBottomRight';
 
-export const GAME_BOTTOM_RIGHT_MARGIN = { right: 20, bottom: 10 };
-
 /** Placement → rect (CSS px), clamped fully into the viewport. `cursor` must be provided for 'cursor'. */
 export function computePlacement(
   placement: Placement,
@@ -133,11 +132,7 @@ export function computePlacement(
         rect = { x: game.x + game.width - size.width, y: game.y, width: size.width, height: game.height };
         break;
       case 'gameBottomRight':
-        rect = {
-          x: game.x + game.width - size.width - GAME_BOTTOM_RIGHT_MARGIN.right,
-          y: game.y + game.height - size.height - GAME_BOTTOM_RIGHT_MARGIN.bottom,
-          ...size,
-        };
+        rect = { x: game.x + game.width - size.width, y: game.y + game.height - size.height, ...size };
         break;
       case 'screenCenter':
         rect = {
@@ -402,8 +397,12 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   }, [closeDismissablePanels]);
 
   useEffect(() => {
-    // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away
-    setToastBridge({ openChat: (payload) => openPanel('chat', payload, { focus: true }) });
+    // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away.
+    // A market alert's View: the market browser opens on the saved search, focused on the new listing.
+    setToastBridge({
+      openChat: (payload) => openPanel('chat', payload, { focus: true }),
+      openMarket: (payload) => openPanel('market', payload),
+    });
     return () => setToastBridge(null);
   }, [openPanel]);
 
@@ -411,6 +410,15 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     () => installDevHook({ openPanel, closePanel, togglePanel, isOpen, getState: () => stateRef.current }),
     [openPanel, closePanel, togglePanel, isOpen],
   );
+
+  // Browser mode has no hotkeys: `/market` or `?panel=<id>` (optionally `&item=<name>`) opens a panel on load.
+  const launchedRef = useRef(false);
+  useEffect(() => {
+    if (launchedRef.current || isTauri()) return;
+    launchedRef.current = true;
+    const launch = browserLaunchFromUrl(window.location, Object.keys(defs));
+    if (launch) openPanel(launch.id, launch.payload);
+  }, [defs, openPanel]);
 
   return (
     <OverlayContext.Provider value={api}>

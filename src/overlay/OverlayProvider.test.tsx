@@ -116,6 +116,7 @@ const DEFS = {
   delist: def('delist'),
   netWorthTicker: def('netWorthTicker', { keyboard: 'never', keepMounted: true }),
   netWorthPanel: def('netWorthPanel'),
+  market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;
@@ -206,7 +207,7 @@ describe('computePlacement', () => {
   it.each([
     ['gameCenter', { x: 640, y: 360, width: 200, height: 100 }],
     ['gameRight', { x: 1180, y: 50, width: 200, height: 720 }],
-    ['gameBottomRight', { x: 1160, y: 660, width: 200, height: 100 }],
+    ['gameBottomRight', { x: 1180, y: 670, width: 200, height: 100 }],
     ['screenCenter', { x: 860, y: 490, width: 200, height: 100 }],
   ] as const)('%s', (placement, expected) => {
     expect(computePlacement(placement, size, gameRect, viewport)).toEqual(expected);
@@ -217,7 +218,7 @@ describe('computePlacement', () => {
     const fullscreenGame = { x: 0, y: 0, width: 1920, height: 1080 };
     const workArea = { x: 0, y: 0, width: 1920, height: 1032 };
     expect(computePlacement('gameBottomRight', size, fullscreenGame, workArea)).toEqual({
-      x: 1700,
+      x: 1720,
       y: 932,
       width: 200,
       height: 100,
