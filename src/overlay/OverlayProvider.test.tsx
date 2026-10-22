@@ -109,7 +109,7 @@ const DEFS = {
   quickList: def('quickList', { placement: 'cursor' }),
   currency: def('currency', { placement: 'screenCenter', persist: true }),
   chat: def('chat', { keepMounted: true, closeOnBlur: true }),
-  chatButton: def('chatButton', { placement: 'gameBottomRight', keyboard: 'never', keepMounted: true }),
+  chatButton: def('chatButton', { placement: 'gameRight', keyboard: 'never', keepMounted: true }),
   settings: def('settings', { closeOnBlur: true }),
   changeLog: def('changeLog'),
   signIn: def('signIn', { hideOnGameBlur: false }),
@@ -207,7 +207,6 @@ describe('computePlacement', () => {
   it.each([
     ['gameCenter', { x: 640, y: 360, width: 200, height: 100 }],
     ['gameRight', { x: 1180, y: 50, width: 200, height: 720 }],
-    ['gameBottomRight', { x: 1180, y: 670, width: 200, height: 100 }],
     ['screenCenter', { x: 860, y: 490, width: 200, height: 100 }],
   ] as const)('%s', (placement, expected) => {
     expect(computePlacement(placement, size, gameRect, viewport)).toEqual(expected);
@@ -217,12 +216,6 @@ describe('computePlacement', () => {
     // Borderless fullscreen game 1920x1080; the overlay stops at a 48px taskbar
     const fullscreenGame = { x: 0, y: 0, width: 1920, height: 1080 };
     const workArea = { x: 0, y: 0, width: 1920, height: 1032 };
-    expect(computePlacement('gameBottomRight', size, fullscreenGame, workArea)).toEqual({
-      x: 1720,
-      y: 932,
-      width: 200,
-      height: 100,
-    });
     const right = computePlacement('gameRight', size, fullscreenGame, workArea);
     expect(right.y + right.height).toBeLessThanOrEqual(workArea.height);
   });

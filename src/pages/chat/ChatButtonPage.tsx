@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ChatButton } from '@/components/custom/ChatButton';
 import { useOptions } from '@/hooks/useOptions';
 import { confirmToast, showToast, useBadgeCount, useOverlay } from '@/overlay';
 import { NET_WORTH_PANEL_SIZE, panelBesideTicker } from '@/pages/net-worth/overlay';
-import { chatDockMetrics, chatDockRect } from './chat-dock';
+import { chatDockRect, clampDockOffset, setChatDockOffset, useChatDockOffset } from './chat-dock';
 
 /** Gap (px) between the dock and the net worth panel it opens. */
 const PANEL_GAP = 8;
+/** Room (px) the menu needs above the tab; with less, it opens below. */
+const MENU_ROOM = 300;
 
 const ChatButtonPage: React.FC = () => {
   const { updateSettings } = useOptions();
@@ -14,7 +16,9 @@ const ChatButtonPage: React.FC = () => {
   const unreadCount = useBadgeCount('chatUnread');
   // One offers badge: open trade whispers + website offers
   const tradeOffersCount = useBadgeCount('whisperTrades') + useBadgeCount('tradeOffers');
-  const { width, height, inset } = chatDockMetrics(gameRect.height);
+  const offset = useChatDockOffset();
+  const dock = chatDockRect(gameRect, offset);
+  const dragStart = useRef<number | null>(null);
 
   const handleDisableClick = () =>
     confirmToast({
@@ -28,18 +32,20 @@ const ChatButtonPage: React.FC = () => {
     });
 
   return (
-    // The panel frame sits flush on the game's bottom-right corner; the pill keeps its inset inside it.
-    <div className="pointer-events-none absolute"
-      style={{ right: inset, bottom: inset, width, height }}>
+    // The panel frame spans the game's right edge, full height (click-through); the tab sits at its saved height.
+    <div
+      className="pointer-events-none absolute right-0"
+      style={{ top: dock.y - gameRect.y, width: dock.width, height: dock.height }}
+    >
       <ChatButton
-        size={{ width, height }}
+        size={dock}
         // Same as the chat hotkey: with unread messages, land on the newest unread thread
         onChatClick={() => (unreadCount > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat'))}
         onOffersClick={() => openPanel('chat', { filter: 'selling' })}
         onMarketClick={() => openPanel('market')}
         onNetWorthClick={() =>
           openPanel('netWorthPanel', undefined, {
-            placement: panelBesideTicker(chatDockRect(gameRect), NET_WORTH_PANEL_SIZE, gameRect, PANEL_GAP),
+            placement: panelBesideTicker(dock, NET_WORTH_PANEL_SIZE, gameRect, PANEL_GAP),
           })
         }
         onStashValueClick={() => openPanel('currency')}
@@ -49,6 +55,16 @@ const ChatButtonPage: React.FC = () => {
         onDisableClick={handleDisableClick}
         unreadCount={unreadCount}
         tradeOffersCount={tradeOffersCount}
+        // Slides along the edge: dragging down lowers the tab (smaller offset above the game's bottom)
+        onDrag={(dy) => {
+          dragStart.current ??= offset;
+          setChatDockOffset(clampDockOffset(dragStart.current - dy / gameRect.height, gameRect.height), false);
+        }}
+        onDragEnd={() => {
+          dragStart.current = null;
+          setChatDockOffset(offset);
+        }}
+        menuBelow={dock.y - gameRect.y < MENU_ROOM}
       />
     </div>
   );

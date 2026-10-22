@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
-import { chatDockMetrics } from '@/pages/chat/chat-dock';
+import { chatDockSize } from '@/pages/chat/chat-dock';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 
@@ -161,19 +161,19 @@ export function undoToast({ title, description, duration, onUndo }: UndoToastOpt
 
 /**
  * Sonner toaster pinned to the bottom-right corner of the game rect while in game, otherwise of the overlay
- * (the screen's work area, just above the taskbar). In game the stack starts left of the chat dock, so a new-message
- * toast never hides the dock's badges. Rendered by OverlayRoot.
+ * (the screen's work area, just above the taskbar). In game the stack starts left of the chat dock's edge strip, so
+ * a new-message toast never hides the dock's badges. Rendered by OverlayRoot.
  */
 export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
   const dockShown = usePanelOpen('chatButton') && gameFocused;
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-  const dock = chatDockMetrics(gameRect.height);
+  const dock = chatDockSize(gameRect.height);
 
   const offset = {
     right:
       Math.max(0, window.innerWidth - (anchor.x + anchor.width)) +
-      (dockShown ? dock.inset + dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
+      (dockShown ? dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
     bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 

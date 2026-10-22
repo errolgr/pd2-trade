@@ -18,6 +18,7 @@ import {
   panelBesideTicker,
   tickerPosition,
 } from './overlay';
+import { useChatDockOffset } from '@/pages/chat/chat-dock';
 
 /** Pointer travel (px) before a press on the ticker becomes a drag instead of a click. */
 const DRAG_THRESHOLD_PX = 4;
@@ -61,6 +62,8 @@ const NetWorthTicker: React.FC = () => {
   const pressRef = useRef<{ x: number; y: number; origin: OverlayRect } | null>(null);
   const draggingRef = useRef(false);
   const suppressClickRef = useRef(false);
+  // 'above-chat' follows the chat dock as it is dragged along the edge
+  const dockOffset = useChatDockOffset();
 
   // Re-evaluate freshness every 30s
   useEffect(() => {
@@ -114,7 +117,7 @@ const NetWorthTicker: React.FC = () => {
       }
     }
     if (anchor === 'custom' && migrationRef.current === 'running') return;
-    const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect);
+    const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect, dockOffset);
     const next = { ...clampToArea({ ...origin, ...pillSize }, viewport()), ...pillSize };
     const current = rectRef.current;
     if (
@@ -125,7 +128,7 @@ const NetWorthTicker: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, gameRect, pillSize, setRect, legacyPosition, updateSettings, migrated]);
+  }, [anchor, gameRect, dockOffset, pillSize, setRect, legacyPosition, updateSettings, migrated]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     suppressClickRef.current = false;

@@ -13,6 +13,7 @@ import {
 import type * as Overlay from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import ChatButtonPage from './ChatButtonPage';
+import { setChatDockOffset } from './chat-dock';
 
 vi.mock('@/overlay', async (importOriginal) => ({
   ...(await importOriginal<typeof Overlay>()),
@@ -30,7 +31,7 @@ afterAll(() => {
 });
 
 const updateSettings = vi.fn();
-// A 1920x1080 game: the dock is 43x118, 9px in from the corner (x 1868, y 953)
+// A 1920x1080 game: the dock is 43x118, flush on the right edge, 9px above the bottom (x 1877, y 953)
 const overlay = { openPanel: vi.fn(), togglePanel: vi.fn(), gameRect: { x: 0, y: 0, width: 1920, height: 1080 } };
 
 beforeEach(() => {
@@ -46,7 +47,9 @@ afterEach(() => {
     setBadgeCount('chatUnread', 0);
     setBadgeCount('whisperTrades', 0);
     setBadgeCount('tradeOffers', 0);
+    setChatDockOffset(0.008);
   });
+  localStorage.clear();
 });
 
 describe('ChatButtonPage', () => {
@@ -108,7 +111,7 @@ describe('ChatButtonPage', () => {
   it.each([
     ['Market browser', ['market']],
     // Beside the dock: right edges aligned, above it (no room below)
-    ['Net worth', ['netWorthPanel', undefined, { placement: { x: 1551, y: 525 } }]],
+    ['Net worth', ['netWorthPanel', undefined, { placement: { x: 1560, y: 525 } }]],
     ['Stash value', ['currency']],
     // Offers: chat on the Selling filter
     ['Offers', ['chat', { filter: 'selling' }]],
@@ -121,5 +124,29 @@ describe('ChatButtonPage', () => {
     fireEvent.click(screen.getByRole('menuitem', { name }));
     expect(overlay.openPanel.mock.calls).toEqual([args]);
     expect(screen.getByRole('button', { name: 'More' }).getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('slides along the edge when dragged, saves the spot on release, and the drag does not click', () => {
+    render(<ChatButtonPage />);
+    const tab = screen.getByTitle('Drag to move');
+    const dock = () => tab.closest<HTMLElement>('.absolute.right-0')!;
+    expect(dock().style.top).toBe('953px');
+
+    fireEvent.pointerDown(tab, { button: 0, clientY: 1000, pointerId: 1 });
+    fireEvent.pointerMove(tab, { clientY: 900, pointerId: 1 });
+    expect(dock().style.top).toBe('853px');
+    expect(localStorage.getItem('pd2-chat-dock-offset-v1')).toBeNull(); // saved on release only
+
+    // Dragged past the top: stops with the tab inside the game
+    fireEvent.pointerMove(tab, { clientY: -2000, pointerId: 1 });
+    expect(dock().style.top).toBe('0px');
+    fireEvent.pointerUp(tab, { pointerId: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Open PD2 Chat' }));
+    expect(overlay.togglePanel).not.toHaveBeenCalled();
+    expect(Number(localStorage.getItem('pd2-chat-dock-offset-v1'))).toBeCloseTo(1 - 118 / 1080);
+
+    // Near the top the menu opens below the tab
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('menu').className).toContain('top-full');
   });
 });

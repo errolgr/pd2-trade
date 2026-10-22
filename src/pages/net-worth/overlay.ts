@@ -29,15 +29,16 @@ export function clampToArea(rect: OverlayRect, area: OverlayRect): { x: number; 
 
 /**
  * Top-left (overlay px) of a `size` ticker at `anchor` on the game rect: a corner or top center inset by
- * TICKER_EDGE_MARGIN, or right-aligned just above the chat dock.
+ * TICKER_EDGE_MARGIN, or right-aligned just above the chat dock at `dockOffset` (see chat-dock.ts).
  */
 export function tickerPosition(
   anchor: Exclude<NetWorthTickerAnchor, 'custom'>,
   size: { width: number; height: number },
   game: OverlayRect,
+  dockOffset: number,
 ): { x: number; y: number } {
   if (anchor === 'above-chat') {
-    const dock = chatDockRect(game);
+    const dock = chatDockRect(game, dockOffset);
     return {
       x: Math.round(dock.x + dock.width - size.width),
       y: Math.round(dock.y - size.height - CHAT_DOCK_GAP),

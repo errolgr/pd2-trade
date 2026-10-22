@@ -109,8 +109,8 @@ export function isPanelVisible(def: PanelDef, panel: PanelState | undefined, gam
   return !!panel?.open && !panel.placing && !(def.hideOnGameBlur && !gameFocused);
 }
 
-const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' | 'gameBottomRight' =>
-  placement === 'gameCenter' || placement === 'gameRight' || placement === 'gameBottomRight';
+const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' =>
+  placement === 'gameCenter' || placement === 'gameRight';
 
 /** Placement → rect (CSS px), clamped fully into the viewport. `cursor` must be provided for 'cursor'. */
 export function computePlacement(
@@ -130,9 +130,6 @@ export function computePlacement(
         break;
       case 'gameRight':
         rect = { x: game.x + game.width - size.width, y: game.y, width: size.width, height: game.height };
-        break;
-      case 'gameBottomRight':
-        rect = { x: game.x + game.width - size.width, y: game.y + game.height - size.height, ...size };
         break;
       case 'screenCenter':
         rect = {
