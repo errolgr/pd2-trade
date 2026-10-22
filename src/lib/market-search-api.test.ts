@@ -145,4 +145,25 @@ describe('marketSearchBody', () => {
     });
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
+
+  it('sends OR and corruption rows, and never text over the service limits', () => {
+    const f = mergeFilters(base, {
+      priceText: 'x'.repeat(150),
+      sellerName: 'CIutch',
+      stats: [
+        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+        { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
+      ],
+    });
+    const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
+    expect(body.filters.stats).toEqual([
+      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+      { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+    ]);
+    expect(body.filters.priceText).toHaveLength(100);
+    expect(body.filters.sellerName).toBe('CIutch');
+    // A seller picked from a listing is queried by id
+    const byId = marketSearchBody({ ...f, sellerUserId: 'u1' }, 0, 25).filters;
+    expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
+  });
 });

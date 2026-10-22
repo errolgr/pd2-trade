@@ -21,8 +21,8 @@ export type StatFilterRow = Omit<StatFilter, 'id' | 'enabled'>;
 
 /** What the mod-line menus and "add all mods" act on; provided by the market page. */
 export interface ModActionsApi {
-  /** Merge rows into the stat filters (update by key), toast "Added filter: …" with Undo, highlight the row. */
-  addFilters: (rows: StatFilterRow[], description: string) => void;
+  /** Merge rows into the stat filters (update by key) and highlight the row; no toast (the row pulses). */
+  addFilters: (rows: StatFilterRow[]) => void;
   /** Sort the results by this stat (`sort: { by: 'stat', key, dir }`). */
   sortByStat: (key: string, dir: 'asc' | 'desc') => void;
   /** Price-check fill settings ("add all mods": min = value − margin). */
@@ -94,26 +94,18 @@ export function ModMenu({
         <DropdownMenuLabel className="truncate text-[11px] text-muted-foreground">{name}</DropdownMenuLabel>
         {key && value !== null && (
           <>
-            <DropdownMenuItem
-              onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value }], `${name} ≥ ${formatStat(value)}`)}
-            >
+            <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value }])}>
               <Filter className="size-3.5" />
               {socketLine ? `Filter ${name} ≥ ${formatStat(value)} (item total)` : `Filter ≥ ${formatStat(value)}`}
             </DropdownMenuItem>
             {ranged && (
-              <DropdownMenuItem
-                onSelect={() => actions.addFilters([{ kind: 'mod', key, min: lo, max: hi }], `${name} ${lo}–${hi}`)}
-              >
+              <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: lo, max: hi }])}>
                 <Filter className="size-3.5" />
                 {`Filter ${lo}–${hi} range`}
               </DropdownMenuItem>
             )}
             {!socketLine && (
-              <DropdownMenuItem
-                onSelect={() =>
-                  actions.addFilters([{ kind: 'mod', key, min: value, max: value }], `${name} = ${formatStat(value)}`)
-                }
-              >
+              <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value, max: value }])}>
                 <Filter className="size-3.5" />
                 {`Filter exactly ${formatStat(value)}`}
               </DropdownMenuItem>
@@ -142,12 +134,7 @@ export function ModMenu({
               return (
                 <DropdownMenuItem
                   key={p.id}
-                  onSelect={() =>
-                    actions.addFilters(
-                      [{ kind: 'pseudo', key: p.id, min: total }],
-                      `${pseudoName} ≥ ${formatStat(total)}`,
-                    )
-                  }
+                  onSelect={() => actions.addFilters([{ kind: 'pseudo', key: p.id, min: total }])}
                 >
                   <Sigma className="size-3.5 text-info" />
                   <span className="min-w-0">{`Filter ${pseudoName} ≥ ${formatStat(total)}`}</span>
@@ -167,7 +154,7 @@ export function AddAllModsButton({
   className,
   label,
 }: {
-  item: Pick<ItemDetail, 'name' | 'modifiers'>;
+  item: Pick<ItemDetail, 'modifiers'>;
   className?: string;
   /** Text next to the icon (icon-only without). */
   label?: string;
@@ -184,7 +171,7 @@ export function AddAllModsButton({
       aria-label="Add all mods as filters"
       onClick={(e) => {
         e.stopPropagation();
-        actions.addFilters(rows, `${rows.length} stats from ${item.name}`);
+        actions.addFilters(rows);
       }}
     >
       <ListFilter className="size-3" />

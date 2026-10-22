@@ -48,10 +48,10 @@ export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[
 
 /**
  * What a watch matches on: the filters minus what alerts ignore or the server fills in (sort, age window, stat
- * row ids/weights, disabled stats, empty fields, order of rarities and corruptions). Equal keys = same watch.
+ * row ids/weights, disabled stats, empty fields, order of rarities and rows). Equal keys = same watch.
  */
 export function watchKey(filters: MarketFilters): string {
-  const { sort: _sort, maxAgeDays: _age, stats, rarity, corruptions, requirements, ...rest } = filters;
+  const { sort: _sort, maxAgeDays: _age, stats, rarity, requirements, ...rest } = filters;
   const present = (value: unknown) => value !== undefined && value !== null && value !== '';
   const clean = (record: Record<string, unknown>) =>
     Object.fromEntries(
@@ -62,11 +62,10 @@ export function watchKey(filters: MarketFilters): string {
   return JSON.stringify({
     ...clean(rest),
     rarity: [...(rarity ?? [])].sort(),
-    corruptions: [...new Set(corruptions ?? [])].sort(),
     requirements: clean({ ...(requirements ?? {}) }),
     stats: (stats ?? [])
       .filter((s) => s.enabled !== false)
-      .map((s) => clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max }))
+      .map((s) => clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max, or: s.or || undefined }))
       .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
   });
 }

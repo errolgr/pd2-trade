@@ -82,10 +82,10 @@ describe('jewel art', () => {
 
   it('draws Rainbow Facets by element, whatever their graphic id', () => {
     const facet = (mod: string) => jewel('Rainbow Facet', 'Unique', 3, [{ name: 'item_skillondeath' }, { name: mod }]);
-    expect(listingArtUrl(facet('passive_fire_mastery'), itemsByKey)).toBe(url('invgsre'));
-    expect(listingArtUrl(facet('passive_cold_pierce'), itemsByKey)).toBe(url('invgsbe'));
-    expect(listingArtUrl(facet('passive_ltng_mastery'), itemsByKey)).toBe(url('invgsye'));
-    expect(listingArtUrl(facet('passive_pois_mastery'), itemsByKey)).toBe(url('invgsge'));
+    expect(listingArtUrl(facet('passive_fire_mastery'), itemsByKey)).toBe(url('invgswe5'));
+    expect(listingArtUrl(facet('passive_cold_pierce'), itemsByKey)).toBe(url('invgswe2'));
+    expect(listingArtUrl(facet('passive_ltng_mastery'), itemsByKey)).toBe(url('invgswe3'));
+    expect(listingArtUrl(facet('passive_pois_mastery'), itemsByKey)).toBe(url('invgswe4'));
     expect(listingArtUrl(jewel('Rainbow Facet', 'Unique', 3), itemsByKey)).toBe(url('invgswe'));
   });
 

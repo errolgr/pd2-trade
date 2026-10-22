@@ -107,8 +107,6 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
 
   if (query['item.corrupted'] === true) out.corrupted = 'yes';
   else if (query['item.corrupted'] === false) out.corrupted = 'no';
-  const corruptions = prop(query['item.corruptions'], '$all');
-  out.corruptions = Array.isArray(corruptions) ? corruptions.filter((c): c is string => typeof c === 'string') : [];
 
   if (query['item.is_ethereal'] === true) out.ethereal = 'yes';
   const sockets = readRange(query['item.socket_count']);
@@ -122,7 +120,11 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
         return typeof prop(match, 'name') === 'string' ? [match as ElemMatch] : [];
       })
     : [];
-  out.stats = matches.flatMap(statRows).map((row) => ({ ...row, id: crypto.randomUUID() }));
+  const corruptions = prop(query['item.corruptions'], '$all');
+  const corruptionRows: Omit<StatFilter, 'id'>[] = Array.isArray(corruptions)
+    ? corruptions.flatMap((key) => (typeof key === 'string' ? [{ kind: 'corruption', key, enabled: true }] : []))
+    : [];
+  out.stats = [...matches.flatMap(statRows), ...corruptionRows].map((row) => ({ ...row, id: crypto.randomUUID() }));
   return out;
 }
 

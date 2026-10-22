@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, Loader2, RotateCcw, X } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, CORRUPTION_OPTIONS, ITEM_TYPES, RARITIES, basesForType, itemNameOptions } from '../lib/catalog';
-import { DEFAULT_MAX_AGE_DAYS, withSource } from '../lib/defaults';
-import type { MarketApi, MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
+import { CLASSES, ITEM_TYPES, RARITIES, basesForType, itemNameOptions } from '../lib/catalog';
+import { DEFAULT_MAX_AGE_DAYS, MAX_FILTER_TEXT, MAX_SELLER_NAME, withSource } from '../lib/defaults';
+import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import {
   Autocomplete,
   Field,
@@ -106,13 +106,23 @@ export interface FilterSidebarProps {
   onChange: (next: MarketFilters) => void;
   /** Back to the defaults (keeps mode/source). */
   onReset: () => void;
-  api: MarketApi | null;
   stats: Omit<StatFiltersProps, 'stats' | 'onChange'>;
+  /** Sections the user opened or closed (by title); the rest use their default. */
+  sectionsOpen: Record<string, boolean>;
+  onSectionOpen: (title: string, open: boolean) => void;
 }
 
+/** Stats and Item start open; the rest start collapsed (their badge counts active filters). */
+const OPEN_BY_DEFAULT = new Set(['Stats', 'Item']);
+
 /** Every site filter, dense and collapsible, plus the stats section. */
-export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: FilterSidebarProps) {
+export function FilterSidebar({ filters: f, onChange, onReset, stats, sectionsOpen, onSectionOpen }: FilterSidebarProps) {
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
+  const section = (title: string) => ({
+    title,
+    open: sectionsOpen[title] ?? OPEN_BY_DEFAULT.has(title),
+    onOpenChange: (open: boolean) => onSectionOpen(title, open),
+  });
   const setReq = (changes: Partial<MarketFilters['requirements']>) =>
     set({ requirements: { ...f.requirements, ...changes } });
   const bases = useMemo(() => (f.typeCode ? basesForType(f.typeCode) : []), [f.typeCode]);
@@ -143,15 +153,30 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
         </Button>
       </div>
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
-        <Section title="Stats"
-          active={f.stats.filter((s) => s.enabled).length}>
+        <Section
+          {...section('Stats')}
+          active={f.stats.filter((s) => s.enabled).length}
+          actions={
+            f.stats.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
+                onClick={() => set({ stats: [] })}
+                title="Remove every stat filter"
+              >
+                Clear
+              </Button>
+            )
+          }
+        >
           <StatFilters {...stats}
             stats={f.stats}
             onChange={(next) => set({ stats: next })} />
         </Section>
 
         <Section
-          title="Item"
+          {...section('Item')}
           active={countDefined(f.itemName, f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
         >
           <Field label="Name">
@@ -183,38 +208,37 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
         </Section>
 
         <Section
-          title="Properties"
-          active={
-            countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax) +
-            f.corruptions.length
-          }
+          {...section('Properties')}
+          active={countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax)}
         >
-          <TriField label="Ethereal"
-            value={f.ethereal}
-            onChange={(ethereal) => set({ ethereal })} />
           <TriField label="Corrupted"
             value={f.corrupted}
             onChange={(corrupted) => set({ corrupted })} />
-          <TriField label="Desecrated"
-            value={f.desecrated}
-            onChange={(desecrated) => set({ desecrated })} />
-          <TriField label="Identified"
-            value={f.identified}
-            onChange={(identified) => set({ identified })} />
           <RangeField
             label="Sockets"
             min={f.socketsMin}
             max={f.socketsMax}
             onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
           />
-          <Field label="Corruptions">
-            <CorruptionsInput value={f.corruptions}
-              onChange={(corruptions) => set({ corruptions })} />
-          </Field>
+          <TriField label="Ethereal"
+            value={f.ethereal}
+            onChange={(ethereal) => set({ ethereal })} />
+          <TriField label="Desecrated"
+            value={f.desecrated}
+            onChange={(desecrated) => set({ desecrated })} />
+          <TriField label="Identified"
+            value={f.identified}
+            onChange={(identified) => set({ identified })} />
         </Section>
 
-        <Section title="Listing"
-          active={f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source] ? 1 : 0}>
+        <Section
+          {...section('Listing')}
+          // Collapsed by default: a non-default window or sort (e.g. "sort by this" from a mod menu) shows in the badge
+          active={
+            (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source] ? 1 : 0) +
+            (f.sort.by !== 'bumped' || f.sort.dir !== 'desc' ? 1 : 0)
+          }
+        >
           <Field label="Mode">
             <div className="flex gap-1">
               <Segmented
@@ -303,15 +327,16 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
           </Field>
         </Section>
 
-        <Section title="Price"
+        <Section {...section('Price')}
           active={countDefined(f.priceText, f.hrMin, f.hrMax, f.hasBuyout)}>
           <Field label="Price note"
             htmlFor="market-price-text">
             <Input
               id="market-price-text"
               placeholder="e.g. ist, 2 hr"
+              maxLength={MAX_FILTER_TEXT}
               value={f.priceText ?? ''}
-              onChange={(e) => set({ priceText: e.target.value || undefined })}
+              onChange={(e) => set({ priceText: e.target.value.slice(0, MAX_FILTER_TEXT) || undefined })}
               className={fieldInputClass}
             />
           </Field>
@@ -327,11 +352,11 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
             onChange={(hasBuyout) => set({ hasBuyout })} />
         </Section>
 
-        <Section title="Seller"
-          active={countDefined(f.sellerUserId, f.userOnlineSite, f.userOnlineGame)}>
-          <Field label="Seller">
+        <Section {...section('Seller')}
+          active={countDefined(f.sellerUserId ?? f.sellerName, f.userOnlineSite, f.userOnlineGame)}>
+          <Field label="Seller"
+            htmlFor="market-seller">
             <SellerInput
-              api={api}
               userId={f.sellerUserId}
               name={f.sellerName}
               onChange={(sellerUserId, sellerName) => set({ sellerUserId, sellerName })}
@@ -356,8 +381,7 @@ export function FilterSidebar({ filters: f, onChange, onReset, api, stats }: Fil
         </Section>
 
         <Section
-          title="Requirements"
-          defaultOpen={false}
+          {...section('Requirements')}
           active={countDefined(req.levelMin, req.levelMax, req.strMin, req.strMax, req.dexMin, req.dexMax)}
         >
           <RangeField
@@ -428,127 +452,32 @@ function ItemNameInput({ value, onChange }: { value: string | undefined; onChang
   );
 }
 
-function CorruptionsInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const [text, setText] = useState('');
-  const options = useMemo(() => {
-    const q = text.trim().toLowerCase();
-    return CORRUPTION_OPTIONS.filter(
-      (o) => !value.includes(o.value) && (!q || o.label.toLowerCase().includes(q)),
-    ).slice(0, NAME_SUGGESTIONS);
-  }, [text, value]);
-  const labelOf = (v: string) => CORRUPTION_OPTIONS.find((o) => o.value === v)?.label ?? v;
-  return (
-    <div className="space-y-1">
-      <Autocomplete
-        ariaLabel="Add corruption"
-        placeholder="Add corruption…"
-        value={text}
-        onQuery={setText}
-        options={options}
-        optionKey={(o) => o.value}
-        onPick={(o) => {
-          onChange([...value, o.value]);
-          setText('');
-        }}
-        renderOption={(o) => <span className="text-q-corrupted">{o.label}</span>}
-      />
-      {value.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {value.map((v) => (
-            <span
-              key={v}
-              className="inline-flex h-5 items-center gap-0.5 rounded-full border border-destructive/30 bg-destructive/10 pl-2 pr-0.5 text-[11px] text-q-corrupted"
-            >
-              <span className="max-w-40 truncate">{labelOf(v)}</span>
-              <button
-                type="button"
-                aria-label={`Remove ${labelOf(v)}`}
-                onClick={() => onChange(value.filter((x) => x !== v))}
-                className="inline-flex size-4 items-center justify-center rounded-full hover:bg-destructive/20"
-              >
-                <X className="size-2.5" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /**
- * Seller lookup (site parity: typing alone adds nothing). The PD2 API only matches exact usernames, so the
- * lookup runs on Enter / leaving the field and filters by the found user's id.
+ * Seller name: the website username or an in-game account, matched exactly (any case) by the market service.
+ * Typing applies it like the other text filters and replaces a seller picked with "browse seller" (by id).
  */
 function SellerInput({
-  api,
   userId,
   name,
   onChange,
 }: {
-  api: MarketApi | null;
   userId: string | undefined;
   name: string | undefined;
   onChange: (userId: string | undefined, name: string | undefined) => void;
 }) {
-  const [text, setText] = useState(name ?? '');
-  const [state, setState] = useState<'idle' | 'loading' | 'missing'>('idle');
-  const [shownName, setShownName] = useState(name);
-  if (shownName !== name) {
-    setShownName(name);
-    setText(name ?? '');
-  }
-
-  const lookup = async () => {
-    const q = text.trim();
-    if (!q) {
-      if (userId) onChange(undefined, undefined);
-      setState('idle');
-      return;
-    }
-    if (!api || q === name) return;
-    setState('loading');
-    try {
-      const [user] = (await api.findUsers(q)) ?? [];
-      if (user) {
-        onChange(user._id, user.username);
-        setState('idle');
-      } else setState('missing');
-    } catch {
-      setState('missing');
-    }
-  };
-
   return (
-    <div>
-      <div className="relative">
-        <Input
-          aria-label="Seller username"
-          aria-invalid={state === 'missing' || undefined}
-          placeholder="Exact username, Enter"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            setState('idle');
-          }}
-          onBlur={() => void lookup()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void lookup();
-            }
-          }}
-          className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
-        />
-        {state === 'loading' && (
-          <Loader2 className="absolute top-1/2 right-1.5 size-3 -translate-y-1/2 animate-spin text-muted-foreground" />
-        )}
-        {state !== 'loading' && userId && (
-          <ClearButton label="Clear seller"
-            onClick={() => onChange(undefined, undefined)} />
-        )}
-      </div>
-      {state === 'missing' && <p className="mt-0.5 text-[11px] text-destructive">{`No user named "${text.trim()}"`}</p>}
+    <div className="relative">
+      <Input
+        id="market-seller"
+        placeholder="Account or username"
+        maxLength={MAX_SELLER_NAME}
+        value={name ?? ''}
+        onChange={(e) => onChange(undefined, e.target.value.slice(0, MAX_SELLER_NAME) || undefined)}
+        title={userId ? 'This seller (picked from a listing)' : undefined}
+        className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
+      />
+      {(name || userId) && <ClearButton label="Clear seller"
+        onClick={() => onChange(undefined, undefined)} />}
     </div>
   );
 }

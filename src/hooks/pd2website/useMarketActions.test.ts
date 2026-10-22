@@ -259,19 +259,6 @@ describe('market browser API', () => {
     expect(lastCall().init.method).toBe('DELETE');
   });
 
-  it('findUsers looks a username up exactly and returns only id and name', async () => {
-    fetchMock.mockResolvedValueOnce(
-      fakeResponse(200, { total: 1, data: [{ _id: 'u9', username: 'Seller', game: { accounts: ['x'] } }] }),
-    );
-    const { actions } = market();
-    await expect(actions.findUsers('  Seller ')).resolves.toEqual([{ _id: 'u9', username: 'Seller' }]);
-    expect(lastCall().url).toBe('https://api.projectdiablo2.com/security/user?username=Seller&$limit=1');
-
-    fetchMock.mockClear();
-    await expect(actions.findUsers('  ')).resolves.toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   it('getListing reads one listing with its seller; 404 is null, 401 is an error (not "gone")', async () => {
     fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
     const { actions, onAuthError } = market();
@@ -310,7 +297,6 @@ describe('market browser API', () => {
     );
     const first = result.current.marketApi;
     expect(first.getMarketListings).toBe(result.current.getMarketListings);
-    expect(first.findUsers).toBe(result.current.findUsers);
     expect(first.createOffer).toBe(result.current.createOffer);
     rerender();
     expect(result.current.marketApi).toBe(first);

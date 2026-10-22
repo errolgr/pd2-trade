@@ -150,6 +150,26 @@ describe('local preferences (market-prefs.json)', () => {
       savedSearches: [],
     });
   });
+
+  it('remembers deleted built-in presets until they are restored, and the sections the user toggled', async () => {
+    await loadFrom({ hiddenPresets: ['builtin-old'], sectionsOpen: { Price: true } });
+    actions.hideBuiltInPreset('builtin-mf-gear');
+    actions.hideBuiltInPreset('builtin-mf-gear');
+    actions.setSectionOpen('Stats', false);
+    await flush();
+    expect(written().at(-1)).toMatchObject({
+      hiddenPresets: ['builtin-old', 'builtin-mf-gear'],
+      sectionsOpen: { Price: true, Stats: false },
+    });
+    actions.restoreBuiltInPresets();
+    await flush();
+    expect(getMarketPrefs().hiddenPresets).toEqual([]);
+    // Malformed values fall back to the defaults
+    expect(parseMarketPrefs(JSON.stringify({ hiddenPresets: 'x', sectionsOpen: { Price: 'yes' } }))).toMatchObject({
+      hiddenPresets: [],
+      sectionsOpen: {},
+    });
+  });
 });
 
 describe('server saved searches', () => {
@@ -162,6 +182,15 @@ describe('server saved searches', () => {
 
     syncSavedSearches(null);
     expect(getMarketPrefs()).toMatchObject({ syncStatus: 'signedOut', savedSearches: [] });
+  });
+
+  it('reads searches saved before corruption rows as corruption rows', async () => {
+    await loadFrom({});
+    const legacy = server('c', { filters: { ...filters('c'), corruptions: ['item_numsockets'] } as MarketFilters });
+    await signIn([legacy]);
+    const [search] = getMarketPrefs().savedSearches;
+    expect(search.filters).not.toHaveProperty('corruptions');
+    expect(search.filters.stats).toMatchObject([{ kind: 'corruption', key: 'item_numsockets', enabled: true }]);
   });
 
   it('retries a failed list with backoff while the same token is signed in', async () => {

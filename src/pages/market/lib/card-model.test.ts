@@ -4,6 +4,7 @@ import {
   amountIndex,
   buildCardModel,
   groupSockets,
+  itemSlotLabel,
   modMatchesStatKey,
   multipliedLabel,
   perLevelLabel,
@@ -23,6 +24,27 @@ const item = (over: Partial<ItemDetail>): ItemDetail =>
 const socket = (name: string, modifiers: Modifier[]) => item({ name, modifiers });
 
 const ohm = () => socket('Ohm Rune', [mod('maxdamage_percent', [45], '+45% Enhanced Damage')]);
+
+describe('itemSlotLabel', () => {
+  const slot = (name: string, base: object, damage?: object) =>
+    itemSlotLabel(item({ name, base: base as ItemDetail['base'], damage: damage as ItemDetail['damage'] }));
+
+  it('names the slot from the catalog type, members of grouped types by their base', () => {
+    expect(slot('Harlequin Crest', { name: 'Shako', type_code: 'helm' })).toBe('Helm');
+    expect(slot('Enigma', { name: 'Mage Plate', type_code: 'tors' })).toBe('Body Armor');
+    expect(slot('Bul-Kathos Wedding Band', { name: 'Ring', type_code: 'ring' })).toBe('Ring');
+    expect(slot('Gheeds Fortune', { name: 'Grand Charm', type_code: 'lcha' })).toBe('Grand Charm');
+    expect(slot('Grief', { name: 'Phase Blade', type_code: 'swor' }, { one_handed: { min: 1, max: 2 } })).toBe(
+      'One-Hand Sword',
+    );
+  });
+
+  it('skips unknown types and titles that already say it', () => {
+    expect(slot('Thing', { name: 'Thing', type_code: 'nope' })).toBeNull();
+    expect(slot('Jewel', { name: 'Jewel', type_code: 'jewl' })).toBeNull();
+    expect(slot('Fine Grand Charm of Life', { name: 'Grand Charm', type_code: 'lcha' })).toBeNull();
+  });
+});
 
 const windforce = item({
   name: 'Windforce',

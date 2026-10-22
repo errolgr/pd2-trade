@@ -4,9 +4,10 @@
  * - **Saved searches** (with their Watch / alert toggle) live on pd2trader.com (`/api/market/saved-searches`,
  *   `alerts/saved-search-api.ts`), per PD2 user. `syncSavedSearches(token)` lists them on sign-in; edits apply
  *   optimistically and roll back (with a toast) when the server refuses them.
- * - **Local preferences** stay in market-prefs.json (app config dir; localStorage in a browser): stat presets,
- *   the last search, default stat weights, the alerts switch and the results layout. Saved searches from before
- *   they moved to the server are read from its `savedSearches`, uploaded once on sign-in, then dropped.
+ * - **Local preferences** stay in market-prefs.json (app config dir; localStorage in a browser): stat presets
+ *   (and the built-in ones deleted), the last search, the alerts switch, the results layout and the filter
+ *   sections opened/closed. Saved searches from before they moved to the server are read from its
+ *   `savedSearches`, uploaded once on sign-in, then dropped.
  *
  * Module-level stores like `lib/chat-prefs.ts`; local changes are saved right away, in order.
  */
@@ -14,6 +15,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
 import { BaseDirectory, exists, mkdir, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { showToast } from '@/overlay';
+import { upgradeFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch, StatPreset } from '@/pages/market/lib/types';
 import {
   createSavedSearch,
@@ -39,11 +41,15 @@ export type MarketViewMode = 'rows' | 'cards';
 /** Local preferences (market-prefs.json). */
 export interface MarketLocalPrefs {
   userPresets: StatPreset[];
+  /** Built-in presets the user deleted (ids); "Restore default presets" clears it. */
+  hiddenPresets: string[];
   lastFilters: MarketFilters | null;
   /** Master switch for saved-search alerts (no stream, no popups when off). */
   alertsEnabled: boolean;
   /** Results layout: compact rows (+ detail pane) or self-contained cards. */
   viewMode: MarketViewMode;
+  /** Filter sidebar sections the user opened or closed (by title); the rest use their default. */
+  sectionsOpen: Record<string, boolean>;
   /** Saved searches from before they moved to the server, not uploaded yet. */
   legacySavedSearches: SavedSearch[];
 }
@@ -63,9 +69,11 @@ export type MarketPrefs = MarketLocalPrefs & SavedSearchState;
 
 export const EMPTY_LOCAL_PREFS: MarketLocalPrefs = {
   userPresets: [],
+  hiddenPresets: [],
   lastFilters: null,
   alertsEnabled: true,
   viewMode: 'cards',
+  sectionsOpen: {},
   legacySavedSearches: [],
 };
 
@@ -86,8 +94,10 @@ const PresetSchema = z.object({
   name: z.string(),
   typeCodes: z.array(z.string()).optional(),
   rarity: z.array(z.string()).optional(),
-  stats: z.array(z.object({ kind: z.enum(['mod', 'pseudo']), key: z.string() }).passthrough()),
+  stats: z.array(z.object({ kind: z.enum(['mod', 'pseudo', 'corruption']), key: z.string() }).passthrough()),
 });
+const HiddenPresetsSchema = z.array(z.string().max(100)).max(100);
+const SectionsOpenSchema = z.record(z.string().max(40), z.boolean());
 
 function entries<S extends z.ZodTypeAny>(raw: unknown, schema: S): z.infer<S>[] {
   if (!Array.isArray(raw)) return [];
@@ -108,13 +118,17 @@ export function parseMarketPrefs(text: string): MarketLocalPrefs {
   if (!raw || typeof raw !== 'object') return EMPTY_LOCAL_PREFS;
   const file = raw as Record<string, unknown>;
   const lastFilters = FiltersSchema.safeParse(file.lastFilters);
+  const hiddenPresets = HiddenPresetsSchema.safeParse(file.hiddenPresets);
+  const sectionsOpen = SectionsOpenSchema.safeParse(file.sectionsOpen);
   return {
     userPresets: entries(file.userPresets, PresetSchema).map(
       (p) => ({ ...p, builtIn: false }) as unknown as StatPreset,
     ),
+    hiddenPresets: hiddenPresets.success ? hiddenPresets.data : [],
     lastFilters: lastFilters.success ? (lastFilters.data as unknown as MarketFilters) : null,
     alertsEnabled: file.alertsEnabled !== false,
     viewMode: file.viewMode === 'rows' ? 'rows' : 'cards',
+    sectionsOpen: sectionsOpen.success ? sectionsOpen.data : {},
     legacySavedSearches: entries(file.savedSearches, SavedSearchSchema).map((s) => ({
       id: s.id,
       name: s.name,
@@ -205,9 +219,15 @@ function publishRemote(next: SavedSearchState) {
 const setSearches = (change: (searches: SavedSearch[]) => SavedSearch[]) =>
   publishRemote({ ...remote, savedSearches: change(remote.savedSearches) });
 
+/** Server filters may predate the current shape (legacy corruptions list, weights): read them as today's. */
+const upgradeSearch = (search: SavedSearch): SavedSearch => {
+  const filters = upgradeFilters(search.filters);
+  return filters === search.filters ? search : { ...search, filters };
+};
+
 const replaceSearch = (id: string, next: SavedSearch | null) =>
   setSearches((searches) =>
-    next ? searches.map((s) => (s.id === id ? next : s)) : searches.filter((s) => s.id !== id),
+    next ? searches.map((s) => (s.id === id ? upgradeSearch(next) : s)) : searches.filter((s) => s.id !== id),
   );
 
 const errorMessage = (error: unknown) => {
@@ -344,7 +364,11 @@ async function listForSession(owner: { token: string; generation: number }): Pro
     retryAttempt = 0;
     // Keep searches created while the list was loading (still pending)
     const pending = remote.savedSearches.filter(isPendingSearch);
-    publishRemote({ savedSearches: [...pending, ...items], syncStatus: 'ready', limits: limits ?? DEFAULT_LIMITS });
+    publishRemote({
+      savedSearches: [...pending, ...items.map(upgradeSearch)],
+      syncStatus: 'ready',
+      limits: limits ?? DEFAULT_LIMITS,
+    });
   } catch (error) {
     if (session !== owner) return;
     console.warn('[market] listing saved searches failed:', error);
@@ -518,6 +542,21 @@ export const marketStoreActions = {
       prefs.userPresets.some((p) => p.id === id)
         ? { ...prefs, userPresets: prefs.userPresets.filter((p) => p.id !== id) }
         : prefs,
+    );
+  },
+  /** Deletes a built-in preset (remembered; `restoreBuiltInPresets` brings them back). */
+  hideBuiltInPreset(id: string): void {
+    changeMarketPrefs((prefs) =>
+      prefs.hiddenPresets.includes(id) ? prefs : { ...prefs, hiddenPresets: [...prefs.hiddenPresets, id] },
+    );
+  },
+  restoreBuiltInPresets(): void {
+    changeMarketPrefs((prefs) => (prefs.hiddenPresets.length ? { ...prefs, hiddenPresets: [] } : prefs));
+  },
+  /** Remembers a filter section the user opened or closed. */
+  setSectionOpen(title: string, open: boolean): void {
+    changeMarketPrefs((prefs) =>
+      prefs.sectionsOpen[title] === open ? prefs : { ...prefs, sectionsOpen: { ...prefs.sectionsOpen, [title]: open } },
     );
   },
   /** The last search run (restored when the panel opens without a payload). Call on search, not per keystroke. */

@@ -10,8 +10,8 @@ import { showToast, undoToast } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
-import { statName } from './stat-text';
-import type { MarketFilters, SavedSearch } from '../lib/types';
+import { filterName } from './stat-text';
+import type { MarketFilters, SavedSearch, StatFilter } from '../lib/types';
 import { fieldInputClass } from './controls';
 
 const UNDO_MS = 6000;
@@ -23,7 +23,12 @@ export function describeFilters(f: MarketFilters): string {
   if (f.typeCode) parts.push(ITEM_TYPES.find((t) => t.code === f.typeCode)?.label ?? 'Type');
   if (f.rarity.length) parts.push(f.rarity.join('/'));
   const stats = f.stats.filter((s) => s.enabled);
-  if (stats.length) parts.push(stats.map((s) => `${statName(s.key)}${s.min != null ? ` ≥${s.min}` : ''}`).join(', '));
+  const row = (s: StatFilter) =>
+    `${s.kind === 'corruption' ? 'corrupted ' : ''}${filterName(s)}${s.min != null ? ` ≥${s.min}` : ''}`;
+  const required = stats.filter((s) => !s.or).map(row);
+  const anyOf = stats.filter((s) => s.or).map(row);
+  if (anyOf.length) required.push(`any of (${anyOf.join(' / ')})`);
+  if (required.length) parts.push(required.join(', '));
   if (f.sellerName) parts.push(`seller ${f.sellerName}`);
   parts.push(`${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? ' · sold' : ''}`);
   return parts.join(' · ');

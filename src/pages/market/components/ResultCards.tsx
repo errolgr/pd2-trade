@@ -15,7 +15,7 @@ import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
-import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
+import { buildCardModel, itemSlotLabel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
@@ -51,8 +51,6 @@ export interface ResultCardsProps {
   selectedId: string | null;
   /** Click: select (the card is self-contained; no detail pane needed). */
   onSelect: (listingId: string) => void;
-  /** Double click: open the detail pane anyway. */
-  onOpen: (listingId: string) => void;
   deals: ReadonlyMap<string, Deal>;
   pseudoKeys: string[];
   /** Enabled mod filter keys: matching lines are marked. */
@@ -83,7 +81,6 @@ export function ResultCards({
   rows,
   selectedId,
   onSelect,
-  onOpen,
   deals,
   pseudoKeys,
   statKeys,
@@ -159,7 +156,6 @@ export function ResultCards({
                   row={row}
                   selected={id === selectedId}
                   onSelect={onSelect}
-                  onOpen={onOpen}
                   deal={deals.get(id)}
                   pseudoKeys={pseudoKeys}
                   statKeys={statKeys}
@@ -240,7 +236,6 @@ const ResultCard = React.memo(function ResultCard({
   row,
   selected,
   onSelect,
-  onOpen,
   deal,
   pseudoKeys,
   statKeys,
@@ -255,7 +250,6 @@ const ResultCard = React.memo(function ResultCard({
   row: ScoredListing;
   selected: boolean;
   onSelect: (id: string) => void;
-  onOpen: (id: string) => void;
   deal: Deal | undefined;
   pseudoKeys: string[];
   statKeys: string[];
@@ -295,10 +289,10 @@ const ResultCard = React.memo(function ResultCard({
 
   const price = formatHrPrice(listing.hr_price);
   const quality = item.is_runeword ? 'Runeword' : (item.quality?.name ?? '');
-  const handType = item.damage?.two_handed ? 'Two-Hand' : item.damage?.one_handed ? 'One-Hand' : null;
+  const slot = itemSlotLabel(item);
   const subtitle = [
     [quality, item.base?.name && item.base.name !== item.name ? item.base.name : null].filter(Boolean).join(' '),
-    [handType, item.base?.type].filter(Boolean).join(' '),
+    slot,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -311,7 +305,6 @@ const ResultCard = React.memo(function ResultCard({
       aria-selected={selected}
       data-listing-id={listing._id}
       onClick={() => onSelect(listing._id)}
-      onDoubleClick={() => onOpen(listing._id)}
       className={cn(
         'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
         selected ? 'border-primary' : 'border-border/60 hover:border-border',
@@ -506,8 +499,7 @@ const ResultCard = React.memo(function ResultCard({
             </span>
           </span>
         </span>
-        <span className="flex shrink-0 items-center gap-1"
-          onDoubleClick={(e) => e.stopPropagation()}>
+        <span className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"

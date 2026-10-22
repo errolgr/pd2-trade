@@ -5,6 +5,7 @@
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { MAX_FILTER_TEXT, MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 
 /** A search that hasn't answered by then counts as the service being unavailable. */
@@ -44,7 +45,7 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
       hardcore: f.hardcore,
       ladder: f.ladder,
       itemName: f.itemName,
-      priceText: f.priceText,
+      priceText: f.priceText?.slice(0, MAX_FILTER_TEXT),
       hrMin: f.hrMin,
       hrMax: f.hrMax,
       typeCode: f.typeCode,
@@ -60,7 +61,7 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
       userOnlineGame: f.userOnlineGame,
       hasBuyout: f.hasBuyout,
       sellerUserId: f.sellerUserId,
-      sellerName: f.sellerName,
+      sellerName: f.sellerUserId ? undefined : f.sellerName?.slice(0, MAX_SELLER_NAME),
       requirements: {
         class: f.requirements.class,
         levelMin: f.requirements.levelMin,
@@ -81,8 +82,8 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
           max: s.max,
           weight: s.weight,
           enabled: s.enabled,
+          or: s.or || undefined,
         })),
-      corruptions: f.corruptions,
       maxAgeDays: f.maxAgeDays,
       sort: { by: f.sort.by, dir: f.sort.dir, key: f.sort.by === 'stat' ? f.sort.key : undefined },
     },

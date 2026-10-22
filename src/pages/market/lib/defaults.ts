@@ -3,6 +3,11 @@ import type { MarketFilters, StatFilter } from './types';
 /** The site's `updated_at` windows: Trade shows the last 3 days, Archive the last 14. */
 export const DEFAULT_MAX_AGE_DAYS = { live: 3, archive: 14 } as const;
 
+/** Longest free-text filter (item name, price note) the market service accepts (its dto `MAX_TEXT`). */
+export const MAX_FILTER_TEXT = 100;
+/** Longest seller name the market service accepts. */
+export const MAX_SELLER_NAME = 64;
+
 /** Fresh filters for the user's realm, matching the site's empty Trade search. */
 export function defaultFilters(mode: { hardcore: boolean; ladder: boolean }): MarketFilters {
   return {
@@ -19,7 +24,6 @@ export function defaultFilters(mode: { hardcore: boolean; ladder: boolean }): Ma
     hasBuyout: 'any',
     requirements: {},
     stats: [],
-    corruptions: [],
     maxAgeDays: DEFAULT_MAX_AGE_DAYS.live,
     sort: { by: 'bumped', dir: 'desc' },
   };
@@ -46,16 +50,20 @@ export function mergeFilters(base: MarketFilters, partial?: Partial<MarketFilter
 }
 
 /**
- * Filters stored before stat weights were removed (saved searches, the last search, payloads): weights are
- * dropped and the score/value sorts they fed fall back to the newest bumps.
+ * Filters stored by older versions (saved searches, the last search, payloads): stat weights are dropped and the
+ * score/value sorts they fed fall back to the newest bumps; the old `corruptions` list becomes corruption rows.
  */
-export function withoutWeights(f: MarketFilters): MarketFilters {
-  const weighted = f.stats.some((s) => s.weight !== undefined);
-  const scoreSort = f.sort.by === 'score' || f.sort.by === 'value';
-  if (!weighted && !scoreSort) return f;
+export function upgradeFilters(stored: MarketFilters & { corruptions?: unknown }): MarketFilters {
+  const { corruptions, ...f } = stored;
+  const legacy = Array.isArray(corruptions) ? corruptions.filter((c): c is string => typeof c === 'string') : [];
+  // Stored filters are only checked for their envelope: a field may be missing
+  const weighted = (f.stats ?? []).some((s) => s.weight !== undefined);
+  const scoreSort = f.sort?.by === 'score' || f.sort?.by === 'value';
+  if (!weighted && !scoreSort && corruptions === undefined) return stored;
+  const stats = weighted ? f.stats.map(({ weight: _weight, ...row }) => row) : (f.stats ?? []);
   return {
     ...f,
-    stats: weighted ? f.stats.map(({ weight: _weight, ...row }) => row) : f.stats,
+    stats: [...stats, ...legacy.map((key) => newStatFilter({ kind: 'corruption', key }))],
     sort: scoreSort ? { by: 'bumped', dir: 'desc' } : f.sort,
   };
 }

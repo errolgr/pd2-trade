@@ -78,12 +78,12 @@ export function jewelElement(mods: Pick<Modifier, 'name'>[] | undefined): JewelE
   return ELEMENT_MODS.find(([re]) => re.test(names))?.[1] ?? null;
 }
 
-/** Rainbow Facet art by element (the white jewel when none). */
+/** Rainbow Facet art by element: the coloured facet jewels the price-check window draws (the white one when none). */
 const FACET_ART: Record<JewelElement, string> = {
-  fire: 'invgsre',
-  cold: 'invgsbe',
-  lightning: 'invgsye',
-  poison: 'invgsge',
+  fire: 'invgswe5',
+  cold: 'invgswe2',
+  lightning: 'invgswe3',
+  poison: 'invgswe4',
 };
 
 /** What the art resolution reads (socketed items carry the same fields). */

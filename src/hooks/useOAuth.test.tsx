@@ -98,20 +98,44 @@ describe('useOAuth startOAuthFlow', () => {
     expect(toasts().map((t) => t.description)).toEqual(['Authentication successful!']);
   });
 
-  it('opens a browser tab outside Tauri', async () => {
+  it('outside Tauri opens the sign-in tab during the click, then points it at PD2', async () => {
     vi.mocked(isTauri).mockReturnValue(false);
-    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    const tab = { closed: false, opener: window, location: { href: 'about:blank' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
     routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
     const { result } = renderHook(() => useOAuth());
 
+    let pending!: Promise<string | false>;
+    act(() => {
+      pending = result.current.startOAuthFlow();
+    });
+    // Synchronously, before the start request resolves: still inside the user's gesture
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
     await act(async () => {
-      const pending = result.current.startOAuthFlow();
       await vi.advanceTimersByTimeAsync(2000);
-      await pending;
+      expect(await pending).toBe('acc');
     });
 
-    expect(open).toHaveBeenCalledWith('https://auth', '_blank', 'noopener,noreferrer');
+    expect(tab.location.href).toBe('https://auth');
+    expect(tab.opener).toBeNull();
+    expect(tab.close).not.toHaveBeenCalled();
     expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('outside Tauri says so and stops when the browser blocks the sign-in tab', async () => {
+    vi.mocked(isTauri).mockReturnValue(false);
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => useOAuth());
+
+    let outcome: string | false | undefined;
+    await act(async () => {
+      outcome = await result.current.startOAuthFlow();
+    });
+
+    expect(outcome).toBe(false);
+    expect(pollCount()).toBe(0);
+    expect(toasts().at(-1)?.description).toMatch(/blocked the sign-in window/);
   });
 
   it('times out after 10 minutes with a warning toast and stores nothing', async () => {

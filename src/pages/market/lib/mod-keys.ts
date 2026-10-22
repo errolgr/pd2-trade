@@ -71,35 +71,13 @@ export function mergeStatFilter(
   return { stats: [...stats, { ...row, id, enabled: row.enabled ?? true }], id };
 }
 
-/**
- * Merge several rows (mergeStatFilter each) and return an `undo` that reverts only this merge against the
- * stats as they are by then: rows it added are removed, rows it updated get their previous value back unless
- * they were edited since; every other change made in between stays.
- */
+/** Merge several rows (mergeStatFilter each); `id` is the last row touched. */
 export function mergeStatFilters(
   stats: StatFilter[],
   rows: (Omit<StatFilter, 'id' | 'enabled'> & { enabled?: boolean })[],
   newId: () => string = () => crypto.randomUUID(),
-): { stats: StatFilter[]; id: string; undo: (current: StatFilter[]) => StatFilter[] } {
-  // Row id → its value before the merge (null: added by it)
-  const before = new Map<string, StatFilter | null>();
-  let next = stats;
-  let id = '';
-  for (const row of rows) {
-    const merged = mergeStatFilter(next, row, newId);
-    if (!before.has(merged.id)) before.set(merged.id, next.find((s) => s.id === merged.id) ?? null);
-    next = merged.stats;
-    id = merged.id;
-  }
-  const after = new Map(next.filter((s) => before.has(s.id)).map((s) => [s.id, JSON.stringify(s)]));
-  const undo = (current: StatFilter[]) =>
-    current.flatMap((s) => {
-      if (!before.has(s.id)) return [s];
-      const prev = before.get(s.id);
-      if (!prev) return [];
-      return JSON.stringify(s) === after.get(s.id) ? [prev] : [s];
-    });
-  return { stats: next, id, undo };
+): { stats: StatFilter[]; id: string } {
+  return rows.reduce((merged, row) => mergeStatFilter(merged.stats, row, newId), { stats, id: '' });
 }
 
 /** Fill margin as the price check applies it (Settings → stat fill): percent of the value, or flat. */

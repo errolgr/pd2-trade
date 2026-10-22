@@ -9,13 +9,13 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import { showToast, undoToast, useOverlay, usePanel } from '@/overlay';
+import { showToast, useOverlay, usePanel } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMarketStore';
-import { defaultFilters, mergeFilters, withSource, withoutWeights } from './lib/defaults';
+import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './lib/defaults';
 import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { scoreListings } from './lib/search';
@@ -84,9 +84,9 @@ const MarketBrowserPage: React.FC = () => {
     setHandledVersion(payloadVersion);
     const saved = payload?.savedSearchId ? store.savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
     let next: MarketFilters | null = null;
-    if (saved) next = withoutWeights(saved.filters);
-    else if (payload?.filters) next = withoutWeights(mergeFilters(defaultFilters(mode), payload.filters));
-    else if (!filters) next = withoutWeights(store.lastFilters ?? defaultFilters(mode));
+    if (saved) next = upgradeFilters(saved.filters);
+    else if (payload?.filters) next = upgradeFilters(mergeFilters(defaultFilters(mode), payload.filters));
+    else if (!filters) next = upgradeFilters(store.lastFilters ?? defaultFilters(mode));
     if (next) {
       setFilters(next);
       setSelectedId(null);
@@ -242,7 +242,7 @@ const MarketBrowserPage: React.FC = () => {
   const resetFilters = () => filters && setFilters(freshFilters(filters));
 
   const presets = {
-    builtInPresets: BUILT_IN_PRESETS,
+    builtInPresets: BUILT_IN_PRESETS.filter((p) => !store.hiddenPresets.includes(p.id)),
     userPresets: store.userPresets,
     onApplyPreset: (preset: StatPreset) => filters && setFilters(applyPreset(filters, preset)),
     onSavePreset: (name: string) => {
@@ -256,28 +256,23 @@ const MarketBrowserPage: React.FC = () => {
       });
       showToast({ title: 'Preset saved', description: name, variant: 'success' });
     },
-    onRemovePreset: (preset: StatPreset) => store.removePreset(preset.id),
+    onRemovePreset: (preset: StatPreset) =>
+      preset.builtIn ? store.hideBuiltInPreset(preset.id) : store.removePreset(preset.id),
+    onRestorePresets: store.hiddenPresets.length ? store.restoreBuiltInPresets : undefined,
     searchRef: statSearchRef,
     highlight: statHighlight,
   };
 
-  /** Mod-line menus and "add all mods": merge filters by key (Undo toast), sort by a stat. */
+  /** Mod-line menus and "add all mods": merge filters by key (the row pulses, no toast), sort by a stat. */
   const modActions = useMemo<ModActionsApi | null>(() => {
     if (!filters) return null;
     return {
-      addFilters: (rows, description) => {
+      addFilters: (rows) => {
         if (rows.length === 0) return;
         const merge = mergeStatFilters(filters.stats, rows);
         setFilters({ ...filters, stats: merge.stats });
         setTab('search');
         setStatHighlight({ id: merge.id, nonce: Date.now() });
-        undoToast({
-          title: rows.length > 1 ? `Added ${rows.length} filters` : 'Added filter',
-          description,
-          duration: 6000,
-          // Only this merge is reverted; edits made since (other rows, item, price…) stay
-          onUndo: () => setFilters((cur) => cur && { ...cur, stats: merge.undo(cur.stats) }),
-        });
       },
       sortByStat: (key, dir) => {
         setFilters({ ...filters, sort: { by: 'stat', key, dir } });
@@ -426,8 +421,9 @@ const MarketBrowserPage: React.FC = () => {
                       filters={filters}
                       onChange={setFilters}
                       onReset={resetFilters}
-                      api={marketApi ?? null}
                       stats={presets}
+                      sectionsOpen={store.sectionsOpen}
+                      onSectionOpen={store.setSectionOpen}
                     />
                   </div>
                 )}
@@ -448,7 +444,7 @@ const MarketBrowserPage: React.FC = () => {
                           store={store}
                           current={filters}
                           onRun={(s) => {
-                            setFilters(withoutWeights(s.filters));
+                            setFilters(upgradeFilters(s.filters));
                             setTab('search');
                             setDetailOpen(false);
                           }}
@@ -496,7 +492,6 @@ const MarketBrowserPage: React.FC = () => {
                                   glowIds={glowIds}
                                   selectedId={selectedId}
                                   onSelect={selectCard}
-                                  onOpen={selectListing}
                                   statKeys={statKeys}
                                   command={cardCommands.command}
                                   takeCommand={cardCommands.take}

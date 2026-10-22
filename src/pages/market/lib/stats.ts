@@ -1,7 +1,10 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { PSEUDO_STATS } from './pseudo';
 import { SITE_STAT_OPTIONS } from './stat-options.data';
-import type { PseudoDef, StatOption } from './types';
+import type { CorruptionOption, PseudoDef, StatOption } from './types';
+
+/** A stat picker entry: a property, a pseudo stat or a cube corruption. */
+export type StatChoice = StatOption | PseudoDef | CorruptionOption;
 
 export interface ParsedStatKey {
   /** Modifier names to match (more than one for `a|b` alternatives). */
@@ -105,8 +108,13 @@ export function statLabel(key: string): string {
 }
 
 /** True for pseudo entries returned by searchStats. */
-export function isPseudo(option: StatOption | PseudoDef): option is PseudoDef {
+export function isPseudo(option: StatChoice): option is PseudoDef {
   return 'compute' in option;
+}
+
+/** True for corruption entries returned by searchStats. */
+export function isCorruption(option: StatChoice): option is CorruptionOption {
+  return 'rolled' in option;
 }
 
 /** Shorthands players type, expanded before matching. */
@@ -151,15 +159,20 @@ function scoreMatch(haystack: string, tokens: string[]): number | null {
   return score + haystack.length / 1000;
 }
 
+/** Query words asking for corruptions ("corrupt", "corrupted", "corruption"). */
+const CORRUPT_WORD = /^corrupt/;
+
 /**
  * Picker search: every query word (aliases like `fcr`, `res`, `mf` expanded) must appear in the label. Pseudo
- * stats rank ahead of plain properties on equal relevance. Empty query → pseudos then all properties.
+ * stats rank ahead of plain properties on equal relevance, corruptions after them unless the query says
+ * "corrupt…" (then they lead, and that word needn't appear in their label). Empty query → pseudos then all
+ * properties.
  */
-export function searchStats(query: string, limit = 50): (StatOption | PseudoDef)[] {
+export function searchStats(query: string, limit = 50, corruptions: readonly CorruptionOption[] = []): StatChoice[] {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [...PSEUDO_STATS, ...STAT_OPTIONS].slice(0, limit);
   const tokens = words.flatMap((w) => normalize(ALIASES[w] ?? w).split(' '));
-  const hits: { option: StatOption | PseudoDef; score: number }[] = [];
+  const hits: { option: StatChoice; score: number }[] = [];
   for (const pseudo of PSEUDO_STATS) {
     // "Total …" frames the pseudo, so rank on the rest; still match when the user typed "total"
     const label = normalize(pseudo.label);
@@ -169,6 +182,13 @@ export function searchStats(query: string, limit = 50): (StatOption | PseudoDef)
   for (const option of STAT_OPTIONS) {
     const score = scoreMatch(normalize(option.label), tokens) ?? scoreMatch(option.key.toLowerCase(), words);
     if (score !== null) hits.push({ option, score });
+  }
+  const wantsCorruption = words.some((w) => CORRUPT_WORD.test(w));
+  const corruptionTokens = tokens.filter((t) => !CORRUPT_WORD.test(t));
+  for (const option of corruptions) {
+    const score =
+      scoreMatch(normalize(option.label), corruptionTokens) ?? scoreMatch(option.value.toLowerCase(), corruptionTokens);
+    if (score !== null) hits.push({ option, score: score + (wantsCorruption ? -1 : 0.25) });
   }
   return hits
     .sort((a, b) => a.score - b.score)

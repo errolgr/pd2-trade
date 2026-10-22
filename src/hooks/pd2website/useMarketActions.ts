@@ -27,7 +27,6 @@ interface UseMarketActionsReturn {
   getFavorites: MarketApi['getFavorites'];
   addFavorite: MarketApi['addFavorite'];
   removeFavorite: MarketApi['removeFavorite'];
-  findUsers: MarketApi['findUsers'];
   getListing: MarketApi['getListing'];
   createOffer: NonNullable<MarketApi['createOffer']>;
   /** The market browser's API surface, stable while the token is. */
@@ -257,29 +256,6 @@ export function useMarketActions({
     [settings.pd2Token, onAuthError],
   );
 
-  // Seller lookup: PD2 only matches a whole username, case-insensitively (GET /security/user?username=)
-  const findUsers = useCallback(
-    async (name: string): Promise<{ _id: string; username: string }[]> => {
-      const username = name.trim();
-      if (!username) return [];
-      const query = { username, $limit: 1 };
-      const url = buildUrlWithQuery('https://api.projectdiablo2.com/security/user', query);
-      const response = await tauriFetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
-        },
-      });
-      const result: { data: { _id: string; username: string }[] } | null = await handleApiResponse(
-        response,
-        onAuthError,
-        query,
-      );
-      return result && result.data.map(({ _id, username }) => ({ _id, username }));
-    },
-    [settings.pd2Token, onAuthError],
-  );
-
   // Make an offer, as the site's Offer form does (POST /market/offer)
   const createOffer = useCallback(
     async (listingId: string, offer: { price: string; hrPrice?: number }): Promise<unknown> => {
@@ -329,19 +305,9 @@ export function useMarketActions({
       getFavorites,
       addFavorite,
       removeFavorite,
-      findUsers,
       createOffer,
     }),
-    [
-      getListing,
-      getMarketListings,
-      getMarketListingsArchive,
-      getFavorites,
-      addFavorite,
-      removeFavorite,
-      findUsers,
-      createOffer,
-    ],
+    [getListing, getMarketListings, getMarketListingsArchive, getFavorites, addFavorite, removeFavorite, createOffer],
   );
 
   return {
@@ -355,7 +321,6 @@ export function useMarketActions({
     getFavorites,
     addFavorite,
     removeFavorite,
-    findUsers,
     getListing,
     createOffer,
     marketApi,

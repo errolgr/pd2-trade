@@ -30,7 +30,6 @@ const filters = (over: Partial<MarketFilters> = {}): MarketFilters => ({
   hasBuyout: 'any',
   requirements: {},
   stats: [],
-  corruptions: [],
   maxAgeDays: 3,
   sort: { by: 'bumped', dir: 'desc' },
   ...over,

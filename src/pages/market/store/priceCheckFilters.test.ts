@@ -19,7 +19,7 @@ describe('marketQueryToFilters', () => {
         'item.base.type_code': 'circ',
         'item.base_code': 'ci0',
         'item.corrupted': true,
-        'item.corruptions': { $all: ['Fire Res'] },
+        'item.corruptions': { $all: ['item_fastercastrate'] },
         'item.is_ethereal': true,
         'item.socket_count': { $gte: 1, $lte: 2 },
         'item.modifiers': {
@@ -41,7 +41,6 @@ describe('marketQueryToFilters', () => {
       typeCode: 'circ',
       baseCode: 'ci0',
       corrupted: 'yes',
-      corruptions: ['Fire Res'],
       ethereal: 'yes',
       socketsMin: 1,
       socketsMax: 2,
@@ -50,6 +49,7 @@ describe('marketQueryToFilters', () => {
       { kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true },
       { kind: 'mod', key: 'item_singleskill{54}', min: 2, max: 3, enabled: true },
       { kind: 'mod', key: 'item_addskill_tab{25}', enabled: true },
+      { kind: 'corruption', key: 'item_fastercastrate', enabled: true },
     ]);
   });
 
@@ -65,7 +65,7 @@ describe('marketQueryToFilters', () => {
       },
       true,
     );
-    expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14, corruptions: [] });
+    expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14 });
     expect(stripIds(filters)).toEqual([
       { kind: 'mod', key: 'fireresist', min: 15, enabled: true },
       { kind: 'mod', key: 'lightresist', min: 15, enabled: true },

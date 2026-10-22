@@ -18,21 +18,29 @@ export const ANY = '__any';
 
 export const fieldInputClass = 'h-7 rounded-md px-2 text-xs shadow-none';
 
-/** Collapsible sidebar section with a count badge of its active filters. */
+/**
+ * Collapsible sidebar section with a count badge of its active filters. Uncontrolled (`defaultOpen`) unless
+ * `open` is given; `onOpenChange` hears every toggle either way.
+ */
 export function Section({
   title,
   active = 0,
   defaultOpen = true,
+  open: openProp,
+  onOpenChange,
   actions,
   children,
 }: {
   title: string;
   active?: number;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [openState, setOpenState] = useState(defaultOpen);
+  const open = openProp ?? openState;
   const id = useId();
   return (
     <section className="border-b border-border/60 last:border-b-0">
@@ -41,7 +49,10 @@ export function Section({
           type="button"
           aria-expanded={open}
           aria-controls={id}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setOpenState(!open);
+            onOpenChange?.(!open);
+          }}
           className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-[11px] font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <ChevronRight

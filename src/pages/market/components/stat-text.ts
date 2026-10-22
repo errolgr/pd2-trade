@@ -1,4 +1,6 @@
+import { corruptionOption } from '../lib/catalog';
 import { statLabel } from '../lib/stats';
+import type { StatFilter } from '../lib/types';
 
 /*
  * Stat labels are site-style templates ("+{X}% Total Fire Resistance"). Lists show the name without the
@@ -27,6 +29,11 @@ export function templateName(template: string): string {
 /** A stat key's (mod or pseudo) display name: "Faster Cast Rate", "Total Fire Resistance". */
 export function statName(key: string): string {
   return templateName(statLabel(key));
+}
+
+/** A stat row's display name; corruption rows by their corruption ("Faster Cast Rate", "Sockets"). */
+export function filterName(row: Pick<StatFilter, 'kind' | 'key'>): string {
+  return row.kind === 'corruption' ? templateName(corruptionOption(row.key).label) : statName(row.key);
 }
 
 /** Chips drop the explanatory parenthetical and shorten "Resistance(s)". */

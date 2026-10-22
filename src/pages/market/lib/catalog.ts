@@ -2,7 +2,7 @@ import { runeWords, setItems, uniqueItems } from '@/assets/items';
 import { modifierByName } from '@/assets/modifiers';
 import { SITE_BASE_NAMES, SITE_ITEM_TYPES } from './catalog.data';
 import { statLabel } from './stats';
-import type { CharClass, Rarity } from './types';
+import type { CharClass, CorruptionOption, Rarity } from './types';
 
 export interface CatalogOption {
   /** Query value: a type/base code, or the site's JSON `{"$in": [...]}` string for grouped entries. */
@@ -47,22 +47,6 @@ export function findBaseOption(baseCode: string): { typeCode: string; baseCode: 
 export function findTypeOption(typeCode: string): CatalogOption | null {
   return ITEM_TYPES.find((t) => t.code === typeCode || optionCodes(t.code).includes(typeCode)) ?? null;
 }
-
-const groupCode = (label: string) => ITEM_TYPES.find((t) => t.label === label)?.code ?? '';
-
-/** Grouped type codes presets and callers refer to by name. */
-export const TYPE_CODES = {
-  jewelry: groupCode('Jewelry'),
-  charm: groupCode('Charm'),
-  jewel: 'jewl',
-  circlet: 'circ',
-  boots: 'boot',
-  gloves: 'glov',
-  belt: groupCode('Belt'),
-  helm: 'helm',
-  armor: 'tors',
-  shield: 'shie',
-} as const;
 
 export const RARITIES: Rarity[] = ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted', 'Set', 'Unique', 'Runeword'];
 
@@ -154,6 +138,12 @@ const CORRUPTION_LABELS: Record<string, string> = {
   indestruct: 'Indestructible',
 };
 
+/**
+ * Corruptions without a `corrupted` modifier line of their own, so nothing to bound (the market service rejects
+ * min/max on them): sockets, the `dmg%` / `dmg-max` markers, dye and indestructible.
+ */
+const UNROLLED_CORRUPTIONS = new Set(['item_numsockets', 'dmg%', 'dmg-max', 'transform_dye', 'indestruct']);
+
 /** Corruption values that aren't property keys, mapped to the property they roll. */
 const CORRUPTION_PROPERTY: Record<string, string> = {
   'dmg-max': 'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage',
@@ -173,11 +163,16 @@ function corruptionLabel(value: string): string {
     .trim();
 }
 
-export const CORRUPTION_OPTIONS: { value: string; label: string }[] = [
-  ...CORRUPTION_KEYS,
-  'transform_dye',
-  'indestruct',
-].map((value) => ({ value, label: corruptionLabel(value) }));
+export const CORRUPTION_OPTIONS: CorruptionOption[] = [...CORRUPTION_KEYS, 'transform_dye', 'indestruct'].map(
+  (value) => ({ value, label: corruptionLabel(value), rolled: !UNROLLED_CORRUPTIONS.has(value) }),
+);
+
+const CORRUPTION_BY_VALUE = new Map(CORRUPTION_OPTIONS.map((o) => [o.value, o]));
+
+/** The picker entry of a corruption name; unknown names (older saved searches) are labelled by the name. */
+export function corruptionOption(value: string): CorruptionOption {
+  return CORRUPTION_BY_VALUE.get(value) ?? { value, label: value, rolled: !UNROLLED_CORRUPTIONS.has(value) };
+}
 
 export interface ItemNameOption {
   name: string;

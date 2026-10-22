@@ -16,18 +16,25 @@ export type CharClass = 'amazon' | 'assassin' | 'barbarian' | 'druid' | 'necroma
  */
 export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
+export type StatKind = 'mod' | 'pseudo' | 'corruption';
+
 export interface StatFilter {
   /** Stable row id (uuid) for React keys / editing. */
   id: string;
-  /** `mod` = PD2 property key; `pseudo` = a computed pseudo stat (both filtered by the market service). */
-  kind: 'mod' | 'pseudo';
-  /** PD2 modifier name (e.g. `item_fastercastrate`) or pseudo id (e.g. `pseudo_total_res`). */
+  /**
+   * `mod` = PD2 property key; `pseudo` = a computed pseudo stat; `corruption` = a cube corruption name
+   * (`item.corruptions`; min/max bound its corrupted line). All filtered by the market service.
+   */
+  kind: StatKind;
+  /** PD2 modifier name (e.g. `item_fastercastrate`), pseudo id (e.g. `pseudo_total_res`) or corruption name. */
   key: string;
   min?: number;
   max?: number;
   /** Weight for stat-weighted sort; undefined/0 = not scored. */
   weight?: number;
   enabled: boolean;
+  /** Member of the any-of group: the enabled `or` rows match when one of them does; other rows are all required. */
+  or?: boolean;
 }
 
 export interface Requirements {
@@ -68,12 +75,10 @@ export interface MarketFilters {
   userOnlineGame: OnlineFilter;
   hasBuyout: Tri;
   sellerUserId?: string;
-  /** Display only; the query uses sellerUserId. */
+  /** Seller name (website username or in-game account); queried when `sellerUserId` is not set. */
   sellerName?: string;
   requirements: Requirements;
   stats: StatFilter[];
-  /** item.corruptions `$all` (cube corruption names). */
-  corruptions: string[];
   /** updated_at window; site default 3. */
   maxAgeDays: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
@@ -87,6 +92,14 @@ export interface StatOption {
   label: string;
   /** Display group (Offense, Defense, Resists, Skills, Caster, Attributes, Utility, Charm/Misc, Corruption). */
   group: string;
+}
+
+/** A cube corruption the stat picker offers (`item.corruptions` value). */
+export interface CorruptionOption {
+  value: string;
+  label: string;
+  /** False when PD2 keeps no corrupted line to bound (sockets, dye…): presence only. */
+  rolled: boolean;
 }
 
 export interface PseudoDef {
@@ -177,11 +190,6 @@ export interface MarketApi {
   getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;
   addFavorite: (listingId: string, sellerId: string) => Promise<MarketFavorite>;
   removeFavorite: (favoriteId: string) => Promise<void>;
-  /**
-   * Seller lookup for the Seller filter. PD2 only supports an exact (case-insensitive) username match
-   * (`GET security/user?username=`), so this returns 0 or 1 users.
-   */
-  findUsers: (name: string) => Promise<{ _id: string; username: string }[]>;
   /**
    * Make an offer on a listing (site parity: POST market/offer `{listing_id, offer, hr_offer}`).
    * `price` is the offer text shown to the seller, `hrPrice` its optional HR value.

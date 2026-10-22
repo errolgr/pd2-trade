@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { defaultFilters, mergeFilters, withSource, withoutWeights } from './defaults';
+import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './defaults';
 import { itemArtUrl, itemDisplayName, listingAge, listingUrl, sellerAccount } from './listing';
 import { applyPreset, BUILT_IN_PRESETS } from './presets';
 import { PSEUDO_STATS } from './pseudo';
@@ -103,7 +103,7 @@ describe('defaults', () => {
   });
 });
 
-describe('withoutWeights', () => {
+describe('upgradeFilters', () => {
   const base = defaultFilters({ hardcore: false, ladder: true });
   it('drops stored weights and falls back from score/value sorts to newest bumps', () => {
     const old = {
@@ -111,10 +111,22 @@ describe('withoutWeights', () => {
       sort: { by: 'value' as const, dir: 'asc' as const },
       stats: [{ id: 'a', kind: 'mod' as const, key: 'maxhp', min: 10, weight: 1, enabled: true }],
     };
-    expect(withoutWeights(old)).toMatchObject({ sort: { by: 'bumped', dir: 'desc' } });
-    expect(withoutWeights(old).stats).toEqual([{ id: 'a', kind: 'mod', key: 'maxhp', min: 10, enabled: true }]);
+    expect(upgradeFilters(old)).toMatchObject({ sort: { by: 'bumped', dir: 'desc' } });
+    expect(upgradeFilters(old).stats).toEqual([{ id: 'a', kind: 'mod', key: 'maxhp', min: 10, enabled: true }]);
     const stat = { ...base, sort: { by: 'stat' as const, key: 'maxhp', dir: 'desc' as const } };
-    expect(withoutWeights(stat)).toBe(stat);
+    expect(upgradeFilters(stat)).toBe(stat);
+  });
+
+  it('turns the old corruptions list into presence-only corruption rows', () => {
+    const old = { ...base, stats: [{ id: 'a', kind: 'mod' as const, key: 'maxhp', enabled: true }] };
+    const upgraded = upgradeFilters({ ...old, corruptions: ['item_numsockets', 7, 'dmg%'] });
+    expect(upgraded).not.toHaveProperty('corruptions');
+    expect(upgraded.stats.map(({ id: _id, ...row }) => row)).toEqual([
+      { kind: 'mod', key: 'maxhp', enabled: true },
+      { kind: 'corruption', key: 'item_numsockets', enabled: true },
+      { kind: 'corruption', key: 'dmg%', enabled: true },
+    ]);
+    expect(upgradeFilters({ ...old, corruptions: [] })).toEqual(old);
   });
 });
 
@@ -122,11 +134,18 @@ describe('applyPreset', () => {
   const base = { ...defaultFilters({ hardcore: false, ladder: true }), typeCode: 'helm', baseCode: 'uap' };
 
   it('replaces stats with fresh ids, sets type/rarity/name, keeps the sort and drops stored weights', () => {
-    const circlet = BUILT_IN_PRESETS.find((p) => p.id === 'builtin-2-20-circlet')!;
+    const circlet = {
+      id: 'u-circlet',
+      name: '2/20 circlet',
+      builtIn: false,
+      typeCodes: ['circ'],
+      rarity: ['Magic' as const, 'Rare' as const],
+      stats: [{ kind: 'mod' as const, key: 'item_fastercastrate', min: 20, enabled: true }],
+    };
     const next = applyPreset(base, circlet);
     expect(next.stats.map((s) => s.key)).toEqual(circlet.stats.map((s) => s.key));
     expect(new Set(next.stats.map((s) => s.id)).size).toBe(next.stats.length);
-    expect(next).toMatchObject({ typeCode: 'circ', baseCode: undefined, rarity: ['Magic', 'Rare', 'Crafted'] });
+    expect(next).toMatchObject({ typeCode: 'circ', baseCode: undefined, rarity: ['Magic', 'Rare'] });
     expect(next.sort).toEqual(base.sort);
     const legacy = applyPreset(base, {
       id: 'u',
