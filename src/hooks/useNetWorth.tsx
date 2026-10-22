@@ -47,6 +47,11 @@ const SCHEDULER_TICK_MS = 30 * 1000;
  */
 const IDLE_AFTER_MS = 30 * 60 * 1000;
 const IDLE_PROBE_MS = 30 * 60 * 1000;
+/**
+ * Failed automatic snapshots back off: the n-th failure in a row waits interval × 2^(n-1), capped
+ * here, so an outage (PD2 stash down, 4xx for the account) isn't retried every scheduler tick.
+ */
+const FAILURE_BACKOFF_MAX_MS = 60 * 60 * 1000;
 
 const NetWorthContext = createContext<NetWorthContextValue | undefined>(undefined);
 
@@ -123,6 +128,11 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const retryAfterAuthRef = useRef<SnapshotTrigger | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  // Consecutive failed snapshots and when the last one failed (scheduler backoff).
+  const failuresRef = useRef(0);
+  const lastFailureAtRef = useRef<number | null>(null);
+  // A 401 gets one token refresh (or sign-in prompt) per failure streak, not one per attempt.
+  const authRecoveryUsedRef = useRef(false);
 
   // Reset owner-scoped state when the account/ladder/mode changes.
   useEffect(() => {
@@ -134,6 +144,9 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     lastSnapshotAtRef.current = null;
     lastSignatureRef.current = null;
     lastChangeAtRef.current = Date.now();
+    failuresRef.current = 0;
+    lastFailureAtRef.current = null;
+    authRecoveryUsedRef.current = false;
   }, [ownerKey]);
 
   useEffect(() => {
@@ -195,6 +208,9 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setLatest(response);
           setError(null);
           setRequestStatus('ok');
+          failuresRef.current = 0;
+          lastFailureAtRef.current = null;
+          authRecoveryUsedRef.current = false;
           if (response.snapshotId) refreshSessions();
           return response;
         } catch (err) {
@@ -202,8 +218,17 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.warn('[NetWorth] Snapshot failed:', err);
           setError(describeError(err));
           setRequestStatus('error');
-          // Expired token: same recovery as the rest of the app (silent refresh, else sign-in dialog).
-          if (err instanceof NetWorthApiError && err.status === 401) {
+          failuresRef.current += 1;
+          lastFailureAtRef.current = Date.now();
+          // Expired token: same recovery as the rest of the app (silent refresh, else sign-in dialog),
+          // once per failure streak so a token PD2 keeps rejecting doesn't loop refresh → retry → 401.
+          // A manual snapshot always gets it.
+          if (
+            err instanceof NetWorthApiError &&
+            err.status === 401 &&
+            (trigger === 'manual' || !authRecoveryUsedRef.current)
+          ) {
+            authRecoveryUsedRef.current = true;
             const refreshToken = settingsRef.current.pd2RefreshToken;
             const refreshed = refreshToken ? await refreshTokens(refreshToken) : false;
             if (refreshed) retryAfterAuthRef.current = trigger;
@@ -270,6 +295,12 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       wasFocused = focused;
       if (!focused) return;
       const now = Date.now();
+      // After failures, wait interval × 2^(n-1) (capped) since the last failed attempt.
+      const failedAt = lastFailureAtRef.current;
+      if (failedAt && failuresRef.current > 0) {
+        const wait = Math.min(intervalMs * 2 ** (failuresRef.current - 1), FAILURE_BACKOFF_MAX_MS);
+        if (now - failedAt < wait) return;
+      }
       const idle = now - lastChangeAtRef.current >= IDLE_AFTER_MS;
       const last = lastSnapshotAtRef.current;
       if (last && now - last < (idle ? IDLE_PROBE_MS : intervalMs)) return;

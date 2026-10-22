@@ -5,12 +5,12 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
-import { confirmToast, type ConfirmToastOptions } from '@/overlay';
+import { confirmToast, showToast, type ConfirmToastOptions } from '@/overlay';
 import { ThreadDeals } from './ThreadDeals';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/overlay', () => ({ confirmToast: vi.fn() }));
+vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), showToast: vi.fn() }));
 
 const offer = (over: Partial<TradeOffer>): TradeOffer => ({
   id: 'o1',
@@ -56,7 +56,7 @@ const actions = {
 };
 
 const onCounter = vi.fn();
-const onSendWebsite = vi.fn(async (_text: string) => {});
+const onSendWebsite = vi.fn(async (_text: string) => true);
 const onWhisper = vi.fn();
 const onDismissTrade = vi.fn();
 
@@ -153,11 +153,23 @@ describe('ThreadDeals website offers', () => {
 
   it('with a game, messages the filled accept template on the website before accepting', async () => {
     const order: string[] = [];
-    onSendWebsite.mockImplementationOnce(async (text: string) => void order.push(`send ${text}`));
+    onSendWebsite.mockImplementationOnce(async (text: string) => {
+      order.push(`send ${text}`);
+      return true;
+    });
     actions.acceptOffer.mockImplementationOnce(async () => void order.push('accept'));
     renderDeals({ offers: [offer({ id: 'o7', listingId: 'l7' })], listingIds: ['l7'] });
     await accept('trade-1', 'pw');
     expect(order).toEqual(['send Accepted Harlequin Crest (2 ist). Game: trade-1////pw', 'accept']);
+  });
+
+  it('leaves the offer open when the game info message fails to send', async () => {
+    onSendWebsite.mockResolvedValueOnce(false);
+    renderDeals({ offers: [offer({ id: 'o7', listingId: 'l7' })], listingIds: ['l7'] });
+    await accept('trade-1', 'pw');
+    expect(onSendWebsite).toHaveBeenCalledTimes(1);
+    expect(actions.acceptOffer).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Offer not accepted' }));
   });
 
   it('counters and declines an open incoming offer', async () => {

@@ -399,8 +399,8 @@ export function useChatStore({
 
   const sendsInFlightRef = useRef(new Set<string>());
   const deliver = useCallback(
-    async (conversationId: string, clientId: string, content: string) => {
-      if (!currentUserId) return;
+    async (conversationId: string, clientId: string, content: string): Promise<boolean> => {
+      if (!currentUserId) return false;
       sendsInFlightRef.current.add(clientId);
       try {
         const message = await sendMessage(conversationId, content, currentUserId);
@@ -409,9 +409,11 @@ export function useChatStore({
             ? { type: 'sendSucceeded', conversationId, clientId, message }
             : { type: 'sendFailed', conversationId, clientId },
         );
+        return !!message;
       } catch (error) {
         console.error('Failed to send message:', error);
         dispatch({ type: 'sendFailed', conversationId, clientId });
+        return false;
       } finally {
         sendsInFlightRef.current.delete(clientId);
       }
@@ -419,10 +421,13 @@ export function useChatStore({
     [currentUserId, sendMessage],
   );
 
-  /** Append a pending message right away and send it; a failure keeps it in the thread as `failed`. */
+  /**
+   * Append a pending message right away and send it; a failure keeps it in the thread as `failed`.
+   * Resolves whether it was delivered.
+   */
   const send = useCallback(
-    (conversationId: string, content: string) => {
-      if (!currentUserId) return;
+    (conversationId: string, content: string): Promise<boolean> => {
+      if (!currentUserId) return Promise.resolve(false);
       const clientId = `local-${Date.now().toString(36)}-${++clientIdSeq}`;
       const now = new Date().toISOString();
       dispatch({
@@ -441,7 +446,7 @@ export function useChatStore({
           created_by_id: currentUserId,
         },
       });
-      void deliver(conversationId, clientId, content);
+      return deliver(conversationId, clientId, content);
     },
     [currentUserId, deliver],
   );

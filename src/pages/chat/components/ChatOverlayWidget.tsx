@@ -473,21 +473,22 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     };
   }, []);
 
-  /** Website message to the open thread's person; starts the conversation for an offers-only thread. */
-  const sendWebsite = async (thread: InboxThread, text: string) => {
-    if (thread.conversation) {
-      chat.send(thread.conversation._id, text);
-      return;
-    }
-    if (!thread.userId || !currentUserId) return;
+  /**
+   * Website message to the open thread's person; starts the conversation for an offers-only thread.
+   * Resolves whether the message was delivered.
+   */
+  const sendWebsite = async (thread: InboxThread, text: string): Promise<boolean> => {
+    if (thread.conversation) return chat.send(thread.conversation._id, text);
+    if (!thread.userId || !currentUserId) return false;
     try {
       const created: Conversation = await createConversation([currentUserId, thread.userId]);
       chat.upsertConversation({ ...created, unread_count: 0, participants: created.participants || [] });
       setSelectedThreadId(created._id);
-      chat.send(created._id, text);
+      return await chat.send(created._id, text);
     } catch (error) {
       console.error('Failed to start chat:', error);
       showToast({ title: 'Message not sent', description: "Couldn't start the conversation.", variant: 'error' });
+      return false;
     }
   };
 

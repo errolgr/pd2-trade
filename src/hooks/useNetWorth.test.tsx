@@ -424,4 +424,49 @@ describe('NetWorthProvider scheduler', () => {
     await advance(30_000);
     expect(syncs().at(-1)).toEqual(['interval', true]);
   });
+
+  it('backs off exponentially after failed snapshots and resumes the cadence after a success', async () => {
+    vi.mocked(syncSnapshot).mockRejectedValue(new NetWorthApiError('Stash unavailable', 502));
+    await renderHost({ netWorthAutoSnapshotMinutes: 5 });
+    expect(syncs()).toHaveLength(1);
+
+    // Failures at 0, then retries after 5, 10 and 20 minutes (t = 5, 15, 35).
+    await advance(35 * MINUTE);
+    expect(syncs()).toHaveLength(4);
+    await advance(39 * MINUTE + 30_000);
+    expect(syncs()).toHaveLength(4);
+
+    vi.mocked(syncSnapshot).mockImplementation(async () => snapshot());
+    await advance(30_000); // t = 75: 40 minutes after the last failure
+    // Idle by now, so a value probe first; its new holdings store a snapshot right away.
+    expect(syncs().slice(4)).toEqual([
+      ['interval', false],
+      ['interval', true],
+    ]);
+    await advance(5 * MINUTE);
+    expect(syncs()).toHaveLength(7);
+  });
+
+  it('caps the backoff at an hour', async () => {
+    vi.mocked(syncSnapshot).mockRejectedValue(new NetWorthApiError('Stash unavailable', 502));
+    await renderHost({ netWorthAutoSnapshotMinutes: 15 });
+    await advance(10 * 60 * MINUTE);
+    // 0, 15, 45, 105 (60 min wait from here on), 165, …, 585
+    expect(syncs()).toHaveLength(12);
+  });
+
+  it('refreshes the token once per failure streak when PD2 keeps answering 401', async () => {
+    refreshTokens.mockResolvedValue(true);
+    vi.mocked(syncSnapshot).mockRejectedValue(new NetWorthApiError('unauthorized', 401));
+    const { result } = await renderHost({ netWorthAutoSnapshotMinutes: 5, pd2RefreshToken: 'r' });
+
+    await advance(60 * MINUTE);
+    expect(syncs().length).toBeGreaterThan(2);
+    expect(refreshTokens).toHaveBeenCalledTimes(1);
+    expect(openPanel).not.toHaveBeenCalledWith('signIn');
+
+    // A manual snapshot still gets a refresh.
+    await act(() => result.current.takeSnapshot());
+    expect(refreshTokens).toHaveBeenCalledTimes(2);
+  });
 });

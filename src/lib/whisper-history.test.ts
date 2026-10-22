@@ -189,6 +189,19 @@ describe('pruning and parsing', () => {
     expect(parseHistory('not json')).toEqual(EMPTY_HISTORY);
     expect(parseHistory('{"people": 3}')).toEqual(EMPTY_HISTORY);
   });
+
+  it('keeps a person whose trade whisper had no item or price (the watcher sends null)', () => {
+    const history = recordTrade(EMPTY_HISTORY, { ...tradeFromBob, itemName: null, price: null }, T0);
+    const loaded = parseHistory(JSON.stringify(history));
+    expect(loaded.people.bob?.trades).toHaveLength(1);
+    expect(loaded.people.bob.trades[0]).not.toHaveProperty('price', null);
+
+    // A file saved with explicit nulls (before the fix) still loads.
+    const legacy = JSON.parse(JSON.stringify(history));
+    legacy.people.bob.trades[0].price = null;
+    legacy.people.bob.trades[0].itemName = null;
+    expect(parseHistory(JSON.stringify(legacy)).people.bob?.trades).toHaveLength(1);
+  });
 });
 
 describe('persistence', () => {
