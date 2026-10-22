@@ -147,6 +147,19 @@ function normalize(text: string): string {
   return text.replace(/\{X\}/g, ' ').replace(/[+%]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+/** A normalized label without filler: leading "to " / "total ", trailing "(…)" notes ("+{X} to Life" → "life"). */
+function coreName(label: string): string {
+  return label
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/^(to|total) /, '')
+    .trim();
+}
+
+/** Whole-name match ("life" → "+{X} to Life") beats any partial match. */
+const EXACT_BONUS = 5;
+/** Per character of the core name: shorter names win close calls ("Life" over "Life stolen per hit"). */
+const LENGTH_WEIGHT = 1 / 25;
+
 function scoreMatch(haystack: string, tokens: string[]): number | null {
   let score = 0;
   for (const token of tokens) {
@@ -156,7 +169,13 @@ function scoreMatch(haystack: string, tokens: string[]): number | null {
     score += at === 0 ? 0 : haystack[at - 1] === ' ' ? 1 : 3;
     score += at / 100;
   }
-  return score + haystack.length / 1000;
+  // Whole name: the same number of words, each equal to its query word or, from 4 letters, starting with it
+  // ("cold res" → "cold resist" ≈ "Cold Resistance"; "def" ≠ "Defiance")
+  const words = coreName(haystack).split(' ');
+  const whole =
+    words.length === tokens.length &&
+    words.every((w, i) => w === tokens[i] || (tokens[i].length >= 4 && w.startsWith(tokens[i])));
+  return score + words.join(' ').length * LENGTH_WEIGHT - (whole ? EXACT_BONUS : 0);
 }
 
 /** Query words asking for corruptions ("corrupt", "corrupted", "corruption"). */
