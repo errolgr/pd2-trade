@@ -99,6 +99,13 @@ describe('local preferences (market-prefs.json)', () => {
     expect(parseMarketPrefs('null')).toEqual(EMPTY_LOCAL_PREFS);
   });
 
+  it('shows cards unless the user picked rows', () => {
+    expect(EMPTY_LOCAL_PREFS.viewMode).toBe('cards');
+    expect(parseMarketPrefs('{}').viewMode).toBe('cards');
+    expect(parseMarketPrefs(JSON.stringify({ viewMode: 'bogus' })).viewMode).toBe('cards');
+    expect(parseMarketPrefs(JSON.stringify({ viewMode: 'rows' })).viewMode).toBe('rows');
+  });
+
   it('reads presets, last search, switches and the legacy saved searches (stat weights of old files are dropped)', () => {
     const prefs = parseMarketPrefs(
       JSON.stringify({

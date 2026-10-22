@@ -65,7 +65,7 @@ export const EMPTY_LOCAL_PREFS: MarketLocalPrefs = {
   userPresets: [],
   lastFilters: null,
   alertsEnabled: true,
-  viewMode: 'rows',
+  viewMode: 'cards',
   legacySavedSearches: [],
 };
 
@@ -114,7 +114,7 @@ export function parseMarketPrefs(text: string): MarketLocalPrefs {
     ),
     lastFilters: lastFilters.success ? (lastFilters.data as unknown as MarketFilters) : null,
     alertsEnabled: file.alertsEnabled !== false,
-    viewMode: file.viewMode === 'cards' ? 'cards' : 'rows',
+    viewMode: file.viewMode === 'rows' ? 'rows' : 'cards',
     legacySavedSearches: entries(file.savedSearches, SavedSearchSchema).map((s) => ({
       id: s.id,
       name: s.name,
