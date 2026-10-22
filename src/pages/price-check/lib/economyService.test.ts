@@ -167,6 +167,17 @@ describe('getRuneBreakdown', () => {
     expect(asText).toContain('2xSur Rune');
   });
 
+  it('stays fast for an expensive rune over the full rune ladder, using at most 3 different runes', () => {
+    // Today's market shape: Zod 6.8 HR over ~17 cheaper runes took ~3 s with the exhaustive search
+    const prices = [6.79, 2.99, 2.96, 1.9, 1.27, 0.94, 0.85, 0.5, 0.25, 0.15, 0.1, 0.05, 0.03, 0.01, 0.01, 0.01, 0.005];
+    const values = prices.map((p, i) => v(i === 0 ? 'Zod Rune' : `R${i}`, p));
+    const started = performance.now();
+    const combos = getRuneBreakdown('Zod Rune', values);
+    expect(performance.now() - started).toBeLessThan(200);
+    expect(combos).toHaveLength(5);
+    for (const c of combos) expect(c.runes.length).toBeLessThanOrEqual(3);
+  });
+
   it('caps repeats of the same rune at 3 for targets >= 0.1', () => {
     const combos = getRuneBreakdown('Lo Rune', [v('Lo Rune', 1), v('Mal Rune', 0.1)]);
     expect(combos).toEqual([]);

@@ -194,64 +194,53 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
   return runeValues.sort((a, b) => b.price - a.price);
 }
 
+/** A breakdown uses at most this many different runes (a trade, not a pile); keeps the search small. */
+const MAX_BREAKDOWN_RUNE_TYPES = 3;
+const MAX_BREAKDOWN_RESULTS = 5;
+
+/**
+ * Combinations of cheaper runes worth the target within 5%: up to 3 different runes, each at most 3 times
+ * (5 for targets under 0.1 HR), closest first. The search was exhaustive before (Zod at 6.8 HR: ~3 s on the
+ * main thread); capping the different runes bounds it to a few thousand branches.
+ */
 export function getRuneBreakdown(targetRuneName: string, calculatedRuneValues: ItemValue[]): RuneCombination[] {
   const targetRune = calculatedRuneValues.find((r) => r.name === targetRuneName);
   if (!targetRune || targetRuneName === 'Lem Rune') return [];
 
   const targetValue = targetRune.price;
+  const tolerance = Math.max(0.01, targetValue * 0.05);
+  const maxSameRune = targetValue < 0.1 ? 5 : 3;
   const combinations: RuneCombination[] = [];
 
   const availableRunes = calculatedRuneValues
-    .filter((r) => r.price <= targetValue && r.name !== targetRuneName)
+    .filter((r) => r.price > 0 && r.price <= targetValue && r.name !== targetRuneName)
     .sort((a, b) => b.price - a.price);
 
-  const findCombinations = (
-    currentRunes: Array<{ name: string; price: number; count: number }>,
-    remainingValue: number,
-    startIndex: number,
-  ) => {
-    const tolerance = Math.max(0.01, targetValue * 0.05);
-
+  const current: Array<{ name: string; price: number; count: number }> = [];
+  const search = (remainingValue: number, startIndex: number) => {
     if (remainingValue <= tolerance) {
-      const totalValue = currentRunes.reduce((sum, r) => sum + r.price * r.count, 0);
+      const totalValue = current.reduce((sum, r) => sum + r.price * r.count, 0);
       combinations.push({
-        runes: [...currentRunes],
+        runes: current.map((r) => ({ ...r })),
         totalValue,
         difference: Math.abs(targetValue - totalValue),
       });
       return;
     }
+    if (current.length === MAX_BREAKDOWN_RUNE_TYPES) return;
 
     for (let i = startIndex; i < availableRunes.length; i++) {
       const rune = availableRunes[i];
-      const maxCount = Math.floor(remainingValue / rune.price);
-      const maxSameRune = targetValue < 0.1 ? 5 : 3;
-
-      for (let count = 1; count <= maxCount && count <= maxSameRune; count++) {
-        const newRemaining = remainingValue - rune.price * count;
-        const existingRuneIndex = currentRunes.findIndex((r) => r.name === rune.name);
-
-        if (existingRuneIndex >= 0) {
-          currentRunes[existingRuneIndex].count += count;
-        } else {
-          currentRunes.push({ name: rune.name, price: rune.price, count });
-        }
-
-        findCombinations(currentRunes, newRemaining, i + 1);
-
-        if (existingRuneIndex >= 0) {
-          currentRunes[existingRuneIndex].count -= count;
-          if (currentRunes[existingRuneIndex].count <= 0) {
-            currentRunes.splice(existingRuneIndex, 1);
-          }
-        } else {
-          currentRunes.pop();
-        }
+      const maxCount = Math.min(Math.floor(remainingValue / rune.price), maxSameRune);
+      for (let count = 1; count <= maxCount; count++) {
+        current.push({ name: rune.name, price: rune.price, count });
+        search(remainingValue - rune.price * count, i + 1);
+        current.pop();
       }
     }
   };
 
-  findCombinations([], targetValue, 0);
+  search(targetValue, 0);
 
-  return combinations.sort((a, b) => a.difference - b.difference).slice(0, 5);
+  return combinations.sort((a, b) => a.difference - b.difference).slice(0, MAX_BREAKDOWN_RESULTS);
 }
