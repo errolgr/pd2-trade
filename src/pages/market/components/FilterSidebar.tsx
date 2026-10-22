@@ -432,17 +432,20 @@ function ItemNameInput({ value, onChange }: { value: string | undefined; onChang
         optionKey={(o) => `${o.quality}:${o.name}`}
         onPick={(o) => onChange(o.name)}
         className={cn('pr-6', value && 'text-foreground')}
+        // Wider than the field, two lines per option: full names, slot and rarity never cut off
+        listClassName="min-w-80"
         renderOption={(o) => (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-col py-0.5">
             <span
               className={cn(
-                'min-w-0 flex-1 truncate',
+                'truncate text-sm leading-tight',
                 o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
               )}
+              title={o.name}
             >
               {o.name}
             </span>
-            <span className="shrink-0 text-[10px] text-muted-foreground">
+            <span className="text-[11px] leading-tight text-muted-foreground">
               {o.slot ? `${o.slot} · ${o.quality}` : o.quality}
             </span>
           </span>

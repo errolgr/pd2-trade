@@ -295,6 +295,7 @@ export function Autocomplete<T>({
   inputRef,
   loading,
   className,
+  listClassName,
   onKeyDown,
 }: {
   value: string;
@@ -308,6 +309,8 @@ export function Autocomplete<T>({
   inputRef?: React.Ref<HTMLInputElement>;
   loading?: boolean;
   className?: string;
+  /** Extra classes for the suggestion list (e.g. a min width wider than the input). */
+  listClassName?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -366,12 +369,12 @@ export function Autocomplete<T>({
         onCloseAutoFocus={(e) => e.preventDefault()}
         // The input keeps focus; a click in the list must not blur it before the pick lands
         onMouseDown={(e) => e.preventDefault()}
-        className="w-(--radix-popover-trigger-width) min-w-56 p-1"
+        className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', listClassName)}
       >
         <ul id={listId}
           role="listbox"
           aria-label={ariaLabel}
-          className="max-h-64 overflow-y-auto">
+          className="max-h-80 overflow-y-auto">
           {loading && options.length === 0 && <li className="px-2 py-1.5 text-xs text-muted-foreground">Searching…</li>}
           {options.map((option, i) => (
             <li
