@@ -1,13 +1,15 @@
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketApi, MarketFavorite } from '@/pages/market/lib/types';
 import { fetch as tauriFetch } from '@/lib/browser-http';
+import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
-import { handleApiResponse } from './usePD2Website';
+import { AuthenticationError, handleApiResponse } from './usePD2Website';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -17,11 +19,18 @@ interface UseMarketActionsReturn {
     note: string,
     type: 'exact' | 'note',
   ) => Promise<MarketListingEntry>;
-  getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
-  getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  getMarketListings: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
+  getMarketListingsArchive: (query: MarketListingFindQuery) => Promise<MarketListingResult>;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   deleteMarketListing: (hash: string) => Promise<void>;
   bumpAllMarketListings: (userId: string) => Promise<void>;
+  getFavorites: MarketApi['getFavorites'];
+  addFavorite: MarketApi['addFavorite'];
+  removeFavorite: MarketApi['removeFavorite'];
+  getListing: MarketApi['getListing'];
+  createOffer: NonNullable<MarketApi['createOffer']>;
+  /** The market browser's API surface, stable while the token is. */
+  marketApi: MarketApi;
 }
 
 interface UseMarketActionsProps {
@@ -117,7 +126,7 @@ export function useMarketActions({
 
   // Get market listings (GET /market/listing)
   const getMarketListings = useCallback(
-    async (query: MarketListingQuery): Promise<MarketListingResult> => {
+    async (query: MarketListingFindQuery): Promise<MarketListingResult> => {
       const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query);
       const response = await tauriFetch(url, {
         method: 'GET',
@@ -127,12 +136,12 @@ export function useMarketActions({
       });
       return await handleApiResponse(response, onAuthError, query);
     },
-    [settings, onAuthError],
+    [settings.pd2Token, onAuthError],
   );
 
   // Get archived market listings (GET /market/listingArchive)
   const getMarketListingsArchive = useCallback(
-    async (query: MarketListingQuery): Promise<MarketListingResult> => {
+    async (query: MarketListingFindQuery): Promise<MarketListingResult> => {
       const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listingArchive', query);
       const response = await tauriFetch(url, {
         method: 'GET',
@@ -142,7 +151,7 @@ export function useMarketActions({
       });
       return await handleApiResponse(response, onAuthError, query);
     },
-    [settings, onAuthError],
+    [settings.pd2Token, onAuthError],
   );
 
   // Generic update market listing (PATCH /market/listing/:listingId)
@@ -194,6 +203,113 @@ export function useMarketActions({
     [settings, onAuthError],
   );
 
+  // The user's site favorites, newest first, each with its listing and seller (GET /market/favorite)
+  const getFavorites = useCallback(
+    async ({ limit = 50, skip = 0 }: { limit?: number; skip?: number } = {}): Promise<{
+      total: number;
+      data: MarketFavorite[];
+    }> => {
+      const query = { $limit: limit, $skip: skip, $sort: { updated_at: -1 }, $resolve: { listing: { user: true } } };
+      const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/favorite', query);
+      const response = await tauriFetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+        },
+      });
+      return await handleApiResponse(response, onAuthError, query);
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
+  // Favorite a listing (POST /market/favorite)
+  const addFavorite = useCallback(
+    async (listingId: string, sellerId: string): Promise<MarketFavorite> => {
+      const body = { listing_id: listingId, seller_id: sellerId };
+      const response = await tauriFetch('https://api.projectdiablo2.com/market/favorite', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      return await handleApiResponse(response, onAuthError, body);
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
+  // Unfavorite (DELETE /market/favorite/:favoriteId)
+  const removeFavorite = useCallback(
+    async (favoriteId: string): Promise<void> => {
+      const response = await tauriFetch(
+        `https://api.projectdiablo2.com/market/favorite/${encodeURIComponent(favoriteId)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${settings.pd2Token}`,
+          },
+        },
+      );
+      await handleApiResponse(response, onAuthError, { favoriteId });
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
+  // Make an offer, as the site's Offer form does (POST /market/offer)
+  const createOffer = useCallback(
+    async (listingId: string, offer: { price: string; hrPrice?: number }): Promise<unknown> => {
+      const body = { listing_id: listingId, offer: offer.price, hr_offer: offer.hrPrice };
+      const response = await tauriFetch('https://api.projectdiablo2.com/market/offer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      return await handleApiResponse(response, onAuthError, body);
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
+  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it
+  const getListing = useCallback(
+    async (listingId: string): Promise<MarketListingEntry | null> => {
+      const query = { $resolve: { user: { in_game_account: true } } };
+      const url = buildUrlWithQuery(
+        `https://api.projectdiablo2.com/market/listing/${encodeURIComponent(listingId)}`,
+        query,
+      );
+      const response = await tauriFetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+        },
+      });
+      if (response.status === 404) return null;
+      const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, { listingId });
+      // 401: re-authentication started; that isn't "gone"
+      if (!listing) throw new AuthenticationError('Sign in to PD2 to check this listing');
+      return listing;
+    },
+    [settings.pd2Token, onAuthError],
+  );
+
+  const marketApi = useMemo<MarketApi>(
+    () => ({
+      searchListings: searchMarketListings,
+      getListing,
+      getMarketListings,
+      getMarketListingsArchive,
+      getFavorites,
+      addFavorite,
+      removeFavorite,
+      createOffer,
+    }),
+    [getListing, getMarketListings, getMarketListingsArchive, getFavorites, addFavorite, removeFavorite, createOffer],
+  );
+
   return {
     findMatchingItems,
     listSpecificItem,
@@ -202,5 +318,11 @@ export function useMarketActions({
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
+    getFavorites,
+    addFavorite,
+    removeFavorite,
+    getListing,
+    createOffer,
+    marketApi,
   };
 }

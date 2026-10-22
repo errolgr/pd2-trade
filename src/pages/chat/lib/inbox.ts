@@ -27,7 +27,10 @@ export interface InboxPreview {
 }
 
 export interface InboxThread {
-  /** The conversation id; `user:<id>` for a website user with offers but no conversation; `whisper:<key>`. */
+  /**
+   * The conversation id; `user:<id>` for a website user with offers, or one messaged from elsewhere (the market),
+   * but no conversation; `whisper:<key>`.
+   */
   id: string;
   name: string;
   conversation?: Conversation;
@@ -60,6 +63,8 @@ export interface InboxInput {
   offers: readonly TradeOffer[];
   now: number;
   prefs?: ChatPrefs;
+  /** Website users opened from elsewhere (a seller in the market) who get a thread even without any history. */
+  contacts?: readonly { userId: string; name: string }[];
 }
 
 /** Pinned threads first (newest first among them), then the rest newest first (threads without any message last). */
@@ -70,6 +75,7 @@ export function buildInbox({
   offers,
   now,
   prefs = EMPTY_PREFS,
+  contacts = [],
 }: InboxInput): InboxThread[] {
   const threads = new Map<string, InboxThread>();
   const byUser = new Map<string, InboxThread>();
@@ -115,6 +121,12 @@ export function buildInbox({
       });
     }
     thread.offers.push(offer);
+  }
+
+  for (const contact of contacts) {
+    if (!byUser.has(contact.userId)) {
+      add({ id: `user:${contact.userId}`, name: contact.name, userId: contact.userId, ...blank() });
+    }
   }
 
   // Accounts once every offer is in: a conversation partner may only show accounts on their offers

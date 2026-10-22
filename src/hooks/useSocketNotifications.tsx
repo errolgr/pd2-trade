@@ -46,8 +46,8 @@ interface ChatMessagePush {
   sender?: { _id?: string; display_name?: string; username?: string };
 }
 
-// Play the notification sound from assets
-function playNotificationSound(volume: number = 70) {
+/** Plays the whisper notification sound at `volume` (0-100); also the market alert sound. */
+export function playNotificationSound(volume: number = 70) {
   try {
     const audio = new Audio(poeWhisperSound);
     audio.volume = volume / 100; // Convert 0-100 to 0-1

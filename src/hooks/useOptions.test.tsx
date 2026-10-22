@@ -114,6 +114,33 @@ describe('OptionsProvider loading', () => {
     expect(savedSettings()).toEqual(result.current.settings);
   });
 
+  it('gives older settings the Ctrl+M market hotkey', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({ hotkeyModifierMarket: 'ctrl', hotkeyKeyMarket: 'm' });
+  });
+
+  it('leaves the market hotkey unbound when another hotkey already uses Ctrl+M', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierChat: 'ctrl', hotkeyKeyChat: 'm' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings.hotkeyKeyMarket).toBe('');
+    expect(savedSettings().hotkeyKeyMarket).toBe('');
+  });
+
+  it('keeps a market hotkey the user already saved', async () => {
+    state.files.set(
+      'settings.json',
+      JSON.stringify({
+        hotkeyModifierChat: 'ctrl',
+        hotkeyKeyChat: 'm',
+        hotkeyModifierMarket: 'alt',
+        hotkeyKeyMarket: 'm',
+      }),
+    );
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({ hotkeyModifierMarket: 'alt', hotkeyKeyMarket: 'm' });
+  });
+
   it('does not rewrite a file that already has every default key', async () => {
     state.dirExists = false;
     await renderLoaded();

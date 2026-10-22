@@ -72,6 +72,10 @@ export function useOAuth() {
       };
       signal?.addEventListener('abort', release, { once: true });
 
+      // Browser build: open the sign-in tab now, while the click still counts as a user gesture. Opening it
+      // after the start request (an await later) gets it silently blocked as a pop-up (Safari, slow Firefox).
+      const authTab = isTauri() ? null : window.open('about:blank', '_blank');
+      let navigated = false;
       try {
         // 1. Start flow on backend
         const startResponse = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/start`, {
@@ -90,8 +94,21 @@ export function useOAuth() {
         // 2. Open system browser
         if (isTauri()) {
           await invoke('open_oauth_url', { url: authUrl });
+        } else if (authTab && !authTab.closed) {
+          authTab.opener = null;
+          authTab.location.href = authUrl;
+          navigated = true;
         } else {
-          window.open(authUrl, '_blank', 'noopener,noreferrer');
+          const tab = window.open(authUrl, '_blank');
+          if (!tab) {
+            showToast({
+              title: 'PD2 Trader',
+              description: 'Your browser blocked the sign-in window. Allow pop-ups for this site and try again.',
+              variant: 'error',
+            });
+            return false;
+          }
+          tab.opener = null;
         }
 
         // 3. Poll for completion
@@ -131,6 +148,8 @@ export function useOAuth() {
         showToast(errorToast);
         return false;
       } finally {
+        // A pre-opened tab the flow never sent to PD2 (start failed or cancelled) shouldn't linger blank.
+        if (authTab && !navigated && !authTab.closed) authTab.close();
         signal?.removeEventListener('abort', release);
         release();
       }

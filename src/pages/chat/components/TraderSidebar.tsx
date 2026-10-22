@@ -22,7 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
-import { showToast } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
 import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
@@ -171,6 +171,7 @@ export function TraderSidebar({
   className?: string;
 }) {
   const { participant } = thread;
+  const { openPanel } = useOverlay();
   const username = participant?.username;
   const joined = participant?.created_at ? moment(participant.created_at) : null;
   const accounts = [
@@ -234,6 +235,21 @@ export function TraderSidebar({
           ))}
         </div>
         <p className="px-0.5 text-[11px] text-muted-foreground">Click an item to link it in your message.</p>
+        {thread.userId && (
+          <button
+            type="button"
+            onClick={() =>
+              openPanel('market', {
+                filters: { sellerUserId: thread.userId, sellerName: username ?? thread.name },
+                tab: 'search',
+              })
+            }
+            className="inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/60 text-[11px] font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
+            <Store className="size-3.5" />
+            Browse all listings
+          </button>
+        )}
       </>
     );
   }

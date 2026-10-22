@@ -131,6 +131,24 @@ describe('buildInbox', () => {
     expect(threads.map((t) => [t.id, t.people.length])).toEqual([['user:dave', 1]]);
   });
 
+  it('gives a contact opened from the market a thread only when no other thread has that user', () => {
+    const threads = inbox({
+      conversations: [conversation('c-bob', { id: 'bob', username: 'bob' })],
+      offers: [offer({ userId: 'dave', playerName: 'dave' })],
+      contacts: [
+        { userId: 'bob', name: 'bob' },
+        { userId: 'dave', name: 'dave' },
+        { userId: 'erin', name: 'erin' },
+      ],
+    });
+    expect(threads.map((t) => t.id).sort()).toEqual(['c-bob', 'user:dave', 'user:erin']);
+    expect(threads.find((t) => t.id === 'user:erin')).toMatchObject({
+      name: 'erin',
+      userId: 'erin',
+      latest: undefined,
+    });
+  });
+
   it("links whispers to a conversation by an account only its partner's offers carry, and whispers go there", () => {
     const input = {
       conversations: [conversation('c-u2', { id: 'u2', username: 'u2web' })],

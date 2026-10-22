@@ -2,6 +2,12 @@ export const CommandCode = 424;
 
 export type MarketListingCommand = ['find', 'market/listing', MarketListingQuery];
 
+/**
+ * What the listing endpoints accept: the typed query the price check/quick list build, or any feathers query
+ * (the market browser builds its own from MarketFilters).
+ */
+export type MarketListingFindQuery = MarketListingQuery | Record<string, unknown>;
+
 export interface MarketListingQuery {
   $resolve: {
     user: {

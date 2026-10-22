@@ -256,6 +256,7 @@ describe('useAppShortcuts', () => {
     offers: vi.fn(),
     delist: vi.fn(),
     snapshot: vi.fn(),
+    market: vi.fn(),
   };
 
   it('registers nothing while settings are loading', async () => {
@@ -315,6 +316,45 @@ describe('useAppShortcuts', () => {
     expect(handlers.delist).toHaveBeenCalledTimes(1);
     press('Control+B');
     expect(handlers.offers).toHaveBeenCalledTimes(1);
+  });
+
+  it('binds the market hotkey when set and a handler is given', async () => {
+    mockOptions({ ...baseSettings, hotkeyModifierMarket: 'ctrl', hotkeyKeyMarket: 'm' });
+    renderHook(() =>
+      useAppShortcuts(
+        handlers.search,
+        handlers.list,
+        handlers.currency,
+        handlers.chat,
+        handlers.offers,
+        handlers.delist,
+        handlers.snapshot,
+        handlers.market,
+      ),
+    );
+    await flush();
+
+    press('Control+M');
+    expect(handlers.market).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the market hotkey unbound when its key is cleared', async () => {
+    mockOptions({ ...baseSettings, hotkeyKeyMarket: '' });
+    renderHook(() =>
+      useAppShortcuts(
+        handlers.search,
+        handlers.list,
+        handlers.currency,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        handlers.market,
+      ),
+    );
+    await flush();
+
+    expect(state.registered.has('Control+M')).toBe(false);
   });
 
   it('rebinds when a hotkey setting changes', async () => {
