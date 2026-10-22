@@ -11,9 +11,10 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
-const overlay = vi.hoisted(() => ({ gameFocused: true }));
+const overlay = vi.hoisted(() => ({ gameFocused: true, dockOpen: false }));
 vi.mock('./OverlayProvider', () => ({
   useOverlay: () => ({ gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: overlay.gameFocused }),
+  usePanelOpen: (id: string) => id === 'chatButton' && overlay.dockOpen,
 }));
 
 async function advance(ms: number) {
@@ -52,6 +53,7 @@ beforeEach(() => {
   window.innerWidth = 1920;
   window.innerHeight = 1080;
   overlay.gameFocused = true;
+  overlay.dockOpen = false;
 });
 
 afterEach(async () => {
@@ -71,6 +73,16 @@ describe('ToastLayer', () => {
     const toaster = document.querySelector<HTMLElement>('[data-sonner-toaster]')!;
     // right = 1920 - (100 + 1280) + 16, bottom = 1080 - (50 + 720) + 16
     expect(toaster.style.getPropertyValue('--offset-right')).toBe('556px');
+    expect(toaster.style.getPropertyValue('--offset-bottom')).toBe('326px');
+  });
+
+  it('starts the stack left of the chat dock while the dock is shown', async () => {
+    overlay.dockOpen = true;
+    await renderLayer();
+    await show(() => showToast('hello'));
+    const toaster = document.querySelector<HTMLElement>('[data-sonner-toaster]')!;
+    // 720px game: 29px dock, 6px inset → right = 540 + 6 + 29 + 8
+    expect(toaster.style.getPropertyValue('--offset-right')).toBe('583px');
     expect(toaster.style.getPropertyValue('--offset-bottom')).toBe('326px');
   });
 

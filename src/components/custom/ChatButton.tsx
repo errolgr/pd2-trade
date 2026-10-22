@@ -1,41 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { MessageSquare, GripVertical, Settings, ShoppingBag, X, List } from 'lucide-react';
+import {
+  ChevronUp,
+  Coins,
+  List,
+  type LucideIcon,
+  MessageSquare,
+  Settings,
+  ShoppingBag,
+  Store,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { popIn } from '@/lib/motion';
+import { popIn, scaleIn } from '@/lib/motion';
 
 interface ChatButtonProps {
-  handleClick: () => void;
-  onSettingsClick?: () => void;
-  onOffersClick?: () => void;
+  /** Pill size (CSS px); everything inside scales with its width. */
+  size: { width: number; height: number };
+  onChatClick: () => void;
+  onOffersClick: () => void;
+  onMarketClick?: () => void;
+  onNetWorthClick?: () => void;
+  onStashValueClick?: () => void;
   onManageListingsClick?: () => void;
+  onSettingsClick?: () => void;
   onDisableClick?: () => void;
   unreadCount?: number;
   tradeOffersCount?: number;
 }
 
-type FanItem = 'settings' | 'trade' | 'manage' | 'drag' | 'disable';
+/** Moving the pointer from the pill to the menu crosses a small gap: only close after this long outside both. */
+const LEAVE_GRACE_MS = 400;
 
-// Spiral positions: angle in degrees, distance from center
-// Settings (30), Trade (90), Manage (150) -> fan at the bottom; Drag (225), Disable (315) fixed on top.
-// `order` staggers the fan-out so the items unfold in a sweep.
-const FAN: Record<FanItem, { angle: number; order: number }> = {
-  settings: { angle: 30, order: 2 },
-  trade: { angle: 90, order: 1 },
-  manage: { angle: 150, order: 0 },
-  drag: { angle: 225, order: 3 },
-  disable: { angle: 315, order: 4 },
-};
-const FAN_DISTANCE = 60;
+const formatCount = (count: number) => (count > 99 ? '99+' : String(count));
 
-// Shared orb look: theme surface + blur so it reads over any game background.
-const orb =
-  'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full ' +
-  'border border-border bg-surface text-surface-foreground shadow-panel backdrop-blur-md outline-none ' +
-  'hover:border-glow/60 hover:bg-accent hover:text-accent-foreground active:scale-90 ' +
-  'focus-visible:ring-2 focus-visible:ring-ring/60 [&_svg]:pointer-events-none';
-
-const CountBadge: React.FC<{ count: number; className: string; label: string }> = ({ count, className, label }) => (
+const CountBadge: React.FC<{ count: number; className: string; label: string; style?: React.CSSProperties }> = ({
+  count,
+  className,
+  label,
+  style,
+}) => (
   <motion.span
     key={count}
     variants={popIn}
@@ -43,220 +48,234 @@ const CountBadge: React.FC<{ count: number; className: string; label: string }> 
     animate="visible"
     exit="exit"
     aria-label={label}
+    style={style}
     className={cn(
-      'pointer-events-none absolute flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold tabular-nums shadow-sm ring-2 ring-background',
+      'pointer-events-none flex items-center justify-center rounded-full font-bold leading-none tabular-nums shadow-sm',
       className,
     )}
   >
-    {count > 99 ? '99+' : count}
+    {formatCount(count)}
   </motion.span>
 );
 
+const segment =
+  'relative flex w-full flex-1 items-center justify-center text-surface-foreground outline-none transition-colors ' +
+  'duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent [&_svg]:pointer-events-none';
+
+interface MenuEntry {
+  label: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  badge?: { count: number; className: string };
+}
+
+/**
+ * The chat dock: a vertical pill (chat · offers · menu caret) parked on a dead zone of the game's HUD. Nothing opens on
+ * hover: a stray pointer passing over it mid-fight does nothing, only clicks do. The caret opens a menu of the other
+ * windows. A new message or offer pulses the pill once.
+ */
 export const ChatButton: React.FC<ChatButtonProps> = ({
-  handleClick,
-  onSettingsClick,
+  size,
+  onChatClick,
   onOffersClick,
+  onMarketClick,
+  onNetWorthClick,
+  onStashValueClick,
   onManageListingsClick,
+  onSettingsClick,
   onDisableClick,
   unreadCount = 0,
   tradeOffersCount = 0,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const hoverTimeoutRef = React.useRef<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const leaveTimer = useRef<number | undefined>(undefined);
 
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      window.clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setIsHovered(true);
+  // One pulse per increase of either count (not on mount, not when they drop); adjusted during render, no effect
+  const [pulse, setPulse] = useState(0);
+  const [seen, setSeen] = useState({ unreadCount, tradeOffersCount });
+  if (seen.unreadCount !== unreadCount || seen.tradeOffersCount !== tradeOffersCount) {
+    if (unreadCount > seen.unreadCount || tradeOffersCount > seen.tradeOffersCount) setPulse((n) => n + 1);
+    setSeen({ unreadCount, tradeOffersCount });
+  }
+
+  useEffect(() => () => window.clearTimeout(leaveTimer.current), []);
+
+  const onEnter = () => window.clearTimeout(leaveTimer.current);
+  const onLeave = () => {
+    if (!menuOpen) return;
+    window.clearTimeout(leaveTimer.current);
+    leaveTimer.current = window.setTimeout(() => setMenuOpen(false), LEAVE_GRACE_MS);
+  };
+  const pick = (action: () => void) => () => {
+    setMenuOpen(false);
+    action();
   };
 
-  const handleMouseLeave = () => {
-    // Add a small delay before collapsing to allow moving between buttons
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setIsHovered(false);
-    }, 200);
+  const w = size.width;
+  const icon = { width: Math.round(w * 0.42), height: Math.round(w * 0.42) };
+  const badge: React.CSSProperties = {
+    position: 'absolute',
+    top: Math.round(w * 0.04),
+    right: Math.round(w * 0.04),
+    minWidth: Math.round(w * 0.38),
+    height: Math.round(w * 0.38),
+    paddingInline: Math.max(2, Math.round(w * 0.06)),
+    fontSize: Math.max(9, Math.round(w * 0.24)),
   };
 
-  const fanStyle = (item: FanItem): React.CSSProperties => {
-    const { angle, order } = FAN[item];
-    const rad = (angle * Math.PI) / 180;
-    const x = Math.cos(rad) * FAN_DISTANCE;
-    const y = Math.sin(rad) * FAN_DISTANCE;
-
-    return {
-      transform: isHovered ? `translate(${x}px, ${y}px) scale(1)` : 'translate(0px, 0px) scale(0)',
-      opacity: isHovered ? 1 : 0,
-      pointerEvents: isHovered ? 'auto' : 'none',
-      // Spring out with a sweep; collapse together and quickly.
-      transition: isHovered
-        ? `transform var(--dur-slow) var(--ease-spring) ${order * 30}ms, opacity var(--dur-med) var(--ease-out) ${order * 30}ms, width var(--dur-med) var(--ease-out), height var(--dur-med) var(--ease-out), background-color var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), scale var(--dur-fast)`
-        : 'transform var(--dur-med) var(--ease-out), opacity var(--dur-fast) var(--ease-out), width var(--dur-med) var(--ease-out), height var(--dur-med) var(--ease-out)',
-    };
-  };
-
-  const itemSize = isHovered ? 'size-11' : 'size-9';
-  const iconSize = isHovered ? 'size-5' : 'size-4';
-  const iconTransition = 'transition-[width,height] duration-(--dur-med) ease-out';
-
-  // Calculate the expanded area size (largest distance + button size + padding)
-  const expandedRadius = FAN_DISTANCE + 24 + 16; // max distance + button radius + padding
+  const entries: MenuEntry[] = [
+    {
+      label: 'Chat',
+      icon: MessageSquare,
+      onClick: onChatClick,
+      badge: { count: unreadCount, className: 'bg-destructive text-destructive-foreground' },
+    },
+    { label: 'Market browser', icon: Store, onClick: onMarketClick },
+    { label: 'Net worth', icon: TrendingUp, onClick: onNetWorthClick },
+    { label: 'Stash value', icon: Coins, onClick: onStashValueClick },
+    {
+      label: 'Offers',
+      icon: ShoppingBag,
+      onClick: onOffersClick,
+      badge: { count: tradeOffersCount, className: 'bg-warning text-warning-foreground' },
+    },
+    { label: 'Manage listings', icon: List, onClick: onManageListingsClick },
+    { label: 'Settings', icon: Settings, onClick: onSettingsClick },
+  ];
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* Centered in its panel frame. The frame is click-through: only the orb (and, while expanded, the fan
-          area) are interactive, so the rest of the frame never blocks clicks on the game. */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        {/* Invisible hover area that covers the expanded button positions (interactive only while expanded) */}
-        <div
-          data-interactive={isHovered ? 'true' : undefined}
-          className={cn('absolute', isHovered ? 'pointer-events-auto' : 'pointer-events-none')}
-          style={{
-            width: expandedRadius * 2,
-            height: expandedRadius * 2,
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        />
-        <div
-          data-interactive="true"
-          className="pointer-events-auto relative size-14"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {/* Soft halo behind the cluster while expanded */}
-          <div
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute top-1/2 left-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-glow/10 blur-2xl',
-              'transition-opacity duration-(--dur-slow) ease-out',
-              isHovered ? 'opacity-100' : 'opacity-0',
-            )}
-          />
-
-          {/* Drag Handle Circle */}
-          <div
-            data-panel-drag
-            title="Drag to move"
-            className={cn(orb, 'size-9 cursor-grab text-muted-foreground active:cursor-grabbing active:scale-100')}
-            style={fanStyle('drag')}
-          >
-            <GripVertical className="size-4" />
-          </div>
-
-          {/* Settings Button Circle */}
-          {onSettingsClick && (
-            <button
-              type="button"
-              onClick={onSettingsClick}
-              className={cn(orb, itemSize)}
-              aria-label="Settings"
-              title="Settings"
-              style={fanStyle('settings')}
-            >
-              <Settings className={cn(iconSize, iconTransition)} />
-            </button>
+      {/* The frame is click-through: only the pill and the open menu take clicks. */}
+      <div
+        data-interactive="true"
+        className="pointer-events-auto absolute"
+        style={{ right: 0, bottom: 0, width: size.width, height: size.height }}
+        onPointerEnter={onEnter}
+        onPointerLeave={onLeave}
+      >
+        <AnimatePresence>
+          {pulse > 0 && (
+            <motion.span
+              key={pulse}
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-glow"
+              initial={{ opacity: 0.9, scale: 1 }}
+              animate={{ opacity: 0, scale: 1.35 }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+            />
           )}
+        </AnimatePresence>
 
-          {/* Offers Button Circle (chat on the Selling filter) */}
-          {onOffersClick && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              style={fanStyle('trade')}>
-              <button
-                type="button"
-                onClick={onOffersClick}
-                className={cn(orb, 'relative top-auto left-auto translate-x-0 translate-y-0', itemSize)}
-                aria-label="Offers"
-                title="Offers"
-              >
-                <ShoppingBag className={cn(iconSize, iconTransition)} />
-              </button>
-              <AnimatePresence>
-                {tradeOffersCount > 0 && isHovered && (
-                  <CountBadge
-                    key="trade"
-                    count={tradeOffersCount}
-                    label={`${tradeOffersCount} trade offers`}
-                    className="-top-1 -right-1 bg-info text-info-foreground"
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Manage Listings Button Circle */}
-          {onManageListingsClick && (
-            <button
-              type="button"
-              onClick={onManageListingsClick}
-              className={cn(orb, itemSize)}
-              aria-label="Manage Listings"
-              title="Manage Listings"
-              style={fanStyle('manage')}
-            >
-              <List className={cn(iconSize, iconTransition)} />
-            </button>
-          )}
-
-          {/* Disable Button Circle */}
-          {onDisableClick && (
-            <button
-              type="button"
-              onClick={onDisableClick}
-              className={cn(
-                orb,
-                'border-destructive/60 bg-destructive text-destructive-foreground hover:border-destructive hover:bg-destructive/85 hover:text-destructive-foreground',
-                isHovered ? 'size-8' : 'size-7',
-              )}
-              aria-label="Disable Overlay"
-              title="Disable overlay"
-              style={fanStyle('disable')}
-            >
-              <X className={cn(iconTransition, isHovered ? 'size-3.5' : 'size-3')}
-                strokeWidth={3} />
-            </button>
-          )}
-
-          {/* Chat Button Circle - Main */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <button
-              type="button"
-              onClick={handleClick}
-              className={cn(
-                orb,
-                'pointer-events-auto relative top-auto left-auto translate-x-0 translate-y-0',
-                'transition-[width,height,scale,background-color,border-color,color,box-shadow] duration-(--dur-slow) ease-spring',
-                isHovered ? 'size-13 scale-110 border-glow/60 shadow-glow' : 'size-11 scale-100',
-              )}
-              aria-label="Open PD2 Chat"
-              title="Open PD2 Chat"
-            >
-              <MessageSquare className={cn(iconTransition, isHovered ? 'size-6' : 'size-5')} />
-            </button>
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-full border border-border bg-surface shadow-panel backdrop-blur-md">
+          <button type="button"
+            onClick={onChatClick}
+            className={segment}
+            aria-label="Open PD2 Chat"
+            title="Chat">
+            <MessageSquare style={icon} />
             <AnimatePresence>
               {unreadCount > 0 && (
                 <CountBadge
                   key="unread"
                   count={unreadCount}
                   label={`${unreadCount} unread messages`}
-                  className="-top-1 -right-1 bg-destructive text-destructive-foreground"
+                  className="bg-destructive text-destructive-foreground"
+                  style={badge}
                 />
               )}
-              {tradeOffersCount > 0 && !isHovered && (
+            </AnimatePresence>
+          </button>
+          <button type="button"
+            onClick={onOffersClick}
+            className={segment}
+            aria-label="Offers"
+            title="Offers">
+            <ShoppingBag style={icon} />
+            <AnimatePresence>
+              {tradeOffersCount > 0 && (
                 <CountBadge
                   key="trade"
                   count={tradeOffersCount}
                   label={`${tradeOffersCount} trade offers`}
-                  className="-top-1 -left-1 bg-info text-info-foreground"
+                  className="bg-warning text-warning-foreground"
+                  style={badge}
                 />
               )}
             </AnimatePresence>
-          </div>
+          </button>
+          <div aria-hidden
+            className="mx-auto h-px w-1/2 shrink-0 bg-border" />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className={cn(segment, 'max-h-[30%] text-muted-foreground', menuOpen && 'bg-accent text-accent-foreground')}
+            aria-label="More"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            title="More"
+          >
+            <ChevronUp
+              style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
+              className={cn('transition-transform duration-(--dur-med)', menuOpen && 'rotate-180')}
+            />
+          </button>
         </div>
+
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              role="menu"
+              aria-label="PD2 Trader"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              style={{ transformOrigin: 'bottom right' }}
+              className="absolute right-0 bottom-full mb-1.5 w-52 rounded-lg border border-border bg-surface p-1 text-sm text-surface-foreground shadow-panel backdrop-blur-md"
+            >
+              {entries.map(
+                ({ label, icon: Icon, onClick, badge: count }) =>
+                  onClick && (
+                    <button
+                      key={label}
+                      type="button"
+                      role="menuitem"
+                      onClick={pick(onClick)}
+                      className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent"
+                    >
+                      <Icon className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{label}</span>
+                      {count && count.count > 0 && (
+                        <span
+                          className={cn(
+                            'min-w-5 rounded-full px-1.5 text-center text-xs leading-5 font-bold tabular-nums',
+                            count.className,
+                          )}
+                        >
+                          {formatCount(count.count)}
+                        </span>
+                      )}
+                    </button>
+                  ),
+              )}
+              {onDisableClick && (
+                <>
+                  <div role="separator"
+                    className="my-1 h-px bg-border" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={pick(onDisableClick)}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-destructive outline-none hover:bg-destructive/15 focus-visible:bg-destructive/15"
+                  >
+                    <X className="size-4 shrink-0" />
+                    <span className="flex-1">Disable overlay</span>
+                  </button>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MotionConfig>
   );
