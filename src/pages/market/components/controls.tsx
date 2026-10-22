@@ -295,6 +295,7 @@ export function Autocomplete<T>({
   inputRef,
   loading,
   className,
+  header,
   onKeyDown,
   contentClassName,
   footer,
@@ -310,6 +311,8 @@ export function Autocomplete<T>({
   inputRef?: React.Ref<HTMLInputElement>;
   loading?: boolean;
   className?: string;
+  /** Shown above the suggestions while the list is open (e.g. category tabs); clicks keep the input focused. */
+  header?: React.ReactNode;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   /** Extra classes for the dropdown (e.g. wider than the input). */
   contentClassName?: string;
@@ -317,7 +320,9 @@ export function Autocomplete<T>({
   footer?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
+  const [activeRaw, setActive] = useState(0);
+  // The caller may swap `options` (another tab); keep the highlight on an existing row
+  const active = Math.min(activeRaw, Math.max(0, options.length - 1));
   const listId = useId();
   const show = open && (options.length > 0 || !!loading);
   const pick = (option: T) => {
@@ -350,10 +355,10 @@ export function Autocomplete<T>({
           onKeyDown={(e) => {
             if (show && e.key === 'ArrowDown') {
               e.preventDefault();
-              setActive((i) => Math.min(options.length - 1, i + 1));
+              setActive(Math.min(options.length - 1, active + 1));
             } else if (show && e.key === 'ArrowUp') {
               e.preventDefault();
-              setActive((i) => Math.max(0, i - 1));
+              setActive(Math.max(0, active - 1));
             } else if (show && e.key === 'Enter' && options[active]) {
               e.preventDefault();
               pick(options[active]);
@@ -374,6 +379,7 @@ export function Autocomplete<T>({
         onMouseDown={(e) => e.preventDefault()}
         className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', contentClassName)}
       >
+        {header}
         <ul id={listId}
           role="listbox"
           aria-label={ariaLabel}

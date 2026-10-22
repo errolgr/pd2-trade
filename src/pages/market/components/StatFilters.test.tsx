@@ -79,4 +79,32 @@ describe('StatFilters', () => {
     expect(latest()[1]).toMatchObject({ kind: 'corruption', key: 'item_fastercastrate' });
     expect(screen.getByRole('spinbutton', { name: 'Faster Cast Rate min' })).toBeTruthy();
   });
+
+  it("splits suggestions into Mods / Pseudo / Corruptions tabs; the best match picks the tab, Tab cycles", () => {
+    const { latest } = mount([]);
+    const search = screen.getByRole("combobox", { name: "Add a stat filter" });
+    const selected = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent;
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: "life" } });
+    expect(selected()).toMatch(/^Pseudo/);
+    fireEvent.click(screen.getByRole("tab", { name: /^Mods/ }));
+    fireEvent.keyDown(search, { key: "Enter" });
+    expect(latest()[0].kind).toBe("mod");
+
+    fireEvent.change(search, { target: { value: "corrupted faster cast" } });
+    expect(selected()).toMatch(/^Corruptions/);
+    fireEvent.change(search, { target: { value: "faster cast" } });
+    const first = selected();
+    fireEvent.keyDown(search, { key: "Tab" });
+    expect(selected()).not.toBe(first);
+    while (!/^Corruptions/.test(selected() ?? "")) fireEvent.keyDown(search, { key: "Tab" });
+    fireEvent.keyDown(search, { key: "Enter" });
+    expect(latest()[1]).toMatchObject({ kind: "corruption", key: "item_fastercastrate" });
+  });
+
+  it("lists corruption rows after stat rows", () => {
+    mount([row("c", { kind: "corruption", key: "item_numsockets" }), row("a"), row("b", { key: "maxhp" })]);
+    const names = screen.getAllByRole("button", { name: /^Remove / }).map((b) => b.getAttribute("aria-label"));
+    expect(names.at(-1)).toMatch(/Remove .*Socket/i);
+  });
 });

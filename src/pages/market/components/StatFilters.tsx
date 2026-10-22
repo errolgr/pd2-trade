@@ -80,9 +80,23 @@ export interface StatFiltersProps {
   highlight?: { id: string; nonce: number } | null;
 }
 
+/** Picker tabs: what kind of filter a suggestion adds. */
+type StatTab = 'mod' | 'pseudo' | 'corruption';
+const TABS: { id: StatTab; label: string }[] = [
+  { id: 'mod', label: 'Mods' },
+  { id: 'pseudo', label: 'Pseudo' },
+  { id: 'corruption', label: 'Corruptions' },
+];
+const tabOf = (choice: StatChoice): StatTab => (isPseudo(choice) ? 'pseudo' : isCorruption(choice) ? 'corruption' : 'mod');
+
+/** Corruption rows after the stat rows (stable otherwise), so the two kinds don't interleave. */
+const statsFirst = (rows: StatFilter[]) =>
+  [...rows].sort((a, b) => Number(a.kind === 'corruption') - Number(b.kind === 'corruption'));
+
 /**
- * Stats section: one search over mods, pseudo stats and cube corruptions; rows with min/max, enable and
- * AND/OR (the OR rows form one "any of" group), presets.
+ * Stats section: one search over mods, pseudo stats and cube corruptions, split into tabs (Tab / Shift+Tab
+ * switch; the tab of the best match opens first); rows with min/max, enable and AND/OR (the OR rows form one
+ * "any of" group), corruption rows last with a red edge; presets.
  */
 export function StatFilters({
   stats,
@@ -97,6 +111,7 @@ export function StatFilters({
   highlight,
 }: StatFiltersProps) {
   const [query, setQuery] = useState('');
+  const [pickedTab, setPickedTab] = useState<StatTab | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!highlight) return;
@@ -104,13 +119,31 @@ export function StatFilters({
       ?.querySelector(`[data-stat-id="${CSS.escape(highlight.id)}"]`)
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [highlight]);
-  const suggestions = useMemo(
-    () => (query.trim() ? searchStats(query, MAX_SUGGESTIONS, CORRUPTION_OPTIONS) : []),
+  const matches = useMemo(
+    () => (query.trim() ? searchStats(query, MAX_SUGGESTIONS * 3, CORRUPTION_OPTIONS) : []),
     [query],
   );
+  const counts = useMemo(() => {
+    const c: Record<StatTab, number> = { mod: 0, pseudo: 0, corruption: 0 };
+    for (const m of matches) c[tabOf(m)] += 1;
+    return c;
+  }, [matches]);
+  // The tab the user picked while it has matches, else the best match's tab
+  const tab: StatTab = pickedTab && counts[pickedTab] > 0 ? pickedTab : matches[0] ? tabOf(matches[0]) : 'mod';
+  const suggestions = useMemo(
+    () => matches.filter((m) => tabOf(m) === tab).slice(0, MAX_SUGGESTIONS),
+    [matches, tab],
+  );
+  const cycleTab = (step: 1 | -1) => {
+    const open = TABS.filter((t) => counts[t.id] > 0);
+    if (open.length < 2) return;
+    const at = open.findIndex((t) => t.id === tab);
+    setPickedTab(open[(at + step + open.length) % open.length].id);
+  };
 
   const add = (choice: StatChoice) => {
     setQuery('');
+    setPickedTab(null);
     const row = isPseudo(choice)
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
@@ -121,8 +154,8 @@ export function StatFilters({
   const update = (id: string, changes: Partial<StatFilter>) =>
     onChange(stats.map((s) => (s.id === id ? { ...s, ...changes } : s)));
 
-  const required = stats.filter((s) => !s.or);
-  const anyOf = stats.filter((s) => s.or);
+  const required = statsFirst(stats.filter((s) => !s.or));
+  const anyOf = statsFirst(stats.filter((s) => s.or));
   const enabledAnyOf = anyOf.filter((s) => s.enabled).length;
 
   const renderRow = (s: StatFilter) => {
@@ -149,6 +182,10 @@ export function StatFilters({
             animate={{ opacity: [0, 1, 1, 0] }}
             transition={{ duration: 1.4, times: [0, 0.15, 0.6, 1], ease: 'easeOut' }}
           />
+        )}
+        {corruption && (
+          <span aria-hidden
+            className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />
         )}
         <div className="relative space-y-1 py-1 pr-0.5 pl-1.5">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -221,27 +258,67 @@ export function StatFilters({
           ariaLabel="Add a stat filter"
           placeholder="Add stat…  ( ? )"
           value={query}
-          onQuery={setQuery}
+          onQuery={(q) => {
+            setQuery(q);
+            if (!q.trim()) setPickedTab(null);
+          }}
           options={suggestions}
           optionKey={choiceKey}
           onPick={add}
           className="flex-1"
+          contentClassName="min-w-80"
+          onKeyDown={(e) => {
+            if (e.key === 'Tab' && matches.length > 0) {
+              e.preventDefault();
+              cycleTab(e.shiftKey ? -1 : 1);
+            }
+          }}
+          header={
+            <div role="tablist"
+              aria-label="Filter kind"
+              className="mb-1 flex gap-0.5 border-b border-border pb-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  disabled={counts[t.id] === 0}
+                  onClick={() => setPickedTab(t.id)}
+                  className={cn(
+                    'flex-1 rounded px-1.5 py-0.5 text-[11px] outline-none transition-colors disabled:opacity-40',
+                    tab === t.id
+                      ? t.id === 'corruption'
+                        ? 'bg-q-corrupted/15 text-q-corrupted'
+                        : 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {t.label}
+                  {counts[t.id] > 0 && <span className="ml-1 tabular-nums opacity-70">{counts[t.id]}</span>}
+                </button>
+              ))}
+            </div>
+          }
           renderOption={(choice) => (
             <span className="flex items-center gap-1.5">
+              {/* Pseudo marker stays (Σ also tags pseudo rows); the Corruptions tab needs no per-row badge */}
               {isPseudo(choice) ? (
                 <Sigma className="size-3 shrink-0 text-info"
                   aria-label="Pseudo stat" />
-              ) : isCorruption(choice) ? (
-                <CorruptionBadge />
               ) : (
                 <span className="size-3 shrink-0" />
               )}
-              <span className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}>
+              <span
+                className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}
+                title={templateName(choice.label)}
+              >
                 {templateName(choice.label)}
               </span>
-              <span className="shrink-0 text-[10px] text-muted-foreground">
-                {isCorruption(choice) ? 'Corruption' : choice.group}
-              </span>
+              {/* The tab already says pseudo / corruption; mods keep their group */}
+              {!isPseudo(choice) && !isCorruption(choice) && (
+                <span className="shrink-0 text-[10px] text-muted-foreground">{choice.group}</span>
+              )}
             </span>
           )}
         />
