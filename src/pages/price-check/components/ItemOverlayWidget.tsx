@@ -1094,7 +1094,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               basis: windowNote ? `${basisLabel(requestedWindow)} (${windowNote.label})` : basisLabel(requestedWindow),
             }
             : null,
-        appraisal,
         listings: searched ? { entries: marketListings, total: totalCount, archived: searchArchived } : null,
         context,
       });

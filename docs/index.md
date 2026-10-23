@@ -69,7 +69,7 @@ const { theme } = useData()
 
 #### Item Price Check
 
-Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, appraisal, listings) to your clipboard, ready to paste into Discord or a trade post.
+Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post.
 <a href="https://i.imgur.com/8vSvw6F.png" target="_blank" rel="noopener noreferrer">
 <img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>

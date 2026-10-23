@@ -1,7 +1,5 @@
 import type { AveragePriceResponse } from '@/pages/currency/lib/price-api';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { RareAppraisal } from '@/lib/rare-appraisal-api';
-import { bandRange, rankText, SLOT_PLURALS, VERDICT_LABELS } from '@/components/rares/rares-format';
 import type { Item } from './interfaces';
 import { tooltipLines, type TooltipColor, type TooltipLine, type TooltipLines } from './tooltip-lines';
 
@@ -15,8 +13,6 @@ export interface ItemCardPrice {
 export interface ItemCard {
   tooltip: TooltipLines;
   prices: ItemCardPrice[];
-  /** Small muted line under the prices (rare appraisal), deliberately low-key. */
-  note?: string;
   /** Right side of the footer, e.g. "Alliance (S14) · Softcore Ladder · Oct 23, 2026". */
   context: string;
 }
@@ -25,7 +21,6 @@ export interface ItemCardInput {
   item: Item;
   /** Unique/set market price and the label of the basis it is shown on ("7-day avg", "7-day avg (S13)"). */
   average?: { data: AveragePriceResponse; headline: number; basis: string } | null;
-  appraisal?: RareAppraisal | null;
   /** Current market search results, when a search ran. */
   listings?: { entries: MarketListingEntry[]; total: number; archived: boolean } | null;
   context: string;
@@ -34,7 +29,7 @@ export interface ItemCardInput {
 const hr = (n: number) => `${n >= 10 ? n.toFixed(1) : n.toFixed(2)} HR`;
 
 /** Price check state → what the shared image shows. */
-export function buildItemCard({ item, average, appraisal, listings, context }: ItemCardInput): ItemCard {
+export function buildItemCard({ item, average, listings, context }: ItemCardInput): ItemCard {
   const tooltip = tooltipLines(item);
 
   const prices: ItemCardPrice[] = [];
@@ -48,15 +43,6 @@ export function buildItemCard({ item, average, appraisal, listings, context }: I
     ].filter(Boolean);
     prices.push({ label: average.basis, value: hr(average.headline), detail: detail.join(' · ') });
   }
-  const note = appraisal
-    ? [
-      `Appraisal: ${VERDICT_LABELS[appraisal.verdict].toLowerCase()}`,
-      `${rankText(appraisal.rank)} of ${(SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase()}`,
-      appraisal.market ? `~${bandRange(appraisal.market.lowHr, appraisal.market.highHr)} HR` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ')
-    : undefined;
   const priced = (listings?.entries ?? [])
     .map((l) => (listings?.archived ? (l.sell_hr_price ?? l.hr_price) : l.hr_price))
     .filter((p) => p > 0)
@@ -71,7 +57,7 @@ export function buildItemCard({ item, average, appraisal, listings, context }: I
     });
   }
 
-  return { tooltip, prices, note, context };
+  return { tooltip, prices, context };
 }
 
 /** D2 tooltip palette. */
@@ -87,7 +73,6 @@ const COLORS: Record<TooltipColor, string> = {
 };
 const GOLD = '#c7b377';
 const MUTED = '#8a8a8a';
-const NOTE = '#5f5f5f';
 const BACKGROUND = '#0a0a0a';
 const BORDER = '#3b3428';
 
@@ -204,13 +189,11 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   const lineHeight = (size: number) => (size === TITLE_SIZE ? 23 : LINE_HEIGHT);
   const tooltipHeight = rows.reduce((h, r) => h + (r === 'gap' ? GAP : r.lines.length * lineHeight(r.size)), 0);
 
-  // Price rows: label left, value right, optional detail line below; then the muted note.
+  // Price rows: label left, value right, optional detail line below.
   const PRICE_ROW = 22;
   const DETAIL_ROW = 16;
-  const NOTE_ROW = 18;
-  const hasSection = card.prices.length > 0 || !!card.note;
-  const sectionHeight =
-    card.prices.reduce((h, p) => h + PRICE_ROW + (p.detail ? DETAIL_ROW : 0), 0) + (card.note ? NOTE_ROW : 0) + 18;
+  const hasSection = card.prices.length > 0;
+  const sectionHeight = card.prices.reduce((h, p) => h + PRICE_ROW + (p.detail ? DETAIL_ROW : 0), 0) + 18;
   const FOOTER = 30;
   const height = PAD_Y + tooltipHeight + PAD_Y + (hasSection ? sectionHeight : 0) + FOOTER;
 
@@ -280,13 +263,6 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
         ctx.fillText(price.detail, width - PAD_X, y + DETAIL_ROW / 2 - 2);
         y += DETAIL_ROW;
       }
-    }
-    if (card.note) {
-      ctx.textAlign = 'center';
-      ctx.font = `400 11px ${UI_FONT}`;
-      ctx.fillStyle = NOTE;
-      ctx.fillText(card.note, width / 2, y + NOTE_ROW / 2);
-      y += NOTE_ROW;
     }
     y += 6;
   }
