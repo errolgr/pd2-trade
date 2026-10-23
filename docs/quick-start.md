@@ -14,7 +14,7 @@ All that remains is to parse text in PD2 Trader and show to you in a fancy way.
   - Press `Ctrl + D` to check the price of the item
   - Press `Ctrl + L` to list an item for trade
   - Press `Ctrl + O` to open settings
-  - Press `Ctrl + X` to open stash valutation tab
+  - Press `Ctrl + X` to open Net Worth
   - Press `Ctrl + M` to open the market browser
 
 - Settings
