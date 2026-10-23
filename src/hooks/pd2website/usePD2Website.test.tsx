@@ -70,7 +70,12 @@ const tradeOffers = {
 };
 
 /** Route fetch by URL so ordering of effects does not matter. */
-let routes: Record<string, () => Response>;
+let routes: Record<string, (init?: RequestInit) => Response | Promise<Response>>;
+/** PD2 refuses the current token too (/me 401): the session is really over. */
+const refuseSession = () => {
+  routes[ME_URL] = () => fakeResponse(401, {}, ME_URL);
+};
+const bearer = (init?: RequestInit) => (init?.headers as Record<string, string> | undefined)?.Authorization;
 
 let ctx: NonNullable<React.ContextType<typeof Pd2WebsiteContext>>;
 const setCtx = (value: typeof ctx) => {
@@ -115,11 +120,11 @@ beforeEach(() => {
   routes = {
     [ME_URL]: () => fakeResponse(200, authData, ME_URL),
   };
-  fetchMock.mockImplementation(async (input) => {
+  fetchMock.mockImplementation(async (input, init) => {
     const url = String(input);
     const key = Object.keys(routes).find((k) => url.startsWith(k));
     if (!key) throw new Error(`unexpected fetch ${url}`);
-    return routes[key]();
+    return routes[key](init);
   });
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -150,6 +155,15 @@ describe('handleApiResponse', () => {
 
   it('401 without a handler still resolves null', async () => {
     await expect(handleApiResponse(fakeResponse(401, ''))).resolves.toBeNull();
+  });
+
+  it('401 logs which endpoint refused the token', async () => {
+    await handleApiResponse(fakeResponse(401, { message: 'jwt expired' }, `${API}/market/favorite?$limit=50`));
+    expect(console.warn).toHaveBeenCalledWith(
+      '[API] Authentication required (401):',
+      'jwt expired',
+      '/market/favorite',
+    );
   });
 
   it('404 on a stash endpoint becomes AccountMismatchError with the account parsed from the path', async () => {
@@ -237,11 +251,58 @@ describe('Pd2WebsiteProvider auth', () => {
     expect(updateSettings).not.toHaveBeenCalled();
   });
 
+  it('a 401 keeps the session when PD2 still accepts the current token (no refresh, no sign-in)', async () => {
+    routes[`${API}/market/listing`] = () => fakeResponse(401, {});
+    const view = await renderParent();
+    // Signed in again since the failed request was sent: the re-check uses the new token
+    settings = { ...settings, pd2Token: 'tok-2' };
+    view.rerender(
+      <Pd2WebsiteProvider>
+        <Capture />
+      </Pd2WebsiteProvider>,
+    );
+    await flush();
+    fetchMock.mockClear();
+
+    await act(async () => {
+      await expect(ctx.getMarketListings({} as never)).resolves.toBeNull();
+    });
+    const recheck = fetchMock.mock.calls.find(([u]) => u === ME_URL)!;
+    expect(bearer(recheck[1])).toBe('Bearer tok-2');
+    expect(ctx.authData).toEqual(authData);
+    expect(refreshTokens).not.toHaveBeenCalled();
+    expect(openPanel).not.toHaveBeenCalled();
+  });
+
+  it("a /me answer for a replaced token doesn't sign the newer session out", async () => {
+    const stale = Promise.withResolvers<Response>();
+    routes[ME_URL] = (init) => (bearer(init) === 'Bearer tok' ? stale.promise : fakeResponse(200, authData, ME_URL));
+    const view = await renderParent();
+
+    settings = { ...settings, pd2Token: 'tok-2' };
+    view.rerender(
+      <Pd2WebsiteProvider>
+        <Capture />
+      </Pd2WebsiteProvider>,
+    );
+    await flush();
+    expect(ctx.authData).toEqual(authData);
+
+    // The old token's /me finally answers 401
+    await act(async () => {
+      stale.resolve(fakeResponse(401, {}, ME_URL));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(ctx.authData).toEqual(authData);
+    expect(openPanel).not.toHaveBeenCalled();
+  });
+
   it('a 401 tries a silent refresh first and skips the sign-in dialog when it succeeds', async () => {
     refreshTokens.mockResolvedValue(true);
     routes[`${API}/market/listing`] = () => fakeResponse(401, { message: 'expired' });
     await renderParent();
     expect(ctx.authData).toEqual(authData);
+    refuseSession();
 
     await act(async () => {
       await expect(ctx.getMarketListings({} as never)).resolves.toBeNull();
@@ -254,6 +315,7 @@ describe('Pd2WebsiteProvider auth', () => {
   it('shows the sign-in dialog when refresh fails', async () => {
     routes[`${API}/market/listing`] = () => fakeResponse(401, {});
     await renderParent();
+    refuseSession();
     await act(async () => {
       await ctx.getMarketListings({} as never);
     });
@@ -266,6 +328,7 @@ describe('Pd2WebsiteProvider auth', () => {
     settings.pd2RefreshToken = undefined;
     routes[`${API}/market/listing`] = () => fakeResponse(401, {});
     await renderParent();
+    refuseSession();
     await act(async () => {
       await ctx.getMarketListings({} as never);
     });
@@ -276,6 +339,7 @@ describe('Pd2WebsiteProvider auth', () => {
   it('dedupes concurrent 401s and re-arms after 2s', async () => {
     routes[`${API}/market/listing`] = () => fakeResponse(401, {});
     await renderParent();
+    refuseSession();
     await act(async () => {
       await Promise.all([ctx.getMarketListings({} as never), ctx.getMarketListings({} as never)]);
     });
@@ -309,11 +373,13 @@ describe('Pd2WebsiteProvider auth', () => {
     });
     expect(stashCalls()).toBe(1);
 
+    refuseSession();
     await act(async () => {
       await ctx.getMarketListings({} as never);
     });
     expect(ctx.authData).toBeNull();
     // A new token (as written by the refresh flow) re-authenticates; the stash must then be fetched fresh.
+    routes[ME_URL] = () => fakeResponse(200, authData, ME_URL);
     settings = { ...settings, pd2Token: 'tok-2' };
     view.rerender(
       <Pd2WebsiteProvider>

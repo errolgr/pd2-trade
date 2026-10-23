@@ -95,6 +95,9 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   const clearStashCacheRef = useRef<(() => void) | null>(null);
   const handleAuthErrorRef = useRef<(() => void | Promise<void>) | null>(null);
   const refreshTokenValueRef = useRef<string | undefined>(settings?.pd2RefreshToken);
+  // The token as of the latest render: a 401 is checked against it, not against the one its request carried
+  const tokenRef = useRef(settings?.pd2Token);
+  tokenRef.current = settings?.pd2Token;
 
   // Keep refresh token ref up to date
   useEffect(() => {
@@ -119,6 +122,14 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     isHandlingAuthError.current = true;
 
     try {
+      // A 401 can come from a request that still carried an older token (one sent before the last sign-in), or
+      // from an endpoint that refuses this token: the session is only over when PD2 refuses the current token too
+      const session = await fetchSession(tokenRef.current);
+      if (session) {
+        setAuthData(session);
+        return;
+      }
+
       // Clear auth data
       setAuthData(null);
 
@@ -244,13 +255,18 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
 
   // Authenticate when pd2Token changes
   useEffect(() => {
-    if (settings?.pd2Token) {
-      authenticate().then((data) => {
-        setAuthData(data);
-      });
-    } else {
+    if (!settings?.pd2Token) {
       setAuthData(null);
+      return;
     }
+    // A /me answer for a token that has since been replaced must not overwrite the newer session
+    let current = true;
+    authenticate().then((data) => {
+      if (current) setAuthData(data);
+    });
+    return () => {
+      current = false;
+    };
   }, [settings?.pd2Token]);
 
   // Set Sentry (and Faro telemetry) user context when authData changes
@@ -332,6 +348,32 @@ export const usePd2Website = () => {
   return ctx;
 };
 
+/** The path a response answers, for logs (which endpoint refused the token); the raw URL when it doesn't parse. */
+function pathOf(response: Response): string {
+  try {
+    return new URL(response.url).pathname;
+  } catch {
+    return String(response.url ?? '');
+  }
+}
+
+/**
+ * The signed-in user per `token` (GET /me), or null when there is none, PD2 refuses it, or /me can't be reached.
+ * Never goes through handleApiResponse: it decides whether a 401 means the session is over.
+ */
+async function fetchSession(token: string | undefined): Promise<AuthData> {
+  if (!token) return null;
+  try {
+    const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/me`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleApiResponse(
   response: Response,
   onAuthError?: () => void | Promise<void>,
@@ -352,7 +394,7 @@ export async function handleApiResponse(
     // These are expected (token expiration / invalid token) and should be handled silently
     if (response.status === 401) {
       const errorMessage = errorJson?.message || response.statusText;
-      console.warn('[API] Authentication required (401):', errorMessage);
+      console.warn('[API] Authentication required (401):', errorMessage, pathOf(response));
 
       // Call the authentication error handler if provided (triggers re-auth flow)
       if (onAuthError) {
