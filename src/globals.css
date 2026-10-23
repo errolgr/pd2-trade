@@ -84,6 +84,10 @@
     --dur-slow: 300ms;
 }
 
+html[data-theme='classic-diablo-ii'] {
+    --font-family: "DiabloFont", serif;
+}
+
 /* Literal values (not var()) to avoid self-referencing the same-named :root vars. */
 @theme {
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
