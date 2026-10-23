@@ -4,7 +4,12 @@ use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
-    window::get_diablo_rect(&app_handle)
+    let rect = window::get_diablo_rect(&app_handle);
+    #[cfg(target_os = "linux")]
+    if crate::modules::layer_shell::is_active() {
+        return rect.map(crate::modules::layer_shell::to_overlay);
+    }
+    rect
 }
 
 #[tauri::command]
@@ -73,6 +78,12 @@ pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> 
     else {
         return Ok(());
     };
+    // A layer surface is sized by the compositor to its monitor; only the monitor can change.
+    #[cfg(target_os = "linux")]
+    if crate::modules::layer_shell::is_active() {
+        crate::modules::layer_shell::move_to(&main_window, bounds);
+        return Ok(());
+    }
 
     let position = main_window.outer_position().map_err(|e| e.to_string())?;
     if position.x != bounds.x || position.y != bounds.y {
