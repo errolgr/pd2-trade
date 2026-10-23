@@ -83,9 +83,11 @@ pub fn run() {
             .build()?;
 
             // The foreground tracking tells the overlay apart from our other windows (tray menu owner).
+            // A tool window, so browsers beneath it don't take it for an opaque window and stop painting.
             #[cfg(target_os = "windows")]
             if let Ok(hwnd) = main_window.hwnd() {
                 window::set_overlay_window(hwnd.0 as isize);
+                window::keep_overlay_tool_window(hwnd.0 as isize);
             }
             // Click-through until the frontend reports its interactive rects.
             if let Err(e) = region::apply_region(&main_window, &[]) {
