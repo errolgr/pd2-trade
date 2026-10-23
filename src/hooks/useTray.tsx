@@ -3,6 +3,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
@@ -86,34 +87,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
 
     // Listen for Diablo focus changes to register/unregister hotkey
-    let unlisten: (() => void) | null = null;
-    let cancelled = false;
-
-    listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
-      schedule(isFocused ? registerShortcut : unregisterShortcut);
-    })
-      .then((off) => {
-        if (cancelled) {
-          Promise.resolve()
-            .then(off)
-            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-        } else {
-          unlisten = off;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to listen for diablo-focus-changed event:', error);
-      });
+    const releaseFocusListener = holdListener(
+      listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
+        schedule(isFocused ? registerShortcut : unregisterShortcut);
+      }),
+      'diablo-focus-changed',
+    );
 
     return () => {
-      cancelled = true;
-      const off = unlisten;
-      unlisten = null;
-      if (off) {
-        Promise.resolve()
-          .then(off)
-          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-      }
+      releaseFocusListener();
       // Unregister shortcut on cleanup
       schedule(unregisterShortcut);
     };

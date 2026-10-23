@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { setBadgeCount } from '@/overlay';
 import {
   createHistorySaver,
@@ -100,19 +101,21 @@ export function WhisperHistoryProvider({ children }: { children: React.ReactNode
   // Listen once loaded, so nothing recorded meanwhile is overwritten by the load
   useEffect(() => {
     if (!loaded || !isTauri()) return;
-    const unlistens = [
-      listen<TradeMessageEvent>('trade-message', (event) =>
-        dispatch({ type: 'trade', event: event.payload, now: Date.now() }),
+    const releases = [
+      holdListener(
+        listen<TradeMessageEvent>('trade-message', (event) =>
+          dispatch({ type: 'trade', event: event.payload, now: Date.now() }),
+        ),
+        'trade-message',
       ),
-      listen<WhisperEvent>('whisper-received', (event) =>
-        dispatch({ type: 'whisper', event: event.payload, now: Date.now() }),
+      holdListener(
+        listen<WhisperEvent>('whisper-received', (event) =>
+          dispatch({ type: 'whisper', event: event.payload, now: Date.now() }),
+        ),
+        'whisper-received',
       ),
     ];
-    return () => {
-      for (const unlisten of unlistens) {
-        unlisten.then((off) => off()).catch((error) => console.error('Failed to set up whisper listener:', error));
-      }
-    };
+    return () => releases.forEach((release) => release());
   }, [loaded]);
 
   const [saver] = useState(() => createHistorySaver((h) => saveWhisperHistory(h, Date.now())));

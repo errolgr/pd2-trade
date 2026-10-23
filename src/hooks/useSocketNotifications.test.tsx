@@ -394,10 +394,7 @@ describe('useSocketNotifications whispers', () => {
     expect(bus.listenerCount('whisper-received')).toBe(0);
   });
 
-  // BUG: useSocketNotifications.tsx:304-309 — the whisper listener's `unlisten` is assigned only after
-  // listen() resolves; a settings change before that leaks the first listener, so every whisper
-  // notifies twice for the rest of the session.
-  it.fails('notifies a whisper once after settings change during listener registration', async () => {
+  it('notifies a whisper once after settings change during listener registration', async () => {
     bus.state.hold = true;
     const { rerender } = await renderNotifications({ isConnected: false, settings: { whisperNotificationVolume: 50 } });
     rerender({ isConnected: false, settings: { whisperNotificationVolume: 60 } });

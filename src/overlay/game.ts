@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { cursorPosition, getCurrentWindow } from '@tauri-apps/api/window';
 import type { OverlayRect } from './types';
 
@@ -84,11 +85,7 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
 
   useEffect(() => {
     let disposed = false;
-    const unlisteners: (() => void)[] = [];
-    const track = (p: Promise<() => void>) =>
-      p
-        .then((off) => (disposed ? off() : unlisteners.push(off)))
-        .catch((error) => console.warn('[overlay] listener failed:', error));
+    const releases: (() => void)[] = [];
     const applyRect = (next: OverlayRect) => {
       if (disposed || sameRect(rectRef.current, next)) return;
       rectRef.current = next;
@@ -145,20 +142,23 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
       })
       .catch(() => updateFocus());
 
-    track(
-      listen<boolean>('diablo-focus-changed', ({ payload }) => {
-        inGame = payload;
-        updateFocus();
-        refreshRect();
-      }),
-    );
     const win = getCurrentWindow();
-    track(win.onMoved(refreshRect));
-    track(win.onResized(refreshRect));
+    releases.push(
+      holdListener(
+        listen<boolean>('diablo-focus-changed', ({ payload }) => {
+          inGame = payload;
+          updateFocus();
+          refreshRect();
+        }),
+        'diablo-focus-changed',
+      ),
+      holdListener(win.onMoved(refreshRect), 'window moved'),
+      holdListener(win.onResized(refreshRect), 'window resized'),
+    );
 
     return () => {
       disposed = true;
-      unlisteners.forEach((off) => off());
+      releases.forEach((release) => release());
       clearTimeout(blurTimer);
       setRefreshing(false);
     };
