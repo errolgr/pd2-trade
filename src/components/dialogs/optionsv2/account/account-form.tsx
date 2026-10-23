@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { cancelOAuthFlow, useOAuthFlowActive } from '@/hooks/useOAuth';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ExternalLink, LogOut, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { isTauri } from '@tauri-apps/api/core';
@@ -28,7 +29,9 @@ export function AccountForm() {
   const { authData, logout, startOAuthFlow } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [loggingIn, setLoggingIn] = useState(false);
+  // The flow's own state, not this form's: it outlives the form (switching sections remounts it) and may have been
+  // started from the sign-in panel
+  const loggingIn = useOAuthFlowActive();
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -85,13 +88,10 @@ export function AccountForm() {
   };
 
   const handleLogin = async () => {
-    setLoggingIn(true);
     try {
       await startOAuthFlow();
     } catch (error) {
       console.error('Failed to start OAuth flow:', error);
-    } finally {
-      setLoggingIn(false);
     }
   };
 
@@ -161,11 +161,13 @@ export function AccountForm() {
                   }
                   control={
                     <FormControl>
-                      <Input type="password"
+                      <Input
+                        type="password"
                         placeholder="Enter your PD2 token"
                         className="w-full"
                         autoComplete="off"
-                        {...field} />
+                        {...field}
+                      />
                     </FormControl>
                   }
                 >
@@ -195,7 +197,9 @@ export function AccountForm() {
                     >
                       <FormControl>
                         <SelectTrigger className="w-[220px]">
-                          <SelectValue placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'} />
+                          <SelectValue
+                            placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'}
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -219,13 +223,23 @@ export function AccountForm() {
                         {loggingOut ? 'Logging out...' : 'Log out'}
                       </Button>
                     ) : (
-                      <Button type="button"
-                        onClick={handleLogin}
-                        disabled={loggingIn}
-                        className="min-w-28">
-                        {loggingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
-                        {loggingIn ? 'Logging in...' : 'Log in'}
-                      </Button>
+                      <>
+                        <Button type="button"
+                          onClick={handleLogin}
+                          disabled={loggingIn}
+                          className="min-w-28">
+                          {loggingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
+                          {loggingIn ? 'Logging in...' : 'Log in'}
+                        </Button>
+                        {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
+                        {loggingIn && (
+                          <Button type="button"
+                            variant="outline"
+                            onClick={cancelOAuthFlow}>
+                            Cancel
+                          </Button>
+                        )}
+                      </>
                     )}
                   </>
                 }

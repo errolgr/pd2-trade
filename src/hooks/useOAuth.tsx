@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { useOptions } from './useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { isTauri, invoke } from '@tauri-apps/api/core';
@@ -6,8 +6,33 @@ import { BACKEND_URL, PD2_SCOPES } from '@/lib/pkce';
 import { GenericToastPayload } from '@/common/types/Events';
 import { showToast } from '@/overlay';
 
-/** The running sign-in flow; a new flow is refused while one is active. Cleared when it ends or its signal aborts. */
-let activeFlow: object | null = null;
+/**
+ * The running sign-in flow; a new flow is refused while one is active. Cleared when it ends or is aborted (its
+ * caller's signal or cancelOAuthFlow).
+ */
+let activeFlow: AbortController | null = null;
+const flowListeners = new Set<() => void>();
+
+function setActiveFlow(flow: AbortController | null) {
+  activeFlow = flow;
+  flowListeners.forEach((listener) => listener());
+}
+
+/** Ends the running sign-in flow, whoever started it, as if its caller had aborted: a new flow may start right away. */
+export function cancelOAuthFlow(): void {
+  activeFlow?.abort();
+}
+
+/** True while a sign-in flow runs (whoever started it), re-rendering on change. */
+export function useOAuthFlowActive(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      flowListeners.add(listener);
+      return () => flowListeners.delete(listener);
+    },
+    () => activeFlow !== null,
+  );
+}
 
 /** Resolves after `ms`, or as soon as `signal` aborts. */
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -59,18 +84,22 @@ export function useOAuth() {
   const { updateSettings } = useOptions();
 
   /**
-   * Runs the browser sign-in flow. Aborting `signal` (the caller went away) ends the flow right away: polling stops,
-   * nothing is stored or toasted, the result is `false`, and a new flow may start immediately.
+   * Runs the browser sign-in flow. Aborting `callerSignal` (the caller went away) or cancelOAuthFlow() ends the flow
+   * right away: polling stops, nothing is stored or toasted, the result is `false`, and a new flow may start
+   * immediately.
    */
   const startOAuthFlow = useCallback(
-    async (signal?: AbortSignal): Promise<string | false> => {
-      if (activeFlow || signal?.aborted) return false;
-      const flow = {};
-      activeFlow = flow;
+    async (callerSignal?: AbortSignal): Promise<string | false> => {
+      if (activeFlow || callerSignal?.aborted) return false;
+      const flow = new AbortController();
+      setActiveFlow(flow);
+      const { signal } = flow;
       const release = () => {
-        if (activeFlow === flow) activeFlow = null;
+        if (activeFlow === flow) setActiveFlow(null);
       };
-      signal?.addEventListener('abort', release, { once: true });
+      signal.addEventListener('abort', release, { once: true });
+      const abort = () => flow.abort();
+      callerSignal?.addEventListener('abort', abort, { once: true });
 
       // Browser build: open the sign-in tab now, while the click still counts as a user gesture. Opening it
       // after the start request (an await later) gets it silently blocked as a pop-up (Safari, slow Firefox).
@@ -89,7 +118,7 @@ export function useOAuth() {
         }
 
         const { authUrl, state } = await startResponse.json();
-        if (signal?.aborted) return false;
+        if (signal.aborted) return false;
 
         // 2. Open system browser
         if (isTauri()) {
@@ -113,7 +142,7 @@ export function useOAuth() {
 
         // 3. Poll for completion
         const tokens = await pollForTokens(state, signal);
-        if (signal?.aborted) return false;
+        if (signal.aborted) return false;
         if (!tokens) {
           const timeoutToast: GenericToastPayload = {
             title: 'PD2 Trader',
@@ -138,7 +167,7 @@ export function useOAuth() {
         showToast(successToast);
         return tokens.accessToken;
       } catch (error) {
-        if (signal?.aborted) return false;
+        if (signal.aborted) return false;
         console.error('[OAuth] Flow failed:', error);
         const errorToast: GenericToastPayload = {
           title: 'PD2 Trader',
@@ -150,7 +179,7 @@ export function useOAuth() {
       } finally {
         // A pre-opened tab the flow never sent to PD2 (start failed or cancelled) shouldn't linger blank.
         if (authTab && !navigated && !authTab.closed) authTab.close();
-        signal?.removeEventListener('abort', release);
+        callerSignal?.removeEventListener('abort', abort);
         release();
       }
     },
