@@ -299,6 +299,23 @@ describe('useOAuth startOAuthFlow', () => {
     });
     expect(tauriFetch).not.toHaveBeenCalled();
   });
+
+  it('stops at a banned sign-in: no tokens stored, a banned toast instead of a timeout', async () => {
+    routeFetch([jsonResponse(null, 404), jsonResponse({ message: 'This PD2 Trader account is banned' }, 403)]);
+    const { result } = renderHook(() => useOAuth());
+
+    let outcome: string | false | undefined;
+    await act(async () => {
+      const pending = result.current.startOAuthFlow().then((v) => (outcome = v));
+      await vi.advanceTimersByTimeAsync(2000 * 2);
+      await pending;
+    });
+
+    expect(outcome).toBe(false);
+    expect(pollCount()).toBe(2);
+    expect(updateSettings).not.toHaveBeenCalled();
+    expect(toasts().map((t) => t.description)).toEqual(['This PD2 account is banned from PD2 Trader.']);
+  });
 });
 
 describe('useOAuth refreshTokens', () => {
@@ -336,5 +353,14 @@ describe('useOAuth refreshTokens', () => {
 
     await expect(result.current.refreshTokens('old')).resolves.toBe(false);
     expect(updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('signs a banned user out for good when the refresh is refused with 403', async () => {
+    vi.mocked(tauriFetch).mockResolvedValue(jsonResponse({ message: 'banned' }, 403));
+    const { result } = renderHook(() => useOAuth());
+
+    await expect(result.current.refreshTokens('old')).resolves.toBe(false);
+    expect(updateSettings).toHaveBeenCalledWith({ pd2Token: undefined, pd2RefreshToken: undefined, pd2TokenExpiry: undefined });
+    expect(toasts().map((t) => t.description)).toEqual(['This PD2 account is banned from PD2 Trader.']);
   });
 });
