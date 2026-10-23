@@ -73,7 +73,13 @@
           "path": "**"
         },
         {
+          "path": "$APPDATA"
+        },
+        {
           "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCONFIG"
         },
         {
           "path": "$APPCONFIG/**"

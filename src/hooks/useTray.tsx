@@ -8,6 +8,7 @@ import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
 import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
+import * as Sentry from '@sentry/react';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
 
@@ -143,11 +144,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               id: 'open-config',
               text: 'Open config location',
               action: async () => {
+                let configPath: string | undefined;
                 try {
-                  const configPath = await appConfigDir();
+                  configPath = await appConfigDir();
                   await openPath(configPath);
                 } catch (err) {
-                  console.error('Failed to open config location:', err);
+                  // Fixed message so every user's home path groups into one Sentry issue.
+                  Sentry.captureException(new Error('Failed to open config location'), {
+                    extra: { path: configPath, cause: String(err) },
+                  });
                 }
               },
             },
