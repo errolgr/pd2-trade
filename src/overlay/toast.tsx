@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockSize } from '@/pages/chat/chat-dock';
@@ -45,6 +46,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         break;
       case ToastActionType.UPDATE_AVAILABLE:
         await installUpdateAndRelaunch();
+        break;
+      case ToastActionType.OPEN_RELEASE_PAGE:
+        await openUrl(RELEASE_PAGE_URL);
         break;
       default:
         console.warn('Unknown toast action type:', action.type);
