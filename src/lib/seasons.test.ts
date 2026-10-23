@@ -49,10 +49,10 @@ describe('startedSeasons / getCurrentSeason', () => {
     expect(getCurrentSeason([], new Date('2026-01-01Z'))).toBeUndefined();
   });
 
-  it('defaults to the bundled list and the clock: S14 only becomes current on its start day', () => {
-    at('2026-10-22T23:00:00Z');
+  it('defaults to the bundled list and the clock: S14 only becomes current at its 17:00 UTC launch', () => {
+    at('2026-10-23T16:59:59.999Z');
     expect(getCurrentSeason()?.id).toBe('s13');
-    at('2026-10-23T00:00:00Z');
+    at('2026-10-23T17:00:00Z');
     expect(getCurrentSeason()?.id).toBe('s14');
   });
 });
@@ -105,24 +105,31 @@ describe('getSeasonSettingOptions', () => {
 describe('getSeasonDateConfig (bundled seasons)', () => {
   it('constrains the current season to its start only, even when its end date is known but in the future', () => {
     at('2026-10-18T12:00:00Z');
-    expect(getSeasonDateConfig()).toEqual({ startDate: '2026-04-23' });
-    expect(getSeasonDateConfig('s13')).toEqual({ startDate: '2026-04-23' });
+    expect(getSeasonDateConfig()).toEqual({ startDate: '2026-04-23T00:00:00.000Z' });
+    expect(getSeasonDateConfig('s13')).toEqual({ startDate: '2026-04-23T00:00:00.000Z' });
   });
 
-  it('keeps the end date off on the last day of a season', () => {
-    at('2026-10-22T20:00:00Z');
-    expect(getSeasonDateConfig('s13')).toEqual({ startDate: '2026-04-23' });
+  it('keeps S13 open until S14 launches, then ends it the millisecond before', () => {
+    at('2026-10-23T16:59:59.999Z');
+    expect(getSeasonDateConfig('s13')).toEqual({ startDate: '2026-04-23T00:00:00.000Z' });
+    at('2026-10-23T17:00:00Z');
+    expect(getSeasonDateConfig('s13')).toEqual({
+      startDate: '2026-04-23T00:00:00.000Z',
+      endDate: '2026-10-23T16:59:59.999Z',
+    });
+    expect(getSeasonDateConfig(CURRENT_SEASON_SETTING)).toEqual({ startDate: '2026-10-23T17:00:00.000Z' });
   });
 
-  it('gives a past season its full date range once it has ended', () => {
+  it('ends a season whose successor launched at 00:00 UTC at the end of its last day', () => {
     at('2026-10-30T00:00:00Z');
-    expect(getSeasonDateConfig('s13')).toEqual({ startDate: '2026-04-23', endDate: '2026-10-22' });
-    expect(getSeasonDateConfig('s12')).toEqual({ startDate: '2025-10-25', endDate: '2026-04-22' });
-    expect(getSeasonDateConfig(CURRENT_SEASON_SETTING)).toEqual({ startDate: '2026-10-23' });
+    expect(getSeasonDateConfig('s12')).toEqual({
+      startDate: '2025-10-25T00:00:00.000Z',
+      endDate: '2026-04-22T23:59:59.999Z',
+    });
   });
 
   it('treats an unknown season id as the current season', () => {
     at('2026-10-30T00:00:00Z');
-    expect(getSeasonDateConfig('s2')).toEqual({ startDate: '2026-10-23' });
+    expect(getSeasonDateConfig('s2')).toEqual({ startDate: '2026-10-23T17:00:00.000Z' });
   });
 });

@@ -57,7 +57,7 @@ describe('useEconomyData', () => {
     expect(vi.mocked(fetchEconomyData).mock.calls[0][0]).toEqual({
       isLadder: true,
       isHardcore: false,
-      startDate: '2026-04-23',
+      startDate: '2026-04-23T00:00:00.000Z',
     });
 
     await act(async () => d.resolve(berData(3.5)));
@@ -73,8 +73,8 @@ describe('useEconomyData', () => {
     expect(vi.mocked(fetchEconomyData).mock.calls[0][0]).toEqual({
       isLadder: false,
       isHardcore: true,
-      startDate: '2025-10-25',
-      endDate: '2026-04-22',
+      startDate: '2025-10-25T00:00:00.000Z',
+      endDate: '2026-04-22T23:59:59.999Z',
     });
   });
 

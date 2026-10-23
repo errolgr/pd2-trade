@@ -291,7 +291,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     expect(fetchItemPriceByName).toHaveBeenCalledWith('Harlequin Crest', {
       isLadder: true,
       isHardcore: false,
-      startDate: '2026-04-23',
+      startDate: '2026-04-23T00:00:00.000Z',
       hours: 168,
     });
   });

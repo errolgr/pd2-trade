@@ -11,7 +11,7 @@ export interface SparklineQuery {
   baseCode: string;
   isLadder: boolean;
   isHardcore: boolean;
-  /** Season bounds (YYYY-MM-DD) from getSeasonDateConfig: the 30 days are clamped to the season. */
+  /** Season bounds (ISO instants) from getSeasonDateConfig: the 30 days are clamped to the season. */
   seasonStart?: string;
   seasonEnd?: string;
 }
