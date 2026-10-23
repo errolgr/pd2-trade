@@ -430,6 +430,13 @@ describe('buildGetMarketListingQuery', () => {
       expect(query(unique)['item.name'].$regex).toBe('tal rasha');
     });
 
+    it('sends no name filter for a nameless item: PD2 answers an empty $regex with a 500', () => {
+      const q = query(makeItem({ quality: 'Inferior', name: undefined, type: 'Short Sword' }));
+      expect(q['item.quality.name']).toBe('Inferior');
+      expect(q).not.toHaveProperty(['item.name']);
+      expect(query(makeItem({ quality: 'Normal', isRuneword: true, name: '' }))).not.toHaveProperty(['item.name']);
+    });
+
     it('parses $in category and base values into query objects', () => {
       expect(query(makeItem({ type: 'Ring' }))).toMatchObject({
         'item.base.type_code': { $in: ['amul', 'ring', 'amus'] },

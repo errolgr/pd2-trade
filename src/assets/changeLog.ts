@@ -4,6 +4,8 @@ export const changeLog = {
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',
     '🔧 Fixed whisper notifications sometimes playing twice after changing notification settings, and errors when closing windows',
     "🔧 Linux: .deb/.rpm installs that can't update themselves now link to the release page instead of failing over and over",
+    '🔧 Chat messages and offer notifications come back after a PD2 outage instead of stopping until you restart',
+    '🔧 Fixed price check failing with a server error for low quality (Inferior) items',
   ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',
