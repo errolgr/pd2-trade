@@ -107,6 +107,27 @@ export function showToast(payload: ToastPayload): void {
   });
 }
 
+/**
+ * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):
+ * revoked when the toast closes.
+ */
+export function imageToast({ title, description, imageUrl }: { title: string; description?: string; imageUrl: string }): void {
+  const revoke = () => URL.revokeObjectURL(imageUrl);
+  toast.success(title, {
+    description: (
+      <span className="flex flex-col gap-2">
+        {description && <span>{description}</span>}
+        <img src={imageUrl}
+          alt=""
+          className="max-h-40 w-auto max-w-full self-start rounded border border-border object-contain" />
+      </span>
+    ),
+    closeButton: true,
+    onDismiss: revoke,
+    onAutoClose: revoke,
+  });
+}
+
 export interface ConfirmToastOptions {
   title: string;
   description?: string;

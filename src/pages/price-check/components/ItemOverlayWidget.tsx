@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ChevronUp,
   ExternalLink,
+  ImageDown,
   ListPlus,
   Loader2,
   LuggageIcon,
@@ -58,8 +59,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useOverlay } from '@/overlay';
-import { getSeasonDateConfig } from '@/lib/seasons';
+import { imageToast, showToast, useOverlay } from '@/overlay';
+import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -77,7 +78,9 @@ import {
 import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { writeText } from '@/lib/browser-clipboard';
+import { writePng, writeText } from '@/lib/browser-clipboard';
+import { buildItemCard, renderItemCard } from '../lib/item-card';
+import { CaptureSweep } from './CaptureSweep';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
 import { appraisalNote } from '@/components/rares/rares-format';
@@ -1068,6 +1071,52 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     </span>
   );
 
+  // "Copy image": the item as a PD2 tooltip with this price check under it, as a PNG on the clipboard.
+  const [copyingImage, setCopyingImage] = useState(false);
+  // Bumped per press: remounts the border sweep so it replays.
+  const [sweepKey, setSweepKey] = useState(0);
+  const copyItemImage = async () => {
+    if (copyingImage) return;
+    setCopyingImage(true);
+    setSweepKey((k) => k + 1);
+    try {
+      const season = getSeasonById(settings.selectedSeasonId || 'current');
+      const context = [
+        season && (/\((S\d+)\)/.exec(season.label)?.[1] ?? season.label),
+        `${settings.mode === 'hardcore' ? 'Hardcore' : 'Softcore'} ${settings.ladder === 'ladder' ? 'Ladder' : 'Non-Ladder'}`,
+        new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      const card = buildItemCard({
+        item,
+        average:
+          averagePriceData && headlinePrice !== null
+            ? {
+              data: averagePriceData,
+              headline: headlinePrice,
+              basis: windowNote ? `${basisLabel(requestedWindow)} (${windowNote.label})` : basisLabel(requestedWindow),
+            }
+            : null,
+        listings: searched ? { entries: marketListings, total: totalCount, archived: searchArchived } : null,
+        context,
+      });
+      const png = await renderItemCard(card);
+      await writePng(png);
+      trackEvent('item_overlay_image_copied', { quality: item.quality, prices: card.prices.length });
+      imageToast({
+        title: 'Image copied',
+        description: 'Paste it into Discord or a trade post.',
+        imageUrl: URL.createObjectURL(png),
+      });
+    } catch (error) {
+      console.error('[ItemOverlayWidget] Failed to copy the item image:', error);
+      showToast({ title: 'Could not copy image', description: String(error), variant: 'error' });
+    } finally {
+      setCopyingImage(false);
+    }
+  };
+
   // Top corruptions exclude the item's own corruption (shown in its own section)
   const otherCorruptions = useMemo(
     () =>
@@ -1108,7 +1157,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
-        <WindowPanel className="h-full w-full">
+        <WindowPanel className="relative h-full w-full">
+          {sweepKey > 0 && <CaptureSweep key={sweepKey} />}
           {/* Top Bar */}
           <div id="titlebar-drag-handle"
             data-panel-drag
@@ -1136,6 +1186,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               actions={
                 <>
                   <UpdatePill />
+                  <ToolbarButton label="Copy image"
+                    onClick={copyItemImage}>
+                    {copyingImage ? <Loader2 className="animate-spin" /> : <ImageDown />}
+                  </ToolbarButton>
                   <ToolbarButton label="Settings"
                     onClick={openSettingsPage}>
                     <SettingsIcon />
