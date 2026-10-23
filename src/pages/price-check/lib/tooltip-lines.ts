@@ -1,7 +1,6 @@
 import { modifiers } from '@/assets/modifiers';
 import type { Item, Stat } from './interfaces';
 import { StatId, statRemapByName } from './stat-mappings';
-import { getStatKey } from './utils';
 
 /** In-game tooltip colours (D2 palette). */
 export type TooltipColor = 'white' | 'gray' | 'magic' | 'rare' | 'set' | 'unique' | 'crafted' | 'corrupted';
@@ -17,8 +16,8 @@ export interface TooltipLines {
   title: TooltipLine[];
   /** Defense, item level. */
   base: TooltipLine[];
-  /** Magic properties; `keys` are the price check row keys (getStatKey) the line covers. */
-  stats: Array<TooltipLine & { keys: string[] }>;
+  /** Magic properties. */
+  stats: TooltipLine[];
   /** Ethereal / sockets / corrupted. */
   footer: TooltipLine[];
 }
@@ -190,15 +189,11 @@ export function tooltipLines(item: Item): TooltipLines {
   take(STAT.evilForce);
 
   // Merged lines sit where their first stat is in the clipboard order (PD2's display order).
-  const placed: Array<{ at: number; line: TooltipLines['stats'][number] }> = [];
-  const push = (text: string, sources: Stat[], combinedKey?: string) =>
+  const placed: Array<{ at: number; line: TooltipLine }> = [];
+  const push = (text: string, sources: Stat[]) =>
     placed.push({
       at: Math.min(...sources.map((s) => stats.indexOf(s))),
-      line: {
-        text,
-        color: sources.some((s) => s.corrupted) ? 'corrupted' : 'magic',
-        keys: combinedKey ? [combinedKey] : sources.map(getStatKey),
-      },
+      line: { text, color: sources.some((s) => s.corrupted) ? 'corrupted' : 'magic' },
     });
 
   for (const [minId, maxId, element] of DAMAGE_PAIRS) {
@@ -223,18 +218,17 @@ export function tooltipLines(item: Item): TooltipLines {
   }
   const maxEd = num(byId.get(STAT.maxEd));
   if (maxEd !== undefined && byId.has(STAT.minEd)) {
-    push(`${signed(maxEd)}% Enhanced Damage`, [take(STAT.maxEd)!, take(STAT.minEd)!], 'id:998');
+    push(`${signed(maxEd)}% Enhanced Damage`, [take(STAT.maxEd)!, take(STAT.minEd)!]);
   }
-  for (const [ids, format, combinedId] of [
-    [RESIST_IDS, (n: number) => `All Resistances ${signed(n)}%`, StatId.AllResistances],
-    [ATTRIBUTE_IDS, (n: number) => `${signed(n)} to All Attributes`, StatId.AllAttributes],
+  for (const [ids, format] of [
+    [RESIST_IDS, (n: number) => `All Resistances ${signed(n)}%`],
+    [ATTRIBUTE_IDS, (n: number) => `${signed(n)} to All Attributes`],
   ] as const) {
     const values = ids.map((id) => num(byId.get(id)));
     if (values.some((v) => v === undefined) || new Set(values).size !== 1) continue;
     push(
       format(values[0]!),
       ids.map((id) => take(id)!),
-      `id:${combinedId}`,
     );
   }
   for (const s of stats) {

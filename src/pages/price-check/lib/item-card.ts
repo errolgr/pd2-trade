@@ -1,6 +1,6 @@
 import type { AveragePriceResponse } from '@/pages/currency/lib/price-api';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { AppraisedStat, RareAppraisal } from '@/lib/rare-appraisal-api';
+import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { bandRange, rankText, SLOT_PLURALS, VERDICT_LABELS } from '@/components/rares/rares-format';
 import type { Item } from './interfaces';
 import { tooltipLines, type TooltipColor, type TooltipLine, type TooltipLines } from './tooltip-lines';
@@ -10,15 +10,13 @@ export interface ItemCardPrice {
   label: string;
   value: string;
   detail?: string;
-  /** Verdict rows draw the label as a coloured badge. */
-  tone?: 'keep' | 'check' | 'vendor';
 }
 
 export interface ItemCard {
   tooltip: TooltipLines;
-  /** Appraisal stars per stat line (index into `tooltip.stats`). */
-  stars?: ReadonlyMap<number, number>;
   prices: ItemCardPrice[];
+  /** Small muted line under the prices (rare appraisal), deliberately low-key. */
+  note?: string;
   /** Right side of the footer, e.g. "Alliance (S14) · Softcore Ladder · Oct 23, 2026". */
   context: string;
 }
@@ -28,8 +26,6 @@ export interface ItemCardInput {
   /** Unique/set market price and the label of the basis it is shown on ("7-day avg", "7-day avg (S13)"). */
   average?: { data: AveragePriceResponse; headline: number; basis: string } | null;
   appraisal?: RareAppraisal | null;
-  /** Appraised stat per price check row key (matchRareStats). */
-  rareStats?: ReadonlyMap<string, AppraisedStat>;
   /** Current market search results, when a search ran. */
   listings?: { entries: MarketListingEntry[]; total: number; archived: boolean } | null;
   context: string;
@@ -38,15 +34,8 @@ export interface ItemCardInput {
 const hr = (n: number) => `${n >= 10 ? n.toFixed(1) : n.toFixed(2)} HR`;
 
 /** Price check state → what the shared image shows. */
-export function buildItemCard({ item, average, appraisal, rareStats, listings, context }: ItemCardInput): ItemCard {
+export function buildItemCard({ item, average, appraisal, listings, context }: ItemCardInput): ItemCard {
   const tooltip = tooltipLines(item);
-  const stars = new Map<number, number>();
-  if (rareStats?.size) {
-    tooltip.stats.forEach((line, i) => {
-      const best = Math.max(0, ...line.keys.map((k) => rareStats.get(k)?.stars ?? 0));
-      if (best) stars.set(i, best);
-    });
-  }
 
   const prices: ItemCardPrice[] = [];
   if (average) {
@@ -59,17 +48,15 @@ export function buildItemCard({ item, average, appraisal, rareStats, listings, c
     ].filter(Boolean);
     prices.push({ label: average.basis, value: hr(average.headline), detail: detail.join(' · ') });
   }
-  if (appraisal) {
-    const slots = (SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase();
-    prices.push({
-      label: VERDICT_LABELS[appraisal.verdict],
-      tone: appraisal.verdict,
-      value: `${rankText(appraisal.rank)} of ${slots}`,
-      detail: appraisal.market
-        ? `usually listed ${bandRange(appraisal.market.lowHr, appraisal.market.highHr)} HR`
-        : undefined,
-    });
-  }
+  const note = appraisal
+    ? [
+      `Appraisal: ${VERDICT_LABELS[appraisal.verdict].toLowerCase()}`,
+      `${rankText(appraisal.rank)} of ${(SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase()}`,
+      appraisal.market ? `~${bandRange(appraisal.market.lowHr, appraisal.market.highHr)} HR` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    : undefined;
   const priced = (listings?.entries ?? [])
     .map((l) => (listings?.archived ? (l.sell_hr_price ?? l.hr_price) : l.hr_price))
     .filter((p) => p > 0)
@@ -84,7 +71,7 @@ export function buildItemCard({ item, average, appraisal, rareStats, listings, c
     });
   }
 
-  return { tooltip, stars, prices, context };
+  return { tooltip, prices, note, context };
 }
 
 /** D2 tooltip palette. */
@@ -98,16 +85,11 @@ const COLORS: Record<TooltipColor, string> = {
   crafted: '#ffa800',
   corrupted: '#ff5050',
 };
-const TONES: Record<NonNullable<ItemCardPrice['tone']>, string> = {
-  keep: '#4ade80',
-  check: '#facc15',
-  vendor: '#f87171',
-};
 const GOLD = '#c7b377';
 const MUTED = '#8a8a8a';
+const NOTE = '#5f5f5f';
 const BACKGROUND = '#0a0a0a';
 const BORDER = '#3b3428';
-const STAR = '★';
 
 const FONT = 'DiabloFont';
 const UI_FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -155,7 +137,6 @@ interface Row {
   lines: string[];
   color: string;
   size: number;
-  stars: number;
 }
 
 /** A piece of a tooltip line drawn in one font and colour. */
@@ -165,17 +146,12 @@ interface Run {
   color: string;
 }
 
-/**
- * Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph, so plus signs use the UI font;
- * appraisal stars follow in gold.
- */
-function lineRuns(text: string, size: number, color: string, stars = 0): Run[] {
-  const runs: Run[] = text
+/** Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph, so plus signs use the UI font. */
+function lineRuns(text: string, size: number, color: string): Run[] {
+  return text
     .split(/(\+)/)
     .filter(Boolean)
     .map((part) => ({ text: part, font: part === '+' ? `600 ${size}px ${UI_FONT}` : font(size), color }));
-  if (stars) runs.push({ text: ` ${STAR.repeat(stars)}`, font: `${size - 1}px ${UI_FONT}`, color: GOLD });
-  return runs;
 }
 
 function runsWidth(ctx: CanvasRenderingContext2D, runs: Run[]): number {
@@ -204,18 +180,12 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
 
   // Measure: widest tooltip line decides the width (clamped), long lines wrap.
   const { tooltip } = card;
-  const stars = card.stars ?? new Map<number, number>();
-  const sized: Array<{ line: TooltipLine; size: number; stars: number }> = [
-    ...tooltip.title.map((line) => ({ line, size: TITLE_SIZE, stars: 0 })),
-    ...tooltip.base.map((line) => ({ line, size: LINE_SIZE, stars: 0 })),
-    ...tooltip.stats.map((line, i) => ({ line, size: LINE_SIZE, stars: stars.get(i) ?? 0 })),
-    ...tooltip.footer.map((line) => ({ line, size: LINE_SIZE, stars: 0 })),
+  const sized: Array<{ line: TooltipLine; size: number }> = [
+    ...tooltip.title.map((line) => ({ line, size: TITLE_SIZE })),
+    ...[...tooltip.base, ...tooltip.stats, ...tooltip.footer].map((line) => ({ line, size: LINE_SIZE })),
   ];
   let contentWidth = MIN_WIDTH - PAD_X * 2;
-  for (const s of sized) {
-    const w = runsWidth(ctx, lineRuns(s.line.text, s.size, '', s.stars));
-    contentWidth = Math.max(contentWidth, w);
-  }
+  for (const s of sized) contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(s.line.text, s.size, '')));
   // Footer: logo + brand + context on one line.
   ctx.font = font(13);
   const brandWidth = LOGO_SIZE + 6 + ctx.measureText(BRAND).width;
@@ -224,10 +194,9 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   contentWidth = Math.min(Math.ceil(contentWidth), MAX_WIDTH - PAD_X * 2);
   const width = contentWidth + PAD_X * 2;
 
-  const rows: Array<Row | 'gap'> = sized.map(({ line, size, stars: rowStars }) => {
-    const starWidth = rowStars ? runsWidth(ctx, lineRuns('', size, '', rowStars)) : 0;
+  const rows: Array<Row | 'gap'> = sized.map(({ line, size }) => {
     ctx.font = font(size);
-    return { lines: wrap(ctx, line.text, contentWidth - starWidth), color: COLORS[line.color], size, stars: rowStars };
+    return { lines: wrap(ctx, line.text, contentWidth), color: COLORS[line.color], size };
   });
   // D2 leaves no gaps; one small gap after the title block reads better at share size.
   if (tooltip.title.length && rows.length > tooltip.title.length) rows.splice(tooltip.title.length, 0, 'gap');
@@ -235,12 +204,15 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   const lineHeight = (size: number) => (size === TITLE_SIZE ? 23 : LINE_HEIGHT);
   const tooltipHeight = rows.reduce((h, r) => h + (r === 'gap' ? GAP : r.lines.length * lineHeight(r.size)), 0);
 
-  // Price rows: label left, value right, optional detail line below.
+  // Price rows: label left, value right, optional detail line below; then the muted note.
   const PRICE_ROW = 22;
   const DETAIL_ROW = 16;
-  const pricesHeight = card.prices.reduce((h, p) => h + PRICE_ROW + (p.detail ? DETAIL_ROW : 0), 0) + (card.prices.length ? 6 : 0);
+  const NOTE_ROW = 18;
+  const hasSection = card.prices.length > 0 || !!card.note;
+  const sectionHeight =
+    card.prices.reduce((h, p) => h + PRICE_ROW + (p.detail ? DETAIL_ROW : 0), 0) + (card.note ? NOTE_ROW : 0) + 18;
   const FOOTER = 30;
-  const height = PAD_Y + tooltipHeight + PAD_Y + (card.prices.length ? pricesHeight + 12 : 0) + FOOTER;
+  const height = PAD_Y + tooltipHeight + PAD_Y + (hasSection ? sectionHeight : 0) + FOOTER;
 
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
@@ -266,7 +238,7 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
     row.lines.forEach((text, i) => {
       y += lh;
       const baseline = y - (lh - row.size) / 2 - 2;
-      const runs = lineRuns(text, row.size, row.color, i === row.lines.length - 1 ? row.stars : 0);
+      const runs = lineRuns(text, row.size, row.color);
       let x = width / 2 - runsWidth(ctx, runs) / 2;
       for (const run of runs) {
         ctx.font = run.font;
@@ -287,31 +259,16 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
     ctx.fillStyle = g;
     ctx.fillRect(PAD_X, at, width - PAD_X * 2, 1);
   };
-  if (card.prices.length) {
+  if (hasSection) {
     divider(y);
     y += 12;
+    ctx.textBaseline = 'middle';
     for (const price of card.prices) {
       const mid = y + PRICE_ROW / 2;
-      ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      if (price.tone) {
-        ctx.font = `600 11px ${UI_FONT}`;
-        const label = price.label.toUpperCase();
-        const w = ctx.measureText(label).width + 16;
-        const color = TONES[price.tone];
-        ctx.fillStyle = `${color}22`;
-        ctx.strokeStyle = `${color}88`;
-        ctx.beginPath();
-        ctx.roundRect(PAD_X, mid - 9, w, 18, 9);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = color;
-        ctx.fillText(label, PAD_X + 8, mid + 0.5);
-      } else {
-        ctx.font = `500 12px ${UI_FONT}`;
-        ctx.fillStyle = MUTED;
-        ctx.fillText(price.label, PAD_X, mid);
-      }
+      ctx.font = `500 12px ${UI_FONT}`;
+      ctx.fillStyle = MUTED;
+      ctx.fillText(price.label, PAD_X, mid);
       ctx.textAlign = 'right';
       ctx.font = `600 14px ${UI_FONT}`;
       ctx.fillStyle = '#f2f2f2';
@@ -323,6 +280,13 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
         ctx.fillText(price.detail, width - PAD_X, y + DETAIL_ROW / 2 - 2);
         y += DETAIL_ROW;
       }
+    }
+    if (card.note) {
+      ctx.textAlign = 'center';
+      ctx.font = `400 11px ${UI_FONT}`;
+      ctx.fillStyle = NOTE;
+      ctx.fillText(card.note, width / 2, y + NOTE_ROW / 2);
+      y += NOTE_ROW;
     }
     y += 6;
   }

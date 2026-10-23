@@ -74,9 +74,7 @@ describe('tooltipLines', () => {
       { stat_id: 2, name: 'to Dexterity', value: 2 },
       { stat_id: 3, name: 'to Vitality', value: 2 },
     ];
-    const { stats: lines } = tooltipLines(item({ stats }));
-    expect(lines.map((l) => l.text)).toEqual(['+2 to All Attributes']);
-    expect(lines[0].keys).toEqual(['id:1002']);
+    expect(texts(stats)).toEqual(['+2 to All Attributes']);
   });
 
   it('converts poison per-frame damage to the in-game total', () => {
@@ -100,7 +98,7 @@ describe('tooltipLines', () => {
         ],
       }),
     );
-    expect(lines.stats).toEqual([{ text: '+10% Faster Hit Recovery', color: 'corrupted', keys: ['id:99'] }]);
+    expect(lines.stats).toEqual([{ text: '+10% Faster Hit Recovery', color: 'corrupted' }]);
     expect(lines.footer).toEqual([
       { text: 'Ethereal (Cannot be Repaired), Socketed (4)', color: 'magic' },
       { text: 'Corrupted', color: 'corrupted' },

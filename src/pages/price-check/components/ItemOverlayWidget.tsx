@@ -1095,7 +1095,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             }
             : null,
         appraisal,
-        rareStats,
         listings: searched ? { entries: marketListings, total: totalCount, archived: searchArchived } : null,
         context,
       });
