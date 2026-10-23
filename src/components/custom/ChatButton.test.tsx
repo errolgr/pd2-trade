@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { INTERACTIVE_SELECTOR } from '@/overlay/region';
 import { ChatButton } from './ChatButton';
 
 beforeAll(() => {
@@ -73,6 +74,13 @@ describe('ChatButton', () => {
     );
     expect(screen.getByLabelText('100 unread messages').textContent).toBe('99+');
     expect(screen.getByLabelText('99 trade offers').textContent).toBe('99');
+  });
+
+  it.each([false, true])('the open menu is in the click region itself (menuBelow %s)', (menuBelow) => {
+    // It overflows the tab's box, so the tab's rect alone leaves it outside the OS region (invisible, click-through)
+    renderDock({ onSettingsClick: vi.fn(), menuBelow });
+    fireEvent.click(caret());
+    expect(menu()!.matches(INTERACTIVE_SELECTOR)).toBe(true);
   });
 
   it('closes the open menu after the pointer stays out for the grace period, not when it comes back in time', () => {

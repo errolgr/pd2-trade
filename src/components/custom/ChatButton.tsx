@@ -281,7 +281,9 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
         <AnimatePresence>
           {menuOpen && (
+            // Its own interactive rect: the menu overflows the tab's box, and outside the OS region it is clipped
             <motion.div
+              data-interactive="true"
               role="menu"
               aria-label="PD2 Trader"
               variants={scaleIn}
