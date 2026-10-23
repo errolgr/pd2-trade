@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.10.1': [
+    '🆕 Classic Diablo II theme: dark carved stone, blood-red and gold, in the Diablo font (Settings → Interface)',
+    '🔧 Accounts banned from PD2 Trader now get a clear message at sign-in instead of waiting for it to time out',
+  ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',
     '🆕 Net Worth (was Stash Value, Ctrl+X): your stash value over time with an in-game ticker; history is saved by default (Settings → Net Worth to turn off)',
