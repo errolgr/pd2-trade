@@ -287,10 +287,8 @@ export function buildGetMarketListingQuery(
   } else {
     // Runewords always use name search regardless of base quality
     if (item.isRuneword) {
-      query['item.name'] = {
-        $regex: item.runeword || mappedItem?.name || item.name || '',
-        $options: 'i',
-      };
+      const name = item.runeword || mappedItem?.name || item.name;
+      if (name) query['item.name'] = { $regex: name, $options: 'i' };
     } else {
       // Check if item is a base quality that supports toggle
       const isBaseQuality =
@@ -323,11 +321,9 @@ export function buildGetMarketListingQuery(
           console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
         }
       } else {
-        // Uniques, Sets: Always use name search (original functionality)
-        query['item.name'] = {
-          $regex: item.name ? `${mappedItem?.name || item.name}` : '',
-          $options: 'i',
-        };
+        // Uniques, Sets: Always use name search (original functionality). Nameless items (Inferior quality) get no
+        // name filter: PD2 answers an empty $regex with a 500 ("$regex has to be a string").
+        if (item.name) query['item.name'] = { $regex: mappedItem?.name || item.name, $options: 'i' };
       }
     }
   }
