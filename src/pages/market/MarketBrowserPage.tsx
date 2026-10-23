@@ -473,6 +473,13 @@ const MarketBrowserPage: React.FC = () => {
                           favorites={favorites}
                           rows={cards ? cardRows : rows}
                           onSignIn={() => openPanel('signIn')}
+                          // No live listing for this search: offer the same search over sold listings
+                          onSearchArchive={
+                            tab === 'search' && filters?.source === 'live'
+                              ? () => setFilters(withSource(filters, 'archive'))
+                              : undefined
+                          }
+                          itemName={filters?.itemName}
                           toolbar={
                             <>
                               {tab === 'search' && <WatchButton filters={filters} />}
@@ -634,6 +641,8 @@ function ResultsPane({
   favorites,
   rows,
   onSignIn,
+  onSearchArchive,
+  itemName,
   toolbar,
   children,
 }: {
@@ -645,6 +654,10 @@ function ResultsPane({
   favorites: MarketFavorites;
   rows: ScoredListing[];
   onSignIn: () => void;
+  /** Set while a live search can be re-run over the sold archive (offered when it finds nothing). */
+  onSearchArchive?: () => void;
+  /** The searched item name, for the empty-state wording. */
+  itemName?: string;
   /** Right end of the status strip (view toggle). */
   toolbar: React.ReactNode;
   children: React.ReactNode;
@@ -742,6 +755,19 @@ function ResultsPane({
           icon={<Heart />}
           title="No favorites yet"
           description="Heart a listing to keep it here; favorites sync with projectdiablo2.com."
+        />
+      ) : onSearchArchive ? (
+        <EmptyState
+          className="m-6"
+          icon={<SearchX />}
+          title={itemName ? `No live listings for ${itemName}` : 'No live listings match'}
+          description="Search the sold archive to see what it sold for recently?"
+          action={
+            <Button size="sm"
+              onClick={onSearchArchive}>
+              Search sold archive
+            </Button>
+          }
         />
       ) : (
         <EmptyState
