@@ -1,14 +1,11 @@
 export const changeLog = {
-  '0.10.1': [
-    '🆕 Added Classic Diablo II theme for a darker, more authentic D2 overlay look',
-  ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',
     '🆕 Net Worth (was Stash Value, Ctrl+X): your stash value over time with an in-game ticker; history is saved by default (Settings → Net Worth to turn off)',
     '🆕 Rare appraisal: Keep / Check / Vendor for your rares',
     '🆕 Redesigned chat: one conversation per trader, offers handled right in the thread, message templates and linked listings',
     '🆕 New chat button: a slim dock in the corner with your unread messages and offers, plus quick access to every window',
-    '🆕 Fresh new look for every window, with 21 color themes including Classic Diablo II',
+    '🆕 Fresh new look for every window, with 20 color themes',
     '✨ Price check shows a price trend and what the price is based on',
     '✨ Redesigned sign-in, and automatic updates can be turned off',
     '🔧 Lots of fixes for price accuracy, sign-ins, chat and overlays',
