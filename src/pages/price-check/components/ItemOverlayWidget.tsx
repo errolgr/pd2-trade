@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { RELEASE_PAGE_URL, isManualUpdateRequired } from '@/lib/manual-update';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertCircle,
@@ -1700,21 +1701,37 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 /** "Restart to update" in the title bar: price check is the window users look at most. */
 function UpdatePill() {
   const version = useAvailableUpdate();
-  const [state, setState] = useState<'idle' | 'installing' | 'failed'>('idle');
+  const [state, setState] = useState<'idle' | 'installing' | 'failed' | 'manual'>(() =>
+    isManualUpdateRequired() ? 'manual' : 'idle',
+  );
   if (!version) return null;
 
   const install = async () => {
+    // Linux deb/rpm installs can't update in place: send the user to the release page
+    if (state === 'manual') {
+      await openUrl(RELEASE_PAGE_URL);
+      return;
+    }
     setState('installing');
     // Success relaunches the app; false means the install failed and the app is still running
-    if (!(await installUpdateAndRelaunch())) setState('failed');
+    if (!(await installUpdateAndRelaunch())) setState(isManualUpdateRequired() ? 'manual' : 'failed');
   };
 
   // Short labels: the title bar also holds the title, toolbar icons and close in a narrow window
-  const label = state === 'installing' ? 'Updating…' : state === 'failed' ? 'Retry update' : 'Restart to update';
+  const label =
+    state === 'installing'
+      ? 'Updating…'
+      : state === 'failed'
+        ? 'Retry update'
+        : state === 'manual'
+          ? 'Get update'
+          : 'Restart to update';
   const hint =
     state === 'failed'
       ? `Updating to v${version} failed. Click to try again.`
-      : `Version ${version} is available. Downloads, installs and restarts PD2 Trader.`;
+      : state === 'manual'
+        ? `Version ${version} is available. This install can't update itself: click to open the release page, or use your package manager.`
+        : `Version ${version} is available. Downloads, installs and restarts PD2 Trader.`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>

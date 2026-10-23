@@ -3,6 +3,7 @@ export const changeLog = {
     '🆕 Added Classic Diablo II theme for a darker, more authentic D2 overlay look',
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',
     '🔧 Fixed whisper notifications sometimes playing twice after changing notification settings, and errors when closing windows',
+    "🔧 Linux: .deb/.rpm installs that can't update themselves now link to the release page instead of failing over and over",
   ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',

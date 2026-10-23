@@ -4,6 +4,12 @@ import { useUpdater } from './useUpdater';
 import { useOptions } from './useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 import { showToast } from '@/overlay';
+import {
+  isManualUpdateRequired,
+  manualUpdateToast,
+  markManualUpdateRequired,
+  requiresManualUpdate,
+} from '@/lib/manual-update';
 
 // Track update state globally to prevent duplicate notifications
 let hasNotified = false;
@@ -55,7 +61,17 @@ export const useAppUpdates = () => {
 
         if (update?.available) {
           // Auto-download on startup; download/install/relaunch failures are real bugs, keep reporting them
-          await downloadUpdate(update);
+          try {
+            await downloadUpdate(update);
+          } catch (error) {
+            if (!requiresManualUpdate(error)) throw error;
+            // Expected for Linux deb/rpm installs: point the user at the release page once; no retry, no error report
+            console.warn('Update must be installed manually:', error);
+            markManualUpdateRequired();
+            hasNotified = true;
+            notifiedVersion = update.version;
+            showToast(manualUpdateToast(update.version));
+          }
         }
       } catch (error) {
         console.error('Error auto-downloading update:', error);
@@ -95,17 +111,19 @@ export const useAppUpdates = () => {
             hasNotified = true;
             notifiedVersion = update.version;
 
-            const updateToastPayload: CustomToastPayload = {
-              title: 'PD2 Trader - Update Available',
-              description: `Version ${update.version} is available. Click to download and restart.`,
-              action: {
-                label: 'Download & Restart',
-                type: ToastActionType.UPDATE_AVAILABLE,
-                data: {
-                  version: update.version,
-                },
-              },
-            };
+            const updateToastPayload: CustomToastPayload = isManualUpdateRequired()
+              ? manualUpdateToast(update.version)
+              : {
+                  title: 'PD2 Trader - Update Available',
+                  description: `Version ${update.version} is available. Click to download and restart.`,
+                  action: {
+                    label: 'Download & Restart',
+                    type: ToastActionType.UPDATE_AVAILABLE,
+                    data: {
+                      version: update.version,
+                    },
+                  },
+                };
             showToast(updateToastPayload);
           }
         } else {
