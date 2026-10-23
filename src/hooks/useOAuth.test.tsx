@@ -7,7 +7,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { useOptions } from '@/hooks/useOptions';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { GenericToastPayload } from '@/common/types/Events';
-import { useOAuth } from './useOAuth';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from './useOAuth';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
@@ -245,6 +245,47 @@ describe('useOAuth startOAuthFlow', () => {
 
     expect(updateSettings).not.toHaveBeenCalled();
     expect(toasts()).toEqual([]);
+  });
+
+  it('cancelOAuthFlow ends the running flow like an abort, whoever started it, so a retry can start', async () => {
+    routeFetch([jsonResponse(null, 404)]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), active: useOAuthFlowActive() }));
+    const caller = new AbortController();
+    expect(result.current.active).toBe(false);
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow(caller.signal);
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(pollCount()).toBe(1);
+    expect(result.current.active).toBe(true);
+
+    await act(async () => {
+      cancelOAuthFlow();
+      await expect(pending).resolves.toBe(false);
+    });
+    expect(result.current.active).toBe(false);
+    expect(toasts()).toEqual([]);
+
+    // Polling stopped; the retry runs its own flow
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    vi.mocked(tauriFetch).mockClear();
+    await act(async () => {
+      const retry = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(retry).resolves.toBe('acc');
+    });
+    expect(pollCount()).toBe(1);
+    // Aborting the cancelled flow's caller later touches nothing
+    caller.abort();
+    expect(result.current.active).toBe(false);
+  });
+
+  it('cancelOAuthFlow does nothing when no flow runs', () => {
+    const { result } = renderHook(() => useOAuthFlowActive());
+    act(() => cancelOAuthFlow());
+    expect(result.current).toBe(false);
   });
 
   it('does nothing when the signal is already aborted', async () => {

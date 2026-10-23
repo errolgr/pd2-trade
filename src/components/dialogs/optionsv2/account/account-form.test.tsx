@@ -6,12 +6,14 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { cancelOAuthFlow, useOAuthFlowActive } from '@/hooks/useOAuth';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { AccountForm } from './account-form';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+vi.mock('@/hooks/useOAuth', () => ({ cancelOAuthFlow: vi.fn(), useOAuthFlowActive: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
 vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
 
@@ -42,6 +44,8 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.mocked(isTauri).mockReturnValue(true);
+  vi.mocked(useOAuthFlowActive).mockReturnValue(false);
+  vi.mocked(cancelOAuthFlow).mockReset();
   logout.mockReset();
   startOAuthFlow.mockReset();
 });
@@ -74,19 +78,26 @@ describe('AccountForm', () => {
     expect(screen.queryByText('Signed in')).not.toBeNull();
   });
 
-  it('shows the login progress and recovers when the OAuth flow fails', async () => {
-    const { promise, reject: fail } = Promise.withResolvers<string>();
-    startOAuthFlow.mockReturnValue(promise);
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('starts the browser sign-in from Log in, and survives the flow failing', async () => {
+    startOAuthFlow.mockRejectedValue(new Error('closed'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderForm(null);
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
 
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Log in/ })));
-    const button = screen.getByRole('button', { name: /Logging in/ }) as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-
-    await act(async () => fail(new Error('closed')));
-    expect((screen.getByRole('button', { name: /Log in/ }) as HTMLButtonElement).disabled).toBe(false);
     expect(startOAuthFlow).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('Failed to start OAuth flow:', expect.any(Error));
+    expect((screen.getByRole('button', { name: /Log in/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('while a sign-in runs (from here or the sign-in panel): shows the progress and a Cancel that ends it', () => {
+    vi.mocked(useOAuthFlowActive).mockReturnValue(true);
+    renderForm(null);
+    expect((screen.getByRole('button', { name: /Logging in/ }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(cancelOAuthFlow).toHaveBeenCalledTimes(1);
+    expect(startOAuthFlow).not.toHaveBeenCalled();
   });
 
   it('shows the logout progress until logout settles', async () => {
