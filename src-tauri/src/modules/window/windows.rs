@@ -5,17 +5,20 @@ use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::AppHandle;
 
 use windows_sys::Win32::{
-    Foundation::{HWND, POINT, RECT},
+    Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::Gdi::{
         GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
         MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
     },
     System::Threading::{AttachThreadInput, GetCurrentThreadId},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
+    UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
     UI::WindowsAndMessaging::{
-        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowRect,
-        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, ShowWindow,
-        EVENT_SYSTEM_FOREGROUND, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
+        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowLongW, GetWindowRect,
+        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW, SetWindowPos,
+        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT, SWP_FRAMECHANGED,
+        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
+        WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
     },
 };
 
@@ -54,6 +57,60 @@ static OVERLAY_WINDOW: AtomicIsize = AtomicIsize::new(0);
 
 pub fn set_overlay_window(hwnd: HWND) {
     OVERLAY_WINDOW.store(hwnd, Ordering::SeqCst);
+}
+
+/// The overlay's extended style: a tool window (no taskbar button, no Alt+Tab entry).
+///
+/// Browsers (Chromium, Firefox) stop painting a window they think is fully covered, and they count
+/// any visible window that is not a tool window, transparent or layered, and whose region is empty
+/// or a single rect, as opaque over its whole window rect. The overlay spans the monitor's work
+/// area, so with at most one panel showing (e.g. the sign-in panel during the OAuth login), every
+/// browser window on that monitor froze until it was moved to another one.
+fn overlay_ex_style(style: u32) -> u32 {
+    (style | WS_EX_TOOLWINDOW) & !WS_EX_APPWINDOW
+}
+
+const OVERLAY_STYLE_SUBCLASS_ID: usize = 0x7064_3274;
+
+/// Makes the overlay a tool window and keeps it one: tao rewrites the whole extended style on every
+/// flag change (focusable, always on top), so the subclass applies it to each change. Call on the
+/// thread that owns the window.
+pub fn keep_overlay_tool_window(hwnd: HWND) {
+    unsafe {
+        SetWindowSubclass(hwnd, Some(overlay_style_proc), OVERLAY_STYLE_SUBCLASS_ID, 0);
+        let style = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+        SetWindowLongW(hwnd, GWL_EXSTYLE, overlay_ex_style(style) as i32);
+        SetWindowPos(
+            hwnd,
+            0,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+        );
+    }
+}
+
+unsafe extern "system" fn overlay_style_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _id: usize,
+    _data: usize,
+) -> LRESULT {
+    match msg {
+        WM_STYLECHANGING if wparam as i32 == GWL_EXSTYLE => {
+            let change = &mut *(lparam as *mut STYLESTRUCT);
+            change.styleNew = overlay_ex_style(change.styleNew);
+        }
+        WM_NCDESTROY => {
+            RemoveWindowSubclass(hwnd, Some(overlay_style_proc), OVERLAY_STYLE_SUBCLASS_ID);
+        }
+        _ => {}
+    }
+    DefSubclassProc(hwnd, msg, wparam, lparam)
 }
 
 pub fn foreground() -> Foreground {
@@ -225,6 +282,26 @@ mod tests {
     const DIABLO: HWND = 20;
     const TRAY_MENU_OWNER: HWND = 30;
     const BROWSER: HWND = 40;
+
+    #[test]
+    fn the_overlay_is_always_a_tool_window_without_a_taskbar_entry() {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{WS_EX_NOACTIVATE, WS_EX_TOPMOST};
+        // tao's styles for the overlay: topmost, app window, not focusable
+        let tao = WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_NOACTIVATE;
+        assert_eq!(
+            overlay_ex_style(tao),
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
+        );
+        // Focusable while typing: only NOACTIVATE goes, the tool window bit stays
+        assert_eq!(
+            overlay_ex_style(WS_EX_TOPMOST | WS_EX_APPWINDOW),
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+        );
+        assert_eq!(
+            overlay_ex_style(overlay_ex_style(tao)),
+            overlay_ex_style(tao)
+        );
+    }
 
     #[test]
     fn only_the_overlay_counts_as_our_window() {
