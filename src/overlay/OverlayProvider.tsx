@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { claimKeyboard, isKeyboardClaimed, releaseKeyboard, trackKeyboardFocus } from './keyboard';
 import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
@@ -378,20 +379,10 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     },
     [],
   );
-  useEffect(() => {
-    let disposed = false;
-    let off: (() => void) | null = null;
-    listen(OUTSIDE_CLICK_EVENT, closeDismissablePanels)
-      .then((unlisten) => {
-        if (disposed) unlisten();
-        else off = unlisten;
-      })
-      .catch((error) => console.warn('[overlay] outside-click listener failed:', error));
-    return () => {
-      disposed = true;
-      off?.();
-    };
-  }, [closeDismissablePanels]);
+  useEffect(
+    () => holdListener(listen(OUTSIDE_CLICK_EVENT, closeDismissablePanels), OUTSIDE_CLICK_EVENT),
+    [closeDismissablePanels],
+  );
 
   useEffect(() => {
     // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away.
