@@ -51,12 +51,19 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return promise;
 }
 
+/** Shown when pd2trader.com refuses a banned account (403 from poll, refresh or /me). */
+export const BANNED_MESSAGE = 'This PD2 account is banned from PD2 Trader.';
+
+export function showBannedToast(): void {
+  showToast({ title: 'PD2 Trader', description: BANNED_MESSAGE, variant: 'error' });
+}
+
 async function pollForTokens(
   state: string,
   signal?: AbortSignal,
   intervalMs = 2000,
   timeoutMs = 10 * 60 * 1000,
-): Promise<{ accessToken: string; refreshToken?: string; idToken?: string; expiresIn: number } | null> {
+): Promise<{ accessToken: string; refreshToken?: string; idToken?: string; expiresIn: number } | 'banned' | null> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
@@ -68,6 +75,8 @@ async function pollForTokens(
       if (response.ok) {
         return await response.json();
       }
+      // 403 = the server refused the sign-in: the account is banned
+      if (response.status === 403) return 'banned';
       // 404 = not ready yet, keep polling
       if (response.status !== 404) {
         console.warn('[OAuth] Unexpected poll response:', response.status);
@@ -143,6 +152,10 @@ export function useOAuth() {
         // 3. Poll for completion
         const tokens = await pollForTokens(state, signal);
         if (signal.aborted) return false;
+        if (tokens === 'banned') {
+          showBannedToast();
+          return false;
+        }
         if (!tokens) {
           const timeoutToast: GenericToastPayload = {
             title: 'PD2 Trader',
@@ -195,6 +208,12 @@ export function useOAuth() {
           body: JSON.stringify({ refreshToken }),
         });
 
+        if (response.status === 403) {
+          // Banned: the session is over for good, so drop the stored tokens instead of asking to sign in again.
+          await updateSettings({ pd2Token: undefined, pd2RefreshToken: undefined, pd2TokenExpiry: undefined });
+          showBannedToast();
+          return false;
+        }
         if (!response.ok) {
           throw new Error(`Token refresh failed: ${response.status}`);
         }
