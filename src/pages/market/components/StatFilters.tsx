@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { BookmarkPlus, ChevronDown, RotateCcw, Sigma, Sparkles, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -87,7 +87,8 @@ const TABS: { id: StatTab; label: string }[] = [
   { id: 'pseudo', label: 'Pseudo' },
   { id: 'corruption', label: 'Corruptions' },
 ];
-const tabOf = (choice: StatChoice): StatTab => (isPseudo(choice) ? 'pseudo' : isCorruption(choice) ? 'corruption' : 'mod');
+const tabOf = (choice: StatChoice): StatTab =>
+  isPseudo(choice) ? 'pseudo' : isCorruption(choice) ? 'corruption' : 'mod';
 
 /** Corruption rows after the stat rows (stable otherwise), so the two kinds don't interleave. */
 const statsFirst = (rows: StatFilter[]) =>
@@ -113,6 +114,8 @@ export function StatFilters({
   const [query, setQuery] = useState('');
   const [pickedTab, setPickedTab] = useState<StatTab | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(searchRef, () => inputRef.current as HTMLInputElement);
   useEffect(() => {
     if (!highlight) return;
     listRef.current
@@ -130,10 +133,7 @@ export function StatFilters({
   }, [matches]);
   // The tab the user picked while it has matches, else the best match's tab
   const tab: StatTab = pickedTab && counts[pickedTab] > 0 ? pickedTab : matches[0] ? tabOf(matches[0]) : 'mod';
-  const suggestions = useMemo(
-    () => matches.filter((m) => tabOf(m) === tab).slice(0, MAX_SUGGESTIONS),
-    [matches, tab],
-  );
+  const suggestions = useMemo(() => matches.filter((m) => tabOf(m) === tab).slice(0, MAX_SUGGESTIONS), [matches, tab]);
   const cycleTab = (step: 1 | -1) => {
     const open = TABS.filter((t) => counts[t.id] > 0);
     if (open.length < 2) return;
@@ -142,8 +142,8 @@ export function StatFilters({
   };
 
   const add = (choice: StatChoice) => {
-    setQuery('');
-    setPickedTab(null);
+    // The search stays so a click brings the same list back; selected, so typing starts a new one
+    inputRef.current?.select();
     const row = isPseudo(choice)
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
@@ -183,10 +183,8 @@ export function StatFilters({
             transition={{ duration: 1.4, times: [0, 0.15, 0.6, 1], ease: 'easeOut' }}
           />
         )}
-        {corruption && (
-          <span aria-hidden
-            className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />
-        )}
+        {corruption && <span aria-hidden
+          className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />}
         <div className="relative space-y-1 py-1 pr-0.5 pl-1.5">
           <div className="flex min-w-0 items-center gap-1.5">
             <Checkbox
@@ -254,7 +252,7 @@ export function StatFilters({
     <div className="space-y-1.5">
       <div className="flex items-center gap-1">
         <Autocomplete<StatChoice>
-          inputRef={searchRef}
+          inputRef={inputRef}
           ariaLabel="Add a stat filter"
           placeholder="Add stat…  ( ? )"
           value={query}
