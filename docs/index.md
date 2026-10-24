@@ -111,6 +111,6 @@ Easily compare and trade runes with up-to-date exchange rates.
 
 #### Themes
 
-Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → Interface, applied instantly to every panel.
+Make the overlay your own: choose from 21 color themes (11 dark, 10 light) in Settings → Interface, applied instantly to every panel.
 
 Panels are opaque by default; the Window transparency slider in Settings → Interface lets the game show through their backgrounds (up to 90%).
