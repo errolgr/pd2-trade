@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::fs;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 
@@ -96,6 +97,83 @@ pub fn get_game_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     }
 
     Some(log_file)
+}
+
+/// Character name (lowercase) → account name, learned from join lines and realm whispers. In-game
+/// whisper lines only carry the character name; this keeps their conversations keyed by account.
+static CHARACTER_ACCOUNTS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+fn remember_account(character: &str, account: &str) {
+    let account = account.trim().trim_start_matches('*');
+    let character = character.trim();
+    if character.is_empty() || account.is_empty() || character.contains(' ') {
+        return;
+    }
+    if let Ok(mut guard) = CHARACTER_ACCOUNTS.lock() {
+        guard
+            .get_or_insert_with(HashMap::new)
+            .insert(character.to_lowercase(), account.to_string());
+    }
+}
+
+fn account_for(character: &str) -> Option<String> {
+    CHARACTER_ACCOUNTS
+        .lock()
+        .ok()?
+        .as_ref()?
+        .get(&character.to_lowercase())
+        .cloned()
+}
+
+/// Learn character → account from "4,<char>(<account>) joined our world." and "2,From <char> (*<account>): …".
+fn learn_accounts(line: &str) {
+    let (who, end) = if let Some(rest) = line.strip_prefix("4,") {
+        match rest.find(" joined our world") {
+            Some(end) => (rest, end),
+            None => return,
+        }
+    } else if let Some(rest) = line.strip_prefix("2,From ") {
+        match rest.find(':') {
+            Some(end) => (rest, end),
+            None => return,
+        }
+    } else {
+        return;
+    };
+    let who = &who[..end];
+    if let (Some(open), Some(close)) = (who.find('('), who.find(')')) {
+        if open < close {
+            remember_account(&who[..open], &who[open + 1..close]);
+        }
+    }
+}
+
+/// In-game whispers (the other player is in your game) are logged as "2,<char> whispers: <msg>" and
+/// "2,You whispered to <char>: <msg>". Rewrites them to the realm format ("2,From <char> (*<account>): <msg>",
+/// "2,Sent to …") the parsers below read, with the account when it is known; other lines are returned as-is.
+fn normalize_in_game_whisper(line: &str) -> std::borrow::Cow<'_, str> {
+    let Some(body) = line.strip_prefix("2,") else {
+        return line.into();
+    };
+    let (direction, character, message) = if let Some(rest) = body.strip_prefix("You whispered to ") {
+        match rest.split_once(": ") {
+            Some((character, message)) => ("Sent to", character, message),
+            None => return line.into(),
+        }
+    } else {
+        match body.split_once(" whispers: ") {
+            Some((character, message)) => ("From", character, message),
+            None => return line.into(),
+        }
+    };
+    // Character names have no spaces; anything else is a different kind of line.
+    if character.is_empty() || character.contains(' ') {
+        return line.into();
+    }
+    match account_for(character) {
+        Some(account) => format!("2,{} {} (*{}): {}", direction, character, account, message).into(),
+        None => format!("2,{} {}: {}", direction, character, message).into(),
+    }
 }
 
 /// Parse a whisper from a log line
@@ -383,7 +461,10 @@ fn read_new_lines(
             Ok(0) => break, // EOF
             Ok(_bytes_read) => {
                 // Convert bytes to string, replacing invalid UTF-8 sequences with replacement characters
-                let line_str = String::from_utf8_lossy(&line);
+                let raw_line = String::from_utf8_lossy(&line);
+                learn_accounts(&raw_line);
+                // In-game whispers ("X whispers: …") read as realm whispers ("From X (*acct): …").
+                let line_str = normalize_in_game_whisper(&raw_line);
 
                 // Parse trade message first (both incoming and outgoing)
                 if let Some(trade_message) = parse_trade_message(&line_str) {
@@ -505,4 +586,78 @@ pub fn stop_watching() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// What the read loop does with one log line.
+    fn read(line: &str) -> (Option<WhisperEvent>, Option<TradeMessageEvent>) {
+        learn_accounts(line);
+        let line = normalize_in_game_whisper(line);
+        (parse_whisper(&line), parse_trade_message(&line))
+    }
+
+    #[test]
+    fn in_game_whisper_from_a_player_in_your_game_is_an_incoming_whisper() {
+        let (whisper, trade) = read("2,Kestrelz whispers: psst, you selling anything?\r\n");
+        let whisper = whisper.expect("in-game whisper is parsed");
+        assert!(whisper.is_incoming && !whisper.is_join && !whisper.is_trade);
+        assert_eq!(whisper.from, "Kestrelz");
+        assert_eq!(whisper.message, "psst, you selling anything?");
+        assert!(trade.is_none());
+    }
+
+    #[test]
+    fn in_game_whisper_uses_the_account_from_the_join_line() {
+        let (join, _) = read("4,Joinerchar(joineracct) joined our world. Diablo's minions grow stronger.\n");
+        assert_eq!(join.expect("join parsed").from, "joineracct");
+
+        let (whisper, _) = read("2,Joinerchar whispers: hey: still selling?\n");
+        let whisper = whisper.expect("in-game whisper is parsed");
+        assert_eq!(whisper.from, "joineracct");
+        assert_eq!(whisper.message, "hey: still selling?");
+    }
+
+    #[test]
+    fn outgoing_in_game_whisper_is_outgoing_and_uses_a_known_account() {
+        read("2,From Realmchar (*realmacct): hi\n");
+        let (whisper, _) = read("2,You whispered to Realmchar: joining now\n");
+        let whisper = whisper.expect("outgoing in-game whisper is parsed");
+        assert!(!whisper.is_incoming);
+        assert_eq!(whisper.from, "realmacct");
+        assert_eq!(whisper.message, "joining now");
+    }
+
+    #[test]
+    fn in_game_trade_whisper_is_a_trade_with_item_and_price() {
+        let (whisper, trade) =
+            read("2,Tradechar whispers: Hi, I'm interested in your Frostburn listed for 2 wss\n");
+        let whisper = whisper.expect("parsed");
+        assert!(whisper.is_trade);
+        assert_eq!(whisper.item_name.as_deref(), Some("Frostburn"));
+        let trade = trade.expect("trade message parsed");
+        assert!(trade.is_incoming);
+        assert_eq!(trade.character_name.as_deref(), Some("Tradechar"));
+        assert_eq!(trade.price.as_deref(), Some("2 wss"));
+    }
+
+    #[test]
+    fn realm_whispers_still_parse_unchanged() {
+        let (whisper, trade) =
+            read("2,From shrackx (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss\n");
+        let whisper = whisper.expect("parsed");
+        assert_eq!(whisper.from, "shrack");
+        assert!(whisper.is_incoming && whisper.is_trade);
+        assert_eq!(trade.expect("trade").account_name.as_deref(), Some("shrack"));
+    }
+
+    #[test]
+    fn public_chat_and_system_lines_are_not_whispers() {
+        assert!(read("0,ÿc4Trader ÿc0: wts shako\n").0.is_none());
+        assert!(read("2,Some text without the whisper marker\n").0.is_none());
+        // A name with spaces is not a character name.
+        assert!(read("2,Not a name whispers: x\n").0.is_none());
+    }
 }
