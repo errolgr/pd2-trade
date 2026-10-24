@@ -6,7 +6,13 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { AuthenticationError, handleApiResponse, NoAccountSelectedError } from './usePD2Website';
+import {
+  AccountMismatchError,
+  AuthenticationError,
+  handleApiResponse,
+  NoAccountSelectedError,
+  PD2ApiError,
+} from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
@@ -54,7 +60,22 @@ export function useStashCache(
       },
     });
     const onAuthError = onAuthErrorRef?.current || undefined;
-    const stashData: GameData | null = await handleApiResponse(response, onAuthError);
+    let stashData: GameData | null;
+    try {
+      stashData = await handleApiResponse(response, onAuthError);
+    } catch (error) {
+      // PD2 answers 404 "Page not found" both for someone else's account and when its realm lookup fails
+      // (seen at the S14 launch). A 404 for an account linked to this login is the latter: transient.
+      const linked = [...(authData.user?.game?.accounts ?? []), ...(authData.user?.game?.beta_accounts ?? [])];
+      if (error instanceof AccountMismatchError && linked.some((a) => a.toLowerCase() === account.toLowerCase())) {
+        throw new PD2ApiError(
+          `PD2 couldn't load the stash for "${account}" right now. Try again in a minute.`,
+          404,
+          `/game/stash/${account}`,
+        );
+      }
+      throw error;
+    }
     // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
     if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
     stashCache.current = { data: stashData, timestamp: Date.now() };

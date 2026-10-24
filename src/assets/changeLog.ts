@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.1': [
+    '🔧 Listing no longer says "Account Mismatch" (and drops queued listings) when PD2 briefly fails to load your stash',
     '🆕 Classic Diablo II theme: dark carved stone, blood-red and gold, in the Diablo font (Settings → Interface)',
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',
     '🆕 Stat ranges in price check and the copied image, matching the PD2 tooltip (S14 data); min/max fills stay inside them',

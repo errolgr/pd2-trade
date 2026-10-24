@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { AccountMismatchError, AuthenticationError, NoAccountSelectedError } from './usePD2Website';
+import { AccountMismatchError, AuthenticationError, NoAccountSelectedError, PD2ApiError } from './usePD2Website';
 import { useStashCache } from './useStashCache';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -119,6 +119,25 @@ describe('fetchAndCacheStash', () => {
     expect(err).toBeInstanceOf(AccountMismatchError);
     expect(err.account).toBe('MyAcc');
     expect(err.message).toContain('"MyAcc"');
+  });
+
+  it('a 404 for an account linked to the login is a transient PD2 failure, not a mismatch', async () => {
+    const linked = { user: { _id: 'u1', game: { accounts: ['Other'], beta_accounts: ['myacc'] } } };
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
+    );
+    const err = await stash(linked)
+      .hook.fetchAndCacheStash()
+      .catch((e) => e);
+    expect(err).not.toBeInstanceOf(AccountMismatchError);
+    expect(err).toBeInstanceOf(PD2ApiError);
+    expect(err.message).toBe('PD2 couldn\'t load the stash for "MyAcc" right now. Try again in a minute.');
+
+    const unlinked = { user: { _id: 'u1', game: { accounts: ['Other'] } } };
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
+    );
+    await expect(stash(unlinked).hook.fetchAndCacheStash()).rejects.toBeInstanceOf(AccountMismatchError);
   });
 });
 
