@@ -25,7 +25,7 @@ describe('statText', () => {
 
   it('builds skill lines from the skill field', () => {
     expect(statText({ stat_id: 188, name: '+%d to Javelin and Spear Skills', value: 3, skill: 'Martial Arts (Assassin)' })).toBe(
-      '+3 to Martial Arts Skills (Assassin Only)',
+      '+3 to Martial Arts (Assassin Only)',
     );
     expect(statText({ stat_id: 83, name: 'to Sorceress Skill Levels', value: 2 })).toBe('+2 to Sorceress Skill Levels');
     expect(statText({ stat_id: 107, name: 'to Teleport', value: 3, skill: 'Teleport (Sorceress)' })).toBe(
@@ -57,7 +57,7 @@ describe('tooltipLines', () => {
         { stat_id: 48, name: 'to Minimum Fire Damage', value: 10 },
         { stat_id: 49, name: 'to Maximum Fire Damage', value: 30 },
       ]),
-    ).toEqual(['+200% Enhanced Damage', 'Adds 10-30 Fire Damage']);
+    ).toEqual(['+200% Enhanced Damage', 'Adds 10-30 fire damage']);
   });
 
   it('shows All Resistances only when all four resists are equal', () => {
@@ -84,7 +84,7 @@ describe('tooltipLines', () => {
         { stat_id: 58, name: 'to Maximum Poison Damage', value: 512 },
         { stat_id: 59, name: 'Poison Length', value: 75 },
       ]),
-    ).toEqual(['Adds 75-150 Poison Damage over 3 Seconds']);
+    ).toEqual(['Adds 75-150 poison damage over 3 seconds']);
   });
 
   it('colours corrupted stats and closes with ethereal, sockets and Corrupted', () => {
