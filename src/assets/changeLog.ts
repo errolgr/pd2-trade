@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.2': [
+    '🔧 Fixed "403 Forbidden" when making an offer from the market browser: sign out and back in once to allow offers',
+  ],
   '0.10.1': [
     '🆕 Classic Diablo II theme: dark carved stone, blood-red and gold, in the Diablo font (Settings → Interface)',
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',

@@ -77,9 +77,15 @@ export function OfferButton({
       setPrice('');
       setHr(undefined);
     } catch (e) {
+      // 403: a sign-in from before 0.10.2 lacks the offer:create scope; only a fresh sign-in grants it
+      const forbidden = e instanceof Error && 'statusCode' in e && e.statusCode === 403;
       showToast({
         title: 'Offer not sent',
-        description: e instanceof Error ? e.message.split('\n')[0] : 'projectdiablo2.com refused the offer.',
+        description: forbidden
+          ? 'Sign out and back in (Settings → Account) to allow PD2 Trader to make offers.'
+          : e instanceof Error
+            ? e.message.split('\n')[0]
+            : 'projectdiablo2.com refused the offer.',
         variant: 'error',
       });
     } finally {
