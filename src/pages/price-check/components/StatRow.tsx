@@ -2,7 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Stat } from '@/pages/price-check/lib/interfaces';
+import type { Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +12,13 @@ import { X, Check, Info } from 'lucide-react';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
+import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
 
 interface StatRowProps {
   stat: Stat;
   nested?: boolean;
-  updateFilter: (key: string, field: 'value' | 'min' | 'max', val: string) => void;
-  filters: Record<string, { value?: string; min?: string; max?: string }>;
+  updateFilter: (key: string, field: keyof StatFilterInput, val: string) => void;
+  filters: Record<string, StatFilterInput>;
   selected: Set<string>;
   toggle: (stat: Stat) => void;
   corruptedState?: number; // 0 = both, 1 = corrupted only, 2 = non-corrupted only
@@ -57,7 +58,8 @@ export const StatRow: React.FC<StatRowProps> = ({
     !fuzzyMatchCharacterSkill(stat.skill.toLowerCase()) &&
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase());
-  const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill) || isUnknownSkill;
+  const isDamagePair = stat.maxValue !== undefined;
+  const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill && !isDamagePair) || isUnknownSkill;
 
   // For corrupted stat, determine checkbox state
   const corruptedChecked = isCorrupted && corruptedState === 1;
@@ -78,17 +80,30 @@ export const StatRow: React.FC<StatRowProps> = ({
     }
   };
 
+  // The bracket PD2 draws after the line: "[25 - 50]"; damage pairs "[a - b to c - d]" (min damage, then max).
+  const rangeText = (() => {
+    const own = stat.range?.min !== undefined && stat.range.max !== undefined ? stat.range : null;
+    const to = stat.maxRange?.min !== undefined && stat.maxRange.max !== undefined ? stat.maxRange : null;
+    if (own && to) return formatStatRange({ min: own.min!, max: own.max!, to: { min: to.min!, max: to.max! } });
+    const only = own ?? to;
+    return only ? formatStatRange({ ...only, min: only.min!, max: only.max! }) : null;
+  })();
+
   const valueParts = (showCorruptedValue: boolean) => (
     <>
       {showCorruptedValue && stat.value !== undefined && (
         <>
           <span className="text-muted-foreground">: </span>
-          <span className="font-semibold tabular-nums">{stat.value}</span>
+          <span className="font-semibold tabular-nums">
+            {isDamagePair && stat.maxValue !== stat.value ? `${stat.value}-${stat.maxValue}` : stat.value}
+          </span>
+          {stat.seconds !== undefined && <span className="text-muted-foreground"> over {stat.seconds}s</span>}
         </>
       )}
-      {!isSocket && showCorruptedValue && stat.range && stat.value !== undefined && (
-        <span className="ml-1 text-xs tabular-nums text-muted-foreground">
-          ({stat.range.min}-{stat.range.max})
+      {!isSocket && showCorruptedValue && rangeText && stat.value !== undefined && (
+        <span className="ml-1 text-xs tabular-nums text-muted-foreground"
+          title="Stat range shown on the PD2 tooltip">
+          {rangeText}
         </span>
       )}
     </>
@@ -244,27 +259,43 @@ export const StatRow: React.FC<StatRowProps> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 8 }}
               transition={{ duration: DUR.med, ease: EASE_OUT }}
-              className="flex shrink-0 items-center gap-1.5 pl-4"
+              className={cn('flex shrink-0 gap-1.5 pl-4', isDamagePair ? 'flex-col items-end py-1' : 'items-center')}
             >
-              <input
-                type="number"
-                className={numberInputClass}
-                placeholder="min"
-                aria-label={`${stat.name} minimum`}
-                value={filters[statKey]?.min ?? ''}
-                onChange={(e) => updateFilter(statKey, 'min', e.target.value)}
-                onKeyDown={handleInputKeyDown}
-              />
-              <span className="text-xs text-muted-foreground">–</span>
-              <input
-                type="number"
-                className={numberInputClass}
-                placeholder="max"
-                aria-label={`${stat.name} maximum`}
-                value={filters[statKey]?.max ?? ''}
-                onChange={(e) => updateFilter(statKey, 'max', e.target.value)}
-                onKeyDown={handleInputKeyDown}
-              />
+              {(isDamagePair
+                ? ([
+                  ['min', 'max', 'Min dmg', `${stat.name} min damage`],
+                  ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
+                ] as const)
+                : ([['min', 'max', null, stat.name]] as const)
+              ).map(([lo, hi, label, aria]) => (
+                <div key={lo}
+                  className="flex items-center gap-1.5">
+                  {label && (
+                    <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </span>
+                  )}
+                  <input
+                    type="number"
+                    className={numberInputClass}
+                    placeholder="min"
+                    aria-label={`${aria} minimum`}
+                    value={filters[statKey]?.[lo] ?? ''}
+                    onChange={(e) => updateFilter(statKey, lo, e.target.value)}
+                    onKeyDown={handleInputKeyDown}
+                  />
+                  <span className="text-xs text-muted-foreground">–</span>
+                  <input
+                    type="number"
+                    className={numberInputClass}
+                    placeholder="max"
+                    aria-label={`${aria} maximum`}
+                    value={filters[statKey]?.[hi] ?? ''}
+                    onChange={(e) => updateFilter(statKey, hi, e.target.value)}
+                    onKeyDown={handleInputKeyDown}
+                  />
+                </div>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>

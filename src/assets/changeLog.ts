@@ -2,6 +2,9 @@ export const changeLog = {
   '0.10.1': [
     '🆕 Added Classic Diablo II theme for a darker, more authentic D2 overlay look',
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',
+    '🆕 Stat ranges in price check and the copied image, matching the PD2 tooltip (S14 data); min/max fills stay inside them',
+    '🆕 Fire/cold/lightning/poison/magic and physical damage show as one "Adds X-Y damage" row with min and max damage filters',
+    '🔧 Fixed price check searches on elemental damage finding no listings',
     '🔧 Fixed whisper notifications sometimes playing twice after changing notification settings, and errors when closing windows',
     "🔧 Linux: .deb/.rpm installs that can't update themselves now link to the release page instead of failing over and over",
     '🔧 Chat messages and offer notifications come back after a PD2 outage instead of stopping until you restart',

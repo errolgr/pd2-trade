@@ -73,6 +73,8 @@ const COLORS: Record<TooltipColor, string> = {
 };
 const GOLD = '#c7b377';
 const MUTED = '#8a8a8a';
+/** BH's TextColor::DarkGreen for stat ranges. */
+const RANGE = '#3aa83a';
 const BACKGROUND = '#0a0a0a';
 const BORDER = '#3b3428';
 
@@ -92,13 +94,13 @@ const CONTEXT_FONT = `400 10px ${UI_FONT}`;
 const font = (size: number, family = FONT) => `${size}px ${family}, ${UI_FONT}`;
 
 /** Greedy word wrap to `width` (a single overlong word stays on its own line). */
-function wrap(ctx: CanvasRenderingContext2D, text: string, width: number): string[] {
+function wrap(ctx: CanvasRenderingContext2D, text: string, width: number, size: number): string[] {
   const words = text.split(' ');
   const out: string[] = [];
   let line = '';
   for (const word of words) {
     const next = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(next).width > width) {
+    if (line && runsWidth(ctx, lineRuns(next, size, '')) > width) {
       out.push(line);
       line = word;
     } else {
@@ -122,6 +124,8 @@ interface Row {
   lines: string[];
   color: string;
   size: number;
+  /** Index in the joined row text where PD2's dark green range starts (-1 = none). */
+  rangeAt: number;
 }
 
 /** A piece of a tooltip line drawn in one font and colour. */
@@ -131,13 +135,19 @@ interface Run {
   color: string;
 }
 
-/** Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph, so plus signs use the UI font. */
+/**
+ * Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph and "-" as a tilde, so those
+ * use the UI font.
+ */
 function lineRuns(text: string, size: number, color: string): Run[] {
   return text
-    .split(/(\+)/)
+    .split(/([+-])/)
     .filter(Boolean)
-    .map((part) => ({ text: part, font: part === '+' ? `600 ${size}px ${UI_FONT}` : font(size), color }));
+    .map((part) => ({ text: part, font: part === '+' || part === '-' ? `600 ${size}px ${UI_FONT}` : font(size), color }));
 }
+
+/** A stat line with its range: "text [a - b]"; the range never wraps inside (non-breaking spaces). */
+const fullText = (line: TooltipLine) => (line.range ? `${line.text} ${line.range.replace(/ /g, '\u00a0')}` : line.text);
 
 function runsWidth(ctx: CanvasRenderingContext2D, runs: Run[]): number {
   let w = 0;
@@ -170,7 +180,7 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
     ...[...tooltip.base, ...tooltip.stats, ...tooltip.footer].map((line) => ({ line, size: LINE_SIZE })),
   ];
   let contentWidth = MIN_WIDTH - PAD_X * 2;
-  for (const s of sized) contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(s.line.text, s.size, '')));
+  for (const s of sized) contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(fullText(s.line), s.size, '')));
   // Footer: logo + brand + context on one line.
   ctx.font = font(13);
   const brandWidth = LOGO_SIZE + 6 + ctx.measureText(BRAND).width;
@@ -181,7 +191,12 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
 
   const rows: Array<Row | 'gap'> = sized.map(({ line, size }) => {
     ctx.font = font(size);
-    return { lines: wrap(ctx, line.text, contentWidth), color: COLORS[line.color], size };
+    return {
+      lines: wrap(ctx, fullText(line), contentWidth, size),
+      color: COLORS[line.color],
+      size,
+      rangeAt: line.range ? line.text.length + 1 : -1,
+    };
   });
   // D2 leaves no gaps; one small gap after the title block reads better at share size.
   if (tooltip.title.length && rows.length > tooltip.title.length) rows.splice(tooltip.title.length, 0, 'gap');
@@ -218,10 +233,16 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
       continue;
     }
     const lh = lineHeight(row.size);
-    row.lines.forEach((text, i) => {
+    let offset = 0; // index of this wrapped line's first character in the joined row text
+    row.lines.forEach((text) => {
       y += lh;
       const baseline = y - (lh - row.size) / 2 - 2;
-      const runs = lineRuns(text, row.size, row.color);
+      const split = row.rangeAt < 0 ? text.length : Math.max(0, Math.min(text.length, row.rangeAt - offset));
+      const runs = [
+        ...lineRuns(text.slice(0, split), row.size, row.color),
+        ...(split < text.length ? lineRuns(text.slice(split), row.size, RANGE) : []),
+      ];
+      offset += text.length + 1;
       let x = width / 2 - runsWidth(ctx, runs) / 2;
       for (const run of runs) {
         ctx.font = run.font;

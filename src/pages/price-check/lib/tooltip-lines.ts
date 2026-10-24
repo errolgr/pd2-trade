@@ -1,6 +1,7 @@
 import { modifiers } from '@/assets/modifiers';
 import type { Item, Stat } from './interfaces';
-import { StatId, statRemapByName } from './stat-mappings';
+import { DAMAGE_PAIRS, damagePairText, damagePairValues, StatId, statRemapByName } from './stat-mappings';
+import { bhStatRange, formatStatRange, isOSkill, skillClass, statLineRange, type StatRange } from './stat-ranges';
 
 /** In-game tooltip colours (D2 palette). */
 export type TooltipColor = 'white' | 'gray' | 'magic' | 'rare' | 'set' | 'unique' | 'crafted' | 'corrupted';
@@ -8,6 +9,8 @@ export type TooltipColor = 'white' | 'gray' | 'magic' | 'rare' | 'set' | 'unique
 export interface TooltipLine {
   text: string;
   color: TooltipColor;
+  /** The stat range PD2 appends in dark green when ranges are shown, e.g. "[25 - 50]". */
+  range?: string;
 }
 
 /** Clipboard stats rendered as the in-game tooltip, top to bottom. */
@@ -41,9 +44,6 @@ const STAT = {
   maxEd: 17,
   minEd: 18,
   coldLength: 56,
-  poisonMin: 57,
-  poisonMax: 58,
-  poisonLength: 59,
   classSkills: 83,
   evilForce: 159,
   skillTab: 188,
@@ -51,18 +51,8 @@ const STAT = {
   corruptor: 361,
 } as const;
 
-/** Elemental min/max damage stat ids shown as one `Adds a-b <Element> Damage` line. */
-const DAMAGE_PAIRS: Array<[number, number, string]> = [
-  [48, 49, 'Fire'],
-  [50, 51, 'Lightning'],
-  [52, 53, 'Magic'],
-  [54, 55, 'Cold'],
-];
 const RESIST_IDS = [39, 41, 43, 45];
 const ATTRIBUTE_IDS = [0, 1, 2, 3];
-/** Poison damage is stored per frame in 1/256 points; 25 frames per second. */
-const POISON_FRAME_DIVISOR = 256;
-const FRAMES_PER_SECOND = 25;
 
 // PD2 colour codes (ÿc1 etc.) can leak into clipboard strings.
 const COLOR_CODE_RE = /ÿc./g;
@@ -70,6 +60,19 @@ const clean = (text: unknown): string =>
   typeof text === 'string' ? text.replace(COLOR_CODE_RE, '').replace(/\s+/g, ' ').trim() : '';
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const signed = (n: number) => (n < 0 ? `${n}` : `+${n}`);
+
+/**
+ * BH's Ctrl+C skill tab names (StashExport SKILL_TABS) → the tab text the game draws; tabs missing here
+ * already match ("Martial Arts", "Fire Skills").
+ */
+const SKILL_TAB_TEXT: Record<string, string> = {
+  'Javalin and Spear Skills': 'Javelin and Spear Skills',
+  'Curses Skills': 'Curses',
+  Summoning: 'Summoning Skills',
+  Shapeshifting: 'Shape Shifting Skills',
+  Elemental: 'Elemental Skills',
+  'Shadow Desciplines': 'Shadow Disciplines',
+};
 
 /** "Martial Arts (Assassin)" → ["Martial Arts", "Assassin"]. */
 function splitClass(skill: string): [string, string | null] {
@@ -109,7 +112,7 @@ function descValue(fn: number, n: number): string | null {
 }
 
 /** One clipboard stat as its tooltip line (D2 descfunc/descval rules), null when it has no visible text. */
-export function statText(stat: Stat): string | null {
+export function statText(stat: Stat, item?: Item): string | null {
   const name = clean(stat.name);
   const skill = clean(stat.skill);
   const value = finite(stat.value) ? stat.value : undefined;
@@ -119,10 +122,10 @@ export function statText(stat: Stat): string | null {
 
   if (skill && (stat.stat_id === STAT.skillTab || /^\+?%d to .+ Skills$/.test(name))) {
     const [tab, cls] = splitClass(skill);
-    return `${signed(amount ?? 0)} to ${tab.replace(/ Skills$/, '')} Skills${cls ? ` (${cls} Only)` : ''}`;
+    return `${signed(amount ?? 0)} to ${SKILL_TAB_TEXT[tab] ?? tab}${cls ? ` (${cls} Only)` : ''}`;
   }
   if (stat.stat_id === STAT.classSkills || /Skill Levels$/.test(name)) {
-    const cls = skill ? splitClass(skill)[0] : (/to (\w+) Skill Levels/.exec(name)?.[1] ?? '');
+    const cls = skill ? splitClass(skill)[0].replace(/ Skills$/, '') : (/to (\w+) Skill Levels/.exec(name)?.[1] ?? '');
     return `${signed(amount ?? 0)} to ${cls} Skill Levels`;
   }
   if (stat.stat_id === STAT.charged) {
@@ -140,7 +143,9 @@ export function statText(stat: Stat): string | null {
   }
   if (skill) {
     // Single skills and o-skills ("to Teleport", "+3 to Battle Orders"): the amount and skill rebuild the line.
-    const [skillName, cls] = splitClass(skill);
+    // The game adds "(Class Only)" to class skills (stat 107), not to o-skills (stat 97, e.g. Enigma's Teleport).
+    const [skillName, clipboardClass] = splitClass(skill);
+    const cls = clipboardClass ?? (item && !isOSkill(item, stat) ? skillClass(skillName) : null);
     return `${signed(amount ?? 0)} to ${skillName}${cls ? ` (${cls} Only)` : ''}`;
   }
   if (!name) return null;
@@ -167,8 +172,11 @@ const TITLE_COLORS: Record<string, TooltipColor> = {
 
 /** The item's tooltip as PD2 draws it: name, base, defense, properties, then ethereal/sockets/corrupted. */
 export function tooltipLines(item: Item): TooltipLines {
-  // Same name remap as the price check rows (some stats come without a stat_id, e.g. "to Strength").
-  const stats = (item.stats ?? []).map((s) => (s.name in statRemapByName ? { ...s, ...statRemapByName[s.name] } : s));
+  // Same name remap as the price check rows, for stats that come without a stat_id ("to Strength"; Enigma's
+  // per-level "to Strength" has stat_id 220 and must stay that stat).
+  const stats = (item.stats ?? []).map((s) =>
+    s.stat_id === undefined && s.name in statRemapByName ? { ...s, ...statRemapByName[s.name] } : s,
+  );
   const byId = new Map<number, Stat>();
   for (const s of stats) if (finite(s.stat_id) && !byId.has(s.stat_id)) byId.set(s.stat_id, s);
   const used = new Set<Stat>();
@@ -190,36 +198,27 @@ export function tooltipLines(item: Item): TooltipLines {
 
   // Merged lines sit where their first stat is in the clipboard order (PD2's display order).
   const placed: Array<{ at: number; line: TooltipLine }> = [];
-  const push = (text: string, sources: Stat[]) =>
+  const push = (text: string, sources: Stat[], range: StatRange | null) =>
     placed.push({
       at: Math.min(...sources.map((s) => stats.indexOf(s))),
-      line: { text, color: sources.some((s) => s.corrupted) ? 'corrupted' : 'magic' },
+      line: {
+        text,
+        color: sources.some((s) => s.corrupted) ? 'corrupted' : 'magic',
+        ...(range && { range: formatStatRange(range) }),
+      },
     });
 
-  for (const [minId, maxId, element] of DAMAGE_PAIRS) {
-    const lo = num(byId.get(minId));
-    const hi = num(byId.get(maxId));
-    if (lo === undefined || hi === undefined) continue;
-    push(lo === hi ? `Adds ${lo} ${element} Damage` : `Adds ${lo}-${hi} ${element} Damage`, [take(minId)!, take(maxId)!]);
-  }
-  const poisonLo = num(byId.get(STAT.poisonMin));
-  const poisonLength = num(byId.get(STAT.poisonLength));
-  if (poisonLo !== undefined && poisonLength) {
-    const poisonHi = num(byId.get(STAT.poisonMax)) ?? poisonLo;
-    const lo = Math.round((poisonLo * poisonLength) / POISON_FRAME_DIVISOR);
-    const hi = Math.round((poisonHi * poisonLength) / POISON_FRAME_DIVISOR);
-    const seconds = Math.round(poisonLength / FRAMES_PER_SECOND);
-    const sources = [take(STAT.poisonMin)!, take(STAT.poisonLength)!];
-    if (byId.has(STAT.poisonMax)) sources.push(take(STAT.poisonMax)!);
-    push(
-      lo === hi ? `Adds ${lo} Poison Damage over ${seconds} Seconds` : `Adds ${lo}-${hi} Poison Damage over ${seconds} Seconds`,
-      sources,
-    );
+  for (const pair of DAMAGE_PAIRS) {
+    const v = damagePairValues(stats, pair);
+    if (!v) continue;
+    v.sources.forEach((s) => used.add(s));
+    push(damagePairText(pair, v), v.sources, bhStatRange(item, pair.rangeStat));
   }
   const maxEd = num(byId.get(STAT.maxEd));
   if (maxEd !== undefined && byId.has(STAT.minEd)) {
-    push(`${signed(maxEd)}% Enhanced Damage`, [take(STAT.maxEd)!, take(STAT.minEd)!]);
+    push(`${signed(maxEd)}% Enhanced Damage`, [take(STAT.maxEd)!, take(STAT.minEd)!], bhStatRange(item, STAT.minEd));
   }
+  // BH ranges a group line through its first stat (Fire Resist / Strength).
   for (const [ids, format] of [
     [RESIST_IDS, (n: number) => `All Resistances ${signed(n)}%`],
     [ATTRIBUTE_IDS, (n: number) => `${signed(n)} to All Attributes`],
@@ -229,12 +228,13 @@ export function tooltipLines(item: Item): TooltipLines {
     push(
       format(values[0]!),
       ids.map((id) => take(id)!),
+      bhStatRange(item, ids[0]),
     );
   }
   for (const s of stats) {
     if (used.has(s)) continue;
-    const text = statText(s);
-    if (text && !/an evil force/i.test(text)) push(text, [s]);
+    const text = statText(s, item);
+    if (text && !/an evil force/i.test(text)) push(text, [s], statLineRange(item, s));
   }
   const lines = placed.sort((a, b) => a.at - b.at).map((p) => p.line);
 

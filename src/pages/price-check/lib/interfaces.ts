@@ -1,6 +1,10 @@
 export interface Range {
   min?: number;
   max?: number;
+  /** Damage lines: the max damage's range, as PD2 shows it ("[a - b to c - d]"). */
+  to?: { min: number; max: number };
+  /** Per-level stat (value per character level, shown with decimals); never clamps a filter. */
+  perLevel?: boolean;
 }
 
 export interface Stat {
@@ -12,6 +16,23 @@ export interface Stat {
   corrupted?: boolean; // whether this stat is corrupted
   chance?: number;
   skill?: string; // skill name for skill stats
+  /** Damage pair rows ("Adds 4-14 fire damage"): `value` is the min damage, this the max. */
+  maxValue?: number;
+  /** Damage pair rows: the max damage's range. */
+  maxRange?: Range;
+  /** Poison damage rows: the duration in seconds. */
+  seconds?: number;
+  /** The Corrupted pseudo-row of a corruptable item that isn't corrupted. */
+  _injected?: boolean;
+}
+
+/** Min/max inputs of a selected stat row; damage pair rows add a second pair for the max damage. */
+export interface StatFilterInput {
+  value?: string;
+  min?: string;
+  max?: string;
+  maxMin?: string;
+  maxMax?: string;
 }
 
 export interface Socketed {

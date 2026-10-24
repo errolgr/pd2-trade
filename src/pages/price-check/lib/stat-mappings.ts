@@ -7,6 +7,79 @@ export enum StatId {
   Ethereal = 1001,
   AllResistances = 999,
   AllAttributes = 1002,
+  /** "Adds X-Y <element> damage" rows (min + max damage stats shown as one line, like the game). */
+  FireDamage = 1003,
+  LightningDamage = 1004,
+  MagicDamage = 1005,
+  ColdDamage = 1006,
+  PoisonDamage = 1007,
+  Damage = 1008,
+}
+
+/** A min/max damage pair the game draws as one line. */
+export interface DamagePair {
+  id: StatId;
+  min: number;
+  max: number;
+  /** Line text: "fire" → "Adds 4-14 fire damage"; '' for physical damage. */
+  element: string;
+  /** Row label in the price check. */
+  label: string;
+  /** Stat whose BH range the line shows (physical: the max damage, as the game draws it). */
+  rangeStat: number;
+  /** Market modifier names of the pair (values [min, max, ...]); null = separate min/max modifiers. */
+  market: string[] | null;
+}
+
+export const DAMAGE_PAIRS: DamagePair[] = [
+  { id: StatId.FireDamage, min: 48, max: 49, element: 'fire', label: 'Fire Damage', rangeStat: 48, market: ['firedam', 'firemindam'] },
+  { id: StatId.LightningDamage, min: 50, max: 51, element: 'lightning', label: 'Lightning Damage', rangeStat: 50, market: ['lightdam', 'lightmindam'] },
+  { id: StatId.MagicDamage, min: 52, max: 53, element: 'magic', label: 'Magic Damage', rangeStat: 52, market: ['magicdam', 'magicmindam'] },
+  { id: StatId.ColdDamage, min: 54, max: 55, element: 'cold', label: 'Cold Damage', rangeStat: 54, market: ['colddam', 'coldmindam'] },
+  { id: StatId.PoisonDamage, min: 57, max: 58, element: 'poison', label: 'Poison Damage', rangeStat: 57, market: ['poisondam', 'poisonmindam'] },
+  { id: StatId.Damage, min: 21, max: 22, element: '', label: 'Damage', rangeStat: 22, market: null },
+];
+
+/** Poison length stat (frames); poison damage is stored per frame in 1/256 points, 25 frames per second. */
+const POISON_LENGTH_STAT = 59;
+
+/**
+ * The pair's line values as the game shows them, or null when the item has no such line: elemental pairs need
+ * both stats (poison: min + length; the max defaults to the min). Physical damage merges only when min < max
+ * (otherwise the game draws "+X to Minimum/Maximum Damage" separately).
+ */
+export function damagePairValues(
+  stats: Stat[],
+  pair: DamagePair,
+): { lo: number; hi: number; seconds?: number; sources: Stat[] } | null {
+  const minStat = stats.find((s) => s.stat_id === pair.min);
+  const maxStat = stats.find((s) => s.stat_id === pair.max);
+  const value = (s: Stat | undefined) => (typeof s?.value === 'number' && Number.isFinite(s.value) ? s.value : undefined);
+  if (pair.id === StatId.PoisonDamage) {
+    const lengthStat = stats.find((s) => s.stat_id === POISON_LENGTH_STAT);
+    const min = value(minStat);
+    const frames = value(lengthStat);
+    if (min === undefined || !frames) return null;
+    const max = value(maxStat) ?? min;
+    return {
+      lo: Math.round((min * frames) / 256),
+      hi: Math.round((max * frames) / 256),
+      seconds: Math.round(frames / 25),
+      sources: [minStat!, lengthStat!, ...(maxStat ? [maxStat] : [])],
+    };
+  }
+  const lo = value(minStat);
+  const hi = value(maxStat);
+  if (lo === undefined || hi === undefined) return null;
+  if (pair.id === StatId.Damage && lo >= hi) return null;
+  return { lo, hi, sources: [minStat!, maxStat!] };
+}
+
+/** The pair's tooltip text, worded like the game ("Adds 4-14 fire damage", "+100 poison damage over 6 seconds"). */
+export function damagePairText(pair: DamagePair, v: { lo: number; hi: number; seconds?: number }): string {
+  const what = pair.element ? `${pair.element} damage` : 'damage';
+  const over = v.seconds !== undefined ? ` over ${v.seconds} seconds` : '';
+  return v.lo === v.hi ? `+${v.lo} ${what}${over}` : `Adds ${v.lo}-${v.hi} ${what}${over}`;
 }
 
 export const PRIORITY_STATS = [StatId.Corrupted, StatId.Socket, StatId.Ethereal];
