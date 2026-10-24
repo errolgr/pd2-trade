@@ -121,23 +121,47 @@ describe('fetchAndCacheStash', () => {
     expect(err.message).toContain('"MyAcc"');
   });
 
-  it('a 404 for an account linked to the login is a transient PD2 failure, not a mismatch', async () => {
-    const linked = { user: { _id: 'u1', game: { accounts: ['Other'], beta_accounts: ['myacc'] } } };
-    fetchMock.mockResolvedValueOnce(
-      fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
-    );
-    const err = await stash(linked)
-      .hook.fetchAndCacheStash()
-      .catch((e) => e);
-    expect(err).not.toBeInstanceOf(AccountMismatchError);
-    expect(err).toBeInstanceOf(PD2ApiError);
-    expect(err.message).toBe('PD2 couldn\'t load the stash for "MyAcc" right now. Try again in a minute.');
+  describe('404 for an account in game.accounts', () => {
+    const linked = { user: { _id: 'u1', game: { accounts: ['Other', 'myacc'] } } };
+    const stash404 = () =>
+      fetchMock.mockResolvedValueOnce(
+        fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
+      );
 
-    const unlinked = { user: { _id: 'u1', game: { accounts: ['Other'] } } };
-    fetchMock.mockResolvedValueOnce(
-      fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
-    );
-    await expect(stash(unlinked).hook.fetchAndCacheStash()).rejects.toBeInstanceOf(AccountMismatchError);
+    it('is transient when /game/account fails with a 5xx or no answer', async () => {
+      for (const accountCheck of [
+        () => fetchMock.mockResolvedValueOnce(fakeResponse(500, 'failed to retrieve realm account', '')),
+        () => fetchMock.mockRejectedValueOnce(new Error('error sending request')),
+      ]) {
+        stash404();
+        accountCheck();
+        const err = await stash(linked)
+          .hook.fetchAndCacheStash()
+          .catch((e) => e);
+        expect(err).not.toBeInstanceOf(AccountMismatchError);
+        expect(err).toBeInstanceOf(PD2ApiError);
+        expect(err.message).toBe('PD2 couldn\'t load the stash for "MyAcc" right now. Try again in a minute.');
+      }
+      expect(String(fetchMock.mock.calls[1][0])).toBe('https://api.projectdiablo2.com/game/account/MyAcc');
+    });
+
+    it('is a real miss, naming the mode, when /game/account loads', async () => {
+      stash404();
+      fetchMock.mockResolvedValueOnce(fakeResponse(200, { account: 'myacc', characters: [] }, ''));
+      const err = await stash(linked)
+        .hook.fetchAndCacheStash()
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(AccountMismatchError);
+      expect(err.message).toBe('PD2 has no softcore ladder stash for "MyAcc". Check the account and mode in Settings → Account.');
+    });
+
+    it('beta accounts and unlinked accounts stay a mismatch without the extra check', async () => {
+      for (const auth of [{ user: { _id: 'u1', game: { accounts: ['Other'], beta_accounts: ['MyAcc'] } } }, authData]) {
+        stash404();
+        await expect(stash(auth).hook.fetchAndCacheStash()).rejects.toBeInstanceOf(AccountMismatchError);
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

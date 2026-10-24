@@ -64,17 +64,33 @@ export function useStashCache(
     try {
       stashData = await handleApiResponse(response, onAuthError);
     } catch (error) {
-      // PD2 answers 404 "Page not found" both for someone else's account and when its realm lookup fails
-      // (seen at the S14 launch). A 404 for an account linked to this login is the latter: transient.
-      const linked = [...(authData.user?.game?.accounts ?? []), ...(authData.user?.game?.beta_accounts ?? [])];
-      if (error instanceof AccountMismatchError && linked.some((a) => a.toLowerCase() === account.toLowerCase())) {
+      // PD2 answers the same 404 "Page not found" for someone else's account and when its realm lookup fails
+      // (S14 launch). For an account linked to this login, ask /game/account: a 5xx (or no answer) there is
+      // the realm outage, so the stash 404 is transient; a 200 means the stash 404 is real.
+      const linked: string[] = authData.user?.game?.accounts ?? [];
+      if (!(error instanceof AccountMismatchError) || !linked.some((a) => a.toLowerCase() === account.toLowerCase())) {
+        throw error;
+      }
+      const realmDown = await tauriFetch(`https://api.projectdiablo2.com/game/account/${encodeURIComponent(account)}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${settings.pd2Token}` },
+      }).then(
+        (r) => r.status >= 500,
+        () => true,
+      );
+      if (realmDown) {
         throw new PD2ApiError(
           `PD2 couldn't load the stash for "${account}" right now. Try again in a minute.`,
           404,
           `/game/stash/${account}`,
         );
       }
-      throw error;
+      const mode = `${is_hardcore ? 'hardcore' : 'softcore'} ${is_ladder ? 'ladder' : 'non-ladder'}`;
+      throw new AccountMismatchError(
+        `PD2 has no ${mode} stash for "${account}". Check the account and mode in Settings → Account.`,
+        404,
+        account,
+      );
     }
     // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
     if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
