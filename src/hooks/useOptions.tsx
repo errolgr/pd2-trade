@@ -10,6 +10,7 @@ import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from 
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
+import * as Sentry from '@sentry/react';
 
 export type NetWorthTickerAnchor =
   | 'top-left'
@@ -208,6 +209,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Skip if nothing actually changed
         if (updatedJson === settingsJsonRef.current) return;
 
+        // The config dir can disappear after load (Windows reports os error 3 on write), so recreate it.
+        if (!(await exists('', { baseDir: SETTINGS_DIR }))) await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
         await writeTextFile(SETTINGS_FILENAME, updatedJson, {
           baseDir: SETTINGS_DIR,
         });
@@ -216,7 +219,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSettings(updated);
       });
     } catch (error) {
-      console.error('Error updating settings:', error);
+      // Fixed message: the fs error embeds the user's home path, which would split the Sentry issue per user.
+      Sentry.captureException(new Error('Error updating settings'), { extra: { cause: String(error) } });
     }
   }, []);
 

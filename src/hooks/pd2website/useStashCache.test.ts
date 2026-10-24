@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { AccountMismatchError, AuthenticationError } from './usePD2Website';
+import { AccountMismatchError, AuthenticationError, NoAccountSelectedError } from './usePD2Website';
 import { useStashCache } from './useStashCache';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -60,6 +60,16 @@ describe('fetchAndCacheStash', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('throws NoAccountSelectedError without requesting /game/stash/ (a 405) when no account is chosen', async () => {
+    for (const account of [undefined, '', '  ']) {
+      const err = await stash(authData, { ...settings, account })
+        .hook.fetchAndCacheStash()
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(NoAccountSelectedError);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('requests the account stash with softcore/ladder flags and caches it with a timestamp', async () => {
     const data = { items: [stashItem('h1', 'Unique')] };
     fetchMock.mockResolvedValueOnce(fakeResponse(200, data, ''));
@@ -98,7 +108,9 @@ describe('fetchAndCacheStash', () => {
     fetchMock.mockResolvedValueOnce(
       fakeResponse(404, { message: 'nope' }, 'https://api.projectdiablo2.com/game/stash/MyAcc?account=MyAcc'),
     );
-    const err = await stash().hook.fetchAndCacheStash().catch((e) => e);
+    const err = await stash()
+      .hook.fetchAndCacheStash()
+      .catch((e) => e);
     expect(err).toBeInstanceOf(AccountMismatchError);
     expect(err.account).toBe('MyAcc');
     expect(err.message).toContain('"MyAcc"');
@@ -191,7 +203,7 @@ describe('findItemsByName', () => {
   it('unique charms match the exact known item name, not other uniques of the same base', () => {
     const { hook } = stash();
     const anni = stashItem('anni', 'Unique', { name: 'Annihilus' });
-    const torch = stashItem('torch', 'Unique', { name: "Hellfire Torch" });
+    const torch = stashItem('torch', 'Unique', { name: 'Hellfire Torch' });
     const query = { name: 'Annihilus', type: 'Small Charm', quality: 'Unique', stats: [] } as PriceCheckItem;
     expect(hook.findItemsByName([torch, anni], query).map((i) => i.hash)).toEqual(['anni']);
   });

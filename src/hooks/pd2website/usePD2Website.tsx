@@ -49,6 +49,15 @@ export class AccountMismatchError extends Error {
   }
 }
 
+// No in-game account chosen yet: GET /game/stash/ without one is a 405 from PD2, so fail before the request
+export class NoAccountSelectedError extends Error {
+  constructor(message = 'Choose your in-game account in Settings → Account first.') {
+    super(message);
+    this.name = 'NoAccountSelectedError';
+    Object.setPrototypeOf(this, NoAccountSelectedError.prototype);
+  }
+}
+
 interface Pd2WebsiteContextType extends SocialActions {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
