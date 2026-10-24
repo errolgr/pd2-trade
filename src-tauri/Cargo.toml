@@ -57,3 +57,5 @@ x11rb = "0.13"
 x11 = "2.21.0"
 # Same gtk-rs version tauri/tao/wry use (0.18), for the overlay input shape.
 gtk = "0.18"
+# Wayland: the overlay as a layer surface (see modules/layer_shell.rs). Matches gtk 0.18.
+gtk-layer-shell = { version = "0.8", features = ["v0_6"] }
