@@ -55,7 +55,12 @@ afterEach(() => {
 
 describe('fetchAndCacheStash', () => {
   it('requires authentication and settings before hitting the network', async () => {
-    await expect(stash(null).hook.fetchAndCacheStash()).rejects.toThrow('Not authenticated');
+    // AuthenticationError: callers treat a signed-out user as expected state, not an error to report
+    const signedOut = await stash(null)
+      .hook.fetchAndCacheStash()
+      .catch((e) => e);
+    expect(signedOut).toBeInstanceOf(AuthenticationError);
+    expect(signedOut.message).toBe('Not authenticated');
     await expect(stash(authData, null).hook.fetchAndCacheStash()).rejects.toThrow('Settings not found!');
     expect(fetchMock).not.toHaveBeenCalled();
   });

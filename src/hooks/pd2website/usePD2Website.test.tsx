@@ -238,6 +238,18 @@ describe('Pd2WebsiteProvider auth', () => {
     expect(Sentry.setUser).toHaveBeenLastCalledWith(null);
   });
 
+  it('stays signed out with a warning (no unhandled rejection) when pd2trader.com is unreachable', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    routes[ME_URL] = () => Promise.reject('error sending request for url (https://pd2trader.com/api/auth/oauth/me)');
+    await renderParent();
+    expect(ctx.authData).toBeNull();
+    expect(console.warn).toHaveBeenCalledWith(
+      '[Pd2WebsiteProvider] Could not reach pd2trader.com:',
+      expect.stringContaining('error sending request'),
+    );
+    expect(error).not.toHaveBeenCalled();
+  });
+
   it('auto-selects the only game account when none is configured', async () => {
     settings.account = undefined;
     await renderParent();

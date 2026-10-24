@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { isNetworkError } from '@/lib/network-errors';
 
 /**
  * `listed`: still on the market. `unlisted`: moved to the listing archive (sold or removed by the seller).
@@ -89,7 +90,10 @@ export function useChatListings(listingIds: readonly string[]): ReadonlyMap<stri
       const at = Date.now();
       for (const result of results) {
         if (result.status === 'rejected') {
-          console.error('[Chat] Failed to load linked market listings:', result.reason);
+          // Offline / PD2 unreachable: the cards show as failed; nothing to report
+          if (isNetworkError(result.reason))
+            console.warn('[Chat] Failed to load linked market listings:', result.reason);
+          else console.error('[Chat] Failed to load linked market listings:', result.reason);
           continue;
         }
         for (const [id, state] of result.value) cache.set(id, { state, at });

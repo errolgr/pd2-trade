@@ -10,6 +10,7 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
+import { isNetworkError } from '@/lib/network-errors';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
@@ -277,9 +278,16 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     }
     // A /me answer for a token that has since been replaced must not overwrite the newer session
     let current = true;
-    authenticate().then((data) => {
-      if (current) setAuthData(data);
-    });
+    authenticate().then(
+      (data) => {
+        if (current) setAuthData(data);
+      },
+      (error) => {
+        // Offline or pd2trader.com unreachable: the user stays signed out until the next token change or restart
+        if (isNetworkError(error)) console.warn('[Pd2WebsiteProvider] Could not reach pd2trader.com:', error);
+        else console.error('[Pd2WebsiteProvider] Failed to load the session:', error);
+      },
+    );
     return () => {
       current = false;
     };

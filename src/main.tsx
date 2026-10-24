@@ -35,6 +35,8 @@ setTimeout(() => {
   Sentry.init({
     dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
     environment: process.env.NODE_ENV, // Set environment for filtering
+    // Only release builds report: `vite dev` (localhost, headless test browsers) would otherwise file real issues
+    enabled: process.env.NODE_ENV === 'production',
     integrations: [
       Sentry.captureConsoleIntegration({ levels: ['error'] }),
       Sentry.browserTracingIntegration(),

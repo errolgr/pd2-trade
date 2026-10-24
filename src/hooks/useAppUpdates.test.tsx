@@ -164,6 +164,36 @@ describe('useAppUpdates notifications', () => {
     await advance(FIVE_MINUTES);
     expect(updateToasts().map((t) => t.action?.data?.version)).toEqual(['1.2.0']);
   });
+
+  it.each([
+    [
+      'the check',
+      () => vi.mocked(check).mockRejectedValue('error sending request for url (https://github.com/x/latest.json)'),
+    ],
+    [
+      'the download',
+      () => {
+        const update = fakeUpdate('1.2.0');
+        vi.mocked(update.downloadAndInstall).mockRejectedValue('Download request failed with status: 403 Forbidden');
+        vi.mocked(check).mockResolvedValue(update);
+      },
+    ],
+  ])('warns once and does not retry on re-renders when %s fails offline', async (_label, fail) => {
+    fail();
+    const { rerender } = renderAppUpdates({ autoUpdateEnabled: true });
+
+    await advance(2000);
+    // Re-renders re-run the auto-download effect; a failure used to re-arm it and retry (and re-report) every time
+    rerender();
+    await advance(2000);
+    rerender();
+    await advance(2000);
+
+    expect(check).toHaveBeenCalledTimes(2); // the one startup attempt + the first periodic check
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalled();
+    expect(calls).toEqual([]);
+  });
 });
 
 describe('useAppUpdates manual install (Linux deb/rpm)', () => {

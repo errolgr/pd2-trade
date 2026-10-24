@@ -68,11 +68,13 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       } catch (err) {
         // Cross-run races (old cleanup vs new effect) can still surface "already registered".
         // Only treat it as success if the plugin confirms we own it; otherwise another app holds the chord.
-        if (
-          String(err).toLowerCase().includes('already registered') &&
-          (await isRegistered(shortcut).catch(() => false))
-        ) {
-          lastShortcutRef.current = shortcut;
+        if (String(err).toLowerCase().includes('already registered')) {
+          if (await isRegistered(shortcut).catch(() => false)) {
+            lastShortcutRef.current = shortcut;
+            return;
+          }
+          // Another app holds the chord: the user's setup (pick a different hotkey), not an app bug
+          console.warn('Settings shortcut is held by another app:', err);
           return;
         }
         console.error('Failed to register settings shortcut:', err);

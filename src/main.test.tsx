@@ -110,6 +110,21 @@ describe('main Sentry setup', () => {
     expect(Sentry.init).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ['production', true],
+    ['development', false],
+    ['test', false],
+  ])('with NODE_ENV=%s sets enabled=%s, so only release builds report', async (env, enabled) => {
+    vi.stubEnv('NODE_ENV', env);
+    try {
+      const opts = (await boot('/')).sentryOptions();
+      expect(opts.environment).toBe(env);
+      expect(opts.enabled).toBe(enabled);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('drops Tauri IPC breadcrumbs but keeps other HTTP breadcrumbs', async () => {
     const opts = (await boot('/')).sentryOptions();
     const ipc = { category: 'http', data: { url: 'http://ipc.localhost/plugin' } };

@@ -21,6 +21,9 @@ import {
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
 
+/** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
+const CHAT_LOG_MISSING = 'Could not find or create chat log file';
+
 /**
  * App-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket
  * notifications, updates/auth/changelog, and the always-on panels (chat button). Renders nothing.
@@ -172,7 +175,11 @@ const AppController: React.FC = () => {
     const command = shouldWatch
       ? invoke('start_chat_watcher', { customD2Dir: settings.diablo2Directory })
       : invoke('stop_chat_watcher');
-    command.catch((error) => console.error('Failed to manage chat watcher:', error));
+    command.catch((error) => {
+      // No chat log in the configured Diablo II directory: a settings problem the Rust side already toasts to the user
+      if (String(error).startsWith(CHAT_LOG_MISSING)) console.warn('Chat watcher not started:', error);
+      else console.error('Failed to manage chat watcher:', error);
+    });
     return () => {
       invoke('stop_chat_watcher').catch(console.error);
     };

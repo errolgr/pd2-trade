@@ -212,7 +212,8 @@ describe('settings hotkey', () => {
     state.foreign.add('ctrl+o');
     await renderTray();
     await fire('diablo-focus-changed', true);
-    expect(console.error).toHaveBeenCalledWith('Failed to register settings shortcut:', expect.any(Error));
+    expect(console.warn).toHaveBeenCalledWith('Settings shortcut is held by another app:', expect.any(Error));
+    expect(console.error).not.toHaveBeenCalled();
 
     await fire('diablo-focus-changed', false);
     expect(unregister).not.toHaveBeenCalled();
