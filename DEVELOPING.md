@@ -130,7 +130,6 @@ npm run docs:preview
 Price check stat ranges copy BH's tooltip logic over PD2's data tables (`src/assets/stat-ranges.data.ts`). When the launcher manifest's `pd2data.mpq` checksum changes, regenerate it:
 
 ```bash
-# needs StormLib's extract_mpq (libd2-pd2/packages/pd2/tools/extract_mpq)
 EXTRACT_MPQ=/path/to/extract_mpq node scripts/generate-stat-ranges.mjs --download
 ```
 

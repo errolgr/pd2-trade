@@ -7,7 +7,7 @@ import { tooltipLines } from './tooltip-lines';
 /**
  * Ground truth from the live S14 client (bh-harness, BH "always show stat ranges" on): per item, BH's Ctrl+C
  * JSON and the hover tooltip lines exactly as drawn. Re-capture each season with the pd2-trade-oracle
- * scripts, after regenerating src/assets/stat-ranges.data.ts from the same pd2data.mpq.
+ * scripts, after regenerating src/assets/stat-ranges.data.ts from the same game data.
  */
 const ORACLE = readFileSync(path.join(__dirname, '__fixtures__/stat-ranges-oracle.s14.jsonl'), 'utf8')
   .split('\n')
@@ -43,7 +43,9 @@ describe('stat ranges match the PD2 tooltip (S14 client capture)', () => {
         compared++;
         const expected = game.get(key) ?? null;
         if ((line.range ?? null) !== expected) {
-          mismatches.push(`${clipboard.name ?? clipboard.runeword}: ${line.text} → ${line.range ?? 'none'}, game ${expected ?? 'none'}`);
+          mismatches.push(
+            `${clipboard.name ?? clipboard.runeword}: ${line.text} → ${line.range ?? 'none'}, game ${expected ?? 'none'}`,
+          );
         }
       }
     }
