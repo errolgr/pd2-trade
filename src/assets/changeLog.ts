@@ -1,5 +1,9 @@
 export const changeLog = {
   '0.10.2': [
+    '🆕 Public profile toggle in the Net Worth panel and Stash Value header: choose whether your net worth profile is public',
+    '🔧 Fixed class skill tab filters in the market browser (e.g. +2 Paladin Combat Skills) matching no listings or the wrong class',
+    '🔧 Fixed listings showing stale results because of backend caching',
+    '🔧 Clicking the stat picker after choosing a stat reopens the list instead of doing nothing',
     '🔧 Fixed "403 Forbidden" when making an offer from the market browser: sign out and back in once to allow offers',
   ],
   '0.10.1': [
