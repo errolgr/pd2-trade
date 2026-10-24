@@ -3,6 +3,7 @@ import React from 'react';
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BrowserOptions } from '@sentry/react';
+import type * as Pd2WebsiteModule from '@/hooks/pd2website/usePD2Website';
 
 vi.mock('@sentry/react', () => ({
   init: vi.fn(),
@@ -17,10 +18,16 @@ const wrap = (name: string) =>
   function Wrapper({ children }: { children: React.ReactNode }) {
     return <div data-wrapper={name}>{children}</div>;
   };
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  AccountMismatchError: class AccountMismatchError extends Error {},
-  Pd2WebsiteProvider: wrap('pd2website'),
-}));
+// Real PD2ApiError/isExpectedApiError so beforeSend is tested against the status rule it actually ships with.
+vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => {
+  const actual: typeof Pd2WebsiteModule = await importOriginal();
+  return {
+    AccountMismatchError: class AccountMismatchError extends Error {},
+    PD2ApiError: actual.PD2ApiError,
+    isExpectedApiError: actual.isExpectedApiError,
+    Pd2WebsiteProvider: wrap('pd2website'),
+  };
+});
 
 // Providers and root components are stubs that name themselves, so the tree is observable without booting the app.
 vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options') }));
@@ -153,5 +160,26 @@ describe('main Sentry setup', () => {
     const real = { exception: { values: [{ type: 'TypeError', value: 'x is undefined' }] } };
     expect(send(real, new TypeError('x is undefined'))).toBe(real);
     expect(send({ message: 'Something else' })).toEqual({ message: 'Something else' });
+  });
+
+  it('drops PD2 4xx API errors (404 gone, 403 blocked, 429) but keeps 5xx', async () => {
+    const { sentryOptions } = await boot('/');
+    const opts = sentryOptions();
+    const { PD2ApiError } = await import('@/hooks/pd2website/usePD2Website');
+    const send = (event: object, originalException?: unknown) =>
+      (opts.beforeSend as (e: object, h: object) => unknown)(event, { originalException });
+
+    // console.error('Failed to …:', err) → captureException(err)
+    for (const status of [400, 403, 404, 405, 429]) {
+      expect(send({}, new PD2ApiError(`API Error: ${status}`, status, '/x'))).toBeNull();
+    }
+    // console.error('Failed to …:', err.message) → message event only
+    expect(send({ message: 'Failed to delete listing: API Error: 404 Not Found\n{"name":"NotFound"}' })).toBeNull();
+
+    const server = { exception: { values: [{ type: 'PD2ApiError', value: 'API Error: 502 Bad Gateway' }] } };
+    expect(send(server, new PD2ApiError('API Error: 502 Bad Gateway', 502, '/x'))).toBe(server);
+    expect(send({ message: 'Failed: API Error: 500 Internal Server Error' })).toEqual({
+      message: 'Failed: API Error: 500 Internal Server Error',
+    });
   });
 });

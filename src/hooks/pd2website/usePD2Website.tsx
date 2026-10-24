@@ -59,6 +59,25 @@ export class NoAccountSelectedError extends Error {
   }
 }
 
+// Any non-2xx PD2 response that isn't handled above (401, stash 404). Callers log these with console.error,
+// which Sentry's captureConsoleIntegration turns into issues; main.tsx's beforeSend drops the 4xx ones by status.
+export class PD2ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public endpoint: string,
+  ) {
+    super(message);
+    this.name = 'PD2ApiError';
+    Object.setPrototypeOf(this, PD2ApiError.prototype);
+  }
+}
+
+/** 4xx from PD2 (gone, blocked, rate-limited, bad input) is an expected outcome, not an app bug. */
+export function isExpectedApiError(error: unknown): boolean {
+  return error instanceof PD2ApiError && error.statusCode >= 400 && error.statusCode < 500;
+}
+
 interface Pd2WebsiteContextType extends SocialActions {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
@@ -449,7 +468,11 @@ export async function handleApiResponse(
     }
 
     // Create error with context
-    const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
+    const error = new PD2ApiError(
+      `API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`,
+      response.status,
+      endpoint,
+    );
 
     // Prepare additional context including query
     const additionalContext: Record<string, any> = {

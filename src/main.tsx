@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
 import { initFaro } from '@/lib/faro';
-import { AccountMismatchError, Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { AccountMismatchError, isExpectedApiError, Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { OptionsProvider } from './hooks/useOptions';
 import { DialogProvider } from './hooks/useDialog';
 import { TrayProvider } from './hooks/useTray';
@@ -60,7 +60,7 @@ setTimeout(() => {
     // Filter out expected errors that shouldn't be reported to Sentry
     beforeSend(event, hint) {
       // Don't report AccountMismatchError - these are expected user errors
-      if (hint.originalException instanceof AccountMismatchError) {
+      if (hint.originalException instanceof AccountMismatchError || isExpectedApiError(hint.originalException)) {
         return null;
       }
       const firstException = event.exception?.values?.[0];
@@ -72,6 +72,10 @@ setTimeout(() => {
       // catch account-mismatch text there too so each username doesn't become its own issue.
       const text = event.message ?? firstException?.value ?? '';
       if (text.includes('is not associated with your logged-in account')) {
+        return null;
+      }
+      // Same for PD2 4xx logged as `console.error('Failed to …:', err.message)`: no exception to check by status.
+      if (/\bAPI Error: 4\d\d\b/.test(text)) {
         return null;
       }
       return event;
