@@ -346,6 +346,8 @@ export function Autocomplete<T>({
           value={value}
           className={cn(fieldInputClass, className)}
           onFocus={() => setOpen(true)}
+          // A pick or Escape closes the list but keeps focus, so a click won't fire onFocus again
+          onClick={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onChange={(e) => {
             onQuery(e.target.value);
@@ -375,6 +377,10 @@ export function Autocomplete<T>({
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
+        // The input is the anchor, so Radix counts a click in it as outside: keep the list open
+        onPointerDownOutside={(e) => {
+          if ((e.target as Element | null)?.getAttribute?.('aria-controls') === listId) e.preventDefault();
+        }}
         // The input keeps focus; a click in the list must not blur it before the pick lands
         onMouseDown={(e) => e.preventDefault()}
         className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', contentClassName)}
