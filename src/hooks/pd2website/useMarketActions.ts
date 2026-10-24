@@ -179,6 +179,8 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
+      // Already gone (sold, expired, or removed elsewhere): what the user asked for
+      if (response.status === 404) return;
       await handleApiResponse(response, onAuthError, { listingId });
     },
     [settings, onAuthError],

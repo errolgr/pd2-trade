@@ -134,6 +134,17 @@ describe('installUpdateAndRelaunch', () => {
     await advance(5 * 60 * 1000);
     expect(toastVersions()).toEqual(['1.2.0', '1.2.0']);
   });
+
+  it('warns instead of reporting when GitHub is unreachable mid-download, with the same toast', async () => {
+    vi.mocked(check).mockResolvedValue(fakeUpdate(fullDownload.slice(0, 2), new Error('error decoding response body')));
+
+    expect(await installUpdateAndRelaunch()).toBe(false);
+
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith('Could not download update:', expect.any(Error));
+    expect(toast.error).toHaveBeenCalledWith('Failed to download update. Please try again later.', expect.anything());
+    expect(relaunch).not.toHaveBeenCalled();
+  });
 });
 
 describe('installUpdateAndRelaunch on installs that cannot update in place', () => {

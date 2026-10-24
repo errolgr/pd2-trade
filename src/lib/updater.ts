@@ -10,6 +10,7 @@ import {
   markManualUpdateRequired,
   requiresManualUpdate,
 } from '@/lib/manual-update';
+import { isNetworkError } from '@/lib/network-errors';
 
 // "Download & Restart" action: install the pending update (if any) and restart the app.
 // Resolves false when the install failed (the app keeps running); windows without a Toaster use it for feedback.
@@ -70,7 +71,9 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
       });
       return false;
     }
-    console.error('Failed to download/install update:', error);
+    // Offline / GitHub unreachable is the user's network, not an app bug: same toast, no error report
+    if (isNetworkError(error)) console.warn('Could not download update:', error);
+    else console.error('Failed to download/install update:', error);
     toast.error('Failed to download update. Please try again later.', {
       position: 'bottom-right',
     });

@@ -5,6 +5,11 @@ import { isTauri, invoke } from '@tauri-apps/api/core';
 import { BACKEND_URL, PD2_SCOPES } from '@/lib/pkce';
 import { GenericToastPayload } from '@/common/types/Events';
 import { showToast } from '@/overlay';
+import { isNetworkError } from '@/lib/network-errors';
+
+// Windows ERROR_CANCELLED from opening the sign-in URL: the user dismissed the "open with" prompt. The OS text is
+// localized, the errno isn't.
+const OPEN_CANCELLED = /\(os error 1223\)/;
 
 /**
  * The running sign-in flow; a new flow is refused while one is active. Cleared when it ends or is aborted (its
@@ -181,7 +186,9 @@ export function useOAuth() {
         return tokens.accessToken;
       } catch (error) {
         if (signal.aborted) return false;
-        console.error('[OAuth] Flow failed:', error);
+        // The user cancelled opening the browser, or pd2trader.com is unreachable: not app bugs
+        if (isNetworkError(error) || OPEN_CANCELLED.test(String(error))) console.warn('[OAuth] Flow failed:', error);
+        else console.error('[OAuth] Flow failed:', error);
         const errorToast: GenericToastPayload = {
           title: 'PD2 Trader',
           description: 'Authentication failed. Please try again.',

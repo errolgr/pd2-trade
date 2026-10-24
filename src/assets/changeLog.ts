@@ -12,6 +12,7 @@ export const changeLog = {
     '🔧 Fixed price check failing with a server error for low quality (Inferior) items',
     '🔧 Settings save again if the app config folder went missing while PD2 Trader was running',
     '🔧 Listing or delisting with no in-game account chosen now tells you to pick one in Settings → Account',
+    "🔧 Deleting a listing or conversation that's already gone now just removes it instead of showing an error",
   ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',

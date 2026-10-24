@@ -32,7 +32,8 @@ export function useStashCache(
 
   // Helper: fetch stash from server and update cache (RESTful)
   const fetchAndCacheStash = useCallback(async () => {
-    if (!authData) throw new Error('Not authenticated');
+    // Signed out (or the session expired): expected user state; callers skip error reports for AuthenticationError
+    if (!authData) throw new AuthenticationError('Not authenticated');
     if (!settings) throw new Error('Settings not found!');
 
     const is_hardcore = settings.mode === 'hardcore';

@@ -215,14 +215,17 @@ describe('listing mutations', () => {
     expect(JSON.parse(init.body as string)).toEqual({ hr_price: 3 });
   });
 
-  it('deleteMarketListing DELETEs by id and propagates failures', async () => {
+  it('deleteMarketListing DELETEs by id, treats an already-gone listing as deleted, and propagates failures', async () => {
     const { actions } = market();
     await actions.deleteMarketListing('L2');
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/listing/L2');
     expect(lastCall().init.method).toBe('DELETE');
 
     fetchMock.mockResolvedValueOnce(fakeResponse(404, 'gone', 'https://api.projectdiablo2.com/market/listing/L2'));
-    await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 404');
+    await expect(actions.deleteMarketListing('L2')).resolves.toBeUndefined();
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'https://api.projectdiablo2.com/market/listing/L2'));
+    await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 500');
   });
 
   it("bumpAllMarketListings PATCHes all of the user's listings with the current time", async () => {

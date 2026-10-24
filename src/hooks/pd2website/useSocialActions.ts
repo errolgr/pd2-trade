@@ -24,7 +24,8 @@ interface UseSocialActionsProps {
 
 /**
  * List/send calls resolve null, and delete/mark-read resolve false, on a 401 (onAuthError has started the
- * re-auth flow; nothing changed server-side).
+ * re-auth flow; nothing changed server-side). sendMessage also resolves null when PD2 refuses the message (403, e.g.
+ * the recipient blocked the user); markMessagesAsRead resolves false when the messages are gone (404).
  */
 export interface SocialActions {
   deleteConversation: (conversationId: string) => Promise<boolean>;
@@ -63,6 +64,8 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
         body: JSON.stringify({ $archive: true }),
       });
 
+      // Already gone (deleted elsewhere, or an earlier attempt that went through): what the user asked for
+      if (response.status === 404) return true;
       return (await handleApiResponse(response, onAuthError)) !== null;
     },
     [token, onAuthError],
@@ -164,6 +167,11 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
         body: JSON.stringify(body),
       });
 
+      if (response.status === 403) {
+        // PD2 refuses the message (e.g. "Blocked": the recipient blocked this user); the bubble shows it as failed
+        console.warn('[Chat] Message refused (403):', await response.text().catch(() => ''));
+        return null;
+      }
       return await handleApiResponse(response, onAuthError);
     },
     [token, onAuthError],
@@ -207,6 +215,8 @@ export function useSocialActions({ settings, onAuthError }: UseSocialActionsProp
         body: JSON.stringify(body),
       });
 
+      // The messages are gone (conversation deleted): nothing to mark
+      if (response.status === 404) return false;
       return (await handleApiResponse(response, onAuthError)) !== null;
     },
     [token, onAuthError],
