@@ -32,10 +32,11 @@ afterEach(() => {
 });
 
 describe('theme registry', () => {
-  it('has unique ids, both modes, and the default theme present', () => {
+  it('has 21 unique ids, both mode counts, and the default theme present', () => {
+    expect(THEMES).toHaveLength(21);
     expect(new Set(THEMES.map((t) => t.id)).size).toBe(THEMES.length);
-    expect(THEMES.some((t) => t.mode === 'dark')).toBe(true);
-    expect(THEMES.some((t) => t.mode === 'light')).toBe(true);
+    expect(THEMES.filter((t) => t.mode === 'dark')).toHaveLength(11);
+    expect(THEMES.filter((t) => t.mode === 'light')).toHaveLength(10);
     expect(getTheme(DEFAULT_THEME_ID).id).toBe(DEFAULT_THEME_ID);
   });
 

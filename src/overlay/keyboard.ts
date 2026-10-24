@@ -1,6 +1,7 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 
 /**
  * Keyboard focus for the single non-focusable overlay window.
@@ -80,42 +81,34 @@ export const FOREGROUND_EVENT = 'foreground-changed';
  */
 export function trackKeyboardFocus(onFocusChange?: (focused: boolean, handoff: boolean) => void): () => void {
   if (!isTauri()) return () => {};
-  let disposed = false;
-  let unlisten: (() => void) | null = null;
-  listen<ForegroundOwner>(FOREGROUND_EVENT, ({ payload: owner }) => {
-    if (owner === 'unknown') return;
-    const from = foregroundOwner;
-    foregroundOwner = owner;
+  return holdListener(
+    listen<ForegroundOwner>(FOREGROUND_EVENT, ({ payload: owner }) => {
+      if (owner === 'unknown') return;
+      const from = foregroundOwner;
+      foregroundOwner = owner;
 
-    if (owner === 'ownWindow') {
-      claimed = true;
+      if (owner === 'ownWindow') {
+        claimed = true;
+        handoffAt = 0;
+        onFocusChange?.(true, false);
+        return;
+      }
+      if (owner === from) return;
+      const left = from === 'ownWindow' || (from === 'diablo' && owner === 'other');
+      if (!left) return;
+
+      const handoff = Date.now() - handoffAt < HANDOFF_BLUR_MS;
       handoffAt = 0;
-      onFocusChange?.(true, false);
-      return;
-    }
-    if (owner === from) return;
-    const left = from === 'ownWindow' || (from === 'diablo' && owner === 'other');
-    if (!left) return;
-
-    const handoff = Date.now() - handoffAt < HANDOFF_BLUR_MS;
-    handoffAt = 0;
-    if (claimed) {
-      claimed = false;
-      getCurrentWindow()
-        .setFocusable(false)
-        .catch((error) => console.warn('[overlay] setFocusable(false) failed:', error));
-    }
-    onFocusChange?.(false, handoff);
-  })
-    .then((off) => {
-      if (disposed) off();
-      else unlisten = off;
-    })
-    .catch((error) => console.warn('[overlay] foreground listener failed:', error));
-  return () => {
-    disposed = true;
-    unlisten?.();
-  };
+      if (claimed) {
+        claimed = false;
+        getCurrentWindow()
+          .setFocusable(false)
+          .catch((error) => console.warn('[overlay] setFocusable(false) failed:', error));
+      }
+      onFocusChange?.(false, handoff);
+    }),
+    FOREGROUND_EVENT,
+  );
 }
 
 /** Test seam: reset module state between tests. */

@@ -1,5 +1,5 @@
 /**
- * Theme registry: 20 color themes (10 dark, 10 light).
+ * Theme registry: 21 color themes (11 dark, 10 light).
  *
  * Every theme defines the full per-theme token set listed in `THEME_TOKENS`.
  * `vars` keys are CSS custom property names WITHOUT the leading `--`
@@ -464,6 +464,44 @@ const DARK_THEMES: Theme[] = [
     ring: 'hsl(265 85% 68%)',
     glow: 'hsl(268 90% 65%)',
     charts: ['hsl(265 85% 68%)', 'hsl(190 80% 55%)', 'hsl(330 75% 62%)', 'hsl(45 85% 60%)', 'hsl(150 60% 52%)'],
+  }),
+  defineTheme({
+    id: 'classic-diablo-ii',
+    name: 'Classic Diablo II',
+    mode: 'dark',
+    description: 'Dark carved stone, blood-red accents and aged-gold highlights.',
+    background: 'hsl(26 22% 4%)',
+    foreground: 'hsl(38 22% 84%)',
+    card: 'hsl(30 18% 8%)',
+    popover: 'hsl(28 20% 6%)',
+    primary: 'hsl(38 70% 50%)',
+    primaryForeground: 'hsl(28 35% 7%)',
+    secondary: 'hsl(24 17% 12%)',
+    muted: 'hsl(25 15% 10%)',
+    mutedForeground: 'hsl(36 14% 58%)',
+    accent: 'hsl(0 50% 18%)',
+    accentForeground: 'hsl(38 28% 87%)',
+    destructive: 'hsl(0 72% 43%)',
+    border: 'hsl(34 20% 18%)',
+    input: 'hsl(30 14% 26%)',
+    ring: 'hsl(38 70% 50%)',
+    glow: 'hsl(32 90% 54%)',
+    charts: ['hsl(38 70% 50%)', 'hsl(0 65% 46%)', 'hsl(120 40% 44%)', 'hsl(225 50% 58%)', 'hsl(275 42% 56%)'],
+    quality: {
+      'q-unique': 'hsl(36 45% 61%)',
+      'q-set': 'hsl(120 75% 56%)',
+      'q-rare': 'hsl(55 95% 62%)',
+      'q-magic': 'hsl(235 90% 72%)',
+      'q-crafted': 'hsl(28 90% 58%)',
+      'q-rune': 'hsl(26 85% 58%)',
+      'q-normal': 'hsl(0 0% 86%)',
+      'q-gold': 'hsl(42 78% 58%)',
+      'q-corrupted': 'hsl(0 85% 60%)',
+    },
+    overrides: {
+      radius: '0.25rem',
+      'surface-elevated': atWindowOpacity('hsl(28 16% 10%)', 'elevated'),
+    },
   }),
 ];
 

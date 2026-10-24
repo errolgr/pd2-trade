@@ -10,12 +10,13 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
+import { isNetworkError } from '@/lib/network-errors';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { useOAuth } from '../useOAuth';
+import { showBannedToast, useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
 import { showToast, useOverlay } from '@/overlay';
@@ -47,6 +48,34 @@ export class AccountMismatchError extends Error {
     this.name = 'AccountMismatchError';
     Object.setPrototypeOf(this, AccountMismatchError.prototype);
   }
+}
+
+// No in-game account chosen yet: GET /game/stash/ without one is a 405 from PD2, so fail before the request
+export class NoAccountSelectedError extends Error {
+  constructor(message = 'Choose your in-game account in Settings → Account first.') {
+    super(message);
+    this.name = 'NoAccountSelectedError';
+    Object.setPrototypeOf(this, NoAccountSelectedError.prototype);
+  }
+}
+
+// Any non-2xx PD2 response that isn't handled above (401, stash 404). Callers log these with console.error,
+// which Sentry's captureConsoleIntegration turns into issues; main.tsx's beforeSend drops the 4xx ones by status.
+export class PD2ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public endpoint: string,
+  ) {
+    super(message);
+    this.name = 'PD2ApiError';
+    Object.setPrototypeOf(this, PD2ApiError.prototype);
+  }
+}
+
+/** 4xx from PD2 (gone, blocked, rate-limited, bad input) is an expected outcome, not an app bug. */
+export function isExpectedApiError(error: unknown): boolean {
+  return error instanceof PD2ApiError && error.statusCode >= 400 && error.statusCode < 500;
 }
 
 interface Pd2WebsiteContextType extends SocialActions {
@@ -250,8 +279,15 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         Authorization: `Bearer ${token}`,
       },
     });
+    if (response.status === 403) {
+      // Banned on pd2trader.com: sign out for good (re-signing in is refused too).
+      clearStashCacheRef.current?.();
+      await updateSettings({ pd2Token: undefined, pd2RefreshToken: undefined, pd2TokenExpiry: undefined });
+      showBannedToast();
+      return null;
+    }
     return await handleApiResponse(response, handleAuthenticationError);
-  }, [settings, handleAuthenticationError]);
+  }, [settings, handleAuthenticationError, updateSettings]);
 
   // Authenticate when pd2Token changes
   useEffect(() => {
@@ -261,9 +297,16 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     }
     // A /me answer for a token that has since been replaced must not overwrite the newer session
     let current = true;
-    authenticate().then((data) => {
-      if (current) setAuthData(data);
-    });
+    authenticate().then(
+      (data) => {
+        if (current) setAuthData(data);
+      },
+      (error) => {
+        // Offline or pd2trader.com unreachable: the user stays signed out until the next token change or restart
+        if (isNetworkError(error)) console.warn('[Pd2WebsiteProvider] Could not reach pd2trader.com:', error);
+        else console.error('[Pd2WebsiteProvider] Failed to load the session:', error);
+      },
+    );
     return () => {
       current = false;
     };
@@ -425,7 +468,11 @@ export async function handleApiResponse(
     }
 
     // Create error with context
-    const error = new Error(`API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`);
+    const error = new PD2ApiError(
+      `API Error: ${response.status} ${response.statusText}${errorBody ? `\n${errorBody}` : ''}`,
+      response.status,
+      endpoint,
+    );
 
     // Prepare additional context including query
     const additionalContext: Record<string, any> = {

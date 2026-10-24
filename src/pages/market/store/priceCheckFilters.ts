@@ -10,8 +10,8 @@
 import { modifierByName } from '@/assets/modifiers';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
-import type { Item, Stat } from '@/pages/price-check/lib/interfaces';
-import { StatId } from '@/pages/price-check/lib/stat-mappings';
+import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
+import { DAMAGE_PAIRS, StatId, statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -19,7 +19,7 @@ export interface PriceCheckSearch {
   pd2Item: PD2Item;
   /** useStatSelection: selected stat keys and their min/max inputs. */
   selected: Set<string>;
-  filters: Record<string, { value?: string; min?: string; max?: string }>;
+  filters: Record<string, StatFilterInput>;
   /** Settings mode/ladder. */
   settings: { mode?: string; ladder?: string };
   statMapper?: (statId: number, stat: Stat) => string | undefined;
@@ -44,7 +44,31 @@ const COMBINED_MODIFIERS: Record<string, string[]> = {
   all_attributes: ['strength', 'energy', 'dexterity', 'vitality'],
 };
 
-type ElemMatch = Record<string, unknown> & { name: string };
+type ElemMatch = Record<string, unknown> & { name: string | { $in: string[] } };
+
+/**
+ * Damage pair rows query one market modifier under several names (`{ $in: ['firedam', …] }`, min in values.0,
+ * max in values.1) or, for physical damage, two; the market browser filters the site's min/max damage keys.
+ */
+function damagePairRows(match: ElemMatch): Omit<StatFilter, 'id'>[] | null {
+  if (typeof match.name === 'string') return null;
+  const names = match.name.$in;
+  const pair = DAMAGE_PAIRS.find((p) => p.market?.some((n) => names.includes(n)));
+  if (pair) {
+    return [
+      { kind: 'mod', key: statIdToProperty[pair.min], ...readRange(match['values.0']), enabled: true },
+      { kind: 'mod', key: statIdToProperty[pair.max], ...readRange(match['values.1']), enabled: true },
+    ];
+  }
+  const key = PHYSICAL_DAMAGE_KEYS.find((k) => names.every((n) => k.split('|').includes(n)));
+  return key ? [{ kind: 'mod', key, ...readRange(match['values.0']), enabled: true }] : null;
+}
+
+/** Market browser keys of the physical min/max damage modifiers (stat-options `a|b` alternatives). */
+const PHYSICAL_DAMAGE_KEYS = [
+  'min_damage|mindamage|secondary_mindamage|item_throw_mindamage',
+  'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage',
+];
 
 /** `value[key]` when value is an object (query fragments are loosely typed). */
 function prop(value: unknown, key: string): unknown {
@@ -71,6 +95,9 @@ function readRange(value: unknown): { min?: number; max?: number } {
  * site's `name{param}` form and the roll is `values.1`.
  */
 function statRows(match: ElemMatch): Omit<StatFilter, 'id'>[] {
+  const damage = damagePairRows(match);
+  if (damage) return damage;
+  if (typeof match.name !== 'string') return [];
   const param = match['values.0'];
   if (typeof param === 'number') {
     return [{ kind: 'mod', key: `${match.name}{${param}}`, ...readRange(match['values.1']), enabled: true }];
@@ -117,7 +144,9 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const matches = Array.isArray(all)
     ? all.flatMap((m) => {
         const match = prop(m, '$elemMatch');
-        return typeof prop(match, 'name') === 'string' ? [match as ElemMatch] : [];
+        const name = prop(match, 'name');
+        const names = prop(name, '$in');
+        return typeof name === 'string' || Array.isArray(names) ? [match as ElemMatch] : [];
       })
     : [];
   const corruptions = prop(query['item.corruptions'], '$all');

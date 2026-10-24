@@ -36,10 +36,11 @@ export const useSocket = (props?: UseSocketProps) => {
     const socket = io('wss://api.projectdiablo2.com', {
       transports: ['websocket'],
       timeout: 20000, // 20 seconds timeout
+      // Retry for as long as the overlay runs: a capped retry count gives up for the session after a short PD2
+      // outage (e.g. season launch), silently ending chat and offer pushes. Back off to 30s between attempts.
       reconnection: true,
-      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionDelayMax: 30000,
     });
 
     socketRef.current = socket;

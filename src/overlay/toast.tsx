@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockSize } from '@/pages/chat/chat-dock';
@@ -45,6 +46,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         break;
       case ToastActionType.UPDATE_AVAILABLE:
         await installUpdateAndRelaunch();
+        break;
+      case ToastActionType.OPEN_RELEASE_PAGE:
+        await openUrl(RELEASE_PAGE_URL);
         break;
       default:
         console.warn('Unknown toast action type:', action.type);
@@ -104,6 +108,27 @@ export function showToast(payload: ToastPayload): void {
       // sonner dismisses the toast after onClick
       onClick: () => void runToastAction(action),
     },
+  });
+}
+
+/**
+ * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):
+ * revoked when the toast closes.
+ */
+export function imageToast({ title, description, imageUrl }: { title: string; description?: string; imageUrl: string }): void {
+  const revoke = () => URL.revokeObjectURL(imageUrl);
+  toast.success(title, {
+    description: (
+      <span className="flex flex-col gap-2">
+        {description && <span>{description}</span>}
+        <img src={imageUrl}
+          alt=""
+          className="max-h-40 w-auto max-w-full self-start rounded border border-border object-contain" />
+      </span>
+    ),
+    closeButton: true,
+    onDismiss: revoke,
+    onAutoClose: revoke,
   });
 }
 

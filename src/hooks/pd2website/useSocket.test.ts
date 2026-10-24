@@ -86,6 +86,8 @@ describe('connection lifecycle', () => {
     const [url, opts] = ioMock.mock.calls[0];
     expect(url).toBe('wss://api.projectdiablo2.com');
     expect(opts).toMatchObject({ transports: ['websocket'], reconnection: true });
+    // Uncapped: socket.io gives up for good once a capped count of retries fails (a short PD2 outage)
+    expect(opts).not.toHaveProperty('reconnectionAttempts');
 
     expect(hook.result.current.isConnected).toBe(true);
     expect(hook.result.current.getSocket()).toBe(socket);

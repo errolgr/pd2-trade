@@ -1,5 +1,6 @@
-import { Item, Stat } from './interfaces';
-import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from './stat-mappings';
+import type { Item, Stat, StatFilterInput } from './interfaces';
+import { DAMAGE_PAIRS, type DamagePair, StatId, statIdToProperty } from './stat-mappings';
+import { buildStatRows } from './stat-rows';
 import { skillNameToIdMap } from '@/assets/character-skills';
 import { classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex } from '@/assets/class-skills';
 import { ItemCharmMap, ItemQuality } from '@/common/types/Item';
@@ -12,7 +13,7 @@ export function buildTradeUrl(
   item: Item,
   mappedItem: PD2Item,
   selected: Set<string>,
-  filters: Record<string, { value?: string; min?: string; max?: string }>,
+  filters: Record<string, StatFilterInput>,
   settings: any,
   statMapper?: (statId: number, stat: Stat) => string | undefined,
   searchMode: number = 0,
@@ -33,7 +34,7 @@ export function buildTradeUrl(
   // If corruptedState === 0, don't add any corrupted filter
 
   // Get sorted stats for processing
-  const sortedStats = getSortedStats(item);
+  const sortedStats = buildStatRows(item);
 
   [...selected].forEach((key) => {
     const stat = sortedStats.find((s) => getStatKey(s) === key);
@@ -78,6 +79,20 @@ export function buildTradeUrl(
 
     if (stat.stat_id === StatId.Ethereal) {
       searchParams.set('ethereal', 'true');
+      return;
+    }
+
+    // Damage pair rows: the site's min and max damage properties, one per input pair.
+    const pair = DAMAGE_PAIRS.find((p) => p.id === stat.stat_id);
+    if (pair) {
+      for (const [id, lo, hi] of [
+        [pair.min, f.min, f.max],
+        [pair.max, f.maxMin, f.maxMax],
+      ] as const) {
+        const key = getPropertyKey(id, stat, statMapper);
+        if (lo) searchParams.append(`properties[${key}][min]`, lo);
+        if (hi) searchParams.append(`properties[${key}][max]`, hi);
+      }
       return;
     }
 
@@ -150,7 +165,7 @@ export function buildGetMarketListingQuery(
   item: Item,
   mappedItem: PD2Item,
   selected: Set<string>,
-  filters: Record<string, { value?: string; min?: string; max?: string }>,
+  filters: Record<string, StatFilterInput>,
   settings: any,
   statMapper?: (statId: number, stat: Stat) => string | undefined,
   isArchive: boolean = false,
@@ -178,7 +193,7 @@ export function buildGetMarketListingQuery(
     'item.quality.name': qualityOverride ?? item.quality,
   };
 
-  const sortedStats = getSortedStats(item);
+  const sortedStats = buildStatRows(item);
   const modifiers: any[] = [];
 
   // Handle corrupted state separately - check it even if not in selected (for injected stats)
@@ -260,6 +275,13 @@ export function buildGetMarketListingQuery(
       }
     }
 
+    // Damage pair rows ("Adds 4-14 fire damage")
+    const pair = DAMAGE_PAIRS.find((p) => p.id === stat.stat_id);
+    if (pair) {
+      modifiers.push(...damagePairMatches(pair, f));
+      return;
+    }
+
     // Normal stat
     if (stat.stat_id !== undefined) {
       const prop = statIdToProperty[stat.stat_id];
@@ -287,10 +309,8 @@ export function buildGetMarketListingQuery(
   } else {
     // Runewords always use name search regardless of base quality
     if (item.isRuneword) {
-      query['item.name'] = {
-        $regex: item.runeword || mappedItem?.name || item.name || '',
-        $options: 'i',
-      };
+      const name = item.runeword || mappedItem?.name || item.name;
+      if (name) query['item.name'] = { $regex: name, $options: 'i' };
     } else {
       // Check if item is a base quality that supports toggle
       const isBaseQuality =
@@ -323,11 +343,9 @@ export function buildGetMarketListingQuery(
           console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
         }
       } else {
-        // Uniques, Sets: Always use name search (original functionality)
-        query['item.name'] = {
-          $regex: item.name ? `${mappedItem?.name || item.name}` : '',
-          $options: 'i',
-        };
+        // Uniques, Sets: Always use name search (original functionality). Nameless items (Inferior quality) get no
+        // name filter: PD2 answers an empty $regex with a 500 ("$regex has to be a string").
+        if (item.name) query['item.name'] = { $regex: mappedItem?.name || item.name, $options: 'i' };
       }
     }
   }
@@ -407,271 +425,36 @@ function getPropertyKey(
   return statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
 }
 
-/**
- * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
- * into a single "Enhanced Damage" stat (stat_id 998)
- */
-function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
-  const minDamageStat = stats.find((s) => s.stat_id === 18); // item_mindamage_percent
-  const maxDamageStat = stats.find((s) => s.stat_id === 17); // item_maxdamage_percent
-  const existingEnhancedDamageStat = stats.find((s) => s.stat_id === 998);
-
-  // Filter out stats 17, 18, and any existing 998 to avoid duplicates
-  const filteredStats = stats.filter((s) => s.stat_id !== 17 && s.stat_id !== 18 && s.stat_id !== 998);
-
-  // For jewels, enhanced damage is always 5-40%
-  const isJewel = itemType === 'Jewel';
-  const jewelRange = isJewel ? { min: 5, max: 40 } : undefined;
-
-  // If both min and max damage stats exist, combine them
-  if (minDamageStat && maxDamageStat) {
-    const combinedValue = maxDamageStat.value ?? minDamageStat.value ?? 0;
-    const combinedRange = jewelRange ?? {
-      min: minDamageStat.range?.min ?? minDamageStat.value ?? 0,
-      max: maxDamageStat.range?.max ?? maxDamageStat.value ?? 0,
-    };
-    const isCorrupted = minDamageStat.corrupted || maxDamageStat.corrupted;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: combinedValue,
-      range: combinedRange,
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If only min damage exists, convert it to the combined stat
-  if (minDamageStat) {
-    const range = jewelRange ?? minDamageStat.range;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: minDamageStat.value,
-      range: range,
-      ...(minDamageStat.corrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If only max damage exists, convert it to the combined stat
-  if (maxDamageStat) {
-    const range = jewelRange ?? maxDamageStat.range;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: maxDamageStat.value,
-      range: range,
-      ...(maxDamageStat.corrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If no 17/18 stats but existing 998 exists, keep it (but update range if jewel)
-  if (existingEnhancedDamageStat) {
-    if (isJewel && existingEnhancedDamageStat.stat_id === 998) {
-      const updatedStat: Stat = {
-        ...existingEnhancedDamageStat,
-        range: jewelRange,
-      };
-      return [...filteredStats, updatedStat];
-    }
-    return [...filteredStats, existingEnhancedDamageStat];
-  }
-
-  return filteredStats;
+/** `{ $gte, $lte }` from two inputs, or undefined when both are empty. */
+function bounds(lo: string | undefined, hi: string | undefined): { $gte?: number; $lte?: number } | undefined {
+  if (!lo && !hi) return undefined;
+  return { ...(lo ? { $gte: Number(lo) } : {}), ...(hi ? { $lte: Number(hi) } : {}) };
 }
 
-/**
- * Combines fire, lightning, cold, and poison resist stats (stat_ids 39, 41, 43, 45)
- * into a single "All Resistances" stat (stat_id 999) when they all have the same value
- */
-function combineResistanceStats(stats: Stat[]): Stat[] {
-  const fireResist = stats.find((s) => s.stat_id === 39); // fireresist
-  const lightResist = stats.find((s) => s.stat_id === 41); // lightresist
-  const coldResist = stats.find((s) => s.stat_id === 43); // coldresist
-  const poisonResist = stats.find((s) => s.stat_id === 45); // poisonresist
-  const existingAllResistStat = stats.find((s) => s.stat_id === 999);
-
-  // Check if all four resistance stats exist and have the same value
-  const allResistsExist = fireResist && lightResist && coldResist && poisonResist;
-  const allSameValue =
-    allResistsExist &&
-    fireResist.value === lightResist.value &&
-    lightResist.value === coldResist.value &&
-    coldResist.value === poisonResist.value;
-
-  // If all four resistances exist and have the same value, combine them
-  if (allSameValue && fireResist) {
-    // Filter out individual resistance stats and existing 999 to avoid duplicates
-    const filteredStats = stats.filter(
-      (s) => s.stat_id !== 39 && s.stat_id !== 41 && s.stat_id !== 43 && s.stat_id !== 45 && s.stat_id !== 999,
-    );
-
-    const combinedValue = fireResist.value;
-    // Combine ranges: use the minimum of all mins and maximum of all maxes
-    const combinedRange = {
-      min: Math.min(
-        fireResist.range?.min ?? fireResist.value ?? 0,
-        lightResist!.range?.min ?? lightResist!.value ?? 0,
-        coldResist!.range?.min ?? coldResist!.value ?? 0,
-        poisonResist!.range?.min ?? poisonResist!.value ?? 0,
-      ),
-      max: Math.max(
-        fireResist.range?.max ?? fireResist.value ?? 0,
-        lightResist!.range?.max ?? lightResist!.value ?? 0,
-        coldResist!.range?.max ?? coldResist!.value ?? 0,
-        poisonResist!.range?.max ?? poisonResist!.value ?? 0,
-      ),
-    };
-    const isCorrupted =
-      fireResist.corrupted || lightResist!.corrupted || coldResist!.corrupted || poisonResist!.corrupted;
-    const combinedStat: Stat = {
-      stat_id: 999,
-      name: 'All Resistances',
-      value: combinedValue,
-      range: combinedRange,
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If values are not the same, keep individual stats as normal
-  // Only filter out existing 999 if it exists (to avoid duplicates)
-  if (existingAllResistStat) {
-    return stats.filter((s) => s.stat_id !== 999);
-  }
-
-  // Return stats as-is if no combination needed and no existing 999
-  return stats;
-}
+/** Physical min/max damage: separate market modifiers, under every name the market uses. */
+const MIN_DAMAGE_MODS = ['min_damage', 'mindamage', 'secondary_mindamage'];
+const MAX_DAMAGE_MODS = ['max_damage', 'maxdamage', 'secondary_maxdamage'];
 
 /**
- * Combines strength, energy, dexterity, and vitality stats (stat_ids 0, 1, 2, 3)
- * into a single "All Attributes" stat (stat_id 1002) when they all have the same value
+ * Market `$elemMatch`es for a damage pair row. Elemental pairs are one market modifier (`firedam`, values
+ * [min, max, …]) under a few names; physical damage is two modifiers.
  */
-function combineAttributeStats(stats: Stat[]): Stat[] {
-  const strengthStat = stats.find((s) => s.stat_id === 0); // strength
-  const energyStat = stats.find((s) => s.stat_id === 1); // energy
-  const dexterityStat = stats.find((s) => s.stat_id === 2); // dexterity
-  const vitalityStat = stats.find((s) => s.stat_id === 3); // vitality
-  const existingAllAttributesStat = stats.find((s) => s.stat_id === StatId.AllAttributes);
-
-  // Check if all four attribute stats exist and have the same value
-  const allAttributesExist = strengthStat && energyStat && dexterityStat && vitalityStat;
-  const allSameValue =
-    allAttributesExist &&
-    strengthStat.value === energyStat.value &&
-    energyStat.value === dexterityStat.value &&
-    dexterityStat.value === vitalityStat.value;
-
-  // If all four attributes exist and have the same value, combine them
-  if (allSameValue && strengthStat) {
-    // Filter out individual attribute stats and existing 1002 to avoid duplicates
-    const filteredStats = stats.filter(
-      (s) =>
-        s.stat_id !== 0 && s.stat_id !== 1 && s.stat_id !== 2 && s.stat_id !== 3 && s.stat_id !== StatId.AllAttributes,
-    );
-
-    const combinedValue = strengthStat.value;
-    // Combine ranges: use the minimum of all mins and maximum of all maxes
-    const combinedRange = {
-      min: Math.min(
-        strengthStat.range?.min ?? strengthStat.value ?? 0,
-        energyStat!.range?.min ?? energyStat!.value ?? 0,
-        dexterityStat!.range?.min ?? dexterityStat!.value ?? 0,
-        vitalityStat!.range?.min ?? vitalityStat!.value ?? 0,
-      ),
-      max: Math.max(
-        strengthStat.range?.max ?? strengthStat.value ?? 0,
-        energyStat!.range?.max ?? energyStat!.value ?? 0,
-        dexterityStat!.range?.max ?? dexterityStat!.value ?? 0,
-        vitalityStat!.range?.max ?? vitalityStat!.value ?? 0,
-      ),
-    };
-    const isCorrupted =
-      strengthStat.corrupted || energyStat!.corrupted || dexterityStat!.corrupted || vitalityStat!.corrupted;
-    const combinedStat: Stat = {
-      stat_id: StatId.AllAttributes,
-      name: 'All Attributes',
-      value: combinedValue,
-      range: combinedRange,
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
+export function damagePairMatches(pair: DamagePair, f: StatFilterInput): Array<{ $elemMatch: Record<string, unknown> }> {
+  const minBounds = bounds(f.min, f.max);
+  const maxBounds = bounds(f.maxMin, f.maxMax);
+  if (pair.market) {
+    return [
+      {
+        $elemMatch: {
+          name: { $in: pair.market },
+          ...(minBounds && { 'values.0': minBounds }),
+          ...(maxBounds && { 'values.1': maxBounds }),
+        },
+      },
+    ];
   }
-
-  // If values are not the same, keep individual stats as normal
-  // Only filter out existing 1002 if it exists (to avoid duplicates)
-  if (existingAllAttributesStat) {
-    return stats.filter((s) => s.stat_id !== StatId.AllAttributes);
-  }
-
-  // Return stats as-is if no combination needed and no existing 1002
-  return stats;
-}
-
-function getSortedStats(item: any): Stat[] {
-  const baseStats = [];
-
-  // Inject sockets as a pseudo-stat row
-  if (item.sockets != null) {
-    baseStats.push({
-      stat_id: StatId.Socket, // use a unique negative ID to avoid conflicts
-      name: 'Sockets',
-      value: item.sockets,
-      range: { min: item.sockets, max: item.sockets },
-    });
-  }
-
-  if (item.isEthereal) {
-    baseStats.push({
-      stat_id: StatId.Ethereal, // use a unique negative ID to avoid conflicts
-      name: 'Ethereal',
-    });
-  }
-
-  // Apply name-based remapping first (e.g., "to Strength" -> stat_id 0)
-  // This must happen before combining attributes so the combination can find the remapped stats
-  let combinedStats = (item.stats || []).map((stat: Stat) => {
-    if (stat.name in statRemapByName) {
-      return { ...stat, ...statRemapByName[stat.name] };
-    }
-    return stat;
-  });
-
-  // Combine enhanced damage stats before processing
-  combinedStats = combineEnhancedDamageStats(combinedStats, item.type);
-  // Combine attribute stats if applicable
-  combinedStats = combineAttributeStats(combinedStats);
-  // Combine resistance stats if applicable
-  combinedStats = combineResistanceStats(combinedStats);
-
-  return [...combinedStats, ...baseStats]
-    .sort((a: Stat, b: Stat) => {
-      const pa = PRIORITY_STATS.includes(a.stat_id) ? 0 : 1;
-      const pb = PRIORITY_STATS.includes(b.stat_id) ? 0 : 1;
-      return pa - pb; // priority first, others after
-    })
-    .map((stat: Stat) => {
-      if (stat.stat_id in statRemap) {
-        return statRemap[stat.stat_id];
-      }
-      // Note: statRemapByName is already applied earlier, before combining attributes
-      // But we still check here in case there are other remappings needed
-      if (stat.name in statRemapByName) {
-        return { ...stat, ...statRemapByName[stat.name] };
-      }
-      if ('skill' in stat && stat.skill) {
-        return { ...stat, name: stat.skill }; // use skill name as display name
-      }
-      return stat;
-    })
-    .filter((stat) => {
-      // Filter out stats by ID
-      if (STRIP_STATS.includes(stat.stat_id)) return false;
-      // Filter out stats with "an evil force" in the name
-      if (stat.name && stat.name.toLowerCase().includes('an evil force')) return false;
-      return true;
-    });
+  return [
+    { $elemMatch: { name: { $in: MIN_DAMAGE_MODS }, ...(minBounds && { 'values.0': minBounds }) } },
+    { $elemMatch: { name: { $in: MAX_DAMAGE_MODS }, ...(maxBounds && { 'values.0': maxBounds }) } },
+  ];
 }

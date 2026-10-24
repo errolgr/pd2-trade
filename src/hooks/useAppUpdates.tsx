@@ -4,6 +4,13 @@ import { useUpdater } from './useUpdater';
 import { useOptions } from './useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 import { showToast } from '@/overlay';
+import {
+  isManualUpdateRequired,
+  manualUpdateToast,
+  markManualUpdateRequired,
+  requiresManualUpdate,
+} from '@/lib/manual-update';
+import { isNetworkError } from '@/lib/network-errors';
 
 // Track update state globally to prevent duplicate notifications
 let hasNotified = false;
@@ -40,6 +47,8 @@ export const useAppUpdates = () => {
         return;
       }
 
+      // One attempt per session, success or not: this effect re-runs on re-renders, and re-arming it after a failure
+      // retried (and re-reported) the same failure every time. The periodic check below keeps notifying.
       try {
         isProcessingRef.current = true;
         hasAutoDownloadedRef.current = true;
@@ -49,18 +58,30 @@ export const useAppUpdates = () => {
         } catch (error) {
           // GitHub unreachable / bad release JSON is a network condition, not an app bug
           console.warn('Error checking for updates:', error);
-          hasAutoDownloadedRef.current = false;
           return;
         }
 
         if (update?.available) {
           // Auto-download on startup; download/install/relaunch failures are real bugs, keep reporting them
-          await downloadUpdate(update);
+          try {
+            await downloadUpdate(update);
+          } catch (error) {
+            if (isNetworkError(error)) {
+              // Offline or GitHub refused/broke off the download: the periodic check still offers the update
+              console.warn('Could not download update:', error);
+              return;
+            }
+            if (!requiresManualUpdate(error)) throw error;
+            // Expected for Linux deb/rpm installs: point the user at the release page once; no retry, no error report
+            console.warn('Update must be installed manually:', error);
+            markManualUpdateRequired();
+            hasNotified = true;
+            notifiedVersion = update.version;
+            showToast(manualUpdateToast(update.version));
+          }
         }
       } catch (error) {
         console.error('Error auto-downloading update:', error);
-        // Reset flag on error so periodic checks can still notify
-        hasAutoDownloadedRef.current = false;
       } finally {
         isProcessingRef.current = false;
       }
@@ -95,17 +116,19 @@ export const useAppUpdates = () => {
             hasNotified = true;
             notifiedVersion = update.version;
 
-            const updateToastPayload: CustomToastPayload = {
-              title: 'PD2 Trader - Update Available',
-              description: `Version ${update.version} is available. Click to download and restart.`,
-              action: {
-                label: 'Download & Restart',
-                type: ToastActionType.UPDATE_AVAILABLE,
-                data: {
-                  version: update.version,
-                },
-              },
-            };
+            const updateToastPayload: CustomToastPayload = isManualUpdateRequired()
+              ? manualUpdateToast(update.version)
+              : {
+                  title: 'PD2 Trader - Update Available',
+                  description: `Version ${update.version} is available. Click to download and restart.`,
+                  action: {
+                    label: 'Download & Restart',
+                    type: ToastActionType.UPDATE_AVAILABLE,
+                    data: {
+                      version: update.version,
+                    },
+                  },
+                };
             showToast(updateToastPayload);
           }
         } else {

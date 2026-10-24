@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { usePd2Website } from './pd2website/usePD2Website';
 import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
@@ -135,141 +136,125 @@ export const useSocketNotifications = ({
       return;
     }
 
-    let unlisten: (() => void) | undefined;
+    return holdListener(
+      listen<WhisperEvent>('whisper-received', async (event) => {
+        const whisper = event.payload;
 
-    const setupListener = async () => {
-      try {
-        const unlistenFn = await listen<WhisperEvent>('whisper-received', async (event) => {
-          const whisper = event.payload;
+        // Skip outgoing messages (messages sent by the user)
+        if (!whisper.isIncoming) {
+          return;
+        }
 
-          // Skip outgoing messages (messages sent by the user)
-          if (!whisper.isIncoming) {
-            return;
-          }
+        // Their chat thread (a whisper sender's thread id, see lib/chat-prefs) is muted
+        const threadId = whisperThreadId(personKey(whisper.from));
+        if (isThreadMuted([threadId])) return;
+        const reply = {
+          label: 'Reply',
+          type: ToastActionType.OPEN_CHAT_CONVERSATION,
+          data: { threadId },
+        };
 
-          // Their chat thread (a whisper sender's thread id, see lib/chat-prefs) is muted
-          const threadId = whisperThreadId(personKey(whisper.from));
-          if (isThreadMuted([threadId])) return;
-          const reply = {
-            label: 'Reply',
-            type: ToastActionType.OPEN_CHAT_CONVERSATION,
-            data: { threadId },
-          };
-
-          // Handle join messages separately
-          if (whisper.isJoin) {
-            // Only notify if join notifications are enabled and Diablo is not focused
-            const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
-            if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
-              // Play notification sound
-              const volume = settings?.whisperNotificationVolume ?? 70;
-              playNotificationSound(volume);
-
-              if (isToastEnabled(settings, 'joins')) {
-                const toastPayload: GenericToastPayload = {
-                  title: 'Player Joined',
-                  description: `${whisper.from} joined the game`,
-                  duration: 5000,
-                  variant: 'default',
-                };
-                showToast(toastPayload);
-              }
-            }
-            return; // Don't process join messages as regular whispers
-          }
-
-          // Normalize name (case-insensitive, ignore "*" prefix)
-          const normalizeName = (name: string) => name.toLowerCase().replace(/^\*/, '');
-          const whisperFromNormalized = normalizeName(whisper.from);
-
-          // Check if it's an announcement (default: ignore unless enabled)
-          const isAnnouncement = whisperFromNormalized === 'announcements';
-          if (isAnnouncement && !(settings?.whisperAnnouncementsEnabled ?? false)) {
-            return; // Skip announcements by default
-          }
-
-          // Check if player is in ignore list
-          const ignoreList = settings?.whisperIgnoreList || [];
-          const isIgnored = ignoreList.some((ignoredPlayer) => normalizeName(ignoredPlayer) === whisperFromNormalized);
-
-          if (isIgnored) {
-            return; // Skip ignored players
-          }
-
-          // Check if Diablo is focused
+        // Handle join messages separately
+        if (whisper.isJoin) {
+          // Only notify if join notifications are enabled and Diablo is not focused
           const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
-
-          // Determine if we should notify based on timing setting
-          const timing = settings?.whisperNotificationTiming || 'both';
-
-          // If timing is 'never', don't notify at all
-          if (timing === 'never') {
-            return;
-          }
-
-          const shouldNotifyByTiming =
-            timing === 'both' ||
-            (timing === 'in-game' && isDiabloFocused) ||
-            (timing === 'out-of-game' && !isDiabloFocused);
-
-          if (!shouldNotifyByTiming) {
-            return; // Don't notify based on timing setting
-          }
-
-          // Handle trade whispers
-          if (whisper.isTrade) {
-            const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
-            if (tradeEnabled) {
-              // Play notification sound
-              const volume = settings?.whisperNotificationVolume ?? 70;
-              playNotificationSound(volume);
-
-              // Show toast with item name only if Diablo is not focused
-              if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
-                showToast({
-                  title: 'Trade Whisper',
-                  description: `${whisper.from}: ${whisper.itemName}`,
-                  duration: 5000,
-                  action: reply,
-                });
-              }
-            }
-            return; // Trade whispers handled
-          }
-
-          // Handle general whispers (non-trade)
-          const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
-          if (generalEnabled) {
+          if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
             // Play notification sound
             const volume = settings?.whisperNotificationVolume ?? 70;
             playNotificationSound(volume);
 
-            // Show toast when tabbed out of Diablo
-            if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
+            if (isToastEnabled(settings, 'joins')) {
+              const toastPayload: GenericToastPayload = {
+                title: 'Player Joined',
+                description: `${whisper.from} joined the game`,
+                duration: 5000,
+                variant: 'default',
+              };
+              showToast(toastPayload);
+            }
+          }
+          return; // Don't process join messages as regular whispers
+        }
+
+        // Normalize name (case-insensitive, ignore "*" prefix)
+        const normalizeName = (name: string) => name.toLowerCase().replace(/^\*/, '');
+        const whisperFromNormalized = normalizeName(whisper.from);
+
+        // Check if it's an announcement (default: ignore unless enabled)
+        const isAnnouncement = whisperFromNormalized === 'announcements';
+        if (isAnnouncement && !(settings?.whisperAnnouncementsEnabled ?? false)) {
+          return; // Skip announcements by default
+        }
+
+        // Check if player is in ignore list
+        const ignoreList = settings?.whisperIgnoreList || [];
+        const isIgnored = ignoreList.some((ignoredPlayer) => normalizeName(ignoredPlayer) === whisperFromNormalized);
+
+        if (isIgnored) {
+          return; // Skip ignored players
+        }
+
+        // Check if Diablo is focused
+        const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
+
+        // Determine if we should notify based on timing setting
+        const timing = settings?.whisperNotificationTiming || 'both';
+
+        // If timing is 'never', don't notify at all
+        if (timing === 'never') {
+          return;
+        }
+
+        const shouldNotifyByTiming =
+          timing === 'both' ||
+          (timing === 'in-game' && isDiabloFocused) ||
+          (timing === 'out-of-game' && !isDiabloFocused);
+
+        if (!shouldNotifyByTiming) {
+          return; // Don't notify based on timing setting
+        }
+
+        // Handle trade whispers
+        if (whisper.isTrade) {
+          const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
+          if (tradeEnabled) {
+            // Play notification sound
+            const volume = settings?.whisperNotificationVolume ?? 70;
+            playNotificationSound(volume);
+
+            // Show toast with item name only if Diablo is not focused
+            if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
               showToast({
-                title: `Whisper from ${whisper.from}`,
-                description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
+                title: 'Trade Whisper',
+                description: `${whisper.from}: ${whisper.itemName}`,
                 duration: 5000,
                 action: reply,
               });
             }
           }
-        });
+          return; // Trade whispers handled
+        }
 
-        unlisten = unlistenFn;
-      } catch (error) {
-        console.error('Failed to set up whisper listener:', error);
-      }
-    };
+        // Handle general whispers (non-trade)
+        const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
+        if (generalEnabled) {
+          // Play notification sound
+          const volume = settings?.whisperNotificationVolume ?? 70;
+          playNotificationSound(volume);
 
-    setupListener();
-
-    return () => {
-      if (unlisten) {
-        unlisten();
-        unlisten = undefined;
-      }
-    };
+          // Show toast when tabbed out of Diablo
+          if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
+            showToast({
+              title: `Whisper from ${whisper.from}`,
+              description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
+              duration: 5000,
+              action: reply,
+            });
+          }
+        }
+      }),
+      'whisper-received',
+    );
   }, [
     whisperNotificationsEnabled,
     settings?.whisperIgnoreList,

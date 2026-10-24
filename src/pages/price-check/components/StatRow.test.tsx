@@ -70,7 +70,7 @@ describe('StatRow', () => {
     const { container } = renderRow({ stat: FCR });
     expect(container.textContent).toContain('% Faster Cast Rate');
     expect(container.textContent).toContain('20');
-    expect(container.textContent).toContain('(10-20)');
+    expect(container.textContent).toContain('[10 - 20]');
   });
 
   it('omits the range for socket rows (sockets are a count, not a roll)', () => {

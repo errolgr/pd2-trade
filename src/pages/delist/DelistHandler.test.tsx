@@ -2,13 +2,16 @@
 import { cleanup, render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { showToast } from '@/overlay';
-import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import DelistHandler, { useDelist } from './DelistHandler';
 
 const overlay = vi.hoisted(() => ({ openPanel: vi.fn() }));
 vi.mock('@/overlay', () => ({ showToast: vi.fn(), useOverlay: () => overlay }));
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+vi.mock('@/hooks/pd2website/usePD2Website', () => ({
+  usePd2Website: vi.fn(),
+  NoAccountSelectedError: class NoAccountSelectedError extends Error {},
+}));
 // Query building has its own tests; any stash match yields a query here.
 vi.mock('@/pages/price-check/lib/tradeUrlBuilder', () => ({
   buildGetMarketListingByStashItemQuery: () => ({ 'item.hash': { $in: ['h1'] } }),
@@ -57,6 +60,24 @@ describe('DelistHandler / useDelist', () => {
     expect(deleteMarketListing).toHaveBeenCalledWith('L1');
     expect(showToast).toHaveBeenCalledWith({ title: 'Delist', description: 'Removed Item 1 listing.' });
     expect(overlay.openPanel).not.toHaveBeenCalled();
+  });
+
+  it('asks for an in-game account instead of reporting a failure when none is chosen', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(usePd2Website).mockReturnValue({
+      authData: { user: { _id: 'u1' } },
+      findMatchingItems: vi.fn(async () => {
+        throw new NoAccountSelectedError('Choose your in-game account');
+      }),
+    } as never);
+    render(<DelistHandler />);
+    await delistItem(RAW);
+    expect(showToast).toHaveBeenCalledWith({
+      title: 'Delist',
+      description: 'Choose your in-game account',
+      variant: 'error',
+    });
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('does nothing once DelistHandler is unmounted', async () => {

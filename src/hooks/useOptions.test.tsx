@@ -6,6 +6,7 @@ import { showToast } from '@/overlay';
 import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import { applyTheme, getTheme } from '@/lib/themes';
 import type * as Themes from '@/lib/themes';
+import * as Sentry from '@sentry/react';
 import { mkdir, writeTextFile } from '@/lib/browser-fs';
 import { OptionsProvider, useOptions } from './useOptions';
 
@@ -17,6 +18,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+vi.mock('@sentry/react', () => ({ captureException: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri, invoke: vi.fn() }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
@@ -31,6 +33,8 @@ vi.mock('@/lib/browser-fs', () => ({
   }),
   writeTextFile: vi.fn(async (path: string, content: string) => {
     if (state.failWrite) throw new Error('disk full');
+    if (!state.dirExists)
+      throw new Error('failed to open file: The system cannot find the path specified. (os error 3)');
     state.files.set(path, content);
   }),
 }));
@@ -234,6 +238,21 @@ describe('updateSettings', () => {
     await act(() => result.current.updateSettings({ hotkeyKey: 'k' }));
 
     expect(result.current.settings.hotkeyKey).toBe('d');
+    expect(Sentry.captureException).toHaveBeenCalledWith(new Error('Error updating settings'), {
+      extra: { cause: 'Error: disk full' },
+    });
+  });
+
+  it('recreates the config dir when it disappeared after load', async () => {
+    const { result } = await renderLoaded();
+    state.dirExists = false;
+    state.files.clear();
+
+    await act(() => result.current.updateSettings({ hotkeyKey: 'k' }));
+
+    expect(savedSettings()).toMatchObject({ hotkeyKey: 'k' });
+    expect(result.current.settings.hotkeyKey).toBe('k');
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
   it('writes onto defaults when the file vanished', async () => {

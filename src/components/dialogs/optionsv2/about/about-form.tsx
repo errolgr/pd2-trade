@@ -12,7 +12,9 @@ import { isTauri } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
-import { useOverlay } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
+import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
+import { isNetworkError } from '@/lib/network-errors';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 export function AboutForm() {
@@ -42,15 +44,33 @@ export function AboutForm() {
       setUpdateInfo(update);
       setLastChecked(new Date());
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      // Offline / GitHub unreachable: the user's network, not an app bug
+      if (isNetworkError(error)) console.warn('Failed to check for updates:', error);
+      else console.error('Failed to check for updates:', error);
     } finally {
       setIsChecking(false);
     }
   };
 
   const handleUpdateNow = async () => {
-    if (updateInfo?.available) {
+    if (!updateInfo?.available) return;
+    try {
       await downloadUpdate(updateInfo);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        console.warn('Could not download update:', error);
+        showToast({
+          title: 'PD2 Trader',
+          description: 'Failed to download update. Please try again later.',
+          variant: 'error',
+        });
+        return;
+      }
+      if (!requiresManualUpdate(error)) throw error;
+      // Linux deb/rpm installs can't update in place: point at the release page instead of reporting it
+      console.warn('Update must be installed manually:', error);
+      markManualUpdateRequired();
+      showToast(manualUpdateToast(updateInfo.version));
     }
   };
 

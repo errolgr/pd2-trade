@@ -6,7 +6,7 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import { AuthenticationError, handleApiResponse, NoAccountSelectedError } from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
@@ -32,12 +32,14 @@ export function useStashCache(
 
   // Helper: fetch stash from server and update cache (RESTful)
   const fetchAndCacheStash = useCallback(async () => {
-    if (!authData) throw new Error('Not authenticated');
+    // Signed out (or the session expired): expected user state; callers skip error reports for AuthenticationError
+    if (!authData) throw new AuthenticationError('Not authenticated');
     if (!settings) throw new Error('Settings not found!');
 
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const account = settings.account;
+    if (!account?.trim()) throw new NoAccountSelectedError();
 
     const params = {
       account,

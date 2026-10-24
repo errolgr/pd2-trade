@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import { showToast } from '@/overlay';
 import { useInView } from 'react-intersection-observer';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import {
+  AccountMismatchError,
+  AuthenticationError,
+  NoAccountSelectedError,
+  usePd2Website,
+} from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -21,7 +26,8 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AuthenticationError extends Error {}
   class AccountMismatchError extends Error {}
-  return { usePd2Website: vi.fn(), AuthenticationError, AccountMismatchError };
+  class NoAccountSelectedError extends Error {}
+  return { usePd2Website: vi.fn(), AuthenticationError, AccountMismatchError, NoAccountSelectedError };
 });
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
@@ -235,6 +241,14 @@ describe('finding the item', () => {
     expect(screen.getByRole('alert').textContent).toContain('Session expired');
     expect(console.error).not.toHaveBeenCalled();
     expect(toasts()).toEqual([]);
+  });
+
+  it('asks for an in-game account without logging it as an app error', async () => {
+    api.findMatchingItems.mockRejectedValueOnce(new NoAccountSelectedError('Choose your in-game account'));
+    renderForm();
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('Choose your in-game account');
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it('does not search before the user is authenticated', async () => {

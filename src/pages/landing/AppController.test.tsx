@@ -354,4 +354,26 @@ describe('AppController chat watcher', () => {
     await mount();
     expect(invoked.filter((c) => c === 'start_chat_watcher')).toHaveLength(1);
   });
+
+  it.each([
+    [
+      'warns (no error report) when the chat log is missing from the Diablo II directory',
+      'Could not find or create chat log file. Please check your Diablo II Directory settings.',
+      'warn',
+    ],
+    ['still reports other watcher failures', 'Failed to watch chat log file: access denied', 'error'],
+  ] as const)('%s', async (_label, message, level) => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      invoked.push(cmd);
+      if (cmd === 'start_chat_watcher') throw message;
+      return undefined;
+    });
+    await mount();
+    await advance(0);
+
+    const reported = error.mock.calls.some((args) => args.includes(message));
+    const warned = vi.mocked(console.warn).mock.calls.some((args) => args.includes(message));
+    expect([reported, warned]).toEqual(level === 'error' ? [true, false] : [false, true]);
+  });
 });

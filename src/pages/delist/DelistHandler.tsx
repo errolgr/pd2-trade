@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { showToast, useOverlay } from '@/overlay';
@@ -118,6 +118,10 @@ const DelistHandler: React.FC = () => {
         openPanel('delist', { listings });
       }
     } catch (err) {
+      if (err instanceof NoAccountSelectedError) {
+        showToast({ title: 'Delist', description: err.message, variant: 'error' });
+        return;
+      }
       console.error('[DelistHandler] Error:', err);
       showToast({
         title: 'Delist',

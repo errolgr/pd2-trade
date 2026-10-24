@@ -18,6 +18,7 @@
     "clipboard-manager:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-write-image",
     "core:app:allow-default-window-icon",
     "app-exit:default",
     "fs:default",
@@ -73,7 +74,13 @@
           "path": "**"
         },
         {
+          "path": "$APPDATA"
+        },
+        {
           "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCONFIG"
         },
         {
           "path": "$APPCONFIG/**"

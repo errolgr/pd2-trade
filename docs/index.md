@@ -69,7 +69,10 @@ const { theme } = useData()
 
 #### Item Price Check
 
-Instantly check the value of your items in-game with a single hotkey.
+Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post.
+
+Every stat shows its roll range exactly like the PD2 tooltip with stat ranges on (e.g. `[25 - 50]`), and the min/max fill stays inside it. Damage pairs ("Adds 4-14 fire damage") are one row with separate min and max damage filters.
+
 <a href="https://i.imgur.com/8vSvw6F.png" target="_blank" rel="noopener noreferrer">
 <img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
@@ -108,6 +111,6 @@ Easily compare and trade runes with up-to-date exchange rates.
 
 #### Themes
 
-Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → Interface, applied instantly to every panel.
+Make the overlay your own: choose from 21 color themes (11 dark, 10 light) in Settings → Interface, applied instantly to every panel.
 
 Panels are opaque by default; the Window transparency slider in Settings → Interface lets the game show through their backgrounds (up to 90%).

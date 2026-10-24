@@ -31,6 +31,7 @@ import { isCrafted } from '@/components/rares/rares-format';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
+import { PublicProfileToggle } from '../net-worth/PublicProfileToggle';
 
 type WindowTab =
   | 'overview'
@@ -130,6 +131,7 @@ export function StashValueWindow() {
                     wealthRank={wealthRank}
                     loading={status === 'loading'}
                     onRefresh={() => takeSnapshot('manual')}
+                    token={token}
                   />
                 )}
 
@@ -299,6 +301,7 @@ function Header({
   wealthRank,
   loading,
   onRefresh,
+  token,
 }: {
   valuation: Valuation | null;
   sincePrevious: number | null;
@@ -307,6 +310,7 @@ function Header({
   wealthRank: string | null;
   loading: boolean;
   onRefresh: () => void;
+  token: string | null;
 }) {
   const deltas = useMemo(() => {
     if (!valuation) return [];
@@ -406,6 +410,11 @@ function Header({
           <span className="inline-flex items-center gap-1 rounded-full bg-warning/12 px-2 py-0.5 text-warning">
             <AlertTriangle className="size-3" />
             valued with ladder prices (no non-ladder market data)
+          </span>
+        )}
+        {token && (
+          <span className="ml-auto">
+            <PublicProfileToggle token={token} />
           </span>
         )}
       </div>

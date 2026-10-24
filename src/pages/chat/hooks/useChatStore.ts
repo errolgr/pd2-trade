@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import { CONVERSATION_PAGE_SIZE, MESSAGE_PAGE_SIZE, type SocialActions } from '@/hooks/pd2website/useSocialActions';
 import type { SubscribeSocket } from '@/hooks/pd2website/useSocket';
+import { isNetworkError } from '@/lib/network-errors';
 
 export type SendStatus = 'sending' | 'failed';
 
@@ -411,7 +412,9 @@ export function useChatStore({
         );
         return !!message;
       } catch (error) {
-        console.error('Failed to send message:', error);
+        // Offline / PD2 unreachable: the bubble shows the failure with Retry; nothing to report
+        if (isNetworkError(error)) console.warn('Failed to send message:', error);
+        else console.error('Failed to send message:', error);
         dispatch({ type: 'sendFailed', conversationId, clientId });
         return false;
       } finally {
