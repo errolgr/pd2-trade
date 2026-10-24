@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { AnimatedNumber } from '@/pages/currency/components/AnimatedNumber';
 import { deltaPillClass } from '@/pages/currency/lib/networth-format';
 import { formatHr, formatSignedHr } from './overlay';
+import { PublicProfileToggle } from './PublicProfileToggle';
 
 const HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SPARK_WIDTH = 320;
@@ -246,6 +247,7 @@ const NetWorthPanel: React.FC = () => {
                 </div>
               )}
             </div>
+            {token && <PublicProfileToggle token={token} />}
 
             {trackingEnabled ? (
               <>
