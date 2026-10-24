@@ -4,7 +4,11 @@
  */
 
 import { isTauri } from '@tauri-apps/api/core';
-import { readText as tauriReadText, writeText as tauriWriteText } from '@tauri-apps/plugin-clipboard-manager';
+import {
+  readText as tauriReadText,
+  writeImage as tauriWriteImage,
+  writeText as tauriWriteText,
+} from '@tauri-apps/plugin-clipboard-manager';
 
 /**
  * Read text from clipboard
@@ -51,4 +55,19 @@ export async function writeText(text: string): Promise<void> {
   } else {
     throw new Error('Clipboard API not available');
   }
+}
+
+/**
+ * Write a PNG image to the clipboard (paste into Discord, Reddit, etc.).
+ */
+export async function writePng(png: Blob): Promise<void> {
+  if (isTauri()) {
+    await tauriWriteImage(new Uint8Array(await png.arrayBuffer()));
+    return;
+  }
+
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    throw new Error('Clipboard API not available');
+  }
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
 }

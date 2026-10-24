@@ -69,7 +69,10 @@ const { theme } = useData()
 
 #### Item Price Check
 
-Instantly check the value of your items in-game with a single hotkey.
+Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post.
+
+Every stat shows its roll range exactly like the PD2 tooltip with stat ranges on (e.g. `[25 - 50]`), and the min/max fill stays inside it. Damage pairs ("Adds 4-14 fire damage") are one row with separate min and max damage filters.
+
 <a href="https://i.imgur.com/8vSvw6F.png" target="_blank" rel="noopener noreferrer">
 <img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>

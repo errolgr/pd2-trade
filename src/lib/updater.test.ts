@@ -11,6 +11,7 @@ import type { ISettings } from '@/hooks/useOptions';
 import { CustomToastPayload } from '@/common/types/Events';
 import { resetUpdateNotification, useAppUpdates } from '@/hooks/useAppUpdates';
 import { installUpdateAndRelaunch } from './updater';
+import { isManualUpdateRequired, resetManualUpdateRequired } from './manual-update';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
@@ -45,6 +46,7 @@ const fullDownload: DownloadEvent[] = [
 beforeEach(() => {
   calls = [];
   resetUpdateNotification();
+  resetManualUpdateRequired();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(toast.loading).mockReturnValue('download-toast');
@@ -131,5 +133,24 @@ describe('installUpdateAndRelaunch', () => {
 
     await advance(5 * 60 * 1000);
     expect(toastVersions()).toEqual(['1.2.0', '1.2.0']);
+  });
+});
+
+describe('installUpdateAndRelaunch on installs that cannot update in place', () => {
+  it('links the release page instead of reporting an error when the install hits os error 13', async () => {
+    vi.mocked(check).mockResolvedValue(
+      fakeUpdate(fullDownload, new Error('Permission denied (os error 13) at path "/usr/bin/tauri_current_appXeR7LQ"')),
+    );
+
+    expect(await installUpdateAndRelaunch()).toBe(false);
+
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith('Update must be installed manually:', expect.any(Error));
+    expect(toast.error).toHaveBeenCalledWith(
+      'Update must be installed manually',
+      expect.objectContaining({ action: expect.objectContaining({ label: 'Open Release Page' }) }),
+    );
+    expect(isManualUpdateRequired()).toBe(true);
+    expect(relaunch).not.toHaveBeenCalled();
   });
 });

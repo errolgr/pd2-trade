@@ -12,7 +12,8 @@ import { isTauri } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
-import { useOverlay } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
+import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 
 export function AboutForm() {
@@ -49,8 +50,15 @@ export function AboutForm() {
   };
 
   const handleUpdateNow = async () => {
-    if (updateInfo?.available) {
+    if (!updateInfo?.available) return;
+    try {
       await downloadUpdate(updateInfo);
+    } catch (error) {
+      if (!requiresManualUpdate(error)) throw error;
+      // Linux deb/rpm installs can't update in place: point at the release page instead of reporting it
+      console.warn('Update must be installed manually:', error);
+      markManualUpdateRequired();
+      showToast(manualUpdateToast(updateInfo.version));
     }
   };
 

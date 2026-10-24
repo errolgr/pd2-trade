@@ -15,7 +15,7 @@ import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { useOAuth } from '../useOAuth';
+import { showBannedToast, useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
 import { showToast, useOverlay } from '@/overlay';
@@ -250,8 +250,15 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         Authorization: `Bearer ${token}`,
       },
     });
+    if (response.status === 403) {
+      // Banned on pd2trader.com: sign out for good (re-signing in is refused too).
+      clearStashCacheRef.current?.();
+      await updateSettings({ pd2Token: undefined, pd2RefreshToken: undefined, pd2TokenExpiry: undefined });
+      showBannedToast();
+      return null;
+    }
     return await handleApiResponse(response, handleAuthenticationError);
-  }, [settings, handleAuthenticationError]);
+  }, [settings, handleAuthenticationError, updateSettings]);
 
   // Authenticate when pd2Token changes
   useEffect(() => {

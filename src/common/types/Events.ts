@@ -4,6 +4,8 @@ export enum ToastActionType {
   OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
   /** data: MarketPanelPayload (e.g. a saved search's alert: { savedSearchId, focusListingId }). */
   OPEN_MARKET_PANEL = 'OPEN_MARKET_PANEL',
+  /** Opens the GitHub release page: installs that can't update themselves (Linux deb/rpm). */
+  OPEN_RELEASE_PAGE = 'OPEN_RELEASE_PAGE',
 }
 
 export interface CustomToastPayload {

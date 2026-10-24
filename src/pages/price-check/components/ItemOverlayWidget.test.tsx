@@ -390,8 +390,9 @@ describe('ItemOverlayWidget stat selection', () => {
     expect(screen.queryByText(/selected/)).toBeNull();
 
     fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    // Rings only roll a fixed 10% FCR, so PD2 draws no range and the fill is value ± 5%.
     expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('19');
-    expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('20');
+    expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('21');
     expect(screen.getByText('1 selected')).not.toBeNull();
 
     fireEvent.click(screen.getByText('Clear'));

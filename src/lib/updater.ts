@@ -3,6 +3,13 @@ import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';
 import { resetUpdateNotification } from '@/hooks/useAppUpdates';
+import { openUrl } from '@/lib/browser-opener';
+import {
+  MANUAL_UPDATE_DESCRIPTION,
+  RELEASE_PAGE_URL,
+  markManualUpdateRequired,
+  requiresManualUpdate,
+} from '@/lib/manual-update';
 
 // "Download & Restart" action: install the pending update (if any) and restart the app.
 // Resolves false when the install failed (the app keeps running); windows without a Toaster use it for feedback.
@@ -51,6 +58,18 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
     await relaunch();
     return true;
   } catch (error) {
+    if (requiresManualUpdate(error)) {
+      // Expected for Linux deb/rpm installs: retrying can't help, so link the release page instead of reporting it
+      console.warn('Update must be installed manually:', error);
+      markManualUpdateRequired();
+      toast.error('Update must be installed manually', {
+        description: MANUAL_UPDATE_DESCRIPTION,
+        duration: Infinity,
+        position: 'bottom-right',
+        action: { label: 'Open Release Page', onClick: () => void openUrl(RELEASE_PAGE_URL) },
+      });
+      return false;
+    }
     console.error('Failed to download/install update:', error);
     toast.error('Failed to download update. Please try again later.', {
       position: 'bottom-right',

@@ -1,345 +1,35 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Stat } from '../lib/interfaces';
-import { StatId, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from '../lib/stat-mappings';
-import { getStatKey, getTypeFromBaseType } from '../lib/utils';
+import type { Range, Stat, StatFilterInput } from '../lib/interfaces';
+import { StatId } from '../lib/stat-mappings';
+import { getStatKey } from '../lib/utils';
+import { buildStatRows, isItemCorruptable } from '../lib/stat-rows';
 import { useOptions } from '@/hooks/useOptions';
 
-/**
- * List of base type labels that cannot be corrupted (special cases)
- */
-const NON_CORRUPTABLE_TYPE_LABELS = new Set(['Rune', 'Gem', 'Charm', 'Map Orb']);
-
-/**
- * Whitelist of type codes that CAN be corrupted
- */
-const CORRUPTABLE_TYPE_CODES = new Set([
-  '2hcs',
-  'abow',
-  'ajav',
-  'aspe',
-  'tors',
-  'axe',
-  'phlm',
-  'bels',
-  'belt',
-  'boot',
-  'bow',
-  'bowq',
-  'circ',
-  'club',
-  'xbow',
-  'xboq',
-  'knif',
-  'pelt',
-  'h2h',
-  'h2h2',
-  'glov',
-  'hamm',
-  'helm',
-  'jave',
-  'mace',
-  't1m',
-  't2m',
-  't3m',
-  't4m',
-  't5m',
-  'ashd',
-  'pole',
-  'scep',
-  'sc9',
-  'shie',
-  'head',
-  'orb',
-  'spea',
-  'staf',
-  'swor',
-  'taxe',
-  'tkni',
-  'wand',
-  'rin',
-  'amu',
-]);
-
-/**
- * Checks if an item is corruptable based on its base type
- * An item is corruptable if its type code IS in the corruptable list
- */
-function isItemCorruptable(item: any): boolean {
-  if (!item.type) return false;
-
-  // Check special type labels first (exact match)
-  if (NON_CORRUPTABLE_TYPE_LABELS.has(item.type)) {
-    return false;
-  }
-
-  // Check if the item type ends with any of the non-corruptable labels (for cases like "Grand Charm")
-  const itemTypeLower = item.type.toLowerCase();
-  for (const label of NON_CORRUPTABLE_TYPE_LABELS) {
-    const labelLower = label.toLowerCase();
-    // Check if the type ends with the label (e.g., "Grand Charm" ends with "Charm")
-    if (itemTypeLower === labelLower || itemTypeLower.endsWith(' ' + labelLower)) {
-      return false;
-    }
-  }
-
-  // Get the type code from the base type
-  const typeInfo = getTypeFromBaseType(item.type, false);
-  if (!typeInfo) return false; // If we can't determine the type, assume it's NOT corruptable (safer default)
-
-  // Check if the type code IS in the corruptable list
-  const typeCode = typeof typeInfo.type === 'string' ? typeInfo.type : null;
-  if (typeCode && CORRUPTABLE_TYPE_CODES.has(typeCode)) {
-    return true;
-  }
-
-  return false;
-}
-
 type MarginFn = (value: number) => number;
-
-const defaultMarginFn: MarginFn = (value) => Math.ceil(value * 0.05);
-
-/**
- * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
- * into a single "Enhanced Damage" stat (stat_id 998)
- */
-function combineEnhancedDamageStats(stats: Stat[], itemType?: string, getMargin: MarginFn = defaultMarginFn): Stat[] {
-  const minDamageStat = stats.find((s) => s.stat_id === 18); // item_mindamage_percent
-  const maxDamageStat = stats.find((s) => s.stat_id === 17); // item_maxdamage_percent
-  const existingEnhancedDamageStat = stats.find((s) => s.stat_id === 998);
-
-  // Filter out stats 17, 18, and any existing 998 to avoid duplicates
-  const filteredStats = stats.filter((s) => s.stat_id !== 17 && s.stat_id !== 18 && s.stat_id !== 998);
-
-  // Helper function to apply range margin
-  const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
-    if (!value) return range;
-    const margin = getMargin(value);
-    return {
-      min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
-      max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
-    };
-  };
-
-  // For jewels, enhanced damage is always 5-40%
-  const isJewel = itemType === 'Jewel';
-  const jewelRange = isJewel ? { min: 5, max: 40 } : undefined;
-
-  // If both min and max damage stats exist, combine them
-  if (minDamageStat && maxDamageStat) {
-    const combinedValue = maxDamageStat.value ?? minDamageStat.value ?? 0;
-    const combinedRange = jewelRange ?? {
-      min: minDamageStat.range?.min ?? minDamageStat.value ?? 0,
-      max: maxDamageStat.range?.max ?? maxDamageStat.value ?? 0,
-    };
-    const isCorrupted = minDamageStat.corrupted || maxDamageStat.corrupted;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: combinedValue,
-      range: isJewel ? combinedRange : applyRangeMargin(combinedValue, combinedRange),
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If only min damage exists, convert it to the combined stat
-  if (minDamageStat) {
-    const range = jewelRange ?? minDamageStat.range;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: minDamageStat.value,
-      range: isJewel ? range : applyRangeMargin(minDamageStat.value, range),
-      ...(minDamageStat.corrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If only max damage exists, convert it to the combined stat
-  if (maxDamageStat) {
-    const range = jewelRange ?? maxDamageStat.range;
-    const combinedStat: Stat = {
-      stat_id: 998,
-      name: '% Enhanced Damage',
-      value: maxDamageStat.value,
-      range: isJewel ? range : applyRangeMargin(maxDamageStat.value, range),
-      ...(maxDamageStat.corrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If no 17/18 stats but existing 998 exists, keep it (but update range if jewel)
-  if (existingEnhancedDamageStat) {
-    if (isJewel && existingEnhancedDamageStat.stat_id === 998) {
-      const updatedStat: Stat = {
-        ...existingEnhancedDamageStat,
-        range: jewelRange,
-      };
-      return [...filteredStats, updatedStat];
-    }
-    return [...filteredStats, existingEnhancedDamageStat];
-  }
-
-  return filteredStats;
-}
-
-/**
- * Combines fire, lightning, cold, and poison resist stats (stat_ids 39, 41, 43, 45)
- * into a single "All Resistances" stat (stat_id 999) when they all have the same value
- */
-function combineResistanceStats(stats: Stat[], getMargin: MarginFn = defaultMarginFn): Stat[] {
-  const fireResist = stats.find((s) => s.stat_id === 39); // fireresist
-  const lightResist = stats.find((s) => s.stat_id === 41); // lightresist
-  const coldResist = stats.find((s) => s.stat_id === 43); // coldresist
-  const poisonResist = stats.find((s) => s.stat_id === 45); // poisonresist
-  const existingAllResistStat = stats.find((s) => s.stat_id === 999);
-
-  // Check if all four resistance stats exist and have the same value
-  const allResistsExist = fireResist && lightResist && coldResist && poisonResist;
-  const allSameValue =
-    allResistsExist &&
-    fireResist.value === lightResist.value &&
-    lightResist.value === coldResist.value &&
-    coldResist.value === poisonResist.value;
-
-  // Helper function to apply range margin
-  const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
-    if (!value) return range;
-    const margin = getMargin(value);
-    return {
-      min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
-      max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
-    };
-  };
-
-  // If all four resistances exist and have the same value, combine them
-  if (allSameValue && fireResist) {
-    // Filter out individual resistance stats and existing 999 to avoid duplicates
-    const filteredStats = stats.filter(
-      (s) => s.stat_id !== 39 && s.stat_id !== 41 && s.stat_id !== 43 && s.stat_id !== 45 && s.stat_id !== 999,
-    );
-
-    const combinedValue = fireResist.value;
-    // Combine ranges: use the minimum of all mins and maximum of all maxes
-    const combinedRange = {
-      min: Math.min(
-        fireResist.range?.min ?? fireResist.value ?? 0,
-        lightResist!.range?.min ?? lightResist!.value ?? 0,
-        coldResist!.range?.min ?? coldResist!.value ?? 0,
-        poisonResist!.range?.min ?? poisonResist!.value ?? 0,
-      ),
-      max: Math.max(
-        fireResist.range?.max ?? fireResist.value ?? 0,
-        lightResist!.range?.max ?? lightResist!.value ?? 0,
-        coldResist!.range?.max ?? coldResist!.value ?? 0,
-        poisonResist!.range?.max ?? poisonResist!.value ?? 0,
-      ),
-    };
-    const isCorrupted =
-      fireResist.corrupted || lightResist!.corrupted || coldResist!.corrupted || poisonResist!.corrupted;
-    const combinedStat: Stat = {
-      stat_id: 999,
-      name: 'All Resistances',
-      value: combinedValue,
-      range: applyRangeMargin(combinedValue, combinedRange),
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If values are not the same, keep individual stats as normal
-  // Only filter out existing 999 if it exists (to avoid duplicates)
-  if (existingAllResistStat) {
-    return stats.filter((s) => s.stat_id !== 999);
-  }
-
-  // Return stats as-is if no combination needed and no existing 999
-  return stats;
-}
-
-/**
- * Combines strength, energy, dexterity, and vitality stats (stat_ids 0, 1, 2, 3)
- * into a single "All Attributes" stat (stat_id 1002) when they all have the same value
- */
-function combineAttributeStats(stats: Stat[], getMargin: MarginFn = defaultMarginFn): Stat[] {
-  const strengthStat = stats.find((s) => s.stat_id === 0); // strength
-  const energyStat = stats.find((s) => s.stat_id === 1); // energy
-  const dexterityStat = stats.find((s) => s.stat_id === 2); // dexterity
-  const vitalityStat = stats.find((s) => s.stat_id === 3); // vitality
-  const existingAllAttributesStat = stats.find((s) => s.stat_id === StatId.AllAttributes);
-
-  // Check if all four attribute stats exist and have the same value
-  const allAttributesExist = strengthStat && energyStat && dexterityStat && vitalityStat;
-  const allSameValue =
-    allAttributesExist &&
-    strengthStat.value === energyStat.value &&
-    energyStat.value === dexterityStat.value &&
-    dexterityStat.value === vitalityStat.value;
-
-  // Helper function to apply range margin
-  const applyRangeMargin = (value: number | undefined, range: { min?: number; max?: number } | undefined) => {
-    if (!value) return range;
-    const margin = getMargin(value);
-    return {
-      min: range?.min !== undefined ? Math.max(value - margin, range.min) : value - margin,
-      max: range?.max !== undefined ? Math.min(value + margin, range.max) : value + margin,
-    };
-  };
-
-  // If all four attributes exist and have the same value, combine them
-  if (allSameValue && strengthStat) {
-    // Filter out individual attribute stats and existing 1002 to avoid duplicates
-    const filteredStats = stats.filter(
-      (s) =>
-        s.stat_id !== 0 && s.stat_id !== 1 && s.stat_id !== 2 && s.stat_id !== 3 && s.stat_id !== StatId.AllAttributes,
-    );
-
-    const combinedValue = strengthStat.value;
-    // Combine ranges: use the minimum of all mins and maximum of all maxes
-    const combinedRange = {
-      min: Math.min(
-        strengthStat.range?.min ?? strengthStat.value ?? 0,
-        energyStat!.range?.min ?? energyStat!.value ?? 0,
-        dexterityStat!.range?.min ?? dexterityStat!.value ?? 0,
-        vitalityStat!.range?.min ?? vitalityStat!.value ?? 0,
-      ),
-      max: Math.max(
-        strengthStat.range?.max ?? strengthStat.value ?? 0,
-        energyStat!.range?.max ?? energyStat!.value ?? 0,
-        dexterityStat!.range?.max ?? dexterityStat!.value ?? 0,
-        vitalityStat!.range?.max ?? vitalityStat!.value ?? 0,
-      ),
-    };
-    const isCorrupted =
-      strengthStat.corrupted || energyStat!.corrupted || dexterityStat!.corrupted || vitalityStat!.corrupted;
-    const combinedStat: Stat = {
-      stat_id: StatId.AllAttributes,
-      name: 'All Attributes',
-      value: combinedValue,
-      range: applyRangeMargin(combinedValue, combinedRange),
-      ...(isCorrupted && { corrupted: true }),
-    };
-    return [...filteredStats, combinedStat];
-  }
-
-  // If values are not the same, keep individual stats as normal
-  // Only filter out existing 1002 if it exists (to avoid duplicates)
-  if (existingAllAttributesStat) {
-    return stats.filter((s) => s.stat_id !== StatId.AllAttributes);
-  }
-
-  // Return stats as-is if no combination needed and no existing 1002
-  return stats;
-}
 
 const corruptedFilterToState = (filter: string | undefined): number =>
   filter === 'corrupted' ? 1 : filter === 'non-corrupted' ? 2 : 0;
 
+/**
+ * value ± margin, kept inside the range PD2 shows. Per-level ranges are per character level, and a value outside
+ * the range (stacked or corrupted stats) can't be clamped by it.
+ */
+function fillAround(v: number, margin: number, range: Range | undefined): [number, number] {
+  let min = v - margin;
+  let max = v + margin;
+  if (range && !range.perLevel && range.min !== undefined && range.max !== undefined && v >= range.min && v <= range.max) {
+    min = Math.max(min, range.min);
+    max = Math.min(max, range.max);
+  }
+  return [min, max];
+}
+
+export type StatFilterField = keyof StatFilterInput;
+
 export function useStatSelection(item: any) {
   const { settings } = useOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<Record<string, { value?: string; min?: string; max?: string }>>({});
+  const [filters, setFilters] = useState<Record<string, StatFilterInput>>({});
 
   // The corrupted checkbox is only shown when isItemCorruptable() is true (the same
   // gate that injects the Corrupted stat row); applying a corrupted filter to a
@@ -370,86 +60,9 @@ export function useStatSelection(item: any) {
     return (value: number) => Math.ceil(value * (fillStatValue / 100));
   }, [settings?.fillStatValue, settings?.statFillMarginUnit]);
 
-  // Sort stats once with useMemo so it's cheap
-  const sortedStats = useMemo(() => {
-    const baseStats = [];
+  const sortedStats = useMemo(() => buildStatRows(item), [item]);
 
-    // Inject sockets as a pseudo-stat row
-    if (item.sockets != null) {
-      baseStats.push({
-        stat_id: StatId.Socket, // use a unique negative ID to avoid conflicts
-        name: 'Sockets',
-        value: item.sockets,
-        range: { min: item.sockets, max: item.sockets },
-      });
-    }
-
-    if (item.isEthereal) {
-      baseStats.push({
-        stat_id: StatId.Ethereal, // use a unique negative ID to avoid conflicts
-        name: 'Ethereal',
-      });
-    }
-
-    // Apply name-based remapping first (e.g., "to Strength" -> stat_id 0)
-    // This must happen before combining attributes so the combination can find the remapped stats
-    let combinedStats = (item.stats || []).map((stat: Stat) => {
-      if (stat.name in statRemapByName) {
-        return { ...stat, ...statRemapByName[stat.name] };
-      }
-      return stat;
-    });
-
-    // Inject corrupted stat for corruptable items if it doesn't already exist
-    const hasCorruptedStat = combinedStats.some((s) => s.stat_id === StatId.Corrupted);
-    if (isItemCorruptable(item) && !hasCorruptedStat) {
-      baseStats.push({
-        stat_id: StatId.Corrupted,
-        name: 'Corrupted',
-        // Mark as injected so we can style it differently
-        _injected: true,
-      });
-    }
-
-    // Combine enhanced damage stats before processing
-    combinedStats = combineEnhancedDamageStats(combinedStats, item.type, getMargin);
-    // Combine attribute stats if applicable
-    combinedStats = combineAttributeStats(combinedStats, getMargin);
-    // Combine resistance stats if applicable
-    combinedStats = combineResistanceStats(combinedStats, getMargin);
-
-    return [...combinedStats, ...baseStats]
-      .sort((a: Stat, b: Stat) => {
-        const pa = PRIORITY_STATS.includes(a.stat_id) ? 0 : 1;
-        const pb = PRIORITY_STATS.includes(b.stat_id) ? 0 : 1;
-        return pa - pb; // priority first, others after
-      })
-      .map((stat: Stat) => {
-        if (stat.stat_id in statRemap) {
-          // Preserve all properties from original stat (including custom ones like _injected) when remapping
-          // But ensure the remapped name takes precedence to strip color codes
-          return { ...stat, ...statRemap[stat.stat_id], name: statRemap[stat.stat_id].name };
-        }
-        // Note: statRemapByName is already applied earlier, before combining attributes
-        // But we still check here in case there are other remappings needed
-        if (stat.name in statRemapByName) {
-          return { ...stat, ...statRemapByName[stat.name] };
-        }
-        if ('skill' in stat && stat.skill) {
-          return { ...stat, name: stat.skill }; // use skill name as display name
-        }
-        return stat;
-      })
-      .filter((stat) => {
-        // Filter out stats by ID
-        if (STRIP_STATS.includes(stat.stat_id)) return false;
-        // Filter out stats with "an evil force" in the name
-        if (stat.name && stat.name.toLowerCase().includes('an evil force')) return false;
-        return true;
-      });
-  }, [item.stats, item.sockets, item.type, item.isEthereal, getMargin]);
-
-  const updateFilter = (key: string, field: 'value' | 'min' | 'max', val: string) =>
+  const updateFilter = (key: string, field: StatFilterField, val: string) =>
     setFilters((f) => ({
       ...f,
       [key]: { ...f[key], [field]: val },
@@ -492,29 +105,18 @@ export function useStatSelection(item: any) {
         next.add(key);
         setFilters((f) => {
           const v = stat.value ?? 0;
-
-          let minStr = '';
-          let maxStr = '';
-
-          if (stat.range) {
-            const margin = getMargin(v);
-            const min = Math.max(v - margin, stat.range.min);
-            const max = Math.min(v + margin, stat.range.max);
-            minStr = String(min);
-            maxStr = String(max);
-          } else {
-            const margin = getMargin(v);
-            minStr = String(v - margin);
-            maxStr = String(v + margin);
-          }
-
-          return {
-            ...f,
-            [key]: {
-              min: leaveMinEmpty ? '' : minStr,
-              max: leaveMaxEmpty ? '' : maxStr,
-            },
+          const [min, max] = fillAround(v, getMargin(v), stat.range);
+          const input: StatFilterInput = {
+            min: leaveMinEmpty ? '' : String(min),
+            max: leaveMaxEmpty ? '' : String(max),
           };
+          // Damage pair rows: a second pair around the max damage.
+          if (stat.maxValue !== undefined) {
+            const [maxMin, maxMax] = fillAround(stat.maxValue, getMargin(stat.maxValue), stat.maxRange);
+            input.maxMin = leaveMinEmpty ? '' : String(maxMin);
+            input.maxMax = leaveMaxEmpty ? '' : String(maxMax);
+          }
+          return { ...f, [key]: input };
         });
       }
       return next;

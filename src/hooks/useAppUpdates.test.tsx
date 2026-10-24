@@ -8,6 +8,7 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
+import { manualUpdateToast, resetManualUpdateRequired } from '@/lib/manual-update';
 import { resetUpdateNotification, useAppUpdates } from './useAppUpdates';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
@@ -54,6 +55,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   calls = [];
   resetUpdateNotification();
+  resetManualUpdateRequired();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(check).mockResolvedValue(fakeUpdate('1.2.0'));
@@ -161,5 +163,56 @@ describe('useAppUpdates notifications', () => {
     vi.mocked(check).mockResolvedValue(fakeUpdate('1.2.0'));
     await advance(FIVE_MINUTES);
     expect(updateToasts().map((t) => t.action?.data?.version)).toEqual(['1.2.0']);
+  });
+});
+
+describe('useAppUpdates manual install (Linux deb/rpm)', () => {
+  // The updater plugin rejects with the Rust error string, not an Error
+  function failingUpdate(version: string, message: string): Update {
+    const downloadAndInstall = vi.fn(async (onEvent?: (event: DownloadEvent) => void) => {
+      onEvent?.({ event: 'Started', data: { contentLength: 100 } });
+      onEvent?.({ event: 'Progress', data: { chunkLength: 100 } });
+      onEvent?.({ event: 'Finished' });
+      throw message;
+    });
+    return { available: true, version, downloadAndInstall } as unknown as Update;
+  }
+
+  it.each([
+    [
+      'permission denied (deb/rpm in /usr/bin)',
+      'Brak dostępu (os error 13) at path "/usr/bin/tauri_current_appzFCbk7"',
+    ],
+    ['a deb install served the AppImage', 'invalid updater binary format'],
+  ])('links the release page once, without retrying or reporting, on %s', async (_label, message) => {
+    const update = failingUpdate('1.2.0', message);
+    vi.mocked(check).mockResolvedValue(update);
+    const { rerender } = renderAppUpdates({ autoUpdateEnabled: true });
+
+    await advance(2000);
+    // Re-renders re-run the auto-download effect; a failed install used to retry on every one
+    rerender();
+    await advance(2000);
+    await advance(2 * FIVE_MINUTES);
+
+    expect(update.downloadAndInstall).toHaveBeenCalledTimes(1);
+    expect(relaunch).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+    expect(updateToasts()).toEqual([manualUpdateToast('1.2.0')]);
+    expect(updateToasts()[0].action?.type).toBe(ToastActionType.OPEN_RELEASE_PAGE);
+
+    // A newer release keeps pointing at the release page instead of offering Download & Restart
+    vi.mocked(check).mockResolvedValue(failingUpdate('1.3.0', message));
+    await advance(FIVE_MINUTES);
+    expect(updateToasts()).toEqual([manualUpdateToast('1.2.0'), manualUpdateToast('1.3.0')]);
+  });
+
+  it('still reports other install failures', async () => {
+    vi.mocked(check).mockResolvedValue(failingUpdate('1.2.0', 'failed to unpack `PD2 Trader.exe`'));
+    renderAppUpdates({ autoUpdateEnabled: true });
+
+    await advance(2000);
+
+    expect(console.error).toHaveBeenCalledWith('Error auto-downloading update:', 'failed to unpack `PD2 Trader.exe`');
   });
 });

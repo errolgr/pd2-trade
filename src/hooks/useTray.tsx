@@ -3,11 +3,13 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
 import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
+import * as Sentry from '@sentry/react';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
 
@@ -85,34 +87,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
 
     // Listen for Diablo focus changes to register/unregister hotkey
-    let unlisten: (() => void) | null = null;
-    let cancelled = false;
-
-    listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
-      schedule(isFocused ? registerShortcut : unregisterShortcut);
-    })
-      .then((off) => {
-        if (cancelled) {
-          Promise.resolve()
-            .then(off)
-            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-        } else {
-          unlisten = off;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to listen for diablo-focus-changed event:', error);
-      });
+    const releaseFocusListener = holdListener(
+      listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
+        schedule(isFocused ? registerShortcut : unregisterShortcut);
+      }),
+      'diablo-focus-changed',
+    );
 
     return () => {
-      cancelled = true;
-      const off = unlisten;
-      unlisten = null;
-      if (off) {
-        Promise.resolve()
-          .then(off)
-          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-      }
+      releaseFocusListener();
       // Unregister shortcut on cleanup
       schedule(unregisterShortcut);
     };
@@ -143,11 +126,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               id: 'open-config',
               text: 'Open config location',
               action: async () => {
+                let configPath: string | undefined;
                 try {
-                  const configPath = await appConfigDir();
+                  configPath = await appConfigDir();
                   await openPath(configPath);
                 } catch (err) {
-                  console.error('Failed to open config location:', err);
+                  // Fixed message so every user's home path groups into one Sentry issue.
+                  Sentry.captureException(new Error('Failed to open config location'), {
+                    extra: { path: configPath, cause: String(err) },
+                  });
                 }
               },
             },

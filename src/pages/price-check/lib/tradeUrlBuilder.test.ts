@@ -187,7 +187,8 @@ describe('buildTradeUrl', () => {
   it('combines four equal attributes (incl. "to Strength" remapped by name) into all_attributes', () => {
     const item = makeItem({
       stats: [
-        { stat_id: 9999, name: 'to Strength', value: 5 },
+        // BH's Ctrl+C sends Strength without a stat_id
+        { name: 'to Strength', value: 5 } as Stat,
         { stat_id: 1, name: 'Energy', value: 5 },
         { stat_id: 2, name: 'Dexterity', value: 5 },
         { stat_id: 3, name: 'Vitality', value: 5 },
@@ -386,6 +387,40 @@ describe('buildGetMarketListingQuery', () => {
     expect(query(item, [key])['item.modifiers'].$all).toEqual([{ $elemMatch: { name, 'values.0': id } }]);
   });
 
+  it('searches a fire damage row on the market pair modifier: min damage in values.0, max in values.1', () => {
+    const item = makeItem({
+      stats: [
+        { stat_id: 48, name: 'to Minimum Fire Damage', value: 4 },
+        { stat_id: 49, name: 'to Maximum Fire Damage', value: 14 },
+      ],
+    });
+    const key = 'id:1003';
+    const filters = { [key]: { min: '3', max: '5', maxMin: '12', maxMax: '' } };
+    expect(query(item, [key], filters)['item.modifiers'].$all).toEqual([
+      {
+        $elemMatch: {
+          name: { $in: ['firedam', 'firemindam'] },
+          'values.0': { $gte: 3, $lte: 5 },
+          'values.1': { $gte: 12 },
+        },
+      },
+    ]);
+  });
+
+  it('searches a physical damage row as separate min and max damage modifiers', () => {
+    const item = makeItem({
+      stats: [
+        { stat_id: 21, name: 'to Minimum Damage', value: 10 },
+        { stat_id: 22, name: 'to Maximum Damage', value: 30 },
+      ],
+    });
+    const key = 'id:1008';
+    expect(query(item, [key], { [key]: { min: '8', maxMin: '25' } })['item.modifiers'].$all).toEqual([
+      { $elemMatch: { name: { $in: ['min_damage', 'mindamage', 'secondary_mindamage'] }, 'values.0': { $gte: 8 } } },
+      { $elemMatch: { name: { $in: ['max_damage', 'maxdamage', 'secondary_maxdamage'] }, 'values.0': { $gte: 25 } } },
+    ]);
+  });
+
   it('merges socket min and max into one socket_count range', () => {
     const q = query(makeItem({ sockets: 4 }), ['id:1000'], { 'id:1000': { min: '2', max: '4' } });
     expect(q['item.socket_count']).toEqual({ $gte: 2, $lte: 4 });
@@ -428,6 +463,13 @@ describe('buildGetMarketListingQuery', () => {
         $options: 'i',
       });
       expect(query(unique)['item.name'].$regex).toBe('tal rasha');
+    });
+
+    it('sends no name filter for a nameless item: PD2 answers an empty $regex with a 500', () => {
+      const q = query(makeItem({ quality: 'Inferior', name: undefined, type: 'Short Sword' }));
+      expect(q['item.quality.name']).toBe('Inferior');
+      expect(q).not.toHaveProperty(['item.name']);
+      expect(query(makeItem({ quality: 'Normal', isRuneword: true, name: '' }))).not.toHaveProperty(['item.name']);
     });
 
     it('parses $in category and base values into query objects', () => {
