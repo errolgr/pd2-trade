@@ -10,6 +10,8 @@ export const changeLog = {
     "🔧 Linux: .deb/.rpm installs that can't update themselves now link to the release page instead of failing over and over",
     '🔧 Chat messages and offer notifications come back after a PD2 outage instead of stopping until you restart',
     '🔧 Fixed price check failing with a server error for low quality (Inferior) items',
+    '🔧 Settings save again if the app config folder went missing while PD2 Trader was running',
+    '🔧 Listing or delisting with no in-game account chosen now tells you to pick one in Settings → Account',
   ],
   '0.10.0': [
     '🆕 In-game market browser (Ctrl+M): search the trade site without leaving the game, and Watch a search to get a popup when new listings match',

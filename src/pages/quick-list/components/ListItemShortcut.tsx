@@ -21,7 +21,12 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { usePd2Website, AccountMismatchError, AuthenticationError } from '@/hooks/pd2website/usePD2Website';
+import {
+  usePd2Website,
+  AccountMismatchError,
+  AuthenticationError,
+  NoAccountSelectedError,
+} from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
@@ -144,8 +149,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
-      // AccountMismatchError / AuthenticationError are expected user-state conditions, not app bugs
-      if (!(err instanceof AccountMismatchError) && !(err instanceof AuthenticationError)) {
+      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs
+      if (
+        !(err instanceof AccountMismatchError) &&
+        !(err instanceof AuthenticationError) &&
+        !(err instanceof NoAccountSelectedError)
+      ) {
         console.error(err instanceof Error ? err.message : 'Failed to find items');
       }
 

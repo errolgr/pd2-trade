@@ -6,7 +6,7 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import { AuthenticationError, handleApiResponse, NoAccountSelectedError } from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
@@ -38,6 +38,7 @@ export function useStashCache(
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const account = settings.account;
+    if (!account?.trim()) throw new NoAccountSelectedError();
 
     const params = {
       account,
