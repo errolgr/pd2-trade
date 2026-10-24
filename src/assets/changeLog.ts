@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.2': [
+    '🔧 Fixed "403 Forbidden" when making an offer from the market browser: sign out and back in once to allow offers',
     '🔧 Listing no longer says "Account Mismatch" (and drops queued listings) when PD2 briefly fails to load your stash',
   ],
   '0.10.1': [
