@@ -6,7 +6,13 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { AuthenticationError, handleApiResponse, NoAccountSelectedError } from './usePD2Website';
+import {
+  AccountMismatchError,
+  AuthenticationError,
+  handleApiResponse,
+  NoAccountSelectedError,
+  PD2ApiError,
+} from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
@@ -54,7 +60,38 @@ export function useStashCache(
       },
     });
     const onAuthError = onAuthErrorRef?.current || undefined;
-    const stashData: GameData | null = await handleApiResponse(response, onAuthError);
+    let stashData: GameData | null;
+    try {
+      stashData = await handleApiResponse(response, onAuthError);
+    } catch (error) {
+      // PD2 answers the same 404 "Page not found" for someone else's account and when its realm lookup fails
+      // (S14 launch). For an account linked to this login, ask /game/account: a 5xx (or no answer) there is
+      // the realm outage, so the stash 404 is transient; a 200 means the stash 404 is real.
+      const linked: string[] = authData.user?.game?.accounts ?? [];
+      if (!(error instanceof AccountMismatchError) || !linked.some((a) => a.toLowerCase() === account.toLowerCase())) {
+        throw error;
+      }
+      const realmDown = await tauriFetch(`https://api.projectdiablo2.com/game/account/${encodeURIComponent(account)}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${settings.pd2Token}` },
+      }).then(
+        (r) => r.status >= 500,
+        () => true,
+      );
+      if (realmDown) {
+        throw new PD2ApiError(
+          `PD2 couldn't load the stash for "${account}" right now. Try again in a minute.`,
+          404,
+          `/game/stash/${account}`,
+        );
+      }
+      const mode = `${is_hardcore ? 'hardcore' : 'softcore'} ${is_ladder ? 'ladder' : 'non-ladder'}`;
+      throw new AccountMismatchError(
+        `PD2 has no ${mode} stash for "${account}". Check the account and mode in Settings → Account.`,
+        404,
+        account,
+      );
+    }
     // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
     if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
     stashCache.current = { data: stashData, timestamp: Date.now() };

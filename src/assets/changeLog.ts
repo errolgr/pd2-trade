@@ -1,4 +1,12 @@
 export const changeLog = {
+  '0.10.2': [
+    '🆕 Public profile toggle in the Net Worth panel and Stash Value header: choose whether your net worth profile is public',
+    '🔧 Fixed class skill tab filters in the market browser (e.g. +2 Paladin Combat Skills) matching no listings or the wrong class',
+    '🔧 Fixed listings showing stale results because of backend caching',
+    '🔧 Clicking the stat picker after choosing a stat reopens the list instead of doing nothing',
+    '🔧 Fixed "403 Forbidden" when making an offer from the market browser: sign out and back in once to allow offers',
+    '🔧 Listing no longer says "Account Mismatch" (and drops queued listings) when PD2 briefly fails to load your stash',
+  ],
   '0.10.1': [
     '🆕 Classic Diablo II theme: dark carved stone, blood-red and gold, in the Diablo font (Settings → Interface)',
     '🆕 Copy image in price check: copies the item as a PD2 tooltip with its price to paste into Discord or trade posts',
