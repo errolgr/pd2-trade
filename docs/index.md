@@ -102,6 +102,10 @@ Instantly calculate the value of your stash (Ctrl+X): runes, currency, uniques a
 
 Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Turn it on under Settings → Net Worth, then pin it to a corner of the game or drag it anywhere on screen.
 
+#### Corrupted Zone Timer
+
+Know where to farm without leaving the game: a small in-game timer shows the zones corrupted in Hell games made right now (monster level 85, more density, more Worldstone Shards and Tier 1 maps) and a countdown to the next 15-minute rotation. Click it for the upcoming zones and their start times. A game keeps the zones it was made with, so make a new game after the switch. Turn it on under Settings → Interface, then pin it to a corner of the game or drag it anywhere on screen.
+
 #### Rune Exchange
 
 Easily compare and trade runes with up-to-date exchange rates.

@@ -44,6 +44,9 @@ vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p
 vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
 vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
 vi.mock('./pages/net-worth/NetWorthOverlayController', () => ({ default: () => <p>net-worth-controller</p> }));
+vi.mock('./pages/corrupted-zones/CorruptedZoneTimerController', () => ({
+  default: () => <p>zone-timer-controller</p>,
+}));
 vi.mock('./pages/dev/PrimitivesGallery', () => ({ default: () => <p>gallery</p> }));
 
 /** Loads main.tsx fresh at `path` (it renders on import), returning the Sentry options it registers. */
@@ -86,7 +89,9 @@ describe('main routing', () => {
       node = node!.querySelector(`:scope > [data-wrapper="${name}"]`);
       expect(node, name).not.toBeNull();
     }
-    expect(node!.textContent).toBe('error-handlerapp-controllerdelist-handlernet-worth-controlleroverlay-root');
+    expect(node!.textContent).toBe(
+      'error-handlerapp-controllerdelist-handlernet-worth-controllerzone-timer-controlleroverlay-root',
+    );
   });
 
   it.each(['/item', '/settings', '/toast', '/chat', '/nope'])(

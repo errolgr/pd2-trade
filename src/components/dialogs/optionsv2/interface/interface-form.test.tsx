@@ -7,6 +7,8 @@ import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { InterfaceForm } from './interface-form';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+// vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
+vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
 
 let store: OptionsStore;
 
@@ -17,9 +19,16 @@ function renderForm(settings: Partial<ISettings>, isLoading = false) {
 }
 
 const overlaySwitch = () => screen.getByRole('switch', { name: 'Chat Button Overlay' });
+const timerSwitch = () => screen.getByRole('switch', { name: 'Corrupted zone timer' });
+const timerPosition = () => screen.getByLabelText('Timer position') as HTMLSelectElement;
 
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
-const transparency = () => screen.getByRole('slider');
+const transparency = () => screen.getAllByRole('slider')[0];
+const TIMER_DEFAULTS = {
+  corruptedZoneTimerEnabled: false,
+  corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerOpacity: 90,
+};
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -48,7 +57,11 @@ describe('InterfaceForm', () => {
     fireEvent.click(overlaySwitch());
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
-    expect(store.updateSettings).toHaveBeenCalledWith({ chatButtonOverlayEnabled: false, windowTransparency: 0 });
+    expect(store.updateSettings).toHaveBeenCalledWith({
+      chatButtonOverlayEnabled: false,
+      windowTransparency: 0,
+      ...TIMER_DEFAULTS,
+    });
   });
 
   it('starts opaque when transparency was never set', () => {
@@ -73,6 +86,28 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
       chatButtonOverlayEnabled: true,
       windowTransparency: 90,
+      ...TIMER_DEFAULTS,
+    });
+  });
+
+  it('starts the corrupted zone timer off, top right', () => {
+    renderForm({});
+    expect(timerSwitch().getAttribute('aria-checked')).toBe('false');
+    expect(timerPosition().value).toBe('top-right');
+    expect(screen.getByText(/Timer opacity/).textContent).toContain('90%');
+  });
+
+  it('saves the corrupted zone timer toggle and position in one write', async () => {
+    renderForm({});
+    fireEvent.click(timerSwitch());
+    fireEvent.change(timerPosition(), { target: { value: 'bottom-left' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
+      chatButtonOverlayEnabled: true,
+      windowTransparency: 0,
+      corruptedZoneTimerEnabled: true,
+      corruptedZoneTimerAnchor: 'bottom-left',
+      corruptedZoneTimerOpacity: 90,
     });
   });
 

@@ -83,6 +83,9 @@ export interface ISettings {
   netWorthTickerOpacity?: number; // 0-100
   netWorthAutoSnapshotMinutes?: number; // 0 = off, otherwise >= 5
   netWorthToastThresholdHr?: number;
+  corruptedZoneTimerEnabled?: boolean; // Corrupted zone timer overlay (src/lib/corrupted-zones.ts)
+  corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
+  corruptedZoneTimerOpacity?: number; // 30-100
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
@@ -143,6 +146,9 @@ const DEFAULT_SETTINGS: ISettings = {
   netWorthTickerOpacity: 90,
   netWorthAutoSnapshotMinutes: 15,
   netWorthToastThresholdHr: 0.5,
+  corruptedZoneTimerEnabled: false,
+  corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerOpacity: 90,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',

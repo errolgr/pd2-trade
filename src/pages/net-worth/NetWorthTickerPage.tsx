@@ -5,7 +5,7 @@ import { MotionConfig } from 'framer-motion';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
-import { usePanel, useOverlay, type OverlayRect } from '@/overlay';
+import { usePanel, useOverlay } from '@/overlay';
 import { screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
@@ -19,13 +19,10 @@ import {
   tickerPosition,
 } from './overlay';
 import { useChatDockOffset } from '@/pages/chat/chat-dock';
+import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 
-/** Pointer travel (px) before a press on the ticker becomes a drag instead of a click. */
-const DRAG_THRESHOLD_PX = 4;
 /** Px between the ticker and the mini panel opened from it. */
 const PANEL_GAP = 6;
-
-const viewport = (): OverlayRect => ({ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight });
 
 /**
  * Overlay px of the old ticker window's saved top-left (`settings.netWorthTickerPosition`: physical screen px, or
@@ -58,10 +55,10 @@ const NetWorthTicker: React.FC = () => {
   const [now, setNow] = useState(() => Date.now());
   const anchor = settings.netWorthTickerAnchor ?? 'top-center';
 
-  // A press that travels DRAG_THRESHOLD_PX moves the panel; the click that follows is swallowed.
-  const pressRef = useRef<{ x: number; y: number; origin: OverlayRect } | null>(null);
-  const draggingRef = useRef(false);
-  const suppressClickRef = useRef(false);
+  // A finished drag switches the ticker to Custom; the panel layout keeps the dragged position
+  const drag = useDragToMove(rect, setRect, () => {
+    if (anchor !== 'custom') updateSettings({ netWorthTickerAnchor: 'custom' });
+  });
   // 'above-chat' follows the chat dock as it is dragged along the edge
   const dockOffset = useChatDockOffset();
 
@@ -103,7 +100,7 @@ const NetWorthTicker: React.FC = () => {
 
   // Keep the panel exactly the pill's size, at its anchor on the game or (custom) where it is, inside the overlay
   useLayoutEffect(() => {
-    if (!pillSize || draggingRef.current) return;
+    if (!pillSize || drag.dragging.current) return;
     if (anchor === 'custom' && migrationRef.current === 'unchecked') {
       migrationRef.current = 'done';
       if (legacyPosition && !loadPanelRect('netWorthTicker')) {
@@ -118,7 +115,7 @@ const NetWorthTicker: React.FC = () => {
     }
     if (anchor === 'custom' && migrationRef.current === 'running') return;
     const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect, dockOffset);
-    const next = { ...clampToArea({ ...origin, ...pillSize }, viewport()), ...pillSize };
+    const next = { ...clampToArea({ ...origin, ...pillSize }, overlayViewport()), ...pillSize };
     const current = rectRef.current;
     if (
       next.x !== current.x ||
@@ -128,41 +125,11 @@ const NetWorthTicker: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, gameRect, dockOffset, pillSize, setRect, legacyPosition, updateSettings, migrated]);
+  }, [anchor, gameRect, dockOffset, pillSize, setRect, legacyPosition, updateSettings, migrated, drag.dragging]);
 
-  const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    suppressClickRef.current = false;
-    pressRef.current = null;
-    if (event.button !== 0) return;
-    pressRef.current = { x: event.clientX, y: event.clientY, origin: rect };
-    // Keep receiving moves when a fast drag leaves the small pill before the threshold
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const onPointerMove = (event: React.PointerEvent) => {
-    const press = pressRef.current;
-    if (!press) return;
-    const dx = event.clientX - press.x;
-    const dy = event.clientY - press.y;
-    if (!draggingRef.current) {
-      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
-      draggingRef.current = true;
-      suppressClickRef.current = true;
-    }
-    setRect(clampToArea({ ...press.origin, x: press.origin.x + dx, y: press.origin.y + dy }, viewport()));
-  };
-  // A finished drag switches the ticker to Custom; the panel layout keeps the dragged position
-  const endPress = () => {
-    pressRef.current = null;
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    if (anchor !== 'custom') updateSettings({ netWorthTickerAnchor: 'custom' });
-  };
   const onClick = () => {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false;
-      return;
-    }
-    const placement = panelBesideTicker(rect, NET_WORTH_PANEL_SIZE, viewport(), PANEL_GAP);
+    if (drag.consumeDragClick()) return;
+    const placement = panelBesideTicker(rect, NET_WORTH_PANEL_SIZE, overlayViewport(), PANEL_GAP);
     togglePanel('netWorthPanel', undefined, { placement });
   };
 
@@ -193,10 +160,7 @@ const NetWorthTicker: React.FC = () => {
           ref={pillRef}
           type="button"
           onClick={onClick}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endPress}
-          onPointerCancel={endPress}
+          {...drag.handlers}
           style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
           className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
           title="Net worth — click for details, drag to move"

@@ -117,6 +117,7 @@ const DEFS = {
   netWorthTicker: def('netWorthTicker', { keyboard: 'never', keepMounted: true }),
   netWorthPanel: def('netWorthPanel'),
   market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
+  corruptedZoneTimer: def('corruptedZoneTimer', { keyboard: 'never' }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;
