@@ -1,5 +1,5 @@
 use tauri::webview::PageLoadEvent;
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 pub mod modules;
@@ -110,6 +110,17 @@ pub fn run() {
             main_window.open_devtools();
             Ok(())
         })
+        // Main runs the sign-in and tracks whether its window is open; tell it when the user closes it.
+        .on_window_event(|window, event| {
+            if window.label() == commands::SIGN_IN_LABEL && matches!(event, WindowEvent::Destroyed)
+            {
+                let _ = window.app_handle().emit_to(
+                    modules::config::WINDOW_CONFIG.labels.Main.as_str(),
+                    commands::SIGN_IN_CLOSED_EVENT,
+                    (),
+                );
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::get_diablo_rect,
             commands::press_key,
@@ -125,6 +136,8 @@ pub fn run() {
             commands::auto_detect_diablo2_directory,
             commands::open_oauth_url,
             commands::write_debug_logs,
+            commands::open_sign_in_window,
+            commands::close_sign_in_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

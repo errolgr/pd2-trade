@@ -20,6 +20,8 @@ import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayControll
 import { OverlayProvider, OverlayRoot } from './overlay';
 import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
+import { SignInWindowPage } from './pages/sign-in/SignInPage';
+import { SignInProvider } from './hooks/useSignIn';
 
 // Apply the cached theme before the first render (no flash of the default theme)
 initTheme();
@@ -95,45 +97,54 @@ const AppRoot: React.FC = () => (
   <DialogProvider>
     <OptionsProvider>
       <OverlayProvider defs={PANEL_DEFS}>
-        <TrayProvider>
-          <ItemsProvider>
-            <Pd2WebsiteProvider>
-              <WhisperHistoryProvider>
-                <NetWorthProvider>
-                  <GlobalErrorHandler />
-                  <AppController />
-                  <DelistHandler />
-                  <NetWorthOverlayController />
-                  <OverlayRoot />
-                </NetWorthProvider>
-              </WhisperHistoryProvider>
-            </Pd2WebsiteProvider>
-          </ItemsProvider>
-        </TrayProvider>
+        <SignInProvider>
+          <TrayProvider>
+            <ItemsProvider>
+              <Pd2WebsiteProvider>
+                <WhisperHistoryProvider>
+                  <NetWorthProvider>
+                    <GlobalErrorHandler />
+                    <AppController />
+                    <DelistHandler />
+                    <NetWorthOverlayController />
+                    <OverlayRoot />
+                  </NetWorthProvider>
+                </WhisperHistoryProvider>
+              </Pd2WebsiteProvider>
+            </ItemsProvider>
+          </TrayProvider>
+        </SignInProvider>
       </OverlayProvider>
     </OptionsProvider>
   </DialogProvider>
 );
 
+// The native sign-in window (src-tauri commands::open_sign_in_window): only its view, Main runs the sign-in
+const signInWindow = new URLSearchParams(window.location.search).get('window') === 'sign-in';
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/"
-        element={<AppRoot />} />
-      {/* Browser mode: open straight into the market browser (see overlay/browser-launch.ts) */}
-      <Route path="/market"
-        element={<AppRoot />} />
-      {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
-      {process.env.NODE_ENV !== 'production' && (
-        <Route
-          path="/dev/gallery"
-          element={
-            <OptionsProvider>
-              <PrimitivesGallery />
-            </OptionsProvider>
-          }
-        />
-      )}
-    </Routes>
-  </BrowserRouter>,
+  signInWindow ? (
+    <SignInWindowPage />
+  ) : (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/"
+          element={<AppRoot />} />
+        {/* Browser mode: open straight into the market browser (see overlay/browser-launch.ts) */}
+        <Route path="/market"
+          element={<AppRoot />} />
+        {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
+        {process.env.NODE_ENV !== 'production' && (
+          <Route
+            path="/dev/gallery"
+            element={
+              <OptionsProvider>
+                <PrimitivesGallery />
+              </OptionsProvider>
+            }
+          />
+        )}
+      </Routes>
+    </BrowserRouter>
+  ),
 );

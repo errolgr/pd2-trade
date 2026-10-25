@@ -18,10 +18,11 @@ import {
   usePd2Website,
 } from './usePD2Website';
 
-const openPanel = vi.hoisted(() => vi.fn());
+const openSignIn = vi.hoisted(() => vi.fn());
 const socket = vi.hoisted(() => ({ isConnected: false, subscribe: vi.fn() }));
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), useOverlay: () => ({ openPanel }) }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn, isOpen: false }) }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ setTelemetryUser: vi.fn() }));
@@ -283,7 +284,7 @@ describe('Pd2WebsiteProvider auth', () => {
     expect(bearer(recheck[1])).toBe('Bearer tok-2');
     expect(ctx.authData).toEqual(authData);
     expect(refreshTokens).not.toHaveBeenCalled();
-    expect(openPanel).not.toHaveBeenCalled();
+    expect(openSignIn).not.toHaveBeenCalled();
   });
 
   it("a /me answer for a replaced token doesn't sign the newer session out", async () => {
@@ -306,7 +307,7 @@ describe('Pd2WebsiteProvider auth', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(ctx.authData).toEqual(authData);
-    expect(openPanel).not.toHaveBeenCalled();
+    expect(openSignIn).not.toHaveBeenCalled();
   });
 
   it('a 401 tries a silent refresh first and skips the sign-in dialog when it succeeds', async () => {
@@ -321,7 +322,7 @@ describe('Pd2WebsiteProvider auth', () => {
     });
     expect(refreshTokens).toHaveBeenCalledWith('refresh-1');
     expect(ctx.authData).toBeNull();
-    expect(openPanel).not.toHaveBeenCalled();
+    expect(openSignIn).not.toHaveBeenCalled();
   });
 
   it('shows the sign-in dialog when refresh fails', async () => {
@@ -332,8 +333,7 @@ describe('Pd2WebsiteProvider auth', () => {
       await ctx.getMarketListings({} as never);
     });
     expect(refreshTokens).toHaveBeenCalledTimes(1);
-    expect(openPanel).toHaveBeenCalledTimes(1);
-    expect(openPanel).toHaveBeenCalledWith('signIn');
+    expect(openSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('goes straight to sign-in when there is no refresh token', async () => {
@@ -345,7 +345,7 @@ describe('Pd2WebsiteProvider auth', () => {
       await ctx.getMarketListings({} as never);
     });
     expect(refreshTokens).not.toHaveBeenCalled();
-    expect(openPanel).toHaveBeenCalledWith('signIn');
+    expect(openSignIn).toHaveBeenCalled();
   });
 
   it('dedupes concurrent 401s and re-arms after 2s', async () => {

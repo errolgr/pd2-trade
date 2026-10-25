@@ -32,6 +32,8 @@ vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => {
 // Providers and root components are stubs that name themselves, so the tree is observable without booting the app.
 vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options') }));
 vi.mock('./hooks/useDialog', () => ({ DialogProvider: wrap('dialog') }));
+vi.mock('./hooks/useSignIn', () => ({ SignInProvider: wrap('signin') }));
+vi.mock('./pages/sign-in/SignInPage', () => ({ SignInWindowPage: () => <p>sign-in-window</p> }));
 vi.mock('./hooks/useTray', () => ({ TrayProvider: wrap('tray') }));
 vi.mock('./hooks/useItems', () => ({ ItemsProvider: wrap('items') }));
 vi.mock('./hooks/useNetWorth', () => ({ NetWorthProvider: wrap('networth') }));
@@ -78,7 +80,7 @@ describe('main routing', () => {
   it('mounts every provider once around the app controller, handlers and overlay root', async () => {
     const { root } = await boot('/');
     // Overlay sits above the domain providers: Tray, Pd2Website and NetWorth open panels through it.
-    const chain = ['dialog', 'options', 'overlay', 'tray', 'items', 'pd2website', 'whispers', 'networth'];
+    const chain = ['dialog', 'options', 'overlay', 'signin', 'tray', 'items', 'pd2website', 'whispers', 'networth'];
     let node: Element | null = root;
     for (const name of chain) {
       node = node!.querySelector(`:scope > [data-wrapper="${name}"]`);

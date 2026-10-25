@@ -13,7 +13,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useOAuth } from '@/hooks/useOAuth';
 import { useOptions } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
-import { showToast, useOverlay } from '@/overlay';
+import { showToast } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { refuseSavedSearchToken, syncSavedSearches, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { publishMarketAlerts } from './alert-events';
 import { alertToasts } from './alert-logic';
@@ -25,7 +26,7 @@ export function useMarketAlerts(): void {
   const token = isLoading ? undefined : settings.pd2Token;
   const { savedSearches, alertsEnabled, syncStatus } = useMarketStore();
   const { refreshTokens } = useOAuth();
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
 
   /** The token pd2trader.com refused (401): nothing is sent with it again. */
   const [refusedToken, setRefusedToken] = useState<string | null>(null);
@@ -62,14 +63,14 @@ export function useMarketAlerts(): void {
         recovery.current = null;
         // Signed in (or out) some other way while the refresh ran: that session decides
         if (tokenRef.current !== token) return;
-        openPanel('signIn');
+        openSignIn();
       });
       return;
     }
     console.log('[market alerts] pd2trader.com refused the PD2 token; asking to sign in again');
     recovery.current = null;
-    openPanel('signIn');
-  }, [token, refusedToken, refreshToken, refreshTokens, openPanel]);
+    openSignIn();
+  }, [token, refusedToken, refreshToken, refreshTokens, openSignIn]);
 
   const watching = alertsEnabled && savedSearches.some((s) => s.alert);
   const active = !!token && watching && token !== refusedToken;

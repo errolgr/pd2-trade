@@ -133,10 +133,8 @@ export const PANEL_DEFS: PanelDefs = {
     persist: false,
     keyboard: 'onPointerDown',
     keepMounted: false,
-    // Like Settings: shows outside the game (it opens at startup), but never stays drawn over other apps: a click
-    // outside it or switching to another app (the browser, to sign in) closes it. The browser sign-in keeps running.
+    // Browser mode only (Tauri uses the native sign-in window, see useSignIn). Only the user closes it.
     hideOnGameBlur: false,
-    closeOnBlur: true,
   },
 
   // ---- delist (Group Search) ----

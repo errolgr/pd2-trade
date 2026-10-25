@@ -7,7 +7,7 @@ export const changeLog = {
     '🔧 Saved searches and Watch alerts stop retrying when your PD2 session has expired: PD2 Trader refreshes it once, then asks you to sign in again',
     '🔧 Market browser no longer shows listings that were already sold or removed on PD2',
     "🔧 Offers you make from the market show up in the chat's Buying tab right away, without restarting PD2 Trader",
-    '🔧 The sign-in prompt no longer stays drawn over other apps: click outside it or switch apps to dismiss it, and sign-in keeps going in your browser',
+    "🔧 Sign-in opens in its own window instead of on top of everything: it goes behind other apps like any window (select it in the taskbar to bring it back) and comes to the front when it's time to pick your account",
   ],
   '0.10.2': [
     '🆕 Public profile toggle in the Net Worth panel and Stash Value header: choose whether your net worth profile is public',
