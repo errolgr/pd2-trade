@@ -1,5 +1,8 @@
 export const changeLog = {
-  '0.10.3': ["✨ Click a seller's name in the market to open their trader panel"],
+  '0.10.3': [
+    "✨ Click a seller's name in the market to open their trader panel",
+    '🔧 Saved searches and Watch alerts stop retrying when your PD2 session has expired: PD2 Trader refreshes it once, then asks you to sign in again',
+  ],
   '0.10.2': [
     '🆕 Public profile toggle in the Net Worth panel and Stash Value header: choose whether your net worth profile is public',
     '🔧 Fixed class skill tab filters in the market browser (e.g. +2 Paladin Combat Skills) matching no listings or the wrong class',
