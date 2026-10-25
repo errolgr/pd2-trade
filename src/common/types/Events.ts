@@ -24,5 +24,6 @@ export interface GenericToastPayload {
   title?: string;
   description?: string;
   duration?: number;
-  variant?: 'default' | 'error' | 'success' | 'warning' | 'info';
+  /** 'corrupted-zone': purple accent (corrupted zone alerts). */
+  variant?: 'default' | 'error' | 'success' | 'warning' | 'info' | 'corrupted-zone';
 }

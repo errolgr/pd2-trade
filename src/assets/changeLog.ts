@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
+    '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
   ],
   '0.10.4': [
     '✨ Mark all read in the chat panel: website messages (on PD2 too), whispers, offers and trade whispers in one click',

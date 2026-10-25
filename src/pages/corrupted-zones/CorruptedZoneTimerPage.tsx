@@ -101,12 +101,12 @@ const CorruptedZoneTimer: React.FC = () => {
         }}
         {...drag.handlers}
         aria-expanded={expanded}
-        className="pointer-events-auto flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
+        className="pointer-events-auto flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-q-corrupted-zone/45 bg-surface pl-3 pr-2 text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted"
         title={`Corrupted in Hell games made until ${clockTime(current.end)}. Next: ${upcoming[0].zone}. Click for the schedule, drag to move.`}
       >
         <span aria-hidden
-          className="size-2 shrink-0 rounded-full bg-q-corrupted ring-[3px] ring-q-corrupted/25" />
-        <span className="font-semibold">{current.zone}</span>
+          className="size-2 shrink-0 rounded-full bg-q-corrupted-zone ring-[3px] ring-q-corrupted-zone/25" />
+        <span className="font-semibold text-q-corrupted-zone">{current.zone}</span>
         <span aria-hidden
           className="h-3 w-px bg-border" />
         <span className="tabular-nums text-muted-foreground"
@@ -125,7 +125,7 @@ const CorruptedZoneTimer: React.FC = () => {
         <ol
           data-interactive="true"
           aria-label="Upcoming corrupted zones"
-          className="pointer-events-auto flex flex-col gap-1 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-surface-foreground backdrop-blur-md"
+          className="pointer-events-auto flex flex-col gap-1 rounded-lg border border-q-corrupted-zone/30 bg-surface px-3 py-2 text-xs text-surface-foreground shadow-[inset_3px_0_0_var(--q-corrupted-zone)] backdrop-blur-md"
         >
           {upcoming.map((slot) => (
             <li key={slot.start}

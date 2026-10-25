@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
@@ -85,6 +85,10 @@ export function showToast(payload: ToastPayload): void {
         break;
       case 'info':
         toast.info(title, options);
+        break;
+      case 'corrupted-zone':
+        // Not a sonner type: the class sets the accent (bar + icon) to the corrupted zone purple
+        toast(title, { ...options, className: '[--toast-accent:var(--q-corrupted-zone)]', icon: <Skull /> });
         break;
       default:
         toast(title, options);

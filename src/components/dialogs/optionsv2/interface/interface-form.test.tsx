@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
@@ -28,6 +28,8 @@ const TIMER_DEFAULTS = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
+  corruptedZoneAlerts: 'off',
+  corruptedZoneFollowed: [],
 };
 
 beforeEach(() => {
@@ -108,6 +110,8 @@ describe('InterfaceForm', () => {
       corruptedZoneTimerEnabled: true,
       corruptedZoneTimerAnchor: 'bottom-left',
       corruptedZoneTimerOpacity: 90,
+      corruptedZoneAlerts: 'off',
+      corruptedZoneFollowed: [],
     });
   });
 
@@ -117,5 +121,19 @@ describe('InterfaceForm', () => {
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
     expect(store.updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('follows zones only under "Only zones I follow", and saves the picks', async () => {
+    renderForm({});
+    expect(screen.queryByRole('group', { name: 'Followed zones' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Zone notifications'), { target: { value: 'followed' } });
+    const group = screen.getByRole('group', { name: 'Followed zones' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Cow Level' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'Chaos Sanctuary' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'Cow Level' }));
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ corruptedZoneAlerts: 'followed', corruptedZoneFollowed: ['Chaos Sanctuary'] }),
+    );
   });
 });
