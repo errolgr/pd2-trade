@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.10.3': [
     "✨ Click a seller's name in the market to open their trader panel",
+    '✨ Market list view shows the price note, alongside the HR price when both are set',
     '🔧 Saved searches and Watch alerts stop retrying when your PD2 session has expired: PD2 Trader refreshes it once, then asks you to sign in again',
     '🔧 Market browser no longer shows listings that were already sold or removed on PD2',
   ],
