@@ -127,13 +127,16 @@ npm run docs:preview
 
 ### Stat range data (each season)
 
-Price check stat ranges copy BH's tooltip logic over PD2's data tables (`src/assets/stat-ranges.data.ts`). When the launcher manifest's `pd2data.mpq` checksum changes, regenerate it:
+Price check stat ranges copy BH's tooltip logic over PD2's data tables (`src/assets/stat-ranges.data.ts`), and the Copy image tooltip reads what the game needs to draw the rest of an item tooltip (`src/assets/tooltip.data.ts`: stat priorities, base damage and requirements, socket filler mods, set item lists). When the launcher manifest's `pd2data.mpq` checksum changes, regenerate both:
 
 ```bash
 EXTRACT_MPQ=/path/to/extract_mpq node scripts/generate-stat-ranges.mjs --download
+# or, from already extracted tables (the string tables are read from the sibling data/local/lng/eng):
+node scripts/generate-stat-ranges.mjs --excel <dir>/data/global/excel --md5 <pd2data.mpq md5>
+npx prettier --write src/assets/stat-ranges.data.ts src/assets/tooltip.data.ts
 ```
 
-Then re-capture `src/pages/price-check/lib/__fixtures__/stat-ranges-oracle.<season>.jsonl` from the live client (bh-harness, see `pd2-trade-oracle/README.md`) so `stat-ranges.test.ts` checks the new data against the real tooltips.
+Then re-capture `src/pages/price-check/lib/__fixtures__/stat-ranges-oracle.<season>.jsonl` from the live client (bh-harness, see `pd2-trade-oracle/README.md`) so `stat-ranges.test.ts` and `tooltip-lines.test.ts` check the new data against the real tooltips.
 
 ## 🎯 Key Features
 
