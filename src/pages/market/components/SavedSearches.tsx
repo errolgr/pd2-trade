@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { showToast, undoToast } from '@/overlay';
+import { showToast, undoToast, useOverlay } from '@/overlay';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
@@ -43,6 +43,7 @@ export interface SavedSearchesProps {
 /** Saved tab: run, rename, delete, live-alert toggle and "save current search". */
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const [name, setName] = useState('');
+  const { openPanel } = useOverlay();
   const alerting = store.savedSearches.filter((s) => s.alert).length;
   const synced = store.syncStatus === 'ready';
   // Opening the tab retries a failed load right away
@@ -121,6 +122,21 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           icon={<Bookmark />}
           title="Sign in to save searches"
           description="Saved searches and watches are kept with your PD2 account on pd2trader.com."
+        />
+      ) : store.syncStatus === 'unauthorized' ? (
+        <EmptyState
+          className="m-4"
+          icon={<Bookmark />}
+          title="Sign in again to load your saved searches"
+          description="pd2trader.com no longer accepts your PD2 session. Saving and Watch are paused until you sign in again."
+          action={
+            <Button size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => openPanel('signIn')}>
+              <LogIn className="size-3.5" />
+              Sign in
+            </Button>
+          }
         />
       ) : store.syncStatus === 'loading' && store.savedSearches.length === 0 ? (
         <EmptyState className="m-4"

@@ -22,11 +22,13 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
   }, [visible]);
   const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
   const signedOut = store.syncStatus === 'signedOut';
+  /** pd2trader.com refused the PD2 token: Watch waits for a new sign-in. */
+  const refused = store.syncStatus === 'unauthorized';
   /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
   const unsynced = store.syncStatus === 'error';
   const archive = filters?.source === 'archive';
   const busy = (watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
-  const disabled = !filters || signedOut || unsynced || (archive && !watching) || !!busy;
+  const disabled = !filters || signedOut || refused || unsynced || (archive && !watching) || !!busy;
   // One soft pulse when watching starts (not when the panel opens on a watched search)
   const [pulses, setPulses] = useState(0);
   const [wasWatching, setWasWatching] = useState(!!watching);
@@ -64,13 +66,15 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
 
   const label = signedOut
     ? 'Sign in to watch this search'
-    : unsynced
-      ? "Your saved searches couldn't be loaded from pd2trader.com; retrying…"
-      : archive && !watching
-        ? 'Sold listings cannot be watched'
-        : watching
-          ? 'Watching: click to stop the popups for new listings matching this search'
-          : 'Watch: get a popup and a sound for every new listing matching this search';
+    : refused
+      ? 'Your PD2 session expired: sign in again to watch this search'
+      : unsynced
+        ? "Your saved searches couldn't be loaded from pd2trader.com; retrying…"
+        : archive && !watching
+          ? 'Sold listings cannot be watched'
+          : watching
+            ? 'Watching: click to stop the popups for new listings matching this search'
+            : 'Watch: get a popup and a sound for every new listing matching this search';
 
   return (
     <button
