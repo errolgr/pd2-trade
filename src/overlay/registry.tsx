@@ -133,7 +133,10 @@ export const PANEL_DEFS: PanelDefs = {
     persist: false,
     keyboard: 'onPointerDown',
     keepMounted: false,
+    // Like Settings: shows outside the game (it opens at startup), but never stays drawn over other apps: a click
+    // outside it or switching to another app (the browser, to sign in) closes it. The browser sign-in keeps running.
     hideOnGameBlur: false,
+    closeOnBlur: true,
   },
 
   // ---- delist (Group Search) ----

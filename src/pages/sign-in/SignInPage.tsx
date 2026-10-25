@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { usePanel } from '@/overlay';
-import { useOAuth } from '@/hooks/useOAuth';
+import React, { useState } from 'react';
+import { usePanel, useOverlay } from '@/overlay';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from '@/hooks/useOAuth';
 import { useOptions } from '@/hooks/useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -55,28 +55,23 @@ function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead
 function SignInContent() {
   const { startOAuthFlow } = useOAuth();
   const { updateSettings } = useOptions();
-  const { close } = usePanel();
-  const [loading, setLoading] = useState(false);
-  const [accounts, setAccounts] = useState<string[] | null>(null);
+  const { close, payload } = usePanel<'signIn'>();
+  const { openPanel, closePanel } = useOverlay();
+  // The browser flow outlives this panel: switching to the browser closes it (closeOnBlur), and the flow may have
+  // been started from Settings. Local state only covers the account lookup that follows it.
+  const flowActive = useOAuthFlowActive();
+  const [lookingUp, setLookingUp] = useState(false);
+  const loading = flowActive || lookingUp;
+  const accounts = payload?.accounts ?? null;
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  // The panel unmounts when closed; abort the browser flow so it stops polling, frees the sign-in lock for the next
-  // open, and never updates this unmounted component.
-  const flowRef = useRef<AbortController | null>(null);
-  useEffect(() => () => flowRef.current?.abort(), []);
 
+  // Runs to the end even after the panel closed, so it only goes through the overlay (not this component's state)
+  // to finish: the account picker reopens the panel when the login has several game accounts.
   const handleSignIn = async () => {
-    flowRef.current?.abort();
-    const flow = new AbortController();
-    flowRef.current = flow;
-    const { signal } = flow;
-    setLoading(true);
+    setLookingUp(true);
     try {
-      const token = await startOAuthFlow(signal);
-      if (signal.aborted) return;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      const token = await startOAuthFlow();
+      if (!token) return;
 
       // Fetch user data to check accounts
       const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/me`, {
@@ -85,12 +80,10 @@ function SignInContent() {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (signal.aborted) return;
 
       if (response.ok) {
         const data = await response.json();
-        if (signal.aborted) return;
-        const userAccounts = data?.user?.game?.accounts ?? [];
+        const userAccounts: string[] = data?.user?.game?.accounts ?? [];
         console.log('[SignIn] Accounts found:', userAccounts);
 
         if (userAccounts.length <= 1) {
@@ -98,20 +91,20 @@ function SignInContent() {
           if (userAccounts.length === 1) {
             await updateSettings({ account: userAccounts[0] });
           }
-          close();
+          closePanel('signIn');
         } else {
-          // Multiple accounts — show selector
-          setAccounts(userAccounts);
-          setLoading(false);
+          // Multiple accounts — show selector. The user is still in the browser (switching to it closed this
+          // panel): bring the overlay to the foreground so the picker opens focused, in front of it.
+          openPanel('signIn', { accounts: userAccounts }, { focus: true });
         }
       } else {
         // Auth check failed but tokens are stored — just close
-        close();
+        closePanel('signIn');
       }
     } catch (err) {
-      if (signal.aborted) return;
       console.error('[SignIn] Error during sign-in flow:', err);
-      setLoading(false);
+    } finally {
+      setLookingUp(false);
     }
   };
 
@@ -277,14 +270,14 @@ function SignInContent() {
             : 'Opens projectdiablo2.com in your browser.'}
         </p>
 
+        {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleLater}
-          disabled={loading}
+          onClick={flowActive ? cancelOAuthFlow : handleLater}
           className="text-muted-foreground hover:text-foreground"
         >
-          Later
+          {flowActive ? 'Cancel' : 'Later'}
         </Button>
       </motion.div>
     </WindowPanel>
