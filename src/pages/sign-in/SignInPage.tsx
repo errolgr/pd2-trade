@@ -93,8 +93,9 @@ function SignInContent() {
           }
           closePanel('signIn');
         } else {
-          // Multiple accounts — show selector
-          openPanel('signIn', { accounts: userAccounts });
+          // Multiple accounts — show selector. The user is still in the browser (switching to it closed this
+          // panel): bring the overlay to the foreground so the picker opens focused, in front of it.
+          openPanel('signIn', { accounts: userAccounts }, { focus: true });
         }
       } else {
         // Auth check failed but tokens are stored — just close

@@ -50,7 +50,11 @@ beforeEach(() => {
     calls.push(`update:${JSON.stringify(patch)}`);
   });
   close.mockReset().mockImplementation(() => calls.push('close'));
-  openPanel.mockReset().mockImplementation((id, payload) => calls.push(`open:${id}:${JSON.stringify(payload)}`));
+  openPanel
+    .mockReset()
+    .mockImplementation((id, payload, opts) =>
+      calls.push(`open:${id}:${JSON.stringify(payload)}:${JSON.stringify(opts)}`),
+    );
   closePanel.mockReset().mockImplementation((id) => calls.push(`closePanel:${id}`));
   vi.mocked(useOAuth).mockReturnValue({ startOAuthFlow } as never);
   vi.mocked(useOAuthFlowActive).mockReturnValue(false);
@@ -89,7 +93,7 @@ describe('SignInPage', () => {
   it('opens the account picker when there are several', async () => {
     vi.mocked(tauriFetch).mockResolvedValue(meResponse(['Alpha', 'Beta']));
     await signIn();
-    expect(calls).toEqual(['open:signIn:{"accounts":["Alpha","Beta"]}']);
+    expect(calls).toEqual(['open:signIn:{"accounts":["Alpha","Beta"]}:{"focus":true}']);
   });
 
   it('the picker saves the chosen account and closes', async () => {
@@ -129,7 +133,7 @@ describe('SignInPage', () => {
     cleanup(); // the user switched to the browser: closeOnBlur closed the panel
 
     await act(async () => resolve('tok-1'));
-    expect(calls).toEqual(['open:signIn:{"accounts":["Alpha","Beta"]}']);
+    expect(calls).toEqual(['open:signIn:{"accounts":["Alpha","Beta"]}:{"focus":true}']);
   });
 
   it('while a sign-in runs (from here or Settings): shows the progress and a Cancel that ends it', () => {
