@@ -5,6 +5,7 @@ export const changeLog = {
     '✨ The Offers button opens what its badge counts: Selling for a new offer, Buying when your offer was accepted, or the trade whisper',
     '✨ A toast and sound when a seller accepts your offer on the website (Offers popups in Settings → Chat)',
     '🔧 The offers badge counts only new offers and trade whispers since you last looked, and clears the bell on projectdiablo2.com too',
+    '🔧 Chat: someone you only traded with through website offers no longer shows as "Not linked to a website account": their @username, join date and every in-game account show, and whispers from any of their accounts land in the same thread',
   ],
   '0.10.3': [
     "✨ Click a seller's name in the market to open their trader panel",

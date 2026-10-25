@@ -34,6 +34,7 @@ export interface InboxThread {
   id: string;
   name: string;
   conversation?: Conversation;
+  /** The website user's profile: the conversation's other participant, else the user an offer resolved. */
   participant?: Participant;
   /** The website user on the other side, if known (website DMs can reach them). */
   userId?: string;
@@ -121,6 +122,8 @@ export function buildInbox({
       });
     }
     thread.offers.push(offer);
+    // An offer-only thread still knows who they are: username, joined date, every account their whispers can come from
+    thread.participant ??= offer.user;
   }
 
   for (const contact of contacts) {

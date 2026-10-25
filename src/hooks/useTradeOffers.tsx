@@ -3,6 +3,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
 import { ISettings } from './useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
+import type { Participant } from '@/common/types/pd2-website/ChatTypes';
 import { showToast } from '@/overlay';
 import qs from 'qs';
 import {
@@ -28,6 +29,8 @@ export interface TradeOffer {
   listingId?: string;
   /** The other user's website id. */
   userId?: string;
+  /** The other user's website profile as the market resolves it: username, every registered account, joined date. */
+  user?: Participant;
   /** The offer the listing accepted, if any (this one or another). */
   acceptedOfferId?: string;
   /** Outgoing only: the listing was sold or delisted (archived). */
@@ -43,13 +46,7 @@ interface WebsiteOffer {
   created_at: string;
   updated_at: string;
   rejected?: boolean;
-  user?: {
-    _id: string;
-    username: string;
-    game?: {
-      accounts?: string[];
-    };
-  };
+  user?: Participant;
   listing?: {
     _id: string;
     item?: {
@@ -58,13 +55,7 @@ interface WebsiteOffer {
     price?: string;
     hr_price?: number;
     accepted_offer_id?: string | null;
-    user?: {
-      _id: string;
-      username: string;
-      game?: {
-        accounts?: string[];
-      };
-    };
+    user?: Participant;
   };
   listing_archive?: {
     _id: string;
@@ -74,13 +65,7 @@ interface WebsiteOffer {
     price?: string;
     hr_price?: number;
     accepted_offer_id?: string | null;
-    user?: {
-      _id: string;
-      username: string;
-      game?: {
-        accounts?: string[];
-      };
-    };
+    user?: Participant;
   };
 }
 
@@ -94,13 +79,7 @@ interface IncomingListing {
   price?: string;
   hr_price?: number;
   offers?: WebsiteOffer[];
-  user?: {
-    _id: string;
-    username: string;
-    game?: {
-      accounts?: string[];
-    };
-  };
+  user?: Participant;
 }
 
 interface UseTradeOffersProps {
@@ -187,6 +166,7 @@ const getIncomingOffers = async (
             timestamp: new Date(offer.created_at),
             listingId: listing._id,
             userId: offer.user?._id,
+            user: offer.user,
             acceptedOfferId: listing.accepted_offer_id || undefined,
           });
         }
@@ -251,6 +231,7 @@ const getOutgoingOffers = async (
         timestamp: new Date(offer.created_at),
         listingId: listing?._id,
         userId: listing?.user?._id,
+        user: listing?.user,
         acceptedOfferId: listing?.accepted_offer_id || undefined,
         listingClosed: !offer.listing,
       };
