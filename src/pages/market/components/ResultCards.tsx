@@ -24,6 +24,7 @@ import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice } from '.
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
+import { SellerName } from './SellerName';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
 
 const ESTIMATED_CARD_HEIGHT = 340;
@@ -470,7 +471,12 @@ const ResultCard = React.memo(function ResultCard({
           {/* Who: presence + account, with the character they're on */}
           <span className="inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-2 pr-2.5">
             <OnlineDots listing={listing} />
-            {account && <span className="truncate font-semibold text-foreground">{account}</span>}
+            {account && (
+              <SellerName onOpen={actions.openTrader}
+                className="font-semibold text-foreground">
+                {account}
+              </SellerName>
+            )}
             {item.character_id && (
               <>
                 <span aria-hidden

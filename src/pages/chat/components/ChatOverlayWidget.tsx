@@ -296,6 +296,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const [request, setRequest] = useState<ConversationRequest | null>(null);
   // The open that asked to focus the composer (a toast's Reply)
   const [replyVersion, setReplyVersion] = useState(0);
+  // The open that asked to show the Trader sidebar (a market seller's name); applied in an effect below since the
+  // wide column's state lives in the saved chat prefs
+  const [traderVersion, setTraderVersion] = useState(0);
   if (payloadVersion !== handledPayloadVersion) {
     setHandledPayloadVersion(payloadVersion);
     const conversationId = payload?.conversationId;
@@ -328,6 +331,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (payload?.filter) setFilter(payload.filter);
     else if (conversationId || threadId) setFilter('all');
     if (payload?.reply) setReplyVersion(payloadVersion);
+    if (payload?.trader && threadId) setTraderVersion(payloadVersion);
     if (conversationId && newConversation) {
       // A freshly created conversation: inject it into the list and select it
       chat.upsertConversation({
@@ -417,6 +421,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     selectThread(threadId);
     setTraderShown(true);
   };
+
+  // Show the Trader sidebar for an open that asked for it (after its thread was selected)
+  useEffect(() => {
+    if (traderVersion) setTraderShown(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on a new trader open
+  }, [traderVersion]);
 
   /** Links one of their listings in the draft (the sidebar's market); the slide-over makes way for it. */
   const insertListing = (listing: MarketListingEntry) => {

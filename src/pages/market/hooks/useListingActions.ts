@@ -21,6 +21,8 @@ export interface ListingActions {
   ensureFresh: () => Promise<MarketListingEntry | null>;
   /** Chat panel: the seller's thread with a listing link drafted. */
   openDm: () => void;
+  /** Chat panel: the seller's thread with their Trader sidebar open (no draft). */
+  openTrader: () => void;
   openWebsite: () => void;
   /** The user's chat templates usable as a whisper (no custom placeholders), tokens mapped to buildWhisper's. */
   whisperTemplates: ChatTemplate[];
@@ -29,6 +31,21 @@ export interface ListingActions {
 const askingPrice = (l: MarketListingEntry) => (l.hr_price > 0 ? `${l.hr_price} HR` : l.price?.trim() || 'no price');
 const changeKey = (l: MarketListingEntry) => `${l.price ?? ''}|${l.hr_price ?? ''}|${l.item?.hash ?? ''}`;
 
+/** Opens the chat panel on the listing's seller with their Trader sidebar showing. */
+export function useOpenTrader(listing: MarketListingEntry): () => void {
+  const { openPanel } = useOverlay();
+  return () =>
+    openPanel(
+      'chat',
+      {
+        userId: listing.user_id,
+        userName: listing.user?.username ?? (sellerAccount(listing) || undefined),
+        trader: true,
+      },
+      { focus: true },
+    );
+}
+
 /** Whisper / message / website actions shared by the detail pane and the result cards. */
 export function useListingActions(listing: MarketListingEntry): ListingActions {
   const { openPanel } = useOverlay();
@@ -36,6 +53,7 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
   const { marketApi } = usePd2Website();
   /** The change the user was already warned about; acting again goes ahead. */
   const acknowledgedRef = useRef<string | null>(null);
+  const openTrader = useOpenTrader(listing);
   // buildWhisper falls back to the website username, as the price check does
   const account = sellerAccount(listing) || listing.user?.username || null;
   const displayName = itemDisplayName(listing.item);
@@ -108,6 +126,7 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
         },
         { focus: true },
       ),
+    openTrader,
     openWebsite: () => void openUrl(listingUrl(listing)),
   };
 }

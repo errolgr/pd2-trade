@@ -1822,6 +1822,29 @@ describe('ChatOverlayWidget trader sidebar', () => {
     expect(sidebar()).toBeNull();
   });
 
+  it("opens a market seller's thread with the Trader sidebar when asked (slide-over and wide column)", async () => {
+    const sam = { id: 'tr-market', username: 'sam', display_name: 'Sam' };
+    messagesByConversation.c1 = [msg('s1', 'c1', sam.id, 'hi', 10, [ME])];
+    await renderWidget([conv('c1', sam, { latest: msg('s1', 'c1', sam.id, 'hi', 10) })]);
+    // Without trader: just the thread
+    await openChat({ userId: sam.id, userName: 'sam' });
+    expect(heading()).toBe('Sam');
+    expect(sidebar()).toBeNull();
+    await openChat({ userId: sam.id, userName: 'sam', trader: true });
+    expect(heading()).toBe('Sam');
+    expect(sidebar()).not.toBeNull();
+
+    // Wide with the column collapsed: shown again (and remembered)
+    panel.rect = { ...panel.rect, width: 1100 };
+    await openChat({ userId: sam.id, userName: 'sam' });
+    await click(screen.getByRole('button', { name: 'Collapse trader details' }));
+    expect(sidebar()).toBeNull();
+    await openChat({ userId: sam.id, userName: 'sam', trader: true });
+    expect(sidebar()).not.toBeNull();
+    await flush();
+    expect(savedPrefs().sidebarCollapsed).toBeUndefined();
+  });
+
   it('opens their PD2 profile, market and character pages with the names encoded', async () => {
     panel.rect = { ...panel.rect, width: 1100 };
     const odd = { id: 'tr-links', username: 'ali ce/2', display_name: 'Alicia' };
