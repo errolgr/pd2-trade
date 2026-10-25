@@ -24,14 +24,15 @@ import { useMarketAlerts } from './useMarketAlerts';
 
 const h = vi.hoisted(() => ({
   settings: {} as Record<string, unknown>,
-  openPanel: vi.fn(),
+  openSignIn: vi.fn(),
   refreshTokens: vi.fn<(refreshToken: string) => Promise<boolean>>(),
 }));
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: () => ({ refreshTokens: h.refreshTokens }) }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), useOverlay: () => ({ openPanel: h.openPanel }) }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn: h.openSignIn, isOpen: false }) }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
   exists: vi.fn(async () => false),
@@ -103,7 +104,7 @@ beforeEach(() => {
   vi.mocked(listMarketAlerts).mockClear();
   vi.mocked(listSavedSearches).mockReset();
   h.settings = { pd2Token: 'tok' };
-  h.openPanel.mockReset();
+  h.openSignIn.mockReset();
   h.refreshTokens.mockReset().mockResolvedValue(false);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -193,7 +194,7 @@ describe('useMarketAlerts', () => {
     expect(openAlertStream).toHaveBeenCalledTimes(1);
     // No refresh token: straight to sign-in
     expect(h.refreshTokens).not.toHaveBeenCalled();
-    expect(h.openPanel).toHaveBeenCalledExactlyOnceWith('signIn');
+    expect(h.openSignIn).toHaveBeenCalledOnce();
     expect(getMarketPrefs().syncStatus).toBe('unauthorized');
 
     vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
@@ -230,7 +231,7 @@ describe('useMarketAlerts', () => {
     expect(openAlertStream).toHaveBeenCalledWith('tok2', expect.any(AbortSignal));
     expect(getMarketPrefs().syncStatus).toBe('ready');
     expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openPanel).not.toHaveBeenCalled();
+    expect(h.openSignIn).not.toHaveBeenCalled();
   });
 
   it('a 401 with the refreshed token stops for good: sign-in prompt, no further requests', async () => {
@@ -246,7 +247,7 @@ describe('useMarketAlerts', () => {
     await settle();
     expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
     expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openPanel).toHaveBeenCalledExactlyOnceWith('signIn');
+    expect(h.openSignIn).toHaveBeenCalledOnce();
 
     // Re-renders, the panel showing (WatchButton / Saved tab retry) and time send nothing more
     rerender();
@@ -255,7 +256,7 @@ describe('useMarketAlerts', () => {
     expect(listSavedSearches).toHaveBeenCalledTimes(2);
     expect(openAlertStream).not.toHaveBeenCalled();
     expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openPanel).toHaveBeenCalledTimes(1);
+    expect(h.openSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('asks to sign in when the refresh itself fails', async () => {
@@ -265,7 +266,7 @@ describe('useMarketAlerts', () => {
     await settle();
     await settle();
     expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
-    expect(h.openPanel).toHaveBeenCalledExactlyOnceWith('signIn');
+    expect(h.openSignIn).toHaveBeenCalledOnce();
     await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
     expect(listSavedSearches).toHaveBeenCalledTimes(1);
   });
@@ -294,7 +295,7 @@ describe('useMarketAlerts', () => {
     expect(getMarketPrefs().syncStatus).toBe('unauthorized');
     expect(h.refreshTokens).toHaveBeenCalledTimes(2);
     expect(h.refreshTokens).toHaveBeenLastCalledWith('r2');
-    expect(h.openPanel).not.toHaveBeenCalled();
+    expect(h.openSignIn).not.toHaveBeenCalled();
   });
 
   it('does not prompt when the user signs in some other way while a failing refresh runs', async () => {
@@ -314,7 +315,7 @@ describe('useMarketAlerts', () => {
     await settle();
     await act(async () => refresh.resolve(false));
     await settle();
-    expect(h.openPanel).not.toHaveBeenCalled();
+    expect(h.openSignIn).not.toHaveBeenCalled();
     expect(listSavedSearches).toHaveBeenLastCalledWith('manual');
     expect(getMarketPrefs().syncStatus).toBe('ready');
   });
@@ -337,6 +338,6 @@ describe('useMarketAlerts', () => {
     await settle();
     expect(openAlertStream).toHaveBeenCalledWith('tok', expect.any(AbortSignal));
     expect(h.refreshTokens).not.toHaveBeenCalled();
-    expect(h.openPanel).not.toHaveBeenCalled();
+    expect(h.openSignIn).not.toHaveBeenCalled();
   });
 });

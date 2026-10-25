@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOverlay, type OverlayApi } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
@@ -22,6 +23,7 @@ import { NetWorthProvider, useNetWorth } from './useNetWorth';
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
@@ -51,6 +53,7 @@ let holdings: Array<{ key: string; tab: string | null; qty: number }>;
 let focused: boolean;
 const updateSettings = vi.fn();
 const openPanel = vi.fn();
+const openSignIn = vi.fn();
 const refreshTokens = vi.fn<(refreshToken: string) => Promise<boolean>>();
 
 function snapshot(snapshotId: string | null = 'snap'): SnapshotResponse {
@@ -121,6 +124,8 @@ beforeEach(() => {
   vi.mocked(usePd2Website).mockImplementation(() => ({ authData }) as never);
   openPanel.mockReset();
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
+  openSignIn.mockReset();
+  vi.mocked(useSignIn).mockReturnValue({ openSignIn, isOpen: false } as never);
   vi.mocked(getSeasons).mockRejectedValue(new Error('offline'));
   vi.mocked(getSessions).mockResolvedValue({ sessions: [] } as never);
   vi.mocked(postSessionMarker).mockResolvedValue({ ok: true });
@@ -243,7 +248,7 @@ describe('NetWorthProvider snapshots', () => {
 
     expect(result.current.error).toBe('Your PD2 session expired. Sign in again.');
     expect(refreshTokens).not.toHaveBeenCalled();
-    expect(openPanel.mock.calls.filter(([id]) => id === 'signIn')).toHaveLength(1);
+    expect(openSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('prompts sign-in on 401 when the refresh fails', async () => {
@@ -251,7 +256,7 @@ describe('NetWorthProvider snapshots', () => {
     await renderHost({ pd2RefreshToken: 'r' });
 
     expect(refreshTokens).toHaveBeenCalledWith('r');
-    expect(openPanel.mock.calls.filter(([id]) => id === 'signIn')).toHaveLength(1);
+    expect(openSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('retries the failed snapshot with the refreshed token', async () => {
@@ -269,7 +274,7 @@ describe('NetWorthProvider snapshots', () => {
       ['tok2', 'startup'],
     ]);
     expect(result.current.status).toBe('ok');
-    expect(openPanel).not.toHaveBeenCalledWith('signIn');
+    expect(openSignIn).not.toHaveBeenCalled();
   });
 
   it('drops a result that lands after switching accounts and resets owner state', async () => {
@@ -463,7 +468,7 @@ describe('NetWorthProvider scheduler', () => {
     await advance(60 * MINUTE);
     expect(syncs().length).toBeGreaterThan(2);
     expect(refreshTokens).toHaveBeenCalledTimes(1);
-    expect(openPanel).not.toHaveBeenCalledWith('signIn');
+    expect(openSignIn).not.toHaveBeenCalled();
 
     // A manual snapshot still gets a refresh.
     await act(() => result.current.takeSnapshot());

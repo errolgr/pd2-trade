@@ -19,7 +19,8 @@ import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-webs
 import { showBannedToast, useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
-import { showToast, useOverlay } from '@/overlay';
+import { showToast } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 
 interface Pd2WebsiteProviderProps {
   children: React.ReactNode;
@@ -117,7 +118,7 @@ export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | und
 
 export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   const { updateSettings, settings, isLoading } = useOptions();
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   const { startOAuthFlow, refreshTokens } = useOAuth();
   const [authData, setAuthData] = useState<AuthData>(null);
   const isHandlingAuthError = useRef(false);
@@ -174,14 +175,14 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
       }
 
       // Refresh failed or unavailable — ask the user to sign in
-      openPanel('signIn');
+      openSignIn();
     } finally {
       // Reset flag after a short delay to allow for retry
       setTimeout(() => {
         isHandlingAuthError.current = false;
       }, 2000);
     }
-  }, [refreshTokens, openPanel]);
+  }, [refreshTokens, openSignIn]);
 
   // Logout function to manually trigger re-authentication
   const logout = useCallback(async () => {

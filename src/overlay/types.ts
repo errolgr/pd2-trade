@@ -52,8 +52,7 @@ export interface PanelPayloads {
   /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat). */
   settings: { section?: SettingsSectionId } | undefined;
   changeLog: undefined;
-  /** accounts: the sign-in finished with several linked game accounts; show the picker. */
-  signIn: { accounts: string[] } | undefined;
+  signIn: undefined;
   /** Market listings matching the delisted item (2+; the user picks which one to remove). */
   delist: { listings: MarketListingEntry[] };
   netWorthTicker: undefined;

@@ -1,9 +1,5 @@
-import React, { useState } from 'react';
-import { usePanel, useOverlay } from '@/overlay';
-import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from '@/hooks/useOAuth';
-import { useOptions } from '@/hooks/useOptions';
-import { fetch as tauriFetch } from '@/lib/browser-http';
-import { BACKEND_URL } from '@/lib/pkce';
+import React from 'react';
+import { useRemoteSignIn, useSignIn, type SignInAction, type SignInState } from '@/hooks/useSignIn';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
 import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
@@ -52,71 +48,21 @@ function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead
   );
 }
 
-function SignInContent() {
-  const { startOAuthFlow } = useOAuth();
-  const { updateSettings } = useOptions();
-  const { close, payload } = usePanel<'signIn'>();
-  const { openPanel, closePanel } = useOverlay();
-  // The browser flow outlives this panel: switching to the browser closes it (closeOnBlur), and the flow may have
-  // been started from Settings. Local state only covers the account lookup that follows it.
-  const flowActive = useOAuthFlowActive();
-  const [lookingUp, setLookingUp] = useState(false);
-  const loading = flowActive || lookingUp;
-  const accounts = payload?.accounts ?? null;
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+interface SignInViewProps {
+  state: SignInState;
+  dispatch(action: SignInAction): void;
+  /** Our own close button: the overlay panel has no title bar (the window has the native one). */
+  showClose: boolean;
+}
 
-  // Runs to the end even after the panel closed, so it only goes through the overlay (not this component's state)
-  // to finish: the account picker reopens the panel when the login has several game accounts.
-  const handleSignIn = async () => {
-    setLookingUp(true);
-    try {
-      const token = await startOAuthFlow();
-      if (!token) return;
+/** The sign-in prompt; Main runs the sign-in (useSignIn), this only shows its state and reports the buttons. */
+function SignInView({ state, dispatch, showClose }: SignInViewProps) {
+  const { flowActive, busy: loading, accounts, selectedAccount } = state;
+  const handleSignIn = () => dispatch({ type: 'start' });
+  const handleSelectAccount = (account: string) => dispatch({ type: 'select', account });
+  const handleLater = () => dispatch({ type: 'later' });
 
-      // Fetch user data to check accounts
-      const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/me`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const userAccounts: string[] = data?.user?.game?.accounts ?? [];
-        console.log('[SignIn] Accounts found:', userAccounts);
-
-        if (userAccounts.length <= 1) {
-          // Single or no accounts — auto-select and close
-          if (userAccounts.length === 1) {
-            await updateSettings({ account: userAccounts[0] });
-          }
-          closePanel('signIn');
-        } else {
-          // Multiple accounts — show selector. The user is still in the browser (switching to it closed this
-          // panel): bring the overlay to the foreground so the picker opens focused, in front of it.
-          openPanel('signIn', { accounts: userAccounts }, { focus: true });
-        }
-      } else {
-        // Auth check failed but tokens are stored — just close
-        closePanel('signIn');
-      }
-    } catch (err) {
-      console.error('[SignIn] Error during sign-in flow:', err);
-    } finally {
-      setLookingUp(false);
-    }
-  };
-
-  const handleSelectAccount = async (account: string) => {
-    setSelectedAccount(account);
-    await updateSettings({ account });
-    close();
-  };
-
-  const handleLater = close;
-
-  const closeButton = (
+  const closeButton = showClose && (
     <button
       type="button"
       onClick={handleLater}
@@ -274,7 +220,7 @@ function SignInContent() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={flowActive ? cancelOAuthFlow : handleLater}
+          onClick={() => dispatch({ type: flowActive ? 'cancel' : 'later' })}
           className="text-muted-foreground hover:text-foreground"
         >
           {flowActive ? 'Cancel' : 'Later'}
@@ -284,10 +230,29 @@ function SignInContent() {
   );
 }
 
+/** The overlay panel (browser mode, no native windows). */
 export default function SignInPage() {
+  const { state, dispatch } = useSignIn();
   return (
     <MotionConfig reducedMotion="user">
-      <SignInContent />
+      <SignInView state={state}
+        dispatch={dispatch}
+        showClose />
+    </MotionConfig>
+  );
+}
+
+/** The native sign-in window's page (`index.html?window=sign-in`). */
+export function SignInWindowPage() {
+  const { state, dispatch } = useRemoteSignIn();
+  if (!state) return null;
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="h-screen w-screen">
+        <SignInView state={state}
+          dispatch={dispatch}
+          showClose={false} />
+      </div>
     </MotionConfig>
   );
 }

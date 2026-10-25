@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { showToast, undoToast, useOverlay } from '@/overlay';
+import { showToast, undoToast } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
@@ -43,7 +44,7 @@ export interface SavedSearchesProps {
 /** Saved tab: run, rename, delete, live-alert toggle and "save current search". */
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const [name, setName] = useState('');
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   const alerting = store.savedSearches.filter((s) => s.alert).length;
   const synced = store.syncStatus === 'ready';
   // Opening the tab retries a failed load right away
@@ -132,7 +133,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           action={
             <Button size="sm"
               className="h-7 px-2.5 text-xs"
-              onClick={() => openPanel('signIn')}>
+              onClick={openSignIn}>
               <LogIn className="size-3.5" />
               Sign in
             </Button>

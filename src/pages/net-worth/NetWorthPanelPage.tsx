@@ -4,7 +4,8 @@ import { AlertTriangle, Camera, ExternalLink, LogIn, Loader2, Play, Square, Tren
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { getPoints, NetWorthPoint } from '@/lib/networth-api';
-import { usePanel, useOverlay } from '@/overlay';
+import { usePanel } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
@@ -101,7 +102,7 @@ const NetWorthPanel: React.FC = () => {
     stopSession,
     openNetWorth,
   } = useNetWorth();
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   const { close } = usePanel<'netWorthPanel'>();
   const [points, setPoints] = useState<NetWorthPoint[]>([]);
   const [pointsError, setPointsError] = useState<string | null>(null);
@@ -203,7 +204,7 @@ const NetWorthPanel: React.FC = () => {
           </p>
           {!token && (
             <Button size="sm"
-              onClick={() => openPanel('signIn')}>
+              onClick={openSignIn}>
               <LogIn className="size-3.5" />
               Sign in
             </Button>

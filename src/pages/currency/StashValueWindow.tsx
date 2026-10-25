@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { WindowChrome } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
+import { useSignIn } from '@/hooks/useSignIn';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import {
@@ -433,7 +434,7 @@ function TrackingDisabled() {
 }
 
 function SignedOut({ hasToken }: { hasToken: boolean }) {
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   return hasToken ? (
     <EmptyState
       className="mt-6"
@@ -447,7 +448,7 @@ function SignedOut({ hasToken }: { hasToken: boolean }) {
       title="Sign in with your PD2 account to value your stash."
       action={
         <Button size="sm"
-          onClick={() => openPanel('signIn')}>
+          onClick={openSignIn}>
           <LogIn className="size-3.5" />
           Sign in
         </Button>

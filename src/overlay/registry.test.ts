@@ -9,7 +9,6 @@ describe('PANEL_DEFS', () => {
   it.each([
     ['Settings', 'settings'],
     ["What's New", 'changeLog'],
-    ['Sign-in', 'signIn'],
   ] as const)('shows %s outside the game, and closes it when the user leaves it', (_name, id) => {
     expect(isPanelVisible(PANEL_DEFS[id], open, false)).toBe(true);
     expect(PANEL_DEFS[id].closeOnBlur).toBe(true);
