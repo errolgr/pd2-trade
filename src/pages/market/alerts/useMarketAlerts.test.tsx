@@ -19,6 +19,7 @@ import {
   type MarketAlert,
 } from './saved-search-api';
 import type * as SavedSearchApi from './saved-search-api';
+import { MAX_RECONNECT_MS, STREAM_IDLE_TIMEOUT_MS } from './alert-stream';
 import { useMarketAlerts } from './useMarketAlerts';
 
 const h = vi.hoisted(() => ({
@@ -267,6 +268,55 @@ describe('useMarketAlerts', () => {
     expect(h.openPanel).toHaveBeenCalledExactlyOnceWith('signIn');
     await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
     expect(listSavedSearches).toHaveBeenCalledTimes(1);
+  });
+
+  it('a refreshed token that worked gets its own refresh when it is refused later', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    h.refreshTokens.mockResolvedValue(true);
+    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
+      if (token === 'tok') throw refused();
+      return { items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } };
+    });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
+
+    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
+    rerender();
+    await settle();
+    await settle();
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+
+    // Much later, tok2 is refused (here by the stream on a reconnect)
+    vi.mocked(openAlertStream).mockRejectedValue(refused());
+    await act(() => vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS + MAX_RECONNECT_MS * 2));
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    expect(h.refreshTokens).toHaveBeenCalledTimes(2);
+    expect(h.refreshTokens).toHaveBeenLastCalledWith('r2');
+    expect(h.openPanel).not.toHaveBeenCalled();
+  });
+
+  it('does not prompt when the user signs in some other way while a failing refresh runs', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    const refresh = Promise.withResolvers<boolean>();
+    h.refreshTokens.mockReturnValue(refresh.promise);
+    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
+      if (token === 'tok') throw refused();
+      return { items: [], limits: { maxSearches: 25, maxAlerting: 10 } };
+    });
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+
+    h.settings = { pd2Token: 'manual', pd2RefreshToken: 'rm' };
+    rerender();
+    await settle();
+    await act(async () => refresh.resolve(false));
+    await settle();
+    expect(h.openPanel).not.toHaveBeenCalled();
+    expect(listSavedSearches).toHaveBeenLastCalledWith('manual');
+    expect(getMarketPrefs().syncStatus).toBe('ready');
   });
 
   it('a network error still backs off and retries, without refreshing or prompting', async () => {

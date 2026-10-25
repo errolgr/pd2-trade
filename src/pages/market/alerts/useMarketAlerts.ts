@@ -23,7 +23,7 @@ import { listMarketAlerts, type MarketAlert, openAlertStream } from './saved-sea
 export function useMarketAlerts(): void {
   const { settings, isLoading } = useOptions();
   const token = isLoading ? undefined : settings.pd2Token;
-  const { savedSearches, alertsEnabled } = useMarketStore();
+  const { savedSearches, alertsEnabled, syncStatus } = useMarketStore();
   const { refreshTokens } = useOAuth();
   const { openPanel } = useOverlay();
 
@@ -36,10 +36,17 @@ export function useMarketAlerts(): void {
 
   /** A refresh started because `from` was refused; `to` is the token it brought. */
   const recovery = useRef<{ from: string; to: string | null } | null>(null);
+  /** The token now: a refresh that fails after the user signed in some other way must not prompt again. */
+  const tokenRef = useRef(token);
   useEffect(() => {
+    tokenRef.current = token;
     const current = recovery.current;
     if (current && !current.to && token && token !== current.from) current.to = token;
   }, [token]);
+  // The refreshed token works: recovery is over, a later 401 on it gets its own refresh
+  useEffect(() => {
+    if (syncStatus === 'ready' && recovery.current?.to === token) recovery.current = null;
+  }, [syncStatus, token]);
 
   const refreshToken = settings.pd2RefreshToken;
   /** The refused token already acted on: one refresh or sign-in prompt per token, whatever re-renders. */
@@ -53,6 +60,8 @@ export function useMarketAlerts(): void {
       void refreshTokens(refreshToken).then((refreshed) => {
         if (refreshed) return; // the new token restarts the sync and the stream
         recovery.current = null;
+        // Signed in (or out) some other way while the refresh ran: that session decides
+        if (tokenRef.current !== token) return;
         openPanel('signIn');
       });
       return;
