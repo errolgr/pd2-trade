@@ -19,7 +19,8 @@ const AUTO_SNAPSHOT_OPTIONS = [
   { value: '30', label: 'Every 30 minutes' },
 ];
 
-const ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; label: string }[] = [
+/** Ticker positions (net worth ticker, corrupted zone timer). */
+export const TICKER_ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; label: string }[] = [
   { value: 'top-left', label: 'Top left' },
   { value: 'top-center', label: 'Top center' },
   { value: 'top-right', label: 'Top right' },
@@ -29,19 +30,21 @@ const ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; label: string }[] = [
   { value: 'custom', label: 'Custom (drag to move)' },
 ];
 
+export const tickerAnchorSchema = z.enum([
+  'top-left',
+  'top-center',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+  'above-chat',
+  'custom',
+]);
+
 const netWorthFormSchema = z.object({
   netWorthTrackingEnabled: z.boolean(),
   netWorthAutoSnapshotMinutes: z.number().int().min(0),
   netWorthTickerEnabled: z.boolean(),
-  netWorthTickerAnchor: z.enum([
-    'top-left',
-    'top-center',
-    'top-right',
-    'bottom-left',
-    'bottom-right',
-    'above-chat',
-    'custom',
-  ]),
+  netWorthTickerAnchor: tickerAnchorSchema,
   netWorthTickerOpacity: z.number().min(30).max(100),
   netWorthToastThresholdHr: z.number().min(0),
 });
@@ -197,7 +200,7 @@ export function NetWorthForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {ANCHOR_OPTIONS.map((option) => (
+                      {TICKER_ANCHOR_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
                           {option.label}

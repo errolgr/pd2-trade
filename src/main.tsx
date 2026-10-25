@@ -17,6 +17,7 @@ import { GlobalErrorHandler } from './components/GlobalErrorHandler';
 import AppController from './pages/landing/AppController';
 import DelistHandler from './pages/delist/DelistHandler';
 import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayController';
+import CorruptedZoneTimerController from './pages/corrupted-zones/CorruptedZoneTimerController';
 import { OverlayProvider, OverlayRoot } from './overlay';
 import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
@@ -107,6 +108,7 @@ const AppRoot: React.FC = () => (
                     <AppController />
                     <DelistHandler />
                     <NetWorthOverlayController />
+                    <CorruptedZoneTimerController />
                     <OverlayRoot />
                   </NetWorthProvider>
                 </WhisperHistoryProvider>
