@@ -119,6 +119,7 @@ let incomingOffers: TradeOffer[];
 let traderListings: Record<string, MarketListingEntry[]>;
 let outgoingOffers: TradeOffer[];
 let createConversation: Mock<(participantIds: string[]) => Promise<Conversation>>;
+let refreshOffers: Mock<() => Promise<void>>;
 let audio: { src: string; volume: number }[];
 
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
@@ -259,6 +260,7 @@ beforeEach(() => {
   vi.mocked(openUrl).mockClear();
   outgoingOffers = [];
   createConversation = vi.fn();
+  refreshOffers = vi.fn(async () => {});
   gameLog.clear();
   vi.mocked(writeText).mockClear();
   vi.mocked(writeTextFile).mockClear();
@@ -295,6 +297,7 @@ beforeEach(() => {
         outgoingOffers,
         hiddenOutgoingOffers: [],
         createConversation,
+        refresh: refreshOffers,
         ...api,
       }) as unknown as ReturnType<typeof usePd2Website>,
   );
@@ -1243,6 +1246,23 @@ describe('ChatOverlayWidget unified inbox', () => {
     // Opening a conversation shows the full list again
     await openChat({ conversationId: 'c1' });
     expect(filterButton('All').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('refetches the offers each time the panel opens, not while it stays open or hidden', async () => {
+    panel.visible = false;
+    await renderWidget([]);
+    expect(refreshOffers).not.toHaveBeenCalled();
+
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    await act(async () => rerenderWidget());
+    expect(refreshOffers).toHaveBeenCalledTimes(1);
+
+    panel.visible = false;
+    await act(async () => rerenderWidget());
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    expect(refreshOffers).toHaveBeenCalledTimes(2);
   });
 
   it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {

@@ -38,7 +38,7 @@ import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
 import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
-import { ThreadDeals } from './ThreadDeals';
+import { offerStatus, ThreadDeals } from './ThreadDeals';
 import { ThreadHeader } from './ThreadHeader';
 import { TraderSidebar } from './TraderSidebar';
 
@@ -97,6 +97,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     incomingOffers,
     outgoingOffers,
     hiddenOutgoingOffers,
+    refresh: refreshOffers,
   } = usePd2Website();
   const whispers = useWhisperHistory();
   const { markRead: markWhispersRead, recordCopied } = whispers;
@@ -125,6 +126,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
     return () => window.clearInterval(id);
   }, []);
+
+  // Offers change outside the overlay (made, declined or delisted on the website) without any socket push to
+  // the buyer: refetch them each time the panel opens, so Buying shows the current ones
+  useEffect(() => {
+    if (visible) void refreshOffers();
+    // On open only: refreshOffers changes with every settings change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
@@ -201,9 +210,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const websiteThread = (conversation && chat.threads[conversation._id]) || EMPTY_THREAD;
   const { messages: websiteMessages, hasOlder: websiteHasOlder } = websiteThread;
   const people = selectedThread?.people;
+  const threadOffers = selectedThread?.offers;
+  // Your offers that are no longer open read as events in the conversation, not pinned deals
+  const settledOffers = useMemo(
+    () => (threadOffers ?? []).filter((offer) => !offer.isIncoming && offerStatus(offer) !== 'open'),
+    [threadOffers],
+  );
   const entries = useMemo(
-    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder),
-    [websiteMessages, websiteHasOlder, people, currentUserId],
+    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers),
+    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers],
   );
 
   // The "New" divider: fixed when the thread is opened (once its newest website page is in), until it closes

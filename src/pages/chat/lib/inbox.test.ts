@@ -268,6 +268,33 @@ describe('buildTimeline', () => {
     expect(entries).toHaveLength(5);
   });
 
+  it('places your settled offers by the time you made them, as unread-free events, honouring the paging cutoff', () => {
+    const offer = (id: string, minutes: number): TradeOffer => ({
+      id,
+      isIncoming: false,
+      playerName: 'bob',
+      itemName: 'Ber',
+      price: '1 ber',
+      timestamp: new Date(ago(minutes)),
+      listingClosed: true,
+    });
+    const offers = [offer('o-mid', 20), offer('o-old', 200)];
+    const keys = (hasOlder: boolean) => buildTimeline(website, [whispers], ME, hasOlder, offers).map((e) => e.key);
+    expect(keys(false)).toEqual([
+      'offer:o-old',
+      'w:bob:w-old',
+      'a',
+      'offer:o-mid',
+      'w:bob:w-mid',
+      'b',
+      'w:bob:w-new',
+      'tmp-1',
+    ]);
+    expect(keys(true)).not.toContain('offer:o-old');
+    const entry = buildTimeline(website, [], ME, false, offers).find((e) => e.key === 'offer:o-mid');
+    expect(entry).toMatchObject({ own: true, unread: false, offer: { id: 'o-mid' } });
+  });
+
   it('shows only whispers for a whisper-only thread', () => {
     expect(buildTimeline([], [whispers], ME, false).map((e) => e.key)).toEqual([
       'w:bob:w-old',

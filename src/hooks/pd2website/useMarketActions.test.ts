@@ -287,6 +287,37 @@ describe('market browser API', () => {
     expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', offer: '2 ist', hr_offer: 0.5 });
   });
 
+  it('createOffer has the offers lists refetched once PD2 took the offer, not on a 401 or a failure', async () => {
+    const onOfferCreated = vi.fn();
+    const { result } = renderHook(() =>
+      useMarketActions({
+        settings: baseSettings,
+        authData,
+        fetchAndCacheStash: vi.fn(),
+        findItemsByName: vi.fn(),
+        stashCache: { current: null },
+        CACHE_TTL: TTL,
+        onAuthError: vi.fn(),
+        onOfferCreated,
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(201, { _id: 'offer-1' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' });
+    expect(onOfferCreated).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' }).catch(() => {});
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(500, { message: 'boom' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' }).catch(() => {});
+    expect(onOfferCreated).toHaveBeenCalledTimes(1);
+  });
+
   it('marketApi exposes the same functions and stays stable across renders', () => {
     const { result, rerender } = renderHook(() =>
       useMarketActions({
