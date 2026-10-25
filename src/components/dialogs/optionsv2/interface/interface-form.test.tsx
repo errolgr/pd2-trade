@@ -123,17 +123,26 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).not.toHaveBeenCalled();
   });
 
-  it('follows zones only under "Only zones I follow", and saves the picks', async () => {
+  it('picks followed zones from a searchable dropdown under "Only zones I follow"', async () => {
     renderForm({});
-    expect(screen.queryByRole('group', { name: 'Followed zones' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Followed zones' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Zone notifications'), { target: { value: 'followed' } });
-    const group = screen.getByRole('group', { name: 'Followed zones' });
-    fireEvent.click(within(group).getByRole('button', { name: 'Cow Level' }));
-    fireEvent.click(within(group).getByRole('button', { name: 'Chaos Sanctuary' }));
-    fireEvent.click(within(group).getByRole('button', { name: 'Cow Level' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Followed zones' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search zones' }), { target: { value: 'kurast' } });
+    const options = () => within(screen.getByRole('listbox', { name: 'Zones' })).getAllByRole('option');
+    expect(options().map((o) => o.textContent)).toEqual([
+      'Lower Kurast and the Kurast Sewers',
+      'Kurast Bazaar, Ruined Temple, and Disused Fane',
+      'Upper Kurast, the Forgotten Reliquary, and Forgotten Temple',
+    ]);
+    fireEvent.click(options()[1]);
+    expect(options()[1].getAttribute('aria-selected')).toBe('true');
     await advance(300);
     expect(store.updateSettings).toHaveBeenLastCalledWith(
-      expect.objectContaining({ corruptedZoneAlerts: 'followed', corruptedZoneFollowed: ['Chaos Sanctuary'] }),
+      expect.objectContaining({
+        corruptedZoneAlerts: 'followed',
+        corruptedZoneFollowed: ['Kurast Bazaar, Ruined Temple, and Disused Fane'],
+      }),
     );
   });
 });

@@ -1,7 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, Plus } from 'lucide-react';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { ISettings, useOptions } from '@/hooks/useOptions';
@@ -9,8 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_MAX } from '@/lib/themes';
-import { CORRUPTED_ZONES } from '@/lib/corrupted-zones';
-import { cn } from '@/lib/utils';
+import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
 
@@ -252,31 +250,12 @@ export function InterfaceForm() {
               control={form.control}
               name="corruptedZoneFollowed"
               render={({ field }) => (
-                <div role="group"
-                  aria-label="Followed zones"
-                  className="flex flex-wrap gap-2 px-4 py-3">
-                  {CORRUPTED_ZONES.map((zone) => {
-                    const on = field.value.includes(zone);
-                    return (
-                      <button
-                        key={zone}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => field.onChange(on ? field.value.filter((z) => z !== zone) : [...field.value, zone])}
-                        className={cn(
-                          'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none',
-                          'transition-[color,background-color,border-color] duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60',
-                          on
-                            ? 'border-q-corrupted-zone bg-q-corrupted-zone/15 text-q-corrupted-zone'
-                            : 'border-border bg-muted/60 text-muted-foreground hover:border-ring/50 hover:text-foreground',
-                        )}
-                      >
-                        {on ? <Check className="size-3" /> : <Plus className="size-3" />}
-                        {zone}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SettingsRow
+                  label="Followed zones"
+                  description="Toast when one of these becomes the corrupted zone."
+                  control={<ZonePicker value={field.value}
+                    onChange={field.onChange} />}
+                />
               )}
             />
           )}
