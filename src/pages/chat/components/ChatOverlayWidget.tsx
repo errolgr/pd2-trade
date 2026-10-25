@@ -38,7 +38,7 @@ import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
 import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
-import { ThreadDeals } from './ThreadDeals';
+import { offerStatus, ThreadDeals } from './ThreadDeals';
 import { ThreadHeader } from './ThreadHeader';
 import { TraderSidebar } from './TraderSidebar';
 
@@ -210,9 +210,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const websiteThread = (conversation && chat.threads[conversation._id]) || EMPTY_THREAD;
   const { messages: websiteMessages, hasOlder: websiteHasOlder } = websiteThread;
   const people = selectedThread?.people;
+  const threadOffers = selectedThread?.offers;
+  // Your offers that are no longer open read as events in the conversation, not pinned deals
+  const settledOffers = useMemo(
+    () => (threadOffers ?? []).filter((offer) => !offer.isIncoming && offerStatus(offer) !== 'open'),
+    [threadOffers],
+  );
   const entries = useMemo(
-    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder),
-    [websiteMessages, websiteHasOlder, people, currentUserId],
+    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers),
+    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers],
   );
 
   // The "New" divider: fixed when the thread is opened (once its newest website page is in), until it closes

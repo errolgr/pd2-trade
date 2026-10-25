@@ -231,7 +231,7 @@ export function visibleThreads(threads: readonly InboxThread[], filter: InboxFil
 export const threadWhisperAccount = (thread: Pick<InboxThread, 'people' | 'accounts'>) =>
   thread.people[0] ? whisperTarget(thread.people[0]) : thread.accounts[0];
 
-/** One message of a thread's timeline, from either source. */
+/** One message of a thread's timeline, from either source, or one of your settled offers. */
 export interface TimelineEntry {
   /** Stable list key (a website send keeps its client id across the server ack). */
   key: string;
@@ -246,22 +246,26 @@ export interface TimelineEntry {
   copied?: boolean;
   /** From them and not read yet. */
   unread: boolean;
+  /** An offer you made that is no longer open: an event row at the time you made it, not a message. */
+  offer?: TradeOffer;
 }
 
 /**
  * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers of
- * `people` by time. While older website pages are still unloaded, whispers before the oldest loaded website
- * message are left out, so paging back never slips website messages in above whispers already shown.
+ * `people` and the `offers` (your settled ones) by time. While older website pages are still unloaded,
+ * whispers and offers before the oldest loaded website message are left out, so paging back never slips
+ * website messages in above entries already shown.
  */
 export function buildTimeline(
   website: readonly ChatMessage[],
   people: readonly WhisperPerson[],
   currentUserId: string | undefined,
   hasOlder: boolean,
+  offers: readonly TradeOffer[] = [],
 ): TimelineEntry[] {
   const oldestWebsite = website.length > 0 && hasOlder ? Date.parse(website[0].created_at) : -Infinity;
-  const whispers = people
-    .flatMap((person) =>
+  const others = [
+    ...people.flatMap((person) =>
       person.messages.map(
         (m): TimelineEntry => ({
           key: `w:${person.key}:${m.id}`,
@@ -273,7 +277,19 @@ export function buildTimeline(
           unread: m.isIncoming && m.timestamp > person.readAt,
         }),
       ),
-    )
+    ),
+    ...offers.map(
+      (offer): TimelineEntry => ({
+        key: `offer:${offer.id}`,
+        source: 'website',
+        own: true,
+        content: '',
+        createdAt: offer.timestamp.toISOString(),
+        unread: false,
+        offer,
+      }),
+    ),
+  ]
     .filter((entry) => Date.parse(entry.createdAt) >= oldestWebsite)
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 
@@ -281,7 +297,7 @@ export function buildTimeline(
   let w = 0;
   for (const message of website) {
     const at = Date.parse(message.created_at);
-    while (w < whispers.length && Date.parse(whispers[w].createdAt) < at) entries.push(whispers[w++]);
+    while (w < others.length && Date.parse(others[w].createdAt) < at) entries.push(others[w++]);
     const own = message.sender_id === currentUserId;
     entries.push({
       key: message.clientId ?? message._id,
@@ -293,5 +309,5 @@ export function buildTimeline(
       unread: !own && !message.status && !!currentUserId && !message.reader_ids?.includes(currentUserId),
     });
   }
-  return entries.concat(whispers.slice(w));
+  return entries.concat(others.slice(w));
 }
