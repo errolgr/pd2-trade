@@ -219,36 +219,6 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     handleAuthErrorRef.current = handleAuthenticationError;
   }, [handleAuthenticationError]);
 
-  // Market actions (RESTful) - now we can use handleAuthenticationError
-  const {
-    findMatchingItems,
-    listSpecificItem,
-    getMarketListings,
-    getMarketListingsArchive,
-    updateMarketListing,
-    deleteMarketListing,
-    bumpAllMarketListings,
-    marketApi,
-  } = useMarketActions({
-    settings,
-    authData,
-    fetchAndCacheStash,
-    findItemsByName,
-    stashCache,
-    CACHE_TTL,
-    onAuthError: handleAuthenticationError,
-  });
-
-  // Social actions (RESTful)
-  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } =
-    useSocialActions({
-      settings,
-      onAuthError: handleAuthenticationError,
-    });
-
-  // Socket connection
-  const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
-
   // Trade offers
   const {
     incomingOffers,
@@ -267,6 +237,38 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     authData,
     onAuthError: handleAuthenticationError,
   });
+
+  // Market actions (RESTful) - now we can use handleAuthenticationError
+  const {
+    findMatchingItems,
+    listSpecificItem,
+    getMarketListings,
+    getMarketListingsArchive,
+    updateMarketListing,
+    deleteMarketListing,
+    bumpAllMarketListings,
+    marketApi,
+  } = useMarketActions({
+    settings,
+    authData,
+    fetchAndCacheStash,
+    findItemsByName,
+    stashCache,
+    CACHE_TTL,
+    onAuthError: handleAuthenticationError,
+    // An offer the user made is theirs (outgoing): show it in the chat's Buying deals right away
+    onOfferCreated: refresh,
+  });
+
+  // Social actions (RESTful)
+  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } =
+    useSocialActions({
+      settings,
+      onAuthError: handleAuthenticationError,
+    });
+
+  // Socket connection
+  const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
     const token = settings?.pd2Token;

@@ -97,6 +97,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     incomingOffers,
     outgoingOffers,
     hiddenOutgoingOffers,
+    refresh: refreshOffers,
   } = usePd2Website();
   const whispers = useWhisperHistory();
   const { markRead: markWhispersRead, recordCopied } = whispers;
@@ -125,6 +126,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
     return () => window.clearInterval(id);
   }, []);
+
+  // Offers change outside the overlay (made, declined or delisted on the website) without any socket push to
+  // the buyer: refetch them each time the panel opens, so Buying shows the current ones
+  useEffect(() => {
+    if (visible) void refreshOffers();
+    // On open only: refreshOffers changes with every settings change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   // Get current user ID
   const currentUserId = authData?.user?._id;

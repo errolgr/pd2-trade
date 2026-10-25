@@ -1,5 +1,5 @@
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
@@ -41,6 +41,8 @@ interface UseMarketActionsProps {
   stashCache: React.MutableRefObject<{ data: GameData; timestamp: number } | null>;
   CACHE_TTL: number;
   onAuthError?: () => void | Promise<void>;
+  /** Called after an offer was made (the offers lists refetch); read when it fires, so it may change freely. */
+  onOfferCreated?: () => void | Promise<void>;
 }
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
@@ -64,7 +66,13 @@ export function useMarketActions({
   stashCache,
   CACHE_TTL,
   onAuthError,
+  onOfferCreated,
 }: UseMarketActionsProps): UseMarketActionsReturn {
+  const onOfferCreatedRef = useRef(onOfferCreated);
+  useEffect(() => {
+    onOfferCreatedRef.current = onOfferCreated;
+  }, [onOfferCreated]);
+
   // Find matching items
   const findMatchingItems = useCallback(
     async (item: PriceCheckItem): Promise<GameStashItem[]> => {
@@ -270,7 +278,10 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError, body);
+      const created = await handleApiResponse(response, onAuthError, body);
+      // null: a 401, the sign-in flow takes over
+      if (created !== null) void onOfferCreatedRef.current?.();
+      return created;
     },
     [settings.pd2Token, onAuthError],
   );
