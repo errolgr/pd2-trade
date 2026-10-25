@@ -32,6 +32,7 @@ import { SavedSearches } from './components/SavedSearches';
 import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
 import { mergeStatFilters } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
+import { OpenOnSiteButton } from './components/OpenOnSiteButton';
 import { fetchMarketListing } from './alerts/saved-search-api';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
@@ -483,7 +484,12 @@ const MarketBrowserPage: React.FC = () => {
                           itemName={filters?.itemName}
                           toolbar={
                             <>
-                              {tab === 'search' && <WatchButton filters={filters} />}
+                              {tab === 'search' && (
+                                <>
+                                  <OpenOnSiteButton filters={filters} />
+                                  <WatchButton filters={filters} />
+                                </>
+                              )}
                               <ViewModeToggle value={viewMode}
                                 onChange={changeViewMode} />
                             </>
