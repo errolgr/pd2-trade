@@ -59,6 +59,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
@@ -88,6 +89,15 @@ import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
+
+/** The search whose results are listed. */
+interface ActiveSearch {
+  query: MarketListingQuery;
+  archived: boolean;
+  searchMode: number;
+  /** Listings fetched so far: the `$skip` of the next page. */
+  skip: number;
+}
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -123,14 +133,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
   const [searchArchived, setSearchArchived] = useState(false);
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   // True once a new search has completed for the current item (drives the "no listings" empty state)
   const [searched, setSearched] = useState(false);
-  const [triggerCorruptionSearch, setTriggerCorruptionSearch] = useState(false);
-  const [triggerSocketSearch, setTriggerSocketSearch] = useState(false);
+  // Set with filter changes that search as soon as they apply (corruption/socket price clicks, a Keep rare)
+  const [searchPending, setSearchPending] = useState(false);
   const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 20;
+  // More pages continue this search's query, never the filters as edited since
+  const activeSearch = useRef<ActiveSearch | null>(null);
+  // Bumped by each new search and item change: a response for an older one is dropped
+  const searchGeneration = useRef(0);
 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
@@ -162,8 +175,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
   const appraisalNoteText = rareResponse?.reason ? appraisalNote(rareResponse.reason) : null;
-  // Set when an appraisal pre-selects key stats of a Keep rare: runs the search once the filters are applied.
-  const [triggerRareSearch, setTriggerRareSearch] = useState(false);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -441,49 +452,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     effectiveQuality,
   ]);
 
-  const pd2MarketQuery = useMemo(() => {
-    // Only use searchMode for items that support toggle, otherwise use default (0)
-    const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
-    return buildGetMarketListingQuery(
-      item,
-      pd2Item,
-      selected,
-      filters,
-      settings,
-      statMapper,
-      searchArchived,
-      effectiveSearchMode,
-      matchedItemType,
-      corruptedState,
-      ITEMS_PER_PAGE,
-      page * ITEMS_PER_PAGE,
-      selectedCorruptionNames.length > 0 ? selectedCorruptionNames : undefined,
-      shouldUseToggle ? effectiveQuality : undefined,
-    );
-  }, [
-    selected,
-    filters,
-    item,
-    statMapper,
-    settings,
-    searchArchived,
-    pd2Item,
-    searchMode,
-    matchedItemType,
-    shouldUseToggle,
-    corruptedState,
-    page,
-    selectedCorruptionNames,
-    effectiveQuality,
-  ]);
-
   useEffect(() => {
     if (item) {
-      // clear market listing result if new item is loaded
+      // clear market listing result if new item is loaded; a search still in flight is for the old item
+      searchGeneration.current += 1;
+      activeSearch.current = null;
       setMarketListings([]);
       setTotalCount(0);
-      setPage(0);
       setHasMore(false);
+      setMarketLoading(false);
+      setMarketError(null);
       setSearched(false);
       setSelected(new Set());
       setFilters({});
@@ -525,7 +503,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         return next;
       });
     }
-    if (appraisal.verdict === 'keep') setTriggerRareSearch(true);
+    if (appraisal.verdict === 'keep') setSearchPending(true);
     // Once per appraisal: later stat/setting changes must not re-apply the selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appraisal]);
@@ -811,24 +789,25 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     [item, openPanel],
   );
 
-  const fetchListings = useCallback(
-    async (isNewSearch: boolean = false) => {
-      if (settingsLoading) return;
+  /** Fetches the next page of `search`, its first page when nothing is fetched yet. */
+  const fetchPage = useCallback(
+    async (search: ActiveSearch) => {
+      const generation = searchGeneration.current;
+      const isNewSearch = search.skip === 0;
+      const query = { ...search.query, $skip: search.skip };
       setMarketError(null);
       setMarketLoading(true);
       const startTime = performance.now();
 
       try {
-        const result = searchArchived
-          ? await getMarketListingsArchive(pd2MarketQuery)
-          : await getMarketListings(pd2MarketQuery);
+        const result = search.archived ? await getMarketListingsArchive(query) : await getMarketListings(query);
+        if (generation !== searchGeneration.current) return;
 
         const duration = performance.now() - startTime;
 
         if (isNewSearch) {
           setMarketListings(result.data);
           setTotalCount(result.total);
-          setPage(0);
           setSearched(true);
         } else {
           setMarketListings((prev) => {
@@ -839,6 +818,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           });
         }
 
+        search.skip += ITEMS_PER_PAGE;
         setHasMore(result.data.length === ITEMS_PER_PAGE);
 
         trackMeasurement(
@@ -850,47 +830,87 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           },
           {
             outcome: 'success',
-            archived: searchArchived,
-            search_mode: shouldUseToggle ? searchMode : 0,
-            page: isNewSearch ? 0 : page,
+            archived: search.archived,
+            search_mode: search.searchMode,
+            page: query.$skip / ITEMS_PER_PAGE,
           },
         );
       } catch (e: any) {
+        if (generation !== searchGeneration.current) return;
         const duration = performance.now() - startTime;
         trackMeasurement(
           'item_overlay_market_search',
           { duration_ms: duration },
-          { outcome: 'error', archived: searchArchived, search_mode: shouldUseToggle ? searchMode : 0 },
+          { outcome: 'error', archived: search.archived, search_mode: search.searchMode },
         );
         console.log(e.message || 'Failed to fetch market listings');
         setMarketError(e.message || 'Failed to fetch market listings');
+        // Retry starts a new search; scrolling must not keep re-requesting the failed page
+        setHasMore(false);
       } finally {
-        setMarketLoading(false);
+        if (generation === searchGeneration.current) setMarketLoading(false);
       }
     },
+    [getMarketListings, getMarketListingsArchive],
+  );
+
+  /**
+   * Searches the current filters from the first page; `corruptionNames` narrows it to items with those
+   * corruptions. Built here, not kept as state, so it never carries the `$skip` of a list scrolled earlier.
+   */
+  const runSearch = useCallback(
+    (corruptionNames: string[]) => {
+      if (settingsLoading) return;
+      // Only use searchMode for items that support toggle, otherwise use default (0)
+      const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+      const search: ActiveSearch = {
+        query: buildGetMarketListingQuery(
+          item,
+          pd2Item,
+          selected,
+          filters,
+          settings,
+          statMapper,
+          searchArchived,
+          effectiveSearchMode,
+          matchedItemType,
+          corruptedState,
+          ITEMS_PER_PAGE,
+          0,
+          corruptionNames.length > 0 ? corruptionNames : undefined,
+          shouldUseToggle ? effectiveQuality : undefined,
+        ),
+        archived: searchArchived,
+        searchMode: effectiveSearchMode,
+        skip: 0,
+      };
+      searchGeneration.current += 1;
+      activeSearch.current = search;
+      setHasMore(false);
+      fetchPage(search);
+    },
     [
-      pd2MarketQuery,
-      getMarketListings,
-      getMarketListingsArchive,
+      settingsLoading,
+      item,
+      pd2Item,
+      selected,
+      filters,
+      settings,
+      statMapper,
       searchArchived,
       searchMode,
       shouldUseToggle,
-      page,
-      settingsLoading,
+      matchedItemType,
+      corruptedState,
+      effectiveQuality,
+      fetchPage,
     ],
   );
 
-  // Initial Search / Reset
+  // Search button, Enter and Retry: a manual search drops the corruption filter a corruption price click set
   const handleSearch = () => {
-    // Clear corruption names filter when manually searching
     setSelectedCorruptionNames([]);
-    if (page === 0) {
-      fetchListings(true);
-    } else {
-      setPage(0);
-      // Wait for state to update so pd2MarketQuery reflects page 0
-      setTimeout(() => fetchListings(true), 0);
-    }
+    runSearch([]);
   };
 
   // Helper function to check if two corruption key arrays are equal
@@ -910,8 +930,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSelectedCorruptionNames(Array.isArray(corruptionKey) ? corruptionKey : [corruptionKey]); // Set the corruption property names to filter by
       setCorruptedState(1); // Set to corrupted only
       setSearchArchived(true); // Enable expired listings
-      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
-      setTriggerCorruptionSearch(true); // Trigger search after state updates
+      setSearchPending(true);
     },
     [corruptionPrices, itemCorruptions],
   );
@@ -944,66 +963,22 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Set the numsockets corruption key filter
       setSelectedCorruptionNames(corruptionKey);
 
-      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
-      setTriggerSocketSearch(true); // Trigger search after state updates
+      setSearchPending(true);
     },
     [sortedStats],
   );
 
-  // Trigger search when corruption search is requested
+  // Corruption/socket price clicks and a Keep rare search once their filter changes have applied
   useEffect(() => {
-    if (triggerCorruptionSearch) {
-      setTriggerCorruptionSearch(false);
-      setPage(0); // Reset to first page before searching
-      // Use setTimeout to ensure state updates are applied
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerCorruptionSearch, fetchListings]);
+    if (!searchPending) return;
+    setSearchPending(false);
+    runSearch(selectedCorruptionNames);
+  }, [searchPending, runSearch, selectedCorruptionNames]);
 
-  // Search once the key stats of a Keep rare are pre-selected (filters are applied by then)
+  // Infinite scroll: the next page of the listed search
   useEffect(() => {
-    if (triggerRareSearch) {
-      setTriggerRareSearch(false);
-      setPage(0);
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerRareSearch, fetchListings]);
-
-  // Trigger search when socket search is requested
-  useEffect(() => {
-    if (triggerSocketSearch) {
-      setTriggerSocketSearch(false);
-      setPage(0); // Reset to first page before searching
-      // Use setTimeout to ensure state updates are applied
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerSocketSearch, fetchListings]);
-
-  // We need to distinguish between "page changed because of scroll" vs "reset to 0"
-  // Let's simplify: Search button resets everything and fetches page 0.
-  // Scroll increments page.
-  // pd2MarketQuery updates when page changes.
-
-  useEffect(() => {
-    // If page > 0, it means we scrolled.
-    // Don't trigger if we're doing a corruption or socket search (triggers handle that)
-    if (page > 0 && !triggerCorruptionSearch && !triggerSocketSearch) {
-      fetchListings(false);
-    }
-  }, [page, fetchListings, triggerCorruptionSearch]);
-
-  // Trigger infinite scroll
-  useEffect(() => {
-    if (inView && !marketLoading && hasMore) {
-      setPage((prev) => prev + 1);
-    }
-  }, [inView, marketLoading, hasMore]);
+    if (inView && !marketLoading && hasMore && activeSearch.current) fetchPage(activeSearch.current);
+  }, [inView, marketLoading, hasMore, fetchPage]);
 
   const openSettingsPage = useCallback(() => openPanel('settings'), [openPanel]);
 
@@ -1094,10 +1069,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         average:
           averagePriceData && headlinePrice !== null
             ? {
-              data: averagePriceData,
-              headline: headlinePrice,
-              basis: windowNote ? `${basisLabel(requestedWindow)} (${windowNote.label})` : basisLabel(requestedWindow),
-            }
+                data: averagePriceData,
+                headline: headlinePrice,
+                basis: windowNote
+                  ? `${basisLabel(requestedWindow)} (${windowNote.label})`
+                  : basisLabel(requestedWindow),
+              }
             : null,
         listings: searched ? { entries: marketListings, total: totalCount, archived: searchArchived } : null,
         context,

@@ -556,6 +556,61 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.queryByText('Load more')).toBeNull();
   });
 
+  it('after scrolling, a new search starts from the first page with the edited filters', async () => {
+    const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `a${i}`, hr_price: i + 1 }));
+    getMarketListings.mockResolvedValueOnce(page(first, 23));
+    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'a20', hr_price: 21 })], 23));
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(statCheckbox('% Better Chance of Getting Magic Items'));
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('Load more')).not.toBeNull();
+    inView = true;
+    rerenderItem(item);
+    expect(await screen.findByText('21 HR')).not.toBeNull();
+    inView = false;
+    rerenderItem(item);
+
+    // Editing the range or Show Expired fetches nothing until Search
+    const min = screen.getByLabelText('% Better Chance of Getting Magic Items minimum');
+    fireEvent.change(min, { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.click(screen.getByRole('switch'));
+    await act(async () => {});
+    expect(getMarketListings).toHaveBeenCalledTimes(2);
+
+    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'b0', hr_price: 77 })], 1));
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('77 HR')).not.toBeNull();
+    const q = lastQuery();
+    expect(q.$skip).toBe(0);
+    expect(JSON.stringify(q)).toContain('{"name":"item_magicbonus","values.0":{"$gte":1,"$lte":');
+    expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
+  });
+
+  it('drops a page that arrives after a newer search started', async () => {
+    const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `a${i}` }));
+    getMarketListings.mockResolvedValueOnce(page(first, 40));
+    const late = Promise.withResolvers<MarketListingResult>();
+    getMarketListings.mockReturnValueOnce(late.promise);
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('Load more')).not.toBeNull();
+    inView = true;
+    rerenderItem(item);
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(2));
+    inView = false;
+    rerenderItem(item);
+
+    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'b0', hr_price: 77 })], 1));
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('77 HR')).not.toBeNull();
+    await act(async () => late.resolve(page([listing({ _id: 'a20', hr_price: 66 })], 40)));
+    expect(screen.queryByText('66 HR')).toBeNull();
+    expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
+  });
+
   it('copies a whisper to the seller of an online listing', async () => {
     vi.mocked(writeText).mockResolvedValue(undefined);
     getMarketListings.mockResolvedValue(
