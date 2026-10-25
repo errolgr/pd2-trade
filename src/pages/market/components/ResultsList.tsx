@@ -264,16 +264,22 @@ const ResultRow = React.memo(function ResultRow({
       </div>
 
       <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 max-w-full items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
           <span
-            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
+            className={cn('truncate text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-foreground/85')}
             title={listing.price || undefined}
           >
-            {price ?? (listing.price ? 'Offer' : '—')}
+            {price ?? (listing.price || '—')}
           </span>
         </div>
+        {price && listing.price && (
+          <span className="max-w-full truncate text-[10px] text-muted-foreground"
+            title={listing.price}>
+            {listing.price}
+          </span>
+        )}
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {listing.user?.username && (
             <SellerName onOpen={openTrader}
