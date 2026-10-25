@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setBadgeCount, showToast } from '@/overlay';
+import { showToast } from '@/overlay';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { getDeletedOffers, markOfferAsDeleted } from '@/lib/deleted-offers-storage';
 import type { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import type { ISettings } from './useOptions';
 import { useTradeOffers } from './useTradeOffers';
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), setBadgeCount: vi.fn() }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 // The real module drags in the whole PD2 website provider; this stub keeps handleApiResponse's contract:
 // ok → JSON body, 401 → onAuthError() and null, anything else → throw.
@@ -229,14 +229,6 @@ describe('useTradeOffers fetching', () => {
     await act(async () => result.current.refresh());
     expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
     expect(result.current.outgoingOffers.map((o) => o.id)).toEqual(['x']);
-  });
-
-  it('publishes the total offer count as the tradeOffers badge', async () => {
-    api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('o1'), websiteOffer('o2')])] });
-    api.outgoing = () => apiResponse({ data: [outgoingOffer('a')] });
-    await renderOffers();
-
-    expect(vi.mocked(setBadgeCount)).toHaveBeenLastCalledWith('tradeOffers', 3);
   });
 
   // BUG: useTradeOffers.tsx:330-342/344-375 — incoming and outgoing fetches share one `loading` flag, so

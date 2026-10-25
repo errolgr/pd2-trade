@@ -18,6 +18,7 @@ import {
   useOverlay,
   type PanelPayloads,
 } from '@/overlay';
+import { openOffers } from '@/pages/chat/chat-feed';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
 
@@ -136,7 +137,8 @@ const AppController: React.FC = () => {
     },
     // Opening with unread messages lands on the newest unread thread (the badge leaves out muted ones)
     chat: () => (getBadgeCount('chatUnread') > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat')),
-    offers: () => openPanel('chat', { filter: 'selling' }),
+    // Like the Offers button: the view of what the offers badge counts
+    offers: () => openOffers((payload) => openPanel('chat', payload)),
     delist: handleDelistItem,
     snapshot: async () => {
       await takeSnapshot('manual');

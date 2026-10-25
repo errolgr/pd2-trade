@@ -14,6 +14,8 @@ import type * as Overlay from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import ChatButtonPage from './ChatButtonPage';
 import { setChatDockOffset } from './chat-dock';
+import { publishChatFeed, provideChatFeedActions, resetChatFeed, type FeedItem } from './chat-feed';
+import { PEEK_DELAY_MS } from '@/components/custom/ChatButton';
 
 vi.mock('@/overlay', async (importOriginal) => ({
   ...(await importOriginal<typeof Overlay>()),
@@ -148,5 +150,115 @@ describe('ChatButtonPage', () => {
     // Near the top the menu opens below the tab
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByRole('menu').className).toContain('top-full');
+  });
+});
+
+const item = (n: number, over: Partial<FeedItem> = {}): FeedItem => ({
+  key: `k${n}`,
+  kind: 'message',
+  name: `Trader${n}`,
+  at: n * 1000,
+  open: { threadId: `whisper:t${n}` },
+  ...over,
+});
+
+function provideActions() {
+  const actions = { markAllRead: vi.fn(), seeOffers: vi.fn() };
+  provideChatFeedActions(actions);
+  return actions;
+}
+
+describe('ChatButtonPage feed', () => {
+  afterEach(() => resetChatFeed());
+
+  it('Offers lands on Buying for an accepted offer and marks offers seen', () => {
+    const actions = provideActions();
+    publishChatFeed({ items: [item(1, { kind: 'offerAccepted', open: { filter: 'buying' } })], canMarkAllRead: false });
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { filter: 'buying' }]]);
+    expect(actions.seeOffers).toHaveBeenCalledTimes(1);
+  });
+
+  it("Offers lands on a single trade whisper's thread", () => {
+    provideActions();
+    publishChatFeed({ items: [item(1, { kind: 'trade', open: { threadId: 'whisper:bob' } })], canMarkAllRead: false });
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { threadId: 'whisper:bob' }]]);
+  });
+
+  it('Offers with nothing new lands on Selling', () => {
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { filter: 'selling' }]]);
+  });
+
+  describe('peek', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const peek = () => screen.queryByRole('group', { name: "What's new" });
+    const hover = () =>
+      act(() => {
+        fireEvent.pointerEnter(screen.getByRole('button', { name: 'Offers' }).closest('[data-interactive]')!);
+        vi.advanceTimersByTime(PEEK_DELAY_MS);
+      });
+    const six = () => [6, 5, 4, 3, 2, 1].map((n) => item(n));
+
+    it('lists the 5 newest items, newest first', () => {
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      const buttons = peek()!.querySelectorAll('li button');
+      expect(buttons).toHaveLength(5);
+      expect([...buttons].map((b) => b.textContent)).toEqual(
+        [6, 5, 4, 3, 2].map((n) => expect.stringContaining(`Trader${n}`)),
+      );
+      expect(screen.queryByText('Trader1')).toBeNull();
+    });
+
+    it('clicking an item opens it and closes the peek', async () => {
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByText('Trader5'));
+      expect(overlay.openPanel.mock.calls).toEqual([['chat', { threadId: 'whisper:t5' }]]);
+      // the exit animation runs on real frames
+      vi.useRealTimers();
+      await waitFor(() => expect(peek()).toBeNull());
+    });
+
+    it('Mark all read calls the provided action, disabled when there is nothing to mark', () => {
+      const actions = provideActions();
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+      expect(actions.markAllRead).toHaveBeenCalledTimes(1);
+
+      act(() => publishChatFeed({ items: six(), canMarkAllRead: false }));
+      expect((screen.getByRole('button', { name: 'Mark all read' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('Open chat opens chat, on the newest unread with unread messages', () => {
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+      act(() => setBadgeCount('chatUnread', 3));
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+      expect(overlay.openPanel.mock.calls).toEqual([['chat', undefined], ['chat', { newestUnread: true }]]);
+    });
+
+    it("an empty feed shows You're all caught up", () => {
+      render(<ChatButtonPage />);
+      hover();
+      expect(screen.getByText("You're all caught up")).not.toBeNull();
+    });
   });
 });

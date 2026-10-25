@@ -6,6 +6,8 @@ import { isTauri } from '@tauri-apps/api/core';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { setBadgeCount } from '@/overlay';
 import { OPEN_TRADE_MS, parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
+import { changeChatPrefs, resetChatPrefs } from '@/lib/chat-prefs';
+import { markOffersSeen } from '@/pages/chat/lib/offers-seen';
 import { useWhisperHistory, WhisperHistoryProvider } from './useWhisperHistory';
 
 const bus = vi.hoisted(() => {
@@ -165,5 +167,19 @@ describe('WhisperHistoryProvider', () => {
     expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
     await act(async () => vi.advanceTimersByTimeAsync(60_000));
     expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 0]);
+  });
+
+  it('counts only trades received since the offers were last looked at (chat prefs)', async () => {
+    resetChatPrefs();
+    await renderHistory();
+    fire('trade-message', tradeFromBob);
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
+
+    act(() => changeChatPrefs((prefs) => markOffersSeen(prefs, Date.now())));
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 0]);
+
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+    fire('trade-message', { ...tradeFromBob, playerName: 'Zed', accountName: 'Zed', characterName: 'ZedChar' });
+    expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
   });
 });

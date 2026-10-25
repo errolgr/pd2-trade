@@ -5,6 +5,7 @@ import { useMarketActions } from './useMarketActions';
 import { useSocialActions, type SocialActions } from './useSocialActions';
 import { useTradeOffers, type TradeOffer } from '../useTradeOffers';
 import { useSocket, type SubscribeSocket } from './useSocket';
+import { useOfferNotifications, type OfferNotificationsApi } from './useOfferNotifications';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
@@ -79,7 +80,7 @@ export function isExpectedApiError(error: unknown): boolean {
   return error instanceof PD2ApiError && error.statusCode >= 400 && error.statusCode < 500;
 }
 
-interface Pd2WebsiteContextType extends SocialActions {
+interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
     stashItem: GameStashItem,
@@ -271,6 +272,16 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   // Socket connection
   const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
 
+  // PD2's offer notifications (the website's bell): the offers badge
+  const { offerNotifications, newAcceptedOffers, acknowledgeOfferNotifications } = useOfferNotifications({
+    settings,
+    userId: authData?.user?._id,
+    subscribeSocket,
+    isConnected,
+    outgoingOffers,
+    onAuthError: handleAuthenticationError,
+  });
+
   const authenticate = useCallback(async (): Promise<AuthData> => {
     const token = settings?.pd2Token;
     if (!token) {
@@ -381,6 +392,9 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         startOAuthFlow,
         isConnected,
         subscribeSocket,
+        offerNotifications,
+        newAcceptedOffers,
+        acknowledgeOfferNotifications,
       }}
     >
       {children}

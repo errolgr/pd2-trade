@@ -200,14 +200,65 @@ describe('useSocketNotifications offer notifications', () => {
     expect(sounds).toHaveLength(102);
   });
 
-  it('ignores other notification types and offers without a listing', async () => {
+  it('ignores other notification types, logging only their type at debug level', async () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
     await renderNotifications({ isConnected: true });
 
-    await fire(OFFER_EVENT, offer('a', { type: 'listing_sold' }));
-    await fire(OFFER_EVENT, offer('b', { data: {} }));
+    await fire(OFFER_EVENT, offer('a', { type: 'listing_sold', meta: { string: 'secret' } }));
 
     expect(sounds).toEqual([]);
     expect(pd2.refresh).not.toHaveBeenCalled();
+    expect(debug.mock.calls).toEqual([['[Notifications] Unhandled system/notification push type:', 'listing_sold']]);
+    debug.mockRestore();
+  });
+
+  it('reads offers leniently: without a listing or an id there is still a sound and a toast (no link)', async () => {
+    await renderNotifications({ isConnected: true });
+
+    await fire(OFFER_EVENT, { type: 'offer_received' });
+
+    expect(sounds).toHaveLength(1);
+    expect(toasts()).toEqual([{ title: 'New Offer', description: 'New offer received', action: undefined }]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('an accepted offer gets its own toast and sound, and refreshes the offers', async () => {
+    await renderNotifications({ isConnected: true, settings: { whisperNotificationVolume: 40 } });
+
+    await fire(OFFER_EVENT, offer('acc1', { type: 'offer_accepted', meta: { string: 'alice accepted your offer' } }));
+
+    expect(sounds).toEqual([0.4]);
+    expect(toasts()).toEqual([
+      {
+        title: 'Offer Accepted',
+        description: 'alice accepted your offer',
+        action: { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'listing-1' } },
+      },
+    ]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('an accepted offer follows the offers toast setting and the trade sound setting', async () => {
+    await renderNotifications({
+      isConnected: true,
+      settings: { tradeNotificationsEnabled: false, toastPopupTypes: ['whispers'] },
+    });
+
+    await fire(OFFER_EVENT, offer('acc1', { type: 'offer_accepted', meta: {} }));
+
+    expect(sounds).toEqual([]);
+    expect(toasts()).toEqual([]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('a withdrawn offer only refreshes the offers, quietly', async () => {
+    await renderNotifications({ isConnected: true });
+
+    await fire(OFFER_EVENT, offer('rev1', { type: 'offer_revoked' }));
+
+    expect(sounds).toEqual([]);
+    expect(toasts()).toEqual([]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('still refreshes offers with sound and toast both disabled, using a default description', async () => {

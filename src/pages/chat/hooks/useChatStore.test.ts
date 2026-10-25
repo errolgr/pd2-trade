@@ -355,6 +355,15 @@ describe('chatReducer read state', () => {
     ]);
     expect(thread(state).messages[0].reader_ids).toEqual([ME]);
   });
+
+  it('with `clears` (Mark all read found every unread message) drops the count by that, keeping later pushes', () => {
+    let state = run([], withConversations(conv('c1', 3)));
+    // Unread 3 when the ids were collected, one more pushed since: the server counted differently (2 ids)
+    state = run([received(msg('a9', 'alice', 'later', 0))], state);
+    expect(state.conversations[0].unread_count).toBe(4);
+    state = run([{ type: 'markedRead', conversationId: 'c1', messageIds: ['a1', 'a2'], readerId: ME, clears: 3 }], state);
+    expect(state.conversations[0].unread_count).toBe(1);
+  });
 });
 
 describe('useChatStore conversations', () => {

@@ -33,10 +33,17 @@ interface ChatButtonProps {
   onDragEnd?: () => void;
   /** Open the menu below the tab instead of above it (the tab is near the top). */
   menuBelow?: boolean;
+  /**
+   * Shown beside the tab after the pointer rests on it for PEEK_DELAY_MS (what's new behind the badges); it gets
+   * `close` to call once something in it was picked. Omitted: nothing opens on hover.
+   */
+  peek?: (close: () => void) => React.ReactNode;
 }
 
 /** Moving the pointer from the tab to the menu crosses a small gap: only close after this long outside both. */
 const LEAVE_GRACE_MS = 400;
+/** The pointer must rest on the tab this long for the peek: passing over it (mid-fight) opens nothing. */
+export const PEEK_DELAY_MS = 600;
 
 const formatCount = (count: number) => (count > 99 ? '99+' : String(count));
 
@@ -78,10 +85,11 @@ interface MenuEntry {
 const DRAG_THRESHOLD = 4;
 
 /**
- * The chat dock: a tab (chat · offers · menu caret) flush on the game's right edge, flat side against it. Nothing
- * opens on hover: a stray pointer passing over it mid-fight does nothing, only clicks do. Dragging the tab slides it
- * along the edge (`onDrag` gets the vertical travel). The caret opens a menu of the other windows, above the tab or
- * below it (`menuBelow`) near the top. A new message or offer pulses the tab once.
+ * The chat dock: a tab (chat · offers · menu caret) flush on the game's right edge, flat side against it. A stray
+ * pointer passing over it mid-fight opens nothing: the menu opens from the caret, the peek (if given) only once
+ * the pointer rests on the tab for PEEK_DELAY_MS. Dragging the tab slides it along the edge (`onDrag` gets the
+ * vertical travel). The menu opens above the tab or below it (`menuBelow`) near the top; the peek beside it,
+ * aligned the same way. A new message or offer pulses the tab once.
  */
 export const ChatButton: React.FC<ChatButtonProps> = ({
   size,
@@ -98,9 +106,12 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   onDrag,
   onDragEnd,
   menuBelow = false,
+  peek,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [peekOpen, setPeekOpen] = useState(false);
   const leaveTimer = useRef<number | undefined>(undefined);
+  const peekTimer = useRef<number | undefined>(undefined);
 
   // One pulse per increase of either count (not on mount, not when they drop); adjusted during render, no effect
   const [pulse, setPulse] = useState(0);
@@ -110,13 +121,32 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     setSeen({ unreadCount, tradeOffersCount });
   }
 
-  useEffect(() => () => window.clearTimeout(leaveTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(leaveTimer.current);
+      window.clearTimeout(peekTimer.current);
+    },
+    [],
+  );
 
-  const onEnter = () => window.clearTimeout(leaveTimer.current);
-  const onLeave = () => {
-    if (!menuOpen) return;
+  const closePeek = () => {
+    window.clearTimeout(peekTimer.current);
+    setPeekOpen(false);
+  };
+  const onEnter = () => {
     window.clearTimeout(leaveTimer.current);
-    leaveTimer.current = window.setTimeout(() => setMenuOpen(false), LEAVE_GRACE_MS);
+    if (!peek || peekOpen || menuOpen) return;
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => setPeekOpen(true), PEEK_DELAY_MS);
+  };
+  const onLeave = () => {
+    window.clearTimeout(peekTimer.current);
+    if (!menuOpen && !peekOpen) return;
+    window.clearTimeout(leaveTimer.current);
+    leaveTimer.current = window.setTimeout(() => {
+      setMenuOpen(false);
+      setPeekOpen(false);
+    }, LEAVE_GRACE_MS);
   };
   const pick = (action: () => void) => () => {
     setMenuOpen(false);
@@ -131,6 +161,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   });
   const swallowClick = useRef(false);
   const onTabPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Pressing the tab (a click or a drag) means business: no peek
+    closePeek();
     if (e.button !== 0 || !onDrag) return;
     const startY = e.clientY;
     let dragging = false;
@@ -198,7 +230,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* The frame is click-through: only the pill and the open menu take clicks. */}
+      {/* The frame is click-through: only the pill and the open menu or peek take clicks. */}
       <div
         data-interactive="true"
         className="pointer-events-auto absolute"
@@ -336,6 +368,23 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                   </button>
                 </>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {peek && peekOpen && !menuOpen && (
+            // Beside the tab, its own interactive rect like the menu; nothing in it takes focus by itself
+            <motion.div
+              data-interactive="true"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              style={{ transformOrigin: menuBelow ? 'top right' : 'bottom right' }}
+              className={cn('absolute right-full mr-1.5', menuBelow ? 'top-0' : 'bottom-0')}
+            >
+              {peek(() => setPeekOpen(false))}
             </motion.div>
           )}
         </AnimatePresence>

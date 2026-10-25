@@ -99,6 +99,31 @@ describe('thread preferences', () => {
     });
     expect(parseChatPrefs(JSON.stringify({ threads: {}, sidebarCollapsed: 'yes' })).sidebarCollapsed).toBeUndefined();
   });
+
+  it('round-trips when the offers were seen and the accepted offers, dropping malformed values', () => {
+    const saved = {
+      threads: { c1: { offersSeenAt: 7 } },
+      offersSeenAt: 5,
+      acceptedOffers: { o1: 10, o2: 0 },
+    };
+    const prefs = parseChatPrefs(JSON.stringify(saved));
+    expect(prefs).toEqual(saved);
+    expect(parseChatPrefs(JSON.stringify(prefs))).toEqual(saved);
+    const bad = parseChatPrefs(JSON.stringify({ threads: {}, offersSeenAt: '5', acceptedOffers: { o1: 'x' } }));
+    expect(bad.offersSeenAt).toBeUndefined();
+    expect(bad.acceptedOffers).toBeUndefined();
+  });
+
+  it("copies a thread's offers seen mark onto its new ids, keeping the latest", () => {
+    let prefs = setThreadPrefs(EMPTY_PREFS, ['user:carol'], { offersSeenAt: 3 });
+    prefs = setThreadPrefs(prefs, ['whisper:carol'], { offersSeenAt: 9 });
+    const next = reconcileThreadPrefs(prefs, [['c9', 'user:carol', 'whisper:carol']]);
+    expect(next.threads).toEqual({
+      c9: { offersSeenAt: 9 },
+      'user:carol': { offersSeenAt: 9 },
+      'whisper:carol': { offersSeenAt: 9 },
+    });
+  });
 });
 
 describe('chat-prefs store', () => {

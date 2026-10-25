@@ -31,6 +31,9 @@ vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: vi.fn() }));
 vi.mock('@/hooks/useTradeOffers', () => ({ useTradeOffers: vi.fn() }));
 vi.mock('./useSocket', () => ({ useSocket: () => socket }));
+vi.mock('./useOfferNotifications', () => ({
+  useOfferNotifications: () => ({ offerNotifications: [], newAcceptedOffers: [], acknowledgeOfferNotifications: vi.fn() }),
+}));
 
 import { useTradeOffers } from '@/hooks/useTradeOffers';
 

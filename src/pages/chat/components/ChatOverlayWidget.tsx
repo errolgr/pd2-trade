@@ -4,7 +4,9 @@ import { MessageSquare, MessagesSquare } from 'lucide-react';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { Badge } from '@/components/ui/badge';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import { useOptions } from '@/hooks/useOptions';
+import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -32,6 +34,8 @@ import {
   type InboxFilter,
   type InboxThread,
 } from '../lib/inbox';
+import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed';
+import { markOffersSeen, newTrades, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
@@ -60,6 +64,13 @@ interface ConversationRequest {
 interface UnreadMarker {
   threadId: string;
   key: string | null | undefined;
+}
+
+/** What the offers badge counts (offers-seen), as looked at together. */
+interface OffersSeen {
+  notifications: readonly OfferNotification[];
+  accepted: readonly TradeOffer[];
+  trades: readonly NewTrade[];
 }
 
 /** Open trade whispers are re-evaluated (they stop being pinned after a day) this often. */
@@ -98,6 +109,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     outgoingOffers,
     hiddenOutgoingOffers,
     refresh: refreshOffers,
+    offerNotifications,
+    acknowledgeOfferNotifications,
+    newAcceptedOffers,
   } = usePd2Website();
   const whispers = useWhisperHistory();
   const { markRead: markWhispersRead, recordCopied } = whispers;
@@ -296,6 +310,96 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   useEffect(() => {
     if (unreadWhisperKeys) markWhispersRead(unreadWhisperKeys.split('\n'));
   }, [unreadWhisperKeys, markWhispersRead]);
+
+  // The offers badge (see offers-seen: PD2's offer notifications, your offers seen accepted without one, open trade
+  // whispers received) clears for what the panel shows: the Selling or Buying list shows them all, an open
+  // thread its own
+  const peopleList = useMemo(() => Object.values(whispers.people), [whispers.people]);
+  const unseenTrades = useMemo(() => newTrades(prefs, peopleList, now), [prefs, peopleList, now]);
+  const allOffers = useMemo<OffersSeen>(
+    () => ({ notifications: offerNotifications, accepted: newAcceptedOffers, trades: unseenTrades }),
+    [offerNotifications, newAcceptedOffers, unseenTrades],
+  );
+  /**
+   * Acknowledges the notifications on PD2 (the website's bell clears too) and marks everything up to now (or the
+   * newest item, if later) looked at: in the thread known by `threadIds`, else everywhere.
+   */
+  const seeOffers = useCallback(
+    ({ notifications, accepted, trades }: OffersSeen, threadIds?: readonly string[]) => {
+      if (notifications.length === 0 && accepted.length === 0 && trades.length === 0) return;
+      if (notifications.length > 0) acknowledgeOfferNotifications(notifications.map((n) => n.id));
+      changeChatPrefs((current) => {
+        const at = Math.max(
+          Date.now(),
+          ...notifications.map((n) => n.at),
+          ...accepted.map((offer) => current.acceptedOffers?.[offer.id] ?? 0),
+          ...trades.map(({ trade }) => trade.timestamp),
+        );
+        return markOffersSeen(current, at, threadIds);
+      });
+    },
+    [acknowledgeOfferNotifications],
+  );
+  const offersListShown = visible && (filter === 'selling' || filter === 'buying') && (!compact || !selectedThread);
+  useEffect(() => {
+    if (offersListShown) seeOffers(allOffers);
+  }, [offersListShown, allOffers, seeOffers]);
+  const threadSeen = useMemo(() => {
+    if (!visible || !selectedThread) return undefined;
+    const listingIds = new Set(selectedThread.offers.map((offer) => offer.listingId));
+    const aliases = threadAliases(selectedThread);
+    const seen: OffersSeen = {
+      notifications: offerNotifications.filter((n) => !!n.listingId && listingIds.has(n.listingId)),
+      accepted: newAcceptedOffers.filter((offer) => aliases.includes(offerThreadId(offer))),
+      trades: unseenTrades.filter(({ person }) => selectedThread.people.some((p) => p.key === person.key)),
+    };
+    return { seen, aliases };
+  }, [visible, selectedThread, offerNotifications, newAcceptedOffers, unseenTrades]);
+  useEffect(() => {
+    if (threadSeen) seeOffers(threadSeen.seen, threadSeen.aliases);
+  }, [threadSeen, seeOffers]);
+
+  // Mark all read: website messages (on PD2), whispers, offer notifications (on PD2), accepted offers, trades
+  const canMarkAllRead =
+    threads.some((thread) => thread.unread > 0) ||
+    offerNotifications.some(isOfferNews) ||
+    newAcceptedOffers.length > 0 ||
+    unseenTrades.length > 0;
+  const markAllRead = async () => {
+    seeOffers(allOffers);
+    markWhispersRead(peopleList.filter((p) => unreadWhispers(p) > 0).map((p) => p.key));
+    if (!(await chat.markAllRead())) {
+      showToast({
+        title: "Couldn't mark every chat read",
+        description: 'Check your connection and try again.',
+        variant: 'error',
+      });
+    }
+  };
+
+  // The chat button's peek and Offers landing (chat-feed)
+  const feedItems = useMemo(
+    () =>
+      buildFeed({
+        threads,
+        notifications: offerNotifications,
+        incomingOffers,
+        outgoingOffers,
+        accepted: newAcceptedOffers.map((offer) => ({ offer, at: prefs.acceptedOffers?.[offer.id] ?? 0 })),
+        trades: unseenTrades,
+        threadOf: (id) => findThread(threads, id),
+      }),
+    [threads, offerNotifications, incomingOffers, outgoingOffers, newAcceptedOffers, prefs, unseenTrades],
+  );
+  useEffect(() => {
+    publishChatFeed({ items: feedItems, canMarkAllRead });
+  }, [feedItems, canMarkAllRead]);
+  useEffect(() => {
+    provideChatFeedActions({
+      markAllRead: () => void markAllRead(),
+      seeOffers: () => seeOffers(allOffers),
+    });
+  });
 
   // Fetch conversations on mount and when user is available
   // Guard on authData.accessToken to ensure we have a token before making API calls
@@ -603,6 +707,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
               threads={listed}
               total={threads.length}
               unreadTotal={unreadTotal}
+              onMarkAllRead={canMarkAllRead ? () => void markAllRead() : undefined}
               filter={filter}
               onFilterChange={setFilter}
               search={search}
