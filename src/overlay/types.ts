@@ -44,6 +44,8 @@ export interface PanelPayloads {
         userId?: string;
         userName?: string;
         draft?: string;
+        /** Show the Trader sidebar on the opened thread (a market seller's name was clicked). */
+        trader?: boolean;
       }
     | undefined;
   chatButton: undefined;

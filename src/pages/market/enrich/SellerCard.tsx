@@ -8,6 +8,8 @@ import type { TraderPresence } from '@/pages/chat/hooks/useTraderProfile';
 import { DealBadge } from './DealBadge';
 import { useSellerContext } from './useSellerContext';
 import { useDealIndicators } from './useDealIndicators';
+import { SellerName } from '../components/SellerName';
+import { useOpenTrader } from '../hooks/useListingActions';
 
 /** Same tones as the chat Trader sidebar's presence dot. */
 const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
@@ -37,6 +39,7 @@ export function SellerCard({
 }) {
   const seller = useSellerContext(listing);
   const deals = useDealIndicators(seller.others);
+  const openTrader = useOpenTrader(listing);
 
   let others: React.ReactNode;
   if (seller.status === 'loading') {
@@ -92,7 +95,14 @@ export function SellerCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="truncate text-sm font-semibold">{seller.username ?? 'Unknown seller'}</span>
+            {listing.user_id ? (
+              <SellerName onOpen={openTrader}
+                className="text-sm font-semibold">
+                {seller.username ?? 'Unknown seller'}
+              </SellerName>
+            ) : (
+              <span className="truncate text-sm font-semibold">{seller.username ?? 'Unknown seller'}</span>
+            )}
             {seller.inGameAccount && (
               <span className="truncate text-xs text-muted-foreground">*{seller.inGameAccount}</span>
             )}
