@@ -76,7 +76,11 @@ export type ChatAction =
   | { type: 'sendSucceeded'; conversationId: string; clientId: string; message: Message }
   | { type: 'sendFailed'; conversationId: string; clientId: string }
   | { type: 'sendRetried'; conversationId: string; clientId: string }
-  | { type: 'markedRead'; conversationId: string; messageIds: string[]; readerId: string };
+  /**
+   * `clears`: the conversation's unread count when `messageIds` were found to be all its unread messages; the
+   * count drops by that rather than by the ids (it may have counted differently; later pushes stay unread).
+   */
+  | { type: 'markedRead'; conversationId: string; messageIds: string[]; readerId: string; clears?: number };
 
 /**
  * Confirmed messages de-duplicated by id (an incoming copy wins but keeps the local key/animation flags) in
@@ -254,7 +258,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }));
       return withConversation(next, conversationId, (c) => ({
         ...c,
-        unread_count: Math.max(0, (c.unread_count || 0) - messageIds.length),
+        unread_count: Math.max(0, (c.unread_count || 0) - (action.clears ?? messageIds.length)),
       }));
     }
   }
@@ -267,6 +271,8 @@ export const totalUnreadCount = (conversations: Conversation[]) =>
 const MAX_CONVERSATION_PAGES = 20;
 /** Push ids remembered to suppress duplicate side effects (sound, list reloads). */
 const SEEN_PUSH_LIMIT = 500;
+/** Mark all read reads at most this many pages of a conversation looking for its unread messages. */
+const MAX_UNREAD_PAGES = 20;
 
 async function fetchAllConversations(
   getConversations: SocialActions['getConversations'],
@@ -505,10 +511,10 @@ export function useChatStore({
     });
   }, [currentUserId, subscribeSocket, loadConversations]);
 
-  // The single mark-read path: unread messages from the other participant in the conversation on screen are
-  // marked once its newest page is in (so opening a thread sends one request covering cached and fetched
-  // messages). Ids in flight are skipped so overlapping triggers (re-renders, pushes) never re-send; ids that
-  // failed are not retried until the conversation is opened again.
+  // The mark-read path of the conversation on screen: unread messages from the other participant are marked
+  // once its newest page is in (so opening a thread sends one request covering cached and fetched messages).
+  // Ids in flight (here or in Mark all read) are skipped so overlapping triggers (re-renders, pushes) never
+  // re-send; ids that failed are not retried until the conversation is opened again.
   const markInFlightRef = useRef(new Set<string>());
   const markFailedRef = useRef(new Set<string>());
   useEffect(() => {
@@ -549,6 +555,78 @@ export function useChatStore({
       .finally(() => ids.forEach((id) => inFlight.delete(id)));
   }, [viewingConversationId, viewingMessages, currentUserId, markMessagesAsRead]);
 
+  /**
+   * Mark all read: every unread website message of every conversation is marked read on PD2 the way the open
+   * thread (and the website) does it, by adding the user to the messages' reader_ids, so it holds on every
+   * device and after a restart. A conversation's unread messages come from its held thread when that has them
+   * all, else from its newest pages. Resolves whether every conversation was marked.
+   */
+  const markAllRead = useCallback(async (): Promise<boolean> => {
+    if (!currentUserId) return false;
+    const inFlight = markInFlightRef.current;
+    const isUnread = (m: ChatMessage) =>
+      !m.status && m.sender_id !== currentUserId && !m.reader_ids?.includes(currentUserId);
+
+    const markConversation = async (conversation: Conversation): Promise<boolean> => {
+      const conversationId = conversation._id;
+      const unread = conversation.unread_count || 0;
+      const held = stateRef.current.threads[conversationId]?.messages ?? [];
+      const ids = new Set(held.filter(isUnread).map((m) => m._id));
+      // Its newest pages, until they hold as many unread messages as it counts (or the thread starts)
+      let complete = ids.size >= unread;
+      for (let skip = 0, page = 0; !complete && page < MAX_UNREAD_PAGES; page++) {
+        const response = await getMessages(conversationId, { limit: MESSAGE_PAGE_SIZE, skip });
+        if (!response) return false;
+        const data = response.data ?? [];
+        data.filter(isUnread).forEach((m) => ids.add(m._id));
+        skip += data.length;
+        complete = ids.size >= unread || data.length < MESSAGE_PAGE_SIZE;
+      }
+
+      // The open thread's own marking already covers its ids in flight
+      const pending = [...ids].filter((id) => !inFlight.has(id));
+      pending.forEach((id) => inFlight.add(id));
+      const marked: string[] = [];
+      let ok = true;
+      try {
+        // Batches keep the `_id[$in]` query string short
+        for (let i = 0; ok && i < pending.length; i += MESSAGE_PAGE_SIZE) {
+          const batch = pending.slice(i, i + MESSAGE_PAGE_SIZE);
+          // false: unauthorized (re-auth started) or the conversation is gone; nothing was marked
+          ok = await markMessagesAsRead(batch, currentUserId);
+          if (ok) marked.push(...batch);
+        }
+      } catch (error) {
+        console.error('Failed to mark messages as read:', error);
+        ok = false;
+      } finally {
+        pending.forEach((id) => inFlight.delete(id));
+      }
+      const all = ok && complete;
+      if (marked.length > 0 || all) {
+        dispatch({
+          type: 'markedRead',
+          conversationId,
+          messageIds: marked,
+          readerId: currentUserId,
+          clears: all ? unread - (ids.size - pending.length) : undefined,
+        });
+      }
+      return all;
+    };
+
+    const unread = stateRef.current.conversations.filter((c) => (c.unread_count || 0) > 0);
+    const results = await Promise.all(
+      unread.map((conversation) =>
+        markConversation(conversation).catch((error) => {
+          console.error('Failed to mark the conversation as read:', error);
+          return false;
+        }),
+      ),
+    );
+    return results.every(Boolean);
+  }, [currentUserId, getMessages, markMessagesAsRead]);
+
   return {
     conversations: state.conversations,
     loadingConversations: state.loadingConversations,
@@ -562,5 +640,6 @@ export function useChatStore({
     retry,
     deleteConversation: removeConversation,
     upsertConversation,
+    markAllRead,
   };
 }

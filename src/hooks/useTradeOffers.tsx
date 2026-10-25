@@ -3,7 +3,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
 import { ISettings } from './useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { setBadgeCount, showToast } from '@/overlay';
+import { showToast } from '@/overlay';
 import qs from 'qs';
 import {
   getDeletedOffers,
@@ -601,11 +601,6 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
     },
     [hiddenOutgoingOffers],
   );
-
-  // Chat button badge
-  useEffect(() => {
-    setBadgeCount('tradeOffers', incomingOffers.length + outgoingOffers.length);
-  }, [incomingOffers.length, outgoingOffers.length]);
 
   return {
     incomingOffers,

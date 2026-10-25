@@ -4,6 +4,8 @@ import { useOptions } from '@/hooks/useOptions';
 import { confirmToast, showToast, useBadgeCount, useOverlay } from '@/overlay';
 import { NET_WORTH_PANEL_SIZE, panelBesideTicker } from '@/pages/net-worth/overlay';
 import { chatDockRect, clampDockOffset, setChatDockOffset, useChatDockOffset } from './chat-dock';
+import { chatFeedActions, openOffers, useChatFeed } from './chat-feed';
+import { ChatPeek } from './components/ChatPeek';
 
 /** Gap (px) between the dock and the net worth panel it opens. */
 const PANEL_GAP = 8;
@@ -14,8 +16,9 @@ const ChatButtonPage: React.FC = () => {
   const { updateSettings } = useOptions();
   const { openPanel, togglePanel, gameRect } = useOverlay();
   const unreadCount = useBadgeCount('chatUnread');
-  // One offers badge: open trade whispers + website offers
+  // One offers badge: new offer notifications + new trade whispers
   const tradeOffersCount = useBadgeCount('whisperTrades') + useBadgeCount('tradeOffers');
+  const feed = useChatFeed();
   const offset = useChatDockOffset();
   const dock = chatDockRect(gameRect, offset);
   const dragStart = useRef<number | null>(null);
@@ -41,7 +44,8 @@ const ChatButtonPage: React.FC = () => {
         size={dock}
         // Same as the chat hotkey: with unread messages, land on the newest unread thread
         onChatClick={() => (unreadCount > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat'))}
-        onOffersClick={() => openPanel('chat', { filter: 'selling' })}
+        // The view of what its badge counts (which then counts as looked at)
+        onOffersClick={() => openOffers((payload) => openPanel('chat', payload))}
         onMarketClick={() => openPanel('market')}
         onNetWorthClick={() =>
           openPanel('netWorthPanel', undefined, {
@@ -65,6 +69,22 @@ const ChatButtonPage: React.FC = () => {
           setChatDockOffset(offset);
         }}
         menuBelow={dock.y - gameRect.y < MENU_ROOM}
+        peek={(close) => (
+          <ChatPeek
+            items={feed.items}
+            canMarkAllRead={feed.canMarkAllRead}
+            now={Date.now()}
+            onPick={(item) => {
+              close();
+              openPanel('chat', item.open);
+            }}
+            onMarkAllRead={() => chatFeedActions().markAllRead()}
+            onOpenChat={() => {
+              close();
+              openPanel('chat', unreadCount > 0 ? { newestUnread: true } : undefined);
+            }}
+          />
+        )}
       />
     </div>
   );

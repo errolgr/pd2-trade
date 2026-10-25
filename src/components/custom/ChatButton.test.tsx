@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { INTERACTIVE_SELECTOR } from '@/overlay/region';
-import { ChatButton } from './ChatButton';
+import { ChatButton, PEEK_DELAY_MS } from './ChatButton';
 
 beforeAll(() => {
   MotionGlobalConfig.skipAnimations = true;
@@ -100,5 +100,110 @@ describe('ChatButton', () => {
       vi.advanceTimersByTime(400);
     });
     expect(caret().getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('ChatButton peek', () => {
+  const peekText = () => screen.queryByText('peek content');
+  // The exit animation runs on real frames: finish it on real timers
+  const expectClosed = async () => {
+    vi.useRealTimers();
+    await waitFor(() => expect(peekText()).toBeNull());
+  };
+  const renderPeek = () =>
+    renderDock({
+      onSettingsClick: vi.fn(),
+      peek: (close) => <button type="button"
+        onClick={close}>peek content</button>,
+    });
+  const hover = (ms = PEEK_DELAY_MS) =>
+    act(() => {
+      fireEvent.pointerEnter(dock());
+      vi.advanceTimersByTime(ms);
+    });
+  const tab = () => caret().parentElement!;
+
+  it('opens only after the pointer rests PEEK_DELAY_MS, in its own interactive rect', () => {
+    renderPeek();
+    hover(PEEK_DELAY_MS - 1);
+    expect(peekText()).toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    const rect = peekText()!.closest(INTERACTIVE_SELECTOR);
+    expect(rect).not.toBeNull();
+    expect(rect).not.toBe(dock());
+  });
+
+  it('without a peek nothing opens on hover', () => {
+    renderDock();
+    hover(5000);
+    expect(dock().querySelectorAll(INTERACTIVE_SELECTOR)).toHaveLength(0);
+  });
+
+  it('a quick pass over the tab never opens it', () => {
+    renderPeek();
+    act(() => {
+      fireEvent.pointerEnter(dock());
+      vi.advanceTimersByTime(PEEK_DELAY_MS - 100);
+      fireEvent.pointerLeave(dock());
+      vi.advanceTimersByTime(5000);
+    });
+    expect(peekText()).toBeNull();
+  });
+
+  it('pressing the tab cancels a pending peek and closes an open one', async () => {
+    renderPeek();
+    act(() => {
+      fireEvent.pointerEnter(dock());
+      vi.advanceTimersByTime(300);
+      fireEvent.pointerDown(tab(), { button: 0 });
+      vi.advanceTimersByTime(5000);
+    });
+    expect(peekText()).toBeNull();
+
+    act(() => {
+      fireEvent.pointerLeave(dock());
+    });
+    hover();
+    expect(peekText()).not.toBeNull();
+    act(() => {
+      fireEvent.pointerDown(tab(), { button: 0 });
+    });
+    await expectClosed();
+  });
+
+  it('opening the menu hides it', async () => {
+    renderPeek();
+    hover();
+    expect(peekText()).not.toBeNull();
+    fireEvent.click(caret());
+    expect(menu()).not.toBeNull();
+    await expectClosed();
+  });
+
+  it('closes after the leave grace, not when the pointer comes back in time', async () => {
+    renderPeek();
+    hover();
+    act(() => {
+      fireEvent.pointerLeave(dock());
+      vi.advanceTimersByTime(300);
+      fireEvent.pointerEnter(dock());
+      vi.advanceTimersByTime(1000);
+    });
+    expect(peekText()).not.toBeNull();
+
+    act(() => {
+      fireEvent.pointerLeave(dock());
+      vi.advanceTimersByTime(399);
+    });
+    expect(peekText()).not.toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    await expectClosed();
+  });
+
+  it('the render prop gets a close that closes it', async () => {
+    renderPeek();
+    hover();
+    fireEvent.click(screen.getByText('peek content'));
+    await expectClosed();
   });
 });

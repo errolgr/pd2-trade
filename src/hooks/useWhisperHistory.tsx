@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
+import { chatPrefsLoaded, useChatPrefs } from '@/lib/chat-prefs';
 import { holdListener } from '@/lib/listener';
 import { setBadgeCount } from '@/overlay';
 import {
@@ -8,7 +9,6 @@ import {
   dismissTrade,
   EMPTY_HISTORY,
   forgetPerson,
-  isOpenTrade,
   loadWhisperHistory,
   markRead,
   recordCopiedWhisper,
@@ -20,6 +20,7 @@ import {
   type WhisperHistory,
   type WhisperPerson,
 } from '@/lib/whisper-history';
+import { newTrades } from '@/pages/chat/lib/offers-seen';
 
 type HistoryAction =
   | { type: 'loaded'; history: WhisperHistory }
@@ -81,8 +82,9 @@ const WhisperHistoryContext = createContext<WhisperHistoryApi | null>(null);
 
 /**
  * Owns the whisper history: loads whisper-history.json, records the chat watcher's `trade-message` and
- * `whisper-received` events (Tauri only), saves debounced, and publishes the open whisper trades as the
- * `whisperTrades` badge. Mounted once at the app root so whispers are recorded with chat closed.
+ * `whisper-received` events (Tauri only), saves debounced, and publishes the open trade whispers received since
+ * they were last looked at (see trades-seen) as the `whisperTrades` badge. Mounted once at the app root so
+ * whispers are recorded with chat closed.
  */
 export function WhisperHistoryProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(historyReducer, { history: EMPTY_HISTORY, loaded: false, revision: 0 });
@@ -130,13 +132,12 @@ export function WhisperHistoryProvider({ children }: { children: React.ReactNode
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
     return () => window.clearInterval(id);
   }, []);
+  const chatPrefs = useChatPrefs();
   useEffect(() => {
-    const openTrades = Object.values(history.people).reduce(
-      (count, person) => count + person.trades.filter((trade) => isOpenTrade(trade, now)).length,
-      0,
-    );
-    setBadgeCount('whisperTrades', openTrades);
-  }, [history.people, now]);
+    // Until the saved chat prefs are in, every trade would look new
+    if (!chatPrefsLoaded()) return;
+    setBadgeCount('whisperTrades', newTrades(chatPrefs, Object.values(history.people), now).length);
+  }, [history.people, now, chatPrefs]);
 
   // Stable across history changes (dispatch never changes), so consumers can use them as effect deps
   const [actions] = useState(() => ({
