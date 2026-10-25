@@ -131,6 +131,22 @@ describe('buildInbox', () => {
     expect(threads.map((t) => [t.id, t.people.length])).toEqual([['user:dave', 1]]);
   });
 
+  it('gives an offers-only user the profile the offer resolved, and links whispers from any of their accounts', () => {
+    const bryan = {
+      _id: 'bryan',
+      username: 'bryan',
+      created_at: '2023-09-28T05:06:13.767Z',
+      game: { accounts: ['Bryan', 'SGSF-Bryan'], beta_accounts: ['BryanBeta'] },
+    };
+    const threads = inbox({
+      people: { 'sgsf-bryan': person('sgsf-bryan', { accountName: 'SGSF-Bryan' }) },
+      offers: [offer({ userId: 'bryan', playerName: 'bryan', accountName: 'Bryan', user: bryan, isIncoming: false })],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['user:bryan', ['sgsf-bryan']]]);
+    expect(threads[0].participant).toBe(bryan);
+    expect(threads[0].accounts).toEqual(['Bryan', 'SGSF-Bryan', 'BryanBeta']);
+  });
+
   it('gives a contact opened from the market a thread only when no other thread has that user', () => {
     const threads = inbox({
       conversations: [conversation('c-bob', { id: 'bob', username: 'bob' })],

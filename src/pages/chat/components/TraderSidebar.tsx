@@ -304,7 +304,12 @@ export function TraderSidebar({
                       className="size-3 shrink-0" />
                   </button>
                 ) : (
-                  <span className="block truncate text-xs text-muted-foreground">Not linked to a website account</span>
+                  // A website user without a known username (a market seller messaged from the market) is still linked
+                  !thread.userId && (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      Not linked to a website account
+                    </span>
+                  )
                 )}
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
                   {presence}

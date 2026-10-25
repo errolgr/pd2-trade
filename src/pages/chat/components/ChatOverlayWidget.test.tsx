@@ -1899,6 +1899,31 @@ describe('ChatOverlayWidget trader sidebar', () => {
     expect(screen.getAllByText('Online 12m ago').length).toBeGreaterThan(0);
   });
 
+  it("shows an offers-only trader's website profile, and never calls a website user unlinked", async () => {
+    panel.rect = { ...panel.rect, width: 1100 };
+    const kai = {
+      _id: 'tr-offer',
+      username: 'kai',
+      created_at: '2023-09-28T05:06:13.767Z',
+      game: { accounts: ['Kai'] },
+    };
+    outgoingOffers = [
+      { id: 'o1', isIncoming: false, playerName: 'kai', itemName: 'Shako', timestamp: NOW, userId: kai._id, user: kai },
+    ];
+    await renderWidget([]);
+    await select('kai');
+    // Header and sidebar both show who they are on the website
+    expect(screen.getAllByRole('button', { name: '@kai' })).toHaveLength(2);
+    expect(within(sidebar()!).queryByText('Joined Sep 2023')).not.toBeNull();
+    expect(screen.queryByText('Not linked to a website account')).toBeNull();
+
+    // A market seller messaged before any conversation or offer: a website user, username unknown
+    await openChat({ userId: 'tr-seller', userName: 'SellerAcc' });
+    expect(heading()).toBe('SellerAcc');
+    expect(sidebar()).not.toBeNull();
+    expect(screen.queryByText('Not linked to a website account')).toBeNull();
+  });
+
   it('links one of their listings in the composer when it is clicked in the sidebar', async () => {
     const nia = { id: 'tr-insert', username: 'nia', display_name: 'Nia' };
     traderListings[nia.id] = [listing('cc01', nia.id, 'Harlequin Crest'), listing('cc02', nia.id, 'Tal Rasha Belt')];
