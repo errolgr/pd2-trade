@@ -6,6 +6,7 @@ export const changeLog = {
     '✨ A toast and sound when a seller accepts your offer on the website (Offers popups in Settings → Chat)',
     '🔧 The offers badge counts only new offers and trade whispers since you last looked, and clears the bell on projectdiablo2.com too',
     '🔧 Chat: someone you only traded with through website offers no longer shows as "Not linked to a website account": their @username, join date and every in-game account show, and whispers from any of their accounts land in the same thread',
+    '🔧 Price check search: after the list had scrolled, the next search skipped its first 20 matches (e.g. "Matches: 23 · showing 3", or "No listings found" for a narrower range), and editing filters mixed in rows that did not match them',
   ],
   '0.10.3': [
     "✨ Click a seller's name in the market to open their trader panel",
