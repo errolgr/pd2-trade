@@ -19,8 +19,11 @@ import { StatId, statRemapByName } from './stat-mappings';
 export type TxtMod = [string, number, number, number];
 /** A row's mod slots in column order; null = an empty slot (BH stops scanning the row there). */
 export type TxtSlots = Array<TxtMod | null>;
-/** [automagic, version, level, spawnable, rare, itypes, etypes, mods] (MagicSuffix/MagicPrefix/AutoMagic row). */
-export type TxtAffix = [0 | 1, number, number, 0 | 1, 0 | 1, string[], string[], TxtSlots];
+/**
+ * [automagic, version, level, spawnable, rare, itypes, etypes, mods, name, levelreq, classlevelreq]
+ * (MagicSuffix/MagicPrefix/AutoMagic row).
+ */
+export type TxtAffix = [0 | 1, number, number, 0 | 1, 0 | 1, string[], string[], TxtSlots, string, number, number];
 
 export interface StatRangeData {
   source: { pd2dataMd5: string };
@@ -198,7 +201,8 @@ function fixedRange(mods: TxtSlots, nStat: number, param: number): StatRange | n
   return rangeFrom(mod[2] + (all?.[2] ?? 0), mod[3] + (all?.[3] ?? 0), elem, nStat);
 }
 
-function typeChain(type: string): Set<string> {
+/** An item type and every Equiv parent ("swor" → swor, mele, weap, …). */
+export function typeChain(type: string): Set<string> {
   const out = new Set<string>();
   const walk = (t: string) => {
     if (!t || out.has(t)) return;
@@ -296,7 +300,7 @@ function affixRange(item: Item, nStat: number, param: number): StatRange | null 
 }
 
 /** The table row of a unique / set / runeword (runewords: the row for this item class), or null. */
-function fixedMods(item: Item): TxtSlots | null {
+export function fixedMods(item: Item): TxtSlots | null {
   if (item.isRuneword) {
     const key = runeWords.find((rw) => rw.name === item.runeword)?.key;
     const rows = key ? STAT_RANGE_DATA.runewords[key] : undefined;
