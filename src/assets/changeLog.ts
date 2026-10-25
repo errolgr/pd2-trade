@@ -4,7 +4,7 @@ export const changeLog = {
     '✨ Market list view shows the price note, alongside the HR price when both are set',
     '✨ Chat: your offers that are closed, declined or accepted leave the pinned deals and show as a row in the conversation',
     "✨ Copy image now draws the whole PD2 tooltip: runes, damage, requirements, weapon class and set items, with stats in the game's order and what socketed runes, gems and jewels add",
-    "✨ Market: a PD2 site button opens your current search on projectdiablo2.com (Trade, or Archive for sold listings) and names any filters the site can't search on",
+    "✨ Market: a button next to Watch opens your current search on projectdiablo2.com (Trade, or Archive for sold listings) and names any filters the site can't search on",
     '🔧 Saved searches and Watch alerts stop retrying when your PD2 session has expired: PD2 Trader refreshes it once, then asks you to sign in again',
     '🔧 Market browser no longer shows listings that were already sold or removed on PD2',
     "🔧 Offers you make from the market show up in the chat's Buying tab right away, without restarting PD2 Trader",

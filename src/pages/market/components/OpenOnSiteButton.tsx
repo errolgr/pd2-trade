@@ -33,10 +33,9 @@ export function OpenOnSiteButton({ filters }: { filters: MarketFilters | null })
       title={label}
       disabled={!link}
       onClick={open}
-      className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-input bg-background/40 text-muted-foreground outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50"
     >
       <ExternalLink className="size-3.5" />
-      PD2 site
     </button>
   );
 }
