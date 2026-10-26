@@ -87,6 +87,11 @@ const Probe: React.FC = () => {
       </div>
       <input data-testid={`field-${id}`} />
       <button data-testid={`button-${id}`}>act</button>
+      <div data-keep-keyboard>
+        <p data-testid={`thread-${id}`}>
+          <span data-testid={`text-${id}`}>message</span>
+        </p>
+      </div>
     </>
   );
 };
@@ -119,6 +124,7 @@ const DEFS = {
   market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
   corruptedZoneTimer: def('corruptedZoneTimer', { keyboard: 'never' }),
   listingDetail: def('listingDetail', { placement: 'gameRight', closeOnBlur: true }),
+  builds: def('builds', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;
@@ -404,6 +410,38 @@ describe('OverlayProvider', () => {
       screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
     });
     expect(releaseKeyboard).not.toHaveBeenCalled();
+  });
+
+  it('pressing in a [data-keep-keyboard] region (message text to copy) takes the keyboard and never gives it back', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    act(() => {
+      screen.getByTestId('text-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+
+    // Already claimed (e.g. from the composer): selecting text keeps it
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('thread-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
+    expect(claimKeyboard).toHaveBeenCalledTimes(2);
+
+    // Outside the region: released as before
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it("keyboard: 'never' panels ignore [data-keep-keyboard] regions", () => {
+    mount();
+    act(() => api.openPanel('chatButton'));
+    act(() => {
+      screen.getByTestId('text-chatButton').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).not.toHaveBeenCalled();
   });
 
   it("keyboard: 'never' panels never take the keyboard, even from a text field", () => {

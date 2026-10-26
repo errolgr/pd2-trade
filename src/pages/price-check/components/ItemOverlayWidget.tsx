@@ -87,6 +87,7 @@ import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
 import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
+import { WornByLine } from './WornByLine';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 
@@ -1263,6 +1264,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 Appraisal note: {appraisalNoteText.text}
               </span>
             )}
+            <WornByLine
+              name={item.isRuneword ? item.runeword : item.name}
+              quality={item.quality}
+              isRuneword={item.isRuneword}
+              mode={settings.mode === 'hardcore' ? 'hardcore' : 'softcore'}
+            />
 
             {/* Average Price Information for Unique Items - Compact */}
             {isUniqueOrSet && (

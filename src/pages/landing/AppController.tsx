@@ -145,6 +145,7 @@ const AppController: React.FC = () => {
     },
     // Closed: reopens on the search it was showing (keepMounted)
     market: () => togglePanel('market'),
+    builds: () => togglePanel('builds'),
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -158,7 +159,8 @@ const AppController: React.FC = () => {
   const onDelist = useCallback(() => hotkeysRef.current.delist(), []);
   const onSnapshot = useCallback(() => hotkeysRef.current.snapshot(), []);
   const onMarket = useCallback(() => hotkeysRef.current.market(), []);
-  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot, onMarket);
+  const onBuilds = useCallback(() => hotkeysRef.current.builds(), []);
+  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot, onMarket, onBuilds);
 
   useAppUpdates();
   usePD2Auth();
