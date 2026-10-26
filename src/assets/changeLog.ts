@@ -2,6 +2,7 @@ export const changeLog = {
   '0.10.6': [
     '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',
     "✨ Chat: rest the pointer on an offer to see the item's stats, asking and market price, and the offer itself (who, price, status and when), in the pinned deals, the trader panel and the offer rows in the conversation",
+    '🔧 Chat: select message text and press Ctrl+C to copy it (it no longer goes to the game), or use the new Copy button that shows when you hover over a message',
   ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
