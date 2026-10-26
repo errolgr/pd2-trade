@@ -26,8 +26,11 @@ interface ItemSelectionListProps {
   onBump: (marketId: string, itemHash: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   deleteMarketListing: (listingId: string) => Promise<void>;
-  /** The copied item, drawn after the stash items when it isn't in the stash (queued on submit). */
+  /** The copied item, drawn after the stash items: picking it queues the listing until the stash syncs it. */
   clipboardItem?: PriceCheckItem;
+  clipboardSelected?: boolean;
+  /** Picks the clipboard card; absent when it is the only card (always selected). */
+  onClipboardSelect?: () => void;
 }
 
 const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
@@ -38,6 +41,8 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   isMarketListingsLoading,
   deleteMarketListing,
   clipboardItem,
+  clipboardSelected,
+  onClipboardSelect,
   onItemSelect,
   onToggleExpanded,
   onExpandAll,
@@ -141,10 +146,20 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
               </motion.div>
             );
           })}
+          {clipboardItem && matchingItems.length > 0 && (
+            <motion.div variants={listItem}
+              className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              Not one of these?
+              <span className="h-px flex-1 bg-border" />
+            </motion.div>
+          )}
           {clipboardItem && (
             <motion.div variants={listItem}>
               <ClipboardItemCard
                 item={clipboardItem}
+                selected={clipboardSelected ?? false}
+                onSelect={onClipboardSelect}
                 isExpanded={expandedItems.has(CLIPBOARD_HASH)}
                 onToggleExpanded={onToggleExpanded}
               />

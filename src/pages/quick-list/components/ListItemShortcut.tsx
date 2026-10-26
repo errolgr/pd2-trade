@@ -44,7 +44,7 @@ import { countChip, itemCard } from './styles';
 import { CLIPBOARD_HASH } from './ClipboardItemCard';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
-import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
+import { DUR, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 
 interface ListItemShortcutFormProps {
@@ -137,15 +137,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         { outcome: 'success' },
       );
 
+      // Never pre-pick: a stash item with the same name can still be a different roll than the copied one.
       setMatchingItems(items);
-      if (items.length === 1) {
-        setSelectedItem(items[0]);
-        setShowQueueOption(false); // Reset queue option visibility
-        trackEvent('list_item_auto_selected');
-      } else {
-        setSelectedItem(null);
-        setShowQueueOption(false); // Reset queue option visibility when new search
-      }
+      setSelectedItem(null);
+      setShowQueueOption(false);
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
@@ -1041,6 +1036,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             <ItemSelectionList
               deleteMarketListing={deleteMarketListing}
               matchingItems={matchingItems}
+              clipboardItem={item}
+              clipboardSelected={queueMode}
+              onClipboardSelect={() => {
+                setSelectedItem(null);
+                setShowQueueOption(true);
+              }}
               selectedItem={selectedItem}
               currentListings={currentListings}
               expandedItems={expandedItems}
@@ -1057,36 +1058,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
 
             <div className="flex-shrink-0 space-y-2">
-              <AnimatePresence initial={false}
-                mode="popLayout">
-                {!showQueueOption && (
-                  <motion.div
-                    key="queue-cta"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">None of these match?</span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedItem(null);
-                        setShowQueueOption(true);
-                      }}
-                      className="text-xs h-7 px-3"
-                    >
-                      Queue Item
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
               {(selectedItem || queueMode) && (
                 <motion.div layout="position"
                   className="space-y-2">
