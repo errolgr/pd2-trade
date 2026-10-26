@@ -8,11 +8,12 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
 import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
-import { X, Check, Info } from 'lucide-react';
+import { X, Check, Info, Sigma } from 'lucide-react';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
 import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
+import { getStatKey } from '@/pages/price-check/lib/utils';
 
 interface StatRowProps {
   stat: Stat;
@@ -48,7 +49,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   onSubmit,
   rare,
 }) => {
-  const statKey = 'skill' in stat && stat.skill ? `skill:${stat.skill.toLowerCase()}` : `id:${stat.stat_id}`;
+  const statKey = getStatKey(stat);
   const isSocket = stat.stat_id === StatId.Socket;
   const isCorrupted = stat.stat_id === StatId.Corrupted;
   const isEthereal = stat.stat_id === StatId.Ethereal;
@@ -59,7 +60,8 @@ export const StatRow: React.FC<StatRowProps> = ({
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase());
   const isDamagePair = stat.maxValue !== undefined;
-  const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill && !isDamagePair) || isUnknownSkill;
+  const isUnknown =
+    (statIdToProperty[stat.stat_id] === undefined && !isSkill && !isDamagePair && !stat.pseudo) || isUnknownSkill;
 
   // For corrupted stat, determine checkbox state
   const corruptedChecked = isCorrupted && corruptedState === 1;
@@ -180,6 +182,8 @@ export const StatRow: React.FC<StatRowProps> = ({
 
             {!isUnknown && (
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {stat.pseudo && <Sigma className="size-3 shrink-0 text-info"
+                  aria-label="Pseudo stat" />}
                 <span
                   className={cn(
                     'text-sm leading-snug transition-colors duration-(--dur-fast)',
@@ -263,9 +267,9 @@ export const StatRow: React.FC<StatRowProps> = ({
             >
               {(isDamagePair
                 ? ([
-                  ['min', 'max', 'Min dmg', `${stat.name} min damage`],
-                  ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
-                ] as const)
+                    ['min', 'max', 'Min dmg', `${stat.name} min damage`],
+                    ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
+                  ] as const)
                 : ([['min', 'max', null, stat.name]] as const)
               ).map(([lo, hi, label, aria]) => (
                 <div key={lo}

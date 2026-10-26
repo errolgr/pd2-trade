@@ -12,6 +12,7 @@ import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { DAMAGE_PAIRS, StatId, statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
+import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -179,5 +180,18 @@ export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<Mar
   ) as unknown as Record<string, unknown>;
   const filters = marketQueryToFilters(query, search.archive);
   filters.ethereal = search.item.isEthereal && search.selected.has(`id:${StatId.Ethereal}`) ? 'yes' : 'any';
+  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection
+  for (const key of search.selected) {
+    if (!key.startsWith(PSEUDO_KEY_PREFIX)) continue;
+    const { min, max } = search.filters[key] ?? {};
+    filters.stats!.push({
+      id: crypto.randomUUID(),
+      kind: 'pseudo',
+      key: key.slice(PSEUDO_KEY_PREFIX.length),
+      ...(min?.trim() ? { min: Number(min) } : {}),
+      ...(max?.trim() ? { max: Number(max) } : {}),
+      enabled: true,
+    });
+  }
   return filters;
 }

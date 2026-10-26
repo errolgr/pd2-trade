@@ -1,8 +1,9 @@
 /**
  * Clipboard item → the price check's stat rows: one row per line the game draws (min/max ED, the four equal
  * resists / attributes and every min/max damage pair merged like the tooltip), plus Sockets / Ethereal /
- * Corrupted pseudo-rows, each with the range PD2's tooltip shows. The price check UI, the PD2 market query
- * and the trade URL all read these rows, so a row key means the same stat everywhere.
+ * Corrupted pseudo-rows and the market's resistance pseudo stats (totals over every line), each with the range
+ * PD2's tooltip shows. The price check UI, the market queries and the trade URL all read these rows, so a row
+ * key means the same stat everywhere.
  */
 import type { Item, Stat } from './interfaces';
 import {
@@ -181,6 +182,40 @@ function combineDamagePairs(stats: Stat[], item: Item): Stat[] {
   return out;
 }
 
+/** Resist stat ids in PSEUDO_STATS order: fire, cold, lightning, poison. */
+const RESIST_IDS = { fire: 39, cold: 43, light: 41, poison: 45 } as const;
+
+/**
+ * The market's resistance pseudo stats (`pseudo_*_res`, see market/lib/pseudo.ts) over the item's resist lines:
+ * the four totals, their sum and the lowest. Only the ones above 0; none for an item without resists.
+ */
+function resistPseudoRows(stats: Stat[]): Stat[] {
+  const total = (id: number) => stats.reduce((n, s) => (s.stat_id === id ? n + (s.value ?? 0) : n), 0);
+  const fire = total(RESIST_IDS.fire);
+  const cold = total(RESIST_IDS.cold);
+  const light = total(RESIST_IDS.light);
+  const poison = total(RESIST_IDS.poison);
+  const rows: [string, string, number][] = [
+    ['pseudo_total_res', 'Total Resistances', fire + cold + light + poison],
+    ['pseudo_all_res', 'All Resistances (lowest)', Math.min(fire, cold, light, poison)],
+    ['pseudo_fire_res', 'Total Fire Resist', fire],
+    ['pseudo_cold_res', 'Total Cold Resist', cold],
+    ['pseudo_light_res', 'Total Lightning Resist', light],
+    ['pseudo_poison_res', 'Total Poison Resist', poison],
+  ];
+  return rows
+    .filter(([, , value]) => value > 0)
+    .map(([pseudo, name, value]) => ({ stat_id: StatId.Pseudo, pseudo, name, value }));
+}
+
+/** Inserts `rows` after the last resist line, so the totals sit with the lines they add up. */
+function insertAfterResists(stats: Stat[], rows: Stat[]): Stat[] {
+  if (rows.length === 0) return stats;
+  const resistIds: number[] = [...Object.values(RESIST_IDS), StatId.AllResistances];
+  const last = stats.findLastIndex((s) => resistIds.includes(s.stat_id));
+  return [...stats.slice(0, last + 1), ...rows, ...stats.slice(last + 1)];
+}
+
 /** The price check's stat rows for an item (see the module comment). */
 export function buildStatRows(item: Item): Stat[] {
   const baseStats: Stat[] = [];
@@ -212,10 +247,12 @@ export function buildStatRows(item: Item): Stat[] {
     baseStats.push({ stat_id: StatId.Corrupted, name: 'Corrupted', _injected: true } as Stat);
   }
 
+  const resistPseudos = resistPseudoRows(combinedStats);
   combinedStats = combineEnhancedDamageStats(combinedStats);
   combinedStats = combineQuadStats(combinedStats, [0, 1, 2, 3], StatId.AllAttributes, 'All Attributes');
   combinedStats = combineQuadStats(combinedStats, [39, 41, 43, 45], StatId.AllResistances, 'All Resistances');
   combinedStats = combineDamagePairs(combinedStats, item);
+  combinedStats = insertAfterResists(combinedStats, resistPseudos);
 
   return [...combinedStats, ...baseStats]
     .sort((a: Stat, b: Stat) => {
@@ -241,7 +278,7 @@ export function buildStatRows(item: Item): Stat[] {
     .map((stat: Stat) => {
       // The range PD2's tooltip shows for this line, replacing any clipboard range, so rows, filters and the
       // copied image agree with the game. Socket counts and damage pairs already carry theirs.
-      if (stat.stat_id === StatId.Socket || stat.maxValue !== undefined) return stat;
+      if (stat.stat_id === StatId.Socket || stat.stat_id === StatId.Pseudo || stat.maxValue !== undefined) return stat;
       const range = statRowRange(item, stat);
       const { range: _clipboardRange, ...rest } = stat;
       return range ? { ...rest, range } : rest;

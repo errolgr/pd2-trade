@@ -32,7 +32,8 @@ function setup(item: TestItem) {
   return renderHook(({ item }) => useStatSelection(item), { initialProps: { item } });
 }
 
-const ids = (stats: Stat[]) => stats.map((s) => s.stat_id);
+/** Row ids without the resist pseudo rows (stat-rows.test covers those). */
+const ids = (stats: Stat[]) => stats.filter((s) => s.stat_id !== StatId.Pseudo).map((s) => s.stat_id);
 const byId = (stats: Stat[], id: number) => stats.find((s) => s.stat_id === id);
 
 beforeEach(() => {

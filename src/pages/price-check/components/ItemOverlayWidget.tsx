@@ -51,9 +51,12 @@ import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
-import { priceCheckToMarketFilters } from '@/pages/market/store/priceCheckFilters';
+import { priceCheckToMarketFilters, type PriceCheckSearch } from '@/pages/market/store/priceCheckFilters';
+import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import type { MarketFilters } from '@/pages/market/lib/types';
+import { searchMarketListings } from '@/lib/market-search-api';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey } from '../lib/utils';
+import { getStatKey, PSEUDO_KEY_PREFIX } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -93,6 +96,8 @@ import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 /** The search whose results are listed. */
 interface ActiveSearch {
   query: MarketListingQuery;
+  /** Set when a pseudo stat is selected: PD2 can't filter computed totals, the market service searches instead. */
+  marketFilters: MarketFilters | null;
   archived: boolean;
   searchMode: number;
   /** Listings fetched so far: the `$skip` of the next page. */
@@ -800,7 +805,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       const startTime = performance.now();
 
       try {
-        const result = search.archived ? await getMarketListingsArchive(query) : await getMarketListings(query);
+        const result = search.marketFilters
+          ? await searchMarketListings(search.marketFilters, {
+              page: search.skip / ITEMS_PER_PAGE,
+              limit: ITEMS_PER_PAGE,
+            }).then((page) => ({ data: page.items.map((row) => row.listing), total: page.total }))
+          : search.archived
+            ? await getMarketListingsArchive(query)
+            : await getMarketListings(query);
         if (generation !== searchGeneration.current) return;
 
         const duration = performance.now() - startTime;
@@ -831,6 +843,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           {
             outcome: 'success',
             archived: search.archived,
+            market_service: search.marketFilters !== null,
             search_mode: search.searchMode,
             page: query.$skip / ITEMS_PER_PAGE,
           },
@@ -863,6 +876,21 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       if (settingsLoading) return;
       // Only use searchMode for items that support toggle, otherwise use default (0)
       const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+      const priceCheck: PriceCheckSearch = {
+        item,
+        pd2Item,
+        selected,
+        filters,
+        settings,
+        statMapper,
+        archive: searchArchived,
+        searchMode: effectiveSearchMode,
+        matchedItemType,
+        corruptedState,
+        corruptionNames,
+        qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+      };
+      const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
       const search: ActiveSearch = {
         query: buildGetMarketListingQuery(
           item,
@@ -880,6 +908,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           corruptionNames.length > 0 ? corruptionNames : undefined,
           shouldUseToggle ? effectiveQuality : undefined,
         ),
+        marketFilters: hasPseudo
+          ? mergeFilters(
+              defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
+              priceCheckToMarketFilters(priceCheck),
+            )
+          : null,
         archived: searchArchived,
         searchMode: effectiveSearchMode,
         skip: 0,

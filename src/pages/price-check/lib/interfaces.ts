@@ -26,6 +26,8 @@ export interface Stat {
   seconds?: number;
   /** The Corrupted pseudo-row of a corruptable item that isn't corrupted. */
   _injected?: boolean;
+  /** Pseudo stat rows (stat_id StatId.Pseudo): the market pseudo stat id, e.g. `pseudo_total_res`. */
+  pseudo?: string;
 }
 
 /** Min/max inputs of a selected stat row; damage pair rows add a second pair for the max damage. */
