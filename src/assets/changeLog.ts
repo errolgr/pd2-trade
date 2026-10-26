@@ -1,5 +1,5 @@
 export const changeLog = {
-  '0.10.7': [
+  '0.10.6': [
     '🆕 Price check: click Σ next to a resist to search a total instead (Total Fire Resist, Total Resistances or the lowest resist). The rows it adds up fold into one, and Unfold brings them back',
   ],
   '0.10.5': [
