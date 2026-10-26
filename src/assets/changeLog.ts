@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.7': [
+    '🆕 Price check: click Σ next to a resist to search a total instead (Total Fire Resist, Total Resistances or the lowest resist). The rows it adds up fold into one, and Unfold brings them back',
+  ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
     '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
