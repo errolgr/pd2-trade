@@ -1,5 +1,7 @@
 export const changeLog = {
   '0.10.6': [
+    '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',
+    "✨ Chat: rest the pointer on an offer to see the item's stats, asking and market price, and the offer itself (who, price, status and when), in the pinned deals, the trader panel and the offer rows in the conversation",
     '🆕 Price check: click Σ next to a resist to search a total instead (Total Fire Resist, Total Resistances or the lowest resist). The rows it adds up fold into one, and Unfold brings them back',
   ],
   '0.10.5': [

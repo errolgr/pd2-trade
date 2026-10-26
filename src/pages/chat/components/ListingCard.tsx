@@ -104,17 +104,22 @@ export function marketDelta(askingHr: number, marketHr: number): { text: string;
     : { text: `${percent}% over market`, className: 'text-warning' };
 }
 
-/** Hover detail: full stats plus the trade context the card leaves out; `hint` says what a click does. */
+/**
+ * Hover detail: full stats plus the trade context the card leaves out; `hint` says what a click does (null:
+ * nothing). `children` adds a section under the listing (an offer on it).
+ */
 export function ListingDetails({
   listing,
   listed,
   market,
   hint = 'Click to open on projectdiablo2.com',
+  children,
 }: {
   listing: MarketListingEntry;
   listed: boolean;
   market: ListingMarketPrice | undefined;
-  hint?: string;
+  hint?: string | null;
+  children?: React.ReactNode;
 }) {
   const { item, user } = listing;
   const online = listed && isUserOnlineIngame(listing.user_last_ingame);
@@ -173,7 +178,8 @@ export function ListingDetails({
           </div>
         )}
       </div>
-      <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{hint}</div>
+      {children}
+      {hint && <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{hint}</div>}
     </div>
   );
 }
