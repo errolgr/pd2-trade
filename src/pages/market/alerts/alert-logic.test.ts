@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ToastActionType } from '@/common/types/Events';
 import { defaultFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
-import { alertListingText, alertToasts, findWatch, MAX_ALERT_TOASTS, watchKey } from './alert-logic';
+import {
+  ALERT_TOAST_DURATION_MS,
+  alertListingText,
+  alertToasts,
+  findWatch,
+  MAX_ALERT_TOASTS,
+  watchKey,
+} from './alert-logic';
 import type { MarketAlert } from './saved-search-api';
 
 const alert = (id: string, over: Partial<MarketAlert['listing']> = {}): MarketAlert => ({
@@ -47,6 +54,7 @@ describe('alert popups', () => {
     expect(alertToasts([alert('a')])).toEqual([
       {
         title: 'Market watch',
+        duration: ALERT_TOAST_DURATION_MS,
         description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
         action: {
           label: 'View',
