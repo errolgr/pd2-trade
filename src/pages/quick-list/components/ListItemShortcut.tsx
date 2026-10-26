@@ -8,12 +8,10 @@ import {
   X,
   GripVertical,
   Loader2,
-  AlertCircle,
   Clock,
   Hourglass,
   ListChecks,
   PackageSearch,
-  SearchX,
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -41,7 +39,8 @@ import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
-import { countChip, itemCard } from './styles';
+import { countChip, itemCard, sectionLabel } from './styles';
+import ClipboardItemCard from './ClipboardItemCard';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
@@ -991,45 +990,26 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       );
     }
 
-    // 4. No Items Found (with Queue option)
+    // 4. No stash match: the clipboard item, queued until the stash syncs it
     if (matchingItems.length === 0 && !isLoading && !error && item) {
       return (
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col items-center justify-center py-6 gap-4"
-        >
-          <span className="flex size-12 items-center justify-center rounded-full bg-warning/12 text-warning ring-1 ring-warning/25">
-            <SearchX className="size-6" />
-          </span>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-              <span>No items found matching &quot;{item.name || item.type}&quot;</span>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Why wasn't my item found?"
-                    className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
-                  >
-                    <AlertCircle className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs text-center">
-                  An item won&apos;t be found unless it is placed in your shared stash (not personal stash) and you have
-                  made a new game.
-                </TooltipContent>
-              </Tooltip>
+        <Form {...form}>
+          <motion.form
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="h-full flex flex-col overflow-hidden"
+          >
+            <div className="mb-3 flex min-h-0 flex-1 flex-col">
+              <span className={cn(sectionLabel, 'mb-2')}>From Clipboard</span>
+              <ScrollArea className="min-h-0 flex-1 pr-2">
+                <div className="p-px pb-3">
+                  <ClipboardItemCard item={item} />
+                </div>
+              </ScrollArea>
             </div>
-            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
-              You can queue this item to be listed automatically. We&apos;ll wait for the server to sync it from your
-              stash (usually takes a few minutes).
-            </div>
-          </div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}
-              className="w-full max-w-lg">
+            <div className="flex-shrink-0">
               <ListingFormFields
                 form={form}
                 selectedItem={null}
@@ -1038,9 +1018,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 onSubmit={handleSubmit}
                 allowQueue={true}
               />
-            </form>
-          </Form>
-        </motion.div>
+            </div>
+          </motion.form>
+        </Form>
       );
     }
 

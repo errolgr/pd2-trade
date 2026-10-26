@@ -376,7 +376,7 @@ describe('queueing', () => {
     api.findMatchingItems.mockResolvedValue([]);
     renderForm();
     await flush();
-    expect(screen.queryByText('No items found matching "Harlequin Crest"')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'Harlequin Crest, from clipboard, not synced to stash' })).not.toBeNull();
     expect(submitButton().textContent).toBe('Queue Item');
     await queueWithNote('wts');
 
