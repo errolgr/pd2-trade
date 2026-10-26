@@ -14,6 +14,8 @@ vi.mock('@sentry/react', () => ({
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
 vi.mock('@/lib/faro', () => ({ initFaro: vi.fn() }));
+let tauri = false;
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri }));
 const wrap = (name: string) =>
   function Wrapper({ children }: { children: React.ReactNode }) {
     return <div data-wrapper={name}>{children}</div>;
@@ -107,11 +109,21 @@ describe('main routing', () => {
     expect(root.querySelector('[data-wrapper="options"]')?.textContent).toBe('gallery');
   });
 
-  it('suppresses the native context menu', async () => {
+  it('keeps the browser context menu (Inspect) in browser mode', async () => {
+    await boot('/');
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  // Last: the document listener it adds outlives the boot
+  it('suppresses the native context menu in the Tauri overlay', async () => {
+    tauri = true;
     await boot('/');
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
+    tauri = false;
   });
 });
 
