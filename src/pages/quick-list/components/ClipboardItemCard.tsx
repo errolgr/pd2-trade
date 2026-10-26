@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Hourglass } from 'lucide-react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { tooltipLines } from '@/pages/price-check/lib/tooltip-lines';
@@ -7,16 +7,20 @@ import { cn } from '@/lib/utils';
 import ItemStatsDisplay, { StatsItem } from './ItemStatsDisplay';
 import { itemCard } from './styles';
 
+/** Expand-state key of the clipboard card (stash items use their hash). */
+export const CLIPBOARD_HASH = 'clipboard';
+
 interface ClipboardItemCardProps {
   item: PriceCheckItem;
+  isExpanded: boolean;
+  onToggleExpanded: (itemHash: string) => void;
 }
 
 /**
  * The copied item when the stash has no match, drawn like the stash item cards with a dotted border: it is
  * what gets queued, listed once the stash syncs it.
  */
-const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item }) => {
-  const [expanded, setExpanded] = useState(false);
+const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item, isExpanded, onToggleExpanded }) => {
   const name = (item.isRuneword && item.runeword) || item.name || item.type;
 
   const statsItem = useMemo<StatsItem>(() => {
@@ -26,7 +30,7 @@ const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item }) => {
       .filter((l) => l.text !== 'Corrupted')
       .map((l, i) => ({ name: l.star ? `corrupted-${i}` : `stat-${i}`, label: l.text }));
     return {
-      hash: 'clipboard',
+      hash: CLIPBOARD_HASH,
       is_ethereal: item.isEthereal === true,
       corrupted,
       is_runeword: item.isRuneword === true,
@@ -60,8 +64,8 @@ const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item }) => {
       </div>
       <div className="pl-6">
         <ItemStatsDisplay stashItem={statsItem}
-          isExpanded={expanded}
-          onToggleExpanded={() => setExpanded((e) => !e)} />
+          isExpanded={isExpanded}
+          onToggleExpanded={onToggleExpanded} />
       </div>
     </div>
   );

@@ -40,8 +40,8 @@ import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
-import { countChip, itemCard, sectionLabel } from './styles';
-import ClipboardItemCard from './ClipboardItemCard';
+import { countChip, itemCard } from './styles';
+import { CLIPBOARD_HASH } from './ClipboardItemCard';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
@@ -713,7 +713,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   const expandAllStats = () => {
-    const allHashes = matchingItems.map((item) => item.hash).filter(Boolean);
+    const allHashes = [...matchingItems.map((item) => item.hash).filter(Boolean), CLIPBOARD_HASH];
     setExpandedItems(new Set(allHashes));
   };
 
@@ -995,21 +995,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (matchingItems.length === 0 && !isLoading && !error && item) {
       return (
         <Form {...form}>
-          <motion.form
-            variants={fadeInUp}
-            initial="hidden"
-            animate="visible"
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="h-full flex flex-col overflow-hidden"
-          >
-            <div className="mb-3 flex min-h-0 flex-1 flex-col">
-              <span className={cn(sectionLabel, 'mb-2')}>From Clipboard</span>
-              <ScrollArea className="min-h-0 flex-1 pr-2">
-                <div className="p-px pb-3">
-                  <ClipboardItemCard item={item} />
-                </div>
-              </ScrollArea>
-            </div>
+          <form onSubmit={form.handleSubmit(handleSubmit)}
+            className="h-full flex flex-col overflow-hidden">
+            <ItemSelectionList
+              deleteMarketListing={deleteMarketListing}
+              matchingItems={[]}
+              clipboardItem={item}
+              selectedItem={null}
+              currentListings={currentListings}
+              expandedItems={expandedItems}
+              isMarketListingsLoading={isMarketListingsLoading}
+              onItemSelect={() => {}}
+              onToggleExpanded={toggleExpandedStats}
+              onExpandAll={expandAllStats}
+              onCollapseAll={collapseAllStats}
+              onBump={handleBump}
+              onRefresh={handleRefresh}
+            />
             <div className="flex-shrink-0 space-y-2">
               <div className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground">
                 <Info className="size-3.5 shrink-0 text-primary" />
@@ -1024,7 +1026,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 allowQueue={true}
               />
             </div>
-          </motion.form>
+          </form>
         </Form>
       );
     }
