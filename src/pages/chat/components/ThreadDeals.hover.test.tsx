@@ -114,17 +114,30 @@ describe('ThreadDeals offer hover card', () => {
     expect(section.textContent).toBe('Your offeropenOffered:1.5 HRSent:3m ago');
   });
 
-  it.each<[string, [string, ChatListingState][]]>([
-    ['loading', [['l1', { status: 'loading' }]]],
-    ['missing', [['l1', { status: 'missing' }]]],
-    ['failed', []],
-  ])('shows no card while the listing is %s', async (_label, listings) => {
+  it.each<[string, [string, ChatListingState][], string]>([
+    ['loading', [['l1', { status: 'loading' }]], 'Looking up the listing…'],
+    ['missing', [['l1', { status: 'missing' }]], 'Listing no longer available'],
+    ['failed', [], 'Listing no longer available'],
+  ])('shows an offer-only card while the listing is %s', async (_label, listings, line) => {
     renderDeals([offer()], listings);
 
     fireEvent.mouseEnter(itemName());
-    await act(async () => {});
-    expect(screen.queryByRole('region', { name: 'Offer' })).toBeNull();
-    expect(screen.queryByRole('dialog')).toBeNull();
+    const section = await screen.findByRole('region', { name: 'Offer' });
+    const card = section.parentElement!;
+    expect(within(card).getByText('Harlequin Crest')).not.toBeNull();
+    expect(within(card).getByText(line)).not.toBeNull();
+    expect(within(card).queryByText('Price:')).toBeNull();
+    expect(section.textContent).toBe('Offer from bobopenOffered:2 ist(1.5 HR)Sent:3m ago');
+  });
+
+  it('shows the full card with its status for a declined offer on a sold listing', async () => {
+    renderDeals([offer({ acceptedOfferId: 'o2' })], [['l1', { status: 'unlisted', listing: shako }]]);
+
+    fireEvent.mouseEnter(itemName());
+    const section = await screen.findByRole('region', { name: 'Offer' });
+    expect(screen.getByText('Sold or delisted')).not.toBeNull();
+    expect(screen.getByText('Price:')).not.toBeNull();
+    expect(section.textContent).toBe('Offer from bobdeclinedOffered:2 ist(1.5 HR)Sent:3m ago');
   });
 
   it('keeps the action buttons working while the card is open', async () => {

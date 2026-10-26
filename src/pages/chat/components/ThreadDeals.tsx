@@ -85,21 +85,28 @@ const TONE: Record<Tone, { text: string; rail: string }> = {
 };
 
 /**
- * Hover card for an offer whose listing resolved: the listed item (as linked listings show it) plus the
+ * Hover card for an offer, whatever its status: the listed item (as linked listings show it) when the
+ * listing resolved, else just the item name and a line saying the listing is loading or gone; then the
  * offer itself. `children` is the hover target; clicks on it do nothing (no hint).
  */
 export function OfferHoverCard({
   offer,
+  hidden = false,
   listing,
   listed,
+  loading = false,
   market,
   now,
   side = 'top',
   children,
 }: {
   offer: TradeOffer;
-  listing: MarketListingEntry;
+  /** An outgoing offer the user hid. */
+  hidden?: boolean;
+  listing: MarketListingEntry | undefined;
   listed: boolean;
+  /** The listing lookup is still running. */
+  loading?: boolean;
   market: ListingMarketPrice | undefined;
   /** Epoch ms, for "3m ago". */
   now: number;
@@ -107,8 +114,36 @@ export function OfferHoverCard({
   children: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
-  const status = offerStatus(offer);
+  const status = hidden ? 'hidden' : offerStatus(offer);
   const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? `${offer.hrOffer} HR` : null;
+  const offerSection = (
+    <section aria-label="Offer"
+      className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
+      <div className="flex items-center justify-between gap-3">
+        <span className="truncate font-semibold">
+          {offer.isIncoming ? `Offer from ${offer.playerName}` : 'Your offer'}
+        </span>
+        <span
+          className={cn('shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide', STATUS_CLASS[status])}
+        >
+          {status}
+        </span>
+      </div>
+      {offer.price && (
+        <div className="flex justify-between gap-3">
+          <span className="shrink-0 text-muted-foreground">Offered:</span>
+          <span className="min-w-0 break-words text-right font-semibold">
+            {offer.price}
+            {hr && <span className="ml-1.5 font-normal text-muted-foreground">{`(${hr})`}</span>}
+          </span>
+        </div>
+      )}
+      <div className="flex justify-between gap-3">
+        <span className="shrink-0 text-muted-foreground">Sent:</span>
+        <span>{shortAgo(offer.timestamp.getTime(), now)}</span>
+      </div>
+    </section>
+  );
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
@@ -129,40 +164,23 @@ export function OfferHoverCard({
         align="start"
         className="w-auto border-0 bg-transparent p-0 shadow-none"
       >
-        <ListingDetails listing={listing}
-          listed={listed}
-          market={market}
-          hint={null}>
-          <section aria-label="Offer"
-            className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate font-semibold">
-                {offer.isIncoming ? `Offer from ${offer.playerName}` : 'Your offer'}
-              </span>
-              <span
-                className={cn(
-                  'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
-                  STATUS_CLASS[status],
-                )}
-              >
-                {status}
-              </span>
+        {listing ? (
+          <ListingDetails listing={listing}
+            listed={listed}
+            market={market}
+            hint={null}>
+            {offerSection}
+          </ListingDetails>
+        ) : (
+          // Same frame as ListingDetails
+          <div className="w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
+            <div className="truncate text-sm font-semibold">{offer.itemName ?? 'Unknown item'}</div>
+            <div className="text-xs text-muted-foreground">
+              {loading ? 'Looking up the listing…' : 'Listing no longer available'}
             </div>
-            {offer.price && (
-              <div className="flex justify-between gap-3">
-                <span className="shrink-0 text-muted-foreground">Offered:</span>
-                <span className="min-w-0 break-words text-right font-semibold">
-                  {offer.price}
-                  {hr && <span className="ml-1.5 font-normal text-muted-foreground">{`(${hr})`}</span>}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between gap-3">
-              <span className="shrink-0 text-muted-foreground">Sent:</span>
-              <span>{shortAgo(offer.timestamp.getTime(), now)}</span>
-            </div>
-          </section>
-        </ListingDetails>
+            {offerSection}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -643,10 +661,9 @@ export function ThreadDeals({
           if (status === 'open') label = isIncoming ? 'New offer' : 'Your offer';
           else if (status === 'in-game') label = isIncoming ? 'in-game offer' : 'your in-game offer';
           const listing = listingOf(deal);
-          const listed =
-            deal.kind === 'offer' &&
-            !!deal.offer.listingId &&
-            listingStates.get(deal.offer.listingId)?.status === 'listed';
+          const listingState =
+            deal.kind === 'offer' && deal.offer.listingId ? listingStates.get(deal.offer.listingId) : undefined;
+          const listed = listingState?.status === 'listed';
           const marketPrice = listing ? market.get(listing._id) : undefined;
           const asking = listing && (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
           const context = [
@@ -692,12 +709,16 @@ export function ThreadDeals({
                     </div>
                   </div>
                 );
-                return deal.kind === 'offer' && listing ? (
-                  <OfferHoverCard offer={deal.offer}
+                return deal.kind === 'offer' ? (
+                  <OfferHoverCard
+                    offer={deal.offer}
+                    hidden={deal.hidden}
                     listing={listing}
                     listed={listed}
+                    loading={listingState?.status === 'loading'}
                     market={marketPrice}
-                    now={now}>
+                    now={now}
+                  >
                     {subject}
                   </OfferHoverCard>
                 ) : (
