@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { useRef } from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_THREAD } from '../hooks/useChatStore';
@@ -104,5 +104,12 @@ describe('MessageList scrolling', () => {
     renderList([entry('a', 30), entry('b', 20)], null);
     expect(virtual.scrollToEnd).toHaveBeenCalledTimes(1);
     expect(virtual.scrollToIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('MessageList keyboard', () => {
+  it('marks the messages as a [data-keep-keyboard] region, so selecting their text keeps Ctrl+C in the overlay', () => {
+    renderList([entry('hello', 10)], null);
+    expect(screen.getByText('hello').closest('[data-keep-keyboard]')).not.toBeNull();
   });
 });

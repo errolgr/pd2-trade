@@ -50,6 +50,7 @@ vi.mock('@/lib/browser-events', () => ({
     return () => gameLog.get(event)!.delete(handler);
   }),
 }));
+const overlayOpenPanel = vi.hoisted(() => vi.fn());
 /**
  * The chat panel's payload/payloadVersion/visible/rect as usePanel() reports them; `openChat()` mimics
  * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read. `rect`:
@@ -76,7 +77,7 @@ vi.mock('@/overlay', () => ({
   },
   usePanel: () => panel,
   // The composer's "Manage templates…"
-  useOverlay: () => ({ openPanel: vi.fn() }),
+  useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 
@@ -1277,6 +1278,23 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(refreshOffers).toHaveBeenCalledTimes(2);
   });
 
+  it("View build opens the trader's character in the builds panel", async () => {
+    await renderWidget([]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+    await select('Dan');
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Trader details' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'View build' })));
+    expect(overlayOpenPanel).toHaveBeenCalledWith('builds', { character: { name: 'DanChar' } });
+  });
+
   it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
     settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
     await renderWidget([]);
@@ -1970,7 +1988,12 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
           .at(-1)?.[1] ?? '',
       ),
     );
-  const notification = (id: string, listingId: string, minutesAgo: number, type: OfferNotification['type'] = 'offer_received') => ({
+  const notification = (
+    id: string,
+    listingId: string,
+    minutesAgo: number,
+    type: OfferNotification['type'] = 'offer_received',
+  ) => ({
     id,
     type,
     listingId,
@@ -2075,8 +2098,24 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
 
   it('an open thread counts as looking at its own offers only', async () => {
     incomingOffers = [
-      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol', listingId: 'L1' },
-      { id: 'o2', isIncoming: true, playerName: 'dave', itemName: 'Ber', timestamp: new Date(NOW), userId: 'dave', listingId: 'L2' },
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'carol',
+        itemName: 'Shako',
+        timestamp: new Date(NOW),
+        userId: 'carol',
+        listingId: 'L1',
+      },
+      {
+        id: 'o2',
+        isIncoming: true,
+        playerName: 'dave',
+        itemName: 'Ber',
+        timestamp: new Date(NOW),
+        userId: 'dave',
+        listingId: 'L2',
+      },
     ];
     offerNotifications = [notification('n1', 'L1', 5), notification('n2', 'L2', 4)];
     await renderWidget([]);

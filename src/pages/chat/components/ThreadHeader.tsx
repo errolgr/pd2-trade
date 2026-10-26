@@ -12,6 +12,7 @@ import {
   PanelRight,
   Pin,
   PinOff,
+  Shield,
   Swords,
   Trash2,
   UserRound,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
+import { useOverlay } from '@/overlay';
 import type { TraderPresence } from '../hooks/useTraderProfile';
 import { characterUrl, ChatAvatar, profileUrl, Tip } from './chat-parts';
 
@@ -81,6 +83,7 @@ export function ThreadHeader({
   onDeleteConversation?: () => void;
   onForgetWhispers?: () => void;
 }) {
+  const { openPanel } = useOverlay();
   const username = participant?.username;
   return (
     <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-linear-to-b from-card/80 to-card/30 px-3">
@@ -219,6 +222,15 @@ export function ThreadHeader({
                 className="cursor-pointer">
                 <Swords className="size-4" />
                 View Character
+              </DropdownMenuItem>
+            )}
+            {characterName && (
+              <DropdownMenuItem
+                onSelect={() => openPanel('builds', { character: { name: characterName } })}
+                className="cursor-pointer"
+              >
+                <Shield className="size-4" />
+                View Build
               </DropdownMenuItem>
             )}
             {(onForgetWhispers || onDeleteConversation) && <DropdownMenuSeparator />}

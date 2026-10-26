@@ -257,6 +257,7 @@ describe('useAppShortcuts', () => {
     delist: vi.fn(),
     snapshot: vi.fn(),
     market: vi.fn(),
+    builds: vi.fn(),
   };
 
   it('registers nothing while settings are loading', async () => {
@@ -355,6 +356,31 @@ describe('useAppShortcuts', () => {
     await flush();
 
     expect(state.registered.has('Control+M')).toBe(false);
+  });
+
+  it('binds the builds hotkey only once a key is set', async () => {
+    const useBuildsShortcuts = () =>
+      useAppShortcuts(
+        handlers.search,
+        handlers.list,
+        handlers.currency,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        handlers.builds,
+      );
+    mockOptions({ ...baseSettings, hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: '' });
+    const { rerender } = renderHook(useBuildsShortcuts);
+    await flush();
+    expect(state.registered.has('Alt+K')).toBe(false);
+
+    mockOptions({ ...baseSettings, hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: 'k' });
+    rerender();
+    await flush();
+    press('Alt+K');
+    expect(handlers.builds).toHaveBeenCalledTimes(1);
   });
 
   it('rebinds when a hotkey setting changes', async () => {
