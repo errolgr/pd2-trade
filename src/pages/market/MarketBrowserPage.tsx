@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import { showToast, useOverlay, usePanel } from '@/overlay';
+import { showToast, usePanel } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -31,6 +32,7 @@ import { SavedSearches } from './components/SavedSearches';
 import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
 import { mergeStatFilters } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
+import { OpenOnSiteButton } from './components/OpenOnSiteButton';
 import { fetchMarketListing } from './alerts/saved-search-api';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
@@ -48,7 +50,7 @@ const SKELETON_CARDS = 3;
 /** `market` panel: filters | results | detail, with Favorites and Saved searches tabs. */
 const MarketBrowserPage: React.FC = () => {
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   const { settings } = useOptions();
   const { marketApi } = usePd2Website();
   const store = useMarketStore();
@@ -472,7 +474,7 @@ const MarketBrowserPage: React.FC = () => {
                           search={search}
                           favorites={favorites}
                           rows={cards ? cardRows : rows}
-                          onSignIn={() => openPanel('signIn')}
+                          onSignIn={openSignIn}
                           // No live listing for this search: offer the same search over sold listings
                           onSearchArchive={
                             tab === 'search' && filters?.source === 'live'
@@ -482,7 +484,12 @@ const MarketBrowserPage: React.FC = () => {
                           itemName={filters?.itemName}
                           toolbar={
                             <>
-                              {tab === 'search' && <WatchButton filters={filters} />}
+                              {tab === 'search' && (
+                                <>
+                                  <OpenOnSiteButton filters={filters} />
+                                  <WatchButton filters={filters} />
+                                </>
+                              )}
                               <ViewModeToggle value={viewMode}
                                 onChange={changeViewMode} />
                             </>

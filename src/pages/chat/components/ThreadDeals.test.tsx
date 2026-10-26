@@ -6,7 +6,7 @@ import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast, type ConfirmToastOptions } from '@/overlay';
-import { ThreadDeals } from './ThreadDeals';
+import { offerStatus, ThreadDeals } from './ThreadDeals';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -242,25 +242,21 @@ describe('ThreadDeals website offers', () => {
     expect(actions.restoreOutgoingOffer).toHaveBeenCalledWith('o5');
   });
 
-  it('settles outgoing offers like incoming ones: no Revoke once the listing took an offer or closed', () => {
+  it('pins only your open offers; settled ones (accepted, declined, closed) leave the pinned deals, linked or not', () => {
     const outgoing = (over: Partial<TradeOffer>) => offer({ isIncoming: false, ...over });
+    const settled = [
+      outgoing({ id: 'won', listingId: 'l1', itemName: 'Won Item', acceptedOfferId: 'won' }),
+      outgoing({ id: 'lost', listingId: 'l2', itemName: 'Lost Item', acceptedOfferId: 'other' }),
+      outgoing({ id: 'gone', listingId: 'l3', itemName: 'Gone Item', listingClosed: true }),
+    ];
+    expect(settled.map(offerStatus)).toEqual(['accepted', 'declined', 'closed']);
     renderDeals({
-      offers: [
-        outgoing({ id: 'won', listingId: 'l1', itemName: 'Won Item', acceptedOfferId: 'won' }),
-        outgoing({ id: 'lost', listingId: 'l2', itemName: 'Lost Item', acceptedOfferId: 'other' }),
-        outgoing({ id: 'gone', listingId: 'l3', itemName: 'Gone Item', listingClosed: true }),
-        outgoing({ id: 'stale', listingId: 'l9', itemName: 'Stale Item', listingClosed: true }),
-      ],
+      offers: [...settled, outgoing({ id: 'open', listingId: 'l8', itemName: 'Open Item' })],
       listingIds: ['l1', 'l2', 'l3'],
     });
-    fireEvent.click(button(/more/));
 
-    const statusOf = (item: string) => rows().find((row) => row.textContent!.includes(item))?.textContent;
-    expect(statusOf('Won Item')).toContain('accepted');
-    expect(statusOf('Lost Item')).toContain('declined');
-    expect(statusOf('Gone Item')).toContain('closed');
-    expect(statusOf('Stale Item')).toBeUndefined();
-    expect(screen.queryByRole('button', { name: /Revoke/ })).toBeNull();
+    expect(rows().map((row) => row.textContent)).toEqual([expect.stringContaining('Open Item')]);
+    expect(screen.getAllByRole('button', { name: /Revoke/ })).toHaveLength(1);
   });
 });
 

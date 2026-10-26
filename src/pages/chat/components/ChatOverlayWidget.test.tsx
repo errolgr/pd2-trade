@@ -7,6 +7,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { ItemsProvider } from '@/hooks/useItems';
 import { useOptions } from '@/hooks/useOptions';
+import type { OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
 import { writeText } from '@/lib/browser-clipboard';
@@ -22,6 +23,7 @@ import {
 } from '@/lib/chat-prefs';
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
+import { chatFeedActions, getChatFeed, resetChatFeed } from '../chat-feed';
 import ChatOverlayWidget from './ChatOverlayWidget';
 import { typeDraft } from './composer-test-utils';
 
@@ -119,6 +121,11 @@ let incomingOffers: TradeOffer[];
 let traderListings: Record<string, MarketListingEntry[]>;
 let outgoingOffers: TradeOffer[];
 let createConversation: Mock<(participantIds: string[]) => Promise<Conversation>>;
+let refreshOffers: Mock<() => Promise<void>>;
+/** PD2's unacknowledged offer notifications and the accepted-offer fallback (Pd2WebsiteProvider). */
+let offerNotifications: OfferNotification[];
+let newAcceptedOffers: TradeOffer[];
+let acknowledgeOfferNotifications: Mock<(ids: readonly string[]) => void>;
 let audio: { src: string; volume: number }[];
 
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
@@ -259,6 +266,10 @@ beforeEach(() => {
   vi.mocked(openUrl).mockClear();
   outgoingOffers = [];
   createConversation = vi.fn();
+  refreshOffers = vi.fn(async () => {});
+  offerNotifications = [];
+  newAcceptedOffers = [];
+  acknowledgeOfferNotifications = vi.fn();
   gameLog.clear();
   vi.mocked(writeText).mockClear();
   vi.mocked(writeTextFile).mockClear();
@@ -295,6 +306,10 @@ beforeEach(() => {
         outgoingOffers,
         hiddenOutgoingOffers: [],
         createConversation,
+        refresh: refreshOffers,
+        offerNotifications,
+        newAcceptedOffers,
+        acknowledgeOfferNotifications,
         ...api,
       }) as unknown as ReturnType<typeof usePd2Website>,
   );
@@ -1245,6 +1260,23 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(filterButton('All').getAttribute('aria-checked')).toBe('true');
   });
 
+  it('refetches the offers each time the panel opens, not while it stays open or hidden', async () => {
+    panel.visible = false;
+    await renderWidget([]);
+    expect(refreshOffers).not.toHaveBeenCalled();
+
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    await act(async () => rerenderWidget());
+    expect(refreshOffers).toHaveBeenCalledTimes(1);
+
+    panel.visible = false;
+    await act(async () => rerenderWidget());
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    expect(refreshOffers).toHaveBeenCalledTimes(2);
+  });
+
   it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
     settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
     await renderWidget([]);
@@ -1822,6 +1854,29 @@ describe('ChatOverlayWidget trader sidebar', () => {
     expect(sidebar()).toBeNull();
   });
 
+  it("opens a market seller's thread with the Trader sidebar when asked (slide-over and wide column)", async () => {
+    const sam = { id: 'tr-market', username: 'sam', display_name: 'Sam' };
+    messagesByConversation.c1 = [msg('s1', 'c1', sam.id, 'hi', 10, [ME])];
+    await renderWidget([conv('c1', sam, { latest: msg('s1', 'c1', sam.id, 'hi', 10) })]);
+    // Without trader: just the thread
+    await openChat({ userId: sam.id, userName: 'sam' });
+    expect(heading()).toBe('Sam');
+    expect(sidebar()).toBeNull();
+    await openChat({ userId: sam.id, userName: 'sam', trader: true });
+    expect(heading()).toBe('Sam');
+    expect(sidebar()).not.toBeNull();
+
+    // Wide with the column collapsed: shown again (and remembered)
+    panel.rect = { ...panel.rect, width: 1100 };
+    await openChat({ userId: sam.id, userName: 'sam' });
+    await click(screen.getByRole('button', { name: 'Collapse trader details' }));
+    expect(sidebar()).toBeNull();
+    await openChat({ userId: sam.id, userName: 'sam', trader: true });
+    expect(sidebar()).not.toBeNull();
+    await flush();
+    expect(savedPrefs().sidebarCollapsed).toBeUndefined();
+  });
+
   it('opens their PD2 profile, market and character pages with the names encoded', async () => {
     panel.rect = { ...panel.rect, width: 1100 };
     const odd = { id: 'tr-links', username: 'ali ce/2', display_name: 'Alicia' };
@@ -1842,6 +1897,31 @@ describe('ChatOverlayWidget trader sidebar', () => {
     expect(vi.mocked(openUrl).mock.calls.slice(2)).toEqual([[profile], [`${profile}/market`]]);
     // The newest of their in-game/online stamps
     expect(screen.getAllByText('Online 12m ago').length).toBeGreaterThan(0);
+  });
+
+  it("shows an offers-only trader's website profile, and never calls a website user unlinked", async () => {
+    panel.rect = { ...panel.rect, width: 1100 };
+    const kai = {
+      _id: 'tr-offer',
+      username: 'kai',
+      created_at: '2023-09-28T05:06:13.767Z',
+      game: { accounts: ['Kai'] },
+    };
+    outgoingOffers = [
+      { id: 'o1', isIncoming: false, playerName: 'kai', itemName: 'Shako', timestamp: NOW, userId: kai._id, user: kai },
+    ];
+    await renderWidget([]);
+    await select('kai');
+    // Header and sidebar both show who they are on the website
+    expect(screen.getAllByRole('button', { name: '@kai' })).toHaveLength(2);
+    expect(within(sidebar()!).queryByText('Joined Sep 2023')).not.toBeNull();
+    expect(screen.queryByText('Not linked to a website account')).toBeNull();
+
+    // A market seller messaged before any conversation or offer: a website user, username unknown
+    await openChat({ userId: 'tr-seller', userName: 'SellerAcc' });
+    expect(heading()).toBe('SellerAcc');
+    expect(sidebar()).not.toBeNull();
+    expect(screen.queryByText('Not linked to a website account')).toBeNull();
   });
 
   it('links one of their listings in the composer when it is clicked in the sidebar', async () => {
@@ -1872,5 +1952,170 @@ describe('ChatOverlayWidget trader sidebar', () => {
       'how much for https://www.projectdiablo2.com/market/listing/cc01?display="Harlequin Crest"',
       ME,
     );
+  });
+});
+
+describe('ChatOverlayWidget mark all read and the offers badge', () => {
+  afterEach(() => resetChatFeed());
+
+  const markAllRead = () => screen.getByRole('button', { name: 'Mark all read' }) as HTMLButtonElement;
+  const filterButton = (name: string) => screen.getByRole('radio', { name });
+  /** The last chat-prefs.json written. */
+  const savedPrefs = () =>
+    parseChatPrefs(
+      String(
+        vi
+          .mocked(writeTextFile)
+          .mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)
+          .at(-1)?.[1] ?? '',
+      ),
+    );
+  const notification = (id: string, listingId: string, minutesAgo: number, type: OfferNotification['type'] = 'offer_received') => ({
+    id,
+    type,
+    listingId,
+    at: NOW.getTime() - minutesAgo * 60_000,
+  });
+  const tradeFromDan = () =>
+    gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+
+  it('marks every website conversation read on PD2 (loading unread ids it does not hold) and whispers too', async () => {
+    messagesByConversation.c1 = [
+      msg('a0', 'c1', 'alice', 'old', 40, [ME]),
+      msg('m1', 'c1', ME, 'mine', 35, [ME]),
+      msg('a1', 'c1', 'alice', 'one', 30),
+      msg('a2', 'c1', 'alice', 'two', 20),
+    ];
+    messagesByConversation.c2 = [msg('b1', 'c2', 'bob', 'yo', 10)];
+    await renderWidget([
+      conv('c1', ALICE, { unread: 2, latest: msg('a2', 'c1', 'alice', 'two', 20) }),
+      conv('c2', BOB, { unread: 1, latest: msg('b1', 'c2', 'bob', 'yo', 10) }),
+    ]);
+    await whisperFrom('Dan', 'still there?');
+    expect(lastEmittedUnread()).toBe(4);
+    expect(markAllRead().disabled).toBe(false);
+
+    await act(async () => fireEvent.click(markAllRead()));
+    await flush();
+
+    // Only their unread messages, by id: the same PATCH the open thread (and the website) sends
+    expect(api.markMessagesAsRead.mock.calls.map(([ids, reader]) => [[...ids].sort(), reader]).sort()).toEqual([
+      [['a1', 'a2'], ME],
+      [['b1'], ME],
+    ]);
+    expect(lastEmittedUnread()).toBe(0);
+    expect(headerUnread()).toBeNull();
+    expect(markAllRead().disabled).toBe(true);
+    // Nothing was opened for it
+    expect(screen.getByText('Select a conversation to view messages')).not.toBeNull();
+  });
+
+  it('is disabled when nothing is unread', async () => {
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10, [ME]) })]);
+    expect(markAllRead().disabled).toBe(true);
+  });
+
+  it('keeps the unread count and says so when PD2 refuses', async () => {
+    api.markMessagesAsRead.mockResolvedValue(false);
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10)];
+    await renderWidget([conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+
+    await act(async () => fireEvent.click(markAllRead()));
+    await flush();
+
+    expect(lastEmittedUnread()).toBe(1);
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: "Couldn't mark every chat read" }));
+  });
+
+  it('also acknowledges the offer notifications on PD2 and marks trade whispers seen (saved)', async () => {
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    // Offers alone enable it
+    expect(markAllRead().disabled).toBe(false);
+    await tradeFromDan();
+
+    await act(async () => fireEvent.click(markAllRead()));
+    await flush();
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    expect(savedPrefs().offersSeenAt).toBeGreaterThanOrEqual(NOW.getTime());
+    expect(getChatFeed().items.filter((item) => item.kind === 'trade')).toEqual([]);
+  });
+
+  it('the Selling or Buying list on screen counts as looking at the offers; the All list does not', async () => {
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    await tradeFromDan();
+    expect(acknowledgeOfferNotifications).not.toHaveBeenCalled();
+    expect(getChatFeed().items.map((item) => item.kind)).toContain('trade');
+
+    await act(async () => fireEvent.click(filterButton('Buying')));
+    await flush();
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    expect(savedPrefs().offersSeenAt).toBeGreaterThanOrEqual(NOW.getTime());
+    expect(getChatFeed().items.map((item) => item.kind)).not.toContain('trade');
+  });
+
+  it('nothing counts as looked at while the panel is hidden', async () => {
+    panel.visible = false;
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    await openChat({ filter: 'selling' });
+    expect(acknowledgeOfferNotifications).not.toHaveBeenCalled();
+  });
+
+  it('an open thread counts as looking at its own offers only', async () => {
+    incomingOffers = [
+      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol', listingId: 'L1' },
+      { id: 'o2', isIncoming: true, playerName: 'dave', itemName: 'Ber', timestamp: new Date(NOW), userId: 'dave', listingId: 'L2' },
+    ];
+    offerNotifications = [notification('n1', 'L1', 5), notification('n2', 'L2', 4)];
+    await renderWidget([]);
+
+    await select('carol');
+
+    // (this stub keeps them listed; the real provider drops acknowledged ones and never resends them)
+    expect(new Set(acknowledgeOfferNotifications.mock.calls.flat(2))).toEqual(new Set(['n1']));
+  });
+
+  it('publishes the peek feed newest first, matched to the offers, and provides its actions', async () => {
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'carol',
+        itemName: 'Shako',
+        price: '2 ist',
+        timestamp: new Date(NOW.getTime() - 60_000),
+        userId: 'carol',
+        listingId: 'L1',
+      },
+    ];
+    offerNotifications = [notification('n1', 'L1', 1)];
+    await renderWidget([conv('c1', ALICE, { unread: 1, latest: msg('a1', 'c1', 'alice', 'you there?', 10) })]);
+    await tradeFromDan();
+
+    expect(
+      getChatFeed().items.map(({ kind, name, itemName, price, open }) => ({ kind, name, itemName, price, open })),
+    ).toEqual([
+      { kind: 'trade', name: 'Dan', itemName: 'Arach', price: '1 ist', open: { threadId: 'whisper:dan' } },
+      { kind: 'offerReceived', name: 'carol', itemName: 'Shako', price: '2 ist', open: { threadId: 'user:carol' } },
+      { kind: 'message', name: 'Alice', itemName: undefined, price: undefined, open: { threadId: 'c1' } },
+    ]);
+    expect(getChatFeed().canMarkAllRead).toBe(true);
+
+    await act(async () => chatFeedActions().seeOffers());
+    await flush();
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    expect(getChatFeed().items.map((item) => item.kind)).not.toContain('trade');
   });
 });

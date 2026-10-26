@@ -69,6 +69,7 @@
     --q-normal: oklch(0.967 0.003 264.542);
     --q-gold: hsl(42 75% 62%);
     --q-corrupted: oklch(0.704 0.191 22.216);
+    --q-corrupted-zone: oklch(0.714 0.203 305.504);
     --radius: 0.5rem;
 
     color-scheme: dark;
@@ -172,6 +173,7 @@ html[data-theme='classic-diablo-ii'] {
     --color-q-normal: var(--q-normal);
     --color-q-gold: var(--q-gold);
     --color-q-corrupted: var(--q-corrupted);
+    --color-q-corrupted-zone: var(--q-corrupted-zone);
 
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);

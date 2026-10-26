@@ -14,6 +14,8 @@ import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
 import { displayMods, itemNameColor } from './ItemTooltip';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
+import { SellerName } from './SellerName';
+import { useOpenTrader } from '../hooks/useListingActions';
 
 const ROW_HEIGHT = 58;
 /** Rows from the end at which the next server page is requested. */
@@ -208,6 +210,7 @@ const ResultRow = React.memo(function ResultRow({
   const { listing } = row;
   const { item } = listing;
   const price = formatHrPrice(listing.hr_price);
+  const openTrader = useOpenTrader(listing);
   const summary = displayMods(item)
     .slice(0, SUMMARY_MODS)
     .map((m) => m.label)
@@ -261,18 +264,29 @@ const ResultRow = React.memo(function ResultRow({
       </div>
 
       <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 max-w-full items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
           <span
-            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
+            className={cn('truncate text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-foreground/85')}
             title={listing.price || undefined}
           >
-            {price ?? (listing.price ? 'Offer' : '—')}
+            {price ?? (listing.price || '—')}
           </span>
         </div>
+        {price && listing.price && (
+          <span className="max-w-full truncate text-[10px] text-muted-foreground"
+            title={listing.price}>
+            {listing.price}
+          </span>
+        )}
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <span className="max-w-16 truncate">{listing.user?.username}</span>
+          {listing.user?.username && (
+            <SellerName onOpen={openTrader}
+              className="max-w-16">
+              {listing.user.username}
+            </SellerName>
+          )}
           <OnlineDots listing={listing} />
           <span className="tabular-nums">{listingAge(listing)}</span>
         </div>

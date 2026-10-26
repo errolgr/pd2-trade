@@ -12,6 +12,7 @@ import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
 import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
 import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
+import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -133,6 +134,7 @@ export const PANEL_DEFS: PanelDefs = {
     persist: false,
     keyboard: 'onPointerDown',
     keepMounted: false,
+    // Browser mode only (Tauri uses the native sign-in window, see useSignIn). Only the user closes it.
     hideOnGameBlur: false,
   },
 
@@ -190,5 +192,20 @@ export const PANEL_DEFS: PanelDefs = {
     keepMounted: true, // search results and filters survive closing (like chat)
     hideOnGameBlur: true,
     closeOnBlur: true,
+  },
+
+  // ---- corruptedZoneTimer (Group CorruptedZones) ----
+  corruptedZoneTimer: {
+    id: 'corruptedZoneTimer',
+    component: CorruptedZoneTimerPage,
+    size: { width: 360, height: 32 },
+    resizable: false,
+    placement: 'gameCenter', // the timer sizes and places itself (anchor setting / dragged position) via setRect
+    persist: true,
+    keyboard: 'never',
+    keepMounted: false,
+    hideOnGameBlur: true,
+    // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
+    interactive: 'children',
   },
 };

@@ -142,3 +142,57 @@ pub async fn open_oauth_url(app_handle: tauri::AppHandle, url: String) -> Result
         .open_url(&url, None::<&str>)
         .map_err(|e| format!("Failed to open URL: {}", e))
 }
+
+/// The sign-in window: an ordinary app window (taskbar entry, minimizable, not always on top) so it can sit
+/// behind other apps while the user signs in in the browser. Its page is a view; Main runs the sign-in.
+pub const SIGN_IN_LABEL: &str = "SignIn";
+/// Emitted to Main when the user closes the sign-in window.
+pub const SIGN_IN_CLOSED_EVENT: &str = "sign-in-window-closed";
+
+/// Opens the sign-in window, or restores it if minimized; either way brings it to the front with focus.
+/// Async: building a window from a sync command deadlocks on Windows.
+#[tauri::command]
+pub async fn open_sign_in_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let window = match app_handle.get_webview_window(SIGN_IN_LABEL) {
+        Some(window) => {
+            let _ = window.unminimize();
+            let _ = window.show();
+            window
+        }
+        None => tauri::WebviewWindowBuilder::new(
+            &app_handle,
+            SIGN_IN_LABEL,
+            tauri::WebviewUrl::App("index.html?window=sign-in".into()),
+        )
+        .title("PD2 Trader - Sign in")
+        .inner_size(440.0, 340.0)
+        .resizable(false)
+        .maximizable(false)
+        .center()
+        .always_on_top(false)
+        .skip_taskbar(false)
+        .focused(true)
+        .build()
+        .map_err(|e| e.to_string())?,
+    };
+    focus_window(&window);
+    Ok(())
+}
+
+/// Brings a window to the front even while another app holds the foreground (the browser, mid sign-in).
+fn focus_window(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "windows")]
+    if let Ok(hwnd) = window.hwnd() {
+        if window::bring_to_foreground(hwnd.0 as isize) {
+            return;
+        }
+    }
+    let _ = window.set_focus();
+}
+
+#[tauri::command]
+pub fn close_sign_in_window(app_handle: tauri::AppHandle) {
+    if let Some(window) = app_handle.get_webview_window(SIGN_IN_LABEL) {
+        let _ = window.destroy();
+    }
+}

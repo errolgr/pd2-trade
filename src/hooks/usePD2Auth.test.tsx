@@ -1,25 +1,25 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useOverlay } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
 import { usePD2Auth } from './usePD2Auth';
 
-vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: vi.fn() }));
 
 const NOW = new Date('2026-10-18T12:00:00Z').getTime();
 const FIVE_MINUTES = 5 * 60 * 1000;
 
-const openPanel = vi.fn();
+const openSignIn = vi.fn();
 const refreshTokens = vi.fn<(refreshToken: string) => Promise<boolean>>();
 let options: { settings: Partial<ISettings>; isLoading: boolean };
 
 function signInPrompts() {
-  return openPanel.mock.calls.filter(([id]) => id === 'signIn').length;
+  return openSignIn.mock.calls.length;
 }
 
 function renderAuth(settings: Partial<ISettings>, isLoading = false) {
@@ -30,8 +30,8 @@ function renderAuth(settings: Partial<ISettings>, isLoading = false) {
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
-  openPanel.mockReset();
-  vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
+  openSignIn.mockReset();
+  vi.mocked(useSignIn).mockReturnValue({ openSignIn, isOpen: false } as never);
   refreshTokens.mockReset().mockResolvedValue(true);
   vi.mocked(useOAuth).mockReturnValue({ startOAuthFlow: vi.fn(), refreshTokens });
   vi.mocked(useOptions).mockImplementation(() => ({

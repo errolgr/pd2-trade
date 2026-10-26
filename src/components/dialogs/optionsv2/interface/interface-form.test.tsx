@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
@@ -7,6 +7,8 @@ import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { InterfaceForm } from './interface-form';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+// vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
+vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
 
 let store: OptionsStore;
 
@@ -17,9 +19,18 @@ function renderForm(settings: Partial<ISettings>, isLoading = false) {
 }
 
 const overlaySwitch = () => screen.getByRole('switch', { name: 'Chat Button Overlay' });
+const timerSwitch = () => screen.getByRole('switch', { name: 'Corrupted zone timer' });
+const timerPosition = () => screen.getByLabelText('Timer position') as HTMLSelectElement;
 
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
-const transparency = () => screen.getByRole('slider');
+const transparency = () => screen.getAllByRole('slider')[0];
+const TIMER_DEFAULTS = {
+  corruptedZoneTimerEnabled: false,
+  corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerOpacity: 90,
+  corruptedZoneAlerts: 'off',
+  corruptedZoneFollowed: [],
+};
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -48,7 +59,11 @@ describe('InterfaceForm', () => {
     fireEvent.click(overlaySwitch());
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
-    expect(store.updateSettings).toHaveBeenCalledWith({ chatButtonOverlayEnabled: false, windowTransparency: 0 });
+    expect(store.updateSettings).toHaveBeenCalledWith({
+      chatButtonOverlayEnabled: false,
+      windowTransparency: 0,
+      ...TIMER_DEFAULTS,
+    });
   });
 
   it('starts opaque when transparency was never set', () => {
@@ -73,6 +88,30 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
       chatButtonOverlayEnabled: true,
       windowTransparency: 90,
+      ...TIMER_DEFAULTS,
+    });
+  });
+
+  it('starts the corrupted zone timer off, top right', () => {
+    renderForm({});
+    expect(timerSwitch().getAttribute('aria-checked')).toBe('false');
+    expect(timerPosition().value).toBe('top-right');
+    expect(screen.getByText(/Timer opacity/).textContent).toContain('90%');
+  });
+
+  it('saves the corrupted zone timer toggle and position in one write', async () => {
+    renderForm({});
+    fireEvent.click(timerSwitch());
+    fireEvent.change(timerPosition(), { target: { value: 'bottom-left' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
+      chatButtonOverlayEnabled: true,
+      windowTransparency: 0,
+      corruptedZoneTimerEnabled: true,
+      corruptedZoneTimerAnchor: 'bottom-left',
+      corruptedZoneTimerOpacity: 90,
+      corruptedZoneAlerts: 'off',
+      corruptedZoneFollowed: [],
     });
   });
 
@@ -82,5 +121,28 @@ describe('InterfaceForm', () => {
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
     expect(store.updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('picks followed zones from a searchable dropdown under "Only zones I follow"', async () => {
+    renderForm({});
+    expect(screen.queryByRole('button', { name: 'Followed zones' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Zone notifications'), { target: { value: 'followed' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Followed zones' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search zones' }), { target: { value: 'kurast' } });
+    const options = () => within(screen.getByRole('listbox', { name: 'Zones' })).getAllByRole('option');
+    expect(options().map((o) => o.textContent)).toEqual([
+      'Lower Kurast and the Kurast Sewers',
+      'Kurast Bazaar, Ruined Temple, and Disused Fane',
+      'Upper Kurast, the Forgotten Reliquary, and Forgotten Temple',
+    ]);
+    fireEvent.click(options()[1]);
+    expect(options()[1].getAttribute('aria-selected')).toBe('true');
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        corruptedZoneAlerts: 'followed',
+        corruptedZoneFollowed: ['Kurast Bazaar, Ruined Temple, and Disused Fane'],
+      }),
+    );
   });
 });

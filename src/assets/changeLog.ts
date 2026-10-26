@@ -1,4 +1,29 @@
 export const changeLog = {
+  '0.10.5': [
+    '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
+    '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
+    '🆕 New on pd2trader.com: a build page at pd2trader.com/builds',
+  ],
+  '0.10.4': [
+    '✨ Mark all read in the chat panel: website messages (on PD2 too), whispers, offers and trade whispers in one click',
+    '✨ Rest the pointer on the chat button to peek at what is new: the latest messages, offers and trade whispers, each a click away, with Mark all read',
+    '✨ The Offers button opens what its badge counts: Selling for a new offer, Buying when your offer was accepted, or the trade whisper',
+    '✨ A toast and sound when a seller accepts your offer on the website (Offers popups in Settings → Chat)',
+    '🔧 The offers badge counts only new offers and trade whispers since you last looked, and clears the bell on projectdiablo2.com too',
+    '🔧 Chat: someone you only traded with through website offers no longer shows as "Not linked to a website account": their @username, join date and every in-game account show, and whispers from any of their accounts land in the same thread',
+    '🔧 Price check search now shows all matching listings, even after scrolling or changing filters',
+  ],
+  '0.10.3': [
+    "✨ Click a seller's name in the market to open their trader panel",
+    '✨ Market list view shows the price note, alongside the HR price when both are set',
+    '✨ Chat: your offers that are closed, declined or accepted leave the pinned deals and show as a row in the conversation',
+    "✨ Copy image now draws the whole PD2 tooltip: runes, damage, requirements, weapon class and set items, with stats in the game's order and what socketed runes, gems and jewels add",
+    "✨ Market: a button next to Watch opens your current search on projectdiablo2.com (Trade, or Archive for sold listings) and names any filters the site can't search on",
+    '🔧 Saved searches and Watch alerts stop retrying when your PD2 session has expired: PD2 Trader refreshes it once, then asks you to sign in again',
+    '🔧 Market browser no longer shows listings that were already sold or removed on PD2',
+    "🔧 Offers you make from the market show up in the chat's Buying tab right away, without restarting PD2 Trader",
+    "🔧 Sign-in opens in its own window instead of on top of everything: it goes behind other apps like any window (select it in the taskbar to bring it back) and comes to the front when it's time to pick your account",
+  ],
   '0.10.2': [
     '🆕 Public profile toggle in the Net Worth panel and Stash Value header: choose whether your net worth profile is public',
     '🔧 Fixed class skill tab filters in the market browser (e.g. +2 Paladin Combat Skills) matching no listings or the wrong class',

@@ -1,9 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { usePanel } from '@/overlay';
-import { useOAuth } from '@/hooks/useOAuth';
-import { useOptions } from '@/hooks/useOptions';
-import { fetch as tauriFetch } from '@/lib/browser-http';
-import { BACKEND_URL } from '@/lib/pkce';
+import React from 'react';
+import { useRemoteSignIn, useSignIn, type SignInAction, type SignInState } from '@/hooks/useSignIn';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
 import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
@@ -52,78 +48,21 @@ function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead
   );
 }
 
-function SignInContent() {
-  const { startOAuthFlow } = useOAuth();
-  const { updateSettings } = useOptions();
-  const { close } = usePanel();
-  const [loading, setLoading] = useState(false);
-  const [accounts, setAccounts] = useState<string[] | null>(null);
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  // The panel unmounts when closed; abort the browser flow so it stops polling, frees the sign-in lock for the next
-  // open, and never updates this unmounted component.
-  const flowRef = useRef<AbortController | null>(null);
-  useEffect(() => () => flowRef.current?.abort(), []);
+interface SignInViewProps {
+  state: SignInState;
+  dispatch(action: SignInAction): void;
+  /** Our own close button: the overlay panel has no title bar (the window has the native one). */
+  showClose: boolean;
+}
 
-  const handleSignIn = async () => {
-    flowRef.current?.abort();
-    const flow = new AbortController();
-    flowRef.current = flow;
-    const { signal } = flow;
-    setLoading(true);
-    try {
-      const token = await startOAuthFlow(signal);
-      if (signal.aborted) return;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+/** The sign-in prompt; Main runs the sign-in (useSignIn), this only shows its state and reports the buttons. */
+function SignInView({ state, dispatch, showClose }: SignInViewProps) {
+  const { flowActive, busy: loading, accounts, selectedAccount } = state;
+  const handleSignIn = () => dispatch({ type: 'start' });
+  const handleSelectAccount = (account: string) => dispatch({ type: 'select', account });
+  const handleLater = () => dispatch({ type: 'later' });
 
-      // Fetch user data to check accounts
-      const response = await tauriFetch(`${BACKEND_URL}/api/auth/oauth/me`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (signal.aborted) return;
-
-      if (response.ok) {
-        const data = await response.json();
-        if (signal.aborted) return;
-        const userAccounts = data?.user?.game?.accounts ?? [];
-        console.log('[SignIn] Accounts found:', userAccounts);
-
-        if (userAccounts.length <= 1) {
-          // Single or no accounts — auto-select and close
-          if (userAccounts.length === 1) {
-            await updateSettings({ account: userAccounts[0] });
-          }
-          close();
-        } else {
-          // Multiple accounts — show selector
-          setAccounts(userAccounts);
-          setLoading(false);
-        }
-      } else {
-        // Auth check failed but tokens are stored — just close
-        close();
-      }
-    } catch (err) {
-      if (signal.aborted) return;
-      console.error('[SignIn] Error during sign-in flow:', err);
-      setLoading(false);
-    }
-  };
-
-  const handleSelectAccount = async (account: string) => {
-    setSelectedAccount(account);
-    await updateSettings({ account });
-    close();
-  };
-
-  const handleLater = close;
-
-  const closeButton = (
+  const closeButton = showClose && (
     <button
       type="button"
       onClick={handleLater}
@@ -277,24 +216,43 @@ function SignInContent() {
             : 'Opens projectdiablo2.com in your browser.'}
         </p>
 
+        {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleLater}
-          disabled={loading}
+          onClick={() => dispatch({ type: flowActive ? 'cancel' : 'later' })}
           className="text-muted-foreground hover:text-foreground"
         >
-          Later
+          {flowActive ? 'Cancel' : 'Later'}
         </Button>
       </motion.div>
     </WindowPanel>
   );
 }
 
+/** The overlay panel (browser mode, no native windows). */
 export default function SignInPage() {
+  const { state, dispatch } = useSignIn();
   return (
     <MotionConfig reducedMotion="user">
-      <SignInContent />
+      <SignInView state={state}
+        dispatch={dispatch}
+        showClose />
+    </MotionConfig>
+  );
+}
+
+/** The native sign-in window's page (`index.html?window=sign-in`). */
+export function SignInWindowPage() {
+  const { state, dispatch } = useRemoteSignIn();
+  if (!state) return null;
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="h-screen w-screen">
+        <SignInView state={state}
+          dispatch={dispatch}
+          showClose={false} />
+      </div>
     </MotionConfig>
   );
 }

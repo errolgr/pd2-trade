@@ -17,7 +17,8 @@ export type PanelId =
   | 'delist'
   | 'netWorthTicker'
   | 'netWorthPanel'
-  | 'market';
+  | 'market'
+  | 'corruptedZoneTimer';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -44,6 +45,8 @@ export interface PanelPayloads {
         userId?: string;
         userName?: string;
         draft?: string;
+        /** Show the Trader sidebar on the opened thread (a market seller's name was clicked). */
+        trader?: boolean;
       }
     | undefined;
   chatButton: undefined;
@@ -57,6 +60,7 @@ export interface PanelPayloads {
   netWorthPanel: undefined;
   /** Filters to search right away (merged over defaults), a saved search to run, a listing to focus. */
   market: MarketPanelPayload | undefined;
+  corruptedZoneTimer: undefined;
 }
 
 /** CSS px relative to the overlay viewport. */

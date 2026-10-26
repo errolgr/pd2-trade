@@ -5,13 +5,17 @@
  * the market alert sound (Settings → Chat → Sound). Mounted once, in AppController.
  *
  * The server matches every listing PD2 adds or bumps (about every 15 s) and keeps alerts for 30 days: after a
- * reconnect, missed ones are caught up on. A 401 stops the stream until the token changes.
+ * reconnect, missed ones are caught up on. A 401 (list, edit or stream) stops everything sent with that token:
+ * the token is refreshed once, and when that fails (or the refreshed token is refused too) the sign-in panel
+ * opens. Nothing is sent again until the token changes.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useOAuth } from '@/hooks/useOAuth';
 import { useOptions } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { showToast } from '@/overlay';
-import { syncSavedSearches, useMarketStore } from '@/pages/market/store/useMarketStore';
+import { useSignIn } from '@/hooks/useSignIn';
+import { refuseSavedSearchToken, syncSavedSearches, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { publishMarketAlerts } from './alert-events';
 import { alertToasts } from './alert-logic';
 import { runAlertStream } from './alert-stream';
@@ -20,15 +24,55 @@ import { listMarketAlerts, type MarketAlert, openAlertStream } from './saved-sea
 export function useMarketAlerts(): void {
   const { settings, isLoading } = useOptions();
   const token = isLoading ? undefined : settings.pd2Token;
-  const { savedSearches, alertsEnabled } = useMarketStore();
+  const { savedSearches, alertsEnabled, syncStatus } = useMarketStore();
+  const { refreshTokens } = useOAuth();
+  const { openSignIn } = useSignIn();
+
+  /** The token pd2trader.com refused (401): nothing is sent with it again. */
+  const [refusedToken, setRefusedToken] = useState<string | null>(null);
 
   useEffect(() => {
-    syncSavedSearches(token ?? null);
+    syncSavedSearches(token ?? null, token ? () => setRefusedToken(token) : undefined);
   }, [token]);
 
+  /** A refresh started because `from` was refused; `to` is the token it brought. */
+  const recovery = useRef<{ from: string; to: string | null } | null>(null);
+  /** The token now: a refresh that fails after the user signed in some other way must not prompt again. */
+  const tokenRef = useRef(token);
+  useEffect(() => {
+    tokenRef.current = token;
+    const current = recovery.current;
+    if (current && !current.to && token && token !== current.from) current.to = token;
+  }, [token]);
+  // The refreshed token works: recovery is over, a later 401 on it gets its own refresh
+  useEffect(() => {
+    if (syncStatus === 'ready' && recovery.current?.to === token) recovery.current = null;
+  }, [syncStatus, token]);
+
+  const refreshToken = settings.pd2RefreshToken;
+  /** The refused token already acted on: one refresh or sign-in prompt per token, whatever re-renders. */
+  const handledToken = useRef<string | null>(null);
+  useEffect(() => {
+    if (!token || token !== refusedToken || handledToken.current === token) return;
+    handledToken.current = token;
+    // A token our own refresh just brought being refused too: refreshing again would loop
+    if (refreshToken && recovery.current?.to !== token) {
+      recovery.current = { from: token, to: null };
+      void refreshTokens(refreshToken).then((refreshed) => {
+        if (refreshed) return; // the new token restarts the sync and the stream
+        recovery.current = null;
+        // Signed in (or out) some other way while the refresh ran: that session decides
+        if (tokenRef.current !== token) return;
+        openSignIn();
+      });
+      return;
+    }
+    console.log('[market alerts] pd2trader.com refused the PD2 token; asking to sign in again');
+    recovery.current = null;
+    openSignIn();
+  }, [token, refusedToken, refreshToken, refreshTokens, openSignIn]);
+
   const watching = alertsEnabled && savedSearches.some((s) => s.alert);
-  /** The token the stream got a 401 with: no reconnecting until a new one. */
-  const [refusedToken, setRefusedToken] = useState<string | null>(null);
   const active = !!token && watching && token !== refusedToken;
 
   const sound = useRef({ enabled: true, volume: 70 });
@@ -52,7 +96,10 @@ export function useMarketAlerts(): void {
       open: openAlertStream,
       catchUp: async (t, since) => (await listMarketAlerts(t, since)).items,
       onAlerts,
-      onUnauthorized: () => setRefusedToken(token),
+      onUnauthorized: () => {
+        setRefusedToken(token);
+        refuseSavedSearchToken(token);
+      },
       signal: controller.signal,
       seen: seen.current,
     });

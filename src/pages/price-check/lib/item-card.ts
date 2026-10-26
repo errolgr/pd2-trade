@@ -69,7 +69,8 @@ const COLORS: Record<TooltipColor, string> = {
   set: '#00e000',
   unique: '#c7b377',
   crafted: '#ffa800',
-  corrupted: '#ff5050',
+  /** Corrupted, class restrictions, set items not worn. */
+  red: '#ff5050',
 };
 const GOLD = '#c7b377';
 const MUTED = '#8a8a8a';
@@ -122,10 +123,9 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 
 interface Row {
   lines: string[];
-  color: string;
   size: number;
-  /** Index in the joined row text where PD2's dark green range starts (-1 = none). */
-  rangeAt: number;
+  /** Colour changes along the joined row text: line colour, BH's red corruption star, the dark green range. */
+  spans: Array<{ from: number; color: string }>;
 }
 
 /** A piece of a tooltip line drawn in one font and colour. */
@@ -136,18 +136,26 @@ interface Run {
 }
 
 /**
- * Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph and "-" as a tilde, so those
- * use the UI font.
+ * Tooltip line → runs. DiabloFont (AvQest) draws "+" as a star-like glyph, "-" as a tilde and has no "*", so
+ * those use the UI font.
  */
 function lineRuns(text: string, size: number, color: string): Run[] {
   return text
-    .split(/([+-])/)
+    .split(/([+\-*])/)
     .filter(Boolean)
-    .map((part) => ({ text: part, font: part === '+' || part === '-' ? `600 ${size}px ${UI_FONT}` : font(size), color }));
+    .map((part) => ({ text: part, font: /^[+\-*]$/.test(part) ? `600 ${size}px ${UI_FONT}` : font(size), color }));
 }
 
-/** A stat line with its range: "text [a - b]"; the range never wraps inside (non-breaking spaces). */
-const fullText = (line: TooltipLine) => (line.range ? `${line.text} ${line.range.replace(/ /g, '\u00a0')}` : line.text);
+/** A stat line as drawn: "text*[a - b]"; the range never wraps inside (non-breaking spaces). */
+const fullText = (line: TooltipLine) =>
+  `${line.text}${line.star ? '*' : ''}${line.range ? ` ${line.range.replace(/ /g, '\u00a0')}` : ''}`;
+
+function rowSpans(line: TooltipLine): Row['spans'] {
+  const spans = [{ from: 0, color: COLORS[line.color] }];
+  if (line.star) spans.push({ from: line.text.length, color: COLORS.red });
+  if (line.range) spans.push({ from: line.text.length + (line.star ? 1 : 0), color: RANGE });
+  return spans;
+}
 
 function runsWidth(ctx: CanvasRenderingContext2D, runs: Run[]): number {
   let w = 0;
@@ -175,12 +183,20 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
 
   // Measure: widest tooltip line decides the width (clamped), long lines wrap.
   const { tooltip } = card;
-  const sized: Array<{ line: TooltipLine; size: number }> = [
+  const body = [...tooltip.header, ...tooltip.stats, ...tooltip.footer];
+  const sized: Array<{ line: TooltipLine; size: number } | 'gap' | 'blank'> = [
     ...tooltip.title.map((line) => ({ line, size: TITLE_SIZE })),
-    ...[...tooltip.base, ...tooltip.stats, ...tooltip.footer].map((line) => ({ line, size: LINE_SIZE })),
+    // D2 leaves no gap under the name; a small one reads better at share size.
+    ...(tooltip.title.length && body.length ? ['gap' as const] : []),
+    ...body.map((line) => ({ line, size: LINE_SIZE })),
+    // Set items: a blank line, then the set name and its items (as the game draws them).
+    ...(tooltip.set.length ? ['blank' as const] : []),
+    ...tooltip.set.map((line) => ({ line, size: LINE_SIZE })),
   ];
   let contentWidth = MIN_WIDTH - PAD_X * 2;
-  for (const s of sized) contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(fullText(s.line), s.size, '')));
+  for (const s of sized) {
+    if (typeof s !== 'string') contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(fullText(s.line), s.size, '')));
+  }
   // Footer: logo + brand + context on one line.
   ctx.font = font(13);
   const brandWidth = LOGO_SIZE + 6 + ctx.measureText(BRAND).width;
@@ -189,20 +205,15 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   contentWidth = Math.min(Math.ceil(contentWidth), MAX_WIDTH - PAD_X * 2);
   const width = contentWidth + PAD_X * 2;
 
-  const rows: Array<Row | 'gap'> = sized.map(({ line, size }) => {
-    ctx.font = font(size);
-    return {
-      lines: wrap(ctx, fullText(line), contentWidth, size),
-      color: COLORS[line.color],
-      size,
-      rangeAt: line.range ? line.text.length + 1 : -1,
-    };
-  });
-  // D2 leaves no gaps; one small gap after the title block reads better at share size.
-  if (tooltip.title.length && rows.length > tooltip.title.length) rows.splice(tooltip.title.length, 0, 'gap');
   const GAP = 6;
+  const rows: Array<Row | number> = sized.map((s) => {
+    if (s === 'gap') return GAP;
+    if (s === 'blank') return LINE_HEIGHT;
+    ctx.font = font(s.size);
+    return { lines: wrap(ctx, fullText(s.line), contentWidth, s.size), size: s.size, spans: rowSpans(s.line) };
+  });
   const lineHeight = (size: number) => (size === TITLE_SIZE ? 23 : LINE_HEIGHT);
-  const tooltipHeight = rows.reduce((h, r) => h + (r === 'gap' ? GAP : r.lines.length * lineHeight(r.size)), 0);
+  const tooltipHeight = rows.reduce<number>((h, r) => h + (typeof r === 'number' ? r : r.lines.length * lineHeight(r.size)), 0);
 
   // Price rows: label left, value right, optional detail line below.
   const PRICE_ROW = 22;
@@ -228,8 +239,8 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   let y = PAD_Y;
   ctx.textAlign = 'left';
   for (const row of rows) {
-    if (row === 'gap') {
-      y += GAP;
+    if (typeof row === 'number') {
+      y += row;
       continue;
     }
     const lh = lineHeight(row.size);
@@ -237,11 +248,11 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
     row.lines.forEach((text) => {
       y += lh;
       const baseline = y - (lh - row.size) / 2 - 2;
-      const split = row.rangeAt < 0 ? text.length : Math.max(0, Math.min(text.length, row.rangeAt - offset));
-      const runs = [
-        ...lineRuns(text.slice(0, split), row.size, row.color),
-        ...(split < text.length ? lineRuns(text.slice(split), row.size, RANGE) : []),
-      ];
+      const runs = row.spans.flatMap((span, i) => {
+        const from = Math.max(0, span.from - offset);
+        const to = Math.min(text.length, (row.spans[i + 1]?.from ?? Infinity) - offset);
+        return from < to ? lineRuns(text.slice(from, to), row.size, span.color) : [];
+      });
       offset += text.length + 1;
       let x = width / 2 - runsWidth(ctx, runs) / 2;
       for (const run of runs) {

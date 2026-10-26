@@ -16,6 +16,8 @@ export interface Stat {
   corrupted?: boolean; // whether this stat is corrupted
   chance?: number;
   skill?: string; // skill name for skill stats
+  /** Charged skills: "(25/31 Charges)" (BH exports them without a name). */
+  charges?: string;
   /** Damage pair rows ("Adds 4-14 fire damage"): `value` is the min damage, this the max. */
   maxValue?: number;
   /** Damage pair rows: the max damage's range. */
@@ -57,6 +59,8 @@ export interface Item {
   socketed?: Socketed[];
   stats: Stat[];
   location?: string;
+  /** Set items: the set's name. */
+  set?: string;
 }
 export interface StatOverride {
   name: string;

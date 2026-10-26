@@ -284,8 +284,12 @@ export function ThreadDeals({
     ...hiddenOffers.map((offer): Deal => ({ kind: 'offer', id: offer.id, offer, hidden: true })),
     ...whisperTrades.map(({ person, trade }): Deal => ({ kind: 'whisper', id: trade.id, trade, person })),
   ]
-    // Settled offers (accepted, declined, closed) only on listings the thread links
-    .filter((deal) => linked(deal) || !['accepted', 'declined', 'closed'].includes(dealStatus(deal)))
+    // Settled offers (accepted, declined, closed): yours (buying) show in the conversation instead
+    // (buildTimeline); offers to you stay here only on listings the thread links
+    .filter((deal) => {
+      if (!['accepted', 'declined', 'closed'].includes(dealStatus(deal))) return true;
+      return deal.kind === 'offer' && deal.offer.isIncoming && linked(deal);
+    })
     .sort((a, b) => {
       const time = (deal: Deal) => (deal.kind === 'offer' ? deal.offer.timestamp.getTime() : deal.trade.timestamp);
       return (

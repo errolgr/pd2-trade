@@ -3,6 +3,7 @@ import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { usePd2Website } from './pd2website/usePD2Website';
+import { toOfferNotification } from './pd2website/useOfferNotifications';
 import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { ISettings } from './useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
@@ -10,20 +11,6 @@ import { showToast } from '@/overlay';
 import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
 import { normalizeName as personKey } from '@/lib/whisper-history';
 import { whisperThreadId } from '@/pages/chat/lib/identity';
-
-interface SystemNotification {
-  _id: string;
-  user_id: string;
-  data: {
-    listing_id?: string;
-  };
-  meta: {
-    string?: string;
-  };
-  type: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface WhisperEvent {
   isTrade: boolean;
@@ -76,15 +63,22 @@ export const useSocketNotifications = ({
   // Muted chat threads get no sound and no toast
   useEffect(loadChatPrefs, []);
 
-  // Listen for offer received notifications via socket
+  // PD2's offer notifications: offer_received (an offer on your listing), offer_accepted (the seller accepted
+  // your offer), offer_revoked (a buyer withdrew theirs). Read leniently (only `type` is relied on); the offers
+  // badge counts them (useOfferNotifications).
   useEffect(() => {
     if (!isConnected) return;
 
-    return subscribeSocket<SystemNotification>('system/notification_pushed', (notification) => {
-      // Only handle offer_received notifications
-      if (notification.type !== 'offer_received' || !notification.data?.listing_id) return;
-      if (processedNotificationsRef.current.has(notification._id)) return;
-      processedNotificationsRef.current.add(notification._id);
+    return subscribeSocket<unknown>('system/notification_pushed', (raw) => {
+      const notification = toOfferNotification(raw, Date.now());
+      if (!notification) {
+        // Other kinds exist; note which (never the payload)
+        const type = (raw as { type?: unknown } | null)?.type;
+        console.debug('[Notifications] Unhandled system/notification push type:', String(type));
+        return;
+      }
+      if (processedNotificationsRef.current.has(notification.id)) return;
+      processedNotificationsRef.current.add(notification.id);
 
       // Clean up old notification IDs (keep only last 100)
       if (processedNotificationsRef.current.size > 100) {
@@ -92,8 +86,14 @@ export const useSocketNotifications = ({
         processedNotificationsRef.current = new Set(idsArray.slice(-100));
       }
 
-      const listingId = notification.data.listing_id;
-      const offerMessage = notification.meta?.string || 'New offer received';
+      // Refresh the trade offers list (owned by Pd2WebsiteProvider)
+      refreshOffers();
+      // A withdrawn offer just leaves the lists
+      if (notification.type === 'offer_revoked') return;
+
+      const { listingId } = notification;
+      const accepted = notification.type === 'offer_accepted';
+      const offerMessage = notification.text || (accepted ? 'Your offer was accepted' : 'New offer received');
 
       // Play notification sound if trade notifications are enabled
       const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
@@ -105,20 +105,13 @@ export const useSocketNotifications = ({
       // Show toast notification with link to listing
       if (isToastEnabled(settings, 'offers')) {
         showToast({
-          title: 'New Offer',
+          title: accepted ? 'Offer Accepted' : 'New Offer',
           description: offerMessage,
-          action: {
-            label: 'View Listing',
-            type: ToastActionType.OPEN_MARKET_LISTING,
-            data: {
-              listingId: listingId,
-            },
-          },
+          action: listingId
+            ? { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId } }
+            : undefined,
         });
       }
-
-      // Refresh the trade offers list (owned by Pd2WebsiteProvider)
-      refreshOffers();
     });
   }, [
     isConnected,

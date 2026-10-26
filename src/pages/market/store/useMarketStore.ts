@@ -22,6 +22,7 @@ import {
   DEFAULT_LIMITS,
   deleteSavedSearch,
   listSavedSearches,
+  SavedSearchApiError,
   type SavedSearchLimits,
   updateSavedSearch,
 } from '@/pages/market/alerts/saved-search-api';
@@ -54,8 +55,11 @@ export interface MarketLocalPrefs {
   legacySavedSearches: SavedSearch[];
 }
 
-/** `signedOut`: no PD2 token, nothing listed. */
-export type SavedSearchSyncStatus = 'signedOut' | 'loading' | 'ready' | 'error';
+/**
+ * `signedOut`: no PD2 token, nothing listed. `unauthorized`: pd2trader.com refused the token (401); nothing is
+ * retried with it, the session owner refreshes it or asks to sign in again.
+ */
+export type SavedSearchSyncStatus = 'signedOut' | 'loading' | 'ready' | 'error' | 'unauthorized';
 
 /** Server saved searches. */
 export interface SavedSearchState {
@@ -207,8 +211,14 @@ export function changeMarketPrefs(change: (prefs: MarketLocalPrefs) => MarketLoc
 // ---- server saved searches ----
 
 let remote: SavedSearchState = SIGNED_OUT;
+interface SyncSession {
+  token: string;
+  generation: number;
+  /** Told once when the server refuses `token` (401). */
+  onUnauthorized?: () => void;
+}
 /** The signed-in token the saved searches belong to; a new one discards answers meant for the old one. */
-let session: { token: string; generation: number } | null = null;
+let session: SyncSession | null = null;
 let generation = 0;
 
 function publishRemote(next: SavedSearchState) {
@@ -230,9 +240,14 @@ const replaceSearch = (id: string, next: SavedSearch | null) =>
     next ? searches.map((s) => (s.id === id ? upgradeSearch(next) : s)) : searches.filter((s) => s.id !== id),
   );
 
+const REFUSED_MESSAGE = 'Your PD2 session expired. Sign in again to sync your saved searches.';
+
+const statusOf = (error: unknown) =>
+  error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
+
 const errorMessage = (error: unknown) => {
-  const status = error && typeof error === 'object' && 'status' in error ? error.status : null;
-  if (status === 401) return 'Sign in again to sync your saved searches.';
+  const status = statusOf(error);
+  if (status === 401) return REFUSED_MESSAGE;
   if (error instanceof Error && status) return error.message;
   return "Couldn't reach pd2trader.com. Try again in a moment.";
 };
@@ -240,6 +255,13 @@ const errorMessage = (error: unknown) => {
 function toastError(title: string, error: unknown) {
   console.warn(`[market] ${title}:`, error);
   showToast({ title, description: errorMessage(error), variant: 'error' });
+}
+
+/** The server refused the session's token: no more requests with it (no retry timer), and its owner is told. */
+function refuseSession(owner: SyncSession) {
+  clearTimeout(retryTimer);
+  if (remote.syncStatus !== 'unauthorized') publishRemote({ ...remote, syncStatus: 'unauthorized' });
+  owner.onUnauthorized?.();
 }
 
 /** Runs `request` for the current session; `onDone` / `onError` only when the session is still the same. */
@@ -257,15 +279,21 @@ function withSession<T>(
     });
     return false;
   }
+  // The token was refused: another request with it would only be refused again
+  if (remote.syncStatus === 'unauthorized') {
+    showToast({ title: 'Saved searches', description: REFUSED_MESSAGE, variant: 'warning' });
+    return false;
+  }
   request(owner.token).then(
     (result) => session === owner && onDone(result),
-    (error) => session === owner && onError(error),
+    (error) => {
+      if (session !== owner) return;
+      if (statusOf(error) === 401) refuseSession(owner);
+      onError(error);
+    },
   );
   return true;
 }
-
-const statusOf = (error: unknown) =>
-  error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
 
 export interface LegacyUploadApi {
   create: (search: { name: string; filters: MarketFilters; alert: boolean }) => Promise<unknown>;
@@ -349,14 +377,17 @@ async function migrateLegacySearches(owner: { token: string }): Promise<void> {
   }
 }
 
-/** Retries of a failed list: 2 s, 4 s … 60 s (± jitter) while the same token is signed in. */
+/**
+ * Retries of a failed list: 2 s, 4 s … 60 s (± jitter), never sooner than a 429/503 Retry-After, while the same
+ * token is signed in. A 401 is not retried (the token was refused).
+ */
 export const SYNC_RETRY_BASE_MS = 2_000;
 export const SYNC_RETRY_MAX_MS = 60_000;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let retryAttempt = 0;
 
-/** Lists the session's saved searches; on failure, `error` and a retry with backoff. */
-async function listForSession(owner: { token: string; generation: number }): Promise<void> {
+/** Lists the session's saved searches; on failure, `error` and a retry with backoff (`unauthorized` on a 401). */
+async function listForSession(owner: SyncSession): Promise<void> {
   clearTimeout(retryTimer);
   try {
     const { items, limits } = await listSavedSearches(owner.token);
@@ -372,29 +403,42 @@ async function listForSession(owner: { token: string; generation: number }): Pro
   } catch (error) {
     if (session !== owner) return;
     console.warn('[market] listing saved searches failed:', error);
+    if (statusOf(error) === 401) {
+      refuseSession(owner);
+      return;
+    }
     publishRemote({ ...remote, syncStatus: 'error' });
-    const delay = Math.min(SYNC_RETRY_MAX_MS, SYNC_RETRY_BASE_MS * 2 ** retryAttempt) * (0.5 + Math.random());
+    const backoff = Math.min(SYNC_RETRY_MAX_MS, SYNC_RETRY_BASE_MS * 2 ** retryAttempt) * (0.5 + Math.random());
+    const retryAfterMs = error instanceof SavedSearchApiError ? (error.retryAfterMs ?? 0) : 0;
     retryAttempt++;
-    retryTimer = setTimeout(() => {
-      if (session === owner) void listForSession(owner);
-    }, delay);
+    retryTimer = setTimeout(
+      () => {
+        if (session === owner) void listForSession(owner);
+      },
+      Math.max(backoff, retryAfterMs),
+    );
   }
 }
 
 /**
  * Follows the sign-in: with a token, uploads legacy local saved searches once, then lists the user's saved
  * searches (retrying with backoff while that fails); without one, clears them. Calling again with the same token
- * does nothing.
+ * only swaps `onUnauthorized`. `onUnauthorized` is told when the server refuses the token (right away if it already
+ * has); nothing is sent with that token again.
  */
-export function syncSavedSearches(token: string | null): void {
+export function syncSavedSearches(token: string | null, onUnauthorized?: () => void): void {
   if (!token) {
     session = null;
     clearTimeout(retryTimer);
     if (remote !== SIGNED_OUT) publishRemote(SIGNED_OUT);
     return;
   }
-  if (session?.token === token) return;
-  const owner = { token, generation: ++generation };
+  if (session?.token === token) {
+    session.onUnauthorized = onUnauthorized;
+    if (remote.syncStatus === 'unauthorized') onUnauthorized?.();
+    return;
+  }
+  const owner: SyncSession = { token, generation: ++generation, onUnauthorized };
   session = owner;
   retryAttempt = 0;
   publishRemote({ savedSearches: [], syncStatus: 'loading', limits: remote.limits });
@@ -407,6 +451,11 @@ export function syncSavedSearches(token: string | null): void {
     if (session !== owner) return;
     await listForSession(owner);
   })();
+}
+
+/** Something else (the alert stream) got a 401 with `token`: the saved searches stop using it too. */
+export function refuseSavedSearchToken(token: string): void {
+  if (session?.token === token) refuseSession(session);
 }
 
 /** A failed list: try again now (the panel or Saved tab was shown, or Retry pressed). */
@@ -438,9 +487,11 @@ export const marketStoreActions = {
       showToast({
         title: 'Saved searches',
         description:
-          remote.syncStatus === 'error'
-            ? "Your saved searches couldn't be loaded from pd2trader.com yet. Try again in a moment."
-            : 'Your saved searches are still loading.',
+          remote.syncStatus === 'unauthorized'
+            ? REFUSED_MESSAGE
+            : remote.syncStatus === 'error'
+              ? "Your saved searches couldn't be loaded from pd2trader.com yet. Try again in a moment."
+              : 'Your saved searches are still loading.',
         variant: 'warning',
       });
       return null;

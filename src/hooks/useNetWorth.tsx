@@ -4,6 +4,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
 import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOverlay } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import {
   getSeasons,
   getSessions,
@@ -93,6 +94,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { settings, isLoading } = useOptions();
   const { authData } = usePd2Website();
   const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
 
   const token = settings.pd2Token;
   const account = settings.account;
@@ -232,7 +234,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const refreshToken = settingsRef.current.pd2RefreshToken;
             const refreshed = refreshToken ? await refreshTokens(refreshToken) : false;
             if (refreshed) retryAfterAuthRef.current = trigger;
-            else openPanel('signIn');
+            else openSignIn();
           }
           return null;
         } finally {
@@ -242,7 +244,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       inFlightRef.current = run;
       return run;
     },
-    [refreshSessions, refreshTokens, openPanel],
+    [refreshSessions, refreshTokens, openSignIn],
   );
 
   const takeSnapshot = useCallback((trigger: SnapshotTrigger = 'manual') => runSnapshot(trigger), [runSnapshot]);

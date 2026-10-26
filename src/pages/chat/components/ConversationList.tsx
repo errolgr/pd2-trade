@@ -7,6 +7,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   BellOff,
+  CheckCheck,
   Gamepad2,
   MessagesSquare,
   Pin,
@@ -27,7 +28,7 @@ import { useChatListings } from '../hooks/useChatListings';
 import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
 import { findMarketLinks } from '../lib/market-links';
-import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass } from './chat-parts';
+import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass, Tip } from './chat-parts';
 import { ListingThumb } from './ListingCard';
 import { offerStatus } from './ThreadDeals';
 
@@ -81,6 +82,7 @@ export function ConversationList({
   threads,
   total,
   unreadTotal,
+  onMarkAllRead,
   filter,
   onFilterChange,
   search,
@@ -100,6 +102,8 @@ export function ConversationList({
   total: number;
   /** Unread messages outside muted and archived threads. */
   unreadTotal: number;
+  /** Marks every message, whisper, offer and trade whisper read; undefined (disabled) when nothing is unread. */
+  onMarkAllRead?: () => void;
   filter: InboxFilter;
   onFilterChange: (filter: InboxFilter) => void;
   search: string;
@@ -372,6 +376,22 @@ export function ConversationList({
               {total} {total === 1 ? 'chat' : 'chats'}
             </span>
           )}
+          <Tip label="Mark all read"
+            side="bottom">
+            <button
+              type="button"
+              aria-label="Mark all read"
+              disabled={!onMarkAllRead}
+              onClick={onMarkAllRead}
+              className={cn(
+                'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast)',
+                'hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent',
+                total === 0 && 'ml-auto',
+              )}
+            >
+              <CheckCheck className="size-4" />
+            </button>
+          </Tip>
         </div>
         <div className="group relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors duration-(--dur-fast) group-focus-within:text-foreground" />

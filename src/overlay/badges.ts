@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
 
-/** chatUnread: website + whisper unread; whisperTrades: open trade whispers; tradeOffers: website offers. */
+/**
+ * chatUnread: website + whisper unread; whisperTrades: open trade whispers received since last looked at;
+ * tradeOffers: PD2's unacknowledged offer notifications (received, accepted).
+ */
 export type BadgeKey = 'chatUnread' | 'whisperTrades' | 'tradeOffers';
 
 const counts: Record<BadgeKey, number> = { chatUnread: 0, whisperTrades: 0, tradeOffers: 0 };

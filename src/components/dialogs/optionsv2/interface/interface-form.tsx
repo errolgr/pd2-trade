@@ -6,12 +6,26 @@ import React from 'react';
 import { ISettings, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_MAX } from '@/lib/themes';
+import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
+
+const ZONE_ALERT_OPTIONS = [
+  { value: 'off', label: 'Off' },
+  { value: 'all', label: 'Every rotation' },
+  { value: 'followed', label: 'Only zones I follow' },
+] as const;
 
 const interfaceFormSchema = z.object({
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
+  corruptedZoneTimerEnabled: z.boolean(),
+  corruptedZoneTimerAnchor: tickerAnchorSchema,
+  corruptedZoneTimerOpacity: z.number().min(30).max(100),
+  corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
+  corruptedZoneFollowed: z.array(z.string()),
 });
 
 type InterfaceFormValues = z.infer<typeof interfaceFormSchema>;
@@ -20,6 +34,11 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
   return {
     chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
+    corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
+    corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
+    corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
+    corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
+    corruptedZoneFollowed: settings?.corruptedZoneFollowed ?? [],
   };
 }
 
@@ -47,7 +66,10 @@ export function InterfaceForm() {
       window.clearTimeout(debounceRef.current);
       debounceRef.current = window.setTimeout(() => {
         const current = toFormValues(settingsRef.current);
-        const changed = Object.entries(values).some(([key, val]) => current[key as keyof InterfaceFormValues] !== val);
+        // JSON: the followed-zones array is a new array on every read
+        const changed = Object.entries(values).some(
+          ([key, val]) => JSON.stringify(current[key as keyof InterfaceFormValues]) !== JSON.stringify(val),
+        );
         if (changed) updateSettings(values);
       }, 300);
     });
@@ -58,63 +80,187 @@ export function InterfaceForm() {
   }, [form, updateSettings]);
 
   if (isLoading || !settings) {
-    return <SettingsSkeleton rows={2} />;
+    return <SettingsSkeleton rows={5} />;
   }
 
   return (
     <Form {...form}>
-      <SettingsGroup title="Overlays">
-        <FormField
-          control={form.control}
-          name="chatButtonOverlayEnabled"
-          render={({ field }) => (
-            <SettingsRow
-              label="Chat Button Overlay"
-              description="Show the floating chat button overlay in the bottom-right corner of the screen."
-              control={
-                <FormControl>
-                  <Switch checked={field.value ?? true}
-                    onCheckedChange={field.onChange} />
-                </FormControl>
-              }
-            >
-              <FormMessage />
-            </SettingsRow>
+      <div className="flex flex-col gap-y-6">
+        <SettingsGroup title="Overlays">
+          <FormField
+            control={form.control}
+            name="chatButtonOverlayEnabled"
+            render={({ field }) => (
+              <SettingsRow
+                label="Chat Button Overlay"
+                description="Show the floating chat button overlay in the bottom-right corner of the screen."
+                control={
+                  <FormControl>
+                    <Switch checked={field.value ?? true}
+                      onCheckedChange={field.onChange} />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="windowTransparency"
+            render={({ field }) => (
+              <SettingsRow
+                label={
+                  <>
+                    Window transparency: <span className="tabular-nums">{field.value}%</span>
+                  </>
+                }
+                description="See the game through window backgrounds. 0% is fully opaque."
+                control={
+                  <FormControl>
+                    <Slider
+                      className="w-[220px]"
+                      min={0}
+                      max={WINDOW_TRANSPARENCY_MAX}
+                      step={5}
+                      value={[field.value]}
+                      onValueChange={(value) => {
+                        // Preview in this window right away; other windows follow once the setting is saved.
+                        applyWindowTransparency(value[0]);
+                        field.onChange(value[0]);
+                      }}
+                    />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Corrupted zone timer">
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerEnabled"
+            render={({ field }) => (
+              <SettingsRow
+                label="Corrupted zone timer"
+                description="Show which zones new Hell games corrupt and the time until the next rotation (every 15 minutes). Click it for the upcoming zones."
+                control={
+                  <FormControl>
+                    <Switch checked={field.value}
+                      onCheckedChange={field.onChange} />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerAnchor"
+            render={({ field }) => (
+              <SettingsRow
+                label="Timer position"
+                description="Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom)."
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Position" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TICKER_ANCHOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerOpacity"
+            render={({ field }) => (
+              <SettingsRow
+                label={
+                  <>
+                    Timer opacity: <span className="tabular-nums">{field.value}%</span>
+                  </>
+                }
+                control={
+                  <FormControl>
+                    <Slider
+                      className="w-[220px]"
+                      min={30}
+                      max={100}
+                      step={5}
+                      value={[field.value]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                    />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneAlerts"
+            render={({ field }) => (
+              <SettingsRow
+                label="Zone notifications"
+                description="Pop up a toast when the corrupted zone changes: for every new zone, or only the zones you follow. Toasts follow the Toast Popups switch in Chat settings."
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Notifications" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ZONE_ALERT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          {form.watch('corruptedZoneAlerts') === 'followed' && (
+            <FormField
+              control={form.control}
+              name="corruptedZoneFollowed"
+              render={({ field }) => (
+                <SettingsRow
+                  label="Followed zones"
+                  description="Toast when one of these becomes the corrupted zone."
+                  control={<ZonePicker value={field.value}
+                    onChange={field.onChange} />}
+                />
+              )}
+            />
           )}
-        />
-        <FormField
-          control={form.control}
-          name="windowTransparency"
-          render={({ field }) => (
-            <SettingsRow
-              label={
-                <>
-                  Window transparency: <span className="tabular-nums">{field.value}%</span>
-                </>
-              }
-              description="See the game through window backgrounds. 0% is fully opaque."
-              control={
-                <FormControl>
-                  <Slider
-                    className="w-[220px]"
-                    min={0}
-                    max={WINDOW_TRANSPARENCY_MAX}
-                    step={5}
-                    value={[field.value]}
-                    onValueChange={(value) => {
-                      // Preview in this window right away; other windows follow once the setting is saved.
-                      applyWindowTransparency(value[0]);
-                      field.onChange(value[0]);
-                    }}
-                  />
-                </FormControl>
-              }
-            >
-              <FormMessage />
-            </SettingsRow>
-          )}
-        />
-      </SettingsGroup>
+        </SettingsGroup>
+      </div>
     </Form>
   );
 }

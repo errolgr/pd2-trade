@@ -69,7 +69,7 @@ const { theme } = useData()
 
 #### Item Price Check
 
-Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post.
+Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post. The tooltip is drawn like the game's: name, runes, defense or damage, requirements, every property in the game's order (socketed runes, gems and jewels included) and the set's items. Lines the clipboard can't tell are left out rather than guessed: durability, chance to block, and the required level of rare and crafted items.
 
 Every stat shows its roll range exactly like the PD2 tooltip with stat ranges on (e.g. `[25 - 50]`), and the min/max fill stays inside it. Damage pairs ("Adds 4-14 fire damage") are one row with separate min and max damage filters.
 
@@ -101,6 +101,10 @@ Instantly calculate the value of your stash (Ctrl+X): runes, currency, uniques a
 #### Net Worth Ticker
 
 Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Turn it on under Settings → Net Worth, then pin it to a corner of the game or drag it anywhere on screen.
+
+#### Corrupted Zone Timer
+
+Know where to farm without leaving the game: a small in-game timer shows the zones corrupted in Hell games made right now (monster level 85, more density, more Worldstone Shards and Tier 1 maps) and a countdown to the next 15-minute rotation. Click it for the upcoming zones and their start times. A game keeps the zones it was made with, so make a new game after the switch. Optional notifications pop up a toast when the zone changes, for every zone or only the ones you follow. Turn it on under Settings → Interface, then pin it to a corner of the game or drag it anywhere on screen.
 
 #### Rune Exchange
 

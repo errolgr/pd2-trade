@@ -5,6 +5,7 @@ import { useMarketActions } from './useMarketActions';
 import { useSocialActions, type SocialActions } from './useSocialActions';
 import { useTradeOffers, type TradeOffer } from '../useTradeOffers';
 import { useSocket, type SubscribeSocket } from './useSocket';
+import { useOfferNotifications, type OfferNotificationsApi } from './useOfferNotifications';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
@@ -19,7 +20,8 @@ import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-webs
 import { showBannedToast, useOAuth } from '../useOAuth';
 import { GenericToastPayload } from '@/common/types/Events';
 import { BACKEND_URL } from '@/lib/pkce';
-import { showToast, useOverlay } from '@/overlay';
+import { showToast } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 
 interface Pd2WebsiteProviderProps {
   children: React.ReactNode;
@@ -78,7 +80,7 @@ export function isExpectedApiError(error: unknown): boolean {
   return error instanceof PD2ApiError && error.statusCode >= 400 && error.statusCode < 500;
 }
 
-interface Pd2WebsiteContextType extends SocialActions {
+interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (
     stashItem: GameStashItem,
@@ -117,7 +119,7 @@ export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | und
 
 export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   const { updateSettings, settings, isLoading } = useOptions();
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
   const { startOAuthFlow, refreshTokens } = useOAuth();
   const [authData, setAuthData] = useState<AuthData>(null);
   const isHandlingAuthError = useRef(false);
@@ -174,14 +176,14 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
       }
 
       // Refresh failed or unavailable — ask the user to sign in
-      openPanel('signIn');
+      openSignIn();
     } finally {
       // Reset flag after a short delay to allow for retry
       setTimeout(() => {
         isHandlingAuthError.current = false;
       }, 2000);
     }
-  }, [refreshTokens, openPanel]);
+  }, [refreshTokens, openSignIn]);
 
   // Logout function to manually trigger re-authentication
   const logout = useCallback(async () => {
@@ -219,6 +221,25 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     handleAuthErrorRef.current = handleAuthenticationError;
   }, [handleAuthenticationError]);
 
+  // Trade offers
+  const {
+    incomingOffers,
+    outgoingOffers,
+    hiddenOutgoingOffers,
+    loading,
+    refresh,
+    revokeOffer,
+    acceptOffer,
+    rejectOffer,
+    unacceptOffer,
+    deleteOutgoingOffer,
+    restoreOutgoingOffer,
+  } = useTradeOffers({
+    settings,
+    authData,
+    onAuthError: handleAuthenticationError,
+  });
+
   // Market actions (RESTful) - now we can use handleAuthenticationError
   const {
     findMatchingItems,
@@ -237,6 +258,8 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     stashCache,
     CACHE_TTL,
     onAuthError: handleAuthenticationError,
+    // An offer the user made is theirs (outgoing): show it in the chat's Buying deals right away
+    onOfferCreated: refresh,
   });
 
   // Social actions (RESTful)
@@ -249,22 +272,13 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
   // Socket connection
   const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
 
-  // Trade offers
-  const {
-    incomingOffers,
-    outgoingOffers,
-    hiddenOutgoingOffers,
-    loading,
-    refresh,
-    revokeOffer,
-    acceptOffer,
-    rejectOffer,
-    unacceptOffer,
-    deleteOutgoingOffer,
-    restoreOutgoingOffer,
-  } = useTradeOffers({
+  // PD2's offer notifications (the website's bell): the offers badge
+  const { offerNotifications, newAcceptedOffers, acknowledgeOfferNotifications } = useOfferNotifications({
     settings,
-    authData,
+    userId: authData?.user?._id,
+    subscribeSocket,
+    isConnected,
+    outgoingOffers,
     onAuthError: handleAuthenticationError,
   });
 
@@ -378,6 +392,9 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         startOAuthFlow,
         isConnected,
         subscribeSocket,
+        offerNotifications,
+        newAcceptedOffers,
+        acknowledgeOfferNotifications,
       }}
     >
       {children}

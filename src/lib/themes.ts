@@ -73,6 +73,7 @@ export const THEME_TOKENS = [
   'q-normal',
   'q-gold',
   'q-corrupted',
+  'q-corrupted-zone',
   // shape
   'radius',
 ] as const;
@@ -156,6 +157,7 @@ const DARK_QUALITY: Record<QualityToken, string> = {
   'q-normal': TW.gray100,
   'q-gold': 'hsl(42 75% 62%)',
   'q-corrupted': TW.red400,
+  'q-corrupted-zone': 'oklch(0.714 0.203 305.504)', // purple-400, the in-game corrupted zone name color
 };
 
 const LIGHT_QUALITY: Omit<Record<QualityToken, string>, 'q-normal'> = {
@@ -167,6 +169,7 @@ const LIGHT_QUALITY: Omit<Record<QualityToken, string>, 'q-normal'> = {
   'q-rune': 'hsl(16 85% 40%)',
   'q-gold': 'hsl(42 85% 27%)',
   'q-corrupted': TW.red700,
+  'q-corrupted-zone': 'oklch(0.496 0.265 301.924)', // purple-700
 };
 
 const DARK_INK = 'hsl(240 10% 4%)';

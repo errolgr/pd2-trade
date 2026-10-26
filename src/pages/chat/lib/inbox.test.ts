@@ -131,6 +131,22 @@ describe('buildInbox', () => {
     expect(threads.map((t) => [t.id, t.people.length])).toEqual([['user:dave', 1]]);
   });
 
+  it('gives an offers-only user the profile the offer resolved, and links whispers from any of their accounts', () => {
+    const bryan = {
+      _id: 'bryan',
+      username: 'bryan',
+      created_at: '2023-09-28T05:06:13.767Z',
+      game: { accounts: ['Bryan', 'SGSF-Bryan'], beta_accounts: ['BryanBeta'] },
+    };
+    const threads = inbox({
+      people: { 'sgsf-bryan': person('sgsf-bryan', { accountName: 'SGSF-Bryan' }) },
+      offers: [offer({ userId: 'bryan', playerName: 'bryan', accountName: 'Bryan', user: bryan, isIncoming: false })],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['user:bryan', ['sgsf-bryan']]]);
+    expect(threads[0].participant).toBe(bryan);
+    expect(threads[0].accounts).toEqual(['Bryan', 'SGSF-Bryan', 'BryanBeta']);
+  });
+
   it('gives a contact opened from the market a thread only when no other thread has that user', () => {
     const threads = inbox({
       conversations: [conversation('c-bob', { id: 'bob', username: 'bob' })],
@@ -266,6 +282,33 @@ describe('buildTimeline', () => {
     const entries = buildTimeline(website, [whispers], ME, true);
     expect(entries.map((e) => e.content)).not.toContain('very old whisper');
     expect(entries).toHaveLength(5);
+  });
+
+  it('places your settled offers by the time you made them, as unread-free events, honouring the paging cutoff', () => {
+    const offer = (id: string, minutes: number): TradeOffer => ({
+      id,
+      isIncoming: false,
+      playerName: 'bob',
+      itemName: 'Ber',
+      price: '1 ber',
+      timestamp: new Date(ago(minutes)),
+      listingClosed: true,
+    });
+    const offers = [offer('o-mid', 20), offer('o-old', 200)];
+    const keys = (hasOlder: boolean) => buildTimeline(website, [whispers], ME, hasOlder, offers).map((e) => e.key);
+    expect(keys(false)).toEqual([
+      'offer:o-old',
+      'w:bob:w-old',
+      'a',
+      'offer:o-mid',
+      'w:bob:w-mid',
+      'b',
+      'w:bob:w-new',
+      'tmp-1',
+    ]);
+    expect(keys(true)).not.toContain('offer:o-old');
+    const entry = buildTimeline(website, [], ME, false, offers).find((e) => e.key === 'offer:o-mid');
+    expect(entry).toMatchObject({ own: true, unread: false, offer: { id: 'o-mid' } });
   });
 
   it('shows only whispers for a whisper-only thread', () => {
