@@ -32,8 +32,7 @@ function setup(item: TestItem) {
   return renderHook(({ item }) => useStatSelection(item), { initialProps: { item } });
 }
 
-/** Row ids without the resist pseudo rows (stat-rows.test covers those). */
-const ids = (stats: Stat[]) => stats.filter((s) => s.stat_id !== StatId.Pseudo).map((s) => s.stat_id);
+const ids = (stats: Stat[]) => stats.map((s) => s.stat_id);
 const byId = (stats: Stat[], id: number) => stats.find((s) => s.stat_id === id);
 
 beforeEach(() => {
@@ -438,5 +437,46 @@ describe('useStatSelection: corrupted tri-state', () => {
     settings = { ...settings, statDefaultCorruptedFilter: 'non-corrupted' };
     rerender({ item });
     expect(result.current.corruptedState).toBe(2);
+  });
+});
+
+describe('useStatSelection: Σ totals', () => {
+  const resists = (): TestItem => ({
+    type: 'Grand Charm',
+    stats: [
+      { stat_id: 39, name: 'Fire Resist', value: 20 },
+      { stat_id: 45, name: 'Poison Resist', value: 40 },
+    ],
+  });
+
+  it('folds the covered rows into a selected Σ row, dropping their own selections', () => {
+    const { result } = setup(resists());
+    act(() => result.current.toggle(byId(result.current.sortedStats, 39)!));
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    const { sortedStats, selected, filters } = result.current;
+    expect(ids(sortedStats)).toEqual([StatId.Pseudo]);
+    expect(sortedStats[0]).toMatchObject({ pseudo: 'pseudo_total_res', value: 60 });
+    expect([...selected]).toEqual(['pseudo:pseudo_total_res']);
+    expect(filters).toEqual({ 'pseudo:pseudo_total_res': { min: '57', max: '63' } });
+  });
+
+  it('replaces an active total over the same rows, and unfolds when picked again', () => {
+    const { result } = setup(resists());
+    act(() => result.current.togglePseudo('pseudo_fire_res'));
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    expect([...result.current.selected]).toEqual(['pseudo:pseudo_total_res']);
+    expect(ids(result.current.sortedStats)).toEqual([StatId.Pseudo]);
+
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    expect(ids(result.current.sortedStats)).toEqual([39, 45]);
+    expect(result.current.selected.size).toBe(0);
+  });
+
+  it('keeps independent element totals side by side', () => {
+    const { result } = setup(resists());
+    act(() => result.current.togglePseudo('pseudo_fire_res'));
+    act(() => result.current.togglePseudo('pseudo_poison_res'));
+    expect(result.current.sortedStats.map((s) => s.pseudo)).toEqual(['pseudo_fire_res', 'pseudo_poison_res']);
+    expect(result.current.selected.size).toBe(2);
   });
 });

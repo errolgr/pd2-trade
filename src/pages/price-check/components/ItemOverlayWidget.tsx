@@ -128,6 +128,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle,
     corruptedState,
     setCorruptedState,
+    pseudos,
+    togglePseudo,
+    setActivePseudos,
   } = useStatSelection(item);
 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName]);
@@ -961,6 +964,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Clear existing selections and add the corruption property names to the array for direct filtering
       setSelected(new Set());
       setFilters({});
+      setActivePseudos([]);
       setSelectedCorruptionNames(Array.isArray(corruptionKey) ? corruptionKey : [corruptionKey]); // Set the corruption property names to filter by
       setCorruptedState(1); // Set to corrupted only
       setSearchArchived(true); // Enable expired listings
@@ -1016,12 +1020,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openSettingsPage = useCallback(() => openPanel('settings'), [openPanel]);
 
-  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`)
+  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`) and the
+  // Σ totals folded in
   const clearSelectedStats = useCallback(() => {
     setSelected(new Set());
     setFilters({});
     setCorruptedState(0);
-  }, [setSelected, setFilters, setCorruptedState]);
+    setActivePseudos([]);
+  }, [setSelected, setFilters, setCorruptedState, setActivePseudos]);
 
   const openTradeUrl = () => {
     if (tradeUrl) {
@@ -1498,20 +1504,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <ScrollArea className="flex-none pr-2"
                   viewportClassName="max-h-[30vh]">
                   <div>
-                    {sortedStats.map((s) => (
-                      <StatRow
-                        toggle={toggle}
-                        key={getStatKey(s)}
-                        stat={s}
-                        nested={false}
-                        updateFilter={updateFilter}
-                        filters={filters}
-                        selected={selected}
-                        corruptedState={corruptedState}
-                        onSubmit={handleSearch}
-                        rare={rareStats.get(getStatKey(s))}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {sortedStats.map((s) => {
+                        // Σ chip menu: the totals over this row, or over the rows a Σ row folded in
+                        const keys = s.folded ? s.folded.map(getStatKey) : [getStatKey(s)];
+                        return (
+                          <StatRow
+                            toggle={toggle}
+                            key={getStatKey(s)}
+                            stat={s}
+                            nested={false}
+                            updateFilter={updateFilter}
+                            filters={filters}
+                            selected={selected}
+                            corruptedState={corruptedState}
+                            onSubmit={handleSearch}
+                            rare={rareStats.get(getStatKey(s))}
+                            pseudoOptions={pseudos.filter((o) => o.covers.some((k) => keys.includes(k)))}
+                            onPseudo={togglePseudo}
+                          />
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 </ScrollArea>
               </section>
