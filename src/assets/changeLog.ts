@@ -12,6 +12,7 @@ export const changeLog = {
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
     '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
+    '🔧 Market: a search with more than 1,000 matches shows "1,000+ listings", and a count estimated under a Seller online filter shows as "~312 listings"',
   ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',

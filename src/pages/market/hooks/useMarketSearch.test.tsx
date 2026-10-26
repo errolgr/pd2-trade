@@ -5,7 +5,13 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult, StatFilter } from '../lib/types';
-import { clearMarketSearchCache, MARKET_PAGE_SIZE, searchErrorMessage, useMarketSearch } from './useMarketSearch';
+import {
+  clearMarketSearchCache,
+  MARKET_PAGE_SIZE,
+  searchCountText,
+  searchErrorMessage,
+  useMarketSearch,
+} from './useMarketSearch';
 import type * as SearchModule from '../lib/search';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -45,6 +51,7 @@ const row = (id: string): ScoredListing => ({
 const result = (items: ScoredListing[], over: Partial<SearchResult> = {}): SearchResult => ({
   items,
   total: items.length,
+  totalExact: true,
   fetched: items.length,
   mode: 'server',
   ...over,
@@ -207,5 +214,21 @@ describe('searchErrorMessage', () => {
       'The market service rejected these filters: filters.stats[0].key is bad',
     );
     expect(searchErrorMessage(new Error('boom\nstack'))).toBe('boom');
+  });
+});
+
+describe('searchCountText', () => {
+  const count = (total: number, totalExact: boolean, over: Partial<MarketFilters> = {}) =>
+    searchCountText({ total, totalExact, filters: filters(over) });
+
+  it('says an exact count as is', () => {
+    expect(count(1, true)).toBe('1 listing');
+    expect(count(312, true, { userOnlineGame: 'online' })).toBe('312 listings');
+  });
+
+  it('a capped count is a lower bound, a Seller online count an estimate', () => {
+    expect(count(1000, false)).toBe(`${(1000).toLocaleString()}+ listings`);
+    expect(count(312, false, { userOnlineSite: 'online' })).toBe('~312 listings');
+    expect(count(1, false, { userOnlineGame: 'online' })).toBe('~1 listing');
   });
 });

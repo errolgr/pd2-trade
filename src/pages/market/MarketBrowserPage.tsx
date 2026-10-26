@@ -20,7 +20,7 @@ import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './lib/
 import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { scoreListings } from './lib/search';
-import { type MarketSearch, useMarketSearch } from './hooks/useMarketSearch';
+import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
@@ -703,7 +703,7 @@ function ResultsPane({
   if (tab === 'favorites') {
     status = `${rows.length} favorite${rows.length === 1 ? '' : 's'}`;
   } else if (search.status === 'ready') {
-    status = `${search.total.toLocaleString()} listing${search.total === 1 ? '' : 's'}`;
+    status = searchCountText(search);
   } else if (loading) {
     status = 'Searching…';
   }
