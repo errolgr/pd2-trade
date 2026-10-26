@@ -10,6 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { listItem, listStagger } from '@/lib/motion';
 import { countChip, itemCard, sectionLabel } from './styles';
+import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
+import ClipboardItemCard, { CLIPBOARD_HASH } from './ClipboardItemCard';
 
 interface ItemSelectionListProps {
   matchingItems: GameStashItem[];
@@ -24,6 +26,11 @@ interface ItemSelectionListProps {
   onBump: (marketId: string, itemHash: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   deleteMarketListing: (listingId: string) => Promise<void>;
+  /** The copied item, drawn after the stash items: picking it queues the listing until the stash syncs it. */
+  clipboardItem?: PriceCheckItem;
+  clipboardSelected?: boolean;
+  /** Picks the clipboard card; absent when it is the only card (always selected). */
+  onClipboardSelect?: () => void;
 }
 
 const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
@@ -33,6 +40,9 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   expandedItems,
   isMarketListingsLoading,
   deleteMarketListing,
+  clipboardItem,
+  clipboardSelected,
+  onClipboardSelect,
   onItemSelect,
   onToggleExpanded,
   onExpandAll,
@@ -41,6 +51,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   onRefresh,
 }) => {
   const anyExpanded = expandedItems.size > 0;
+  const count = matchingItems.length + (clipboardItem ? 1 : 0);
 
   return (
     <div className="mb-3 flex min-h-0 flex-1 flex-col">
@@ -49,9 +60,9 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           <span className={sectionLabel}>Select Item</span>
           <span className={countChip}
             aria-hidden>
-            {matchingItems.length}
+            {count}
           </span>
-          <span className="sr-only">({matchingItems.length} found)</span>
+          <span className="sr-only">({count} found)</span>
           {isMarketListingsLoading && (
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Loader2 className="size-3 animate-spin" /> Loading market listings...
@@ -135,6 +146,25 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
               </motion.div>
             );
           })}
+          {clipboardItem && matchingItems.length > 0 && (
+            <motion.div variants={listItem}
+              className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              Not one of these?
+              <span className="h-px flex-1 bg-border" />
+            </motion.div>
+          )}
+          {clipboardItem && (
+            <motion.div variants={listItem}>
+              <ClipboardItemCard
+                item={clipboardItem}
+                selected={clipboardSelected ?? false}
+                onSelect={onClipboardSelect}
+                isExpanded={expandedItems.has(CLIPBOARD_HASH)}
+                onToggleExpanded={onToggleExpanded}
+              />
+            </motion.div>
+          )}
         </motion.div>
       </ScrollArea>
     </div>
