@@ -36,6 +36,7 @@ export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[
         title: 'Market watch',
         description: `${alerts.length} new matches. Newest: ${newest.savedSearchName}: ${alertListingText(newest)}`,
         action: viewAction(newest),
+        listing: { listingId: newest.listingId, savedSearchId: newest.savedSearchId },
       },
     ];
   }
@@ -43,6 +44,7 @@ export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[
     title: 'Market watch',
     description: `${alert.savedSearchName}: ${alertListingText(alert)}`,
     action: viewAction(alert),
+    listing: { listingId: alert.listingId, savedSearchId: alert.savedSearchId },
   }));
 }
 

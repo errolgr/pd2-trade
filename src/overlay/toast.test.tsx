@@ -6,11 +6,14 @@ import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
 import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
+import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
+import { listing, mod } from '@/pages/market/lib/test-utils';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
+vi.mock('@/pages/market/alerts/saved-search-api', () => ({ fetchMarketListing: vi.fn() }));
 const overlay = vi.hoisted(() => ({ gameFocused: true, dockOpen: false }));
 vi.mock('./OverlayProvider', () => ({
   useOverlay: () => ({ gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: overlay.gameFocused }),
@@ -192,7 +195,7 @@ describe('showToast action toasts', () => {
 
   it('Reply opens chat on the conversation or whisper thread with the composer focused', async () => {
     const openChat = vi.fn();
-    setToastBridge({ openChat, openMarket: vi.fn() });
+    setToastBridge({ openChat, openMarket: vi.fn(), openListing: vi.fn() });
     await renderLayer();
     await show(() =>
       showToast({
@@ -217,7 +220,7 @@ describe('showToast action toasts', () => {
 
   it('a market alert action opens the market panel with its payload', async () => {
     const openMarket = vi.fn();
-    setToastBridge({ openChat: vi.fn(), openMarket });
+    setToastBridge({ openChat: vi.fn(), openMarket, openListing: vi.fn() });
     await renderLayer();
     await show(() =>
       showToast({
@@ -232,6 +235,71 @@ describe('showToast action toasts', () => {
     );
     await click(screen.getByText('View'));
     expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'l1', tab: 'search' });
+  });
+
+  describe('a market listing toast', () => {
+    const alertToast = (listingId: string) => ({
+      title: 'Market watch',
+      description: 'Cheap Shako: Harlequin Crest — 1 HR',
+      action: {
+        label: 'View',
+        type: ToastActionType.OPEN_MARKET_PANEL,
+        data: { savedSearchId: 's1', focusListingId: listingId, tab: 'search' },
+      },
+      listing: { listingId, savedSearchId: 's1' },
+    });
+    const hover = (el: HTMLElement, on: boolean) =>
+      act(() => {
+        fireEvent[on ? 'pointerEnter' : 'pointerLeave'](el);
+      });
+    const shako = (id: string) => listing({ id, name: 'Harlequin Crest', mods: [mod('+2 to All Skills')] });
+
+    it('shows the in-game tooltip while the pointer is on the toast', async () => {
+      vi.mocked(fetchMarketListing).mockResolvedValue({ listing: shako('hover-1'), status: 'active' });
+      await renderLayer();
+      await show(() => showToast(alertToast('hover-1')));
+      expect(fetchMarketListing).toHaveBeenCalledWith('hover-1'); // looked up as the toast shows, before any hover
+      const el = toastEl('Cheap Shako: Harlequin Crest — 1 HR')!;
+
+      hover(el, true);
+      await advance(0);
+      const tooltip = screen.getByLabelText('Item tooltip');
+      expect(within(tooltip).getByText('Harlequin Crest')).toBeTruthy();
+      expect(within(tooltip).getByText('+2 to All Skills')).toBeTruthy();
+
+      hover(el, false);
+      await advance(500);
+      expect(screen.queryByLabelText('Item tooltip')).toBeNull();
+    });
+
+    it('shows no tooltip when the listing is unknown or the lookup failed', async () => {
+      vi.mocked(fetchMarketListing).mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('503'));
+      await renderLayer();
+      await show(() => showToast(alertToast('gone-1')));
+      await show(() => showToast({ ...alertToast('fail-1'), description: 'second' }));
+      hover(toastEl('Cheap Shako: Harlequin Crest — 1 HR')!, true);
+      hover(toastEl('second')!, true);
+      await advance(0);
+      expect(screen.queryByLabelText('Item tooltip')).toBeNull();
+    });
+
+    it('Details opens the listing drawer; View still opens the market', async () => {
+      vi.mocked(fetchMarketListing).mockResolvedValue({ listing: shako('drawer-1'), status: 'active' });
+      const openListing = vi.fn();
+      const openMarket = vi.fn();
+      setToastBridge({ openChat: vi.fn(), openMarket, openListing });
+      await renderLayer();
+      await show(() => showToast(alertToast('drawer-1')));
+      await click(screen.getByText('Details'));
+      expect(openListing).toHaveBeenCalledWith({ listingId: 'drawer-1', savedSearchId: 's1' });
+      expect(openMarket).not.toHaveBeenCalled();
+      await advance(1000);
+      expect(toastEl('Cheap Shako: Harlequin Crest — 1 HR')).toBeNull();
+
+      await show(() => showToast(alertToast('drawer-1')));
+      await click(screen.getByText('View'));
+      expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'drawer-1', tab: 'search' });
+    });
   });
 
   it('installs the update from the action button', async () => {

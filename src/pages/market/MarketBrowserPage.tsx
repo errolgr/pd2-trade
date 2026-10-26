@@ -33,7 +33,7 @@ import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
 import { mergeStatFilters } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
 import { OpenOnSiteButton } from './components/OpenOnSiteButton';
-import { fetchMarketListing } from './alerts/saved-search-api';
+import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
 
@@ -163,9 +163,11 @@ const MarketBrowserPage: React.FC = () => {
   useEffect(() => {
     if (!missingFocus || !filters) return;
     let cancelled = false;
-    fetchMarketListing(missingFocus.id)
-      .then((listing) => {
-        if (cancelled || !listing) return;
+    // Shared with the alert toast: usually already looked up when the toast showed
+    lookupListing(missingFocus.id)
+      .then((detail) => {
+        if (cancelled || !detail) return;
+        const { listing } = detail;
         const [row] = scoreListings([listing], filters);
         setSelectedId(listing._id);
         if (viewMode === 'cards') {
