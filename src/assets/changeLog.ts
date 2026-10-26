@@ -8,6 +8,7 @@ export const changeLog = {
     '🆕 Builds hotkey to show or hide the Builds panel (unbound by default, set it in Settings → Hotkeys)',
     "✨ Chat: View build opens a trader's character in the Builds panel",
     '✨ Price check shows how many ladder characters wear a unique, set item or runeword; click it to see their builds',
+    '🆕 Price check: click Σ next to a resist to search a total instead (Total Fire Resist, Total Resistances or the lowest resist). The rows it adds up fold into one, and Unfold brings them back',
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
     '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
