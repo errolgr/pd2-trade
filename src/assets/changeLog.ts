@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.6': [
+    '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',
+  ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
     '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
