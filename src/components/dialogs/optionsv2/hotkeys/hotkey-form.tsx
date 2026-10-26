@@ -64,6 +64,11 @@ const hotkeyFormSchema = z
       .string()
       .max(1, 'Only one character allowed')
       .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
+    hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
+    hotkeyKeyBuilds: z
+      .string()
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
   })
   .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
@@ -145,6 +150,13 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeyMarket',
     optional: true,
   },
+  {
+    label: 'Builds',
+    description: 'Show or hide the ladder builds.',
+    modifier: 'hotkeyModifierBuilds',
+    key: 'hotkeyKeyBuilds',
+    optional: true,
+  },
 ];
 
 export function HotkeyForm() {
@@ -171,6 +183,8 @@ export function HotkeyForm() {
       hotkeyKeySnapshot: '',
       hotkeyModifierMarket: 'ctrl',
       hotkeyKeyMarket: 'm',
+      hotkeyModifierBuilds: 'ctrl',
+      hotkeyKeyBuilds: '',
     },
   });
 

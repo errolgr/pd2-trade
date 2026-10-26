@@ -1,4 +1,11 @@
 export const changeLog = {
+  '0.10.6': [
+    '🆕 Builds panel: the ladder meta (classes, skills, gear) and every level 80+ character, with their gear, skills and build timeline',
+    '🆕 Your characters in the Builds panel: gear-up suggestions from characters like yours, priced in HR',
+    '🆕 Builds hotkey to show or hide the Builds panel (unbound by default, set it in Settings → Hotkeys)',
+    "✨ Chat: View build opens a trader's character in the Builds panel",
+    '✨ Price check shows how many ladder characters wear a unique, set item or runeword; click it to see their builds',
+  ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
     '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',

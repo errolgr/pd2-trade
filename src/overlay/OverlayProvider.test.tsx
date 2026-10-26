@@ -118,6 +118,7 @@ const DEFS = {
   netWorthPanel: def('netWorthPanel'),
   market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
   corruptedZoneTimer: def('corruptedZoneTimer', { keyboard: 'never' }),
+  builds: def('builds', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;

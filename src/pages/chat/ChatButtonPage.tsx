@@ -47,6 +47,7 @@ const ChatButtonPage: React.FC = () => {
         // The view of what its badge counts (which then counts as looked at)
         onOffersClick={() => openOffers((payload) => openPanel('chat', payload))}
         onMarketClick={() => openPanel('market')}
+        onBuildsClick={() => openPanel('builds')}
         onNetWorthClick={() =>
           openPanel('netWorthPanel', undefined, {
             placement: panelBesideTicker(dock, NET_WORTH_PANEL_SIZE, gameRect, PANEL_GAP),

@@ -13,6 +13,7 @@ import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
 import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
 import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
+import BuildsPage from '@/pages/builds/BuildsPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -207,5 +208,21 @@ export const PANEL_DEFS: PanelDefs = {
     hideOnGameBlur: true,
     // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
     interactive: 'children',
+  },
+
+  // ---- builds (Group Builds) ----
+  builds: {
+    id: 'builds',
+    component: BuildsPage,
+    // Meta: usage | characters | core kit; character view: dolls + skills | gear up / timeline. Clamped to the screen.
+    size: { width: 1280, height: 820 },
+    minSize: { width: 920, height: 560 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: true, // filters, page and the open character survive closing
+    hideOnGameBlur: true,
+    closeOnBlur: true,
   },
 };

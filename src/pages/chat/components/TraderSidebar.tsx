@@ -13,6 +13,7 @@ import {
   PackageSearch,
   PanelRightClose,
   Store,
+  Shield,
   Swords,
   UserRound,
 } from 'lucide-react';
@@ -381,6 +382,19 @@ export function TraderSidebar({
                   >
                     <Swords className="size-3.5 shrink-0" />
                     <span className="truncate">Character</span>
+                  </button>
+                </Tip>
+              )}
+              {characterName && (
+                <Tip label="Their ladder build in the Builds panel">
+                  <button
+                    type="button"
+                    aria-label="View build"
+                    className={actionButtonClass}
+                    onClick={() => openPanel('builds', { character: { name: characterName } })}
+                  >
+                    <Shield className="size-3.5 shrink-0" />
+                    <span className="truncate">Build</span>
                   </button>
                 </Tip>
               )}
