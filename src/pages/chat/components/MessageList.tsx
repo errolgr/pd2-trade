@@ -181,7 +181,9 @@ export function MessageList({
         onScrollCapture={handleScroll}
       >
         {placeholder ?? (
-          <div className="relative w-full"
+          // data-keep-keyboard: selecting message text keeps the keyboard in the overlay, so Ctrl+C copies it
+          <div data-keep-keyboard
+            className="relative w-full"
             style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((item) => {
               const row = rows[item.index];

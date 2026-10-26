@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.6': [
+    '🔧 Chat: select message text and press Ctrl+C to copy it (it no longer goes to the game), or use the new Copy button that shows when you hover over a message',
+  ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
     '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
