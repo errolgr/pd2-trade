@@ -4,6 +4,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
 import type { MarketPanelPayload } from '@/pages/market/lib/types';
+import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
   | 'itemSearch'
@@ -18,7 +19,8 @@ export type PanelId =
   | 'netWorthTicker'
   | 'netWorthPanel'
   | 'market'
-  | 'corruptedZoneTimer';
+  | 'corruptedZoneTimer'
+  | 'builds';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -61,6 +63,8 @@ export interface PanelPayloads {
   /** Filters to search right away (merged over defaults), a saved search to run, a listing to focus. */
   market: MarketPanelPayload | undefined;
   corruptedZoneTimer: undefined;
+  /** A character to show, Meta filters, or a tab; undefined = reopen where it was (keepMounted). */
+  builds: BuildsPanelPayload | undefined;
 }
 
 /** CSS px relative to the overlay viewport. */
