@@ -3,7 +3,7 @@ import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
-import type { MarketPanelPayload } from '@/pages/market/lib/types';
+import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
 import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
@@ -20,6 +20,7 @@ export type PanelId =
   | 'netWorthPanel'
   | 'market'
   | 'corruptedZoneTimer'
+  | 'listingDetail'
   | 'builds';
 
 export interface PanelPayloads {
@@ -63,6 +64,8 @@ export interface PanelPayloads {
   /** Filters to search right away (merged over defaults), a saved search to run, a listing to focus. */
   market: MarketPanelPayload | undefined;
   corruptedZoneTimer: undefined;
+  /** The listing drawer: one market listing (a watch toast's Details). */
+  listingDetail: ListingPanelPayload;
   /** A character to show, Meta filters, or a tab; undefined = reopen where it was (keepMounted). */
   builds: BuildsPanelPayload | undefined;
 }

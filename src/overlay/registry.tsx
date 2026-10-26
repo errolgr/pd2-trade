@@ -12,6 +12,7 @@ import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
 import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
 import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
+import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import BuildsPage from '@/pages/builds/BuildsPage';
 import type { PanelDefs } from './types';
@@ -191,6 +192,20 @@ export const PANEL_DEFS: PanelDefs = {
     persist: true,
     keyboard: 'onPointerDown',
     keepMounted: true, // search results and filters survive closing (like chat)
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- listingDetail (Group Market): a drawer on the game's right edge ----
+  listingDetail: {
+    id: 'listingDetail',
+    component: ListingDrawerPage,
+    size: { width: 400, height: 800 }, // height = game height via placement 'gameRight'
+    resizable: false,
+    placement: 'gameRight',
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false,
     hideOnGameBlur: true,
     closeOnBlur: true,
   },

@@ -9,6 +9,9 @@ import type { MarketAlert } from './saved-search-api';
 /** More alerts than this at once (a catch-up after a reconnect) show as one summary popup. */
 export const MAX_ALERT_TOASTS = 3;
 
+/** ms a market watch popup stays (sonner's default 4 s is too short to read it, hover it or act on it). */
+export const ALERT_TOAST_DURATION_MS = 12_000;
+
 /** "Harlequin Crest — 1.5 HR" (listing text is shown as plain text). */
 export function alertListingText(alert: MarketAlert): string {
   const { listing } = alert;
@@ -34,15 +37,19 @@ export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[
     return [
       {
         title: 'Market watch',
+        duration: ALERT_TOAST_DURATION_MS,
         description: `${alerts.length} new matches. Newest: ${newest.savedSearchName}: ${alertListingText(newest)}`,
         action: viewAction(newest),
+        listing: { listingId: newest.listingId, savedSearchId: newest.savedSearchId },
       },
     ];
   }
   return alerts.map((alert) => ({
     title: 'Market watch',
+    duration: ALERT_TOAST_DURATION_MS,
     description: `${alert.savedSearchName}: ${alertListingText(alert)}`,
     action: viewAction(alert),
+    listing: { listingId: alert.listingId, savedSearchId: alert.savedSearchId },
   }));
 }
 
