@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Filter, MoreHorizontal, RefreshCw, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import type { BuildsQuery } from '../lib/useBuildsQuery';
 import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
 import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, qualityText, skillIconUrl } from '../lib/format';
+import { itemArtCandidates } from '../lib/item-art';
 
 /** In-game class portrait (46×41 art); `size` is the height. Unknown classes get a lettered tile. */
 export function ClassEmblem({ className, size = 32 }: { className: string; size?: number }) {
@@ -82,15 +83,20 @@ export interface IconItem {
   quality: string | null;
   runeword?: boolean;
   iconUrl?: string | null;
+  /** Base item name when known (worn items): its art stands in for rares, magic items and runewords. */
+  base?: string;
 }
 
-/** Same query as the website's icons: browsers and Cloudflare cached 404s for icons added later. */
-const ICON_CACHE_BUST = 'v=2';
-
-/** Item art from the API; quality-coloured initials when it has none or it fails to load. */
+/** Item art: the API's icon, else the base's inventory art (see itemArtCandidates); a URL that fails to load moves
+ * on to the next; quality-coloured initials when none loads. */
 export function ItemIcon({ item, size = 28, className }: { item: IconItem; size?: number; className?: string }) {
-  const [broken, setBroken] = useState<string | null>(null);
-  const src = item.iconUrl && broken !== item.iconUrl ? `${item.iconUrl}?${ICON_CACHE_BUST}` : null;
+  const candidates = useMemo(
+    () => itemArtCandidates(item),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [item.name, item.quality, item.runeword, item.base, item.iconUrl],
+  );
+  const [failed, setFailed] = useState<string[]>([]);
+  const src = candidates.find((url) => !failed.includes(url)) ?? null;
   return (
     <span
       className={cn(
@@ -105,7 +111,7 @@ export function ItemIcon({ item, size = 28, className }: { item: IconItem; size?
           src={src}
           alt=""
           loading="lazy"
-          onError={() => setBroken(src)}
+          onError={() => setFailed((f) => [...f, src])}
           className="max-h-full max-w-full object-contain [image-rendering:pixelated]"
         />
       ) : (

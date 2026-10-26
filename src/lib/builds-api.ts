@@ -234,19 +234,6 @@ export interface SnapshotDetail {
   doc: SnapshotBuild;
 }
 
-export interface MetaHistoryResponse {
-  season: string;
-  mode: BuildsMode;
-  points: { hour: string; total: number; classes: UsageCount[] }[];
-  items: {
-    key: string;
-    name: string;
-    quality: string;
-    iconUrl: string | null;
-    series: { hour: string; pct: number }[];
-  }[];
-}
-
 /** One character of a PD2 account (PD2 `game/account` details; live, every level and mode). */
 export interface AccountCharacter {
   account: string;
@@ -338,13 +325,6 @@ export function getBuildUsage(filters: BuildsFilters, signal?: AbortSignal): Pro
 
 export function getBuildShoppingList(filters: BuildsFilters, signal?: AbortSignal): Promise<ShoppingListResponse> {
   return getJson(builds('/shopping-list', filterParams(filters)), signal);
-}
-
-export function getBuildMetaHistory(
-  opts: { season?: string; mode?: BuildsMode; from?: string; to?: string },
-  signal?: AbortSignal,
-): Promise<MetaHistoryResponse> {
-  return getJson(builds('/meta/history', { ...seasonParams(opts), from: opts.from, to: opts.to }), signal);
 }
 
 /** `mode` omitted: the server looks in softcore first, then hardcore. 404 → BuildsApiError status 404. */

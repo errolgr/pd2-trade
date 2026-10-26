@@ -8,8 +8,6 @@ import {
   RotateCcw,
   ShoppingBag,
   Skull,
-  TrendingDown,
-  TrendingUp,
   Users,
   X,
 } from 'lucide-react';
@@ -26,11 +24,9 @@ import {
   type CharacterSort,
   filterParams,
   getBuildCharacters,
-  getBuildMetaHistory,
   getBuildShoppingList,
   getBuildUsage,
   type ItemUsage,
-  type MetaHistoryResponse,
   type ShoppingListResponse,
   type UsageCount,
   type UsageResponse,
@@ -38,7 +34,6 @@ import {
 import { useBuildsActions } from '../lib/context';
 import { type BuildsQuery, useBuildsQuery } from '../lib/useBuildsQuery';
 import { CORE_SHARE, coreKitTotal } from '../lib/gear-up';
-import { computeTrending, type TrendingItem } from '../lib/trending';
 import { classMeta, fmtHr, fmtPct, keyLabel, qualityText, skillFilter, skillLabel, timeAgo } from '../lib/format';
 import {
   ClassEmblem,
@@ -67,7 +62,6 @@ const SORTS: { value: CharacterSort; label: string }[] = [
   { value: 'lastUpdated', label: 'Updated' },
 ];
 const PAGE_SIZE = 25;
-const HISTORY_DAYS = 7;
 
 type ListKey = 'classes' | 'skills' | 'items' | 'mercTypes' | 'mercItems';
 
@@ -104,15 +98,6 @@ export function MetaTab({
   );
   const usage = useBuildsQuery(`usage|${filterKey}`, (signal) => getBuildUsage(filters, signal));
   const shopping = useBuildsQuery(`shopping|${filterKey}`, (signal) => getBuildShoppingList(filters, signal));
-  // Hour-aligned so the cache key stays put for the hour
-  const [historyFrom] = useState(() => {
-    const d = new Date(Date.now() - HISTORY_DAYS * 86_400_000);
-    d.setUTCMinutes(0, 0, 0);
-    return d.toISOString();
-  });
-  const history = useBuildsQuery(`history|${filters.season ?? ''}|${filters.mode}|${historyFrom}`, (signal) =>
-    getBuildMetaHistory({ season: filters.season, mode: filters.mode, from: historyFrom }, signal),
-  );
 
   const itemNames = useMemo(() => {
     const names = new Map(labels);
@@ -151,9 +136,6 @@ export function MetaTab({
         <aside className="flex w-[260px] shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-l border-border/50">
           <CoreKit query={shopping}
             filters={filters}
-            onToggleItem={(key) => toggle('items', key)} />
-          <TrendingCard query={history}
-            activeItems={filters.items}
             onToggleItem={(key) => toggle('items', key)} />
         </aside>
       </div>
@@ -203,7 +185,7 @@ function ClassBar({
             <span className="min-w-0 flex-1">
               <span className="block truncate text-xs font-medium"
                 style={{ color: meta.color }}>
-                {meta.short}
+                {meta.name}
               </span>
               <span className="block text-[11px] text-muted-foreground tabular-nums">
                 {breakdown ? (
@@ -571,7 +553,7 @@ function ListSkeleton({ rows }: { rows: number }) {
   );
 }
 
-// ───────────────────────────── core kit / trending ─────────────────────────────
+// ───────────────────────────── core kit ─────────────────────────────
 
 function CoreKit({
   query,
@@ -634,85 +616,6 @@ function CoreKit({
             )}
           </p>
         </div>
-      )}
-    </Section>
-  );
-}
-
-function TrendingCard({
-  query,
-  activeItems,
-  onToggleItem,
-}: {
-  query: BuildsQuery<MetaHistoryResponse>;
-  activeItems: string[];
-  onToggleItem: (key: string) => void;
-}) {
-  const trending = useMemo(() => (query.data ? computeTrending(query.data) : null), [query.data]);
-  if (query.error) return <QueryError query={query}
-    className="m-2"
-    title="Couldn't load trends"
-    compact />;
-  if (!query.data) {
-    return (
-      <Section icon={<TrendingUp />}
-        title="Trending">
-        <ListSkeleton rows={4} />
-      </Section>
-    );
-  }
-  if (!trending || (!trending.rising.length && !trending.falling.length)) return null;
-  const row = (item: TrendingItem) => (
-    <div key={item.key}
-      className="flex items-center gap-2 px-3 py-1 hover:bg-accent/40">
-      <button
-        type="button"
-        aria-pressed={activeItems.includes(item.key)}
-        onClick={() => onToggleItem(item.key)}
-        title={`${fmtPct(item.from)} → ${fmtPct(item.to)}`}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-      >
-        <ItemIcon item={item}
-          size={22} />
-        <span className={cn('min-w-0 flex-1 truncate text-xs', qualityText(item.quality))}>{item.name}</span>
-        <span
-          className={cn(
-            'shrink-0 text-[11px] font-medium tabular-nums',
-            item.delta > 0 ? 'text-success' : 'text-destructive',
-          )}
-        >
-          {item.delta > 0 ? '↑' : '↓'} {Math.abs(item.delta).toFixed(1)}
-        </span>
-      </button>
-      <SearchMarketButton item={item} />
-    </div>
-  );
-  return (
-    <Section
-      icon={<TrendingUp />}
-      title={
-        <span>
-          Trending{' '}
-          <span className="font-normal text-muted-foreground">· {timeAgo(trending.fromHour).replace(' ago', '')}</span>
-        </span>
-      }
-      bodyClassName="px-0 py-1"
-    >
-      {trending.rising.length > 0 && (
-        <>
-          <p className="flex items-center gap-1 px-3 pt-1 pb-0.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            <TrendingUp className="size-3" /> Rising (share points)
-          </p>
-          {trending.rising.map(row)}
-        </>
-      )}
-      {trending.falling.length > 0 && (
-        <>
-          <p className="flex items-center gap-1 px-3 pt-1.5 pb-0.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            <TrendingDown className="size-3" /> Falling
-          </p>
-          {trending.falling.map(row)}
-        </>
       )}
     </Section>
   );
@@ -852,7 +755,7 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
       >
         <ClassEmblem className={c.className}
           size={30} />
-        <div className="w-36 min-w-0 shrink-0">
+        <div className="w-44 min-w-0 shrink-0">
           <div className="flex items-center gap-1">
             <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
             {c.isDead && mode === 'hardcore' && (
@@ -861,7 +764,7 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            <span className="tabular-nums">Lv {c.level}</span> · <span style={{ color: meta.color }}>{meta.short}</span>
+            <span className="tabular-nums">Lv {c.level}</span> · <span style={{ color: meta.color }}>{meta.name}</span>
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
@@ -875,22 +778,6 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
               </TooltipTrigger>
               <TooltipContent>
                 {s.name} <span className="text-muted-foreground">· level {s.total}</span>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-        <div className="flex min-w-0 flex-1 gap-0.5 overflow-hidden @max-lg:hidden">
-          {c.equippedIcons.map((item) => (
-            <Tooltip key={item.slot}>
-              <TooltipTrigger asChild>
-                <span>
-                  <ItemIcon item={item}
-                    size={22} />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span className={qualityText(item.quality)}>{item.name}</span>
-                <span className="text-muted-foreground"> · {item.slot}</span>
               </TooltipContent>
             </Tooltip>
           ))}
