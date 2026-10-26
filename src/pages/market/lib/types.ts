@@ -216,3 +216,11 @@ export interface MarketPanelPayload {
   focusListingId?: string;
   tab?: MarketTab;
 }
+
+/** Payload for `openPanel('listingDetail', payload)`: the listing drawer. */
+export interface ListingPanelPayload {
+  /** PD2 listing id, looked up on pd2trader.com. */
+  listingId: string;
+  /** The watch that found it: its pseudo stat totals show, as in the market browser. */
+  savedSearchId?: string;
+}

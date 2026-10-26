@@ -39,6 +39,8 @@ const TEXT_ENTRY_SELECTOR =
   'textarea, [contenteditable=""], [contenteditable="true"], ' +
   'input:not([type=button]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=hidden])' +
   ':not([type=image]):not([type=radio]):not([type=range]):not([type=reset]):not([type=submit])';
+/** Regions whose text the user selects and copies (Ctrl+C must reach the WebView, not the game). */
+const KEEP_KEYBOARD_SELECTOR = '[data-keep-keyboard]';
 
 function textEntryAt(target: EventTarget | null): HTMLElement | null {
   const field = target instanceof Element ? target.closest<HTMLElement>(TEXT_ENTRY_SELECTOR) : null;
@@ -150,12 +152,15 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   const onPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
     bringToFront(id);
     if (def.keyboard !== 'onPointerDown') return;
-    // Take the keyboard only to type: anything else leaves the game in front (and its sound playing)
+    // Take the keyboard only to type or to copy selected text: anything else leaves the game in front (and its
+    // sound playing)
     const field = textEntryAt(e.target);
     if (field) {
       void claimKeyboard().then(() => {
         if (field.isConnected && document.activeElement !== field) field.focus();
       });
+    } else if (e.target instanceof Element && e.target.closest(KEEP_KEYBOARD_SELECTOR)) {
+      void claimKeyboard();
     } else if (isKeyboardClaimed()) {
       void releaseKeyboard();
     }

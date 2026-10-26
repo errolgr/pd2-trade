@@ -13,6 +13,7 @@ import {
   PackageSearch,
   PanelRightClose,
   Store,
+  Shield,
   Swords,
   UserRound,
 } from 'lucide-react';
@@ -20,16 +21,17 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
 import { cn } from '@/lib/utils';
-import type { ChatListingState } from '../hooks/useChatListings';
+import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderProfile';
 import type { InboxThread } from '../lib/inbox';
 import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
-import { offerStatus, STATUS_CLASS } from './ThreadDeals';
+import { OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
 import { characterUrl, ChatAvatar, marketUrl, profileUrl, Tip } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
@@ -183,8 +185,18 @@ export function TraderSidebar({
     return state && 'listing' in state ? [{ listing: state.listing, listed: state.status === 'listed' }] : [];
   });
   const grid = profile.listings.slice(0, MARKET_GRID_LIMIT);
-  const prices = useListingMarketPrices([...linked.map((l) => l.listing), ...grid]);
   const offers = [...thread.offers].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  // The offered listings, for the offer hover cards
+  const offerListings = useChatListings(offers.flatMap((offer) => (offer.listingId ? [offer.listingId] : [])));
+  const offerListingState = (offer: TradeOffer) => (offer.listingId ? offerListings.get(offer.listingId) : undefined);
+  const prices = useListingMarketPrices([
+    ...linked.map((l) => l.listing),
+    ...grid,
+    ...offers.flatMap((offer) => {
+      const state = offerListingState(offer);
+      return state && 'listing' in state ? [state.listing] : [];
+    }),
+  ]);
   const openOffers = offers.filter((offer) => offerStatus(offer) === 'open').length;
   const whisperCount = thread.people.reduce((sum, p) => sum + p.messages.length, 0);
   const lastWhisper = Math.max(0, ...thread.people.map((p) => p.messages.at(-1)?.timestamp ?? 0));
@@ -384,6 +396,19 @@ export function TraderSidebar({
                   </button>
                 </Tip>
               )}
+              {characterName && (
+                <Tip label="Their ladder build in the Builds panel">
+                  <button
+                    type="button"
+                    aria-label="View build"
+                    className={actionButtonClass}
+                    onClick={() => openPanel('builds', { character: { name: characterName } })}
+                  >
+                    <Shield className="size-3.5 shrink-0" />
+                    <span className="truncate">Build</span>
+                  </button>
+                </Tip>
+              )}
               {whisperAccount && (
                 <Tip label={`Copies *${whisperAccount}: type /w and paste it in the game chat`}>
                   <button
@@ -423,28 +448,38 @@ export function TraderSidebar({
                 {offers.map((offer) => {
                   const status = offerStatus(offer);
                   const Direction = offer.isIncoming ? ArrowUpRight : ArrowDownLeft;
+                  const state = offerListingState(offer);
+                  const listing = state && 'listing' in state ? state.listing : undefined;
                   return (
-                    <li
+                    <OfferHoverCard
                       key={offer.id}
-                      className="flex min-w-0 items-center gap-2 rounded-lg bg-background/40 px-2 py-1.5 text-xs"
+                      offer={offer}
+                      listing={listing}
+                      listed={state?.status === 'listed'}
+                      loading={state?.status === 'loading'}
+                      market={listing && prices.get(listing._id)}
+                      now={now}
+                      side="left"
                     >
-                      <Direction
-                        aria-label={offer.isIncoming ? 'Their offer to you' : 'Your offer'}
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                      />
-                      <span className="min-w-0 flex-1 truncate font-medium">{offer.itemName ?? 'Unknown item'}</span>
-                      {offer.price && (
-                        <span className="max-w-20 shrink-0 truncate font-semibold tabular-nums">{offer.price}</span>
-                      )}
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
-                          STATUS_CLASS[status],
+                      <li className="flex min-w-0 items-center gap-2 rounded-lg bg-background/40 px-2 py-1.5 text-xs">
+                        <Direction
+                          aria-label={offer.isIncoming ? 'Their offer to you' : 'Your offer'}
+                          className="size-3.5 shrink-0 text-muted-foreground"
+                        />
+                        <span className="min-w-0 flex-1 truncate font-medium">{offer.itemName ?? 'Unknown item'}</span>
+                        {offer.price && (
+                          <span className="max-w-20 shrink-0 truncate font-semibold tabular-nums">{offer.price}</span>
                         )}
-                      >
-                        {status}
-                      </span>
-                    </li>
+                        <span
+                          className={cn(
+                            'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
+                            STATUS_CLASS[status],
+                          )}
+                        >
+                          {status}
+                        </span>
+                      </li>
+                    </OfferHoverCard>
                   );
                 })}
               </ul>

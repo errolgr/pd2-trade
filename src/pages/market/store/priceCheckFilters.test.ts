@@ -153,4 +153,23 @@ describe('priceCheckToMarketFilters', () => {
   it('switches to the sold archive window', () => {
     expect(priceCheckToMarketFilters(search({ archive: true }))).toMatchObject({ source: 'archive', maxAgeDays: 14 });
   });
+
+  it('sends selected pseudo rows as pseudo filters, not PD2 modifiers', () => {
+    const selected = new Set(['id:105', 'pseudo:pseudo_total_res', 'pseudo:pseudo_fire_res']);
+    const filters = priceCheckToMarketFilters(
+      search({
+        selected,
+        filters: {
+          'id:105': { min: '20', max: '' },
+          'pseudo:pseudo_total_res': { min: '80', max: '' },
+          'pseudo:pseudo_fire_res': { min: '30', max: '45' },
+        },
+      }),
+    );
+    expect(stripIds(filters)).toEqual([
+      { kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true },
+      { kind: 'pseudo', key: 'pseudo_total_res', min: 80, enabled: true },
+      { kind: 'pseudo', key: 'pseudo_fire_res', min: 30, max: 45, enabled: true },
+    ]);
+  });
 });

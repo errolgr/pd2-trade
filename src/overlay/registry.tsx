@@ -12,7 +12,9 @@ import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
 import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
 import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
+import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
+import BuildsPage from '@/pages/builds/BuildsPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -194,6 +196,20 @@ export const PANEL_DEFS: PanelDefs = {
     closeOnBlur: true,
   },
 
+  // ---- listingDetail (Group Market): a drawer on the game's right edge ----
+  listingDetail: {
+    id: 'listingDetail',
+    component: ListingDrawerPage,
+    size: { width: 400, height: 800 }, // height = game height via placement 'gameRight'
+    resizable: false,
+    placement: 'gameRight',
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false,
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
   // ---- corruptedZoneTimer (Group CorruptedZones) ----
   corruptedZoneTimer: {
     id: 'corruptedZoneTimer',
@@ -207,5 +223,21 @@ export const PANEL_DEFS: PanelDefs = {
     hideOnGameBlur: true,
     // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
     interactive: 'children',
+  },
+
+  // ---- builds (Group Builds) ----
+  builds: {
+    id: 'builds',
+    component: BuildsPage,
+    // Meta: usage | characters | core kit; character view: dolls + skills | gear up / timeline. Clamped to the screen.
+    size: { width: 1280, height: 820 },
+    minSize: { width: 920, height: 560 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: true, // filters, page and the open character survive closing
+    hideOnGameBlur: true,
+    closeOnBlur: true,
   },
 };

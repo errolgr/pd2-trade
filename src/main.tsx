@@ -134,8 +134,10 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <Routes>
         <Route path="/"
           element={<AppRoot />} />
-        {/* Browser mode: open straight into the market browser (see overlay/browser-launch.ts) */}
+        {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
         <Route path="/market"
+          element={<AppRoot />} />
+        <Route path="/builds"
           element={<AppRoot />} />
         {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
         {process.env.NODE_ENV !== 'production' && (

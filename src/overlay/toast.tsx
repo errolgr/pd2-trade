@@ -7,6 +7,7 @@ import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockSize } from '@/pages/chat/chat-dock';
+import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 
@@ -19,6 +20,7 @@ export type ToastPayload = string | GenericToastPayload | CustomToastPayload;
 interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
   openMarket(payload: PanelPayloads['market']): void;
+  openListing(payload: PanelPayloads['listingDetail']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -103,8 +105,13 @@ export function showToast(payload: ToastPayload): void {
     toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
     return;
   }
+  const { listing } = custom;
   toast(custom.title || DEFAULT_TITLE, {
-    description: custom.description,
+    description: listing ? (
+      <ListingToastBody listingId={listing.listingId}>{custom.description}</ListingToastBody>
+    ) : (
+      custom.description
+    ),
     duration: custom.duration,
     closeButton: true,
     action: {
@@ -112,6 +119,8 @@ export function showToast(payload: ToastPayload): void {
       // sonner dismisses the toast after onClick
       onClick: () => void runToastAction(action),
     },
+    // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
+    ...(listing && { cancel: { label: 'Details', onClick: () => bridge?.openListing(listing) } }),
   });
 }
 
@@ -119,15 +128,25 @@ export function showToast(payload: ToastPayload): void {
  * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):
  * revoked when the toast closes.
  */
-export function imageToast({ title, description, imageUrl }: { title: string; description?: string; imageUrl: string }): void {
+export function imageToast({
+  title,
+  description,
+  imageUrl,
+}: {
+  title: string;
+  description?: string;
+  imageUrl: string;
+}): void {
   const revoke = () => URL.revokeObjectURL(imageUrl);
   toast.success(title, {
     description: (
       <span className="flex flex-col gap-2">
         {description && <span>{description}</span>}
-        <img src={imageUrl}
+        <img
+          src={imageUrl}
           alt=""
-          className="max-h-40 w-auto max-w-full self-start rounded border border-border object-contain" />
+          className="max-h-40 w-auto max-w-full self-start rounded border border-border object-contain"
+        />
       </span>
     ),
     closeButton: true,

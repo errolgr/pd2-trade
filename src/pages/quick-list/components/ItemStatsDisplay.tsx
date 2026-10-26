@@ -3,10 +3,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { Item as GameStashItem, Modifier } from '@/common/types/pd2-website/GameStashResponse';
+
+/** What the stats display reads: a stash item, or a clipboard item shaped like one. */
+export type StatsItem = Pick<
+  GameStashItem,
+  'hash' | 'is_ethereal' | 'corrupted' | 'is_runeword' | 'socket_count' | 'corruptions'
+> & { modifiers: Pick<Modifier, 'name' | 'label' | 'min' | 'max'>[] };
 
 interface ItemStatsDisplayProps {
-  stashItem: GameStashItem;
+  stashItem: StatsItem;
   isExpanded: boolean;
   onToggleExpanded: (itemHash: string) => void;
   hideToggle?: boolean;
@@ -39,7 +45,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
     onToggleExpanded(stashItem.hash);
   };
 
-  const renderModifier = (mod: GameStashItem['modifiers'][number], idx: number) => (
+  const renderModifier = (mod: StatsItem['modifiers'][number], idx: number) => (
     <div
       key={idx}
       className={cn('truncate leading-5 text-foreground/85', isCorruptedMod(mod.name) && 'text-q-corrupted')}

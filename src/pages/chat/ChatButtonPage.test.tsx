@@ -112,6 +112,7 @@ describe('ChatButtonPage', () => {
 
   it.each([
     ['Market browser', ['market']],
+    ['Builds', ['builds']],
     // Beside the dock: right edges aligned, above it (no room below)
     ['Net worth', ['netWorthPanel', undefined, { placement: { x: 1560, y: 525 } }]],
     ['Stash value', ['currency']],
@@ -252,7 +253,10 @@ describe('ChatButtonPage feed', () => {
       act(() => setBadgeCount('chatUnread', 3));
       hover();
       fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
-      expect(overlay.openPanel.mock.calls).toEqual([['chat', undefined], ['chat', { newestUnread: true }]]);
+      expect(overlay.openPanel.mock.calls).toEqual([
+        ['chat', undefined],
+        ['chat', { newestUnread: true }],
+      ]);
     });
 
     it("an empty feed shows You're all caught up", () => {

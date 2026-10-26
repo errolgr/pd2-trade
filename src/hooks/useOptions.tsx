@@ -11,6 +11,13 @@ import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-w
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
+import type { BuildsMode } from '@/lib/builds-api';
+
+/** A tracked character the builds panel remembers (followed / recently viewed). */
+export interface BuildCharacterRef {
+  name: string;
+  mode: BuildsMode;
+}
 
 export type NetWorthTickerAnchor =
   | 'top-left'
@@ -92,6 +99,10 @@ export interface ISettings {
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
   hotkeyKeyMarket?: string; // '' = unbound
+  hotkeyModifierBuilds?: 'ctrl' | 'alt';
+  hotkeyKeyBuilds?: string; // '' = unbound
+  followedBuildCharacters?: BuildCharacterRef[]; // builds panel: starred characters
+  recentBuildCharacters?: BuildCharacterRef[]; // builds panel: last viewed characters, newest first
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
@@ -157,6 +168,10 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',
   hotkeyKeyMarket: 'm',
+  hotkeyModifierBuilds: 'ctrl',
+  hotkeyKeyBuilds: '',
+  followedBuildCharacters: [],
+  recentBuildCharacters: [],
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
@@ -172,6 +187,7 @@ const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+  ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
 ];
 
 /**
