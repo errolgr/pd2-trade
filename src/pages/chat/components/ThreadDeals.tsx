@@ -98,6 +98,7 @@ export function OfferHoverCard({
   market,
   now,
   side = 'top',
+  align = 'start',
   children,
 }: {
   offer: TradeOffer;
@@ -108,12 +109,15 @@ export function OfferHoverCard({
   /** The listing lookup is still running. */
   loading?: boolean;
   market: ListingMarketPrice | undefined;
-  /** Epoch ms, for "3m ago". */
-  now: number;
+  /** Epoch ms, for "3m ago"; without it, when the card opened. */
+  now?: number;
   side?: 'top' | 'left';
+  align?: 'start' | 'center';
   children: React.ReactElement;
 }) {
-  const [open, setOpen] = useState(false);
+  // When the card opened (null: closed)
+  const [openedAt, setOpenedAt] = useState<number | null>(null);
+  const setOpen = (open: boolean) => setOpenedAt((at) => (open ? (at ?? Date.now()) : null));
   const status = hidden ? 'hidden' : offerStatus(offer);
   const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? `${offer.hrOffer} HR` : null;
   const offerSection = (
@@ -140,12 +144,12 @@ export function OfferHoverCard({
       )}
       <div className="flex justify-between gap-3">
         <span className="shrink-0 text-muted-foreground">Sent:</span>
-        <span>{shortAgo(offer.timestamp.getTime(), now)}</span>
+        <span>{shortAgo(offer.timestamp.getTime(), now ?? openedAt ?? offer.timestamp.getTime())}</span>
       </div>
     </section>
   );
   return (
-    <Popover open={open}
+    <Popover open={openedAt !== null}
       onOpenChange={setOpen}>
       <PopoverTrigger
         asChild
@@ -161,7 +165,7 @@ export function OfferHoverCard({
         onMouseLeave={() => setOpen(false)}
         onOpenAutoFocus={(e) => e.preventDefault()}
         side={side}
-        align="start"
+        align={align}
         className="w-auto border-0 bg-transparent p-0 shadow-none"
       >
         {listing ? (

@@ -6,6 +6,7 @@ import { fadeInUp, slideInRight } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
+import { OfferListingHoverCard } from './OfferListingHoverCard';
 import { MessageContent } from './MessageContent';
 import { ChatAvatar, ReadReceipt } from './chat-parts';
 import { offerStatus, STATUS_CLASS } from './ThreadDeals';
@@ -110,28 +111,27 @@ export function MessageBubble({
         </div>
       )}
       {entry.offer ? (
-        // One of your offers that ended: a quiet event row, centered like the day divider
+        // One of your offers that ended: a quiet event row, centered like the day divider; hover for the offer card
         <div className="flex justify-center px-2">
-          <div
-            title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
-            className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground"
-          >
-            <HandCoins aria-hidden
-              className="size-3.5 shrink-0" />
-            <span className="truncate">
-              Your offer <span className="font-medium text-foreground/80">{entry.offer.price ?? '?'}</span>
-              {entry.offer.itemName && <> for {entry.offer.itemName}</>}
-            </span>
-            <span
-              className={cn(
-                'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
-                STATUS_CLASS[offerStatus(entry.offer)],
-              )}
-            >
-              {offerStatus(entry.offer)}
-            </span>
-            <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
-          </div>
+          <OfferListingHoverCard offer={entry.offer}>
+            <div className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground">
+              <HandCoins aria-hidden
+                className="size-3.5 shrink-0" />
+              <span className="truncate">
+                Your offer <span className="font-medium text-foreground/80">{entry.offer.price ?? '?'}</span>
+                {entry.offer.itemName && <> for {entry.offer.itemName}</>}
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                  STATUS_CLASS[offerStatus(entry.offer)],
+                )}
+              >
+                {offerStatus(entry.offer)}
+              </span>
+              <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
+            </div>
+          </OfferListingHoverCard>
         </div>
       ) : (
         <div className={cn('group/msg flex items-start gap-2', isOwnMessage ? 'justify-end' : 'justify-start')}>
