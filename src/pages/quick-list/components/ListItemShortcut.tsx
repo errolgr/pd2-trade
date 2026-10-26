@@ -996,6 +996,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               deleteMarketListing={deleteMarketListing}
               matchingItems={[]}
               clipboardItem={item}
+              clipboardSelected
               selectedItem={null}
               currentListings={currentListings}
               expandedItems={expandedItems}
