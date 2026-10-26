@@ -1,9 +1,10 @@
-import React from 'react';
-import { Hourglass, Info } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Hourglass } from 'lucide-react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { tooltipLines } from '@/pages/price-check/lib/tooltip-lines';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { cn } from '@/lib/utils';
+import ItemStatsDisplay, { StatsItem } from './ItemStatsDisplay';
 import { itemCard } from './styles';
 
 interface ClipboardItemCardProps {
@@ -11,21 +12,35 @@ interface ClipboardItemCardProps {
 }
 
 /**
- * The copied item when the stash has no match: a dotted card that will be queued, listed once the stash
- * syncs it.
+ * The copied item when the stash has no match, drawn like the stash item cards with a dotted border: it is
+ * what gets queued, listed once the stash syncs it.
  */
 const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item }) => {
-  const { header, stats, footer } = tooltipLines(item);
+  const [expanded, setExpanded] = useState(false);
   const name = (item.isRuneword && item.runeword) || item.name || item.type;
-  const meta = [item.type !== name ? item.type : null, item.isRuneword ? 'Runeword' : item.quality]
-    .filter(Boolean)
-    .join(' · ');
+
+  const statsItem = useMemo<StatsItem>(() => {
+    const lines = tooltipLines(item).stats;
+    const corrupted = lines.some((l) => l.text === 'Corrupted');
+    const modifiers = lines
+      .filter((l) => l.text !== 'Corrupted')
+      .map((l, i) => ({ name: l.star ? `corrupted-${i}` : `stat-${i}`, label: l.text }));
+    return {
+      hash: 'clipboard',
+      is_ethereal: item.isEthereal === true,
+      corrupted,
+      is_runeword: item.isRuneword === true,
+      socket_count: item.sockets ?? 0,
+      corruptions: modifiers.filter((m) => m.name.startsWith('corrupted-')).map((m) => m.name),
+      modifiers,
+    };
+  }, [item]);
 
   return (
     <div
       role="group"
       aria-label={`${name}, from clipboard, not synced to stash`}
-      className={cn(itemCard({ tone: 'static' }), 'border-2 border-dotted border-primary/60 bg-primary/6')}
+      className={cn(itemCard({ tone: 'selected' }), 'cursor-default border-dotted border-primary ring-0')}
     >
       <div className="flex min-h-7 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -43,43 +58,10 @@ const ClipboardItemCard: React.FC<ClipboardItemCardProps> = ({ item }) => {
           Not synced to stash
         </span>
       </div>
-
-      <div className="pl-6 text-xs">
-        {meta && <div className="mt-1 text-muted-foreground">{meta}</div>}
-        {header.length > 0 && (
-          <div className="mt-2">
-            {header.map((line, i) => (
-              <div key={i}
-                className="truncate leading-5 text-muted-foreground">
-                {line.text}
-              </div>
-            ))}
-          </div>
-        )}
-        {stats.length > 0 && (
-          <div className="mt-2">
-            {stats.map((line, i) => (
-              <div key={i}
-                className={cn('truncate leading-5', line.color === 'red' ? 'text-q-corrupted' : 'text-foreground/85')}>
-                {line.text}
-              </div>
-            ))}
-          </div>
-        )}
-        {footer.map((line, i) => (
-          <div key={i}
-            className="truncate leading-5 text-muted-foreground">
-            {line.text}
-          </div>
-        ))}
-
-        <div className="mt-3 flex items-start gap-1.5 border-t border-dotted border-border pt-2.5 text-[11px] leading-relaxed text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            Not in your shared stash yet. Queue it and we&apos;ll list it automatically once it syncs: put it in your
-            shared stash (not personal), make a new game, and allow a few minutes.
-          </span>
-        </div>
+      <div className="pl-6">
+        <ItemStatsDisplay stashItem={statsItem}
+          isExpanded={expanded}
+          onToggleExpanded={() => setExpanded((e) => !e)} />
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   Hourglass,
   ListChecks,
   PackageSearch,
+  Info,
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -1009,7 +1010,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 </div>
               </ScrollArea>
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 space-y-2">
+              <div className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground">
+                <Info className="size-3.5 shrink-0 text-primary" />
+                Not in your shared stash yet. Queue it to list it once it syncs (new game, then a few minutes).
+              </div>
               <ListingFormFields
                 form={form}
                 selectedItem={null}
