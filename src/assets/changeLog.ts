@@ -1,5 +1,7 @@
 export const changeLog = {
   '0.10.6': [
+    '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',
+    "✨ Chat: rest the pointer on an offer to see the item's stats, asking and market price, and the offer itself (who, price, status and when), in the pinned deals, the trader panel and the offer rows in the conversation",
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
     '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
