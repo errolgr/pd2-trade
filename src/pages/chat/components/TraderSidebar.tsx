@@ -20,16 +20,17 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
 import { cn } from '@/lib/utils';
-import type { ChatListingState } from '../hooks/useChatListings';
+import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderProfile';
 import type { InboxThread } from '../lib/inbox';
 import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
-import { offerStatus, STATUS_CLASS } from './ThreadDeals';
+import { OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
 import { characterUrl, ChatAvatar, marketUrl, profileUrl, Tip } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
@@ -183,8 +184,18 @@ export function TraderSidebar({
     return state && 'listing' in state ? [{ listing: state.listing, listed: state.status === 'listed' }] : [];
   });
   const grid = profile.listings.slice(0, MARKET_GRID_LIMIT);
-  const prices = useListingMarketPrices([...linked.map((l) => l.listing), ...grid]);
   const offers = [...thread.offers].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  // The offered listings, for the offer hover cards
+  const offerListings = useChatListings(offers.flatMap((offer) => (offer.listingId ? [offer.listingId] : [])));
+  const offerListingOf = (offer: TradeOffer) => {
+    const state = offer.listingId ? offerListings.get(offer.listingId) : undefined;
+    return state && 'listing' in state ? { listing: state.listing, listed: state.status === 'listed' } : undefined;
+  };
+  const prices = useListingMarketPrices([
+    ...linked.map((l) => l.listing),
+    ...grid,
+    ...offers.flatMap((offer) => offerListingOf(offer)?.listing ?? []),
+  ]);
   const openOffers = offers.filter((offer) => offerStatus(offer) === 'open').length;
   const whisperCount = thread.people.reduce((sum, p) => sum + p.messages.length, 0);
   const lastWhisper = Math.max(0, ...thread.people.map((p) => p.messages.at(-1)?.timestamp ?? 0));
@@ -423,7 +434,8 @@ export function TraderSidebar({
                 {offers.map((offer) => {
                   const status = offerStatus(offer);
                   const Direction = offer.isIncoming ? ArrowUpRight : ArrowDownLeft;
-                  return (
+                  const resolved = offerListingOf(offer);
+                  const row = (
                     <li
                       key={offer.id}
                       className="flex min-w-0 items-center gap-2 rounded-lg bg-background/40 px-2 py-1.5 text-xs"
@@ -445,6 +457,21 @@ export function TraderSidebar({
                         {status}
                       </span>
                     </li>
+                  );
+                  return resolved ? (
+                    <OfferHoverCard
+                      key={offer.id}
+                      offer={offer}
+                      listing={resolved.listing}
+                      listed={resolved.listed}
+                      market={prices.get(resolved.listing._id)}
+                      now={now}
+                      side="left"
+                    >
+                      {row}
+                    </OfferHoverCard>
+                  ) : (
+                    row
                   );
                 })}
               </ul>

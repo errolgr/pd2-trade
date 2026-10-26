@@ -33,9 +33,9 @@ import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
 import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
-import { useListingMarketPrices } from '../hooks/useListingMarketPrices';
+import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
-import { ListingThumb } from './ListingCard';
+import { ListingDetails, ListingThumb } from './ListingCard';
 import { Tip } from './chat-parts';
 
 type DealStatus = 'open' | 'accepted' | 'declined' | 'closed' | 'hidden' | 'in-game';
@@ -83,6 +83,90 @@ const TONE: Record<Tone, { text: string; rail: string }> = {
   accepted: { text: 'text-primary', rail: 'bg-primary' },
   settled: { text: 'text-muted-foreground', rail: 'bg-muted-foreground/50' },
 };
+
+/**
+ * Hover card for an offer whose listing resolved: the listed item (as linked listings show it) plus the
+ * offer itself. `children` is the hover target; clicks on it do nothing (no hint).
+ */
+export function OfferHoverCard({
+  offer,
+  listing,
+  listed,
+  market,
+  now,
+  side = 'top',
+  children,
+}: {
+  offer: TradeOffer;
+  listing: MarketListingEntry;
+  listed: boolean;
+  market: ListingMarketPrice | undefined;
+  /** Epoch ms, for "3m ago". */
+  now: number;
+  side?: 'top' | 'left';
+  children: React.ReactElement;
+}) {
+  const [open, setOpen] = useState(false);
+  const status = offerStatus(offer);
+  const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? `${offer.hrOffer} HR` : null;
+  return (
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger
+        asChild
+        // Hover opens it; keep Radix from toggling it on click
+        onClick={(e) => e.preventDefault()}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+      >
+        {children}
+      </PopoverTrigger>
+      <PopoverContent
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        side={side}
+        align="start"
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+      >
+        <ListingDetails listing={listing}
+          listed={listed}
+          market={market}
+          hint={null}>
+          <section aria-label="Offer"
+            className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
+            <div className="flex items-center justify-between gap-3">
+              <span className="truncate font-semibold">
+                {offer.isIncoming ? `Offer from ${offer.playerName}` : 'Your offer'}
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
+                  STATUS_CLASS[status],
+                )}
+              >
+                {status}
+              </span>
+            </div>
+            {offer.price && (
+              <div className="flex justify-between gap-3">
+                <span className="shrink-0 text-muted-foreground">Offered:</span>
+                <span className="min-w-0 break-words text-right font-semibold">
+                  {offer.price}
+                  {hr && <span className="ml-1.5 font-normal text-muted-foreground">{`(${hr})`}</span>}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between gap-3">
+              <span className="shrink-0 text-muted-foreground">Sent:</span>
+              <span>{shortAgo(offer.timestamp.getTime(), now)}</span>
+            </div>
+          </section>
+        </ListingDetails>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const DEFAULT_TEMPLATES = {
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
@@ -559,6 +643,10 @@ export function ThreadDeals({
           if (status === 'open') label = isIncoming ? 'New offer' : 'Your offer';
           else if (status === 'in-game') label = isIncoming ? 'in-game offer' : 'your in-game offer';
           const listing = listingOf(deal);
+          const listed =
+            deal.kind === 'offer' &&
+            !!deal.offer.listingId &&
+            listingStates.get(deal.offer.listingId)?.status === 'listed';
           const marketPrice = listing ? market.get(listing._id) : undefined;
           const asking = listing && (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
           const context = [
@@ -576,26 +664,46 @@ export function ThreadDeals({
             >
               <span aria-hidden
                 className={cn('absolute inset-y-0 left-0 w-1', colors.rail)} />
-              {listing ? (
-                <ListingThumb listing={listing}
-                  className="size-9 rounded-lg"
-                  artClassName="max-h-8 max-w-8" />
-              ) : (
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-linear-to-b from-muted/80 to-muted/40">
-                  <Fallback className={cn('size-4', colors.text)} />
-                </span>
-              )}
-              <div className="min-w-0 flex-1">
-                <div
-                  className={cn('truncate text-[10px] font-bold uppercase leading-tight tracking-wider', colors.text)}
-                >
-                  {label}
-                  {live && <span className="font-semibold opacity-80">{` · ${shortAgo(at, now)}`}</span>}
-                </div>
-                <div className="truncate text-sm font-semibold leading-snug text-foreground">
-                  {itemName ?? 'Unknown item'}
-                </div>
-              </div>
+              {(() => {
+                const subject = (
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    {listing ? (
+                      <ListingThumb listing={listing}
+                        className="size-9 rounded-lg"
+                        artClassName="max-h-8 max-w-8" />
+                    ) : (
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-linear-to-b from-muted/80 to-muted/40">
+                        <Fallback className={cn('size-4', colors.text)} />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={cn(
+                          'truncate text-[10px] font-bold uppercase leading-tight tracking-wider',
+                          colors.text,
+                        )}
+                      >
+                        {label}
+                        {live && <span className="font-semibold opacity-80">{` · ${shortAgo(at, now)}`}</span>}
+                      </div>
+                      <div className="truncate text-sm font-semibold leading-snug text-foreground">
+                        {itemName ?? 'Unknown item'}
+                      </div>
+                    </div>
+                  </div>
+                );
+                return deal.kind === 'offer' && listing ? (
+                  <OfferHoverCard offer={deal.offer}
+                    listing={listing}
+                    listed={listed}
+                    market={marketPrice}
+                    now={now}>
+                    {subject}
+                  </OfferHoverCard>
+                ) : (
+                  subject
+                );
+              })()}
               {context.length > 0 && (
                 <span className={cn('min-w-0 shrink truncate text-xs text-muted-foreground', '@max-[559px]:hidden')}>
                   {context.join(' · ')}

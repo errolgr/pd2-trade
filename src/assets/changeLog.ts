@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.6': [
+    "✨ Chat: rest the pointer on an offer to see the item's stats, asking and market price, and the offer itself (who, price, status and when), in the pinned deals and the trader panel",
+  ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',
     '🆕 Corrupted zone notifications: a purple toast when the zone changes, for every zone or only the ones you follow (Settings → Interface)',
