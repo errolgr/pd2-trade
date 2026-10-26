@@ -8,6 +8,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
 import { SellerCard } from '@/pages/market/enrich/SellerCard';
+import { ListingMarket } from '@/pages/market/enrich/ListingMarket';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import { useListingActions } from '../hooks/useListingActions';
 import { listingAge } from '../lib/listing';
@@ -118,6 +119,9 @@ export function ListingDetail({
             </div>
             <PriceHistoryMini listing={listing} />
           </div>
+
+          <ListingMarket listing={listing}
+            onSelectListing={onSelectListing} />
 
           <SellerCard
             listing={listing}

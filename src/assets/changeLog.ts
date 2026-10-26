@@ -2,6 +2,8 @@ export const changeLog = {
   '0.10.6': [
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
+    '✨ Market listing detail: an estimate for the item in its own condition (ethereal, sockets, corruption) with its range and confidence, and the cheaper live listings of it, a click away',
+    "✨ Market listing detail for rares: the full appraisal (verdict, rank, usual price, stat rolls) and the item's market history",
   ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',

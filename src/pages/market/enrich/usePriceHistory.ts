@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useOptions } from '@/hooks/useOptions';
 import { getSeasonDateConfig } from '@/lib/seasons';
-import { fetchRareHistory, type RareHistory } from '@/lib/rare-appraisal-api';
+import { fetchRareHistory, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { listingPriceCode } from '@/pages/chat/lib/price-codes';
 import type { SparklineQuery } from '@/pages/price-check/components/PriceSparkline';
@@ -19,15 +19,16 @@ import {
  * Price history of a listing's item:
  * - economy items (uniques, sets, runes…): the 30-day daily price line (`GET /item-prices/history/:baseCode`),
  *   rendered by the price check's PriceSparkline (which fetches and caches it);
- * - rares/crafted: earlier market listings of the same item (`GET /api/rare-history/:fingerprint`, the
- *   fingerprint from the rare appraisal); `none` when the item was never seen or is too generic (weak);
+ * - rares/crafted: the rare appraisal and earlier market listings of the same item
+ *   (`GET /api/rare-history/:fingerprint`, the fingerprint from the appraisal); history null when the item was
+ *   never seen or is too generic (weak); `none` without an appraisal;
  * - anything else: none.
  */
 export type PriceHistoryState =
   | { kind: 'none' }
   | { kind: 'economy'; query: SparklineQuery }
   | { kind: 'rare'; status: 'loading' }
-  | { kind: 'rare'; status: 'ready'; history: RareHistory };
+  | { kind: 'rare'; status: 'ready'; appraisal: RareAppraisal; history: RareHistory | null };
 
 /** One lookup per fingerprint for the app's lifetime; failed lookups are retried on the next open. */
 const historyCache = new Map<string, Promise<RareHistory | null>>();
@@ -61,7 +62,8 @@ export function usePriceHistory(listing: MarketListingEntry | null | undefined):
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rareKey]);
   const entry = rareKey ? getRareEntry(rareKey) : undefined;
-  const appraisalId = entry?.appraisalId ?? null;
+  const appraisal = entry?.appraisal ?? null;
+  const appraisalId = appraisal?.id ?? null;
 
   const [loaded, setLoaded] = useState<{ id: string; history: RareHistory | null } | null>(null);
   useEffect(() => {
@@ -91,8 +93,13 @@ export function usePriceHistory(listing: MarketListingEntry | null | undefined):
   if (!rareKey) return NONE;
   // Appraisal pending: the fingerprint is not known yet.
   if (!entry) return { kind: 'rare', status: 'loading' };
-  if (!appraisalId) return NONE;
+  if (!appraisal || !appraisalId) return NONE;
   if (loaded?.id !== appraisalId) return { kind: 'rare', status: 'loading' };
   const history = loaded.history;
-  return history && !history.weak && history.listings.length > 0 ? { kind: 'rare', status: 'ready', history } : NONE;
+  return {
+    kind: 'rare',
+    status: 'ready',
+    appraisal,
+    history: history && !history.weak && history.listings.length > 0 ? history : null,
+  };
 }

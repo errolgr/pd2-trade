@@ -57,13 +57,12 @@ export async function fetchRareAppraisalBatch(
   return body.results as RareBatchResult[];
 }
 
-/** A cached appraisal: the estimate (null: none) and the appraisal's fingerprint for the history lookup. */
+/** A cached appraisal: the estimate (null: none) and the appraisal itself (detail pane; its id keys the history). */
 export interface RareEntry {
   /** 'off': the feature is disabled on the server. 'error': the request failed (retried after ERROR_RETRY_MS). */
   status: 'ready' | 'off' | 'error';
   estimate: Estimate | null;
-  /** Content fingerprint (`RareAppraisal.id`), null without an appraisal. */
-  appraisalId: string | null;
+  appraisal: RareAppraisal | null;
   at: number;
 }
 
@@ -113,7 +112,7 @@ async function sendChunk(realm: string, chunk: Array<[string, string]>) {
     );
     const at = Date.now();
     if (!results) {
-      for (const [key] of chunk) cache.set(key, { status: 'off', estimate: null, appraisalId: null, at });
+      for (const [key] of chunk) cache.set(key, { status: 'off', estimate: null, appraisal: null, at });
       return;
     }
     const byIndex = new Map(results.map((r) => [r.index, r]));
@@ -124,7 +123,7 @@ async function sendChunk(realm: string, chunk: Array<[string, string]>) {
       cache.set(key, {
         status: 'ready',
         estimate: appraisal ? rareEstimate(appraisal, r?.reason, estimateDetail(appraisal)) : null,
-        appraisalId: appraisal?.id ?? null,
+        appraisal,
         at,
       });
     });
@@ -133,8 +132,7 @@ async function sendChunk(realm: string, chunk: Array<[string, string]>) {
     const at = Date.now();
     for (const [key] of chunk) {
       // A stale estimate stays on screen rather than flipping to unknown.
-      if (cache.get(key)?.status !== 'ready')
-        cache.set(key, { status: 'error', estimate: null, appraisalId: null, at });
+      if (cache.get(key)?.status !== 'ready') cache.set(key, { status: 'error', estimate: null, appraisal: null, at });
     }
     const error = err instanceof Error ? err : new Error(String(err));
     const status = err instanceof BatchHttpError ? err.status : undefined;
