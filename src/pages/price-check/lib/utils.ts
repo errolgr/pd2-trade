@@ -64,7 +64,11 @@ export function getTypeFromBaseType(
   return { type: typeValue, base: baseValue, label: base.label };
 }
 
+/** Stat key prefix of pseudo rows (`pseudo:pseudo_total_res`). */
+export const PSEUDO_KEY_PREFIX = 'pseudo:';
+
 export function getStatKey(stat: Stat): string {
+  if (stat.pseudo) return `${PSEUDO_KEY_PREFIX}${stat.pseudo}`;
   if ('skill' in stat && stat.skill) return `skill:${stat.skill.toLowerCase()}`;
   return `id:${stat.stat_id}`;
 }
