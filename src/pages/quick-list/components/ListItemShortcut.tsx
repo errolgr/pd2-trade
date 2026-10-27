@@ -8,11 +8,12 @@ import {
   X,
   GripVertical,
   Loader2,
+  AlertCircle,
   Clock,
   Hourglass,
   ListChecks,
   PackageSearch,
-  Info,
+  SearchX,
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -41,10 +42,9 @@ import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListi
 import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
 import { countChip, itemCard } from './styles';
-import { CLIPBOARD_HASH } from './ClipboardItemCard';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
-import { DUR, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
+import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 
 interface ListItemShortcutFormProps {
@@ -137,10 +137,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         { outcome: 'success' },
       );
 
-      // Never pre-pick: a stash item with the same name can still be a different roll than the copied one.
       setMatchingItems(items);
-      setSelectedItem(null);
-      setShowQueueOption(false);
+      if (items.length === 1) {
+        setSelectedItem(items[0]);
+        setShowQueueOption(false); // Reset queue option visibility
+        trackEvent('list_item_auto_selected');
+      } else {
+        setSelectedItem(null);
+        setShowQueueOption(false); // Reset queue option visibility when new search
+      }
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
@@ -708,7 +713,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   const expandAllStats = () => {
-    const allHashes = [...matchingItems.map((item) => item.hash).filter(Boolean), CLIPBOARD_HASH];
+    const allHashes = matchingItems.map((item) => item.hash).filter(Boolean);
     setExpandedItems(new Set(allHashes));
   };
 
@@ -851,7 +856,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             )}
           </AnimatePresence>
         </motion.div>
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 min-h-0 [&_[data-radix-scroll-area-viewport]>div]:!block">
           <motion.div
             className="flex flex-col gap-2 p-px pb-2 pr-2"
             variants={listStagger}
@@ -986,33 +991,45 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       );
     }
 
-    // 4. No stash match: the clipboard item, queued until the stash syncs it
+    // 4. No Items Found (with Queue option)
     if (matchingItems.length === 0 && !isLoading && !error && item) {
       return (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}
-            className="h-full flex flex-col overflow-hidden">
-            <ItemSelectionList
-              deleteMarketListing={deleteMarketListing}
-              matchingItems={[]}
-              clipboardItem={item}
-              clipboardSelected
-              selectedItem={null}
-              currentListings={currentListings}
-              expandedItems={expandedItems}
-              isMarketListingsLoading={isMarketListingsLoading}
-              onItemSelect={() => {}}
-              onToggleExpanded={toggleExpandedStats}
-              onExpandAll={expandAllStats}
-              onCollapseAll={collapseAllStats}
-              onBump={handleBump}
-              onRefresh={handleRefresh}
-            />
-            <div className="flex-shrink-0 space-y-2">
-              <div className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground">
-                <Info className="size-3.5 shrink-0 text-primary" />
-                Not in your shared stash yet. Queue it to list it once it syncs (new game, then a few minutes).
-              </div>
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col items-center justify-center py-6 gap-4"
+        >
+          <span className="flex size-12 items-center justify-center rounded-full bg-warning/12 text-warning ring-1 ring-warning/25">
+            <SearchX className="size-6" />
+          </span>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              <span>No items found matching &quot;{item.name || item.type}&quot;</span>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Why wasn't my item found?"
+                    className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-xs text-center">
+                  An item won&apos;t be found unless it is placed in your shared stash (not personal stash) and you have
+                  made a new game.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
+              You can queue this item to be listed automatically. We&apos;ll wait for the server to sync it from your
+              stash (usually takes a few minutes).
+            </div>
+          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}
+              className="w-full max-w-lg">
               <ListingFormFields
                 form={form}
                 selectedItem={null}
@@ -1021,9 +1038,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 onSubmit={handleSubmit}
                 allowQueue={true}
               />
-            </div>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        </motion.div>
       );
     }
 
@@ -1037,12 +1054,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             <ItemSelectionList
               deleteMarketListing={deleteMarketListing}
               matchingItems={matchingItems}
-              clipboardItem={item}
-              clipboardSelected={queueMode}
-              onClipboardSelect={() => {
-                setSelectedItem(null);
-                setShowQueueOption(true);
-              }}
               selectedItem={selectedItem}
               currentListings={currentListings}
               expandedItems={expandedItems}
@@ -1059,6 +1070,36 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
 
             <div className="flex-shrink-0 space-y-2">
+              <AnimatePresence initial={false}
+                mode="popLayout">
+                {!showQueueOption && (
+                  <motion.div
+                    key="queue-cta"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">None of these match?</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedItem(null);
+                        setShowQueueOption(true);
+                      }}
+                      className="text-xs h-7 px-3"
+                    >
+                      Queue Item
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {(selectedItem || queueMode) && (
                 <motion.div layout="position"
                   className="space-y-2">
