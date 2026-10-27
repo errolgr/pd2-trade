@@ -530,6 +530,25 @@ export function StatFilters({
   );
 }
 
+/** AND / OR n / NOT chip, coloured by group (the group button and its menu entries). */
+function GroupBadge({ group, text, className }: { group: StatGroup; text: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded border px-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
+        group === 'and'
+          ? 'border-border text-muted-foreground'
+          : group === 'not'
+            ? 'border-destructive/50 bg-destructive/15 text-destructive'
+            : 'border-info/50 bg-info/15 text-info',
+        className,
+      )}
+    >
+      {text}
+    </span>
+  );
+}
+
 /** A row's group: AND / OR n / NOT, as a menu that moves the row. */
 function GroupMenu({
   name,
@@ -546,13 +565,26 @@ function GroupMenu({
 }) {
   const description =
     group === 'and' ? 'required (AND)' : group === 'not' ? 'excluded (NOT)' : `in any-of block ${group} (OR)`;
-  const options: { target: DropTarget; label: string }[] = [
-    { target: 'and', label: 'Required (AND)' },
-    ...blocks.map((n) => ({ target: n, label: blocks.length > 1 ? `Any of ${n} (OR)` : 'Any of (OR)' })),
+  // Badges number the blocks once there are several (a new block makes several when one exists)
+  const options: { target: DropTarget; group: StatGroup; badge: string; label: string }[] = [
+    { target: 'and', group: 'and', badge: 'AND', label: 'Required' },
+    ...blocks.map((n) => ({
+      target: n,
+      group: n,
+      badge: blocks.length > 1 ? `OR ${n}` : 'OR',
+      label: blocks.length > 1 ? `Any of ${n}` : 'Any of',
+    })),
     ...(canOpenBlock
-      ? [{ target: 'new' as const, label: blocks.length ? 'New any-of block (OR)' : 'Any of (OR)' }]
+      ? [
+        {
+          target: 'new' as const,
+          group: blocks.length + 1,
+          badge: blocks.length ? `OR ${blocks.length + 1}` : 'OR',
+          label: blocks.length ? 'New any-of block' : 'Any of',
+        },
+      ]
       : []),
-    { target: 'not', label: 'Exclude (NOT)' },
+    { target: 'not', group: 'not', badge: 'NOT', label: 'Exclude' },
   ];
   return (
     <DropdownMenu modal={false}>
@@ -561,16 +593,10 @@ function GroupMenu({
           type="button"
           aria-label={`${name}: ${description}`}
           title="AND: required · OR: at least one row of its block · NOT: excluded. Click to move it, or drag the grip."
-          className={cn(
-            'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded border px-1 text-[10px] font-semibold tracking-wide whitespace-nowrap outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-            group === 'and'
-              ? 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-              : group === 'not'
-                ? 'border-destructive/50 bg-destructive/15 text-destructive hover:bg-destructive/25'
-                : 'border-info/50 bg-info/15 text-info hover:bg-info/25',
-          )}
+          className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
         >
-          {group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+          <GroupBadge group={group}
+            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end"
@@ -584,7 +610,10 @@ function GroupMenu({
             <DropdownMenuRadioItem key={String(o.target)}
               value={String(o.target)}
               className="text-xs">
-              {o.label}
+              <span className="flex-1">{o.label}</span>
+              <GroupBadge group={o.group}
+                text={o.badge}
+                className="ml-3" />
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

@@ -59,7 +59,7 @@ describe('StatFilters', () => {
   it('the group menu moves a row between AND, any-of blocks and NOT', () => {
     const { latest } = mount([row('a'), row('b', { key: 'maxhp' }), row('c', { key: 'strength' })]);
     expect(screen.queryByRole('region', { name: 'Any of' })).toBeNull();
-    moveTo(screen.getByRole('button', { name: /Faster Cast Rate: required/ }), /^Any of \(OR\)/);
+    moveTo(screen.getByRole('button', { name: /Faster Cast Rate: required/ }), /^Any of\s*OR$/);
     expect(latest().find((s) => s.id === 'a')?.or).toBe(1);
     const group = screen.getByRole('region', { name: 'Any of' });
     expect(within(group).getByText('Faster Cast Rate')).toBeTruthy();
