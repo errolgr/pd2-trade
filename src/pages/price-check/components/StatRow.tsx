@@ -9,7 +9,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
 import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
-import { X, Check, Info } from 'lucide-react';
+import { X, Check, Info, Eraser } from 'lucide-react';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
@@ -133,6 +133,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isActive = isCorrupted ? corruptedState !== 0 : isSelected;
   const showRangeInputs = !isCorrupted && !isEthereal && isSelected;
   const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
+  /** Clears per range line (`min` / `maxMin`): each one replays the clear sweep. */
+  const [clearNonce, setClearNonce] = useState<Partial<Record<string, number>>>({});
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
@@ -357,35 +359,88 @@ export const StatRow: React.FC<StatRowProps> = ({
                     ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
                   ] as const)
                 : ([['min', 'max', null, stat.name]] as const)
-              ).map(([lo, hi, label, aria]) => (
-                <div key={lo}
-                  className="flex items-center gap-1.5">
-                  {label && (
-                    <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {label}
+              ).map(([lo, hi, label, aria]) => {
+                const hasRange = !!filters[statKey]?.[lo] || !!filters[statKey]?.[hi];
+                const clears = clearNonce[lo];
+                return (
+                  <div key={lo}
+                    className="flex items-center gap-1.5">
+                    {label && (
+                      <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {label}
+                      </span>
+                    )}
+                    <span className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
+                      <input
+                        type="number"
+                        className={numberInputClass}
+                        placeholder="min"
+                        aria-label={`${aria} minimum`}
+                        value={filters[statKey]?.[lo] ?? ''}
+                        onChange={(e) => updateFilter(statKey, lo, e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <input
+                        type="number"
+                        className={numberInputClass}
+                        placeholder="max"
+                        aria-label={`${aria} maximum`}
+                        value={filters[statKey]?.[hi] ?? ''}
+                        onChange={(e) => updateFilter(statKey, hi, e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                      />
+                      {/* A cleared range is wiped by a light sweep across both inputs, their edges flashing once. Own
+                          AnimatePresence: the range's `initial={false}` presence would otherwise skip these entries. */}
+                      <AnimatePresence>
+                        {clears !== undefined && (
+                          <React.Fragment key={clears}>
+                            <motion.span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-y-0 w-2/3 bg-linear-to-r from-transparent via-glow/55 to-transparent"
+                              initial={{ left: '-70%', opacity: 1 }}
+                              animate={{ left: '110%', opacity: [1, 1, 0] }}
+                              transition={{ duration: 0.5, ease: EASE_OUT, opacity: { duration: 0.5, times: [0, 0.75, 1] } }}
+                            />
+                            <motion.span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-glow/70"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ duration: 0.6, times: [0, 0.2, 1], ease: 'easeOut' }}
+                            />
+                          </React.Fragment>
+                        )}
+                      </AnimatePresence>
                     </span>
-                  )}
-                  <input
-                    type="number"
-                    className={numberInputClass}
-                    placeholder="min"
-                    aria-label={`${aria} minimum`}
-                    value={filters[statKey]?.[lo] ?? ''}
-                    onChange={(e) => updateFilter(statKey, lo, e.target.value)}
-                    onKeyDown={handleInputKeyDown}
-                  />
-                  <span className="text-xs text-muted-foreground">–</span>
-                  <input
-                    type="number"
-                    className={numberInputClass}
-                    placeholder="max"
-                    aria-label={`${aria} maximum`}
-                    value={filters[statKey]?.[hi] ?? ''}
-                    onChange={(e) => updateFilter(statKey, hi, e.target.value)}
-                    onKeyDown={handleInputKeyDown}
-                  />
-                </div>
-              ))}
+                    {/* Slot always reserved, so the inputs don't shift when the button shows or hides */}
+                    <motion.button
+                      type="button"
+                      aria-label={`Clear ${aria} range`}
+                      title="Clear min and max"
+                      tabIndex={hasRange ? 0 : -1}
+                      aria-hidden={!hasRange}
+                      initial={false}
+                      animate={{ opacity: hasRange ? 1 : 0, scale: hasRange ? 1 : 0.6 }}
+                      transition={{ duration: DUR.fast, ease: EASE_OUT }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        updateFilter(statKey, lo, '');
+                        updateFilter(statKey, hi, '');
+                        setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
+                        // Ready to type the new min
+                        e.currentTarget.parentElement?.querySelector('input')?.focus({ preventScroll: true });
+                      }}
+                      className={cn(
+                        'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-foreground/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+                        !hasRange && 'pointer-events-none',
+                      )}
+                    >
+                      <Eraser className="size-3.5" />
+                    </motion.button>
+                  </div>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>

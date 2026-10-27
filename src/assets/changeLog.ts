@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.8': [
+    '✨ Price check: the eraser next to a stat\'s min / max clears both at once (with a quick wipe), ready to type your own range',
+  ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
     '🆕 Corrupted zone timer: "Timer shows: Only zones I follow" counts down to your next followed zone and lists only those; notifications keep their own setting, so you can show every zone and get toasts for followed ones only, or the other way round',
