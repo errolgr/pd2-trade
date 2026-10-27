@@ -16,6 +16,8 @@ export interface MarketSearchState {
   /** Every row loaded so far (pages appended). */
   items: ScoredListing[];
   total: number;
+  /** False when `total` is a lower bound or an estimate; see SearchResult.totalExact. */
+  totalExact: boolean;
   /** The filters `items` were searched with (set once ready); compare with the current filters. */
   filters: MarketFilters | null;
   /** The filters of the last search that actually ran (fetched or served from cache). */
@@ -37,6 +39,7 @@ const IDLE: MarketSearchState = {
   status: 'idle',
   items: [],
   total: 0,
+  totalExact: true,
   error: null,
   loadingMore: false,
   hasMore: false,
@@ -86,6 +89,22 @@ export function searchErrorMessage(e: unknown): string {
     return 'Market service unavailable. Retry in a moment.';
   }
   return e instanceof Error ? e.message.split('\n')[0] : 'Search failed';
+}
+
+/**
+ * The results pane's count for a ready search. A count that isn't exact is the service's cap (`1,000+`) unless
+ * a Seller online filter is set, where the service estimates it (`~312`).
+ */
+export function searchCountText({
+  total,
+  totalExact,
+  filters,
+}: Pick<MarketSearchState, 'total' | 'totalExact' | 'filters'>): string {
+  const n = total.toLocaleString();
+  if (totalExact) return `${n} listing${total === 1 ? '' : 's'}`;
+  const sellerOnline = !!filters && (filters.userOnlineSite !== 'all' || filters.userOnlineGame !== 'all');
+  if (sellerOnline) return `~${n} listing${total === 1 ? '' : 's'}`;
+  return `${n}+ listings`;
 }
 
 /** Wait before retrying a page when a 429 named no Retry-After. */
@@ -139,6 +158,7 @@ export function useMarketSearch(
         ranFilters: filters,
         items: result.items,
         total: result.total,
+        totalExact: result.totalExact,
         hasMore: result.items.length < result.total,
       });
     };
@@ -200,6 +220,7 @@ export function useMarketSearch(
             ...s,
             items,
             total: result.total,
+            totalExact: result.totalExact,
             loadingMore: false,
             hasMore: result.items.length > 0 && items.length < result.total,
           };

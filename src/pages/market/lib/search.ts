@@ -27,6 +27,6 @@ export function scoreListings(listings: MarketListingEntry[], f: MarketFilters):
 export async function runSearch(api: MarketApi, f: MarketFilters, opts: SearchOptions = {}): Promise<SearchResult> {
   const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(opts.pageSize ?? DEFAULT_PAGE_SIZE)));
   const page = Math.max(0, Math.floor(opts.page ?? 0));
-  const { items, total } = await api.searchListings(f, { page, limit, signal: opts.signal });
-  return { items, total, fetched: items.length, mode: 'server' };
+  const { items, total, totalExact } = await api.searchListings(f, { page, limit, signal: opts.signal });
+  return { items, total, totalExact, fetched: items.length, mode: 'server' };
 }

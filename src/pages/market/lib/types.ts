@@ -143,8 +143,10 @@ export interface SearchOptions {
 export interface SearchResult {
   /** One page, filtered and ordered by the market service. */
   items: ScoredListing[];
-  /** Matches across all pages. */
+  /** Matches across all pages; see `totalExact`. */
   total: number;
+  /** False when `total` is a lower bound (the service's count cap) or an estimate (Seller online filters). */
+  totalExact: boolean;
   /** Listings on this page. */
   fetched: number;
   mode: 'server';
@@ -182,7 +184,7 @@ export interface MarketApi {
   searchListings: (
     filters: MarketFilters,
     opts: { page: number; limit: number; signal?: AbortSignal },
-  ) => Promise<{ items: ScoredListing[]; total: number }>;
+  ) => Promise<{ items: ScoredListing[]; total: number; totalExact: boolean }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
   getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
