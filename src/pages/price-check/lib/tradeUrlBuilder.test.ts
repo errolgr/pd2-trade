@@ -431,14 +431,35 @@ describe('buildGetMarketListingQuery', () => {
     expect(query(makeItem({ isEthereal: true }), ['id:1001'])['item.is_ethereal']).toBe(true);
   });
 
-  // BUG: tradeUrlBuilder.ts:216 checks `stat.stat_id === StatId.Ethereal || item.isEthereal`, so for an ethereal item
-  // every selected regular/skill stat short-circuits to `is_ethereal` and its modifier filter is silently dropped.
-  it.fails('keeps stat filters for ethereal items', () => {
+  it('keeps stat filters for ethereal items', () => {
     const item = makeItem({ isEthereal: true, stats: [{ stat_id: 105, name: 'FCR', value: 20 }] });
     const q = query(item, ['id:105'], { 'id:105': { min: '10' } });
     expect(q['item.modifiers']).toEqual({
       $all: [{ $elemMatch: { name: 'item_fastercastrate', 'values.0': { $gte: 10 } } }],
     });
+    expect(q).not.toHaveProperty(['item.is_ethereal']);
+  });
+
+  // #146: an ethereal superior base searched by Enhanced Damage returned every superior base of that type.
+  it('filters an ethereal superior base on its enhanced damage range, and drops it when deselected', () => {
+    const item = makeItem({
+      quality: 'Superior',
+      isEthereal: true,
+      stats: [
+        { stat_id: 17, name: '+% Enhanced Maximum Damage', value: 19 },
+        { stat_id: 18, name: '+% Enhanced Minimum Damage', value: 19 },
+      ],
+    });
+    const ed = 'id:998';
+    const filters = { [ed]: { min: '19', max: '20' } };
+    const on = query(item, ['id:1001', ed], filters);
+    expect(on['item.is_ethereal']).toBe(true);
+    expect(on['item.modifiers']).toEqual({
+      $all: [{ $elemMatch: { name: 'maxdamage_percent', 'values.0': { $gte: 19, $lte: 20 } } }],
+    });
+    const off = query(item, ['id:1001'], filters);
+    expect(off['item.is_ethereal']).toBe(true);
+    expect(off).not.toHaveProperty(['item.modifiers']);
   });
 
   describe('item identity', () => {
