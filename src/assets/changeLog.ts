@@ -12,6 +12,9 @@ export const changeLog = {
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
     '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
+    '✨ Market stat search lists stats as the item shows them ("+#% Faster Cast Rate", "Fire Resist +#%", "+# to Teleport (Sorceress Only)")',
+    '✨ Price check lists the item\'s stats as its tooltip reads them ("+20% Faster Cast Rate [10 - 20]", "Socketed (4)") instead of "Faster Cast Rate: 20"',
+    '🔧 Market stat search: the Mods / Pseudo / Corruptions tabs no longer jump around while you type or resize the list when you switch them; switching starts at the top of the list, and the arrow keys scroll it',
   ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',

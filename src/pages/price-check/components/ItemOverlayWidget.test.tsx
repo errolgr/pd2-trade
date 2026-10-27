@@ -228,7 +228,7 @@ describe('ItemOverlayWidget header', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Harlequin Crest');
     expect(screen.getByText('Base: Shako')).not.toBeNull();
     expect(screen.getByText('141')).not.toBeNull();
-    expect(screen.getByText('to All Skills')).not.toBeNull();
+    expect(screen.getByText('+2 to All Skills')).not.toBeNull();
   });
 
   it('titles a runeword by its runeword name with a badge', () => {
@@ -420,7 +420,7 @@ describe('ItemOverlayWidget stat selection', () => {
     renderWidget(rareRing());
     expect(screen.queryByText(/selected/)).toBeNull();
 
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     // Rings only roll a fixed 10% FCR, so PD2 draws no range and the fill is value ± 5%.
     expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('19');
     expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('21');
@@ -428,7 +428,7 @@ describe('ItemOverlayWidget stat selection', () => {
 
     fireEvent.click(screen.getByText('Clear'));
     await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
-    expect(statCheckbox('% Faster Cast Rate').getAttribute('aria-checked')).toBe('false');
+    expect(statCheckbox('+20% Faster Cast Rate').getAttribute('aria-checked')).toBe('false');
   });
 
   it('Clear also resets the tri-state corrupted filter', async () => {
@@ -442,7 +442,7 @@ describe('ItemOverlayWidget stat selection', () => {
 
   it('edited min/max values are what the search filters on', async () => {
     renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '' } });
     fireEvent.click(searchButton());
@@ -454,7 +454,7 @@ describe('ItemOverlayWidget stat selection', () => {
 
   it('Enter in a range input runs the search', async () => {
     renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.keyDown(screen.getByLabelText('% Faster Cast Rate minimum'), { key: 'Enter' });
     await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
   });
@@ -462,7 +462,7 @@ describe('ItemOverlayWidget stat selection', () => {
   it('a new item clears the previous selection and results', async () => {
     getMarketListings.mockResolvedValue(page([listing()], 1));
     const { rerenderItem } = renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.click(searchButton());
     await screen.findByText('1.5 HR');
 
@@ -593,7 +593,7 @@ describe('ItemOverlayWidget market search', () => {
     getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'a20', hr_price: 21 })], 23));
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
-    fireEvent.click(statCheckbox('% Better Chance of Getting Magic Items'));
+    fireEvent.click(statCheckbox('+30% Better Chance of Getting Magic Items'));
     fireEvent.click(searchButton());
     expect(await screen.findByText('Load more')).not.toBeNull();
     inView = true;
@@ -868,7 +868,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
 describe('ItemOverlayWidget sockets and ethereal rows', () => {
   it('turns item sockets and ethereal flags into filterable rows', async () => {
     renderWidget(rareRing({ type: 'Shako', sockets: 2, isEthereal: true }));
-    fireEvent.click(statCheckbox('Sockets'));
+    fireEvent.click(statCheckbox('Socketed (2)'));
     expect((screen.getByLabelText('Sockets minimum') as HTMLInputElement).value).toBe('2');
     fireEvent.click(statCheckbox('Ethereal'));
     fireEvent.click(searchButton());

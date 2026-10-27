@@ -1520,6 +1520,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             toggle={toggle}
                             key={getStatKey(s)}
                             stat={s}
+                            item={item}
                             nested={false}
                             updateFilter={updateFilter}
                             filters={filters}

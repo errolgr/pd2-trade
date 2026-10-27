@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -299,6 +299,8 @@ export function Autocomplete<T>({
   onKeyDown,
   contentClassName,
   footer,
+  listKey,
+  minRows,
 }: {
   value: string;
   onQuery: (q: string) => void;
@@ -318,13 +320,33 @@ export function Autocomplete<T>({
   contentClassName?: string;
   /** Shown under the options while the list is open. */
   footer?: React.ReactNode;
+  /** Identity of the option list (e.g. the open tab): a new one starts at its first row, scrolled to the top. */
+  listKey?: string;
+  /** Rows of height the list keeps (capped at its max height), so swapping `options` doesn't resize it. */
+  minRows?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [activeRaw, setActive] = useState(0);
-  // The caller may swap `options` (another tab); keep the highlight on an existing row
+  const [shownListKey, setShownListKey] = useState(listKey);
+  if (listKey !== shownListKey) {
+    setShownListKey(listKey);
+    setActive(0);
+  }
+  // Options can shrink under the highlight (new search); keep it on an existing row
   const active = Math.min(activeRaw, Math.max(0, options.length - 1));
   const listId = useId();
+  const listRef = useRef<HTMLUListElement>(null);
+  const keyboardMoved = useRef(false);
   const show = open && (options.length > 0 || !!loading);
+  useLayoutEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [listKey]);
+  // Arrow keys keep the highlighted row in view (hover never scrolls the list under the pointer)
+  useEffect(() => {
+    if (!keyboardMoved.current) return;
+    keyboardMoved.current = false;
+    listRef.current?.querySelector('[role="option"][aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
   const pick = (option: T) => {
     onPick(option);
     setOpen(false);
@@ -355,12 +377,11 @@ export function Autocomplete<T>({
             setActive(0);
           }}
           onKeyDown={(e) => {
-            if (show && e.key === 'ArrowDown') {
+            if (show && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
               e.preventDefault();
-              setActive(Math.min(options.length - 1, active + 1));
-            } else if (show && e.key === 'ArrowUp') {
-              e.preventDefault();
-              setActive(Math.max(0, active - 1));
+              const next = e.key === 'ArrowDown' ? Math.min(options.length - 1, active + 1) : Math.max(0, active - 1);
+              keyboardMoved.current = next !== active;
+              setActive(next);
             } else if (show && e.key === 'Enter' && options[active]) {
               e.preventDefault();
               pick(options[active]);
@@ -386,10 +407,15 @@ export function Autocomplete<T>({
         className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', contentClassName)}
       >
         {header}
-        <ul id={listId}
+        <ul
+          ref={listRef}
+          id={listId}
           role="listbox"
           aria-label={ariaLabel}
-          className="max-h-64 overflow-y-auto">
+          className="max-h-64 overflow-y-auto"
+          // Rows are 1.5rem (py-1 + text-xs line); max-h-64 is 16rem
+          style={minRows ? { minHeight: `min(${minRows * 1.5}rem, 16rem)` } : undefined}
+        >
           {loading && options.length === 0 && <li className="px-2 py-1.5 text-xs text-muted-foreground">Searching…</li>}
           {options.map((option, i) => (
             <li

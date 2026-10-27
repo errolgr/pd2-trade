@@ -103,6 +103,21 @@ describe('StatFilters', () => {
     expect(latest()[1]).toMatchObject({ kind: 'corruption', key: 'item_fastercastrate' });
   });
 
+  it('keeps the shown tab while typing on, as long as it has matches', () => {
+    mount([]);
+    const search = screen.getByRole('combobox', { name: 'Add a stat filter' });
+    const selected = () =>
+      screen.getAllByRole('tab').find((t) => t.getAttribute('aria-selected') === 'true')?.textContent;
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: 'fir' } });
+    expect(selected()).toMatch(/^Pseudo/);
+    // "fire" alone ranks a mod first; the Pseudo list still matches, so it stays
+    fireEvent.change(search, { target: { value: 'fire' } });
+    expect(selected()).toMatch(/^Pseudo/);
+    fireEvent.change(search, { target: { value: 'firestorm' } });
+    expect(selected()).toMatch(/^Mods/);
+  });
+
   it('keeps the search after a pick; clicking the input brings the list back', () => {
     const { latest } = mount([]);
     const search = screen.getByRole('combobox', { name: 'Add a stat filter' }) as HTMLInputElement;
@@ -116,7 +131,7 @@ describe('StatFilters', () => {
 
     fireEvent.click(search);
     expect(search.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('option', { name: /Paladin Combat Skills/ })).toBeTruthy();
+    expect(screen.getByRole('option', { name: /\+# to Combat Skills \(Paladin Only\)/ })).toBeTruthy();
   });
 
   it('lists corruption rows after stat rows', () => {
