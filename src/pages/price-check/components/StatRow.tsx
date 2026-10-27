@@ -388,13 +388,14 @@ export const StatRow: React.FC<StatRowProps> = ({
                         onChange={(e) => updateFilter(statKey, lo, e.target.value)}
                         onKeyDown={handleInputKeyDown}
                       />
-                      {/* The "–" turns into the eraser while the row is hovered or edited: no extra width */}
+                      {/* The "–" turns into the eraser while the row is hovered (or the eraser has keyboard focus): no
+                          extra width. Hover only: focus in a min/max input would keep it showing after the pointer left. */}
                       <span className="relative inline-flex h-7 w-3.5 shrink-0 items-center justify-center">
                         <span
                           aria-hidden
                           className={cn(
-                            'text-xs text-muted-foreground transition-opacity duration-(--dur-fast)',
-                            hasRange && 'group-hover/row:opacity-0 group-focus-within/row:opacity-0',
+                            'text-xs text-muted-foreground transition-opacity duration-(--dur-fast) [span:has(>button:focus-visible)>&]:opacity-0',
+                            hasRange && 'group-hover/row:opacity-0',
                           )}
                         >
                           –
@@ -415,7 +416,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                           }}
                           className={cn(
                             'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
-                            hasRange ? 'group-hover/row:opacity-70 group-focus-within/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
+                            hasRange ? 'group-hover/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
                           )}
                         >
                           <Eraser className="size-3" />
