@@ -104,7 +104,7 @@ Track your net worth while you play: a small in-game ticker shows your total in 
 
 #### Corrupted Zone Timer
 
-Know where to farm without leaving the game: a small in-game timer shows the zones corrupted in Hell games made right now (monster level 85, more density, more Worldstone Shards and Tier 1 maps) and a countdown to the next 15-minute rotation. Click it for the upcoming zones and their start times. A game keeps the zones it was made with, so make a new game after the switch. Optional notifications pop up a toast when the zone changes, for every zone or only the ones you follow. Turn it on under Settings → Interface, then pin it to a corner of the game or drag it anywhere on screen.
+Know where to farm without leaving the game: a small in-game timer shows the zones corrupted in Hell games made right now (monster level 85, more density, more Worldstone Shards and Tier 1 maps) and a countdown to the next 15-minute rotation. Click it for the upcoming zones and their start times; they open upwards when the timer sits in the lower half of the screen, downwards otherwise. A game keeps the zones it was made with, so make a new game after the switch. Follow the zones you farm to have the timer show only those (counting down to the next one), get a toast when they come up, or both. Turn it on under Settings → Interface, then pin it to a corner of the game or drag it anywhere on screen.
 
 #### Builds
 

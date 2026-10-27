@@ -13,14 +13,22 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi
 const NOW = Date.parse('2026-10-25T19:55:42Z');
 /** Rendered content box; the panel is sized to its ceiling: 301 x 28. */
 const BOX = { width: 300.2, height: 27.5 };
+/** Content box while the schedule is open: 400 x 180. */
+const OPEN_BOX = { width: 399.5, height: 179.2 };
 const GAME = { x: 100, y: 50, width: 1280, height: 720 };
 
 let settings: Partial<ISettings>;
 let updateSettings: Mock;
 let panelRect: OverlayRect;
 let setRect: Mock;
+let resize: () => void;
 
 const pill = () => screen.getByRole('button');
+/** Click the pill, then let the ResizeObserver report the new content box. */
+const clickPill = () => {
+  fireEvent.click(pill());
+  act(() => resize());
+};
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -38,13 +46,27 @@ beforeEach(() => {
   vi.mocked(usePanel).mockImplementation(
     () => ({ rect: panelRect, setRect }) as unknown as PanelContextValue<'corruptedZoneTimer'>,
   );
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(BOX as DOMRect);
+  // The timer's box is OPEN_BOX while it holds the schedule list; everything else (the pill) is BOX
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    return (this.querySelector('ol') ? OPEN_BOX : BOX) as DOMRect;
+  });
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe() {}
+      disconnect() {}
+    },
+  );
   HTMLElement.prototype.setPointerCapture = vi.fn();
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe('CorruptedZoneTimer', () => {
@@ -76,7 +98,7 @@ describe('CorruptedZoneTimer', () => {
       'Glacial Trail, Drifter Cavern, and Frozen Tundra',
     ]);
     expect(rows[0].lastElementChild!.textContent).toMatch(/ · in 5m$/);
-    expect(rows[5].lastElementChild!.textContent).toMatch(/ · in 80m$/);
+    expect(rows[5].lastElementChild!.textContent).toMatch(/ · in 1h 20m$/);
     fireEvent.click(pill());
     expect(screen.queryByRole('list')).toBeNull();
   });
@@ -96,6 +118,85 @@ describe('CorruptedZoneTimer', () => {
     panelRect = { x: 5000, y: 10, width: 360, height: 32 };
     render(<CorruptedZoneTimerPage />);
     expect(setRect.mock.calls).toEqual([[{ x: 1920 - 301, y: 10, width: 301, height: 28 }]]);
+  });
+
+  it.each([
+    ['a bottom anchor (lower half) opens upwards', 'bottom-left', 730, 730 + 28 - 180],
+    ['a top anchor (upper half) opens downwards', 'top-left', 62, 62],
+  ] as const)('%s, the pill staying on its anchor', (_case, anchor, pillY, openY) => {
+    settings = { corruptedZoneTimerAnchor: anchor };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
+    expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: pillY, width: 301, height: 28 });
+    rerender(<CorruptedZoneTimerPage />); // pick up the placed rect
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: openY, width: 400, height: 180 });
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: pillY, width: 301, height: 28 });
+  });
+
+  it.each([
+    ['in the lower half opens upwards', 900, 900 + 28 - 180],
+    ['in the upper half opens downwards', 100, 100],
+  ])('a custom timer %s and closes back onto the pill', (_case, y, openY) => {
+    settings = { corruptedZoneTimerAnchor: 'custom' };
+    panelRect = { x: 40, y, width: 301, height: 28 };
+    render(<CorruptedZoneTimerPage />);
+    expect(setRect).not.toHaveBeenCalled();
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y: openY, width: 400, height: 180 });
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y, width: 301, height: 28 });
+  });
+
+  it('restores a custom timer saved with its list open upwards onto its pill', () => {
+    settings = { corruptedZoneTimerAnchor: 'custom' };
+    panelRect = { x: 40, y: 748, width: 400, height: 180 }; // pill at the bottom, y 900
+    render(<CorruptedZoneTimerPage />);
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y: 900, width: 301, height: 28 });
+  });
+
+  it('dragging an open bottom-anchored timer to Custom keeps the list above, so closing keeps the pill put', () => {
+    settings = { corruptedZoneTimerAnchor: 'bottom-left' };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
+    clickPill();
+    rerender(<CorruptedZoneTimerPage />); // pick up the open rect (y 578, pill at 730) as the drag origin
+    fireEvent.pointerDown(pill(), { button: 0, pointerId: 1, clientX: 150, clientY: 740 });
+    fireEvent.pointerMove(pill(), { pointerId: 1, clientX: 150, clientY: 640 });
+    fireEvent.pointerUp(pill(), { pointerId: 1 });
+    expect(updateSettings).toHaveBeenCalledWith({ corruptedZoneTimerAnchor: 'custom' });
+    settings = { corruptedZoneTimerAnchor: 'custom' };
+    rerender(<CorruptedZoneTimerPage />);
+    fireEvent.click(pill()); // the click after a drag is swallowed
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: 478 + 180 - 28, width: 301, height: 28 });
+  });
+
+  describe('only followed zones', () => {
+    beforeEach(() => {
+      settings = { corruptedZoneTimerZones: 'followed', corruptedZoneFollowed: ['Chaos Sanctuary'] };
+    });
+
+    it('counts down to the next followed zone, then to its end once it is corrupted', () => {
+      render(<CorruptedZoneTimerPage />);
+      expect(pill().textContent).toBe('Chaos Sanctuaryin 1:04:18');
+      expect(pill().title).toMatch(/^Next followed zone: /);
+      act(() => vi.advanceTimersByTime(3_858_000)); // 21:00, Chaos Sanctuary's slot
+      expect(pill().textContent).toBe('Chaos Sanctuary15:00');
+    });
+
+    it('lists only followed zones', () => {
+      render(<CorruptedZoneTimerPage />);
+      fireEvent.click(pill());
+      const rows = within(screen.getByRole('list', { name: 'Upcoming corrupted zones' })).getAllByRole('listitem');
+      expect(rows.length).toBeGreaterThan(0);
+      expect(new Set(rows.map((row) => row.firstElementChild!.textContent))).toEqual(new Set(['Chaos Sanctuary']));
+    });
+
+    it('shows every zone while none is followed', () => {
+      settings = { corruptedZoneTimerZones: 'followed', corruptedZoneFollowed: [] };
+      render(<CorruptedZoneTimerPage />);
+      expect(pill().textContent).toBe('Rocky Waste and the Stony Tomb4:18');
+    });
   });
 
   it('a drag moves it, does not expand it and switches it to Custom', () => {

@@ -1,5 +1,7 @@
 export const changeLog = {
   '0.10.7': [
+    '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
+    '🆕 Corrupted zone timer: "Timer shows: Only zones I follow" counts down to your next followed zone and lists only those; notifications keep their own setting, so you can show every zone and get toasts for followed ones only, or the other way round',
     '🔧 List Item (Ctrl+L): back to picking your stash match for the copied item automatically; the "Not synced to stash" card is gone',
     '🔧 List Item (Ctrl+L): items with a long stat no longer get cut off on the right; the stat ends in "…" instead',
     '✨ Chat: a trader who whispers you in game is linked to their website account when they have a listing on the market, so the trader panel shows their profile, market and presence; replies still go out as whispers until you switch',

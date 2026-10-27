@@ -18,12 +18,18 @@ const ZONE_ALERT_OPTIONS = [
   { value: 'followed', label: 'Only zones I follow' },
 ] as const;
 
+const TIMER_ZONES_OPTIONS = [
+  { value: 'all', label: 'Every zone' },
+  { value: 'followed', label: 'Only zones I follow' },
+] as const;
+
 const interfaceFormSchema = z.object({
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
+  corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
   corruptedZoneFollowed: z.array(z.string()),
 });
@@ -37,6 +43,7 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
+    corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
     corruptedZoneFollowed: settings?.corruptedZoneFollowed ?? [],
   };
@@ -217,6 +224,36 @@ export function InterfaceForm() {
           />
           <FormField
             control={form.control}
+            name="corruptedZoneTimerZones"
+            render={({ field }) => (
+              <SettingsRow
+                label="Timer shows"
+                description="Every zone, or only the zones you follow: the timer then counts down to the next one and lists only those (every zone while you follow none)."
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Zones" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIMER_ZONES_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
             name="corruptedZoneAlerts"
             render={({ field }) => (
               <SettingsRow
@@ -245,14 +282,15 @@ export function InterfaceForm() {
               </SettingsRow>
             )}
           />
-          {form.watch('corruptedZoneAlerts') === 'followed' && (
+          {(form.watch('corruptedZoneAlerts') === 'followed' ||
+            form.watch('corruptedZoneTimerZones') === 'followed') && (
             <FormField
               control={form.control}
               name="corruptedZoneFollowed"
               render={({ field }) => (
                 <SettingsRow
                   label="Followed zones"
-                  description="Toast when one of these becomes the corrupted zone."
+                  description="The zones the timer and notifications follow when set to Only zones I follow."
                   control={<ZonePicker value={field.value}
                     onChange={field.onChange} />}
                 />
