@@ -120,14 +120,6 @@ async function selectTab(name: RegExp) {
   });
 }
 
-async function pick(name: RegExp) {
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name }));
-  });
-}
-
-const CLIPBOARD_CARD = /Harlequin Crest, from clipboard/;
-
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
   vi.setSystemTime(new Date('2026-03-01T12:00:00Z'));
@@ -198,22 +190,13 @@ describe('tabs', () => {
 });
 
 describe('finding the item', () => {
-  it('picks nothing when the stash has a match: the user chooses the stash item or the copied one', async () => {
+  it('auto-selects a single match and offers Post', async () => {
     renderForm();
     await flush();
     expect(api.findMatchingItems.mock.calls).toEqual([[copied]]);
-    const pressed = (name: RegExp) => screen.getByRole('button', { name }).getAttribute('aria-pressed');
-    expect(pressed(/Shako #1/)).toBe('false');
-    expect(pressed(CLIPBOARD_CARD)).toBe('false');
-    expect(screen.queryByPlaceholderText('HR')).toBeNull();
-
-    await pick(/Shako #1/);
+    const card = screen.getByRole('button', { name: /Shako #1/ });
+    expect(card.getAttribute('aria-pressed')).toBe('true');
     expect(submitButton().textContent).toBe('Post');
-
-    await pick(CLIPBOARD_CARD);
-    expect(pressed(/Shako #1/)).toBe('false');
-    expect(pressed(CLIPBOARD_CARD)).toBe('true');
-    expect(submitButton().textContent).toBe('Queue Item');
   });
 
   it('requires picking one of multiple matches before the form appears', async () => {
@@ -238,7 +221,7 @@ describe('finding the item', () => {
     });
     await flush();
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('button', { name: /Shako #1/ })).not.toBeNull();
+    expect(submitButton().textContent).toBe('Post');
   });
 
   it('explains an account mismatch and raises an error toast', async () => {
@@ -287,7 +270,6 @@ describe('listing a new item', () => {
   it('posts with an exact HR price, toasts a link to the listing, and closes the panel', async () => {
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(noteInput(), { target: { value: 'fast trade' } });
     fireEvent.change(priceInput(), { target: { value: ' 2.5 ' } });
     await submit();
@@ -305,7 +287,6 @@ describe('listing a new item', () => {
   it('posts a note-only listing with zero HR', async () => {
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(noteInput(), { target: { value: 'offers' } });
     await submit();
     expect(api.listSpecificItem.mock.calls).toEqual([[stash(1), 0, 'offers', 'note']]);
@@ -315,7 +296,6 @@ describe('listing a new item', () => {
     userTotal = 50;
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(priceInput(), { target: { value: '1' } });
     await submit();
     expect(api.listSpecificItem).not.toHaveBeenCalled();
@@ -328,7 +308,6 @@ describe('listing a new item', () => {
     api.listSpecificItem.mockRejectedValueOnce(new Error('Item already listed'));
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(priceInput(), { target: { value: '1' } });
     await submit();
     expect(screen.getByRole('alert').textContent).toContain('Item already listed');
@@ -344,7 +323,6 @@ describe('updating an existing listing', () => {
   it('prefills the form from the listing and switches to Update', async () => {
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     expect(noteInput().value).toBe('or best');
     expect(priceInput().value).toBe('3');
     expect(submitButton().textContent).toBe('Update');
@@ -353,7 +331,6 @@ describe('updating an existing listing', () => {
   it('updates the listing and stash item instead of creating a new one', async () => {
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(priceInput(), { target: { value: '' } });
     await submit();
     expect(api.listSpecificItem).not.toHaveBeenCalled();
@@ -367,7 +344,6 @@ describe('updating an existing listing', () => {
     userTotal = 50;
     renderForm();
     await flush();
-    await pick(/Shako #1/);
     fireEvent.change(priceInput(), { target: { value: '4' } });
     await submit();
     expect(api.updateMarketListing.mock.calls).toEqual([['L1', { hr_price: 4, price: 'or best' }]]);
@@ -400,7 +376,7 @@ describe('queueing', () => {
     api.findMatchingItems.mockResolvedValue([]);
     renderForm();
     await flush();
-    expect(screen.getByRole('group', { name: 'Harlequin Crest, from clipboard, not synced to stash' })).not.toBeNull();
+    expect(screen.queryByText('No items found matching "Harlequin Crest"')).not.toBeNull();
     expect(submitButton().textContent).toBe('Queue Item');
     await queueWithNote('wts');
 
@@ -433,11 +409,13 @@ describe('queueing', () => {
     expect(tab(/Queued/).textContent).toBe('Queued');
   });
 
-  it('picking the clipboard card next to stash matches queues against only new stash items', async () => {
+  it('"None of these match?" queues against only new stash items', async () => {
     api.findMatchingItems.mockResolvedValue([stash(1), stash(2)]);
     renderForm();
     await flush();
-    await pick(CLIPBOARD_CARD);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Queue Item' }));
+    });
     expect(screen.queryByText(/Queue this item to wait for the new one/)).not.toBeNull();
     await queueWithNote('new one');
     expect(storedQueue()[0].initialMatchingHashes).toEqual(['h1', 'h2']);
