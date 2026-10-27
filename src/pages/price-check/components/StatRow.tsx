@@ -200,7 +200,7 @@ export const StatRow: React.FC<StatRowProps> = ({
       <label
         key={statKey}
         className={cn(
-          'relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
+          'group/row relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
           isActive
             ? 'bg-linear-to-r from-glow/16 via-glow/7 to-glow/2 shadow-[inset_3px_0_0_var(--glow)]'
@@ -413,16 +413,13 @@ export const StatRow: React.FC<StatRowProps> = ({
                         )}
                       </AnimatePresence>
                     </span>
-                    {/* Slot always reserved, so the inputs don't shift when the button shows or hides */}
-                    <motion.button
+                    {/* Out of the way until the row is hovered or being edited; its slot stays, so nothing shifts */}
+                    <button
                       type="button"
                       aria-label={`Clear ${aria} range`}
                       title="Clear min and max"
                       tabIndex={hasRange ? 0 : -1}
                       aria-hidden={!hasRange}
-                      initial={false}
-                      animate={{ opacity: hasRange ? 1 : 0, scale: hasRange ? 1 : 0.6 }}
-                      transition={{ duration: DUR.fast, ease: EASE_OUT }}
                       onClick={(e) => {
                         e.preventDefault();
                         updateFilter(statKey, lo, '');
@@ -432,12 +429,12 @@ export const StatRow: React.FC<StatRowProps> = ({
                         e.currentTarget.parentElement?.querySelector('input')?.focus({ preventScroll: true });
                       }}
                       className={cn(
-                        'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-foreground/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-                        !hasRange && 'pointer-events-none',
+                        '-ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground hover:opacity-100! focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
+                        hasRange ? 'group-hover/row:opacity-50 group-focus-within/row:opacity-50' : 'pointer-events-none',
                       )}
                     >
-                      <Eraser className="size-3.5" />
-                    </motion.button>
+                      <Eraser className="size-3" />
+                    </button>
                   </div>
                 );
               })}
