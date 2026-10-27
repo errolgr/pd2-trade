@@ -28,7 +28,6 @@ const TIMER_DEFAULTS = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
-  corruptedZoneTimerListDirection: 'auto',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],
@@ -115,13 +114,12 @@ describe('InterfaceForm', () => {
     });
   });
 
-  it('saves the schedule direction and the zones the timer shows', async () => {
+  it('saves the zones the timer shows', async () => {
     renderForm({});
-    fireEvent.change(screen.getByLabelText('Schedule opens'), { target: { value: 'up' } });
     fireEvent.change(screen.getByLabelText('Timer shows'), { target: { value: 'followed' } });
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({ corruptedZoneTimerListDirection: 'up', corruptedZoneTimerZones: 'followed' }),
+      expect.objectContaining({ corruptedZoneTimerZones: 'followed' }),
     );
   });
 

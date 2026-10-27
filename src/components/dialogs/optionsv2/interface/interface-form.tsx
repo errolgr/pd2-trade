@@ -18,12 +18,6 @@ const ZONE_ALERT_OPTIONS = [
   { value: 'followed', label: 'Only zones I follow' },
 ] as const;
 
-const LIST_DIRECTION_OPTIONS = [
-  { value: 'auto', label: 'Automatic' },
-  { value: 'up', label: 'Upwards' },
-  { value: 'down', label: 'Downwards' },
-] as const;
-
 const TIMER_ZONES_OPTIONS = [
   { value: 'all', label: 'Every zone' },
   { value: 'followed', label: 'Only zones I follow' },
@@ -35,7 +29,6 @@ const interfaceFormSchema = z.object({
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
-  corruptedZoneTimerListDirection: z.enum(['auto', 'up', 'down']),
   corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
   corruptedZoneFollowed: z.array(z.string()),
@@ -50,7 +43,6 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
-    corruptedZoneTimerListDirection: settings?.corruptedZoneTimerListDirection ?? 'auto',
     corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
     corruptedZoneFollowed: settings?.corruptedZoneFollowed ?? [],
@@ -190,36 +182,6 @@ export function InterfaceForm() {
                     </FormControl>
                     <SelectContent>
                       {TICKER_ANCHOR_OPTIONS.map((option) => (
-                        <SelectItem key={option.value}
-                          value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerListDirection"
-            render={({ field }) => (
-              <SettingsRow
-                label="Schedule opens"
-                description="Which way the upcoming zones open from the timer. Automatic opens upwards from a bottom corner, above the chat, or a timer dragged into the lower half of the screen."
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Direction" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {LIST_DIRECTION_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
                           {option.label}

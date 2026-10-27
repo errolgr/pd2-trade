@@ -121,23 +121,13 @@ describe('CorruptedZoneTimer', () => {
   });
 
   it.each([
-    ['a bottom anchor opens upwards', { corruptedZoneTimerAnchor: 'bottom-left' }, 730 + 28 - 180],
-    [
-      'Downwards opens a bottom anchor downwards',
-      { corruptedZoneTimerAnchor: 'bottom-left', corruptedZoneTimerListDirection: 'down' },
-      730,
-    ],
-    ['a top anchor opens downwards', { corruptedZoneTimerAnchor: 'top-left' }, 62],
-    [
-      'Upwards opens a top anchor upwards (inside the overlay)',
-      { corruptedZoneTimerAnchor: 'top-left', corruptedZoneTimerListDirection: 'up' },
-      0,
-    ],
-  ] as const)('%s, the pill staying on its anchor', (_case, timer, openY) => {
-    settings = timer;
-    render(<CorruptedZoneTimerPage />);
-    const pillY = timer.corruptedZoneTimerAnchor === 'bottom-left' ? 730 : 62;
+    ['a bottom anchor (lower half) opens upwards', 'bottom-left', 730, 730 + 28 - 180],
+    ['a top anchor (upper half) opens downwards', 'top-left', 62, 62],
+  ] as const)('%s, the pill staying on its anchor', (_case, anchor, pillY, openY) => {
+    settings = { corruptedZoneTimerAnchor: anchor };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
     expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: pillY, width: 301, height: 28 });
+    rerender(<CorruptedZoneTimerPage />); // pick up the placed rect
     clickPill();
     expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: openY, width: 400, height: 180 });
     clickPill();

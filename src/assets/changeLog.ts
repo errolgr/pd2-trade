@@ -1,6 +1,6 @@
 export const changeLog = {
   '0.10.7': [
-    '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits at the bottom of the screen (dragged there too), or always up or down with the new Schedule opens setting (Settings → Interface)',
+    '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
     '🆕 Corrupted zone timer: "Timer shows: Only zones I follow" counts down to your next followed zone and lists only those; notifications keep their own setting, so you can show every zone and get toasts for followed ones only, or the other way round',
   ],
   '0.10.6': [

@@ -48,17 +48,14 @@ const CorruptedZoneTimer: React.FC = () => {
   const [boxSize, setBoxSize] = useState<BoxSize | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);
-  // 'auto' on a Custom timer: decided when the list opens, kept until it opens again (so closing it lands the pill
-  // where it was); a drag that makes the timer Custom keeps the way it opens
-  const [customOpensUp, setCustomOpensUp] = useState(false);
+  // The list opens upwards when the pill sits in the lower half of the overlay, else downwards: decided when it
+  // opens and kept until it opens again, so closing it (or dragging it meanwhile) lands the pill where it was
+  const [listAbove, setListAbove] = useState(false);
   const anchor = settings.corruptedZoneTimerAnchor ?? 'top-right';
-  const direction = settings.corruptedZoneTimerListDirection ?? 'auto';
   const dockOffset = useChatDockOffset();
   // A finished drag switches the timer to Custom; the panel layout keeps the dragged position
   const drag = useDragToMove(rect, setRect, () => {
-    if (anchor === 'custom') return;
-    setCustomOpensUp(listAbove);
-    updateSettings({ corruptedZoneTimerAnchor: 'custom' });
+    if (anchor !== 'custom') updateSettings({ corruptedZoneTimerAnchor: 'custom' });
   });
 
   useEffect(() => {
@@ -95,15 +92,9 @@ const CorruptedZoneTimer: React.FC = () => {
     rectRef.current = rect;
   });
 
-  // Auto: bottom anchors (and above the chat) open upwards, top ones downwards, a Custom timer upwards from the
-  // lower half of the overlay
   const lowOnScreen = rect.y + rect.height / 2 > overlayViewport().height / 2;
-  const listAbove =
-    direction === 'up' ||
-    (direction === 'auto' &&
-      (anchor === 'custom' ? customOpensUp : anchor.startsWith('bottom') || anchor === 'above-chat'));
   // Where a click opens it (the chevron points there)
-  const opensUp = !expanded && direction === 'auto' && anchor === 'custom' ? lowOnScreen : listAbove;
+  const opensUp = expanded ? listAbove : lowOnScreen;
 
   // Keep the panel exactly the content's size, in the overlay, with the pill at its anchor on the game or (custom)
   // where it is: the box grows away from the pill, so the edge on the pill's side stays put
@@ -113,11 +104,9 @@ const CorruptedZoneTimer: React.FC = () => {
     const size = { width: boxSize.width, height: boxSize.height };
     const current = rectRef.current;
     // First placement: a Custom rect can be a box saved with the list open, whose pill is at the bottom when it
-    // opened upwards. Automatic opened it upwards when its top is in the lower half; one across the middle is
-    // taken as opened downwards.
-    const pillAtBottom = restoredRef.current
-      ? listAbove
-      : direction === 'up' || (direction === 'auto' && current.y + boxSize.pill / 2 > overlayViewport().height / 2);
+    // opened upwards, which it did when its top is in the lower half; one across the middle is taken as opened
+    // downwards.
+    const pillAtBottom = restoredRef.current ? listAbove : current.y + boxSize.pill / 2 > overlayViewport().height / 2;
     restoredRef.current = true;
     let origin: { x: number; y: number };
     if (anchor === 'custom') {
@@ -135,7 +124,7 @@ const CorruptedZoneTimer: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, direction, listAbove, gameRect, dockOffset, boxSize, setRect, drag.dragging]);
+  }, [anchor, listAbove, gameRect, dockOffset, boxSize, setRect, drag.dragging]);
 
   const followedKey = (settings.corruptedZoneFollowed ?? []).join('\n');
   const onlyFollowed = settings.corruptedZoneTimerZones === 'followed' && followedKey !== '';
@@ -174,7 +163,7 @@ const CorruptedZoneTimer: React.FC = () => {
         data-interactive="true"
         onClick={() => {
           if (drag.consumeDragClick()) return;
-          if (!expanded) setCustomOpensUp(lowOnScreen);
+          if (!expanded) setListAbove(lowOnScreen);
           setExpanded((open) => !open);
         }}
         {...drag.handlers}
