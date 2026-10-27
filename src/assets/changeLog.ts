@@ -11,7 +11,7 @@ export const changeLog = {
     '🆕 Price check: click Σ next to a resist to search a total instead (Total Fire Resist, Total Resistances or the lowest resist). The rows it adds up fold into one, and Unfold brings them back',
     '✨ Market watch toasts: point at the toast to see the item as its in-game tooltip',
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
-    '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
+    '🔧 Market watch toasts stay on screen for 8 seconds instead of 4',
     '✨ Market stat search lists stats as the item shows them ("+#% Faster Cast Rate", "Fire Resist +#%", "+# to Teleport (Sorceress Only)")',
     '✨ Price check lists the item\'s stats as its tooltip reads them ("+20% Faster Cast Rate [10 - 20]", "Socketed (4)") instead of "Faster Cast Rate: 20"',
     '🔧 Market stat search: the Mods / Pseudo / Corruptions tabs no longer jump around while you type or resize the list when you switch them; switching starts at the top of the list, and the arrow keys scroll it',

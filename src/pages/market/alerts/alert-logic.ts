@@ -10,7 +10,7 @@ import type { MarketAlert } from './saved-search-api';
 export const MAX_ALERT_TOASTS = 3;
 
 /** ms a market watch popup stays (sonner's default 4 s is too short to read it, hover it or act on it). */
-export const ALERT_TOAST_DURATION_MS = 12_000;
+export const ALERT_TOAST_DURATION_MS = 8_000;
 
 /** "Harlequin Crest — 1.5 HR" (listing text is shown as plain text). */
 export function alertListingText(alert: MarketAlert): string {
