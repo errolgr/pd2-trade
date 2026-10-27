@@ -1404,6 +1404,67 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
   });
 
+  // #148: a sender saved as "character*account" got `/w *frostwind*tharok …` ("user is not online")
+  it('Accept (Enter in the game field) copies the whisper with one "*" before the account', async () => {
+    settings.acceptOfferMessageTemplate = 'Your offer has been accepted. Game: {gameInfo}';
+    const legacy = JSON.stringify({
+      people: {
+        'frostwind*tharok': {
+          key: 'frostwind*tharok',
+          playerName: 'frostwind*tharok',
+          messages: [
+            {
+              id: 'm1',
+              isIncoming: true,
+              message: "Hi, I'm interested in your Shako",
+              timestamp: NOW.getTime() - 60_000,
+            },
+          ],
+          trades: [
+            {
+              id: 't1',
+              isIncoming: true,
+              message: "Hi, I'm interested in your Shako",
+              itemName: 'Shako',
+              timestamp: NOW.getTime() - 60_000,
+            },
+          ],
+          readAt: 0,
+        },
+      },
+    });
+    vi.mocked(exists).mockImplementation(async (path) => path === WHISPER_HISTORY_FILENAME);
+    vi.mocked(readTextFile).mockImplementation(async (path) => (path === WHISPER_HISTORY_FILENAME ? legacy : ''));
+    await renderWidget([]);
+    await flush();
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+
+    const acceptWithEnter = async (game: string) => {
+      const deals = screen.getByRole('list', { name: 'Offers with this user' });
+      await act(async () => fireEvent.click(within(deals).getByRole('button', { name: /^Accept$/ })));
+      const field = screen.getByRole('textbox', { name: 'Game name' });
+      fireEvent.change(field, { target: { value: game } });
+      await act(async () => fireEvent.submit(field.closest('form')!));
+      await flush();
+    };
+
+    await select('tharok');
+    await acceptWithEnter('shako1');
+    expect(writeText).toHaveBeenLastCalledWith('/w *tharok Your offer has been accepted. Game: shako1');
+
+    await select('Dan');
+    await acceptWithEnter('arach1');
+    expect(writeText).toHaveBeenLastCalledWith('/w *Dan Your offer has been accepted. Game: arach1');
+  });
+
   it('starts the conversation on the first website message to an offers-only person', async () => {
     incomingOffers = [
       { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol' },

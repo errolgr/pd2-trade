@@ -79,6 +79,14 @@ describe('buildWhisper', () => {
       '/w *selleracc yo Seller, Rare Amulet for 1 HR? (selleracc)',
     );
   });
+
+  it('whispers the account with a single "*", even when the listing names it "*account" (#148)', () => {
+    const starred = listing({ hr: 2, name: 'Harlequin Crest' });
+    starred.user = { ...starred.user!, in_game_account: '*selleracc' } as typeof starred.user;
+    expect(buildWhisper(starred, '{item} for {price}? ({account})')).toBe(
+      '/w *selleracc Harlequin Crest for 2 HR? (selleracc)',
+    );
+  });
 });
 
 describe('defaults', () => {

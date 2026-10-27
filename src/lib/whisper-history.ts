@@ -136,6 +136,12 @@ export function accountOf(name: string): string {
 export const whisperTarget = (person: Pick<WhisperPerson, 'accountName' | 'playerName'>) =>
   accountOf(person.accountName || person.playerName);
 
+/**
+ * The game chat command whispering `account`: `/w *<account> <text>`. The one place that adds the `*`, so a
+ * stored "character*account" or "*account" name never comes out as `/w *character*account` or `/w **account`.
+ */
+export const whisperCommand = (account: string, text: string) => `/w *${accountOf(account)} ${text}`.trim();
+
 export const isOpenTrade = (trade: WhisperTrade, now: number) =>
   !trade.dismissed && now - trade.timestamp < OPEN_TRADE_MS;
 
