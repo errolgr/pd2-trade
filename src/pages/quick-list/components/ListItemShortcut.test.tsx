@@ -211,6 +211,68 @@ describe('finding the item', () => {
     expect(submitButton().textContent).toBe('Post');
   });
 
+  describe('an inspected item among many similar ones', () => {
+    const inspected = {
+      name: 'Storm Eye',
+      quality: 'Rare',
+      type: 'Jewel',
+      iLevel: 87,
+      location: 'Stash',
+      stats: [
+        { stat_id: 17, name: '% Enhanced Damage', value: 25 },
+        { stat_id: 18, name: '% Enhanced Damage', value: 25 },
+        { stat_id: 1, name: 'to Energy', value: 5 },
+      ],
+    } as unknown as PriceCheckItem;
+    const jewel = (n: number, ed: number): GameStashItem =>
+      ({
+        hash: `j${n}`,
+        name: 'Jewel',
+        quality: { name: 'Rare' },
+        item_level: 87,
+        socket_count: 0,
+        is_ethereal: false,
+        modifiers: [
+          { name: 'maxdamage_percent', values: [ed, ed], label: `+${ed}% Enhanced Damage` },
+          { name: 'energy', values: [5], label: '+5 to Energy' },
+        ],
+      }) as never;
+    const jewels = [jewel(1, 30), jewel(2, 25), jewel(3, 20)];
+    const cards = () => screen.getAllByRole('button', { name: /^Jewel/ });
+
+    it('goes straight to listing that exact item', async () => {
+      api.findMatchingItems.mockResolvedValue(jewels);
+      renderForm(inspected);
+      await flush();
+      expect(cards()).toHaveLength(1);
+      expect(cards()[0].getAttribute('aria-pressed')).toBe('true');
+      expect(submitButton().textContent).toBe('Post');
+      fireEvent.change(priceInput(), { target: { value: '3' } });
+      await submit();
+      expect(api.listSpecificItem.mock.calls).toEqual([[jewels[1], 3, '', 'exact']]);
+    });
+
+    it('falls back to every similar item when none is provably the inspected one', async () => {
+      api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
+      renderForm(inspected);
+      await flush();
+      expect(cards()).toHaveLength(2);
+      expect(screen.queryByPlaceholderText('HR')).toBeNull();
+    });
+
+    it('queues against every similar item, not just the exact match', async () => {
+      api.findMatchingItems.mockResolvedValue(jewels);
+      renderForm(inspected);
+      await flush();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Queue Item' }));
+      });
+      fireEvent.change(noteInput(), { target: { value: 'wts' } });
+      await submit();
+      expect(storedQueue()[0].initialMatchingHashes).toEqual(['j1', 'j2', 'j3']);
+    });
+  });
+
   it('shows a retryable error when the stash lookup fails', async () => {
     api.findMatchingItems.mockRejectedValueOnce(new Error('Stash API down'));
     renderForm();
