@@ -145,6 +145,34 @@ describe('OptionsProvider loading', () => {
     expect(result.current.settings).toMatchObject({ hotkeyModifierMarket: 'alt', hotkeyKeyMarket: 'm' });
   });
 
+  it('gives 0.10.6 settings with an unbound Builds hotkey Ctrl+J, once', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierBuilds: 'ctrl', hotkeyKeyBuilds: '' }));
+    const first = await renderLoaded();
+    expect(first.result.current.settings).toMatchObject({ hotkeyModifierBuilds: 'ctrl', hotkeyKeyBuilds: 'j' });
+    first.unmount();
+
+    // The user turns it off again: the next load keeps it off
+    state.files.set('settings.json', JSON.stringify({ ...savedSettings(), hotkeyKeyBuilds: '' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings.hotkeyKeyBuilds).toBe('');
+  });
+
+  it('leaves the Builds hotkey unbound when another hotkey already uses Ctrl+J', async () => {
+    state.files.set(
+      'settings.json',
+      JSON.stringify({ hotkeyModifierDelist: 'ctrl', hotkeyKeyDelist: 'j', hotkeyKeyBuilds: '' }),
+    );
+    const { result } = await renderLoaded();
+    expect(result.current.settings.hotkeyKeyBuilds).toBe('');
+    expect(savedSettings().hotkeyKeyDelist).toBe('j');
+  });
+
+  it('keeps a Builds hotkey the user bound in 0.10.6', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: 'k' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({ hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: 'k' });
+  });
+
   it('does not rewrite a file that already has every default key', async () => {
     state.dirExists = false;
     await renderLoaded();

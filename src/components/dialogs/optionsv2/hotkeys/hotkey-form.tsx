@@ -184,7 +184,7 @@ export function HotkeyForm() {
       hotkeyModifierMarket: 'ctrl',
       hotkeyKeyMarket: 'm',
       hotkeyModifierBuilds: 'ctrl',
-      hotkeyKeyBuilds: '',
+      hotkeyKeyBuilds: 'j',
     },
   });
 
@@ -270,11 +270,11 @@ export function HotkeyForm() {
                           <Input
                             type="text"
                             maxLength={1}
-                            placeholder={row.optional ? '-' : undefined}
+                            placeholder={row.optional ? 'Off' : undefined}
                             value={(keyField.value as string | undefined)?.toUpperCase() ?? ''}
                             aria-invalid={warning ? true : undefined}
                             className={cn(
-                              'h-9 w-11 rounded-md border-b-[3px] px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs',
+                              'h-9 w-11 rounded-md border-b-[3px] px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-[10px] placeholder:font-normal',
                               'focus-visible:border-b-primary',
                               warning &&
                                 'aria-invalid:border-warning/80 aria-invalid:ring-warning/30 dark:aria-invalid:ring-warning/30',
@@ -299,7 +299,7 @@ export function HotkeyForm() {
             );
           })}
         </SettingsGroup>
-        <SettingsHint>Leave the snapshot or market key empty to keep it unbound.</SettingsHint>
+        <SettingsHint>Leave the snapshot, market or builds key empty to turn that hotkey off.</SettingsHint>
       </div>
     </Form>
   );
