@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { showToast, useOverlay } from '@/overlay';
 import { openUrl } from '@/lib/browser-opener';
 import { writeText } from '@/lib/browser-clipboard';
@@ -14,9 +13,8 @@ export interface ListingActions {
   /** Copies `/w *account …` (default wording, or `template` in buildWhisper's tokens) and toasts. */
   copyWhisper: (template?: string) => Promise<void>;
   /**
-   * Re-checks the listing on PD2 before acting on it. Resolves the listing to act on (PD2's current copy), or
-   * null to stop: it's gone (toasted), or its price/item changed since it was shown (toasted with the new price;
-   * the next call with the same change goes ahead).
+   * Re-checks the listing on PD2 before acting on it. Resolves the listing to act on (PD2's current copy, so a
+   * whisper quotes the current price), or null when it's gone (toasted).
    */
   ensureFresh: () => Promise<MarketListingEntry | null>;
   /** Chat panel: the seller's thread with a listing link drafted. */
@@ -27,9 +25,6 @@ export interface ListingActions {
   /** The user's chat templates usable as a whisper (no custom placeholders), tokens mapped to buildWhisper's. */
   whisperTemplates: ChatTemplate[];
 }
-
-const askingPrice = (l: MarketListingEntry) => (l.hr_price > 0 ? `${l.hr_price} HR` : l.price?.trim() || 'no price');
-const changeKey = (l: MarketListingEntry) => `${l.price ?? ''}|${l.hr_price ?? ''}|${l.item?.hash ?? ''}`;
 
 /** Opens the chat panel on the listing's seller with their Trader sidebar showing. */
 export function useOpenTrader(listing: MarketListingEntry): () => void {
@@ -51,8 +46,6 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
   const { openPanel } = useOverlay();
   const { templates } = useChatTemplates();
   const { marketApi } = usePd2Website();
-  /** The change the user was already warned about; acting again goes ahead. */
-  const acknowledgedRef = useRef<string | null>(null);
   const openTrader = useOpenTrader(listing);
   // buildWhisper falls back to the website username, as the price check does
   const account = sellerAccount(listing) || listing.user?.username || null;
@@ -70,17 +63,7 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
       return null;
     }
     // PD2's copy may lack what the search row resolved (seller); keep ours for anything it doesn't carry
-    const current = { ...listing, ...check.listing, user: check.listing.user ?? listing.user };
-    if (check.status === 'ok') return current;
-    const key = changeKey(check.listing);
-    if (acknowledgedRef.current === key) return current;
-    acknowledgedRef.current = key;
-    showToast({
-      title: 'Listing changed',
-      description: `${displayName} is now listed for ${askingPrice(check.listing)}. Click again to go ahead.`,
-      variant: 'warning',
-    });
-    return null;
+    return { ...listing, ...check.listing, user: check.listing.user ?? listing.user };
   };
 
   return {
