@@ -19,6 +19,7 @@ import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMar
 import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './lib/defaults';
 import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
+import { indexListingOffers } from './lib/listing-offers';
 import { scoreListings } from './lib/search';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
@@ -52,7 +53,7 @@ const MarketBrowserPage: React.FC = () => {
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
   const { openSignIn } = useSignIn();
   const { settings } = useOptions();
-  const { marketApi } = usePd2Website();
+  const { marketApi, outgoingOffers, hiddenOutgoingOffers, incomingOffers } = usePd2Website();
   const store = useMarketStore();
   const { viewMode } = store;
   const cards = viewMode === 'cards';
@@ -134,6 +135,11 @@ const MarketBrowserPage: React.FC = () => {
   );
   const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
   const deals = useDealIndicators(listings);
+  // Offers hidden from the chat's deals still exist on PD2: they show here too
+  const offers = useMemo(
+    () => indexListingOffers([...outgoingOffers, ...hiddenOutgoingOffers], incomingOffers),
+    [outgoingOffers, hiddenOutgoingOffers, incomingOffers],
+  );
 
   // focusListingId (alert toasts): refetch (the cache predates the new listing), then select it if present
   const { refresh } = search;
@@ -527,6 +533,7 @@ const MarketBrowserPage: React.FC = () => {
                                   command={cardCommands.command}
                                   takeCommand={cardCommands.take}
                                   deals={deals}
+                                  offers={offers}
                                   pseudoKeys={pseudoKeys}
                                   favoriteIds={favoriteIds}
                                   onToggleFavorite={toggleFavorite}
@@ -544,6 +551,7 @@ const MarketBrowserPage: React.FC = () => {
                                   selectedId={selectedId}
                                   onSelect={selectListing}
                                   deals={deals}
+                                  offers={offers}
                                   pseudoKeys={pseudoKeys}
                                   favoriteIds={favoriteIds}
                                   hasMore={tab === 'search' && search.hasMore}
