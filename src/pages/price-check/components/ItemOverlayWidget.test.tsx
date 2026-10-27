@@ -440,6 +440,20 @@ describe('ItemOverlayWidget stat selection', () => {
     expect(screen.getByRole('checkbox', { name: 'Corrupted filter' }).getAttribute('aria-checked')).toBe('false');
   });
 
+  it('Clear ranges empties every min/max but keeps the stats selected, so the search only needs the stat', async () => {
+    renderWidget(rareRing());
+    expect(screen.queryByText('Clear ranges')).toBeNull();
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
+    fireEvent.click(screen.getByText('Clear ranges'));
+    expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('');
+    expect(statCheckbox('+20% Faster Cast Rate').getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByText('Clear ranges')).toBeNull();
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(lastQuery())).toContain('{"$elemMatch":{"name":"item_fastercastrate"}}');
+  });
+
   it('edited min/max values are what the search filters on', async () => {
     renderWidget(rareRing());
     fireEvent.click(statCheckbox('+20% Faster Cast Rate'));

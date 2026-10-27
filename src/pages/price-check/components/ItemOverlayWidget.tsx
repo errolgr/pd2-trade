@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '../lib/qualityColor';
-import { StatRow } from './StatRow';
+import { RANGE_FIELDS, StatRow } from './StatRow';
 import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
@@ -1030,6 +1030,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     setActivePseudos([]);
   }, [setSelected, setFilters, setCorruptedState, setActivePseudos]);
 
+  // "Clear ranges": every selected stat keeps its tick, its min / max empty; each row plays its clear wipe
+  const hasAnyRange = [...selected].some((k) => RANGE_FIELDS.some((field) => !!filters[k]?.[field]));
+  const [rangeWipe, setRangeWipe] = useState(0);
+  const clearAllRanges = () => {
+    const empty = Object.fromEntries(RANGE_FIELDS.map((field) => [field, '']));
+    setFilters((f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, selected.has(k) ? { ...v, ...empty } : v])));
+    setRangeWipe((n) => n + 1);
+  };
+
   const openTradeUrl = () => {
     if (tradeUrl) {
       trackEvent('item_overlay_trade_url_opened', {
@@ -1492,19 +1501,38 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </span>
                   <AnimatePresence initial={false}>
                     {(selected.size > 0 || corruptedState !== 0) && (
-                      <motion.button
-                        type="button"
+                      <motion.div
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 6 }}
                         transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                        onClick={clearSelectedStats}
-                        className="inline-flex items-center gap-1 rounded-sm text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
                       >
                         <span className="tabular-nums">{selected.size} selected</span>
+                        {/* Empties every selected stat's min / max (stats stay selected); only while one is set */}
+                        {hasAnyRange && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <button
+                              type="button"
+                              onClick={clearAllRanges}
+                              title="Empty every min and max; the stats stay selected"
+                              className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                            >
+                              Clear ranges
+                            </button>
+                          </>
+                        )}
                         <span aria-hidden>·</span>
-                        <span className="underline-offset-2 hover:underline">Clear</span>
-                      </motion.button>
+                        <button
+                          type="button"
+                          onClick={clearSelectedStats}
+                          title="Untick every stat"
+                          className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          Clear
+                        </button>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -1529,6 +1557,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             onSubmit={handleSearch}
                             rare={rareStats.get(getStatKey(s))}
                             pseudoOptions={pseudos.filter((o) => o.covers.some((k) => keys.includes(k)))}
+                            wipe={rangeWipe}
                             onPseudo={togglePseudo}
                           />
                         );

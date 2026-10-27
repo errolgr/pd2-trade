@@ -44,6 +44,9 @@ function itemLine(stat: Stat, item?: Item): string | null {
   return statText(source ?? stat, item);
 }
 
+/** The min / max inputs of a row (damage pairs use all four). */
+export const RANGE_FIELDS = ['min', 'max', 'maxMin', 'maxMax'] as const;
+
 interface StatRowProps {
   stat: Stat;
   nested?: boolean;
@@ -62,6 +65,8 @@ interface StatRowProps {
   onPseudo?: (id: string) => void;
   /** The item the row belongs to: skill lines read its class (o-skills draw no "(Class Only)"). */
   item?: Item;
+  /** Bumped by the Stats header's "Clear ranges": every range line plays its clear wipe. */
+  wipe?: number;
 }
 
 /** Counts from `from` to `value` once on mount: a Σ row's total adding up its folded lines. */
@@ -107,6 +112,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   pseudoOptions,
   onPseudo,
   item,
+  wipe,
 }) => {
   const statKey = getStatKey(stat);
   const isSocket = stat.stat_id === StatId.Socket;
@@ -361,7 +367,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                 : ([['min', 'max', null, stat.name]] as const)
               ).map(([lo, hi, label, aria]) => {
                 const hasRange = !!filters[statKey]?.[lo] || !!filters[statKey]?.[hi];
-                const clears = clearNonce[lo];
+                // The line's own clears and "Clear ranges" both replay the wipe
+                const clears = clearNonce[lo] !== undefined || wipe ? `${wipe ?? 0}:${clearNonce[lo] ?? 0}` : undefined;
                 return (
                   <div key={lo}
                     className="flex items-center gap-1.5">
