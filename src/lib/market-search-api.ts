@@ -31,6 +31,11 @@ export class MarketBackendError extends Error {
 export interface MarketSearchPage {
   items: ScoredListing[];
   total: number;
+  /**
+   * False when `total` isn't an exact count: the service stops counting at its cap (`total` is then a lower
+   * bound) or, with a Seller online filter, estimated it from the listings it read. Older services omit it: exact.
+   */
+  totalExact: boolean;
 }
 
 /**
@@ -99,6 +104,7 @@ function parsePage(body: unknown): MarketSearchPage {
     throw new MarketBackendError('The market service sent an unreadable reply.', 'unavailable');
   }
   const total = 'total' in body ? finiteOrNull(body.total) : null;
+  const totalExact = !('totalExact' in body) || body.totalExact !== false;
   const items: ScoredListing[] = [];
   for (const row of body.items as unknown[]) {
     if (!row || typeof row !== 'object' || !('listing' in row)) continue;
@@ -113,7 +119,7 @@ function parsePage(body: unknown): MarketSearchPage {
       value: 'value' in row ? finiteOrNull(row.value) : null,
     });
   }
-  return { items, total: total ?? items.length };
+  return { items, total: total ?? items.length, totalExact };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {

@@ -16,6 +16,7 @@ export const changeLog = {
     '✨ Price check lists the item\'s stats as its tooltip reads them ("+20% Faster Cast Rate [10 - 20]", "Socketed (4)") instead of "Faster Cast Rate: 20"',
     '🔧 Market stat search: the Mods / Pseudo / Corruptions tabs no longer jump around while you type or resize the list when you switch them; switching starts at the top of the list, and the arrow keys scroll it',
     "🔧 Market stat search no longer pops its list open by itself (when you click back into the overlay or into a stat's Min/Max), which could add a stat you never saw; clicking a stat in the list no longer closes it before the click lands",
+    '🔧 Market: a search with more than 1,000 matches shows "1,000+ listings", and a count estimated under a Seller online filter shows as "~312 listings"',
     '🔧 Dropdowns in the overlay (market Type, Base, Rarity…): type a letter to jump to the options starting with it, instead of the keys going to the game',
   ],
   '0.10.5': [
