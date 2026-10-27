@@ -8,7 +8,7 @@ import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOffer
 import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
-import type { Conversation } from '@/common/types/pd2-website/ChatTypes';
+import type { Conversation, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writeText } from '@/lib/browser-clipboard';
 import {
@@ -19,7 +19,7 @@ import {
   useChatPrefs,
   type ThreadPrefs,
 } from '@/lib/chat-prefs';
-import { isOpenTrade, unreadWhispers } from '@/lib/whisper-history';
+import { isOpenTrade, unreadWhispers, whisperTarget } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -38,6 +38,7 @@ import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed
 import { markOffersSeen, newTrades, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
+import { useResolvedSellers } from '../hooks/useResolvedSellers';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
 import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
@@ -189,6 +190,38 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const { conversations, loadingConversations, conversationsLoaded, loadConversations, loadMessages, loadOlder } = chat;
   const signedIn = !!authData?.accessToken;
 
+  // Each whisper sender's account is looked up in the market service: a hit becomes a contact so the thread
+  // links to that website user (useTraderProfile, trader sidebar) instead of standing as in-game-only.
+  const resolvedSellers = useResolvedSellers(whispers.people, {
+    enabled: signedIn,
+    mode: { hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' },
+    priorityKey: selectedThreadId?.startsWith('whisper:') ? selectedThreadId.slice('whisper:'.length) : undefined,
+  });
+  const resolvedContacts = useMemo(() => {
+    // Your own alts resolve to you: never a contact
+    const seen = new Set<string | undefined>([currentUserId]);
+    const result: { userId: string; name: string; user: Participant }[] = [];
+    for (const seller of resolvedSellers.values()) {
+      if (seen.has(seller.userId)) continue;
+      seen.add(seller.userId);
+      result.push({
+        userId: seller.userId,
+        name: seller.username,
+        user: {
+          _id: seller.userId,
+          username: seller.username,
+          game: { accounts: seller.accounts },
+          created_at: '',
+        },
+      });
+    }
+    return result;
+  }, [resolvedSellers, currentUserId]);
+  const allContacts = useMemo(
+    () => (resolvedContacts.length > 0 ? [...contacts, ...resolvedContacts] : contacts),
+    [contacts, resolvedContacts],
+  );
+
   const threads = useMemo(
     () =>
       buildInbox({
@@ -198,9 +231,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         offers: [...incomingOffers, ...outgoingOffers],
         now,
         prefs,
-        contacts,
+        contacts: allContacts,
       }),
-    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs, contacts],
+    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs, allContacts],
   );
   // Pin/mute/archive follow a thread onto ids it gained since they were set (a conversation started later), so
   // notifications that only know a conversation id or a whisper sender find them
@@ -267,8 +300,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     p.trades.filter((trade) => isOpenTrade(trade, now)).map((trade) => ({ person: p, trade })),
   );
   const websiteReachable = signedIn && !!(conversation || selectedThread?.userId);
+  // Linked only through their in-game account (no website conversation or offers): they reach you in game,
+  // so replies stay whispers until you switch
+  const inGameOnly = !conversation && !threadOffers?.length && !!people?.length;
+  const pickedChannel = channels[selectedThread?.id ?? ''] ?? (inGameOnly ? 'whisper' : 'website');
   const channel: ReplyChannel =
-    whisperAccount && (!websiteReachable || channels[selectedThread?.id ?? ''] === 'whisper') ? 'whisper' : 'website';
+    whisperAccount && (!websiteReachable || pickedChannel === 'whisper') ? 'whisper' : 'website';
 
   // Template tokens: their account and the most recently linked listing (or their latest trade whisper)
   const latestListing = linkedListingIds
@@ -641,7 +678,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   /** Copies `/w *<account> <text>` for the game chat and records it as an outgoing whisper. */
   const sendWhisper = async (target: { accountName?: string; playerName: string }, text: string) => {
-    const account = target.accountName || target.playerName;
+    const account = whisperTarget(target);
     try {
       await writeText(`/w *${account} ${text}`);
     } catch {

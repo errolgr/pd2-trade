@@ -2,6 +2,9 @@ export const changeLog = {
   '0.10.7': [
     '🔧 List Item (Ctrl+L): back to picking your stash match for the copied item automatically; the "Not synced to stash" card is gone',
     '🔧 List Item (Ctrl+L): items with a long stat no longer get cut off on the right; the stat ends in "…" instead',
+    '✨ Chat: a trader who whispers you in game is linked to their website account when they have a listing on the market, so the trader panel shows their profile, market and presence; replies still go out as whispers until you switch',
+    '🔧 Chat: in-game whispers keep the sender\'s account (the game shows "Character*Account"), so they join the trader\'s existing thread, and Whisper copies /w *Account instead of /w *Character*Account',
+    "🔧 Chat: the trader panel's Profile, Market, Character, Build and Whisper buttons are icons (names on hover), so they no longer get cut off",
   ],
   '0.10.6': [
     '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',

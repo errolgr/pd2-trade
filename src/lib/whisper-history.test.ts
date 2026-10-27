@@ -11,6 +11,8 @@ import {
   loadWhisperHistory,
   markRead,
   MAX_MESSAGES_PER_PERSON,
+  accountOf,
+  nameAliases,
   normalizeName,
   OPEN_TRADE_MS,
   parseHistory,
@@ -23,6 +25,7 @@ import {
   saveWhisperHistory,
   unreadWhispers,
   WHISPER_HISTORY_FILENAME,
+  whisperTarget,
   type TradeMessageEvent,
   type WhisperEvent,
   type WhisperHistory,
@@ -69,6 +72,40 @@ describe('normalizeName and findPerson', () => {
     expect(findPerson(history, ['bobsorc'])?.key).toBe('bob');
     expect(findPerson(history, [' *BOB'])?.key).toBe('bob');
     expect(findPerson(history, ['', undefined, '  '])).toBeUndefined();
+  });
+
+  it('nameAliases expands a legacy "character*account" into the whole, the character and the account', () => {
+    expect(nameAliases('frostwind*tharok')).toEqual(['frostwind*tharok', 'frostwind', 'tharok']);
+    expect(nameAliases('*tharok')).toEqual(['tharok']);
+    expect(nameAliases('plainname')).toEqual(['plainname']);
+    expect(nameAliases('')).toEqual([]);
+  });
+
+  it('finds a legacy "character*account" person by either half (so new whispers merge in)', () => {
+    const legacy = {
+      key: 'frostwind*tharok',
+      accountName: undefined,
+      characterName: undefined,
+      playerName: 'frostwind*tharok',
+      messages: [],
+      trades: [],
+      readAt: 0,
+    };
+    const history: WhisperHistory = { people: { 'frostwind*tharok': legacy } };
+    expect(findPerson(history, ['tharok'])?.key).toBe('frostwind*tharok');
+    expect(findPerson(history, ['frostwind'])?.key).toBe('frostwind*tharok');
+  });
+
+  it('accountOf is the account half of a legacy name, else the name without its "*"', () => {
+    expect(accountOf('frostwind*tharok')).toBe('tharok');
+    expect(accountOf(' *Tharok ')).toBe('Tharok');
+    expect(accountOf('quietvale')).toBe('quietvale');
+    expect(accountOf('odd*')).toBe('odd');
+  });
+
+  it('whispers a legacy "character*account" sender at their account', () => {
+    expect(whisperTarget({ playerName: 'frostwind*tharok' })).toBe('tharok');
+    expect(whisperTarget({ accountName: 'Bob', playerName: 'Bob' })).toBe('Bob');
   });
 });
 

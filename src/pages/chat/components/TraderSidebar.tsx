@@ -26,6 +26,7 @@ import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
 import { cn } from '@/lib/utils';
+import { whisperTarget } from '@/lib/whisper-history';
 import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderProfile';
@@ -81,7 +82,7 @@ function Section({
 }
 
 const actionButtonClass = cn(
-  'inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground outline-none',
+  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none',
   'transition-[background-color,color,transform] duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring/60',
 );
 
@@ -355,8 +356,8 @@ export function TraderSidebar({
               </div>
             )}
 
-            {/* Actions: a footer section of the card, one row */}
-            <div className="-mx-3 -mb-3 mt-3 flex gap-0.5 border-t border-border/60 bg-background/30 p-1">
+            {/* Actions: a footer row of icon buttons; labels live in tooltips so the row never crowds */}
+            <div className="-mx-3 -mb-3 mt-3 flex items-center justify-center gap-1 border-t border-border/60 bg-background/30 p-1">
               {username && (
                 <>
                   <Tip label="View their profile on projectdiablo2.com">
@@ -366,8 +367,7 @@ export function TraderSidebar({
                       className={actionButtonClass}
                       onClick={() => openUrl(profileUrl(username))}
                     >
-                      <UserRound className="size-3.5 shrink-0" />
-                      <span className="truncate">Profile</span>
+                      <UserRound className="size-3.5" />
                     </button>
                   </Tip>
                   <Tip label="Their market listings on projectdiablo2.com">
@@ -377,8 +377,7 @@ export function TraderSidebar({
                       className={actionButtonClass}
                       onClick={() => openUrl(marketUrl(username))}
                     >
-                      <Store className="size-3.5 shrink-0" />
-                      <span className="truncate">Market</span>
+                      <Store className="size-3.5" />
                     </button>
                   </Tip>
                 </>
@@ -391,8 +390,7 @@ export function TraderSidebar({
                     className={actionButtonClass}
                     onClick={() => openUrl(characterUrl(characterName))}
                   >
-                    <Swords className="size-3.5 shrink-0" />
-                    <span className="truncate">Character</span>
+                    <Swords className="size-3.5" />
                   </button>
                 </Tip>
               )}
@@ -404,8 +402,7 @@ export function TraderSidebar({
                     className={actionButtonClass}
                     onClick={() => openPanel('builds', { character: { name: characterName } })}
                   >
-                    <Shield className="size-3.5 shrink-0" />
-                    <span className="truncate">Build</span>
+                    <Shield className="size-3.5" />
                   </button>
                 </Tip>
               )}
@@ -417,8 +414,7 @@ export function TraderSidebar({
                     className={actionButtonClass}
                     onClick={() => void copyAccount(whisperAccount)}
                   >
-                    <Copy className="size-3.5 shrink-0" />
-                    <span className="truncate">Whisper</span>
+                    <Copy className="size-3.5" />
                   </button>
                 </Tip>
               )}
@@ -584,8 +580,7 @@ export function TraderSidebar({
                   <div key={person.key}
                     className="flex items-center justify-between gap-2">
                     <span className="truncate text-muted-foreground">
-                      {person.characterName ? `${person.characterName} ·` : ''} *
-                      {person.accountName ?? person.playerName}
+                      {person.characterName ? `${person.characterName} ·` : ''} *{whisperTarget(person)}
                     </span>
                     <span className="shrink-0 tabular-nums">{person.messages.length}</span>
                   </div>
