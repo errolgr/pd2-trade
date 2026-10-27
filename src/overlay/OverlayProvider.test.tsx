@@ -4,6 +4,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invoke } from '@tauri-apps/api/core';
 import {
   CLOSE_ON_BLUR_MS,
@@ -86,6 +87,14 @@ const Probe: React.FC = () => {
         {JSON.stringify(payload ?? null)}#{payloadVersion}
       </div>
       <input data-testid={`field-${id}`} />
+      <Select>
+        <SelectTrigger data-testid={`select-${id}`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="a">a</SelectItem>
+        </SelectContent>
+      </Select>
       <button data-testid={`button-${id}`}>act</button>
       <div data-keep-keyboard>
         <p data-testid={`thread-${id}`}>
@@ -400,6 +409,17 @@ describe('OverlayProvider', () => {
       screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
     });
     expect(releaseKeyboard).toHaveBeenCalledTimes(1);
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('opening a select keeps the keyboard, so a typed letter jumps to that option', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('select-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
     expect(claimKeyboard).toHaveBeenCalledTimes(1);
   });
 
