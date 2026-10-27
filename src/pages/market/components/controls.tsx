@@ -367,8 +367,8 @@ export function Autocomplete<T>({
           placeholder={placeholder}
           value={value}
           className={cn(fieldInputClass, className)}
-          onFocus={() => setOpen(true)}
-          // A pick or Escape closes the list but keeps focus, so a click won't fire onFocus again
+          // The list opens on intent only (a click, typing, ArrowDown), never on focus: the overlay window losing
+          // and regaining the keyboard re-focuses this input, which used to pop the list open over the stat rows
           onClick={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onChange={(e) => {
@@ -377,7 +377,10 @@ export function Autocomplete<T>({
             setActive(0);
           }}
           onKeyDown={(e) => {
-            if (show && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            if (!show && e.key === 'ArrowDown') {
+              e.preventDefault();
+              setOpen(true);
+            } else if (show && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
               e.preventDefault();
               const next = e.key === 'ArrowDown' ? Math.min(options.length - 1, active + 1) : Math.max(0, active - 1);
               keyboardMoved.current = next !== active;
@@ -396,6 +399,9 @@ export function Autocomplete<T>({
       </PopoverAnchor>
       <PopoverContent
         align="start"
+        // A click in the list keeps the overlay's keyboard (and so this input's focus): releasing it blurred the
+        // input and closed the list mid-click
+        data-keep-keyboard
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
         // The input is the anchor, so Radix counts a click in it as outside: keep the list open
@@ -404,7 +410,11 @@ export function Autocomplete<T>({
         }}
         // The input keeps focus; a click in the list must not blur it before the pick lands
         onMouseDown={(e) => e.preventDefault()}
-        className={cn('w-(--radix-popover-trigger-width) min-w-56 p-1', contentClassName)}
+        // A closing list fades out in place: clicks go through it, not to a row the user no longer sees
+        className={cn(
+          'w-(--radix-popover-trigger-width) min-w-56 p-1 data-[state=closed]:pointer-events-none',
+          contentClassName,
+        )}
       >
         {header}
         <ul

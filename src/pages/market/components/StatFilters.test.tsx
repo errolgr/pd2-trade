@@ -134,6 +134,23 @@ describe('StatFilters', () => {
     expect(screen.getByRole('option', { name: /\+# to Combat Skills \(Paladin Only\)/ })).toBeTruthy();
   });
 
+  it('does not reopen the list when the input only regains focus (the overlay taking the keyboard back)', () => {
+    const { latest } = mount([]);
+    const search = screen.getByRole('combobox', { name: 'Add a stat filter' });
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: 'paladin combat' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    // The overlay hands the keyboard to the game and back: the input blurs, then is focused again
+    fireEvent.blur(search);
+    fireEvent.focus(search);
+    expect(search.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(latest()).toHaveLength(1);
+
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    expect(search.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('lists corruption rows after stat rows', () => {
     mount([row('c', { kind: 'corruption', key: 'item_numsockets' }), row('a'), row('b', { key: 'maxhp' })]);
     const names = screen.getAllByRole('button', { name: /^Remove / }).map((b) => b.getAttribute('aria-label'));
