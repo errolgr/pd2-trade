@@ -13,6 +13,7 @@ export const changeLog = {
     '✨ Market watch toasts: Details opens the listing in a drawer on the right, with the price, price history, seller, Make offer, Whisper and Message, without opening the market',
     '🔧 Market watch toasts stay on screen for 12 seconds instead of 4',
     '🔧 Dropdowns in the overlay (market Type, Base, Rarity…): type a letter to jump to the options starting with it, instead of the keys going to the game',
+    '🔧 Market Whisper and Make offer go ahead on the first click instead of warning that the listing "is now listed for…" and asking you to click again; the whisper quotes the current price',
   ],
   '0.10.5': [
     '🆕 Corrupted zone timer: see which zones are corrupted in new Hell games and the time until the next rotation, click it for the upcoming zones (Settings → Interface)',

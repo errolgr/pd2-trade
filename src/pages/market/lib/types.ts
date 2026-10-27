@@ -150,12 +150,10 @@ export interface SearchResult {
   mode: 'server';
 }
 
-/** Whether a listing still stands as shown, checked against PD2 before acting on it. */
+/** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
 export type ListingFreshness =
   | { status: 'ok'; listing: MarketListingEntry }
   | { status: 'gone' }
-  /** Price note, HR price or item differ from what was shown; `listing` is the current one. */
-  | { status: 'changed'; listing: MarketListingEntry }
   /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
   | { status: 'unknown' };
 
