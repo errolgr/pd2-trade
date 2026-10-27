@@ -98,8 +98,53 @@ pub fn get_game_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     Some(log_file)
 }
 
+/// Split a whisper sender part into (character, account).
+/// Handles both formats PD2 writes:
+///   - "character*account" (actual whisper format in pd2_chat.log)
+///   - "character (*account)" (older documented format; kept as a fallback)
+///   - "*account" or "character" (one name only)
+fn split_sender_names(sender_part: &str) -> (Option<String>, Option<String>) {
+    let trimmed = sender_part.trim();
+
+    // "character (*account)" or "character(*account)"
+    if let Some(paren_start) = trimmed.find('(') {
+        let character = trimmed[..paren_start].trim();
+        if let Some(paren_end) = trimmed[paren_start..].find(')') {
+            let account_raw = trimmed[paren_start + 1..paren_start + paren_end].trim();
+            let account = account_raw.strip_prefix('*').unwrap_or(account_raw).trim();
+            return (
+                (!character.is_empty()).then(|| character.to_string()),
+                (!account.is_empty()).then(|| account.to_string()),
+            );
+        }
+        // Malformed parens: take whatever is before the "("
+        return (
+            (!character.is_empty()).then(|| character.to_string()),
+            None,
+        );
+    }
+
+    // "character*account" (actual PD2 whisper format)
+    if let Some(star_pos) = trimmed.find('*') {
+        let character = trimmed[..star_pos].trim();
+        let account = trimmed[star_pos + 1..].trim();
+        return (
+            (!character.is_empty()).then(|| character.to_string()),
+            (!account.is_empty()).then(|| account.to_string()),
+        );
+    }
+
+    // Just one name (fall back to the first word, matching the old behaviour)
+    let name = trimmed.split_whitespace().next().unwrap_or("");
+    if name.is_empty() {
+        (None, None)
+    } else {
+        (Some(name.to_string()), None)
+    }
+}
+
 /// Parse a whisper from a log line
-/// Format: "2,From <character> (*<account>): Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Format: "2,From <character>*<account>: Hi, I'm interested in your Frostburn listed for 2 wss"
 /// Format: "4,<character>(<account>) joined our world. Diablo's minions grow stronger."
 fn parse_whisper(line: &str) -> Option<WhisperEvent> {
     // Check for join messages (starts with "4,")
@@ -180,22 +225,13 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
         return None;
     }
 
-    // Extract sender name - prefer account name from parentheses, otherwise use character name
-    // Format: "shrackx (*shrack)" or "shrackx (*shrack)" or just "shrackx"
-    let sender = if let Some(paren_start) = sender_part.find('(') {
-        // Extract account name from parentheses (e.g., "*shrack" from "(*shrack)")
-        if let Some(paren_end) = sender_part[paren_start..].find(')') {
-            let account_name = &sender_part[paren_start + 1..paren_start + paren_end].trim();
-            // Remove "*" prefix if present
-            account_name.strip_prefix('*').unwrap_or(account_name)
-        } else {
-            // Fallback to character name if parentheses are malformed
-            sender_part.split_whitespace().next().unwrap_or(sender_part)
-        }
-    } else if let Some(space_pos) = sender_part.find(' ') {
-        &sender_part[..space_pos]
-    } else {
-        sender_part
+    // Prefer the account for the recorded "from" so the frontend can link the whisper to the website
+    // user it already knows (keyed by account). Falls back to the character when only one is present.
+    let (character, account) = split_sender_names(sender_part);
+    let sender = match (&account, &character) {
+        (Some(a), _) => a.clone(),
+        (None, Some(c)) => c.clone(),
+        (None, None) => return None,
     };
 
     // Check if it's a trade whisper
@@ -221,7 +257,7 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
 
     Some(WhisperEvent {
         is_trade,
-        from: sender.to_string(),
+        from: sender,
         message: message.to_string(),
         item_name,
         is_join: false,
@@ -230,8 +266,8 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
 }
 
 /// Parse a trade message from a log line
-/// Incoming format: "2,From shrack (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss"
-/// Outgoing format: "2,Sent to Shrackb (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Incoming format: "2,From shrack*shrack: Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Outgoing format: "2,Sent to Shrackb*shrack: Hi, I'm interested in your Frostburn listed for 2 wss"
 fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
     // Check if it's a whisper (starts with "2,")
     if !line.starts_with("2,") {
@@ -264,32 +300,13 @@ fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
     let sender_part = after_prefix[..colon_pos].trim();
     let message = after_prefix[colon_pos + 1..].trim();
 
-    // Extract character name and account name
-    // Format: "shrack (*shrack)" or "DoreetDrood (*Doreets)" or just "shrack"
-    let (character_name, account_name, player_name) =
-        if let Some(paren_start) = sender_part.find('(') {
-            // Extract character name (before parentheses)
-            let char_name = sender_part[..paren_start].trim();
-            // Extract account name from parentheses (e.g., "*shrack" from "(*shrack)")
-            if let Some(paren_end) = sender_part[paren_start..].find(')') {
-                let acc_name = &sender_part[paren_start + 1..paren_start + paren_end].trim();
-                // Remove "*" prefix if present
-                let acc_name_clean = acc_name.strip_prefix('*').unwrap_or(acc_name);
-                (
-                    Some(char_name.to_string()),
-                    Some(acc_name_clean.to_string()),
-                    acc_name_clean,
-                )
-            } else {
-                // Fallback to character name if parentheses are malformed
-                (Some(char_name.to_string()), None, char_name)
-            }
-        } else if let Some(space_pos) = sender_part.find(' ') {
-            let char_name = &sender_part[..space_pos];
-            (Some(char_name.to_string()), None, char_name)
-        } else {
-            (Some(sender_part.to_string()), None, sender_part)
-        };
+    // Extract character and account names (PD2 writes "character*account" in whispers).
+    let (character_name, account_name) = split_sender_names(sender_part);
+    let player_name = match (&account_name, &character_name) {
+        (Some(a), _) => a.clone(),
+        (None, Some(c)) => c.clone(),
+        (None, None) => return None,
+    };
 
     // Extract item name from trade message
     // Format: "Hi, I'm interested in your Frostburn listed for 2 wss"
@@ -317,7 +334,7 @@ fn parse_trade_message(line: &str) -> Option<TradeMessageEvent> {
 
     Some(TradeMessageEvent {
         is_incoming,
-        player_name: player_name.to_string(),
+        player_name,
         account_name,
         character_name,
         message: message.to_string(),
@@ -505,4 +522,75 @@ pub fn stop_watching() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn splits_pd2_character_star_account() {
+        assert_eq!(
+            split_sender_names("frostwind*tharok"),
+            (Some("frostwind".into()), Some("tharok".into()))
+        );
+    }
+
+    #[test]
+    fn splits_paren_format_fallback() {
+        assert_eq!(
+            split_sender_names("Shrackb (*shrack)"),
+            (Some("Shrackb".into()), Some("shrack".into()))
+        );
+    }
+
+    #[test]
+    fn single_name_has_no_account() {
+        assert_eq!(split_sender_names("shrack"), (Some("shrack".into()), None));
+    }
+
+    #[test]
+    fn parse_trade_message_pulls_account_from_star_format() {
+        let line = "2,From frostwind*tharok: Hi, I'm interested in your Entrapping Grand Charm of Quality listed for 9 wss";
+        let event = parse_trade_message(line).expect("trade parsed");
+        assert_eq!(event.character_name.as_deref(), Some("frostwind"));
+        assert_eq!(event.account_name.as_deref(), Some("tharok"));
+        assert_eq!(event.player_name, "tharok");
+        assert_eq!(
+            event.item_name.as_deref(),
+            Some("Entrapping Grand Charm of Quality")
+        );
+        assert_eq!(event.price.as_deref(), Some("9 wss"));
+        assert!(event.is_incoming);
+    }
+
+    #[test]
+    fn parse_whisper_from_star_format_uses_account() {
+        let line = "2,From frostwind*tharok: still here";
+        let event = parse_whisper(line).expect("whisper parsed");
+        assert_eq!(event.from, "tharok");
+        assert!(event.is_incoming);
+        assert!(!event.is_trade);
+    }
+
+    #[test]
+    fn parse_whisper_sent_to_star_format_uses_account() {
+        let line = "2,Sent to frostwind*tharok: still here";
+        let event = parse_whisper(line).expect("whisper parsed");
+        assert_eq!(event.from, "tharok");
+        assert!(!event.is_incoming);
+    }
+
+    #[test]
+    fn parse_whisper_falls_back_to_character_when_no_account() {
+        let line = "2,From shrack: hi";
+        let event = parse_whisper(line).expect("whisper parsed");
+        assert_eq!(event.from, "shrack");
+    }
+
+    #[test]
+    fn parse_whisper_ignores_friend_online_messages() {
+        let line = "2,From *shrack: Your friend shrack has entered Project Diablo 2.";
+        assert!(parse_whisper(line).is_none());
+    }
 }
