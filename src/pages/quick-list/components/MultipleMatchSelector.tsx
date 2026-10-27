@@ -64,7 +64,7 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
           {anyExpanded ? 'Show Less' : 'Show All Stats'}
         </button>
       </div>
-      <ScrollArea className="pr-2">
+      <ScrollArea className="pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <motion.div className="flex max-h-[20rem] flex-col gap-2 p-px"
           variants={listStagger}
           initial="hidden"

@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.10.7': [
     '🔧 List Item (Ctrl+L): back to picking your stash match for the copied item automatically; the "Not synced to stash" card is gone',
+    '🔧 List Item (Ctrl+L): items with a long stat no longer get cut off on the right; the stat ends in "…" instead',
   ],
   '0.10.6': [
     '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',

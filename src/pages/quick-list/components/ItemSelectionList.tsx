@@ -67,7 +67,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           {anyExpanded ? 'Show Less' : 'Show All Stats'}
         </button>
       </div>
-      <ScrollArea className="min-h-0 flex-1 pr-2">
+      <ScrollArea className="min-h-0 flex-1 pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <motion.div
           role="group"
           aria-label="Matching stash items"
