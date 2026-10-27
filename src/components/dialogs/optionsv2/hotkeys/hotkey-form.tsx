@@ -184,7 +184,7 @@ export function HotkeyForm() {
       hotkeyModifierMarket: 'ctrl',
       hotkeyKeyMarket: 'm',
       hotkeyModifierBuilds: 'ctrl',
-      hotkeyKeyBuilds: 'j',
+      hotkeyKeyBuilds: '',
     },
   });
 

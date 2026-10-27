@@ -102,7 +102,6 @@ export interface ISettings {
   hotkeyKeyMarket?: string; // '' = unbound
   hotkeyModifierBuilds?: 'ctrl' | 'alt';
   hotkeyKeyBuilds?: string; // '' = unbound
-  hotkeyBuildsDefaulted?: boolean; // the Ctrl+J default was offered once (0.10.7); later '' means the user unbound it
   followedBuildCharacters?: BuildCharacterRef[]; // builds panel: starred characters
   recentBuildCharacters?: BuildCharacterRef[]; // builds panel: last viewed characters, newest first
   themeId?: string; // Color theme id from src/lib/themes.ts
@@ -172,8 +171,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierMarket: 'ctrl',
   hotkeyKeyMarket: 'm',
   hotkeyModifierBuilds: 'ctrl',
-  hotkeyKeyBuilds: 'j',
-  hotkeyBuildsDefaulted: true,
+  hotkeyKeyBuilds: '',
   followedBuildCharacters: [],
   recentBuildCharacters: [],
   themeId: DEFAULT_THEME_ID,
@@ -181,8 +179,8 @@ const DEFAULT_SETTINGS: ISettings = {
   windowTransparency: 0,
 };
 
-/** Every hotkey, as [modifier field, key field]. */
-const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+/** The hotkeys besides the market one, as [modifier field, key field]. */
+const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifier', 'hotkeyKey'],
   ['hotkeyModifierListItem', 'hotkeyKeyListItem'],
   ['hotkeyModifierSettings', 'hotkeyKeySettings'],
@@ -191,44 +189,20 @@ const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
-  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
 ];
 
-/** `settings`, with the hotkey in `keyField` unbound if another hotkey already uses its combo. */
-function unbindIfTaken(settings: ISettings, modifierField: keyof ISettings, keyField: keyof ISettings): ISettings {
-  const combo = `${settings[modifierField] ?? 'ctrl'}+${String(settings[keyField] ?? '').toLowerCase()}`;
-  const taken = HOTKEYS.some(
-    ([modifier, key]) =>
-      key !== keyField && `${settings[modifier] ?? 'ctrl'}+${String(settings[key] ?? '').toLowerCase()}` === combo,
-  );
-  return taken ? { ...settings, [keyField]: '' } : settings;
-}
-
 /**
- * Hotkeys added with a default after a release give saved settings that default once, unless the user already
- * bound that combo to another hotkey: then the new hotkey stays unbound rather than stealing it.
- * - Market (Ctrl+M): settings saved before it existed.
- * - Builds (Ctrl+J): 0.10.6 shipped it unbound, so every saved '' is the old default until the first 0.10.7 load.
+ * Settings saved before the market hotkey existed get the default Ctrl+M, unless the user already bound that
+ * combo to another hotkey: then the market hotkey starts unbound rather than stealing it.
  */
-export function migrateHotkeyDefaults(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
-  let next = merged;
-  if (saved?.hotkeyKeyMarket === undefined) next = unbindIfTaken(next, 'hotkeyModifierMarket', 'hotkeyKeyMarket');
-  if (saved && saved.hotkeyBuildsDefaulted !== true) {
-    if (!saved.hotkeyKeyBuilds) {
-      next = unbindIfTaken(
-        {
-          ...next,
-          hotkeyModifierBuilds: DEFAULT_SETTINGS.hotkeyModifierBuilds,
-          hotkeyKeyBuilds: DEFAULT_SETTINGS.hotkeyKeyBuilds,
-        },
-        'hotkeyModifierBuilds',
-        'hotkeyKeyBuilds',
-      );
-    }
-    next = { ...next, hotkeyBuildsDefaulted: true };
-  }
-  return next;
+export function migrateMarketHotkey(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
+  if (saved?.hotkeyKeyMarket !== undefined) return merged;
+  const combo = `${merged.hotkeyModifierMarket}+${merged.hotkeyKeyMarket?.toLowerCase()}`;
+  const taken = OTHER_HOTKEYS.some(
+    ([modifier, key]) => `${merged[modifier] ?? 'ctrl'}+${String(merged[key] ?? '').toLowerCase()}` === combo,
+  );
+  return taken ? { ...merged, hotkeyKeyMarket: '' } : merged;
 }
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -300,7 +274,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
         // would merge them by index, bringing back removed toast types or deleted chat templates).
-        const merged: ISettings = migrateHotkeyDefaults(
+        const merged: ISettings = migrateMarketHotkey(
           parsed,
           mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
             Array.isArray(saved) ? saved : undefined,
@@ -398,7 +372,8 @@ export const useOptions = () => {
 export const OptionsDialog: React.FC = () => {
   const { isOpen, setIsOpen } = useOptions();
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen}
+      onOpenChange={setIsOpen}>
       <SettingsLayout />
     </Dialog>
   );
