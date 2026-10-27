@@ -4,7 +4,9 @@ import {
   CORRUPTED_ZONES,
   corruptedZoneAt,
   corruptedZoneSchedule,
+  followedZoneSchedule,
   formatCountdown,
+  formatWait,
 } from './corrupted-zones';
 
 const at = (iso: string) => Date.parse(iso);
@@ -58,6 +60,38 @@ describe('corruptedZoneSchedule', () => {
   });
 });
 
+describe('followedZoneSchedule', () => {
+  const now = at('2026-10-25T19:51:00Z');
+
+  it('starts with the current slot when it is followed', () => {
+    const schedule = followedZoneSchedule(now, new Set(['Chaos Sanctuary', 'Rocky Waste and the Stony Tomb']), 2);
+    expect(schedule.map((s) => [new Date(s.start).toISOString(), s.zone])).toEqual([
+      ['2026-10-25T19:45:00.000Z', 'Rocky Waste and the Stony Tomb'],
+      ['2026-10-25T21:00:00.000Z', 'Chaos Sanctuary'],
+    ]);
+  });
+
+  it('skips the zones not followed and stops at count', () => {
+    const schedule = followedZoneSchedule(now, new Set(['Chaos Sanctuary', 'Durance of Hate']), 2);
+    expect(schedule.map((s) => [new Date(s.start).toISOString(), s.zone])).toEqual([
+      ['2026-10-25T20:45:00.000Z', 'Durance of Hate'],
+      ['2026-10-25T21:00:00.000Z', 'Chaos Sanctuary'],
+    ]);
+  });
+
+  it('finds any single zone from every slot of 2026 (within its 3-day look-ahead)', () => {
+    const from = at('2026-01-01T00:00:00Z');
+    const last = new Map<string, number>(CORRUPTED_ZONES.map((zone) => [zone, from]));
+    let longestGap = 0;
+    for (let start = from; start < from + 368 * 86_400_000; start += CORRUPTED_ZONE_SLOT_MS) {
+      const { zone } = corruptedZoneAt(start);
+      longestGap = Math.max(longestGap, start - last.get(zone)!);
+      last.set(zone, start);
+    }
+    expect(longestGap).toBeLessThan(3 * 86_400_000);
+  });
+});
+
 describe('formatCountdown', () => {
   it.each([
     [15 * 60_000, '15:00'],
@@ -65,7 +99,20 @@ describe('formatCountdown', () => {
     [1, '0:01'], // rounds up: never shows 0:00 before the switch
     [0, '0:00'],
     [-5_000, '0:00'],
+    [3_599_001, '1:00:00'],
+    [26 * 3_600_000 + 5 * 60_000 + 9_000, '26:05:09'],
   ])('%d ms is %s', (ms, text) => {
     expect(formatCountdown(ms)).toBe(text);
+  });
+});
+
+describe('formatWait', () => {
+  it.each([
+    [5 * 60_000, '5m'],
+    [59 * 60_000 + 1, '1h 0m'], // rounds up like the countdown
+    [80 * 60_000, '1h 20m'],
+    [26 * 3_600_000 + 5 * 60_000, '26h 5m'],
+  ])('%d ms is %s', (ms, text) => {
+    expect(formatWait(ms)).toBe(text);
   });
 });
