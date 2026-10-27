@@ -3,17 +3,20 @@
  * so a whisper from a trader you have no offer or DM with still links to their website profile instead of
  * standing alone as an in-game-only thread.
  *
- * One settled lookup per account per app session (owners and misses both remembered). Lookups run one at a
- * time, LOOKUP_GAP_MS apart, because they share the market service's per-IP rate limit with the market
- * browser; a failed one waits (the service's Retry-After, else RETRY_DELAY_MS) and is retried, and is never
- * remembered as a miss.
+ * Settled lookups (owners and misses) are kept across launches, owners for OWNER_TTL_MS and misses for
+ * MISS_TTL_MS. Lookups run one at a time, LOOKUP_GAP_MS apart, because they share the market service's
+ * per-IP rate limit (60/min) with the market browser and saved-search alerts; a failed one waits (the
+ * service's Retry-After, else RETRY_DELAY_MS) and is retried, and is never remembered as a miss.
  */
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { normalizeName, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
 import { lookupSellerByName, modesFrom, type MarketMode, type ResolvedSeller } from '../lib/seller-lookup';
 
-/** Minimum time between two lookup requests. */
-export const LOOKUP_GAP_MS = 2000;
+/** Minimum time between two lookup requests: at most 10 a minute, a sixth of the service's per-IP limit. */
+export const LOOKUP_GAP_MS = 6000;
+export const OWNER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const MISS_TTL_MS = 24 * 60 * 60 * 1000;
+export const STORAGE_KEY = 'pd2trader.resolvedSellers.v1';
 /** Wait after a failed lookup when the service named none. */
 export const RETRY_DELAY_MS = 30_000;
 /** Failed attempts per account before it waits for the next change to the whisper history. */
@@ -25,8 +28,45 @@ interface Item {
   mode: MarketMode;
 }
 
+interface Settled {
+  seller: ResolvedSeller | null;
+  at: number;
+}
+
+const isSeller = (s: unknown): s is ResolvedSeller =>
+  !!s &&
+  typeof s === 'object' &&
+  typeof (s as ResolvedSeller).userId === 'string' &&
+  typeof (s as ResolvedSeller).username === 'string' &&
+  Array.isArray((s as ResolvedSeller).accounts) &&
+  (s as ResolvedSeller).accounts.every((a) => typeof a === 'string');
+
+/** Stored lookups still within their TTL; empty when storage is unavailable or unreadable. */
+function loadSettled(now: number): Map<string, Settled> {
+  const out = new Map<string, Settled>();
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    for (const [key, entry] of Object.entries(raw)) {
+      const { seller, at } = (entry ?? {}) as Partial<Settled>;
+      if (typeof at !== 'number' || (seller !== null && !isSeller(seller))) continue;
+      if (now - at < (seller ? OWNER_TTL_MS : MISS_TTL_MS)) out.set(key, { seller, at });
+    }
+  } catch {
+    // Unreadable storage: look everyone up again
+  }
+  return out;
+}
+
+function saveSettled() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(settled)));
+  } catch {
+    // Storage full or blocked: lookups are only kept for this session
+  }
+}
+
 /** Settled lookups by normalized account: the owner, or null when nobody owns it. */
-const settled = new Map<string, ResolvedSeller | null>();
+const settled = loadSettled(Date.now());
 const queue: Item[] = [];
 const attempts = new Map<string, number>();
 let inFlight: string | null = null;
@@ -75,7 +115,8 @@ async function drain(gen: number) {
         continue;
       }
       attempts.delete(item.key);
-      settled.set(item.key, result.status === 'found' ? result.seller : null);
+      settled.set(item.key, { seller: result.status === 'found' ? result.seller : null, at: Date.now() });
+      saveSettled();
       version += 1;
       listeners.forEach((listener) => listener());
     }
@@ -99,10 +140,15 @@ function enqueue(items: readonly Item[], priority: string | undefined) {
   if (!running && queue.length > 0) void drain(generation);
 }
 
-/** Forgets every lookup and stops the queue. For tests. */
+/** Forgets every lookup (stored ones too) and stops the queue. For tests. */
 export function _resetResolvedSellers() {
   generation += 1;
   settled.clear();
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // No storage to clear
+  }
   queue.length = 0;
   attempts.clear();
   inFlight = null;
@@ -145,7 +191,7 @@ export function useResolvedSellers(
   return useMemo(() => {
     const resolved = new Map<string, ResolvedSeller>();
     for (const person of Object.values(people)) {
-      const seller = settled.get(normalizeName(sellerNameFor(person)));
+      const seller = settled.get(normalizeName(sellerNameFor(person)))?.seller;
       if (seller) resolved.set(person.key, seller);
     }
     return resolved;

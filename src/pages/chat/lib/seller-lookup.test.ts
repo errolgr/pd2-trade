@@ -89,7 +89,38 @@ describe('lookupSellerByName', () => {
       .mockResolvedValueOnce(json({ items: [{ listing: { user_id: 'u1', user: null } }] }))
       .mockResolvedValueOnce(hit());
 
-    await expect(lookupSellerByName('spotty')).resolves.toMatchObject({ status: 'found' });
+    await expect(lookupSellerByName('tharok')).resolves.toMatchObject({ status: 'found' });
+  });
+
+  it('is none when the name only matched the website username of someone not owning that account', async () => {
+    fetchMock.mockImplementation(async () =>
+      json({
+        items: [{ listing: { user_id: 'u-bob', user: { username: 'bob', game: { accounts: ['Robert'] } } } }],
+      }),
+    );
+
+    await expect(lookupSellerByName('bob')).resolves.toEqual({ status: 'none' });
+  });
+
+  it("adds the looked-up account when only the item's account shows it", async () => {
+    fetchMock.mockResolvedValueOnce(
+      json({
+        items: [
+          {
+            listing: {
+              user_id: 'u-tharok',
+              user: { username: 'tharok_web', game: { accounts: ['Tharok'] } },
+              item: { account_id: 'Frostwind' },
+            },
+          },
+        ],
+      }),
+    );
+
+    await expect(lookupSellerByName('frostwind')).resolves.toEqual({
+      status: 'found',
+      seller: { userId: 'u-tharok', username: 'tharok_web', accounts: ['Tharok', 'Frostwind'] },
+    });
   });
 
   it('is none for a blank or over-long name, without a request', async () => {

@@ -3,7 +3,14 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WhisperPerson } from '@/lib/whisper-history';
 import type { SellerLookup } from '../lib/seller-lookup';
-import { _resetResolvedSellers, LOOKUP_GAP_MS, RETRY_DELAY_MS, useResolvedSellers } from './useResolvedSellers';
+import {
+  _resetResolvedSellers,
+  LOOKUP_GAP_MS,
+  MISS_TTL_MS,
+  RETRY_DELAY_MS,
+  STORAGE_KEY,
+  useResolvedSellers,
+} from './useResolvedSellers';
 
 const lookup = vi.fn<(name: string, opts: { beforeRequest?: () => Promise<void> }) => Promise<SellerLookup>>();
 vi.mock('../lib/seller-lookup', async (importOriginal) => ({
@@ -125,6 +132,39 @@ describe('useResolvedSellers', () => {
     render(peopleOf(person('tharok')), { enabled: false });
     await settle(LOOKUP_GAP_MS);
     expect(lookup).not.toHaveBeenCalled();
+  });
+
+  it('keeps settled lookups for the next launch instead of asking again', async () => {
+    answerFrom({ tharok: THAROK });
+    const people = peopleOf(person('tharok'), person('quietvale'));
+    render(people);
+    await settle(LOOKUP_GAP_MS);
+    expect(lookup).toHaveBeenCalledTimes(2);
+
+    vi.resetModules();
+    const fresh = await import('./useResolvedSellers');
+    const { result } = renderHook(() => fresh.useResolvedSellers(people, { enabled: true, mode: SC_LADDER }));
+    await settle(LOOKUP_GAP_MS);
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(result.current.get('tharok')).toEqual(THAROK);
+  });
+
+  it('asks again about a stored miss once it is older than a day', async () => {
+    answerFrom({});
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        quietvale: { seller: null, at: Date.now() - MISS_TTL_MS - 1 },
+        frostwind: { seller: null, at: Date.now() },
+      }),
+    );
+    vi.resetModules();
+    const fresh = await import('./useResolvedSellers');
+    renderHook(() =>
+      fresh.useResolvedSellers(peopleOf(person('quietvale'), person('frostwind')), { enabled: true, mode: SC_LADDER }),
+    );
+    await settle(LOOKUP_GAP_MS);
+    expect(lookup.mock.calls.map(([name]) => name)).toEqual(['quietvale']);
   });
 
   it('looks a legacy "character*account" sender up by the account', async () => {

@@ -1,7 +1,7 @@
 /**
  * Resolves an in-game account to its pd2trader.com user by asking the market service for one live listing
- * from that seller: `sellerName` matches the seller's website username, game accounts and the item's
- * `account_id` (case-insensitive, exact), so a hit carries the user id and username.
+ * from that seller. `sellerName` also matches website usernames, so a hit only counts when the listing shows
+ * the account itself (the user's game accounts, linked in-game account or the item's `account_id`).
  */
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -10,7 +10,7 @@ import { MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
 export interface ResolvedSeller {
   userId: string;
   username: string;
-  /** `user.game.accounts` of the matched listing, as PD2 cases them. */
+  /** `user.game.accounts` of the matched listing, as PD2 cases them, plus the looked-up account if missing. */
   accounts: string[];
 }
 
@@ -50,12 +50,21 @@ class LookupFailure extends Error {
   }
 }
 
-function sellerOf(body: unknown): ResolvedSeller | null {
+const sameName = (a: unknown, b: string): a is string =>
+  typeof a === 'string' && a.trim().toLowerCase() === b.toLowerCase();
+
+/** The listing's owner when it shows `account` as theirs; null for no listing or a match on another name. */
+function sellerOf(body: unknown, account: string): ResolvedSeller | null {
   if (!body || typeof body !== 'object' || !('items' in body) || !Array.isArray(body.items)) {
     throw new LookupFailure();
   }
-  const listing = (body.items[0] as { listing?: { user_id?: unknown; user?: unknown } } | undefined)?.listing;
-  const user = listing?.user as { username?: unknown; game?: { accounts?: unknown } } | null | undefined;
+  const listing = (
+    body.items[0] as { listing?: { user_id?: unknown; user?: unknown; item?: { account_id?: unknown } } } | undefined
+  )?.listing;
+  const user = listing?.user as
+    | { username?: unknown; in_game_account?: unknown; game?: { accounts?: unknown } }
+    | null
+    | undefined;
   if (
     typeof listing?.user_id !== 'string' ||
     !listing.user_id ||
@@ -67,7 +76,12 @@ function sellerOf(body: unknown): ResolvedSeller | null {
   const accounts = Array.isArray(user.game?.accounts)
     ? user.game.accounts.filter((a): a is string => typeof a === 'string' && a.trim() !== '')
     : [];
-  return { userId: listing.user_id, username: user.username, accounts };
+  if (accounts.some((a) => sameName(a, account))) {
+    return { userId: listing.user_id, username: user.username, accounts };
+  }
+  const owned = [user.in_game_account, listing.item?.account_id].find((a) => sameName(a, account));
+  if (!owned) return null;
+  return { userId: listing.user_id, username: user.username, accounts: [...accounts, owned.trim()] };
 }
 
 /** One mode's search: the seller, null when nobody in that mode, 'invalid' when the service rejects the name. */
@@ -98,7 +112,7 @@ async function searchMode(sellerName: string, mode: MarketMode): Promise<Resolve
     } catch {
       throw new LookupFailure();
     }
-    return sellerOf(body);
+    return sellerOf(body, sellerName);
   } finally {
     clearTimeout(timer);
   }
