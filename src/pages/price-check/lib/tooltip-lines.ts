@@ -69,9 +69,11 @@ interface Description {
 
 const descriptions = new Map<number, Description>();
 const descriptionsByLabel = new Map<string, Description>();
-for (const m of modifiers as unknown as ReadonlyArray<{ id: number; description?: Description }>) {
+const descriptionsByName = new Map<string, Description>();
+for (const m of modifiers as unknown as ReadonlyArray<{ id: number; name: string; description?: Description }>) {
   if (!m.description) continue;
   descriptions.set(m.id, m.description);
+  descriptionsByName.set(m.name, m.description);
   const label = m.description.label?.positive;
   if (label && !descriptionsByLabel.has(label)) descriptionsByLabel.set(label, m.description);
 }
@@ -139,35 +141,50 @@ function splitClass(skill: string): [string, string | null] {
   return m ? [m[1], m[2]] : [skill, null];
 }
 
+/** ItemStatCost descfunc → how the tooltip prints the value, `#` standing for it. */
+const DESC_FORMAT: Partial<Record<number, string>> = {
+  1: '+#',
+  6: '+#',
+  12: '+#',
+  13: '+#',
+  2: '#%',
+  7: '#%',
+  18: '#%',
+  3: '#',
+  9: '#',
+  17: '#',
+  4: '+#%',
+  8: '+#%',
+  5: '#%',
+  10: '#%',
+  20: '-#%',
+  21: '-#',
+};
+
 /** ItemStatCost descfunc → the value as the tooltip prints it. */
 function descValue(fn: number, n: number): string | null {
-  switch (fn) {
-    case 1:
-    case 6:
-    case 12:
-    case 13:
-      return signed(n);
-    case 2:
-    case 7:
-    case 18:
-      return `${n}%`;
-    case 3:
-    case 9:
-    case 17:
-      return `${n}`;
-    case 4:
-    case 8:
-      return `${signed(n)}%`;
-    case 5:
-    case 10:
-      return `${Math.floor((n * 100) / 128)}%`;
-    case 20:
-      return `${-n}%`;
-    case 21:
-      return `${-n}`;
-    default:
-      return null;
-  }
+  const format = DESC_FORMAT[fn];
+  if (format === undefined) return null;
+  // descfunc 5 / 10 store 128ths
+  const v = fn === 5 || fn === 10 ? Math.floor((n * 100) / 128) : n;
+  const shown = format.startsWith('+') ? signed(v) : format.startsWith('-') ? `${-v}` : `${v}`;
+  return format.endsWith('%') ? `${shown}%` : shown;
+}
+
+/**
+ * A stat's tooltip line by its ItemStatCost name, `#` standing for the value: "+#% Faster Cast Rate",
+ * "Fire Resist +#%", "Cannot Be Frozen". Null for lines one value doesn't fill (skills, chance to cast, charges)
+ * and printf-style labels.
+ */
+export function statTemplate(statName: string): string | null {
+  const desc = descriptionsByName.get(statName);
+  const label = clean(desc?.label?.positive);
+  const fn = desc?.function ?? 1;
+  const format = DESC_FORMAT[fn];
+  if (!desc || !label || format === undefined || label.includes('%')) return null;
+  const secondary = fn >= 6 && fn <= 10 && desc.label?.secondary ? ` ${desc.label.secondary}` : '';
+  if (desc.value === 0) return `${label}${secondary}`;
+  return desc.value === 2 ? `${label} ${format}${secondary}` : `${format} ${label}${secondary}`;
 }
 
 /** One clipboard stat as its tooltip line (D2 descfunc/descval rules), null when it has no visible text. */

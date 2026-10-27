@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
-import { statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
+import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
+import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
+import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
 import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
@@ -16,6 +17,32 @@ import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
 import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
 import { getStatKey } from '@/pages/price-check/lib/utils';
+
+/**
+ * The row as the item's tooltip draws it ("+20% Faster Cast Rate", "Adds 4-14 fire damage", "Socketed (4)"),
+ * or null for rows the item has no line for (Σ totals, Ethereal, Corrupted): those keep "name: value".
+ */
+function itemLine(stat: Stat, item?: Item): string | null {
+  if (stat.pseudo || stat.stat_id === StatId.Ethereal || stat.stat_id === StatId.Corrupted) return null;
+  const value = stat.value;
+  const pair = DAMAGE_PAIRS.find((p) => p.id === stat.stat_id);
+  if (pair) {
+    if (value === undefined || stat.maxValue === undefined) return null;
+    return damagePairText(pair, { lo: value, hi: stat.maxValue, seconds: stat.seconds });
+  }
+  if (stat.stat_id === StatId.Socket) return value === undefined ? null : `Socketed (${value})`;
+  if (stat.stat_id === StatId.AllResistances) {
+    return value === undefined ? null : `All Resistances ${value < 0 ? value : `+${value}`}`;
+  }
+  if (stat.stat_id === StatId.AllAttributes) {
+    return value === undefined ? null : `${value < 0 ? value : `+${value}`} to all Attributes`;
+  }
+  // Skill rows are renamed to their skill; the item's own stat keeps the line's wording (charges, chance to cast).
+  const source = stat.skill
+    ? item?.stats?.find((s) => s.stat_id === stat.stat_id && s.skill === stat.skill)
+    : undefined;
+  return statText(source ?? stat, item);
+}
 
 interface StatRowProps {
   stat: Stat;
@@ -33,6 +60,8 @@ interface StatRowProps {
   pseudoOptions?: PseudoOption[];
   /** Folds the Σ total in, or unfolds it when active (useStatSelection.togglePseudo). */
   onPseudo?: (id: string) => void;
+  /** The item the row belongs to: skill lines read its class (o-skills draw no "(Class Only)"). */
+  item?: Item;
 }
 
 /** Counts from `from` to `value` once on mount: a Σ row's total adding up its folded lines. */
@@ -77,6 +106,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   rare,
   pseudoOptions,
   onPseudo,
+  item,
 }) => {
   const statKey = getStatKey(stat);
   const isSocket = stat.stat_id === StatId.Socket;
@@ -120,6 +150,16 @@ export const StatRow: React.FC<StatRowProps> = ({
     return only ? formatStatRange({ ...only, min: only.min!, max: only.max! }) : null;
   })();
 
+  // The row as it reads on the item; rows the item draws no line for show "name: value".
+  const line = isUnknown ? null : itemLine(stat, item);
+
+  const rangeBracket = !isSocket && rangeText && stat.value !== undefined && (
+    <span className="ml-1 text-xs tabular-nums text-muted-foreground"
+      title="Stat range shown on the PD2 tooltip">
+      {rangeText}
+    </span>
+  );
+
   const valueParts = (showCorruptedValue: boolean) => (
     <>
       {showCorruptedValue && stat.value !== undefined && (
@@ -138,12 +178,7 @@ export const StatRow: React.FC<StatRowProps> = ({
           {stat.seconds !== undefined && <span className="text-muted-foreground"> over {stat.seconds}s</span>}
         </>
       )}
-      {!isSocket && showCorruptedValue && rangeText && stat.value !== undefined && (
-        <span className="ml-1 text-xs tabular-nums text-muted-foreground"
-          title="Stat range shown on the PD2 tooltip">
-          {rangeText}
-        </span>
-      )}
+      {showCorruptedValue && rangeBracket}
     </>
   );
 
@@ -240,8 +275,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                   )}
                   onClick={isCorrupted ? () => toggle(stat) : undefined}
                 >
-                  {stat.name}
-                  {valueParts(!isCorrupted)}
+                  {line ?? stat.name}
+                  {line ? rangeBracket : valueParts(!isCorrupted)}
                   {/* Rare appraisal: inline after the text so it follows wrapped lines */}
                   {rare?.stars && (
                     <span
@@ -373,7 +408,7 @@ export const StatRow: React.FC<StatRowProps> = ({
               variants={listItem}
               className="inline-flex h-5 items-center rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
             >
-              {row.name} {row.value}
+              {itemLine(row, item) ?? `${row.name} ${row.value}`}
             </motion.span>
           ))}
           <motion.button

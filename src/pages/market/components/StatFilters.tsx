@@ -20,7 +20,7 @@ import { newStatFilter } from '../lib/defaults';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, NumberInput, fieldInputClass } from './controls';
-import { filterName, templateName } from './stat-text';
+import { choiceText, filterName } from './stat-text';
 
 const MAX_SUGGESTIONS = 40;
 
@@ -112,7 +112,12 @@ export function StatFilters({
   highlight,
 }: StatFiltersProps) {
   const [query, setQuery] = useState('');
+  // The tab the user picked, and the tab on screen: both hold while they have matches, so typing on doesn't
+  // flip the list between tabs whenever the best match changes kind
   const [pickedTab, setPickedTab] = useState<StatTab | null>(null);
+  const [shownTab, setShownTab] = useState<StatTab | null>(null);
+  // After a pick the search stays selected: the next keystroke starts a new search, tabs chosen afresh
+  const freshSearch = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(searchRef, () => inputRef.current as HTMLInputElement);
@@ -131,9 +136,12 @@ export function StatFilters({
     for (const m of matches) c[tabOf(m)] += 1;
     return c;
   }, [matches]);
-  // The tab the user picked while it has matches, else the best match's tab
-  const tab: StatTab = pickedTab && counts[pickedTab] > 0 ? pickedTab : matches[0] ? tabOf(matches[0]) : 'mod';
+  const tab: StatTab =
+    [pickedTab, shownTab].find((t): t is StatTab => !!t && counts[t] > 0) ?? (matches[0] ? tabOf(matches[0]) : 'mod');
+  if (matches.length > 0 && tab !== shownTab) setShownTab(tab);
   const suggestions = useMemo(() => matches.filter((m) => tabOf(m) === tab).slice(0, MAX_SUGGESTIONS), [matches, tab]);
+  // The list keeps the tallest tab's height, so switching tabs doesn't resize the dropdown
+  const listRows = Math.max(...TABS.map((t) => Math.min(counts[t.id], MAX_SUGGESTIONS)));
   const cycleTab = (step: 1 | -1) => {
     const open = TABS.filter((t) => counts[t.id] > 0);
     if (open.length < 2) return;
@@ -144,6 +152,7 @@ export function StatFilters({
   const add = (choice: StatChoice) => {
     // The search stays so a click brings the same list back; selected, so typing starts a new one
     inputRef.current?.select();
+    freshSearch.current = true;
     const row = isPseudo(choice)
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
@@ -257,10 +266,16 @@ export function StatFilters({
           placeholder="Add stat…  ( ? )"
           value={query}
           onQuery={(q) => {
+            if (freshSearch.current || !q.trim()) {
+              setPickedTab(null);
+              setShownTab(null);
+            }
+            freshSearch.current = false;
             setQuery(q);
-            if (!q.trim()) setPickedTab(null);
           }}
           options={suggestions}
+          listKey={tab}
+          minRows={listRows}
           optionKey={choiceKey}
           onPick={add}
           className="flex-1"
@@ -309,9 +324,9 @@ export function StatFilters({
               )}
               <span
                 className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}
-                title={templateName(choice.label)}
+                title={choiceText(choice)}
               >
-                {templateName(choice.label)}
+                {choiceText(choice)}
               </span>
               {/* The tab already says pseudo / corruption; mods keep their group */}
               {!isPseudo(choice) && !isCorruption(choice) && (

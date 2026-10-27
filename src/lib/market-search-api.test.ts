@@ -54,11 +54,19 @@ describe('searchMarketListings', () => {
     expect(JSON.parse(init?.body as string)).toEqual(JSON.parse(JSON.stringify(marketSearchBody(f, 1, 25))));
     expect(result).toEqual({
       total: 312,
+      totalExact: true,
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
         { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
       ],
     });
+  });
+
+  it('reads totalExact, an exact count when the service omits it', async () => {
+    respond(200, { items: [], total: 1000, totalExact: false });
+    await expect(search()).resolves.toMatchObject({ total: 1000, totalExact: false });
+    respond(200, { items: [], total: 1000, totalExact: 'no' });
+    await expect(search()).resolves.toMatchObject({ totalExact: true });
   });
 
   it.each([
