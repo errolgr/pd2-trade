@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.7': [
+    '✨ Market: listings you made an offer on show "Offered <your offer>", and your own listings show how many offers they have; rest the pointer on it to see each offer',
     '🔧 List Item (Ctrl+L): back to picking your stash match for the copied item automatically; the "Not synced to stash" card is gone',
     '🔧 List Item (Ctrl+L): items with a long stat no longer get cut off on the right; the stat ends in "…" instead',
   ],

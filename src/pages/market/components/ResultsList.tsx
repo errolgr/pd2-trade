@@ -15,6 +15,8 @@ import type { ScoredListing } from '../lib/types';
 import { displayMods, itemNameColor } from './ItemTooltip';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { OfferBadge } from './OfferBadge';
+import type { ListingOffers } from '../lib/listing-offers';
 import { useOpenTrader } from '../hooks/useListingActions';
 
 const ROW_HEIGHT = 58;
@@ -98,6 +100,8 @@ export interface ResultsListProps {
   /** Click: select the row and show it in the detail pane. */
   onSelect: (listingId: string) => void;
   deals: ReadonlyMap<string, Deal>;
+  /** The signed-in user's offers by listing id (made, or received on their listings). */
+  offers: ReadonlyMap<string, ListingOffers>;
   /** Enabled pseudo stat keys: their totals show on each row. */
   pseudoKeys: string[];
   favoriteIds: Set<string>;
@@ -117,6 +121,7 @@ export function ResultsList({
   selectedId,
   onSelect,
   deals,
+  offers,
   pseudoKeys,
   favoriteIds,
   hasMore,
@@ -177,6 +182,7 @@ export function ResultsList({
                   selected={row.listing._id === selectedId}
                   onSelect={onSelect}
                   deal={deals.get(row.listing._id)}
+                  offers={offers.get(row.listing._id)}
                   pseudoKeys={pseudoKeys}
                   favorite={favoriteIds.has(row.listing._id)}
                 />
@@ -197,6 +203,7 @@ const ResultRow = React.memo(function ResultRow({
   selected,
   onSelect,
   deal,
+  offers,
   pseudoKeys,
   favorite,
 }: {
@@ -204,6 +211,7 @@ const ResultRow = React.memo(function ResultRow({
   selected: boolean;
   onSelect: (id: string) => void;
   deal: Deal | undefined;
+  offers: ListingOffers | undefined;
   pseudoKeys: string[];
   favorite: boolean;
 }) {
@@ -242,6 +250,8 @@ const ResultRow = React.memo(function ResultRow({
           {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
           {favorite && <Heart className="size-3 shrink-0 fill-destructive text-destructive"
             aria-label="Favorite" />}
+          <OfferBadge offers={offers}
+            compact />
         </div>
         <div className="truncate text-[11px] leading-4 text-muted-foreground"
           title={summary}>
