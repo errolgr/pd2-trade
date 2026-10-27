@@ -28,6 +28,8 @@ const TIMER_DEFAULTS = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
+  corruptedZoneTimerListDirection: 'auto',
+  corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],
 };
@@ -107,12 +109,20 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
       chatButtonOverlayEnabled: true,
       windowTransparency: 0,
+      ...TIMER_DEFAULTS,
       corruptedZoneTimerEnabled: true,
       corruptedZoneTimerAnchor: 'bottom-left',
-      corruptedZoneTimerOpacity: 90,
-      corruptedZoneAlerts: 'off',
-      corruptedZoneFollowed: [],
     });
+  });
+
+  it('saves the schedule direction and the zones the timer shows', async () => {
+    renderForm({});
+    fireEvent.change(screen.getByLabelText('Schedule opens'), { target: { value: 'up' } });
+    fireEvent.change(screen.getByLabelText('Timer shows'), { target: { value: 'followed' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ corruptedZoneTimerListDirection: 'up', corruptedZoneTimerZones: 'followed' }),
+    );
   });
 
   it('reflects external changes without saving them back', async () => {
@@ -123,26 +133,26 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).not.toHaveBeenCalled();
   });
 
-  it('picks followed zones from a searchable dropdown under "Only zones I follow"', async () => {
-    renderForm({});
-    expect(screen.queryByRole('button', { name: 'Followed zones' })).toBeNull();
-    fireEvent.change(screen.getByLabelText('Zone notifications'), { target: { value: 'followed' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Followed zones' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search zones' }), { target: { value: 'kurast' } });
-    const options = () => within(screen.getByRole('listbox', { name: 'Zones' })).getAllByRole('option');
-    expect(options().map((o) => o.textContent)).toEqual([
-      'Lower Kurast and the Kurast Sewers',
-      'Kurast Bazaar, Ruined Temple, and Disused Fane',
-      'Upper Kurast, the Forgotten Reliquary, and Forgotten Temple',
-    ]);
-    fireEvent.click(options()[1]);
-    expect(options()[1].getAttribute('aria-selected')).toBe('true');
-    await advance(300);
-    expect(store.updateSettings).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        corruptedZoneAlerts: 'followed',
-        corruptedZoneFollowed: ['Kurast Bazaar, Ruined Temple, and Disused Fane'],
-      }),
-    );
-  });
+  it.each(['Zone notifications', 'Timer shows'])(
+    'picks followed zones from a searchable dropdown under "Only zones I follow" (%s)',
+    async (setting) => {
+      renderForm({});
+      expect(screen.queryByRole('button', { name: 'Followed zones' })).toBeNull();
+      fireEvent.change(screen.getByLabelText(setting), { target: { value: 'followed' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Followed zones' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Search zones' }), { target: { value: 'kurast' } });
+      const options = () => within(screen.getByRole('listbox', { name: 'Zones' })).getAllByRole('option');
+      expect(options().map((o) => o.textContent)).toEqual([
+        'Lower Kurast and the Kurast Sewers',
+        'Kurast Bazaar, Ruined Temple, and Disused Fane',
+        'Upper Kurast, the Forgotten Reliquary, and Forgotten Temple',
+      ]);
+      fireEvent.click(options()[1]);
+      expect(options()[1].getAttribute('aria-selected')).toBe('true');
+      await advance(300);
+      expect(store.updateSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({ corruptedZoneFollowed: ['Kurast Bazaar, Ruined Temple, and Disused Fane'] }),
+      );
+    },
+  );
 });

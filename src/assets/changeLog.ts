@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.10.7': [
+    '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits at the bottom of the screen (dragged there too), or always up or down with the new Schedule opens setting (Settings → Interface)',
+    '🆕 Corrupted zone timer: "Timer shows: Only zones I follow" counts down to your next followed zone and lists only those; notifications keep their own setting, so you can show every zone and get toasts for followed ones only, or the other way round',
+  ],
   '0.10.6': [
     '✨ List Item (Ctrl+L): an item that is not in your stash yet shows as a "Not synced to stash" card, ready to queue; when your stash has a match you pick between it and the copied item, so a different roll is never posted by mistake',
     "✨ Chat: rest the pointer on an offer to see the item's stats, asking and market price, and the offer itself (who, price, status and when), in the pinned deals, the trader panel and the offer rows in the conversation",
