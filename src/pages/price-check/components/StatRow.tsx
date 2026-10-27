@@ -370,7 +370,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                         {label}
                       </span>
                     )}
-                    <span className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
+                    <span data-range-line
+                      className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
                       <input
                         type="number"
                         className={numberInputClass}
@@ -380,7 +381,39 @@ export const StatRow: React.FC<StatRowProps> = ({
                         onChange={(e) => updateFilter(statKey, lo, e.target.value)}
                         onKeyDown={handleInputKeyDown}
                       />
-                      <span className="text-xs text-muted-foreground">–</span>
+                      {/* The "–" turns into the eraser while the row is hovered or edited: no extra width */}
+                      <span className="relative inline-flex h-7 w-3.5 shrink-0 items-center justify-center">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'text-xs text-muted-foreground transition-opacity duration-(--dur-fast)',
+                            hasRange && 'group-hover/row:opacity-0 group-focus-within/row:opacity-0',
+                          )}
+                        >
+                          –
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Clear ${aria} range`}
+                          title="Clear min and max"
+                          tabIndex={hasRange ? 0 : -1}
+                          aria-hidden={!hasRange}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            updateFilter(statKey, lo, '');
+                            updateFilter(statKey, hi, '');
+                            setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
+                            // Ready to type the new min
+                            e.currentTarget.closest('[data-range-line]')?.querySelector('input')?.focus({ preventScroll: true });
+                          }}
+                          className={cn(
+                            'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
+                            hasRange ? 'group-hover/row:opacity-70 group-focus-within/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
+                          )}
+                        >
+                          <Eraser className="size-3" />
+                        </button>
+                      </span>
                       <input
                         type="number"
                         className={numberInputClass}
@@ -413,28 +446,6 @@ export const StatRow: React.FC<StatRowProps> = ({
                         )}
                       </AnimatePresence>
                     </span>
-                    {/* Out of the way until the row is hovered or being edited; its slot stays, so nothing shifts */}
-                    <button
-                      type="button"
-                      aria-label={`Clear ${aria} range`}
-                      title="Clear min and max"
-                      tabIndex={hasRange ? 0 : -1}
-                      aria-hidden={!hasRange}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        updateFilter(statKey, lo, '');
-                        updateFilter(statKey, hi, '');
-                        setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
-                        // Ready to type the new min
-                        e.currentTarget.parentElement?.querySelector('input')?.focus({ preventScroll: true });
-                      }}
-                      className={cn(
-                        '-ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground hover:opacity-100! focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
-                        hasRange ? 'group-hover/row:opacity-50 group-focus-within/row:opacity-50' : 'pointer-events-none',
-                      )}
-                    >
-                      <Eraser className="size-3" />
-                    </button>
                   </div>
                 );
               })}
