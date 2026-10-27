@@ -24,6 +24,7 @@ import {
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import { chatFeedActions, getChatFeed, resetChatFeed } from '../chat-feed';
+import { _resetResolvedSellers } from '../hooks/useResolvedSellers';
 import ChatOverlayWidget from './ChatOverlayWidget';
 import { typeDraft } from './composer-test-utils';
 
@@ -80,6 +81,15 @@ vi.mock('@/overlay', () => ({
   useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+/** Website owners of in-game accounts (the seller lookup that links whisper senders), by lowercase account. */
+const sellerOwners = vi.hoisted(() => new Map<string, { userId: string; username: string; accounts: string[] }>());
+vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/pages/chat/lib/seller-lookup')>()),
+  lookupSellerByName: vi.fn(async (name: string) => {
+    const seller = sellerOwners.get(name.toLowerCase());
+    return seller ? { status: 'found', seller } : { status: 'none' };
+  }),
+}));
 
 const NOW = new Date('2026-05-01T12:00:00Z');
 const ME = 'me';
@@ -340,6 +350,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  _resetResolvedSellers();
+  sellerOwners.clear();
   Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -1221,6 +1233,75 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(bubbles().at(-1)).toBe('via game');
     expect(sourceTags().at(-1)).toBe('In-game whisper');
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Whisper copied' }));
+  });
+
+  describe('whisper senders linked by the seller lookup', () => {
+    const THAROK = { userId: 'u-tharok', username: 'tharok_web', accounts: ['Tharok'] };
+    const notLinked = () => screen.queryByText('Not linked to a website account');
+
+    beforeEach(() => {
+      // Wide enough for the Trader sidebar
+      panel.rect = { ...panel.rect, width: 1100 };
+    });
+
+    it('links a whisperer to the website user owning their account, and still replies in game', async () => {
+      sellerOwners.set('tharok', THAROK);
+      await renderWidget([]);
+      await gameEvent('trade-message', {
+        isIncoming: true,
+        playerName: 'tharok',
+        accountName: 'tharok',
+        characterName: 'frostwind',
+        message: "Hi, I'm interested in your Entrapping Grand Charm of Quality listed for 9 wss",
+        itemName: 'Entrapping Grand Charm of Quality',
+        price: '9 wss',
+      });
+      await flush();
+
+      await select('tharok_web');
+      expect(heading()).toBe('tharok_web');
+      expect(notLinked()).toBeNull();
+      expect(screen.getAllByRole('button', { name: '@tharok_web' }).length).toBeGreaterThan(0);
+
+      await type('still here');
+      expect(writeText).toHaveBeenCalledWith('/w *tharok still here');
+      expect(api.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('links a sender saved as "character*account" by the account, and whispers that account', async () => {
+      sellerOwners.set('tharok', THAROK);
+      const legacy = JSON.stringify({
+        people: {
+          'frostwind*tharok': {
+            key: 'frostwind*tharok',
+            playerName: 'frostwind*tharok',
+            messages: [{ id: 'm1', isIncoming: true, message: 'still there?', timestamp: NOW.getTime() - 60_000 }],
+            trades: [],
+            readAt: 0,
+          },
+        },
+      });
+      vi.mocked(exists).mockImplementation(async (path) => path === WHISPER_HISTORY_FILENAME);
+      vi.mocked(readTextFile).mockImplementation(async (path) => (path === WHISPER_HISTORY_FILENAME ? legacy : ''));
+      await renderWidget([]);
+      await flush();
+
+      await select('tharok_web');
+      expect(notLinked()).toBeNull();
+      await type('yes');
+      expect(writeText).toHaveBeenCalledWith('/w *tharok yes');
+    });
+
+    it('never links a whisper from one of your own accounts to you', async () => {
+      sellerOwners.set('mymain', { userId: ME, username: 'me', accounts: ['MyMain'] });
+      await renderWidget([]);
+      await whisperFrom('MyMain', 'test');
+      await flush();
+
+      expect(rows()).toHaveLength(1);
+      await select('MyMain');
+      expect(notLinked()).not.toBeNull();
+    });
   });
 
   it('filters the list to Selling or Buying threads, and the offers payload opens on Selling', async () => {

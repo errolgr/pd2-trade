@@ -68,4 +68,12 @@ describe('linkSender', () => {
     const thread = { threadId: 'c-u2', accounts: knownAccounts(participant([]), [{ accountName: 'Thumoi' }]) };
     expect(linkSender(sender({ key: 'thumoi', playerName: 'Thumoi' }), [thread])).toBe('c-u2');
   });
+
+  it('links a legacy "character*account" sender to a candidate that has either half as an account', () => {
+    const thread = {
+      threadId: 'c-tharok',
+      accounts: knownAccounts(participant(['Tharok']), []),
+    };
+    expect(linkSender(sender({ key: 'frostwind*tharok', playerName: 'frostwind*tharok' }), [thread])).toBe('c-tharok');
+  });
 });
