@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StatFilter, StatPreset } from '../lib/types';
+import { MAX_OR_BLOCKS } from '../lib/stat-groups';
 import { StatFilters } from './StatFilters';
 
 // happy-dom rejects cancelled WAAPI animations: render motion.* as plain elements
@@ -50,18 +51,72 @@ describe('StatFilters', () => {
     expect(latest().map((s) => s.id)).toEqual(['b']);
   });
 
-  it('AND/OR toggle moves a row into the "Any of" group and back', () => {
-    const { latest } = mount([row('a'), row('b', { key: 'maxhp' })]);
+  const moveTo = (trigger: HTMLElement, option: RegExp) => {
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole('menuitemradio', { name: option }));
+  };
+
+  it('the group menu moves a row between AND, any-of blocks and NOT', () => {
+    const { latest } = mount([row('a'), row('b', { key: 'maxhp' }), row('c', { key: 'strength' })]);
     expect(screen.queryByRole('region', { name: 'Any of' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Faster Cast Rate: required/ }));
-    expect(latest().find((s) => s.id === 'a')?.or).toBe(true);
+    moveTo(screen.getByRole('button', { name: /Faster Cast Rate: required/ }), /^Any of \(OR\)/);
+    expect(latest().find((s) => s.id === 'a')?.or).toBe(1);
     const group = screen.getByRole('region', { name: 'Any of' });
     expect(within(group).getByText('Faster Cast Rate')).toBeTruthy();
-    expect(within(group).getByText('add another OR row')).toBeTruthy();
 
-    fireEvent.click(within(group).getByRole('button', { name: /Faster Cast Rate: one of the any-of group/ }));
-    expect(latest().find((s) => s.id === 'a')?.or).toBeUndefined();
-    expect(screen.queryByRole('region', { name: 'Any of' })).toBeNull();
+    // A second block: both are numbered
+    moveTo(screen.getByRole('button', { name: /Life: required/ }), /^New any-of block/);
+    expect(latest().find((s) => s.id === 'b')?.or).toBe(2);
+    expect(screen.getByRole('region', { name: 'Any of 1' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Any of 2' })).toBeTruthy();
+
+    moveTo(screen.getByRole('button', { name: /Strength: required/ }), /^Exclude/);
+    expect(latest().find((s) => s.id === 'c')).toMatchObject({ not: true });
+    expect(latest().find((s) => s.id === 'c')).not.toHaveProperty('or');
+    expect(within(screen.getByRole('region', { name: 'None of' })).getByText('Strength')).toBeTruthy();
+
+    // Emptying block 1 renumbers block 2 to 1
+    moveTo(screen.getByRole('button', { name: /Faster Cast Rate: in any-of block 1/ }), /^Required/);
+    expect(latest().find((s) => s.id === 'a')).not.toHaveProperty('or');
+    expect(latest().find((s) => s.id === 'b')?.or).toBe(1);
+    expect(screen.getByRole('region', { name: 'Any of' })).toBeTruthy();
+  });
+
+  it(`offers no new block once ${MAX_OR_BLOCKS} are in use`, () => {
+    mount([row('x'), ...[1, 2, 3, 4, 5].map((n) => row(`b${n}`, { key: `stat${n}`, or: n }))]);
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Faster Cast Rate: required/ }), { button: 0 });
+    expect(screen.getAllByRole('menuitemradio', { name: /^Any of \d/ })).toHaveLength(MAX_OR_BLOCKS);
+    expect(screen.queryByRole('menuitemradio', { name: /New any-of block/ })).toBeNull();
+  });
+
+  it('drags a row by its grip into another group, or into a new block; Escape cancels', () => {
+    const { latest } = mount([row('a'), row('b', { key: 'maxhp', or: 1 })]);
+    let target = '';
+    vi.spyOn(document, 'elementFromPoint').mockImplementation(() => document.querySelector(target));
+    const drag = (id: string, to: string) => {
+      const grip = document.querySelector(`[data-stat-grip="${id}"]`) as HTMLElement;
+      target = to;
+      fireEvent.pointerDown(grip, { button: 0, clientX: 10, clientY: 10, pointerId: 1 });
+      fireEvent.pointerMove(grip, { clientX: 10, clientY: 60, pointerId: 1 });
+      // Zones for missing groups appear once the drag starts: the next move can land on them
+      fireEvent.pointerMove(grip, { clientX: 10, clientY: 62, pointerId: 1 });
+      return grip;
+    };
+
+    fireEvent.pointerUp(drag('a', '[data-stat-drop="1"]'), { pointerId: 1 });
+    expect(latest().map((s) => s.or)).toEqual([1, 1]);
+
+    // The "new block" zone only exists mid-drag
+    expect(document.querySelector('[data-stat-drop="new"]')).toBeNull();
+    fireEvent.pointerUp(drag('b', '[data-stat-drop="new"]'), { pointerId: 1 });
+    expect(latest().map((s) => s.or)).toEqual([1, 2]);
+
+    const calls = latest();
+    const grip = drag('a', '[data-stat-drop="not"]');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.pointerUp(grip, { pointerId: 1 });
+    expect(latest()).toBe(calls);
+    vi.restoreAllMocks();
   });
 
   it('adds cube corruptions from the stat search; unrolled ones have no min/max', () => {
@@ -118,20 +173,20 @@ describe('StatFilters', () => {
     expect(selected()).toMatch(/^Mods/);
   });
 
-  it('keeps the search after a pick; clicking the input brings the list back', () => {
+  it('clears the search after a pick and keeps the focus, so the next stat can be typed', () => {
     const { latest } = mount([]);
     const search = screen.getByRole('combobox', { name: 'Add a stat filter' }) as HTMLInputElement;
-    fireEvent.focus(search);
+    search.focus();
     fireEvent.change(search, { target: { value: 'paladin combat' } });
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(latest()).toMatchObject([{ kind: 'mod', key: 'item_addskill_tab{24}' }]);
-    expect(search.value).toBe('paladin combat');
-    expect([search.selectionStart, search.selectionEnd]).toEqual([0, 'paladin combat'.length]);
+    expect(search.value).toBe('');
+    expect(document.activeElement).toBe(search);
     expect(search.getAttribute('aria-expanded')).toBe('false');
 
-    fireEvent.click(search);
+    fireEvent.change(search, { target: { value: 'faster cast' } });
     expect(search.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('option', { name: /\+# to Combat Skills \(Paladin Only\)/ })).toBeTruthy();
+    expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
   });
 
   it('does not reopen the list when the input only regains focus (the overlay taking the keyboard back)', () => {
@@ -147,7 +202,7 @@ describe('StatFilters', () => {
     expect(screen.queryByRole('option')).toBeNull();
     expect(latest()).toHaveLength(1);
 
-    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.change(search, { target: { value: 'faster cast' } });
     expect(search.getAttribute('aria-expanded')).toBe('true');
   });
 

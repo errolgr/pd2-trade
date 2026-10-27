@@ -72,7 +72,9 @@ export function watchKey(filters: MarketFilters): string {
     requirements: clean({ ...(requirements ?? {}) }),
     stats: (stats ?? [])
       .filter((s) => s.enabled !== false)
-      .map((s) => clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max, or: s.or || undefined }))
+      .map((s) =>
+        clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max, or: s.or || undefined, not: s.not || undefined }),
+      )
       .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
   });
 }

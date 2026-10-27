@@ -54,15 +54,15 @@ export function coveringPseudos(mod: Modifier): PseudoDef[] {
 }
 
 /**
- * Add `row` to `stats`, or update the row already filtering the same stat (same kind + key) in place; returns
- * the new list and the id of the touched row.
+ * Add `row` to `stats`, or update the row already filtering for the same stat (same kind + key, not excluded) in
+ * place; returns the new list and the id of the touched row.
  */
 export function mergeStatFilter(
   stats: StatFilter[],
   row: Omit<StatFilter, 'id' | 'enabled'> & { enabled?: boolean },
   newId: () => string = () => crypto.randomUUID(),
 ): { stats: StatFilter[]; id: string } {
-  const existing = stats.find((s) => s.kind === row.kind && s.key === row.key);
+  const existing = stats.find((s) => s.kind === row.kind && s.key === row.key && !s.not);
   if (existing) {
     const updated: StatFilter = { ...existing, ...row, id: existing.id, enabled: row.enabled ?? true };
     return { stats: stats.map((s) => (s.id === existing.id ? updated : s)), id: existing.id };

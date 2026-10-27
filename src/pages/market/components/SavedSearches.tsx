@@ -11,6 +11,7 @@ import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
+import { groupOf, orBlockNumbers } from '../lib/stat-groups';
 import { filterName } from './stat-text';
 import type { MarketFilters, SavedSearch, StatFilter } from '../lib/types';
 import { fieldInputClass } from './controls';
@@ -26,9 +27,11 @@ export function describeFilters(f: MarketFilters): string {
   const stats = f.stats.filter((s) => s.enabled);
   const row = (s: StatFilter) =>
     `${s.kind === 'corruption' ? 'corrupted ' : ''}${filterName(s)}${s.min != null ? ` ≥${s.min}` : ''}`;
-  const required = stats.filter((s) => !s.or).map(row);
-  const anyOf = stats.filter((s) => s.or).map(row);
-  if (anyOf.length) required.push(`any of (${anyOf.join(' / ')})`);
+  const required = stats.filter((s) => groupOf(s) === 'and').map(row);
+  for (const block of orBlockNumbers(stats))
+    required.push(`any of (${stats.filter((s) => !s.not && s.or === block).map(row).join(' / ')})`);
+  const excluded = stats.filter((s) => s.not).map(row);
+  if (excluded.length) required.push(`none of (${excluded.join(' / ')})`);
   if (required.length) parts.push(required.join(', '));
   if (f.sellerName) parts.push(`seller ${f.sellerName}`);
   parts.push(`${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? ' · sold' : ''}`);

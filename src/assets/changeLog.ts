@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.10.8': [
+    '🆕 Market stat filters: up to 5 "Any of" (OR) blocks, each needing at least one of its stats, and a "None of" (NOT) group that hides listings with any of its stats',
+    '✨ Market stat filters: drag a stat by its grip into another block, or pick its block from the AND / OR / NOT button',
+    '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
+  ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
     '🆕 Corrupted zone timer: "Timer shows: Only zones I follow" counts down to your next followed zone and lists only those; notifications keep their own setting, so you can show every zone and get toasts for followed ones only, or the other way round',

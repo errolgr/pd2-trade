@@ -1,5 +1,6 @@
 import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { BookmarkPlus, ChevronDown, RotateCcw, Sigma, Sparkles, Trash2, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { BookmarkPlus, ChevronDown, GripVertical, RotateCcw, Sigma, Sparkles, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
@@ -12,11 +13,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
+import {
+  MAX_OR_BLOCKS,
+  compactBlocks,
+  groupOf,
+  moveToGroup,
+  orBlockNumbers,
+  type StatGroup,
+} from '../lib/stat-groups';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, NumberInput, fieldInputClass } from './controls';
@@ -94,10 +105,35 @@ const tabOf = (choice: StatChoice): StatTab =>
 const statsFirst = (rows: StatFilter[]) =>
   [...rows].sort((a, b) => Number(a.kind === 'corruption') - Number(b.kind === 'corruption'));
 
+/** Where a dragged row can land: a group, or `new` (another any-of block). */
+type DropTarget = StatGroup | 'new';
+const DROP_ATTR = 'data-stat-drop';
+/** Pointer travel (px) before a press on a row's grip becomes a drag. */
+const DRAG_THRESHOLD_PX = 4;
+
+const dropTargetAt = (x: number, y: number): DropTarget | null => {
+  const value = document.elementFromPoint(x, y)?.closest(`[${DROP_ATTR}]`)?.getAttribute(DROP_ATTR);
+  if (!value) return null;
+  return value === 'and' || value === 'not' || value === 'new' ? value : Number(value);
+};
+
+interface RowDrag {
+  id: string;
+  name: string;
+  startX: number;
+  startY: number;
+  x: number;
+  y: number;
+  /** Past DRAG_THRESHOLD_PX: drop zones and the ghost show. */
+  moved: boolean;
+  over: DropTarget | null;
+}
+
 /**
  * Stats section: one search over mods, pseudo stats and cube corruptions, split into tabs (Tab / Shift+Tab
- * switch; the tab of the best match opens first); rows with min/max, enable and AND/OR (the OR rows form one
- * "any of" group), corruption rows last with a red edge; presets.
+ * switch; the tab of the best match opens first); rows with min/max, enable and a group: required (AND), one of
+ * up to MAX_OR_BLOCKS "any of" blocks (OR) or the "none of" group (NOT). Rows move between groups from their
+ * group menu or by dragging their grip. Corruption rows sort last with a red edge; presets.
  */
 export function StatFilters({
   stats,
@@ -116,8 +152,7 @@ export function StatFilters({
   // flip the list between tabs whenever the best match changes kind
   const [pickedTab, setPickedTab] = useState<StatTab | null>(null);
   const [shownTab, setShownTab] = useState<StatTab | null>(null);
-  // After a pick the search stays selected: the next keystroke starts a new search, tabs chosen afresh
-  const freshSearch = useRef(false);
+  const [drag, setDrag] = useState<RowDrag | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(searchRef, () => inputRef.current as HTMLInputElement);
@@ -127,6 +162,19 @@ export function StatFilters({
       ?.querySelector(`[data-stat-id="${CSS.escape(highlight.id)}"]`)
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [highlight]);
+  // Escape drops a drag where it started
+  const dragging = drag !== null;
+  useEffect(() => {
+    if (!dragging) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDrag(null);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [dragging]);
   const matches = useMemo(
     () => (query.trim() ? searchStats(query, MAX_SUGGESTIONS * 3, CORRUPTION_OPTIONS) : []),
     [query],
@@ -150,9 +198,11 @@ export function StatFilters({
   };
 
   const add = (choice: StatChoice) => {
-    // The search stays so a click brings the same list back; selected, so typing starts a new one
-    inputRef.current?.select();
-    freshSearch.current = true;
+    // A pick clears the search (focus stays) so the next stat can be typed right away
+    setQuery('');
+    setPickedTab(null);
+    setShownTab(null);
+    inputRef.current?.focus();
     const row = isPseudo(choice)
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
@@ -162,10 +212,50 @@ export function StatFilters({
   };
   const update = (id: string, changes: Partial<StatFilter>) =>
     onChange(stats.map((s) => (s.id === id ? { ...s, ...changes } : s)));
+  const move = (id: string, target: DropTarget) => {
+    const next = moveToGroup(stats, id, target);
+    if (next !== stats) onChange(next);
+  };
 
-  const required = statsFirst(stats.filter((s) => !s.or));
-  const anyOf = statsFirst(stats.filter((s) => s.or));
-  const enabledAnyOf = anyOf.filter((s) => s.enabled).length;
+  const blocks = orBlockNumbers(stats);
+  const required = statsFirst(stats.filter((s) => groupOf(s) === 'and'));
+  const excluded = statsFirst(stats.filter((s) => s.not));
+  const blockRows = (n: number) => statsFirst(stats.filter((s) => !s.not && s.or === n));
+  /** `new` can open a block: fewer than MAX_OR_BLOCKS, and the row isn't a block of its own already. */
+  const canOpenBlock = (s: StatFilter) =>
+    blocks.length < MAX_OR_BLOCKS && !(s.or !== undefined && !s.not && blockRows(s.or).length === 1);
+
+  const gripHandlers = (s: StatFilter, name: string) => ({
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      // Keep receiving moves while the pointer is over other rows / outside the section
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const at = { x: e.clientX, y: e.clientY };
+      setDrag({ id: s.id, name, startX: at.x, startY: at.y, ...at, moved: false, over: groupOf(s) });
+    },
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
+      const { clientX: x, clientY: y } = e;
+      setDrag((d) => {
+        if (!d || d.id !== s.id) return d;
+        const moved = d.moved || Math.hypot(x - d.startX, y - d.startY) >= DRAG_THRESHOLD_PX;
+        return { ...d, x, y, moved, over: moved ? dropTargetAt(x, y) : d.over };
+      });
+    },
+    onPointerUp: () => {
+      if (drag?.id === s.id && drag.moved && drag.over !== null) move(s.id, drag.over);
+      setDrag(null);
+    },
+    onPointerCancel: () => setDrag(null),
+  });
+
+  const activeDrag = drag?.moved ? drag : null;
+  const dropProps = (target: DropTarget) => ({
+    [DROP_ATTR]: String(target),
+    'data-drop-over': activeDrag?.over === target ? '' : undefined,
+  });
+  /** Ring on the group under a dragged row. */
+  const overClass = 'data-[drop-over]:ring-2 data-[drop-over]:ring-primary/70';
 
   const renderRow = (s: StatFilter) => {
     const name = filterName(s);
@@ -176,7 +266,7 @@ export function StatFilters({
         key={s.id}
         data-stat-id={s.id}
         initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: s.enabled ? 1 : 0.55, height: 'auto' }}
+        animate={{ opacity: activeDrag?.id === s.id ? 0.35 : s.enabled ? 1 : 0.55, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: DUR.med, ease: EASE_OUT }}
         className="relative overflow-hidden"
@@ -194,8 +284,17 @@ export function StatFilters({
         )}
         {corruption && <span aria-hidden
           className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />}
-        <div className="relative space-y-1 py-1 pr-0.5 pl-1.5">
-          <div className="flex min-w-0 items-center gap-1.5">
+        <div className="relative space-y-1 py-1 pr-0.5 pl-1">
+          <div className="flex min-w-0 items-center gap-1">
+            <span
+              aria-hidden
+              title="Drag to another group"
+              data-stat-grip={s.id}
+              className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
+              {...gripHandlers(s, name)}
+            >
+              <GripVertical className="size-3" />
+            </span>
             <Checkbox
               checked={s.enabled}
               aria-label={`${s.enabled ? 'Disable' : 'Enable'} ${name}`}
@@ -209,37 +308,25 @@ export function StatFilters({
               title={name}>
               {name}
             </span>
-            <button
-              type="button"
-              aria-pressed={!!s.or}
-              aria-label={`${name}: ${s.or ? 'one of the any-of group (OR)' : 'required (AND)'}`}
-              title={
-                s.or
-                  ? 'OR: at least one "Any of" row must match. Click to require this one (AND).'
-                  : 'AND: required. Click to make it an alternative (OR).'
-              }
-              onClick={() => update(s.id, { or: s.or ? undefined : true })}
-              className={cn(
-                'inline-flex h-5 w-8 shrink-0 items-center justify-center rounded border text-[10px] font-semibold tracking-wide outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-                s.or
-                  ? 'border-info/50 bg-info/15 text-info hover:bg-info/25'
-                  : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
-              )}
-            >
-              {s.or ? 'OR' : 'AND'}
-            </button>
+            <GroupMenu
+              name={name}
+              group={groupOf(s)}
+              blocks={blocks}
+              canOpenBlock={canOpenBlock(s)}
+              onMove={(target) => move(s.id, target)}
+            />
             <button
               type="button"
               aria-label={`Remove ${name}`}
               title="Remove"
-              onClick={() => onChange(stats.filter((x) => x.id !== s.id))}
+              onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
               className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               <X className="size-3.5" />
             </button>
           </div>
           {bounded ? (
-            <div className="grid grid-cols-2 gap-1 pr-7 pl-5">
+            <div className="grid grid-cols-2 gap-1 pr-7 pl-9">
               <StatNumber label="Min"
                 name={name}
                 value={s.min}
@@ -250,12 +337,27 @@ export function StatFilters({
                 onChange={(max) => update(s.id, { max })} />
             </div>
           ) : (
-            <p className="pl-5 text-[10px] text-muted-foreground">Item has this corruption</p>
+            <p className="pl-9 text-[10px] text-muted-foreground">Item has this corruption</p>
           )}
         </div>
       </motion.li>
     );
   };
+
+  /** A dashed zone for a group that has no rows yet, shown while a row is dragged. */
+  const dropZone = (target: DropTarget, label: string, tone: string) => (
+    <div
+      {...dropProps(target)}
+      className={cn(
+        'rounded-md border border-dashed px-1.5 py-1.5 text-center text-[10px] font-semibold tracking-wider uppercase',
+        tone,
+        overClass,
+      )}
+    >
+      {label}
+    </div>
+  );
+  const dragged = activeDrag ? stats.find((s) => s.id === activeDrag.id) : undefined;
 
   return (
     <div className="space-y-1.5">
@@ -266,11 +368,10 @@ export function StatFilters({
           placeholder="Add stat…  ( ? )"
           value={query}
           onQuery={(q) => {
-            if (freshSearch.current || !q.trim()) {
+            if (!q.trim()) {
               setPickedTab(null);
               setShownTab(null);
             }
-            freshSearch.current = false;
             setQuery(q);
           }}
           options={suggestions}
@@ -348,25 +449,63 @@ export function StatFilters({
 
       {stats.length > 0 && (
         <div ref={listRef}
-          className="space-y-1.5">
-          {required.length > 0 && (
-            <ul className="divide-y divide-border/50 overflow-hidden rounded-md border border-border/60">
+          className={cn('space-y-1.5', activeDrag && 'select-none')}>
+          {required.length > 0 ? (
+            <ul
+              {...dropProps('and')}
+              aria-label="All of"
+              className={cn('divide-y divide-border/50 overflow-hidden rounded-md border border-border/60', overClass)}
+            >
               <AnimatePresence initial={false}>{required.map(renderRow)}</AnimatePresence>
             </ul>
+          ) : (
+            activeDrag && dropZone('and', 'Required (AND)', 'border-border text-muted-foreground')
           )}
-          {anyOf.length > 0 && (
-            <section aria-label="Any of"
-              className="overflow-hidden rounded-md border border-info/40 bg-info/5">
-              <header className="flex items-baseline justify-between gap-2 border-b border-info/20 px-1.5 py-0.5">
-                <span className="text-[10px] font-semibold tracking-wider text-info uppercase">Any of</span>
+          {blocks.map((n) => {
+            const rows = blockRows(n);
+            const enabled = rows.filter((s) => s.enabled).length;
+            const label = blocks.length > 1 ? `Any of ${n}` : 'Any of';
+            return (
+              <section
+                key={n}
+                {...dropProps(n)}
+                aria-label={label}
+                className={cn('overflow-hidden rounded-md border border-info/40 bg-info/5', overClass)}
+              >
+                <header className="flex items-baseline justify-between gap-2 border-b border-info/20 px-1.5 py-0.5">
+                  <span className="text-[10px] font-semibold tracking-wider text-info uppercase">{label}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">
+                    {enabled > 1 ? `at least 1 of ${enabled} must match` : 'add or drag in another row'}
+                  </span>
+                </header>
+                <ul className="divide-y divide-border/50">
+                  <AnimatePresence initial={false}>{rows.map(renderRow)}</AnimatePresence>
+                </ul>
+              </section>
+            );
+          })}
+          {activeDrag &&
+            dragged &&
+            canOpenBlock(dragged) &&
+            dropZone('new', blocks.length ? 'New any-of block (OR)' : 'Any of (OR)', 'border-info/50 text-info')}
+          {excluded.length > 0 ? (
+            <section
+              {...dropProps('not')}
+              aria-label="None of"
+              className={cn('overflow-hidden rounded-md border border-destructive/40 bg-destructive/5', overClass)}
+            >
+              <header className="flex items-baseline justify-between gap-2 border-b border-destructive/20 px-1.5 py-0.5">
+                <span className="text-[10px] font-semibold tracking-wider text-destructive uppercase">None of</span>
                 <span className="truncate text-[10px] text-muted-foreground">
-                  {enabledAnyOf > 1 ? `at least 1 of ${enabledAnyOf} must match` : 'add another OR row'}
+                  {excluded.length > 1 ? 'listings with any of these are hidden' : 'listings with this are hidden'}
                 </span>
               </header>
               <ul className="divide-y divide-border/50">
-                <AnimatePresence initial={false}>{anyOf.map(renderRow)}</AnimatePresence>
+                <AnimatePresence initial={false}>{excluded.map(renderRow)}</AnimatePresence>
               </ul>
             </section>
+          ) : (
+            activeDrag && dropZone('not', 'Exclude (NOT)', 'border-destructive/50 text-destructive')
           )}
         </div>
       )}
@@ -376,7 +515,81 @@ export function StatFilters({
           corruptions, or start from a preset.
         </p>
       )}
+      {activeDrag &&
+        createPortal(
+          <div
+            aria-hidden
+            className="pointer-events-none fixed z-[1000] max-w-56 truncate rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-lg"
+            style={{ left: activeDrag.x + 12, top: activeDrag.y + 8 }}
+          >
+            {activeDrag.name}
+          </div>,
+          document.body,
+        )}
     </div>
+  );
+}
+
+/** A row's group: AND / OR n / NOT, as a menu that moves the row. */
+function GroupMenu({
+  name,
+  group,
+  blocks,
+  canOpenBlock,
+  onMove,
+}: {
+  name: string;
+  group: StatGroup;
+  blocks: number[];
+  canOpenBlock: boolean;
+  onMove: (target: DropTarget) => void;
+}) {
+  const description =
+    group === 'and' ? 'required (AND)' : group === 'not' ? 'excluded (NOT)' : `in any-of block ${group} (OR)`;
+  const options: { target: DropTarget; label: string }[] = [
+    { target: 'and', label: 'Required (AND)' },
+    ...blocks.map((n) => ({ target: n, label: blocks.length > 1 ? `Any of ${n} (OR)` : 'Any of (OR)' })),
+    ...(canOpenBlock
+      ? [{ target: 'new' as const, label: blocks.length ? 'New any-of block (OR)' : 'Any of (OR)' }]
+      : []),
+    { target: 'not', label: 'Exclude (NOT)' },
+  ];
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${name}: ${description}`}
+          title="AND: required · OR: at least one row of its block · NOT: excluded. Click to move it, or drag the grip."
+          className={cn(
+            'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded border px-1 text-[10px] font-semibold tracking-wide whitespace-nowrap outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+            group === 'and'
+              ? 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+              : group === 'not'
+                ? 'border-destructive/50 bg-destructive/15 text-destructive hover:bg-destructive/25'
+                : 'border-info/50 bg-info/15 text-info hover:bg-info/25',
+          )}
+        >
+          {group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end"
+        className="min-w-44">
+        <DropdownMenuLabel className="text-xs">Move to</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={String(group)}
+          onValueChange={(v) => onMove(options.find((o) => String(o.target) === v)?.target ?? group)}
+        >
+          {options.map((o) => (
+            <DropdownMenuRadioItem key={String(o.target)}
+              value={String(o.target)}
+              className="text-xs">
+              {o.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

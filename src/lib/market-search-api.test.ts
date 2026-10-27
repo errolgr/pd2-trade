@@ -154,19 +154,21 @@ describe('marketSearchBody', () => {
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
 
-  it('sends OR and corruption rows, and never text over the service limits', () => {
+  it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
       sellerName: 'CIutch',
       stats: [
-        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
         { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
+        { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
       ],
     });
     const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
     expect(body.filters.stats).toEqual([
-      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
       { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+      { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
     ]);
     expect(body.filters.priceText).toHaveLength(100);
     expect(body.filters.sellerName).toBe('CIutch');
