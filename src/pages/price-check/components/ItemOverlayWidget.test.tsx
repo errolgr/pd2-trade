@@ -471,6 +471,39 @@ describe('ItemOverlayWidget stat selection', () => {
     expect(screen.queryByText(/selected/)).toBeNull();
     expect(screen.getByText('Ready to search')).not.toBeNull();
   });
+
+  // #147: BH exports chance-to-cast lines without a stat id or skill. Their rows shared one key, so React lost
+  // track of all but one of them and the rest stayed on screen under every later price check.
+  it('a new item shows only its own chance-to-cast rows', async () => {
+    const ctc = (chance: number, level: number, skill: string, when: string) => ({
+      name: `${chance}% Chance to cast level ${level} ${skill} ${when}`,
+      chance,
+      level,
+    });
+    const { rerenderItem } = renderWidget(
+      rareRing({ stats: [FCR, ctc(15, 20, 'Fire Ball', 'on attack'), ctc(2, 20, 'Fire Wall', 'on attack')] }),
+    );
+    expect(screen.getByText('15% Chance to cast level 20 Fire Ball on attack')).not.toBeNull();
+    expect(screen.getByText('2% Chance to cast level 20 Fire Wall on attack')).not.toBeNull();
+
+    rerenderItem(
+      rareRing({
+        name: 'Storm Loop',
+        stats: [MF, ctc(14, 18, 'Ice Blast', 'on striking'), ctc(5, 3, 'Frost Nova', 'when struck')],
+      }),
+    );
+    await waitFor(() => expect(screen.queryByText(/Fire Ball|Fire Wall/)).toBeNull());
+    expect(screen.getAllByText(/Chance to cast/).map((el) => el.textContent)).toEqual([
+      '14% Chance to cast level 18 Ice Blast on striking',
+      '5% Chance to cast level 3 Frost Nova when struck',
+    ]);
+
+    rerenderItem(
+      rareRing({ name: 'Sparkling Large Charm of Balance', quality: 'Magic', type: 'Large Charm', stats: [MF] }),
+    );
+    await waitFor(() => expect(screen.queryByText(/Chance to cast/)).toBeNull());
+    expect(screen.getByText('+30% Better Chance of Getting Magic Items')).not.toBeNull();
+  });
 });
 
 describe('ItemOverlayWidget market search', () => {
