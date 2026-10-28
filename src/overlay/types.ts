@@ -91,7 +91,10 @@ export interface OpenOptions {
   reposition?: boolean;
   /** Already open: only bring it to front (keep payload and payloadVersion, e.g. a half-filled form). */
   keepPayload?: boolean;
-  /** Claim keyboard focus right away. Opening never does by default: it would take focus (and sound) from the game. */
+  /**
+   * Claim keyboard focus right away. Opening never does by default: it would take focus (and sound) from the game.
+   * Only over a fullscreen game does an 'onPointerDown' panel take it on open anyway, or it would not show.
+   */
   focus?: boolean;
 }
 
@@ -109,7 +112,8 @@ export interface PanelDef {
   persist: boolean;
   /**
    * onPointerDown: a pointerdown on a text field inside the panel claims keyboard focus (the only time the game
-   * loses focus); a pointerdown anywhere else in the panel gives it back.
+   * loses focus, short of opening over a fullscreen game); a pointerdown anywhere else in the panel gives it back
+   * (not over a fullscreen game, where the panel would vanish).
    */
   keyboard: 'never' | 'onPointerDown';
   /** Closed => display:none but still mounted (state/listeners survive). Mounted (closed) from startup. */

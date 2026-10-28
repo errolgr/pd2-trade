@@ -19,6 +19,13 @@ pub fn is_diablo_focused() -> bool {
     window::is_game_context()
 }
 
+/// Diablo II fills its monitor (D2GL fullscreen): while it holds the foreground the graphics driver draws nothing
+/// else on that monitor, so a panel only shows once the overlay takes the foreground (see `window::diablo_fullscreen`).
+#[tauri::command]
+pub fn is_diablo_fullscreen() -> bool {
+    window::diablo_fullscreen()
+}
+
 #[tauri::command]
 pub fn focus_diablo() -> bool {
     window::focus_diablo()

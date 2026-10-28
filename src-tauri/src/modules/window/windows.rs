@@ -32,8 +32,16 @@ fn find_diablo_hwnd() -> Option<HWND> {
     (hwnd != 0).then_some(hwnd)
 }
 
-pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
-    let hwnd = find_diablo_hwnd()?;
+fn to_window_rect(r: RECT) -> WindowRect {
+    WindowRect {
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+    }
+}
+
+fn window_rect(hwnd: HWND) -> Option<WindowRect> {
     let mut r = RECT {
         left: 0,
         top: 0,
@@ -41,15 +49,30 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
         bottom: 0,
     };
     let ok = unsafe { GetWindowRect(hwnd, &mut r as *mut RECT) };
-    if ok == 0 {
-        return None;
+    (ok != 0).then(|| to_window_rect(r))
+}
+
+pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+    window_rect(find_diablo_hwnd()?)
+}
+
+/// Diablo II fills its monitor exactly, as D2GL's fullscreen mode sizes it (a borderless window at the monitor
+/// rect, not topmost). Graphics drivers present such an OpenGL window straight to the screen while it holds the
+/// foreground, bypassing the compositor: nothing else on that monitor is drawn, the always-on-top overlay
+/// included, although the overlay is above the game and still gets the mouse. (cnc-ddraw, PD2's DDraw renderer,
+/// makes its borderless window one pixel taller than the monitor to avoid exactly this.)
+pub fn diablo_fullscreen() -> bool {
+    let Some(hwnd) = find_diablo_hwnd() else {
+        return false;
+    };
+    if unsafe { IsIconic(hwnd) } != 0 {
+        return false;
     }
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    let monitor = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+    match (window_rect(hwnd), monitor_rects(monitor)) {
+        (Some(window), Some((monitor, _work))) => window == monitor,
+        _ => false,
+    }
 }
 
 /// The overlay window (Main), the only one of ours that counts as `Foreground::OwnWindow`.
@@ -195,7 +218,8 @@ pub fn bring_to_foreground(hwnd: HWND) -> bool {
     }
 }
 
-fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
+/// Monitor rect and work area (monitor minus taskbar) of `monitor`.
+fn monitor_rects(monitor: HMONITOR) -> Option<(WindowRect, WindowRect)> {
     if monitor == 0 {
         return None;
     }
@@ -204,13 +228,7 @@ fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
     if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
         return None;
     }
-    let r = info.rcWork;
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    Some((to_window_rect(info.rcMonitor), to_window_rect(info.rcWork)))
 }
 
 /// Work area (monitor minus taskbar) of the monitor containing Diablo II, else the primary monitor. Not the full
@@ -221,7 +239,7 @@ pub fn get_appropriate_window_bounds(_app: &AppHandle) -> Option<WindowRect> {
         Some(hwnd) => unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) },
         None => unsafe { MonitorFromPoint(POINT { x: 0, y: 0 }, MONITOR_DEFAULTTOPRIMARY) },
     };
-    work_area(monitor)
+    monitor_rects(monitor).map(|(_monitor, work)| work)
 }
 
 // --- Event-driven foreground monitoring ---
