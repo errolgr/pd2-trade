@@ -7,7 +7,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { useOptions } from '@/hooks/useOptions';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { GenericToastPayload } from '@/common/types/Events';
-import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from './useOAuth';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive, useOAuthFlowLink } from './useOAuth';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
@@ -89,7 +89,7 @@ describe('useOAuth startOAuthFlow', () => {
 
     expect(outcome).toBe('acc');
     expect(pollCount()).toBe(4);
-    expect(invoke).toHaveBeenCalledWith('open_oauth_url', { url: 'https://auth' });
+    expect(invoke).toHaveBeenCalledWith('open_url', { url: 'https://auth' });
     expect(updateSettings).toHaveBeenCalledWith({
       pd2Token: 'acc',
       pd2RefreshToken: 'ref',
@@ -138,6 +138,67 @@ describe('useOAuth startOAuthFlow', () => {
     });
 
     expect(console.error).toHaveBeenCalledWith('[OAuth] Flow failed:', expect.any(Error));
+  });
+
+  it('offers the sign-in link while the flow runs, and clears it when the flow ends', async () => {
+    routeFetch([jsonResponse(null, 404), jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+    expect(result.current.link).toBeNull();
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link).toEqual({ url: 'https://auth', openFailed: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(pending).resolves.toBe('acc');
+    });
+    expect(result.current.link).toBeNull();
+  });
+
+  it('keeps waiting when no browser could be opened, so the user can open the link by hand', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce('/usr/bin/xdg-open failed (exit status: 3)');
+    routeFetch([jsonResponse(null, 404), jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link).toEqual({ url: 'https://auth', openFailed: true });
+    expect(console.warn).toHaveBeenCalledWith('[OAuth] Could not open the browser:', expect.any(String));
+
+    // The user opened the copied link: the flow finishes like any other
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(pending).resolves.toBe('acc');
+    });
+    expect(console.error).not.toHaveBeenCalled();
+    expect(toasts().map((t) => t.description)).toEqual(['Authentication successful!']);
+    expect(result.current.link).toBeNull();
+  });
+
+  it('drops the link of a cancelled flow', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce('/usr/bin/xdg-open failed (exit status: 3)');
+    routeFetch([jsonResponse(null, 404)]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link?.openFailed).toBe(true);
+
+    await act(async () => {
+      cancelOAuthFlow();
+      await expect(pending).resolves.toBe(false);
+    });
+    expect(result.current.link).toBeNull();
   });
 
   it('outside Tauri opens the sign-in tab during the click, then points it at PD2', async () => {

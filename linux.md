@@ -77,6 +77,21 @@ The frontend required updates to support the new configuration requirements.
 - **Impact**:
   - **Wayland**: Input simulation often fails on Wayland without specific compositor configuration or permissions or using XWayland maybe. The app might not be able to send `Ctrl+C` to the game. **You currently always need to manually copy the item to the clipboard before using other commands like price checking or listing an item.**
   - **X11**: Should work generally fine, but is as yet untested.
+- **When the Ctrl+C doesn't arrive**: the price check and Quick List say "No item was copied" (the clipboard didn't change) instead of "Item is not supported or invalid". KDE Plasma may ask for permission to control input devices; allow it. If the message stays, press `Ctrl+C` on the item yourself before the hotkey.
+
+### Opening Links ([src/modules/opener.rs](../src-tauri/src/modules/opener.rs))
+
+- **Problem**: The AppImage bundles the build machine's `xdg-open` (Ubuntu 22.04, xdg-utils 1.1.3), which exits successfully without opening anything on KDE Plasma 6, and AppRun points `LD_LIBRARY_PATH`, `GIO_EXTRA_MODULES`, `GTK_PATH` and friends into the image, which breaks the host's launchers and browser. tauri-plugin-opener also reports success as soon as the launcher started.
+- **Linux Solution**: Links and the config folder open through the host's `xdg-open` (then `gio open`, `kde-open`, `gnome-open`), found on `PATH` without the image's directories and run with the image's entries taken out of the environment. A launcher that exits with an error counts as a failure; the sign-in then keeps waiting and both the sign-in window and Settings > Account offer **Copy link** to open it by hand.
+
+### Rendering (WebKitGTK)
+
+- **NVIDIA**: WebKitGTK's DMA-BUF renderer fails to allocate its buffers with NVIDIA's driver (`Failed to create GBM buffer`), leaving black or blank windows. When the `nvidia` kernel module is loaded the app sets `WEBKIT_DMABUF_RENDERER_FORCE_SHM=1` (shared-memory buffers; WebKitGTK 2.44+) unless `WEBKIT_DISABLE_DMABUF_RENDERER`, `WEBKIT_DMABUF_RENDERER_FORCE_SHM` or `WEBKIT_DISABLE_COMPOSITING_MODE` is already set. It avoids `WEBKIT_DISABLE_DMABUF_RENDERER=1`: since WebKitGTK 2.46 that turns accelerated compositing off altogether, which draws pages partially or crashes them.
+- **Other GPUs with a black window**: start the app with `WEBKIT_DMABUF_RENDERER_FORCE_SHM=1`.
+
+### Single Instance
+
+- Launching the app while it already runs ends the new process right away (exit 0 after ~0.1 s in the journal) and opens Settings in the running one. If nothing appears, the running instance is stuck: quit it from the tray or `pkill -f pd2-trader-installer`.
 
 ## 4. Remaining Work
 

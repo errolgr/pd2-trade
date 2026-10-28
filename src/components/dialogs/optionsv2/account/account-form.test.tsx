@@ -6,14 +6,20 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { cancelOAuthFlow, useOAuthFlowActive } from '@/hooks/useOAuth';
+import { cancelOAuthFlow, useOAuthFlowActive, useOAuthFlowLink } from '@/hooks/useOAuth';
+import { writeText } from '@/lib/browser-clipboard';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { AccountForm } from './account-form';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
-vi.mock('@/hooks/useOAuth', () => ({ cancelOAuthFlow: vi.fn(), useOAuthFlowActive: vi.fn() }));
+vi.mock('@/hooks/useOAuth', () => ({
+  cancelOAuthFlow: vi.fn(),
+  useOAuthFlowActive: vi.fn(),
+  useOAuthFlowLink: vi.fn(),
+}));
+vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
 vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
 
@@ -45,6 +51,8 @@ afterAll(() => {
 beforeEach(() => {
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(useOAuthFlowActive).mockReturnValue(false);
+  vi.mocked(useOAuthFlowLink).mockReturnValue(null);
+  vi.mocked(writeText).mockResolvedValue(undefined);
   vi.mocked(cancelOAuthFlow).mockReset();
   logout.mockReset();
   startOAuthFlow.mockReset();
@@ -98,6 +106,28 @@ describe('AccountForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(cancelOAuthFlow).toHaveBeenCalledTimes(1);
     expect(startOAuthFlow).not.toHaveBeenCalled();
+  });
+
+  it("while a sign-in runs: offers its link to copy, and says so when the browser couldn't be opened", async () => {
+    vi.mocked(useOAuthFlowActive).mockReturnValue(true);
+    vi.mocked(useOAuthFlowLink).mockReturnValue({ url: 'https://auth/x', openFailed: false });
+    renderForm(null);
+    expect(screen.queryByText(/Browser didn't open\?/)).not.toBeNull();
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copy link' })));
+    expect(writeText).toHaveBeenCalledWith('https://auth/x');
+    expect(screen.queryByRole('button', { name: 'Link copied' })).not.toBeNull();
+
+    cleanup();
+    vi.mocked(useOAuthFlowLink).mockReturnValue({ url: 'https://auth/x', openFailed: true });
+    renderForm(null);
+    expect(screen.queryByText(/Couldn't open your browser/)).not.toBeNull();
+  });
+
+  it('has no link to copy before the sign-in has one', () => {
+    vi.mocked(useOAuthFlowActive).mockReturnValue(true);
+    renderForm(null);
+    expect(screen.queryByRole('button', { name: 'Copy link' })).toBeNull();
   });
 
   it('shows the logout progress until logout settles', async () => {

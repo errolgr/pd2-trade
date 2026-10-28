@@ -7,8 +7,14 @@ pub mod modules;
 // Re-export modules for easier access
 pub use modules::{chat_watcher, commands, debug_logger, keyboard, region, system, window};
 
+/// Emitted to Main when the app is launched again while it runs.
+const APP_RELAUNCHED_EVENT: &str = "app-relaunched";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    modules::webkit::apply_defaults();
+
     #[cfg(target_os = "windows")]
     if !system::is_elevated() {
         system::restart_as_admin();
@@ -22,11 +28,15 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        // A second launch ends in the plugin (exit 0); show this instance's Settings so the launch visibly does
+        // something, even when nothing of the app is on screen (the overlay is see-through, the tray may be hidden).
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = app
-                .get_webview_window(&modules::config::WINDOW_CONFIG.labels.Main)
-                .expect("no main window")
-                .set_focus();
+            eprintln!("PD2 Trader is already running: showing its settings");
+            let _ = app.emit_to(
+                modules::config::WINDOW_CONFIG.labels.Main.as_str(),
+                APP_RELAUNCHED_EVENT,
+                (),
+            );
         }))
         .plugin(tauri_plugin_app_exit::init())
         // Shortcuts registered by the page call back into it; after a reload they'd stay registered but
@@ -134,7 +144,8 @@ pub fn run() {
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
             commands::auto_detect_diablo2_directory,
-            commands::open_oauth_url,
+            commands::open_url,
+            commands::open_config_dir,
             commands::write_debug_logs,
             commands::open_sign_in_window,
             commands::close_sign_in_window,
