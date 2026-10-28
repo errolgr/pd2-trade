@@ -21,10 +21,9 @@ use windows_sys::Win32::{
         BringWindowToTop, FindWindowW, GetClassNameW, GetForegroundWindow, GetWindow,
         GetWindowLongW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
         IsWindowVisible, SetForegroundWindow, SetWindowLongW, SetWindowPos, ShowWindow,
-        EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, GW_HWNDPREV, HWND_TOPMOST, STYLESTRUCT,
-        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
-        WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
-        WS_EX_TOPMOST,
+        EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, GW_HWNDPREV, STYLESTRUCT, SWP_FRAMECHANGED,
+        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
+        WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
     },
 };
 
@@ -38,8 +37,16 @@ fn find_diablo_hwnd() -> Option<HWND> {
     (hwnd != 0).then_some(hwnd)
 }
 
-pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
-    let hwnd = find_diablo_hwnd()?;
+fn to_window_rect(r: RECT) -> WindowRect {
+    WindowRect {
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+    }
+}
+
+fn window_rect(hwnd: HWND) -> Option<WindowRect> {
     let mut r = RECT {
         left: 0,
         top: 0,
@@ -47,15 +54,30 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
         bottom: 0,
     };
     let ok = unsafe { GetWindowRect(hwnd, &mut r as *mut RECT) };
-    if ok == 0 {
-        return None;
+    (ok != 0).then(|| to_window_rect(r))
+}
+
+pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+    window_rect(find_diablo_hwnd()?)
+}
+
+/// Diablo II fills its monitor exactly, as D2GL's fullscreen mode sizes it (a borderless window at the monitor
+/// rect, not topmost). Graphics drivers present such an OpenGL window straight to the screen while it holds the
+/// foreground, bypassing the compositor: nothing else on that monitor is drawn, the always-on-top overlay
+/// included, although the overlay is above the game and still gets the mouse. (cnc-ddraw, PD2's DDraw renderer,
+/// makes its borderless window one pixel taller than the monitor to avoid exactly this.)
+pub fn diablo_fullscreen() -> bool {
+    let Some(hwnd) = find_diablo_hwnd() else {
+        return false;
+    };
+    if unsafe { IsIconic(hwnd) } != 0 {
+        return false;
     }
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    let monitor = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+    match (window_rect(hwnd), monitor_rects(monitor)) {
+        (Some(window), Some((monitor, _work))) => window == monitor,
+        _ => false,
+    }
 }
 
 /// The overlay window (Main), the only one of ours that counts as `Foreground::OwnWindow`.
@@ -65,30 +87,9 @@ pub fn set_overlay_window(hwnd: HWND) {
     OVERLAY_WINDOW.store(hwnd, Ordering::SeqCst);
 }
 
-/// Delay before raising the overlay a second time: fullscreen renderers re-apply their own topmost z-order
-/// while activating, after the foreground event has fired.
-const RAISE_AGAIN_MS: u64 = 300;
-
-/// Puts the overlay back at the top of the topmost band without activating it. PD2's fullscreen window is
-/// topmost too, and among topmost windows the last activated one is drawn in front, so every time the game
-/// takes the foreground it would cover the overlay.
-fn raise_overlay() {
-    let overlay = OVERLAY_WINDOW.load(Ordering::SeqCst);
-    if overlay == 0 {
-        return;
-    }
-    unsafe {
-        SetWindowPos(
-            overlay,
-            HWND_TOPMOST,
-            0,
-            0,
-            0,
-            0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
-        );
-    }
-}
+/// Delay before the debug log records what is stacked above the overlay after a foreground change: the
+/// activating window settles its own z-order after the foreground event has fired.
+const STACKING_LOG_DELAY_MS: u64 = 300;
 
 /// `Game.exe "Diablo II" [class] topmost` for the debug log: which program a window belongs to.
 fn describe_window(hwnd: HWND) -> String {
@@ -303,7 +304,8 @@ pub fn bring_to_foreground(hwnd: HWND) -> bool {
     }
 }
 
-fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
+/// Monitor rect and work area (monitor minus taskbar) of `monitor`.
+fn monitor_rects(monitor: HMONITOR) -> Option<(WindowRect, WindowRect)> {
     if monitor == 0 {
         return None;
     }
@@ -312,13 +314,7 @@ fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
     if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
         return None;
     }
-    let r = info.rcWork;
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    Some((to_window_rect(info.rcMonitor), to_window_rect(info.rcWork)))
 }
 
 /// Work area (monitor minus taskbar) of the monitor containing Diablo II, else the primary monitor. Not the full
@@ -329,7 +325,7 @@ pub fn get_appropriate_window_bounds(_app: &AppHandle) -> Option<WindowRect> {
         Some(hwnd) => unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) },
         None => unsafe { MonitorFromPoint(POINT { x: 0, y: 0 }, MONITOR_DEFAULTTOPRIMARY) },
     };
-    work_area(monitor)
+    monitor_rects(monitor).map(|(_monitor, work)| work)
 }
 
 // --- Event-driven foreground monitoring ---
@@ -351,11 +347,13 @@ unsafe extern "system" fn win_event_proc(
     _event_time: u32,
 ) {
     LAST_FOREGROUND_EVENT.store(hwnd, Ordering::SeqCst);
-    let is_diablo = hwnd != 0 && find_diablo_hwnd() == Some(hwnd);
-    let logging = debug_logger::enabled();
-    if logging {
-        let role = if is_diablo {
-            "diablo"
+    if debug_logger::enabled() {
+        let role = if hwnd != 0 && find_diablo_hwnd() == Some(hwnd) {
+            if diablo_fullscreen() {
+                "diablo (fills its monitor)"
+            } else {
+                "diablo"
+            }
         } else if hwnd != 0 && hwnd == OVERLAY_WINDOW.load(Ordering::SeqCst) {
             "overlay"
         } else {
@@ -365,19 +363,11 @@ unsafe extern "system" fn win_event_proc(
             "WINDOW",
             &format!("foreground -> {role}: {}", describe_window(hwnd)),
         );
-    }
-    if is_diablo {
-        raise_overlay();
-    }
-    if is_diablo || logging {
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(RAISE_AGAIN_MS));
-            if logging {
-                log_overlay_stacking(&format!("{RAISE_AGAIN_MS}ms after foreground change"));
-            }
-            if is_diablo {
-                raise_overlay();
-            }
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_millis(STACKING_LOG_DELAY_MS));
+            log_overlay_stacking(&format!(
+                "{STACKING_LOG_DELAY_MS}ms after foreground change"
+            ));
         });
     }
     if let Some(cb) = &*CALLBACK.lock().unwrap() {

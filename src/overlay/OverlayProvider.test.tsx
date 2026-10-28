@@ -19,7 +19,13 @@ import {
 } from './OverlayProvider';
 import { OverlayRoot } from './OverlayRoot';
 import { usePanel } from './Panel';
-import { claimKeyboard, isKeyboardClaimed, releaseKeyboard } from './keyboard';
+import {
+  claimKeyboard,
+  isHeldOverFullscreenGame,
+  isKeyboardClaimed,
+  releaseKeyboard,
+  showOverFullscreenGame,
+} from './keyboard';
 import { LAYOUT_STORAGE_KEY, savePanelRect } from './layout-storage';
 import type { PanelDef, PanelDefs, PanelId } from './types';
 
@@ -47,7 +53,9 @@ const focus = vi.hoisted(() => ({ onChange: null as ((focused: boolean, handoff?
 vi.mock('./keyboard', () => ({
   claimKeyboard: vi.fn(async () => {}),
   releaseKeyboard: vi.fn(async () => {}),
+  showOverFullscreenGame: vi.fn(async () => {}),
   isKeyboardClaimed: vi.fn(() => false),
+  isHeldOverFullscreenGame: vi.fn(() => false),
   trackKeyboardFocus: (onChange: (focused: boolean, handoff?: boolean) => void) => {
     focus.onChange = onChange;
     return () => {
@@ -369,6 +377,19 @@ describe('OverlayProvider', () => {
     expect(claimKeyboard).toHaveBeenCalledTimes(1);
   });
 
+  it('opening a panel the user works in asks to show it over a fullscreen game; widgets never do', () => {
+    mount();
+    act(() => api.openPanel('itemSearch', { text: 'x' }));
+    expect(showOverFullscreenGame).toHaveBeenCalledTimes(1);
+    act(() => {
+      api.openPanel('chatButton');
+      api.openPanel('netWorthTicker');
+    });
+    expect(showOverFullscreenGame).toHaveBeenCalledTimes(1);
+    act(() => api.openPanel('chat', undefined, { focus: true })); // claims anyway
+    expect(showOverFullscreenGame).toHaveBeenCalledTimes(1);
+  });
+
   it('closing the last keyboard panel releases a claim', () => {
     mount();
     vi.mocked(isKeyboardClaimed).mockReturnValue(true);
@@ -410,6 +431,17 @@ describe('OverlayProvider', () => {
     });
     expect(releaseKeyboard).toHaveBeenCalledTimes(1);
     expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('over a fullscreen game, clicking elsewhere in a panel keeps the foreground (the panel would vanish)', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    vi.mocked(isKeyboardClaimed).mockReturnValueOnce(true);
+    vi.mocked(isHeldOverFullscreenGame).mockReturnValueOnce(true);
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
   });
 
   it('opening a select keeps the keyboard, so a typed letter jumps to that option', () => {
