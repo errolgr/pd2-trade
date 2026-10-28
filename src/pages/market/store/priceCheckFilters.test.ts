@@ -85,6 +85,12 @@ describe('marketQueryToFilters', () => {
     ).toMatchObject({ typeCode: 'lcha', baseCode: 'cm3' });
   });
 
+  it('reads a grouped type ($in) as its Type option', () => {
+    expect(marketQueryToFilters({ 'item.base.type_code': { $in: ['h2h', 'h2h2'] } }, false).typeCode).toBe(
+      '{"$in": ["h2h", "h2h2"]}',
+    );
+  });
+
   it('leaves out an unknown quality and absent fields', () => {
     const filters = marketQueryToFilters({ 'item.quality.name': 'Weird' }, false);
     expect(filters.rarity).toBeUndefined();

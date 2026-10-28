@@ -445,6 +445,16 @@ describe('buildGetMarketListingQuery', () => {
     expect(query(item, [key])['item.modifiers'].$all).toEqual([{ $elemMatch: { name, 'values.0': id } }]);
   });
 
+  it('filters melee splash on its chance (values [level, skill, chance]), the roll the clipboard reports', () => {
+    const item = makeItem({
+      type: 'Feral Claws',
+      stats: [{ stat_id: 359, name: 'Melee Attacks Deal Splash Damage', value: 100 }],
+    });
+    expect(query(item, ['id:359'], { 'id:359': { min: '95', max: '105' } })['item.modifiers'].$all).toEqual([
+      { $elemMatch: { name: 'item_splashonhit', 'values.2': { $gte: 95, $lte: 105 } } },
+    ]);
+  });
+
   it('searches a fire damage row on the market pair modifier: min damage in values.0, max in values.1', () => {
     const item = makeItem({
       stats: [
@@ -569,6 +579,13 @@ describe('buildGetMarketListingQuery', () => {
       const matched = { typeLabel: 'Shield', typeValue: 'shie', bases: [] };
       const q = query(makeItem(), [], {}, { searchMode: 1, matched });
       expect(q['item.base.type_code']).toBe('shie');
+      expect(q).not.toHaveProperty(['item.base_code']);
+    });
+
+    it('searches a grouped type in typeLabel mode as its $in object', () => {
+      const matched = { typeLabel: 'Fist Weapon', typeValue: '{"$in": ["h2h", "h2h2"]}', bases: [] };
+      const q = query(makeItem({ type: 'Feral Claws' }), [], {}, { searchMode: 1, matched });
+      expect(q['item.base.type_code']).toEqual({ $in: ['h2h', 'h2h2'] });
       expect(q).not.toHaveProperty(['item.base_code']);
     });
 
