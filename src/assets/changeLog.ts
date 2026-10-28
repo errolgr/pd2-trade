@@ -5,6 +5,11 @@ export const changeLog = {
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
+    '🔧 Price check: searching an ethereal item keeps your stat filters (e.g. Enhanced Damage) instead of dropping them',
+    '🔧 Price check: chance-to-cast and aura lines from a previously checked item no longer stay in the stat list',
+    '✨ List Item from a price check goes straight to that exact item in your stash when it can tell which one it is',
+    '🔧 Chat, market and price check whispers always copy /w *Account (never /w *Character*Account)',
+    "🔧 Ultrawide monitors (21:9, 32:9): overlay panels, the chat dock and toasts stay inside the game's 16:9 area where the mouse can reach them",
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
