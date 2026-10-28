@@ -137,9 +137,6 @@ jobs:
           owner: errolgr
           repo: pd2-trade
           args: ${{ matrix.args }}
-          # Point latest.json at the NSIS setup.exe, not the MSI. MSI major upgrades remove and
-          # reinstall the desktop shortcut on every update (#30); NSIS runs with /UPDATE and leaves it alone.
-          updaterJsonPreferNsis: true
 
       - name: Upload build artifacts (test mode)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode == true }}
