@@ -15,6 +15,9 @@ const NOW = Date.parse('2026-10-25T19:55:42Z');
 const BOX = { width: 300.2, height: 27.5 };
 /** Content box while the schedule is open: 400 x 180. */
 const OPEN_BOX = { width: 399.5, height: 179.2 };
+/** Vertical layout: the narrow column is 176 x 60, and 176 x 400 while the schedule is open. */
+const VERTICAL_BOX = { width: 175.6, height: 59.2 };
+const VERTICAL_OPEN_BOX = { width: 175.6, height: 399.4 };
 const GAME = { x: 100, y: 50, width: 1280, height: 720 };
 
 let settings: Partial<ISettings>;
@@ -23,7 +26,8 @@ let panelRect: OverlayRect;
 let setRect: Mock;
 let resize: () => void;
 
-const pill = () => screen.getByRole('button');
+/** The pill (the schedule's lock toggle is a button too). */
+const pill = () => document.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
 /** Click the pill, then let the ResizeObserver report the new content box. */
 const clickPill = () => {
   fireEvent.click(pill());
@@ -82,6 +86,7 @@ describe('CorruptedZoneTimer', () => {
   it('names the next zone in the tooltip', () => {
     render(<CorruptedZoneTimerPage />);
     expect(pill().title).toContain("Next: Canyon of the Magi and Tal Rasha's Tomb.");
+    expect(pill().title).toMatch(/Click for the schedule, drag to move\.$/);
   });
 
   it('click lists the next six zones; a second click hides them', () => {
@@ -210,6 +215,77 @@ describe('CorruptedZoneTimer', () => {
     fireEvent.click(pill());
     expect(screen.queryByRole('list')).toBeNull();
     expect(updateSettings).toHaveBeenCalledWith({ corruptedZoneTimerAnchor: 'custom' });
+  });
+
+  it('a locked timer does not move when dragged, and a click still opens the schedule', () => {
+    settings = { corruptedZoneTimerLocked: true };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
+    rerender(<CorruptedZoneTimerPage />);
+    setRect.mockClear();
+    expect(pill().title).toMatch(/Click for the schedule\.$/);
+    fireEvent.pointerDown(pill(), { button: 0, pointerId: 1, clientX: 1200, clientY: 70 });
+    fireEvent.pointerMove(pill(), { pointerId: 1, clientX: 1100, clientY: 170 });
+    fireEvent.pointerUp(pill(), { pointerId: 1 });
+    expect(setRect).not.toHaveBeenCalled();
+    expect(updateSettings).not.toHaveBeenCalled();
+    fireEvent.click(pill());
+    expect(screen.getByRole('list', { name: 'Upcoming corrupted zones' })).toBeTruthy();
+  });
+
+  it.each([
+    [false, true],
+    [true, false],
+  ])('the lock under the schedule (pressed: %s) toggles the setting', (locked, next) => {
+    settings = { corruptedZoneTimerLocked: locked };
+    render(<CorruptedZoneTimerPage />);
+    fireEvent.click(pill());
+    const lock = screen.getByRole('button', { name: 'Lock position' });
+    expect(lock.getAttribute('aria-pressed')).toBe(String(locked));
+    fireEvent.click(lock);
+    expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ corruptedZoneTimerLocked: next });
+    expect(pill().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  describe('vertical layout', () => {
+    beforeEach(() => {
+      vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockImplementation(function (this: HTMLElement) {
+        return (this.querySelector('ol') ? VERTICAL_OPEN_BOX : VERTICAL_BOX) as DOMRect;
+      });
+    });
+
+    it('stacks the pill and the schedule in one narrow column, each zone over its time', () => {
+      settings = { corruptedZoneTimerLayout: 'vertical' };
+      render(<CorruptedZoneTimerPage />);
+      fireEvent.click(pill());
+      const list = screen.getByRole('list', { name: 'Upcoming corrupted zones' });
+      expect(pill().className).toContain('flex-col');
+      expect(pill().className).toContain('w-44');
+      expect(list.parentElement!.className).toContain('w-44');
+      const row = within(list).getAllByRole('listitem')[0];
+      expect(row.className).toContain('flex-col');
+      expect(row.firstElementChild!.textContent).toBe("Canyon of the Magi and Tal Rasha's Tomb");
+      expect(row.lastElementChild!.textContent).toMatch(/ · in 5m$/);
+    });
+
+    it.each([
+      ['at the left edge in the lower half opens upwards', 0, 900, 900 + 60 - 400],
+      ['at the right edge in the upper half opens downwards', 1920 - 176, 100, 100],
+    ])('a custom timer %s, keeping its edge and closing back onto the pill', (_case, x, y, openY) => {
+      settings = { corruptedZoneTimerLayout: 'vertical', corruptedZoneTimerAnchor: 'custom' };
+      panelRect = { x, y, width: 176, height: 60 };
+      render(<CorruptedZoneTimerPage />);
+      expect(setRect).not.toHaveBeenCalled();
+      clickPill();
+      expect(setRect).toHaveBeenLastCalledWith({ x, y: openY, width: 176, height: 400 });
+      clickPill();
+      expect(setRect).toHaveBeenLastCalledWith({ x, y, width: 176, height: 60 });
+    });
+
+    it('anchors on the game sized to the column', () => {
+      settings = { corruptedZoneTimerLayout: 'vertical' };
+      render(<CorruptedZoneTimerPage />);
+      expect(setRect).toHaveBeenLastCalledWith({ x: 100 + 1280 - 176 - 12, y: 62, width: 176, height: 60 });
+    });
   });
 
   it('applies the opacity setting', () => {

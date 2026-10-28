@@ -5,6 +5,8 @@ export const changeLog = {
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
+    '🆕 Corrupted zone timer: lock it in place (Settings → Interface, or the lock under the upcoming zones) so a drag no longer moves it; clicking it still shows the upcoming zones',
+    '🆕 Corrupted zone timer: a vertical layout (Settings → Interface → Timer layout) turns it into a narrow column for the left or right side of the screen, with the upcoming zones stacked above or below it',
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
