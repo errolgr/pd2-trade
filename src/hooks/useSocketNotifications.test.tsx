@@ -56,7 +56,14 @@ const bus = vi.hoisted(() => {
 const pd2 = vi.hoisted(() => ({ isConnected: false, refresh: vi.fn() }));
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
-vi.mock('@/assets/poe_whisper.wav', () => ({ default: 'whisper.wav' }));
+vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+// The module fetches the sound at import to make its blob: URL; keep that off the network
+vi.hoisted(() =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  ),
+);
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
 vi.mock('@/lib/browser-fs', () => ({
@@ -159,6 +166,39 @@ describe('isToastEnabled', () => {
   it('only enables the listed types', () => {
     const settings = { toastPopupTypes: ['trade'] } as ISettings;
     expect([isToastEnabled(settings, 'trade'), isToastEnabled(settings, 'offers')]).toEqual([true, false]);
+  });
+});
+
+describe('playNotificationSound', () => {
+  async function playedSrc(fetchSound: () => Promise<Response>) {
+    vi.resetModules();
+    vi.stubGlobal('fetch', vi.fn(fetchSound));
+    const played: string[] = [];
+    vi.stubGlobal(
+      'Audio',
+      class {
+        volume = 1;
+        constructor(public src: string) {}
+        play() {
+          played.push(this.src);
+          return Promise.resolve();
+        }
+      },
+    );
+    // Fresh module load: the blob: URL is made when the module is evaluated
+    const { playNotificationSound } = await import('./useSocketNotifications');
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+    await act(async () => {});
+    playNotificationSound();
+    return played[0];
+  }
+
+  it('plays a blob: URL of the bundled sound (Linux WebKitGTK refuses media from tauri://)', async () => {
+    expect(await playedSrc(async () => new Response(new Blob(['mp3'])))).toMatch(/^blob:/);
+  });
+
+  it('falls back to the asset URL when the sound cannot be fetched', async () => {
+    expect(await playedSrc(async () => Promise.reject(new Error('offline')))).toBe('whisper.mp3');
   });
 });
 

@@ -80,7 +80,14 @@ vi.mock('@/overlay', () => ({
   // The composer's "Manage templates…"
   useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
-vi.mock('@/assets/poe_whisper.wav', () => ({ default: 'whisper.wav' }));
+vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+// useSocketNotifications fetches the sound at import to make its blob: URL; keep that off the network
+vi.hoisted(() =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  ),
+);
 /** Website owners of in-game accounts (the seller lookup that links whisper senders), by lowercase account. */
 const sellerOwners = vi.hoisted(() => new Map<string, { userId: string; username: string; accounts: string[] }>());
 vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
@@ -963,7 +970,7 @@ describe('ChatOverlayWidget socket messages', () => {
     expect(rowFor('bob').textContent).toContain('Just now');
     expect(headerUnread()).toBe('2');
     expect(rows()[0].textContent).toContain('bob');
-    expect(audio).toEqual([expect.objectContaining({ src: 'whisper.wav', volume: 0.25 })]);
+    expect(audio).toEqual([expect.objectContaining({ src: 'whisper.mp3', volume: 0.25 })]);
   });
 
   it('ignores a duplicate push of the same message', async () => {
