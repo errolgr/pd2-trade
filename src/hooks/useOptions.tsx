@@ -12,6 +12,7 @@ import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templat
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
+import { applyLanguage, type LanguageSetting } from '@/i18n';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -107,6 +108,7 @@ export interface ISettings {
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
+  language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
 }
 
 interface OptionsContextProps {
@@ -177,6 +179,7 @@ const DEFAULT_SETTINGS: ISettings = {
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
+  language: 'system',
 };
 
 /** The hotkeys besides the market one, as [modifier field, key field]. */
@@ -352,6 +355,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (settings.debugLoggingEnabled) startDebugLogging();
     else stopDebugLogging();
   }, [isLoading, settings.debugLoggingEnabled]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyLanguage(settings.language);
+  }, [isLoading, settings.language]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

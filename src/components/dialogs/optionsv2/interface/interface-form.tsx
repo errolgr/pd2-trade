@@ -11,19 +11,21 @@ import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_M
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Trans, useTranslation } from '@/i18n';
 
 const ZONE_ALERT_OPTIONS = [
-  { value: 'off', label: 'Off' },
-  { value: 'all', label: 'Every rotation' },
-  { value: 'followed', label: 'Only zones I follow' },
+  { value: 'off', labelKey: 'interface.zoneAlertOptions.off' },
+  { value: 'all', labelKey: 'interface.zoneAlertOptions.all' },
+  { value: 'followed', labelKey: 'interface.zoneAlertOptions.followed' },
 ] as const;
 
 const TIMER_ZONES_OPTIONS = [
-  { value: 'all', label: 'Every zone' },
-  { value: 'followed', label: 'Only zones I follow' },
+  { value: 'all', labelKey: 'interface.timerZonesOptions.all' },
+  { value: 'followed', labelKey: 'interface.timerZonesOptions.followed' },
 ] as const;
 
 const interfaceFormSchema = z.object({
+  language: z.enum(['system', ...SUPPORTED_LANGUAGES]),
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
   corruptedZoneTimerEnabled: z.boolean(),
@@ -38,6 +40,7 @@ type InterfaceFormValues = z.infer<typeof interfaceFormSchema>;
 
 function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
   return {
+    language: settings?.language ?? 'system',
     chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
@@ -50,6 +53,7 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
 }
 
 export function InterfaceForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
 
   const form = useForm<InterfaceFormValues>({
@@ -93,14 +97,49 @@ export function InterfaceForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title="Overlays">
+        <SettingsGroup title={t('interface.language.group')}>
+          <FormField
+            control={form.control}
+            name="language"
+            render={({ field }) => (
+              <SettingsRow
+                label={t('interface.language.label')}
+                description={t('interface.language.description')}
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder={t('interface.language.label')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="system">{t('common:language.system')}</SelectItem>
+                      {SUPPORTED_LANGUAGES.map((language) => (
+                        <SelectItem key={language}
+                          value={language}
+                          lang={language}>
+                          {LANGUAGE_NAMES[language]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title={t('interface.overlays')}>
           <FormField
             control={form.control}
             name="chatButtonOverlayEnabled"
             render={({ field }) => (
               <SettingsRow
-                label="Chat Button Overlay"
-                description="Show the floating chat button overlay in the bottom-right corner of the screen."
+                label={t('interface.chatButton.label')}
+                description={t('interface.chatButton.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
@@ -118,11 +157,14 @@ export function InterfaceForm() {
             render={({ field }) => (
               <SettingsRow
                 label={
-                  <>
-                    Window transparency: <span className="tabular-nums">{field.value}%</span>
-                  </>
+                  <Trans
+                    t={t}
+                    i18nKey="interface.windowTransparency.label"
+                    values={{ value: field.value }}
+                    components={{ num: <span className="tabular-nums" /> }}
+                  />
                 }
-                description="See the game through window backgrounds. 0% is fully opaque."
+                description={t('interface.windowTransparency.description')}
                 control={
                   <FormControl>
                     <Slider
@@ -146,14 +188,14 @@ export function InterfaceForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Corrupted zone timer">
+        <SettingsGroup title={t('interface.zoneTimer.group')}>
           <FormField
             control={form.control}
             name="corruptedZoneTimerEnabled"
             render={({ field }) => (
               <SettingsRow
-                label="Corrupted zone timer"
-                description="Show which zones new Hell games corrupt and the time until the next rotation (every 15 minutes). Click it for the upcoming zones."
+                label={t('interface.zoneTimer.enabled.label')}
+                description={t('interface.zoneTimer.enabled.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value}
@@ -170,14 +212,14 @@ export function InterfaceForm() {
             name="corruptedZoneTimerAnchor"
             render={({ field }) => (
               <SettingsRow
-                label="Timer position"
-                description="Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom)."
+                label={t('interface.zoneTimer.position.label')}
+                description={t('interface.zoneTimer.position.description')}
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Position" />
+                        <SelectValue placeholder={t('interface.zoneTimer.position.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -201,9 +243,12 @@ export function InterfaceForm() {
             render={({ field }) => (
               <SettingsRow
                 label={
-                  <>
-                    Timer opacity: <span className="tabular-nums">{field.value}%</span>
-                  </>
+                  <Trans
+                    t={t}
+                    i18nKey="interface.zoneTimer.opacity"
+                    values={{ value: field.value }}
+                    components={{ num: <span className="tabular-nums" /> }}
+                  />
                 }
                 control={
                   <FormControl>
@@ -227,21 +272,21 @@ export function InterfaceForm() {
             name="corruptedZoneTimerZones"
             render={({ field }) => (
               <SettingsRow
-                label="Timer shows"
-                description="Every zone, or only the zones you follow: the timer then counts down to the next one and lists only those (every zone while you follow none)."
+                label={t('interface.zoneTimer.zones.label')}
+                description={t('interface.zoneTimer.zones.description')}
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Zones" />
+                        <SelectValue placeholder={t('interface.zoneTimer.zones.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {TIMER_ZONES_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
-                          {option.label}
+                          {t(option.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -257,21 +302,21 @@ export function InterfaceForm() {
             name="corruptedZoneAlerts"
             render={({ field }) => (
               <SettingsRow
-                label="Zone notifications"
-                description="Pop up a toast when the corrupted zone changes: for every new zone, or only the zones you follow. Toasts follow the Toast Popups switch in Chat settings."
+                label={t('interface.zoneTimer.alerts.label')}
+                description={t('interface.zoneTimer.alerts.description')}
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Notifications" />
+                        <SelectValue placeholder={t('interface.zoneTimer.alerts.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ZONE_ALERT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
-                          {option.label}
+                          {t(option.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -289,8 +334,8 @@ export function InterfaceForm() {
               name="corruptedZoneFollowed"
               render={({ field }) => (
                 <SettingsRow
-                  label="Followed zones"
-                  description="The zones the timer and notifications follow when set to Only zones I follow."
+                  label={t('interface.zoneTimer.followed.label')}
+                  description={t('interface.zoneTimer.followed.description')}
                   control={<ZonePicker value={field.value}
                     onChange={field.onChange} />}
                 />

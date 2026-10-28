@@ -1,0 +1,54 @@
+{
+  "interface": {
+    "language": {
+      "label": "Language",
+      "description": "The language of the overlay. System default follows your system language. Item names, stats and game terms stay in English, as in the game.",
+      "group": "Language"
+    },
+    "overlays": "Overlays",
+    "chatButton": {
+      "label": "Chat Button Overlay",
+      "description": "Show the floating chat button overlay in the bottom-right corner of the screen."
+    },
+    "windowTransparency": {
+      "label": "Window transparency: <num>{{value}}%</num>",
+      "description": "See the game through window backgrounds. 0% is fully opaque."
+    },
+    "zoneTimer": {
+      "enabled": {
+        "label": "Corrupted zone timer",
+        "description": "Show which zones new Hell games corrupt and the time until the next rotation (every 15 minutes). Click it for the upcoming zones."
+      },
+      "position": {
+        "label": "Timer position",
+        "description": "Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom).",
+        "placeholder": "Position"
+      },
+      "zones": {
+        "label": "Timer shows",
+        "description": "Every zone, or only the zones you follow: the timer then counts down to the next one and lists only those (every zone while you follow none).",
+        "placeholder": "Zones"
+      },
+      "alerts": {
+        "label": "Zone notifications",
+        "description": "Pop up a toast when the corrupted zone changes: for every new zone, or only the zones you follow. Toasts follow the Toast Popups switch in Chat settings.",
+        "placeholder": "Notifications"
+      },
+      "followed": {
+        "label": "Followed zones",
+        "description": "The zones the timer and notifications follow when set to Only zones I follow."
+      },
+      "group": "Corrupted zone timer",
+      "opacity": "Timer opacity: <num>{{value}}%</num>"
+    },
+    "zoneAlertOptions": {
+      "off": "Off",
+      "all": "Every rotation",
+      "followed": "Only zones I follow"
+    },
+    "timerZonesOptions": {
+      "all": "Every zone",
+      "followed": "Only zones I follow"
+    }
+  }
+}
