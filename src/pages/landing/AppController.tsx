@@ -25,6 +25,11 @@ import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
 /** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
 const CHAT_LOG_MISSING = 'Could not find or create chat log file';
 
+const UNSUPPORTED_ITEM = 'Item is not supported or invalid.';
+/** The clipboard didn't change: no item under the cursor, or the game never got the Ctrl+C (e.g. a Linux desktop
+ * that blocks simulated keys). An item the user copied themselves still works. */
+const NOTHING_COPIED = 'No item was copied. Hover over an item in game and try again, or press Ctrl+C on it first.';
+
 /**
  * App-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket
  * notifications, updates/auth/changelog, and the always-on panels (chat button). Renders nothing.
@@ -60,9 +65,12 @@ const AppController: React.FC = () => {
     }
   }, []);
 
-  /** Ctrl+C the item under the cursor, restoring the user's clipboard afterwards. */
+  /**
+   * Ctrl+C the item under the cursor, restoring the user's clipboard afterwards. `copied`: the clipboard changed, so
+   * the game copied something.
+   */
   const copyItemUnderCursor = useCallback(
-    async (sendCopy: boolean): Promise<string | null> => {
+    async (sendCopy: boolean): Promise<{ raw: string | null; copied: boolean }> => {
       // A panel holding the keyboard (e.g. an open price check) would get the Ctrl+C, and a Ctrl+C hotkey never
       // reached the game: hand focus back and let the game take the foreground before copying.
       const handedBack = isKeyboardClaimed();
@@ -76,7 +84,7 @@ const AppController: React.FC = () => {
       const raw = await read();
       // Best-effort and not awaited: a restore that waits for a busy Windows clipboard must not delay the panel
       if (savedClipboard != null) void copy(savedClipboard);
-      return raw;
+      return { raw, copied: !!raw && raw !== savedClipboard };
     },
     [read, copy, keyPress],
   );
@@ -84,9 +92,11 @@ const AppController: React.FC = () => {
   const fireSearch = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
     // When the price-check hotkey itself is Ctrl+C the game already copied the item
-    const raw = await copyItemUnderCursor(!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c'));
+    const { raw, copied } = await copyItemUnderCursor(
+      !(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c'),
+    );
     if (!clipboardContainsValidItem(raw)) {
-      showToast({ title: 'PD2 Trader', description: 'Item is not supported or invalid.', variant: 'error' });
+      showToast({ title: 'PD2 Trader', description: copied ? UNSUPPORTED_ITEM : NOTHING_COPIED, variant: 'error' });
       return;
     }
     openPanel('itemSearch', { text: encodeItem(raw) });
@@ -94,8 +104,8 @@ const AppController: React.FC = () => {
 
   const openQuickList = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
-    const copied = await copyItemUnderCursor(true);
-    const raw = clipboardContainsValidItem(copied) ? copied : null;
+    const { raw: copiedRaw, copied } = await copyItemUnderCursor(true);
+    const raw = clipboardContainsValidItem(copiedRaw) ? copiedRaw : null;
 
     let payload: PanelPayloads['quickList'] = { error: 'not_shared_stash' };
     if (raw && isStashItem(raw)) payload = { item: encodeItemForQuickList(raw) };
@@ -103,7 +113,11 @@ const AppController: React.FC = () => {
 
     // After opening so the toast shows above the panel
     if (!raw) {
-      showToast({ title: 'Cannot List Item', description: 'Item is not supported or invalid.', variant: 'error' });
+      showToast({
+        title: 'Cannot List Item',
+        description: copied ? UNSUPPORTED_ITEM : NOTHING_COPIED,
+        variant: 'error',
+      });
     } else if (!isStashItem(raw)) {
       showToast({
         title: 'Cannot List Item',
@@ -115,12 +129,12 @@ const AppController: React.FC = () => {
 
   const handleDelistItem = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
-    const copied = await copyItemUnderCursor(true);
-    if (!clipboardContainsValidItem(copied)) {
+    const { raw } = await copyItemUnderCursor(true);
+    if (!clipboardContainsValidItem(raw)) {
       showToast({ title: 'Delist', description: 'No valid item found under cursor.', variant: 'error' });
       return;
     }
-    void delistItem(copied);
+    void delistItem(raw);
   }, [checkDiabloFocus, copyItemUnderCursor, delistItem]);
 
   // Registered global hotkeys call through this ref: re-renders (overlay, settings, net worth) never hand

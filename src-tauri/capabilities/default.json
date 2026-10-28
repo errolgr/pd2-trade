@@ -66,27 +66,6 @@
         }
       ]
     },
-    "opener:default",
-    {
-      "identifier": "opener:allow-open-path",
-      "allow": [
-        {
-          "path": "**"
-        },
-        {
-          "path": "$APPDATA"
-        },
-        {
-          "path": "$APPDATA/**"
-        },
-        {
-          "path": "$APPCONFIG"
-        },
-        {
-          "path": "$APPCONFIG/**"
-        }
-      ]
-    },
     {
       "identifier": "http:default",
       "allow": [

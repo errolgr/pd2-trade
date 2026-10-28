@@ -9,7 +9,14 @@ import SignInPage, { SignInWindowPage } from './SignInPage';
 vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn(), useRemoteSignIn: vi.fn() }));
 
 const dispatch = vi.fn();
-const idle: SignInState = { flowActive: false, busy: false, accounts: null, selectedAccount: null };
+const idle: SignInState = {
+  flowActive: false,
+  busy: false,
+  accounts: null,
+  selectedAccount: null,
+  link: null,
+  linkCopied: false,
+};
 
 function renderPanel(state: Partial<SignInState> = {}) {
   vi.mocked(useSignIn).mockReturnValue({ state: { ...idle, ...state }, dispatch } as never);
@@ -51,6 +58,30 @@ describe('SignInPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(dispatch.mock.calls).toEqual([[{ type: 'cancel' }]]);
+  });
+
+  it('offers to copy the sign-in link while the browser sign-in runs', () => {
+    renderPanel({ flowActive: true, busy: true, link: { url: 'https://auth', openFailed: false } });
+    expect(screen.getByText(/Finish signing in in your browser/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(dispatch.mock.calls).toEqual([[{ type: 'copyLink' }]]);
+
+    cleanup();
+    renderPanel({ flowActive: true, busy: true, link: { url: 'https://auth', openFailed: false }, linkCopied: true });
+    expect(screen.getByRole('button', { name: 'Link copied' })).toBeTruthy();
+  });
+
+  it('when no browser opened: says so and points at the link instead of "Opening browser"', () => {
+    renderPanel({ flowActive: true, busy: true, link: { url: 'https://auth', openFailed: true } });
+    expect(screen.queryByRole('button', { name: /Opening browser/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Waiting for sign-in/ })).toBeTruthy();
+    expect(screen.getByText("Couldn't open your browser: copy the link into it.")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
+  });
+
+  it('has no link to copy before the sign-in starts', () => {
+    renderPanel();
+    expect(screen.queryByRole('button', { name: 'Copy link' })).toBeNull();
   });
 
   it('picks one of several accounts, then locks the list on the pick', () => {

@@ -128,16 +128,16 @@ describe('MarketListingBadge', () => {
     expect(toasts()).toEqual(['Removed Shako market listing.']);
   });
 
-  // BUG: the remove handler (MarketListingBadge.tsx:150-161) has try/finally but no catch: a failed delete
-  // gives the user no toast and surfaces as an unhandled promise rejection from the click handler.
-  // Skipped (not it.fails) because the unhandled rejection would fail the whole vitest run.
-  it.skip('reports a failed removal to the user', async () => {
-    deleteMarketListing.mockRejectedValueOnce(new Error('500'));
+  it('reports a failed removal, keeps the panel open and re-enables the button', async () => {
+    deleteMarketListing.mockRejectedValueOnce(new Error('401'));
     renderBadge([listing(null)]);
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Remove listing'));
     });
     expect(toasts()).toEqual(['Failed to remove listing']);
+    expect(onRefresh).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    expect((screen.getByLabelText('Remove listing') as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('opens the listing on the trade website', () => {

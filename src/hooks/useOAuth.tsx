@@ -1,26 +1,52 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { useOptions } from './useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
-import { isTauri, invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@tauri-apps/api/core';
 import { BACKEND_URL, PD2_SCOPES } from '@/lib/pkce';
 import { GenericToastPayload } from '@/common/types/Events';
 import { showToast } from '@/overlay';
 import { isNetworkError } from '@/lib/network-errors';
+import { openUrl } from '@/lib/browser-opener';
 
 // Windows ERROR_CANCELLED from opening the sign-in URL: the user dismissed the "open with" prompt. The OS text is
 // localized, the errno isn't.
 const OPEN_CANCELLED = /\(os error 1223\)/;
+
+/** The running flow's sign-in page, offered for opening by hand: a browser that "opened" may never show up. */
+export interface OAuthFlowLink {
+  url: string;
+  /** Opening the browser failed: the sign-in waits on the user opening the link. */
+  openFailed: boolean;
+}
 
 /**
  * The running sign-in flow; a new flow is refused while one is active. Cleared when it ends or is aborted (its
  * caller's signal or cancelOAuthFlow).
  */
 let activeFlow: AbortController | null = null;
+let flowLink: OAuthFlowLink | null = null;
 const flowListeners = new Set<() => void>();
+
+function notifyFlowListeners() {
+  flowListeners.forEach((listener) => listener());
+}
+
+function subscribeFlow(listener: () => void): () => void {
+  flowListeners.add(listener);
+  return () => flowListeners.delete(listener);
+}
 
 function setActiveFlow(flow: AbortController | null) {
   activeFlow = flow;
-  flowListeners.forEach((listener) => listener());
+  flowLink = null;
+  notifyFlowListeners();
+}
+
+/** Only while `flow` still runs: a link arriving after its flow ended belongs to nothing. */
+function setFlowLink(flow: AbortController, link: OAuthFlowLink) {
+  if (activeFlow !== flow) return;
+  flowLink = link;
+  notifyFlowListeners();
 }
 
 /** Ends the running sign-in flow, whoever started it, as if its caller had aborted: a new flow may start right away. */
@@ -30,13 +56,12 @@ export function cancelOAuthFlow(): void {
 
 /** True while a sign-in flow runs (whoever started it), re-rendering on change. */
 export function useOAuthFlowActive(): boolean {
-  return useSyncExternalStore(
-    (listener) => {
-      flowListeners.add(listener);
-      return () => flowListeners.delete(listener);
-    },
-    () => activeFlow !== null,
-  );
+  return useSyncExternalStore(subscribeFlow, () => activeFlow !== null);
+}
+
+/** The running sign-in flow's link (null until the app has it, and while no flow runs), re-rendering on change. */
+export function useOAuthFlowLink(): OAuthFlowLink | null {
+  return useSyncExternalStore(subscribeFlow, () => flowLink);
 }
 
 /** Resolves after `ms`, or as soon as `signal` aborts. */
@@ -136,7 +161,18 @@ export function useOAuth() {
 
         // 2. Open system browser
         if (isTauri()) {
-          await invoke('open_oauth_url', { url: authUrl });
+          setFlowLink(flow, { url: authUrl, openFailed: false });
+          try {
+            await openUrl(authUrl);
+          } catch (error) {
+            // The user dismissed Windows' "open with" prompt: they chose not to sign in
+            if (OPEN_CANCELLED.test(String(error))) throw error;
+            if (signal.aborted) return false;
+            // Nothing opened the browser (a Linux desktop without a working launcher): the sign-in still completes
+            // once the user opens the link, which the sign-in window and Settings offer to copy
+            console.warn('[OAuth] Could not open the browser:', error);
+            setFlowLink(flow, { url: authUrl, openFailed: true });
+          }
         } else if (authTab && !authTab.closed) {
           authTab.opener = null;
           authTab.location.href = authUrl;
@@ -187,11 +223,14 @@ export function useOAuth() {
       } catch (error) {
         if (signal.aborted) return false;
         // The user cancelled opening the browser, or pd2trader.com is unreachable: not app bugs
-        if (isNetworkError(error) || OPEN_CANCELLED.test(String(error))) console.warn('[OAuth] Flow failed:', error);
+        const unreachable = isNetworkError(error);
+        if (unreachable || OPEN_CANCELLED.test(String(error))) console.warn('[OAuth] Flow failed:', error);
         else console.error('[OAuth] Flow failed:', error);
         const errorToast: GenericToastPayload = {
           title: 'PD2 Trader',
-          description: 'Authentication failed. Please try again.',
+          description: unreachable
+            ? "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again."
+            : 'Authentication failed. Please try again.',
           variant: 'error',
         };
         showToast(errorToast);

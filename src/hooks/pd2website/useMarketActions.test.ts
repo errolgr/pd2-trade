@@ -230,7 +230,7 @@ describe('listing mutations', () => {
   });
 
   it('deleteMarketListing DELETEs by id, treats an already-gone listing as deleted, and propagates failures', async () => {
-    const { actions } = market();
+    const { actions, onAuthError } = market();
     await actions.deleteMarketListing('L2');
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/listing/L2');
     expect(lastCall().init.method).toBe('DELETE');
@@ -240,6 +240,13 @@ describe('listing mutations', () => {
 
     fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'https://api.projectdiablo2.com/market/listing/L2'));
     await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 500');
+
+    // Expired/refused session: re-auth starts, and the listing is still up, so it must not resolve as removed
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/listing/L2'),
+    );
+    await expect(actions.deleteMarketListing('L2')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(onAuthError).toHaveBeenCalledTimes(1);
   });
 
   it("bumpAllMarketListings PATCHes all of the user's listings with the current time", async () => {

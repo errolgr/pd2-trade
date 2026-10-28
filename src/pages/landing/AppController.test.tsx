@@ -148,6 +148,29 @@ describe('AppController price check hotkey', () => {
     expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
   });
 
+  it("says nothing was copied when the game didn't copy anything (no item, or the Ctrl+C never reached it)", async () => {
+    keyPress.mockImplementation(async () => {}); // e.g. a Linux desktop that blocks simulated keys
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(keyPress).toHaveBeenCalledWith('ctrl+c');
+    expect(toasts()).toContainEqual(
+      expect.objectContaining({ description: expect.stringMatching(/^No item was copied\./) }),
+    );
+    expect(toasts()).not.toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
+    expect(clipboard).toBe('user text');
+  });
+
+  it('still checks an item the user copied themselves when the Ctrl+C never reached the game', async () => {
+    keyPress.mockImplementation(async () => {});
+    clipboard = 'ITEM copied by hand';
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM copied by hand') });
+    expect(toasts()).toEqual([]);
+  });
+
   it('hands the keyboard back to the game before copying when an open panel holds it', async () => {
     h.keyboardClaimed = true;
     await mount();
@@ -238,6 +261,19 @@ describe('AppController list and delist hotkeys', () => {
       { placement: 'cursor' },
     );
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
+  });
+
+  it('says nothing was copied when listing with no item under the cursor', async () => {
+    itemUnderCursor = null;
+    await mount();
+    await press(1);
+    await advance(300);
+    expect(toasts()).toContainEqual(
+      expect.objectContaining({
+        title: 'Cannot List Item',
+        description: expect.stringMatching(/^No item was copied\./),
+      }),
+    );
   });
 
   it('delist hotkey hands a valid item to the delist handler', async () => {

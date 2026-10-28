@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,7 +7,6 @@ import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
-import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
@@ -15,7 +14,7 @@ import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
-import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
+import { formatStatRange, skillByName } from '@/pages/price-check/lib/stat-ranges';
 import { getStatKey } from '@/pages/price-check/lib/utils';
 
 /**
@@ -121,7 +120,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSkill = 'skill' in stat;
   const isUnknownSkill =
     isSkill &&
-    !fuzzyMatchCharacterSkill(stat.skill.toLowerCase()) &&
+    !skillByName(stat.skill) &&
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase());
   const isDamagePair = stat.maxValue !== undefined;
@@ -141,6 +140,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
   /** Clears per range line (`min` / `maxMin`): each one replays the clear sweep. */
   const [clearNonce, setClearNonce] = useState<Partial<Record<string, number>>>({});
+  /** The current press started in a min/max input (see the label's onClickCapture). */
+  const pressInInput = useRef(false);
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
@@ -204,6 +205,14 @@ export const StatRow: React.FC<StatRowProps> = ({
       )}
     >
       <label
+        // A drag that selects an input's text and is released elsewhere on the row clicks the row (the press and
+        // release's common ancestor): that must not toggle the stat and drop its range
+        onMouseDown={(e) => {
+          pressInInput.current = e.target instanceof Element && !!e.target.closest('input');
+        }}
+        onClickCapture={(e) => {
+          if (pressInInput.current && !(e.target instanceof Element && e.target.closest('input'))) e.preventDefault();
+        }}
         key={statKey}
         className={cn(
           'group/row relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
@@ -412,7 +421,10 @@ export const StatRow: React.FC<StatRowProps> = ({
                             updateFilter(statKey, hi, '');
                             setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
                             // Ready to type the new min
-                            e.currentTarget.closest('[data-range-line]')?.querySelector('input')?.focus({ preventScroll: true });
+                            e.currentTarget
+                              .closest('[data-range-line]')
+                              ?.querySelector('input')
+                              ?.focus({ preventScroll: true });
                           }}
                           className={cn(
                             'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -441,7 +453,11 @@ export const StatRow: React.FC<StatRowProps> = ({
                               className="pointer-events-none absolute inset-y-0 w-2/3 bg-linear-to-r from-transparent via-glow/55 to-transparent"
                               initial={{ left: '-70%', opacity: 1 }}
                               animate={{ left: '110%', opacity: [1, 1, 0] }}
-                              transition={{ duration: 0.5, ease: EASE_OUT, opacity: { duration: 0.5, times: [0, 0.75, 1] } }}
+                              transition={{
+                                duration: 0.5,
+                                ease: EASE_OUT,
+                                opacity: { duration: 0.5, times: [0, 0.75, 1] },
+                              }}
                             />
                             <motion.span
                               aria-hidden

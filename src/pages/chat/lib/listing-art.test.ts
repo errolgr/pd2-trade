@@ -41,6 +41,24 @@ describe('listingArtUrl', () => {
     // key "Eschuta's temper", name "Eschuta's Temper"; its base (Eldritch Orb) has no base art
     expect(art("Eschuta's Temper", 'Unique', 'Eldritch Orb')).toBe('https://pd2trader.com/assets/items/invob2.png');
   });
+
+  it('does not throw on an item PD2 lists without a name', () => {
+    // A live PD2 listing: 8 T1 maps whose item has no name and whose base has none either
+    const map = {
+      quality: { id: 2, name: 'Normal' },
+      base: { id: 't18', category: 'misc', type: 'Map T1', type_code: 't1m' },
+      base_code: 't18',
+      graphic_id: false,
+      quantity: 8,
+    } as unknown as ItemDetail;
+    expect(listingArtUrl(map, itemsByKey)).toBeNull();
+    expect(listingArtCandidates(map, itemsByKey)).toEqual([]);
+    // Nameless with a named base: the base's art; nameless unique: no database lookup by name
+    expect(listingArtUrl({ ...map, base: { name: 'Ring' } } as ItemDetail, itemsByKey)).toBe(
+      'https://pd2trader.com/assets/items/invrin.png',
+    );
+    expect(listingArtUrl({ ...map, quality: { id: 7, name: 'Unique' } } as ItemDetail, itemsByKey)).toBeNull();
+  });
 });
 
 describe('listingArtCandidates', () => {

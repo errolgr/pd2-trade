@@ -2,14 +2,14 @@
 import * as React from 'react';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon } from '@tauri-apps/api/tray';
-import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
 import { useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
-import { TrayProvider, useTray } from './useTray';
+import { APP_RELAUNCHED_EVENT, TrayProvider, useTray } from './useTray';
 
 type PressCallback = (e: { state: 'Pressed' | 'Released' }) => void;
 type MenuItem = { id: string; action: () => void | Promise<void> };
@@ -25,7 +25,7 @@ const state = vi.hoisted(() => ({
   trays: [] as string[],
 }));
 
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => state.tauri, invoke: vi.fn(async () => {}) }));
 vi.mock('@tauri-apps/plugin-global-shortcut', () => ({
   isRegistered: vi.fn(async (s: string) => state.owned.has(s)),
   register: vi.fn(async (s: string, cb: (e: { state: 'Pressed' | 'Released' }) => void) => {
@@ -49,8 +49,6 @@ vi.mock('@tauri-apps/api/tray', () => ({
   },
 }));
 vi.mock('@tauri-apps/api/app', () => ({ defaultWindowIcon: vi.fn(async () => 'icon') }));
-vi.mock('@tauri-apps/api/path', () => ({ appConfigDir: vi.fn(async () => '/cfg/pd2') }));
-vi.mock('@tauri-apps/plugin-opener', () => ({ openPath: vi.fn(async () => {}) }));
 vi.mock('@tauri-apps/plugin-process', () => ({ exit: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({
@@ -153,9 +151,9 @@ describe('tray icon', () => {
   it('"Open config location" opens the app config dir and survives a failure', async () => {
     await renderTray();
     await act(async () => menuItem('open-config').action());
-    expect(openPath).toHaveBeenCalledWith('/cfg/pd2');
+    expect(invoke).toHaveBeenCalledWith('open_config_dir');
 
-    vi.mocked(openPath).mockRejectedValueOnce(new Error('no opener'));
+    vi.mocked(invoke).mockRejectedValueOnce('No program to open it with (install xdg-utils)');
     await expect(act(async () => menuItem('open-config').action())).resolves.toBeUndefined();
   });
 
@@ -170,6 +168,13 @@ describe('settings panel', () => {
   it('the tray menu opens the settings panel', async () => {
     await renderTray();
     await act(async () => menuItem('settings').action());
+    expect(openPanel).toHaveBeenCalledWith('settings');
+  });
+
+  it('launching the app again while it runs opens the settings panel', async () => {
+    await renderTray();
+    expect(openPanel).not.toHaveBeenCalled();
+    await fire(APP_RELAUNCHED_EVENT);
     expect(openPanel).toHaveBeenCalledWith('settings');
   });
 });

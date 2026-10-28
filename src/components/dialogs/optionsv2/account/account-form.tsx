@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { cancelOAuthFlow, useOAuthFlowActive } from '@/hooks/useOAuth';
+import { cancelOAuthFlow, useOAuthFlowActive, useOAuthFlowLink } from '@/hooks/useOAuth';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ExternalLink, LogOut, LogIn, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, LogOut, LogIn, AlertCircle, Loader2 } from 'lucide-react';
+import { writeText } from '@/lib/browser-clipboard';
 import { isTauri } from '@tauri-apps/api/core';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { fadeInUp } from '@/lib/motion';
@@ -32,6 +33,9 @@ export function AccountForm() {
   // The flow's own state, not this form's: it outlives the form (switching sections remounts it) and may have been
   // started from the sign-in panel
   const loggingIn = useOAuthFlowActive();
+  // The browser may not show up even when it "opened": the sign-in's link to copy into one
+  const link = useOAuthFlowLink();
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -94,6 +98,17 @@ export function AccountForm() {
       console.error('Failed to start OAuth flow:', error);
     }
   };
+
+  const copyLink = async () => {
+    if (!link) return;
+    try {
+      await writeText(link.url);
+      setCopiedUrl(link.url);
+    } catch (error) {
+      console.warn('[Account] Could not copy the sign-in link:', error);
+    }
+  };
+  const linkCopied = link !== null && copiedUrl === link.url;
 
   const username = authData?.user?.username;
 
@@ -245,6 +260,27 @@ export function AccountForm() {
                 }
               >
                 <FormMessage />
+                {loggingIn && link && (
+                  <div className="flex items-center justify-between gap-3">
+                    <p
+                      className={cn(
+                        'text-[13px] leading-relaxed',
+                        link.openFailed ? 'text-destructive' : 'text-muted-foreground',
+                      )}
+                    >
+                      {link.openFailed
+                        ? "Couldn't open your browser: copy the sign-in link and open it there."
+                        : "Browser didn't open? Copy the sign-in link into it."}
+                    </p>
+                    <Button type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={copyLink}>
+                      {linkCopied ? <Check /> : <Copy />}
+                      {linkCopied ? 'Link copied' : 'Copy link'}
+                    </Button>
+                  </div>
+                )}
               </SettingsRow>
             )}
           />
