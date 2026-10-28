@@ -232,7 +232,7 @@ export function buildGetMarketListingQuery(
       // Already handled above, skip here
       return;
     }
-    if (stat.stat_id === StatId.Ethereal || item.isEthereal) {
+    if (stat.stat_id === StatId.Ethereal) {
       query['item.is_ethereal'] = true;
       return;
     }

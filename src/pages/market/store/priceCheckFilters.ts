@@ -160,10 +160,8 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
 
 /** The price check's current search as market filters. */
 export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<MarketFilters> {
-  // The price-check query marks every search of an ethereal item ethereal (and drops its stats); here only a
-  // selected Ethereal row filters on it.
   const query = buildGetMarketListingQuery(
-    { ...search.item, isEthereal: false },
+    search.item,
     search.pd2Item,
     search.selected,
     search.filters,
