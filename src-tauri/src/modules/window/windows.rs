@@ -16,9 +16,9 @@ use windows_sys::Win32::{
     UI::WindowsAndMessaging::{
         BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowLongW, GetWindowRect,
         GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW, SetWindowPos,
-        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT, SWP_FRAMECHANGED,
-        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
-        WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, HWND_TOPMOST, STYLESTRUCT,
+        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
+        WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
     },
 };
 
@@ -57,6 +57,31 @@ static OVERLAY_WINDOW: AtomicIsize = AtomicIsize::new(0);
 
 pub fn set_overlay_window(hwnd: HWND) {
     OVERLAY_WINDOW.store(hwnd, Ordering::SeqCst);
+}
+
+/// Delay before raising the overlay a second time: fullscreen renderers re-apply their own topmost z-order
+/// while activating, after the foreground event has fired.
+const RAISE_AGAIN_MS: u64 = 300;
+
+/// Puts the overlay back at the top of the topmost band without activating it. PD2's fullscreen window is
+/// topmost too, and among topmost windows the last activated one is drawn in front, so every time the game
+/// takes the foreground it would cover the overlay.
+fn raise_overlay() {
+    let overlay = OVERLAY_WINDOW.load(Ordering::SeqCst);
+    if overlay == 0 {
+        return;
+    }
+    unsafe {
+        SetWindowPos(
+            overlay,
+            HWND_TOPMOST,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        );
+    }
 }
 
 /// The overlay's extended style: a tool window (no taskbar button, no Alt+Tab entry).
@@ -243,6 +268,13 @@ unsafe extern "system" fn win_event_proc(
     _event_time: u32,
 ) {
     LAST_FOREGROUND_EVENT.store(hwnd, Ordering::SeqCst);
+    if hwnd != 0 && find_diablo_hwnd() == Some(hwnd) {
+        raise_overlay();
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_millis(RAISE_AGAIN_MS));
+            raise_overlay();
+        });
+    }
     if let Some(cb) = &*CALLBACK.lock().unwrap() {
         cb();
     }
