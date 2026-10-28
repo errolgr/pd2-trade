@@ -35,13 +35,32 @@ export async function readText(): Promise<string | null> {
   }
 }
 
+// Windows lets one process hold the clipboard at a time (clipboard managers, RDP, other apps briefly open it);
+// arboard then fails with this message. Retrying a few times over ~half a second gets through.
+const CLIPBOARD_OCCUPIED = 'held by another party';
+const OCCUPIED_RETRY_DELAYS_MS = [50, 150, 300];
+
+async function retryWhileOccupied(write: () => Promise<void>): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await write();
+      return;
+    } catch (error) {
+      if (attempt >= OCCUPIED_RETRY_DELAYS_MS.length || !String(error).includes(CLIPBOARD_OCCUPIED)) throw error;
+      const { promise, resolve } = Promise.withResolvers<void>();
+      setTimeout(resolve, OCCUPIED_RETRY_DELAYS_MS[attempt]);
+      await promise;
+    }
+  }
+}
+
 /**
  * Write text to clipboard
  */
 export async function writeText(text: string): Promise<void> {
   if (isTauri()) {
     try {
-      await tauriWriteText(text);
+      await retryWhileOccupied(() => tauriWriteText(text));
       return;
     } catch (error) {
       console.error('Failed to write to clipboard:', error);
@@ -62,7 +81,7 @@ export async function writeText(text: string): Promise<void> {
  */
 export async function writePng(png: Blob): Promise<void> {
   if (isTauri()) {
-    await tauriWriteImage(new Uint8Array(await png.arrayBuffer()));
+    await retryWhileOccupied(async () => tauriWriteImage(new Uint8Array(await png.arrayBuffer())));
     return;
   }
 
