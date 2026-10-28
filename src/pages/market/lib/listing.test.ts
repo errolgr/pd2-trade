@@ -136,6 +136,16 @@ describe('upgradeFilters', () => {
     ]);
     expect(upgradeFilters({ ...old, corruptions: [] })).toEqual(old);
   });
+
+  it('puts the single any-of group of older versions (`or: true`) into block 1', () => {
+    const row = (id: string, or: unknown) => ({ id, kind: 'mod' as const, key: 'maxhp', enabled: true, or });
+    const old = { ...base, stats: [row('a', true), row('b', false), row('c', 2)] } as unknown as typeof base;
+    expect(upgradeFilters(old).stats).toEqual([
+      { id: 'a', kind: 'mod', key: 'maxhp', enabled: true, or: 1 },
+      { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+      { id: 'c', kind: 'mod', key: 'maxhp', enabled: true, or: 2 },
+    ]);
+  });
 });
 
 describe('applyPreset', () => {

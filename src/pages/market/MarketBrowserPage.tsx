@@ -207,11 +207,11 @@ const MarketBrowserPage: React.FC = () => {
   const glowIds = useLiveAlertGlow(filters, store.savedSearches);
 
   const pseudoKeys = useMemo(
-    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
+    () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
     [filters?.stats],
   );
   const statKeys = useMemo(
-    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'mod').map((s) => s.key),
+    () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'mod').map((s) => s.key),
     [filters?.stats],
   );
   /** Sold archive results: no offer/whisper (the item is gone). */

@@ -45,7 +45,7 @@ export const ListingDrawerPage: React.FC = () => {
   const watch = payload?.savedSearchId ? savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
   const filters = useMemo(() => upgradeFilters(watch?.filters ?? defaultFilters(mode)), [watch?.filters, mode]);
   const pseudoKeys = useMemo(
-    () => filters.stats.filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
+    () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
     [filters.stats],
   );
   const row = useMemo(() => (listing ? scoreListings([listing], filters)[0] : null), [listing, filters]);

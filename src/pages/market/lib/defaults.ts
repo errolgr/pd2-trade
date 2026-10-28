@@ -1,3 +1,4 @@
+import { hasLegacyOr, upgradeRowGroup } from './stat-groups';
 import type { MarketFilters, StatFilter } from './types';
 
 /** The site's `updated_at` windows: Trade shows the last 3 days, Archive the last 14. */
@@ -51,16 +52,18 @@ export function mergeFilters(base: MarketFilters, partial?: Partial<MarketFilter
 
 /**
  * Filters stored by older versions (saved searches, the last search, payloads): stat weights are dropped and the
- * score/value sorts they fed fall back to the newest bumps; the old `corruptions` list becomes corruption rows.
+ * score/value sorts they fed fall back to the newest bumps; the old `corruptions` list becomes corruption rows;
+ * the single any-of group (`or: true`) becomes block 1.
  */
 export function upgradeFilters(stored: MarketFilters & { corruptions?: unknown }): MarketFilters {
   const { corruptions, ...f } = stored;
   const legacy = Array.isArray(corruptions) ? corruptions.filter((c): c is string => typeof c === 'string') : [];
   // Stored filters are only checked for their envelope: a field may be missing
   const weighted = (f.stats ?? []).some((s) => s.weight !== undefined);
+  const legacyOr = (f.stats ?? []).some(hasLegacyOr);
   const scoreSort = f.sort?.by === 'score' || f.sort?.by === 'value';
-  if (!weighted && !scoreSort && corruptions === undefined) return stored;
-  const stats = weighted ? f.stats.map(({ weight: _weight, ...row }) => row) : (f.stats ?? []);
+  if (!weighted && !legacyOr && !scoreSort && corruptions === undefined) return stored;
+  const stats = (f.stats ?? []).map(({ weight: _weight, ...row }) => upgradeRowGroup(row));
   return {
     ...f,
     stats: [...stats, ...legacy.map((key) => newStatFilter({ kind: 'corruption', key }))],

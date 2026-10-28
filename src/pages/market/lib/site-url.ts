@@ -1,4 +1,5 @@
 import { DEFAULT_MAX_AGE_DAYS } from './defaults';
+import { orBlockNumbers } from './stat-groups';
 import type { MarketFilters, StatFilter, Tri } from './types';
 
 /**
@@ -40,21 +41,23 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   set('sockets_max', f.socketsMax);
 
   const stats = f.stats.filter((s) => s.enabled && s.key.trim() !== '');
-  const mods = stats.filter((s) => s.kind === 'mod');
-  const required = mods.filter((s) => !s.or);
-  // One `or` row on its own is required; the site has no any-of across rows
-  const anyOf = mods.filter((s) => s.or);
-  (anyOf.length === 1 ? [...required, ...anyOf] : required).forEach((s) => property(s.key, s));
-  if (anyOf.length > 1) {
-    // The site's `a|b` key matches any of the names with one shared range: exact when the rows share theirs
-    const [first] = anyOf;
-    const shared = anyOf.every((s) => s.min === first.min && s.max === first.max && !s.key.includes('{'));
-    if (shared) property(anyOf.map((s) => s.key).join('|'), first);
+  const excluded = stats.filter((s) => s.not);
+  const mods = stats.filter((s) => s.kind === 'mod' && !s.not);
+  mods.filter((s) => s.or === undefined).forEach((s) => property(s.key, s));
+  // The site has no any-of across rows: a block of one row is required; a larger block becomes the site's
+  // `a|b` key, which matches any of the names with one shared range (exact only when the rows share theirs)
+  for (const block of orBlockNumbers(mods)) {
+    const rows = mods.filter((s) => s.or === block);
+    const [first] = rows;
+    if (rows.length === 1) property(first.key, first);
+    else if (rows.every((s) => s.min === first.min && s.max === first.max && !s.key.includes('{')))
+      property(rows.map((s) => s.key).join('|'), first);
     else dropped.push('any-of stat group');
   }
-  const pseudo = stats.filter((s) => s.kind === 'pseudo').length;
+  if (excluded.length) dropped.push(excluded.length === 1 ? 'excluded stat' : `${excluded.length} excluded stats`);
+  const pseudo = stats.filter((s) => s.kind === 'pseudo' && !s.not).length;
   if (pseudo) dropped.push(pseudo === 1 ? 'pseudo stat' : `${pseudo} pseudo stats`);
-  const corruptions = stats.filter((s) => s.kind === 'corruption').length;
+  const corruptions = stats.filter((s) => s.kind === 'corruption' && !s.not).length;
   if (corruptions) dropped.push(corruptions === 1 ? 'corruption stat' : `${corruptions} corruption stats`);
 
   params.set('is_hardcore', String(f.hardcore));

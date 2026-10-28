@@ -72,27 +72,36 @@ describe('siteSearchLink', () => {
     expect(query(f).params).toContainEqual(['properties[item_fastercastrate][min]', '']);
   });
 
-  it('joins an any-of group into the site alternatives key only when the rows share a range', () => {
+  it('joins an any-of block into the site alternatives key only when the rows share a range', () => {
     const shared = base({
       stats: [
-        newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: true }),
-        newStatFilter({ kind: 'mod', key: 'coldresist', min: 20, or: true }),
+        newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: 1 }),
+        newStatFilter({ kind: 'mod', key: 'coldresist', min: 20, or: 1 }),
+        newStatFilter({ kind: 'mod', key: 'strength', min: 5, or: 2 }),
+        newStatFilter({ kind: 'mod', key: 'dexterity', min: 5, or: 2 }),
       ],
     });
     expect(query(shared).params).toContainEqual(['properties[fireresist|coldresist][min]', '20']);
+    expect(query(shared).params).toContainEqual(['properties[strength|dexterity][min]', '5']);
     expect(siteSearchLink(shared).dropped).toEqual([]);
 
     const differing = base({
       stats: [
-        newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: true }),
-        newStatFilter({ kind: 'mod', key: 'coldresist', min: 30, or: true }),
+        newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: 1 }),
+        newStatFilter({ kind: 'mod', key: 'coldresist', min: 30, or: 1 }),
       ],
     });
     expect(query(differing).params.some(([k]) => k.startsWith('properties'))).toBe(false);
     expect(siteSearchLink(differing).dropped).toEqual(['any-of stat group']);
 
-    const single = base({ stats: [newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: true })] });
+    const single = base({ stats: [newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, or: 1 })] });
     expect(query(single).params).toContainEqual(['properties[fireresist][min]', '20']);
+  });
+
+  it('leaves excluded (NOT) rows out of the link and names them', () => {
+    const f = base({ stats: [newStatFilter({ kind: 'mod', key: 'fireresist', min: 20, not: true })] });
+    expect(query(f).params.some(([k]) => k.startsWith('properties'))).toBe(false);
+    expect(siteSearchLink(f).dropped).toEqual(['excluded stat']);
   });
 
   it('names every filter the site link cannot carry', () => {
