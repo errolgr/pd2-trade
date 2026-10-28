@@ -32,8 +32,6 @@ export const changeLog = {
     '🔧 List Item (Ctrl+L) / Delist (Ctrl+U): removing a listing after your PD2 session expired says it failed instead of "Removed" while the listing stays up',
     '🔧 Chat: a linked listing whose item has no name (like some map stacks) no longer crashes the chat panel',
     '🔧 Sign-in and price checks work behind antivirus web shields and corporate proxies; sign-in says when pd2trader.com is unreachable',
-    '🔧 Installer: no longer stuck on "an older version is installed" when an old MSI version cannot be uninstalled',
-    '🔧 Updates no longer recreate or move your desktop shortcut (it is re-created one last time on the first update)',
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
