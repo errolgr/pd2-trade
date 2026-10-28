@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { useOptions } from '@/hooks/useOptions';
 import {
   buildGetAllUserMarketListingsQuery,
@@ -17,7 +18,7 @@ const AUTH_POLL_INTERVAL = 200;
 const TRADE_LISTINGS_LIMIT = 1000;
 
 type DelistFn = (raw: string) => Promise<void>;
-type DelistTradeFn = (trade: WhisperedItem) => Promise<void>;
+type DelistTradeFn = (trade: WhisperedItem, onDeleted?: () => void) => Promise<void>;
 
 /** The mounted DelistHandler's implementations (they need the Pd2Website/overlay contexts). */
 let activeDelist: { item: DelistFn; trade: DelistTradeFn } | null = null;
@@ -27,9 +28,10 @@ export interface DelistApi {
   delistItem(raw: string): Promise<void>;
   /**
    * Delist the item of an in-game trade whisper (it names the item, maybe its price): asks to confirm a single
-   * matching listing, opens the picker for several, says so when none match. Resolves once that is shown.
+   * matching listing, opens the picker for several, says so when none match. Resolves once that is shown;
+   * `onDeleted` runs once one of the matched listings is deleted (confirmed, or picked), until the next call.
    */
-  delistTrade(trade: WhisperedItem): Promise<void>;
+  delistTrade(trade: WhisperedItem, onDeleted?: () => void): Promise<void>;
 }
 
 function notMounted(): Promise<void> {
@@ -39,7 +41,7 @@ function notMounted(): Promise<void> {
 
 const delistApi: DelistApi = {
   delistItem: (raw) => (activeDelist ? activeDelist.item(raw) : notMounted()),
-  delistTrade: (trade) => (activeDelist ? activeDelist.trade(trade) : notMounted()),
+  delistTrade: (trade, onDeleted) => (activeDelist ? activeDelist.trade(trade, onDeleted) : notMounted()),
 };
 
 /** Stable delist API; works anywhere (AppController and chat are not children of DelistHandler). */
@@ -150,9 +152,14 @@ const DelistHandler: React.FC = () => {
   };
 
   const handleDelistTradeRef = useRef<DelistTradeFn>();
+  // The last trade delist's wait for one of its listings to go
+  const stopWaitingRef = useRef<() => void>();
+  useEffect(() => () => stopWaitingRef.current?.(), []);
 
-  handleDelistTradeRef.current = async (trade: WhisperedItem) => {
+  handleDelistTradeRef.current = async (trade: WhisperedItem, onDeleted?: () => void) => {
     if (isDelistingRef.current) return;
+    stopWaitingRef.current?.();
+    stopWaitingRef.current = undefined;
 
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
@@ -178,6 +185,17 @@ const DelistHandler: React.FC = () => {
       );
       const listings = matchTradeListings(result.data, trade);
 
+      if (onDeleted && listings.length > 0) {
+        // Deleted here after the confirm, or from the picker: either way deleteMarketListing announces it
+        const ids = new Set(listings.map((listing) => listing._id));
+        const stop = subscribeListingDeleted((listingId) => {
+          if (!ids.has(listingId)) return;
+          stop();
+          if (stopWaitingRef.current === stop) stopWaitingRef.current = undefined;
+          onDeleted();
+        });
+        stopWaitingRef.current = stop;
+      }
       if (listings.length === 0) {
         const name = whisperedItemName(trade);
         showToast({
@@ -232,7 +250,7 @@ const DelistHandler: React.FC = () => {
   useEffect(() => {
     const impl = {
       item: (raw: string) => handleDelistRef.current!(raw),
-      trade: (trade: WhisperedItem) => handleDelistTradeRef.current!(trade),
+      trade: (trade: WhisperedItem, onDeleted?: () => void) => handleDelistTradeRef.current!(trade, onDeleted),
     };
     activeDelist = impl;
     return () => {

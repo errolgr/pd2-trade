@@ -15,6 +15,8 @@ import {
   recordTrade,
   recordWhisper,
   saveWhisperHistory,
+  settleTrade,
+  type TradeOutcome,
   type TradeMessageEvent,
   type WhisperEvent,
   type WhisperHistory,
@@ -28,6 +30,7 @@ type HistoryAction =
   | { type: 'whisper'; event: WhisperEvent; now: number }
   | { type: 'copied'; target: { accountName?: string; playerName: string }; message: string; now: number }
   | { type: 'dismissTrade'; key: string; tradeId: string }
+  | { type: 'settleTrade'; key: string; tradeId: string; outcome: TradeOutcome; now: number }
   | { type: 'markRead'; keys: readonly string[] }
   | { type: 'forget'; key: string };
 
@@ -54,6 +57,9 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
     case 'dismissTrade':
       history = dismissTrade(state.history, action.key, action.tradeId);
       break;
+    case 'settleTrade':
+      history = settleTrade(state.history, action.key, action.tradeId, action.outcome, action.now);
+      break;
     case 'markRead':
       history = markRead(state.history, action.keys);
       break;
@@ -71,6 +77,8 @@ export interface WhisperHistoryApi {
   /** Records a whisper copied to the clipboard as `/w *target message`. */
   recordCopied: (target: { accountName?: string; playerName: string }, message: string) => void;
   dismissTrade: (key: string, tradeId: string) => void;
+  /** Closes an open trade as sold, rejected or delisted: it moves from the pinned deals into the conversation. */
+  settleTrade: (key: string, tradeId: string, outcome: TradeOutcome) => void;
   markRead: (keys: readonly string[]) => void;
   forget: (key: string) => void;
 }
@@ -144,6 +152,8 @@ export function WhisperHistoryProvider({ children }: { children: React.ReactNode
     recordCopied: (target: { accountName?: string; playerName: string }, message: string) =>
       dispatch({ type: 'copied', target, message, now: Date.now() }),
     dismissTrade: (key: string, tradeId: string) => dispatch({ type: 'dismissTrade', key, tradeId }),
+    settleTrade: (key: string, tradeId: string, outcome: TradeOutcome) =>
+      dispatch({ type: 'settleTrade', key, tradeId, outcome, now: Date.now() }),
     markRead: (keys: readonly string[]) => dispatch({ type: 'markRead', keys }),
     forget: (key: string) => dispatch({ type: 'forget', key }),
   }));

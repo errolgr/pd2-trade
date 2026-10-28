@@ -23,6 +23,7 @@ import {
   RETENTION_MS,
   SAVE_DEBOUNCE_MS,
   saveWhisperHistory,
+  settleTrade,
   unreadWhispers,
   WHISPER_HISTORY_FILENAME,
   whisperCommand,
@@ -206,6 +207,16 @@ describe('copied whispers, trades and read state', () => {
     expect(isOpenTrade(trade, T0 + OPEN_TRADE_MS)).toBe(false);
     history = dismissTrade(history, 'bob', trade.id);
     expect(isOpenTrade(history.people.bob.trades[0], T0)).toBe(false);
+  });
+
+  it('settles a trade once (closed, keeping its first outcome) and saves the outcome', () => {
+    let history = recordTrade(EMPTY_HISTORY, tradeFromBob, T0);
+    const [trade] = history.people.bob.trades;
+    history = settleTrade(history, 'bob', trade.id, 'sold', T0 + 60_000);
+    expect(history.people.bob.trades[0]).toMatchObject({ outcome: 'sold', settledAt: T0 + 60_000 });
+    expect(isOpenTrade(history.people.bob.trades[0], T0 + 60_000)).toBe(false);
+    expect(settleTrade(history, 'bob', trade.id, 'rejected', T0 + 90_000)).toBe(history);
+    expect(parseHistory(JSON.stringify(history))).toEqual(history);
   });
 
   it('counts incoming whispers after readAt as unread and marks them read', () => {

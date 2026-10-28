@@ -7,6 +7,7 @@ import { useOptions } from '@/hooks/useOptions';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import DelistHandler, { useDelist } from './DelistHandler';
 import type { WhisperedItem } from './trade-match';
+import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
 
 const overlay = vi.hoisted(() => ({ openPanel: vi.fn() }));
 vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), showToast: vi.fn(), useOverlay: () => overlay }));
@@ -121,7 +122,8 @@ describe('useDelist().delistTrade (chat whisper trades)', () => {
     itemName,
     price,
   });
-  const delistTrade = (t: WhisperedItem) => renderHook(() => useDelist()).result.current.delistTrade(t);
+  const delistTrade = (t: WhisperedItem, onDeleted?: () => void) =>
+    renderHook(() => useDelist()).result.current.delistTrade(t, onDeleted);
   const confirmed = () => vi.mocked(confirmToast).mock.calls[0][0] as ConfirmToastOptions;
 
   it("searches the user's listings in the current realm and asks before deleting a single match", async () => {
@@ -161,6 +163,25 @@ describe('useDelist().delistTrade (chat whisper trades)', () => {
     expect(overlay.openPanel).toHaveBeenCalledWith('delist', { listings: [listings[1], listings[2]] });
     expect(confirmToast).not.toHaveBeenCalled();
     expect(deleteMarketListing).not.toHaveBeenCalled();
+  });
+
+  it('reports once when one of the matched listings is deleted, until the next trade delist', async () => {
+    listings = [shako, gc('G1', '9 wss'), gc('G2', '9 wss')];
+    render(<DelistHandler />);
+    const onDeleted = vi.fn();
+    await delistTrade(trade('Grand Charm', '9 wss'), onDeleted);
+    // The picker deletes elsewhere; another listing going is not this trade's
+    publishListingDeleted('S1');
+    expect(onDeleted).not.toHaveBeenCalled();
+    publishListingDeleted('G2');
+    publishListingDeleted('G1');
+    expect(onDeleted).toHaveBeenCalledTimes(1);
+
+    const earlier = vi.fn();
+    await delistTrade(trade('Grand Charm', '9 wss'), earlier);
+    await delistTrade(trade('Harlequin Crest', '2 HR'));
+    publishListingDeleted('G1');
+    expect(earlier).not.toHaveBeenCalled();
   });
 
   it('says so when no listing matches', async () => {

@@ -352,6 +352,19 @@ describe('buildTimeline', () => {
     ]);
   });
 
+  it('places settled trade whispers as events at the time they were settled; open ones stay out', () => {
+    const traded = person('bob', {
+      messages: whispers.messages,
+      trades: [
+        { id: 't-sold', isIncoming: true, message: 'wts?', timestamp: ago(120), outcome: 'sold', settledAt: ago(12) },
+        { id: 't-open', isIncoming: true, message: 'wtb?', timestamp: ago(14) },
+      ],
+    });
+    const entries = buildTimeline([], [traded], ME, false);
+    expect(entries.map((e) => e.key)).toEqual(['w:bob:w-old', 'w:bob:w-mid', 'trade:bob:t-sold', 'w:bob:w-new']);
+    expect(entries[2]).toMatchObject({ own: true, unread: false, trade: { outcome: 'sold' } });
+  });
+
   it('flags unread entries: incoming whispers after readAt and website messages from them not read by me', () => {
     const read = person('bob', {
       readAt: ago(20),
