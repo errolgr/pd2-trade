@@ -4,7 +4,8 @@ import { buildStatRows } from './stat-rows';
 import { skillNameToIdMap } from '@/assets/character-skills';
 import { classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex } from '@/assets/class-skills';
 import { ItemCharmMap, ItemQuality } from '@/common/types/Item';
-import { getTypeFromBaseType, getStatKey } from './utils';
+import { getTypeFromBaseType, getStatKey, parseCodeValue } from './utils';
+import { modifierByName } from '@/assets/modifiers';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -289,10 +290,13 @@ export function buildGetMarketListingQuery(
       const prop = statIdToProperty[stat.stat_id];
       if (prop) {
         const mod: any = { name: prop };
+        // Skill-event modifiers (values [level, skill, chance], e.g. "Melee Attacks Deal Splash Damage" [1, 358,
+        // 100]) roll the chance the clipboard reports as the value.
+        const slot = modifierByName[prop]?.encoding === 2 ? 'values.2' : 'values.0';
         if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
-          mod['values.0'] = {};
-          if (f.min !== undefined && f.min !== '') mod['values.0'].$gte = Number(f.min);
-          if (f.max !== undefined && f.max !== '') mod['values.0'].$lte = Number(f.max);
+          mod[slot] = {};
+          if (f.min !== undefined && f.min !== '') mod[slot].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod[slot].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
       }
@@ -323,12 +327,9 @@ export function buildGetMarketListingQuery(
         item.quality === ItemQuality.Superior;
 
       if (isBaseQuality && searchMode === 1 && matchedItemType) {
-        // Mode 1: Search by typeLabel (category type) - only for base qualities
-        const typeValue =
-          typeof matchedItemType.typeValue === 'string'
-            ? matchedItemType.typeValue
-            : JSON.stringify(matchedItemType.typeValue);
-        query['item.base.type_code'] = typeValue as any;
+        // Mode 1: Search by typeLabel (category type) - only for base qualities. Grouped types ("Fist Weapon":
+        // `{"$in": ["h2h", "h2h2"]}`) query as their `$in` object: PD2 matches the JSON string literally.
+        query['item.base.type_code'] = parseCodeValue(matchedItemType.typeValue);
         // Don't set base_code parameter when searching by typeLabel
       } else if (isBaseQuality) {
         // Mode 0: Default behavior (category/base) - only for base qualities

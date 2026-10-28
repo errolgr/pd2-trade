@@ -116,7 +116,12 @@ describe('buildTradeUrl', () => {
       ],
     });
     const statMapper = (id: number) => (id === 105 ? 'custom_fcr' : undefined);
-    const { p } = urlParams(item, ['id:105', 'id:4242'], { 'id:105': { min: '5' }, 'id:4242': { min: '1' } }, { statMapper });
+    const { p } = urlParams(
+      item,
+      ['id:105', 'id:4242'],
+      { 'id:105': { min: '5' }, 'id:4242': { min: '1' } },
+      { statMapper },
+    );
     expect(p.get('properties[custom_fcr][min]')).toBe('5');
     expect(p.get('properties[stat_4242][min]')).toBe('1');
   });
@@ -228,7 +233,9 @@ describe('buildTradeUrl', () => {
 
     it('searches uniques by mapped name, falling back to the parsed name', () => {
       const unique = makeItem({ quality: 'Unique', name: 'stormshield' });
-      expect(urlParams(unique, [], {}, { mapped: { name: 'Stormshield' } as PD2Item }).p.get('name')).toBe('Stormshield');
+      expect(urlParams(unique, [], {}, { mapped: { name: 'Stormshield' } as PD2Item }).p.get('name')).toBe(
+        'Stormshield',
+      );
       expect(urlParams(unique).p.get('name')).toBe('stormshield');
     });
 
@@ -340,9 +347,20 @@ describe('buildGetMarketListingQuery', () => {
   });
 
   it('looks back 14 days in archive mode and honors paging, realm and quality override', () => {
-    const q = query(makeItem(), [], {}, { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' });
+    const q = query(
+      makeItem(),
+      [],
+      {},
+      { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' },
+    );
     expect(q.updated_at.$gte).toBe('2026-10-04T12:00:00.000Z');
-    expect(q).toMatchObject({ $limit: 50, $skip: 100, is_hardcore: true, is_ladder: false, 'item.quality.name': 'Crafted' });
+    expect(q).toMatchObject({
+      $limit: 50,
+      $skip: 100,
+      is_hardcore: true,
+      is_ladder: false,
+      'item.quality.name': 'Crafted',
+    });
   });
 
   it.each([
@@ -365,7 +383,10 @@ describe('buildGetMarketListingQuery', () => {
         { stat_id: 4242, name: 'Unmapped', value: 1 },
       ],
     });
-    const q = query(item, ['id:105', 'id:7', 'id:4242'], { 'id:105': { min: '10', max: '20' }, 'id:7': { min: '', max: '' } });
+    const q = query(item, ['id:105', 'id:7', 'id:4242'], {
+      'id:105': { min: '10', max: '20' },
+      'id:7': { min: '', max: '' },
+    });
     expect(q['item.modifiers']).toEqual({
       $all: [
         { $elemMatch: { name: 'item_fastercastrate', 'values.0': { $gte: 10, $lte: 20 } } },
@@ -385,6 +406,16 @@ describe('buildGetMarketListingQuery', () => {
       { $elemMatch: { name, 'values.0': id, 'values.1': { $gte: 2, $lte: 3 } } },
     ]);
     expect(query(item, [key])['item.modifiers'].$all).toEqual([{ $elemMatch: { name, 'values.0': id } }]);
+  });
+
+  it('filters melee splash on its chance (values [level, skill, chance]), the roll the clipboard reports', () => {
+    const item = makeItem({
+      type: 'Feral Claws',
+      stats: [{ stat_id: 359, name: 'Melee Attacks Deal Splash Damage', value: 100 }],
+    });
+    expect(query(item, ['id:359'], { 'id:359': { min: '95', max: '105' } })['item.modifiers'].$all).toEqual([
+      { $elemMatch: { name: 'item_splashonhit', 'values.2': { $gte: 95, $lte: 105 } } },
+    ]);
   });
 
   it('searches a fire damage row on the market pair modifier: min damage in values.0, max in values.1', () => {
@@ -464,7 +495,10 @@ describe('buildGetMarketListingQuery', () => {
 
   describe('item identity', () => {
     it('matches jewels and charms by type/base code', () => {
-      expect(query(makeItem({ type: 'Jewel' }))).toMatchObject({ 'item.base.type_code': 'jewl', 'item.base_code': 'jew' });
+      expect(query(makeItem({ type: 'Jewel' }))).toMatchObject({
+        'item.base.type_code': 'jewl',
+        'item.base_code': 'jew',
+      });
       expect(query(makeItem({ type: 'Small Charm', quality: 'Magic' }))).toMatchObject({
         'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] },
         'item.base_code': 'cm1',
@@ -508,6 +542,13 @@ describe('buildGetMarketListingQuery', () => {
       const matched = { typeLabel: 'Shield', typeValue: 'shie', bases: [] };
       const q = query(makeItem(), [], {}, { searchMode: 1, matched });
       expect(q['item.base.type_code']).toBe('shie');
+      expect(q).not.toHaveProperty(['item.base_code']);
+    });
+
+    it('searches a grouped type in typeLabel mode as its $in object', () => {
+      const matched = { typeLabel: 'Fist Weapon', typeValue: '{"$in": ["h2h", "h2h2"]}', bases: [] };
+      const q = query(makeItem({ type: 'Feral Claws' }), [], {}, { searchMode: 1, matched });
+      expect(q['item.base.type_code']).toEqual({ $in: ['h2h', 'h2h2'] });
       expect(q).not.toHaveProperty(['item.base_code']);
     });
 
