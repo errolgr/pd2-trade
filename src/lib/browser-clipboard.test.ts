@@ -82,6 +82,16 @@ describe('Tauri mode', () => {
       await expect(writeText('x')).rejects.toThrow('denied');
       expect(tauriWriteText).toHaveBeenCalledTimes(1);
     });
+
+    it('retries a read too (the price-check hotkey reads right after the game copied)', async () => {
+      vi.mocked(tauriReadText).mockReset().mockRejectedValueOnce(occupied()).mockResolvedValue('Shako');
+
+      const read = readText();
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('Shako');
+      expect(tauriReadText).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

@@ -74,11 +74,8 @@ const AppController: React.FC = () => {
       if (sendCopy || handedBack) await keyPress('ctrl+c');
       await sleep(250);
       const raw = await read();
-      try {
-        if (savedClipboard != null) await copy(savedClipboard);
-      } catch {
-        /* clipboard restore is best-effort */
-      }
+      // Best-effort and not awaited: a restore that waits for a busy Windows clipboard must not delay the panel
+      if (savedClipboard != null) void copy(savedClipboard);
       return raw;
     },
     [read, copy, keyPress],

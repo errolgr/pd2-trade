@@ -139,6 +139,15 @@ describe('AppController price check hotkey', () => {
     expect(h.overlay.openPanel).not.toHaveBeenCalledWith('itemSearch', expect.anything());
   });
 
+  it('opens the price check without waiting for the clipboard restore (it may retry a busy clipboard)', async () => {
+    const restore = () => Promise.withResolvers<void>().promise; // never settles
+    vi.mocked(useClipboard).mockReturnValue({ read: async () => clipboard, copy: restore } as never);
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
+  });
+
   it('hands the keyboard back to the game before copying when an open panel holds it', async () => {
     h.keyboardClaimed = true;
     await mount();

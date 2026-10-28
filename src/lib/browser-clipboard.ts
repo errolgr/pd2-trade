@@ -10,13 +10,32 @@ import {
   writeText as tauriWriteText,
 } from '@tauri-apps/plugin-clipboard-manager';
 
+// Windows lets one process hold the clipboard at a time (clipboard managers, RDP, other apps briefly open it);
+// arboard then fails with this message after its own ~30 ms of retries. Retrying a few times over ~half a
+// second more gets through.
+const CLIPBOARD_OCCUPIED = 'held by another party';
+const OCCUPIED_RETRY_DELAYS_MS = [50, 150, 300];
+
+async function retryWhileOccupied<T>(access: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await access();
+    } catch (error) {
+      if (attempt >= OCCUPIED_RETRY_DELAYS_MS.length || !String(error).includes(CLIPBOARD_OCCUPIED)) throw error;
+      const { promise, resolve } = Promise.withResolvers<void>();
+      setTimeout(resolve, OCCUPIED_RETRY_DELAYS_MS[attempt]);
+      await promise;
+    }
+  }
+}
+
 /**
  * Read text from clipboard
  */
 export async function readText(): Promise<string | null> {
   if (isTauri()) {
     try {
-      return await tauriReadText();
+      return await retryWhileOccupied(() => tauriReadText());
     } catch (error) {
       console.warn('Failed to read clipboard:', error);
       return null;
@@ -32,25 +51,6 @@ export async function readText(): Promise<string | null> {
   } catch (error) {
     console.warn('Failed to read clipboard:', error);
     return null;
-  }
-}
-
-// Windows lets one process hold the clipboard at a time (clipboard managers, RDP, other apps briefly open it);
-// arboard then fails with this message. Retrying a few times over ~half a second gets through.
-const CLIPBOARD_OCCUPIED = 'held by another party';
-const OCCUPIED_RETRY_DELAYS_MS = [50, 150, 300];
-
-async function retryWhileOccupied(write: () => Promise<void>): Promise<void> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      await write();
-      return;
-    } catch (error) {
-      if (attempt >= OCCUPIED_RETRY_DELAYS_MS.length || !String(error).includes(CLIPBOARD_OCCUPIED)) throw error;
-      const { promise, resolve } = Promise.withResolvers<void>();
-      setTimeout(resolve, OCCUPIED_RETRY_DELAYS_MS[attempt]);
-      await promise;
-    }
   }
 }
 
