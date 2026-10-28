@@ -190,6 +190,8 @@ export function useMarketActions({
       // Already gone (sold, expired, or removed elsewhere): what the user asked for
       if (response.status === 404) return;
       await handleApiResponse(response, onAuthError, { listingId });
+      // A 401 resolves (re-authentication started) but the listing is still up: never report it as removed
+      if (response.status === 401) throw new AuthenticationError('Sign in to PD2 to remove this listing');
     },
     [settings, onAuthError],
   );
