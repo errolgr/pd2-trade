@@ -7,7 +7,6 @@ import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
-import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
@@ -15,7 +14,7 @@ import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
-import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
+import { formatStatRange, skillByName } from '@/pages/price-check/lib/stat-ranges';
 import { getStatKey } from '@/pages/price-check/lib/utils';
 
 /**
@@ -121,7 +120,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSkill = 'skill' in stat;
   const isUnknownSkill =
     isSkill &&
-    !fuzzyMatchCharacterSkill(stat.skill.toLowerCase()) &&
+    !skillByName(stat.skill) &&
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase());
   const isDamagePair = stat.maxValue !== undefined;
@@ -162,8 +161,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   const line = isUnknown ? null : itemLine(stat, item);
 
   const rangeBracket = !isSocket && rangeText && stat.value !== undefined && (
-    <span className="ml-1 text-xs tabular-nums text-muted-foreground"
-      title="Stat range shown on the PD2 tooltip">
+    <span className="ml-1 text-xs tabular-nums text-muted-foreground" title="Stat range shown on the PD2 tooltip">
       {rangeText}
     </span>
   );
@@ -175,8 +173,7 @@ export const StatRow: React.FC<StatRowProps> = ({
           <span className="text-muted-foreground">: </span>
           <span className="font-semibold tabular-nums">
             {stat.folded?.length ? (
-              <CountUp from={stat.folded[0].value ?? 0}
-                value={stat.value} />
+              <CountUp from={stat.folded[0].value ?? 0} value={stat.value} />
             ) : isDamagePair && stat.maxValue !== stat.value ? (
               `${stat.value}-${stat.maxValue}`
             ) : (
@@ -252,9 +249,7 @@ export const StatRow: React.FC<StatRowProps> = ({
               {corruptedIndeterminate && <X className="size-3.5 motion-safe:animate-in motion-safe:zoom-in-50" />}
             </div>
           ) : (
-            <Checkbox checked={isSelected}
-              onCheckedChange={() => toggle(stat)}
-              disabled={isUnknown} />
+            <Checkbox checked={isSelected} onCheckedChange={() => toggle(stat)} disabled={isUnknown} />
           )}
 
           <div className="flex min-w-0 flex-row items-center">
@@ -264,8 +259,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                   {stat.name}
                   {valueParts(true)}
                 </span>
-                <Badge variant="destructive"
-                  className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
+                <Badge variant="destructive" className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
                   Unknown
                 </Badge>
               </div>
@@ -334,15 +328,12 @@ export const StatRow: React.FC<StatRowProps> = ({
                   </HoverPopover>
                 )}
                 {stat.corrupted && (
-                  <span className="text-q-corrupted"
-                    title="Corrupted stat">
+                  <span className="text-q-corrupted" title="Corrupted stat">
                     *
                   </span>
                 )}
                 {pseudoOptions && pseudoOptions.length > 0 && onPseudo && (
-                  <PseudoChip options={pseudoOptions}
-                    active={stat.pseudo}
-                    onPick={onPseudo} />
+                  <PseudoChip options={pseudoOptions} active={stat.pseudo} onPick={onPseudo} />
                 )}
               </div>
             )}
@@ -370,15 +361,13 @@ export const StatRow: React.FC<StatRowProps> = ({
                 // The line's own clears and "Clear ranges" both replay the wipe
                 const clears = clearNonce[lo] !== undefined || wipe ? `${wipe ?? 0}:${clearNonce[lo] ?? 0}` : undefined;
                 return (
-                  <div key={lo}
-                    className="flex items-center gap-1.5">
+                  <div key={lo} className="flex items-center gap-1.5">
                     {label && (
                       <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
                         {label}
                       </span>
                     )}
-                    <span data-range-line
-                      className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
+                    <span data-range-line className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
                       <input
                         type="number"
                         className={numberInputClass}
@@ -412,7 +401,10 @@ export const StatRow: React.FC<StatRowProps> = ({
                             updateFilter(statKey, hi, '');
                             setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
                             // Ready to type the new min
-                            e.currentTarget.closest('[data-range-line]')?.querySelector('input')?.focus({ preventScroll: true });
+                            e.currentTarget
+                              .closest('[data-range-line]')
+                              ?.querySelector('input')
+                              ?.focus({ preventScroll: true });
                           }}
                           className={cn(
                             'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -441,7 +433,11 @@ export const StatRow: React.FC<StatRowProps> = ({
                               className="pointer-events-none absolute inset-y-0 w-2/3 bg-linear-to-r from-transparent via-glow/55 to-transparent"
                               initial={{ left: '-70%', opacity: 1 }}
                               animate={{ left: '110%', opacity: [1, 1, 0] }}
-                              transition={{ duration: 0.5, ease: EASE_OUT, opacity: { duration: 0.5, times: [0, 0.75, 1] } }}
+                              transition={{
+                                duration: 0.5,
+                                ease: EASE_OUT,
+                                opacity: { duration: 0.5, times: [0, 0.75, 1] },
+                              }}
                             />
                             <motion.span
                               aria-hidden
