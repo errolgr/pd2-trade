@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRightLeft, ChevronDown, ChevronRight, ChevronUp, ExternalLink, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { openUrl } from '@/lib/browser-opener';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { ItemValue, RuneCombination } from '../lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,6 +17,8 @@ interface RunePricePopoverProps {
   selectedRuneCombinations: RuneCombination[];
   onRuneBreakdownSelect: (runeName: string | null) => void;
 }
+
+const RUNE_PRICES_URL = 'https://pd2trader.com/?category=runes';
 
 const LOW_RUNES: Record<string, true> = {
   'Gul Rune': true,
@@ -83,9 +86,13 @@ export function RunePricePopover({
             </Tooltip>
           </TooltipProvider>
           <a
-            href="https://pd2trader.com/?category=runes"
+            href={RUNE_PRICES_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              void openUrl(RUNE_PRICES_URL);
+            }}
             className="ml-auto inline-flex items-center gap-1 rounded-sm text-xs font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             View on pd2trader.com

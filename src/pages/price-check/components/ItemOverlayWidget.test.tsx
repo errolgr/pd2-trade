@@ -148,11 +148,13 @@ function listing({ item, user, ...overrides }: ListingOverrides = {}): MarketLis
   };
 }
 
-const page = (data: MarketListingEntry[], total = data.length): MarketListingResult => ({
+/** A PD2 page; `fetched` (the rows PD2 sent) exceeds `data` when it held item-less listings that were dropped. */
+const page = (data: MarketListingEntry[], total = data.length, fetched = data.length): MarketListingResult => ({
   data,
   total,
   limit: 20,
   skip: 0,
+  fetched,
 });
 
 // ---------------------------------------------------------------- mock state
@@ -632,6 +634,23 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.getAllByRole('row')).toHaveLength(1 + 21); // header + 20 + one new (duplicate dropped)
     // a short page means there is nothing more to load
     expect(screen.queryByText('Load more')).toBeNull();
+  });
+
+  it('keeps Load more when a full page of rows held an item-less listing', async () => {
+    // PD2 sent 20 rows; the one without an item was dropped before reaching the widget
+    const first = Array.from({ length: 19 }, (_, i) => listing({ _id: `p1-${i}`, hr_price: i + 1 }));
+    getMarketListings.mockResolvedValueOnce(page(first, 30, 20));
+    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'p2-0', hr_price: 99 })], 30));
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('Load more')).not.toBeNull();
+    expect(screen.getAllByRole('row')).toHaveLength(1 + 19);
+
+    inView = true;
+    rerenderItem(item);
+    expect(await screen.findByText('99 HR')).not.toBeNull();
+    expect(lastQuery().$skip).toBe(20);
   });
 
   it('after scrolling, a new search starts from the first page with the edited filters', async () => {

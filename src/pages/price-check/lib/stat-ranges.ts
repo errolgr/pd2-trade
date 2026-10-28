@@ -9,7 +9,8 @@
  * - no range for chance-to-cast / charges, or when min == max.
  */
 import { STAT_RANGE_DATA } from '@/assets/stat-ranges.data';
-import { skillNameToIdMap } from '@/assets/character-skills';
+import { characterSkillMap, skillNameToIdMap, type CharacterSkill } from '@/assets/character-skills';
+import { SITE_STAT_OPTIONS } from '@/pages/market/lib/stat-options.data';
 import { runeWords } from '@/assets/items';
 import { getTypeFromBaseType } from './utils';
 import type { Item, Range, Stat } from './interfaces';
@@ -329,15 +330,38 @@ export function bhStatRange(item: Item, nStat: number, param = 0): StatRange | n
   return mods ? fixedRange(mods, nStat, param) : null;
 }
 
+/**
+ * Skills by the name the game draws ("Lower Resist", "Werewolf"): the site's +skill labels, first entry
+ * kept (class skills come before their same-named procs). Skills.txt names ("LowRes", "Wearwolf") stay a fallback.
+ */
+const skillsByDisplayName = (() => {
+  const byName: Record<string, CharacterSkill> = {};
+  for (const [key, label] of SITE_STAT_OPTIONS) {
+    const id = /^item_singleskill\{(\d+)\}$/.exec(key)?.[1];
+    const skill = id === undefined ? undefined : characterSkillMap[Number(id)];
+    const name = label
+      .replace(/^\+\{X\} to /, '')
+      .replace(/\s*\([^)]*\)\s*$/, '')
+      .toLowerCase();
+    if (skill && !byName[name]) byName[name] = skill;
+  }
+  return byName;
+})();
+
+/** The skill a clipboard skill name stands for ("Teleport", "Teleport (Sorceress)", "Lower Resist"). */
+export function skillByName(skill: string): CharacterSkill | undefined {
+  const name = skill.replace(/\s*\([^)]*\)\s*$/, '').toLowerCase();
+  return skillsByDisplayName[name] ?? skillNameToIdMap[name];
+}
+
 /** Skill id of a clipboard skill name ("Teleport", "Teleport (Sorceress)"). */
 function skillId(skill: string): number | undefined {
-  const name = skill.replace(/\s*\([^)]*\)\s*$/, '').toLowerCase();
-  return skillNameToIdMap[name]?.id;
+  return skillByName(skill)?.id;
 }
 
 /** The class a skill belongs to ("Fire Mastery" → "Sorceress"), null for non-class skills. */
 export function skillClass(skill: string): string | null {
-  return skillNameToIdMap[skill.toLowerCase()]?.class ?? null;
+  return skillByName(skill)?.class ?? null;
 }
 
 /**
@@ -378,7 +402,10 @@ function lineOf(stat: Stat): [number, number] | null {
   }
   // BH's Ctrl+C export leaves stat_id off skill stats; `skill` says which kind ("Amazon Skills" = class skills,
   // "Martial Arts (Assassin)" = a skill tab, otherwise one skill).
-  if (stat.skill && (stat.stat_id === undefined || stat.stat_id === S.singleSkill || stat.stat_id === S.nonClassSkill)) {
+  if (
+    stat.skill &&
+    (stat.stat_id === undefined || stat.stat_id === S.singleSkill || stat.stat_id === S.nonClassSkill)
+  ) {
     if (CLASS_NAMES[stat.skill.toLowerCase().replace(/ skills$/, '')]) return [S.classSkills, 0];
     const id = skillId(stat.skill);
     return id === undefined ? [S.skillTab, 0] : [S.singleSkill, id];
@@ -394,14 +421,17 @@ function lineOf(stat: Stat): [number, number] | null {
 }
 
 /** Max damage stat → its min stat: the game draws one "Adds a-b" line, BH puts the max range after "to". */
-const MIN_OF_MAX: Record<number, number> = Object.fromEntries(Object.entries(MAX_ELEM_OF).map(([min, max]) => [max, Number(min)]));
+const MIN_OF_MAX: Record<number, number> = Object.fromEntries(
+  Object.entries(MAX_ELEM_OF).map(([min, max]) => [max, Number(min)]),
+);
 
 /** BH range of the tooltip line for one clipboard stat (skills try the class-skill and the o-skill stat). */
 export function statLineRange(item: Item, stat: Stat): StatRange | null {
   const line = lineOf(stat);
   if (!line) return null;
   const [nStat, param] = line;
-  if (nStat === S.singleSkill) return bhStatRange(item, S.singleSkill, param) ?? bhStatRange(item, S.nonClassSkill, param);
+  if (nStat === S.singleSkill)
+    return bhStatRange(item, S.singleSkill, param) ?? bhStatRange(item, S.nonClassSkill, param);
   return bhStatRange(item, nStat, param);
 }
 

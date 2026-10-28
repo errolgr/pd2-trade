@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { itemCorruptions } from '@/lib/item-utils';
 
 interface ItemStatsDisplayProps {
   stashItem: GameStashItem;
@@ -24,7 +25,8 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
   });
 
   // Separate corrupted and non-corrupted modifiers
-  const isCorruptedMod = (name: string) => stashItem.corruptions?.includes(name) ?? false;
+  const corruptions = itemCorruptions(stashItem);
+  const isCorruptedMod = (name: string) => corruptions.includes(name);
   const corruptedModifiers = filteredModifiers.filter((mod) => isCorruptedMod(mod.name));
   const nonCorruptedModifiers = filteredModifiers.filter((mod) => !isCorruptedMod(mod.name));
 

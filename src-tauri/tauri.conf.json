@@ -29,7 +29,8 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/favicon.ico",
-        "sidebarImage": "icons/banner.bmp"
+        "sidebarImage": "icons/banner.bmp",
+        "template": "windows/installer.nsi"
       }
     },
     "linux": {

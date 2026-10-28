@@ -159,7 +159,7 @@ export function useMarketSearch(
         items: result.items,
         total: result.total,
         totalExact: result.totalExact,
-        hasMore: result.items.length < result.total,
+        hasMore: result.fetched < result.total,
       });
     };
 
@@ -222,7 +222,8 @@ export function useMarketSearch(
             total: result.total,
             totalExact: result.totalExact,
             loadingMore: false,
-            hasMore: result.items.length > 0 && items.length < result.total,
+            // Rows, not `items` (a page can hold item-less rows that never show), decide whether more follow
+            hasMore: result.fetched > 0 && page * MARKET_PAGE_SIZE + result.fetched < result.total,
           };
         });
       } catch (e) {

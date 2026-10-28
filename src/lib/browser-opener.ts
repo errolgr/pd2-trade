@@ -1,17 +1,16 @@
 /**
  * Browser-compatible URL opener
- * Uses Tauri opener in Tauri environment, falls back to window.open in browser
+ * Uses the app's opener (src-tauri modules/opener.rs) in Tauri, falls back to window.open in browser
  */
 
-import { isTauri } from '@tauri-apps/api/core';
-import { openUrl as tauriOpenUrl } from '@tauri-apps/plugin-opener';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 
 /**
- * Open a URL
+ * Open a URL in the system browser. In Tauri it rejects when nothing could open it.
  */
 export async function openUrl(url: string): Promise<void> {
   if (isTauri()) {
-    await tauriOpenUrl(url);
+    await invoke('open_url', { url });
     return;
   }
 

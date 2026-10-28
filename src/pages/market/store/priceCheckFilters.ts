@@ -13,6 +13,7 @@ import { buildGetMarketListingQuery } from '@/pages/price-check/lib/tradeUrlBuil
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { DAMAGE_PAIRS, StatId, statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
+import { findTypeOption } from '@/pages/market/lib/catalog';
 import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -130,8 +131,14 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const baseCode = query['item.base_code'];
   if (typeof baseCode === 'string' && baseCode) out.baseCode = baseCode;
   const typeCode = query['item.base.type_code'];
+  const typeGroup = prop(typeCode, '$in');
   if (typeof typeCode === 'string' && typeCode) out.typeCode = typeCode;
   else if (typeof baseCode === 'string' && CHARM_TYPE_BY_BASE[baseCode]) out.typeCode = CHARM_TYPE_BY_BASE[baseCode];
+  // Grouped types (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon")
+  else if (Array.isArray(typeGroup) && typeof typeGroup[0] === 'string') {
+    const option = findTypeOption(typeGroup[0]);
+    if (option) out.typeCode = option.code;
+  }
 
   if (query['item.corrupted'] === true) out.corrupted = 'yes';
   else if (query['item.corrupted'] === false) out.corrupted = 'no';

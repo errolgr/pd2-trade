@@ -34,10 +34,21 @@ interface ChatMessagePush {
   sender?: { _id?: string; display_name?: string; username?: string };
 }
 
+// Linux WebKitGTK only loads media from blob:, data:, file: and http(s): URLs, so an <audio> pointed at the bundled
+// tauri://localhost/assets/… file fails with NotSupportedError. A blob: URL of the same bytes plays in every webview;
+// it is made at startup, long before the first notification, and the asset URL stays the fallback.
+let whisperSoundSrc: string = poeWhisperSound;
+void fetch(poeWhisperSound)
+  .then((response) => response.blob())
+  .then((blob) => {
+    whisperSoundSrc = URL.createObjectURL(blob);
+  })
+  .catch(() => {});
+
 /** Plays the whisper notification sound at `volume` (0-100); also the market alert sound. */
 export function playNotificationSound(volume: number = 70) {
   try {
-    const audio = new Audio(poeWhisperSound);
+    const audio = new Audio(whisperSoundSrc);
     audio.volume = volume / 100; // Convert 0-100 to 0-1
     audio.play().catch((error) => {
       console.error('Failed to play notification sound:', error);
