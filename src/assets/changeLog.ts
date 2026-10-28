@@ -5,6 +5,12 @@ export const changeLog = {
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
+    '🔧 Chat and price check no longer show "This panel crashed" after opening Selling / Buying or a thread with offers',
+    '🔧 Chat, trader profile, market and offers no longer crash on a PD2 listing that comes without its item',
+    '🔧 Quick list, delist and price check no longer crash on items whose corruptions PD2 sends in another shape',
+    "🔧 Hotkeys: press the key to set it; Space, symbol keys and keys on Cyrillic layouts (e.g. х) now register, and a key that can't be used is flagged in settings",
+    '🔧 Copying (whispers, trade links, item images) retries when another app briefly holds the Windows clipboard',
+    '🔧 Linux: whisper and market alert sounds play without an MP3 GStreamer decoder',
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
