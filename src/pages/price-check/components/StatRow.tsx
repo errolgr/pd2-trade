@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -141,6 +141,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
   /** Clears per range line (`min` / `maxMin`): each one replays the clear sweep. */
   const [clearNonce, setClearNonce] = useState<Partial<Record<string, number>>>({});
+  /** The current press started in a min/max input (see the label's onClickCapture). */
+  const pressInInput = useRef(false);
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
@@ -204,6 +206,14 @@ export const StatRow: React.FC<StatRowProps> = ({
       )}
     >
       <label
+        // A drag that selects an input's text and is released elsewhere on the row clicks the row (the press and
+        // release's common ancestor): that must not toggle the stat and drop its range
+        onMouseDown={(e) => {
+          pressInInput.current = e.target instanceof Element && !!e.target.closest('input');
+        }}
+        onClickCapture={(e) => {
+          if (pressInInput.current && !(e.target instanceof Element && e.target.closest('input'))) e.preventDefault();
+        }}
         key={statKey}
         className={cn(
           'group/row relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
