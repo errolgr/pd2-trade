@@ -57,6 +57,8 @@ describe('searchMarketListings', () => {
     expect(result).toEqual({
       total: 312,
       totalExact: true,
+      // Rows the service sent, the dropped one included: paging reads this
+      fetched: 3,
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
         { listing: unscored, pseudo: {}, score: null, value: null },

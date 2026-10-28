@@ -5,6 +5,11 @@ export interface MarketListingResult {
   limit: number;
   skip: number;
   data: MarketListingEntry[];
+  /**
+   * Rows PD2 sent for this page. `data` leaves out listings without an item, so page on this (a full page
+   * means more may follow), never on `data.length`.
+   */
+  fetched: number;
 }
 
 export interface MarketListingEntry {

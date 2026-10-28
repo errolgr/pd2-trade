@@ -36,6 +36,11 @@ export interface MarketSearchPage {
    * bound) or, with a Seller online filter, estimated it from the listings it read. Older services omit it: exact.
    */
   totalExact: boolean;
+  /**
+   * Rows the service sent for this page. `items` leaves out rows without a listing item, so page on this,
+   * never on `items.length`.
+   */
+  fetched: number;
 }
 
 /**
@@ -121,7 +126,7 @@ function parsePage(body: unknown): MarketSearchPage {
       value: 'value' in row ? finiteOrNull(row.value) : null,
     });
   }
-  return { items, total: total ?? items.length, totalExact };
+  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {

@@ -209,7 +209,8 @@ describe('listing queries', () => {
 
   it('drops listings PD2 sent without an item, live and archived (chat cards and prices need one)', async () => {
     const page = { total: 2, limit: 25, skip: 0, data: [{ _id: 'L1', item: { name: 'Shako' } }, { _id: 'L2' }] };
-    const expected = { ...page, data: [page.data[0]] };
+    // `fetched` keeps the rows PD2 sent, so callers still page on a full page
+    const expected = { ...page, data: [page.data[0]], fetched: 2 };
     const { actions } = market();
     fetchMock.mockResolvedValueOnce(fakeResponse(200, page));
     await expect(actions.getMarketListings(query as never)).resolves.toEqual(expected);

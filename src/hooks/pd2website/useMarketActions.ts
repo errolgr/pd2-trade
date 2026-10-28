@@ -60,10 +60,11 @@ function axiosStyleSerializer(obj) {
 
 /**
  * PD2 returns some listings without an `item` (nothing to show, price or link); drop them here so every
- * MarketListingEntry downstream has one. null (a 401) passes through.
+ * MarketListingEntry downstream has one, keeping the page's row count in `fetched` for paging. null (a 401)
+ * passes through.
  */
-function withItems(result: MarketListingResult | null): MarketListingResult | null {
-  return result && { ...result, data: result.data.filter((listing) => listing.item) };
+function withItems(result: Omit<MarketListingResult, 'fetched'> | null): MarketListingResult | null {
+  return result && { ...result, data: result.data.filter((listing) => listing.item), fetched: result.data.length };
 }
 
 export function useMarketActions({

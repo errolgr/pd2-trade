@@ -814,7 +814,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           ? await searchMarketListings(search.marketFilters, {
               page: search.skip / ITEMS_PER_PAGE,
               limit: ITEMS_PER_PAGE,
-            }).then((page) => ({ data: page.items.map((row) => row.listing), total: page.total }))
+            }).then((page) => ({
+              data: page.items.map((row) => row.listing),
+              total: page.total,
+              fetched: page.fetched,
+            }))
           : search.archived
             ? await getMarketListingsArchive(query)
             : await getMarketListings(query);
@@ -836,7 +840,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         }
 
         search.skip += ITEMS_PER_PAGE;
-        setHasMore(result.data.length === ITEMS_PER_PAGE);
+        // A full page of rows, not of listings shown (item-less ones are dropped), means more may follow
+        setHasMore(result.fetched === ITEMS_PER_PAGE);
 
         trackMeasurement(
           'item_overlay_market_search',
