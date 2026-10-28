@@ -29,6 +29,10 @@ export const offerThreadId = (offer: TradeOffer) => (offer.userId ? `user:${offe
 const seenAt = (prefs: ChatPrefs, threadId: string) =>
   Math.max(prefs.offersSeenAt ?? 0, prefsFor(prefs, [threadId]).offersSeenAt ?? 0);
 
+/** Up to when the offers were looked at (epoch ms, 0: never): everywhere, or in the thread known by `threadIds`. */
+export const offersSeenUpTo = (prefs: ChatPrefs, threadIds?: readonly string[]) =>
+  threadIds ? Math.min(...threadIds.map((id) => seenAt(prefs, id))) : (prefs.offersSeenAt ?? 0);
+
 /** The open trade whispers `people` sent you since they were last looked at. */
 export const newTrades = (prefs: ChatPrefs, people: readonly WhisperPerson[], now: number): NewTrade[] =>
   people.flatMap((person) => {
@@ -76,8 +80,7 @@ export function recordAcceptedOffers(
   const entries = [
     ...Object.entries(known ?? {}),
     ...accepted.map(
-      (offer) =>
-        [offer.id, known && !(offer.listingId && notifiedListings.has(offer.listingId)) ? now : 0] as const,
+      (offer) => [offer.id, known && !(offer.listingId && notifiedListings.has(offer.listingId)) ? now : 0] as const,
     ),
   ]
     .sort((a, b) => b[1] - a[1])
