@@ -9,6 +9,7 @@ import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { useMarketActions } from './useMarketActions';
 import { AuthenticationError } from './usePD2Website';
+import { subscribeListingDeleted } from './listing-events';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
@@ -230,23 +231,28 @@ describe('listing mutations', () => {
   });
 
   it('deleteMarketListing DELETEs by id, treats an already-gone listing as deleted, and propagates failures', async () => {
+    const deleted = vi.fn();
+    const unsubscribe = subscribeListingDeleted(deleted);
     const { actions, onAuthError } = market();
     await actions.deleteMarketListing('L2');
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/listing/L2');
     expect(lastCall().init.method).toBe('DELETE');
 
-    fetchMock.mockResolvedValueOnce(fakeResponse(404, 'gone', 'https://api.projectdiablo2.com/market/listing/L2'));
-    await expect(actions.deleteMarketListing('L2')).resolves.toBeUndefined();
+    fetchMock.mockResolvedValueOnce(fakeResponse(404, 'gone', 'https://api.projectdiablo2.com/market/listing/L3'));
+    await expect(actions.deleteMarketListing('L3')).resolves.toBeUndefined();
 
-    fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'https://api.projectdiablo2.com/market/listing/L2'));
-    await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 500');
+    fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'https://api.projectdiablo2.com/market/listing/L4'));
+    await expect(actions.deleteMarketListing('L4')).rejects.toThrow('API Error: 500');
 
     // Expired/refused session: re-auth starts, and the listing is still up, so it must not resolve as removed
     fetchMock.mockResolvedValueOnce(
-      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/listing/L2'),
+      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/listing/L5'),
     );
-    await expect(actions.deleteMarketListing('L2')).rejects.toBeInstanceOf(AuthenticationError);
+    await expect(actions.deleteMarketListing('L5')).rejects.toBeInstanceOf(AuthenticationError);
     expect(onAuthError).toHaveBeenCalledTimes(1);
+    // Removed (or already gone) listings are announced to the quick list; failures are not
+    expect(deleted.mock.calls).toEqual([['L2'], ['L3']]);
+    unsubscribe();
   });
 
   it("bumpAllMarketListings PATCHes all of the user's listings with the current time", async () => {

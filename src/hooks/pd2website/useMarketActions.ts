@@ -10,6 +10,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
 import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import { publishListingDeleted } from './listing-events';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -197,10 +198,12 @@ export function useMarketActions({
         },
       });
       // Already gone (sold, expired, or removed elsewhere): what the user asked for
-      if (response.status === 404) return;
-      await handleApiResponse(response, onAuthError, { listingId });
-      // A 401 resolves (re-authentication started) but the listing is still up: never report it as removed
-      if (response.status === 401) throw new AuthenticationError('Sign in to PD2 to remove this listing');
+      if (response.status !== 404) {
+        await handleApiResponse(response, onAuthError, { listingId });
+        // A 401 resolves (re-authentication started) but the listing is still up: never report it as removed
+        if (response.status === 401) throw new AuthenticationError('Sign in to PD2 to remove this listing');
+      }
+      publishListingDeleted(listingId);
     },
     [settings, onAuthError],
   );

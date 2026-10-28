@@ -9,6 +9,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
+import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
 import ListedItemsTab from './ListedItemsTab';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
@@ -92,8 +93,10 @@ beforeEach(() => {
     }),
     updateMarketListing: vi.fn(async () => {}),
     updateItemByHash: vi.fn(async () => {}),
+    // Like the real deleteMarketListing: announce the removal once it succeeded
     deleteMarketListing: vi.fn(async (id) => {
       server = server.filter((l) => l._id !== id);
+      publishListingDeleted(id);
     }),
     bumpAllMarketListings: vi.fn(async () => {}),
     authData: { user: { _id: 'u1' } },
@@ -260,17 +263,40 @@ describe('bumping', () => {
 });
 
 describe('deleting', () => {
-  it('removes the row, decrements the count and informs the parent', async () => {
-    const onTotalCountChange = vi.fn();
-    const onListingsChange = vi.fn();
-    renderTab({ initialListings: server, initialTotalCount: 7, onTotalCountChange, onListingsChange });
+  it('removes the row and decrements the count once the listing is deleted', async () => {
+    renderTab({ initialListings: server, initialTotalCount: 7 });
     await click(within(row('Item 3')).getByLabelText('Remove listing'));
     expect(api.deleteMarketListing.mock.calls).toEqual([['L3']]);
     expect(screen.queryByText('Item 3')).toBeNull();
     expect(countChip()).toBe('6');
-    expect(onTotalCountChange).toHaveBeenLastCalledWith(6);
-    expect(onListingsChange.mock.lastCall![0].map((l: MarketListingEntry) => l._id)).toEqual(['L1', 'L2', 'L4', 'L5']);
     expect(toasts()).toEqual(['Removed Item 3 market listing.']);
+  });
+
+  it('drops a loaded listing deleted elsewhere (Ctrl+U delist, chat); other ids change nothing', async () => {
+    renderTab();
+    await screen.findByText('Item 2');
+    act(() => publishListingDeleted('L99'));
+    expect(countChip()).toBe('7');
+    act(() => publishListingDeleted('L2'));
+    expect(screen.queryByText('Item 2')).toBeNull();
+    expect(countChip()).toBe('6');
+    expect(api.deleteMarketListing).not.toHaveBeenCalled();
+  });
+
+  it("follows the parent's refetched total after a listing is deleted elsewhere", async () => {
+    const view = renderTab({ initialListings: server, initialTotalCount: 7 });
+    act(() => publishListingDeleted('L2'));
+    expect(screen.queryByText('Item 2')).toBeNull();
+    view.rerender(
+      <TooltipProvider>
+        <ListedItemsTab
+          onClose={vi.fn()}
+          initialListings={server.filter((l) => l._id !== 'L2')}
+          initialTotalCount={6}
+        />
+      </TooltipProvider>,
+    );
+    expect(countChip()).toBe('6');
   });
 
   it('on failure keeps the row, toasts, and refetches the first page', async () => {
