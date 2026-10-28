@@ -185,7 +185,7 @@ Then re-capture `src/pages/price-check/lib/__fixtures__/stat-ranges-oracle.<seas
 - Tests sit next to the code (`foo.ts` → `foo.test.ts`); DOM tests start with `// @vitest-environment happy-dom` and mock Tauri/plugin modules with `vi.mock`
 - `it.fails` / `it.skip` tests marked `// BUG:` pin known bugs; fixing the bug flips them, so convert them to plain `it` in the fix
 - Test and Tauri functionality
-- Browser smoke test (no Tauri): `npm run dev` and open http://localhost:1420/. The app renders in the page (region and keyboard calls are no-ops). In dev builds the console exposes `window.__pd2Overlay`: `openPanel(id, payload?)`, `closePanel(id)`, `togglePanel(id, payload?)`, `isOpen(id)`, `showToast(payload)` and `state` (panel state snapshot), e.g. `__pd2Overlay.openPanel('settings')` or `__pd2Overlay.openPanel('currency', { tab: 'history' })`
+- Browser smoke test (no Tauri): `npm run dev` and open http://localhost:1420/. The app renders in the page (region and keyboard calls are no-ops). In dev builds the console exposes `window.__pd2Overlay`: `openPanel(id, payload?)`, `closePanel(id)`, `togglePanel(id, payload?)`, `isOpen(id)`, `showToast(payload)`, `priceCheck(item?)` and `state` (panel state snapshot), e.g. `__pd2Overlay.openPanel('settings')` or `__pd2Overlay.openPanel('currency', { tab: 'history' })`. `__pd2Overlay.priceCheck()` price-checks a sample rare ring; pass an item object or the raw JSON an in-game copy puts on the clipboard to check that instead
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)
 

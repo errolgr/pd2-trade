@@ -9,7 +9,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
 import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
-import { X, Check, Info } from 'lucide-react';
+import { X, Check, Info, Eraser } from 'lucide-react';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
@@ -44,6 +44,9 @@ function itemLine(stat: Stat, item?: Item): string | null {
   return statText(source ?? stat, item);
 }
 
+/** The min / max inputs of a row (damage pairs use all four). */
+export const RANGE_FIELDS = ['min', 'max', 'maxMin', 'maxMax'] as const;
+
 interface StatRowProps {
   stat: Stat;
   nested?: boolean;
@@ -62,6 +65,8 @@ interface StatRowProps {
   onPseudo?: (id: string) => void;
   /** The item the row belongs to: skill lines read its class (o-skills draw no "(Class Only)"). */
   item?: Item;
+  /** Bumped by the Stats header's "Clear ranges": every range line plays its clear wipe. */
+  wipe?: number;
 }
 
 /** Counts from `from` to `value` once on mount: a Σ row's total adding up its folded lines. */
@@ -107,6 +112,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   pseudoOptions,
   onPseudo,
   item,
+  wipe,
 }) => {
   const statKey = getStatKey(stat);
   const isSocket = stat.stat_id === StatId.Socket;
@@ -133,6 +139,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isActive = isCorrupted ? corruptedState !== 0 : isSelected;
   const showRangeInputs = !isCorrupted && !isEthereal && isSelected;
   const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
+  /** Clears per range line (`min` / `maxMin`): each one replays the clear sweep. */
+  const [clearNonce, setClearNonce] = useState<Partial<Record<string, number>>>({});
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
@@ -198,7 +206,7 @@ export const StatRow: React.FC<StatRowProps> = ({
       <label
         key={statKey}
         className={cn(
-          'relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
+          'group/row relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
           'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
           isActive
             ? 'bg-linear-to-r from-glow/16 via-glow/7 to-glow/2 shadow-[inset_3px_0_0_var(--glow)]'
@@ -357,35 +365,98 @@ export const StatRow: React.FC<StatRowProps> = ({
                     ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
                   ] as const)
                 : ([['min', 'max', null, stat.name]] as const)
-              ).map(([lo, hi, label, aria]) => (
-                <div key={lo}
-                  className="flex items-center gap-1.5">
-                  {label && (
-                    <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {label}
+              ).map(([lo, hi, label, aria]) => {
+                const hasRange = !!filters[statKey]?.[lo] || !!filters[statKey]?.[hi];
+                // The line's own clears and "Clear ranges" both replay the wipe
+                const clears = clearNonce[lo] !== undefined || wipe ? `${wipe ?? 0}:${clearNonce[lo] ?? 0}` : undefined;
+                return (
+                  <div key={lo}
+                    className="flex items-center gap-1.5">
+                    {label && (
+                      <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {label}
+                      </span>
+                    )}
+                    <span data-range-line
+                      className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
+                      <input
+                        type="number"
+                        className={numberInputClass}
+                        placeholder="min"
+                        aria-label={`${aria} minimum`}
+                        value={filters[statKey]?.[lo] ?? ''}
+                        onChange={(e) => updateFilter(statKey, lo, e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                      />
+                      {/* The "–" turns into the eraser while the row is hovered (or the eraser has keyboard focus): no
+                          extra width. Hover only: focus in a min/max input would keep it showing after the pointer left. */}
+                      <span className="relative inline-flex h-7 w-3.5 shrink-0 items-center justify-center">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'text-xs text-muted-foreground transition-opacity duration-(--dur-fast) [span:has(>button:focus-visible)>&]:opacity-0',
+                            hasRange && 'group-hover/row:opacity-0',
+                          )}
+                        >
+                          –
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Clear ${aria} range`}
+                          title="Clear min and max"
+                          tabIndex={hasRange ? 0 : -1}
+                          aria-hidden={!hasRange}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            updateFilter(statKey, lo, '');
+                            updateFilter(statKey, hi, '');
+                            setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
+                            // Ready to type the new min
+                            e.currentTarget.closest('[data-range-line]')?.querySelector('input')?.focus({ preventScroll: true });
+                          }}
+                          className={cn(
+                            'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
+                            hasRange ? 'group-hover/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
+                          )}
+                        >
+                          <Eraser className="size-3" />
+                        </button>
+                      </span>
+                      <input
+                        type="number"
+                        className={numberInputClass}
+                        placeholder="max"
+                        aria-label={`${aria} maximum`}
+                        value={filters[statKey]?.[hi] ?? ''}
+                        onChange={(e) => updateFilter(statKey, hi, e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                      />
+                      {/* A cleared range is wiped by a light sweep across both inputs, their edges flashing once. Own
+                          AnimatePresence: the range's `initial={false}` presence would otherwise skip these entries. */}
+                      <AnimatePresence>
+                        {clears !== undefined && (
+                          <React.Fragment key={clears}>
+                            <motion.span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-y-0 w-2/3 bg-linear-to-r from-transparent via-glow/55 to-transparent"
+                              initial={{ left: '-70%', opacity: 1 }}
+                              animate={{ left: '110%', opacity: [1, 1, 0] }}
+                              transition={{ duration: 0.5, ease: EASE_OUT, opacity: { duration: 0.5, times: [0, 0.75, 1] } }}
+                            />
+                            <motion.span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-glow/70"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ duration: 0.6, times: [0, 0.2, 1], ease: 'easeOut' }}
+                            />
+                          </React.Fragment>
+                        )}
+                      </AnimatePresence>
                     </span>
-                  )}
-                  <input
-                    type="number"
-                    className={numberInputClass}
-                    placeholder="min"
-                    aria-label={`${aria} minimum`}
-                    value={filters[statKey]?.[lo] ?? ''}
-                    onChange={(e) => updateFilter(statKey, lo, e.target.value)}
-                    onKeyDown={handleInputKeyDown}
-                  />
-                  <span className="text-xs text-muted-foreground">–</span>
-                  <input
-                    type="number"
-                    className={numberInputClass}
-                    placeholder="max"
-                    aria-label={`${aria} maximum`}
-                    value={filters[statKey]?.[hi] ?? ''}
-                    onChange={(e) => updateFilter(statKey, hi, e.target.value)}
-                    onKeyDown={handleInputKeyDown}
-                  />
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>

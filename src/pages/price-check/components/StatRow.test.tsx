@@ -73,6 +73,17 @@ describe('StatRow', () => {
     expect(container.textContent).not.toContain('% Faster Cast Rate: 20');
   });
 
+  it('clears min and max with one click and focuses min for the new value', () => {
+    render(<Harness stat={FCR} />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '20' } });
+    const clear = screen.getByRole('button', { name: 'Clear % Faster Cast Rate range' });
+    fireEvent.click(clear);
+    expect(JSON.parse(screen.getByTestId('filters').textContent ?? '{}')['id:105']).toEqual({ min: '', max: '' });
+    expect(document.activeElement).toBe(screen.getByLabelText('% Faster Cast Rate minimum'));
+  });
+
   it('draws damage pairs as the one line the game shows', () => {
     const { container } = renderRow({
       stat: { stat_id: StatId.FireDamage, name: 'Fire Damage', value: 4, maxValue: 14 },
