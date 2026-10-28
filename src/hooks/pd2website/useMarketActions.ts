@@ -58,6 +58,14 @@ function axiosStyleSerializer(obj) {
   });
 }
 
+/**
+ * PD2 returns some listings without an `item` (nothing to show, price or link); drop them here so every
+ * MarketListingEntry downstream has one. null (a 401) passes through.
+ */
+function withItems(result: MarketListingResult | null): MarketListingResult | null {
+  return result && { ...result, data: result.data.filter((listing) => listing.item) };
+}
+
 export function useMarketActions({
   settings,
   authData,
@@ -142,7 +150,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      return withItems(await handleApiResponse(response, onAuthError, query));
     },
     [settings.pd2Token, onAuthError],
   );
@@ -157,7 +165,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      return withItems(await handleApiResponse(response, onAuthError, query));
     },
     [settings.pd2Token, onAuthError],
   );
@@ -227,7 +235,18 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      const page: { total: number; data: MarketFavorite[] } | null = await handleApiResponse(
+        response,
+        onAuthError,
+        query,
+      );
+      // A favorite whose listing came without an item stays (the star still toggles); its listing has no card
+      return (
+        page && {
+          ...page,
+          data: page.data.map((f) => (f.listing && !f.listing.item ? { ...f, listing: undefined } : f)),
+        }
+      );
     },
     [settings.pd2Token, onAuthError],
   );
@@ -286,7 +305,8 @@ export function useMarketActions({
     [settings.pd2Token, onAuthError],
   );
 
-  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it
+  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it, or has it
+  // without an item (nothing left to offer on or whisper about)
   const getListing = useCallback(
     async (listingId: string): Promise<MarketListingEntry | null> => {
       const query = { $resolve: { user: { in_game_account: true } } };
@@ -304,7 +324,7 @@ export function useMarketActions({
       const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, { listingId });
       // 401: re-authentication started; that isn't "gone"
       if (!listing) throw new AuthenticationError('Sign in to PD2 to check this listing');
-      return listing;
+      return listing.item ? listing : null;
     },
     [settings.pd2Token, onAuthError],
   );

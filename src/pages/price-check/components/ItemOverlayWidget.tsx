@@ -1,5 +1,5 @@
 import { PopoverKeyValue, PopoverSectionTitle, PopoverTile } from '@/components/custom/popover-parts';
-import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
+import { encodeItemForQuickList, isStashItem, itemCorruptions } from '@/lib/item-utils';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
@@ -1036,7 +1036,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [rangeWipe, setRangeWipe] = useState(0);
   const clearAllRanges = () => {
     const empty = Object.fromEntries(RANGE_FIELDS.map((field) => [field, '']));
-    setFilters((f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, selected.has(k) ? { ...v, ...empty } : v])));
+    setFilters((f) =>
+      Object.fromEntries(Object.entries(f).map(([k, v]) => [k, selected.has(k) ? { ...v, ...empty } : v])),
+    );
     setRangeWipe((n) => n + 1);
   };
 
@@ -2133,7 +2135,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
   const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
-  const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
+  const isCorrupted = itemCorruptions(listing.item).length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
 
   const copyWhisper = async (e: React.MouseEvent) => {

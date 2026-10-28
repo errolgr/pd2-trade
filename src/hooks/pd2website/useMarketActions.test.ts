@@ -161,6 +161,9 @@ describe('listing queries', () => {
     $sort: { bumped_at: -1 },
     $limit: 50,
   };
+  beforeEach(() => {
+    fetchMock.mockResolvedValue(fakeResponse(200, { total: 0, limit: 0, skip: 0, data: [] }));
+  });
 
   it('serializes nested operators with literal bracket keys and indexed arrays', async () => {
     const { actions } = market();
@@ -202,6 +205,16 @@ describe('listing queries', () => {
     const { actions, onAuthError } = market();
     await expect(actions.getMarketListings(query as never)).resolves.toBeNull();
     expect(onAuthError).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops listings PD2 sent without an item, live and archived (chat cards and prices need one)', async () => {
+    const page = { total: 2, limit: 25, skip: 0, data: [{ _id: 'L1', item: { name: 'Shako' } }, { _id: 'L2' }] };
+    const expected = { ...page, data: [page.data[0]] };
+    const { actions } = market();
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, page));
+    await expect(actions.getMarketListings(query as never)).resolves.toEqual(expected);
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, page));
+    await expect(actions.getMarketListingsArchive(query as never)).resolves.toEqual(expected);
   });
 });
 
@@ -250,6 +263,15 @@ describe('market browser API', () => {
     expect(lastCall().init.method).toBe('GET');
   });
 
+  it('getFavorites keeps a favorite whose listing came without an item, minus that listing', async () => {
+    const shown = { _id: 'F1', listing_id: 'L1', listing: { _id: 'L1', item: { name: 'Shako' } } };
+    const bare = { _id: 'F2', listing_id: 'L2', listing: { _id: 'L2' } };
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { total: 2, data: [shown, bare] }));
+    const { actions } = market();
+    const page = await actions.getFavorites();
+    expect(page.data).toEqual([shown, { _id: 'F2', listing_id: 'L2' }]);
+  });
+
   it('addFavorite posts the listing and seller; removeFavorite deletes by favorite id', async () => {
     const { actions } = market();
     await actions.addFavorite('L1', 'S1');
@@ -262,13 +284,17 @@ describe('market browser API', () => {
     expect(lastCall().init.method).toBe('DELETE');
   });
 
-  it('getListing reads one listing with its seller; 404 is null, 401 is an error (not "gone")', async () => {
-    fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
+  it('getListing reads one listing with its seller; 404 or no item is null, 401 is an error (not "gone")', async () => {
+    const listing = { _id: 'L1', price: '2 hr', item: { name: 'Shako' } };
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, listing));
     const { actions, onAuthError } = market();
-    await expect(actions.getListing('L1')).resolves.toEqual({ _id: 'L1', price: '2 hr' });
+    await expect(actions.getListing('L1')).resolves.toEqual(listing);
     expect(lastCall().url).toBe(
       'https://api.projectdiablo2.com/market/listing/L1?$resolve[user][in_game_account]=true',
     );
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
+    await expect(actions.getListing('L1')).resolves.toBeNull();
 
     fetchMock.mockResolvedValueOnce(fakeResponse(404, { name: 'NotFound' }));
     await expect(actions.getListing('L1')).resolves.toBeNull();

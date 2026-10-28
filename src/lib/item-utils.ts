@@ -76,4 +76,8 @@ export const isStashItem = (itemOrJson: string | any): boolean => {
   }
 };
 
+/** Modifier names of an item's corruption rolls. PD2 doesn't always send `corruptions` as an array. */
+export const itemCorruptions = (item: { corruptions?: unknown }): readonly string[] =>
+  Array.isArray(item.corruptions) ? item.corruptions : [];
+
 export { sleep };

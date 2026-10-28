@@ -61,7 +61,8 @@ export interface ItemDetail {
   name: string;
   requirements: Requirements;
   corrupted: boolean;
-  corruptions?: string[];
+  /** Corruption roll names; not always an array, read through itemCorruptions. */
+  corruptions?: unknown;
   desecrated: boolean;
   properties: string[];
   hash: string;
