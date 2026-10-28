@@ -223,11 +223,14 @@ export function useOAuth() {
       } catch (error) {
         if (signal.aborted) return false;
         // The user cancelled opening the browser, or pd2trader.com is unreachable: not app bugs
-        if (isNetworkError(error) || OPEN_CANCELLED.test(String(error))) console.warn('[OAuth] Flow failed:', error);
+        const unreachable = isNetworkError(error);
+        if (unreachable || OPEN_CANCELLED.test(String(error))) console.warn('[OAuth] Flow failed:', error);
         else console.error('[OAuth] Flow failed:', error);
         const errorToast: GenericToastPayload = {
           title: 'PD2 Trader',
-          description: 'Authentication failed. Please try again.',
+          description: unreachable
+            ? "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again."
+            : 'Authentication failed. Please try again.',
           variant: 'error',
         };
         showToast(errorToast);

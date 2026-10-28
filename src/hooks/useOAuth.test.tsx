@@ -105,6 +105,7 @@ describe('useOAuth startOAuthFlow', () => {
         vi
           .mocked(invoke)
           .mockRejectedValueOnce('Failed to open URL: The operation was canceled by the user. (os error 1223)'),
+      'Authentication failed. Please try again.',
     ],
     [
       'pd2trader.com is unreachable',
@@ -112,8 +113,9 @@ describe('useOAuth startOAuthFlow', () => {
         vi
           .mocked(tauriFetch)
           .mockRejectedValueOnce('error sending request for url (https://pd2trader.com/api/auth/oauth/start)'),
+      "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again.",
     ],
-  ])('warns instead of reporting an error when %s', async (_label, fail) => {
+  ])('warns instead of reporting an error when %s', async (_label, fail, toast) => {
     routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
     fail();
     const { result } = renderHook(() => useOAuth());
@@ -126,7 +128,7 @@ describe('useOAuth startOAuthFlow', () => {
     expect(outcome).toBe(false);
     expect(console.error).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith('[OAuth] Flow failed:', expect.any(String));
-    expect(toasts().map((t) => t.description)).toEqual(['Authentication failed. Please try again.']);
+    expect(toasts().map((t) => t.description)).toEqual([toast]);
   });
 
   it('still reports unexpected failures', async () => {
