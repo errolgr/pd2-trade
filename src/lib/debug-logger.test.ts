@@ -19,6 +19,14 @@ function sentChunks(): string[] {
     .map(([, args]) => (args && typeof args === 'object' && 'entries' in args ? String(args.entries) : ''));
 }
 
+/** `set_debug_logging` values sent to the backend, in order. */
+function nativeToggles(): unknown[] {
+  return vi
+    .mocked(invoke)
+    .mock.calls.filter(([cmd]) => cmd === 'set_debug_logging')
+    .map(([, args]) => (args && typeof args === 'object' && 'enabled' in args ? args.enabled : undefined));
+}
+
 /** Entries sent to the backend across all flushes, without timestamps. */
 function flushedEntries(): string[] {
   return sentChunks()
@@ -57,7 +65,7 @@ describe('startDebugLogging', () => {
     console.error(new Error('boom'));
 
     expect(original.log).toHaveBeenCalledWith('price', 12, { hr: 1.5 });
-    expect(invoke).not.toHaveBeenCalled();
+    expect(sentChunks()).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(2000);
 
@@ -85,7 +93,7 @@ describe('startDebugLogging', () => {
 
     await vi.advanceTimersByTimeAsync(6000);
 
-    expect(invoke).not.toHaveBeenCalled();
+    expect(sentChunks()).toEqual([]);
   });
 
   it('is idempotent: starting twice records each line once', async () => {
@@ -112,7 +120,9 @@ describe('startDebugLogging', () => {
   });
 
   it('reports a failed flush via the original console without re-capturing it', async () => {
-    vi.mocked(invoke).mockRejectedValueOnce(new Error('disk full'));
+    vi.mocked(invoke).mockImplementation(async (cmd) => {
+      if (cmd === 'write_debug_logs') throw new Error('disk full');
+    });
     logger.startDebugLogging();
     console.log('a');
 
@@ -120,7 +130,7 @@ describe('startDebugLogging', () => {
     await vi.advanceTimersByTimeAsync(2000);
 
     expect(original.error).toHaveBeenCalledWith('[debug-logger] Failed to flush logs:', expect.any(Error));
-    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(sentChunks()).toHaveLength(1);
   });
 });
 
@@ -137,7 +147,16 @@ describe('stopDebugLogging', () => {
 
     console.log('after stop');
     await vi.advanceTimersByTimeAsync(10_000);
-    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(sentChunks()).toHaveLength(1);
+  });
+
+  it('turns native (window/focus) logging on with the capture and off again', () => {
+    logger.startDebugLogging();
+    logger.startDebugLogging();
+    logger.stopDebugLogging();
+    logger.stopDebugLogging();
+
+    expect(nativeToggles()).toEqual([true, false]);
   });
 });
 

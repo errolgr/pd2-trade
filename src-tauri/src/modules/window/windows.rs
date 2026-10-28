@@ -4,21 +4,27 @@ use std::sync::Mutex;
 use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::AppHandle;
 
+use crate::modules::debug_logger;
 use windows_sys::Win32::{
-    Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
+    Foundation::{CloseHandle, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::Gdi::{
         GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
         MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
     },
-    System::Threading::{AttachThreadInput, GetCurrentThreadId},
+    System::Threading::{
+        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
+        PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+    },
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
     UI::WindowsAndMessaging::{
-        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowLongW, GetWindowRect,
-        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW, SetWindowPos,
-        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, HWND_TOPMOST, STYLESTRUCT,
+        BringWindowToTop, FindWindowW, GetClassNameW, GetForegroundWindow, GetWindow,
+        GetWindowLongW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
+        IsWindowVisible, SetForegroundWindow, SetWindowLongW, SetWindowPos, ShowWindow,
+        EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, GW_HWNDPREV, HWND_TOPMOST, STYLESTRUCT,
         SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
         WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+        WS_EX_TOPMOST,
     },
 };
 
@@ -82,6 +88,83 @@ fn raise_overlay() {
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
         );
     }
+}
+
+/// `Game.exe "Diablo II" [class] topmost` for the debug log: which program a window belongs to.
+fn describe_window(hwnd: HWND) -> String {
+    if hwnd == 0 {
+        return "(none)".into();
+    }
+    let mut pid = 0u32;
+    let mut title = [0u16; 256];
+    let mut class = [0u16; 256];
+    let (title_len, class_len, ex_style) = unsafe {
+        GetWindowThreadProcessId(hwnd, &mut pid);
+        (
+            GetWindowTextW(hwnd, title.as_mut_ptr(), title.len() as i32).max(0) as usize,
+            GetClassNameW(hwnd, class.as_mut_ptr(), class.len() as i32).max(0) as usize,
+            GetWindowLongW(hwnd, GWL_EXSTYLE) as u32,
+        )
+    };
+    format!(
+        "{} (pid {pid}) \"{}\" [{}]{}",
+        process_name(pid),
+        String::from_utf16_lossy(&title[..title_len]),
+        String::from_utf16_lossy(&class[..class_len]),
+        if ex_style & WS_EX_TOPMOST != 0 {
+            " topmost"
+        } else {
+            ""
+        },
+    )
+}
+
+/// Executable file name of `pid`, or `?` when the process can't be opened (e.g. protected).
+fn process_name(pid: u32) -> String {
+    unsafe {
+        let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+        if process == 0 {
+            return "?".into();
+        }
+        let mut path = [0u16; 1024];
+        let mut len = path.len() as u32;
+        let ok =
+            QueryFullProcessImageNameW(process, PROCESS_NAME_WIN32, path.as_mut_ptr(), &mut len);
+        CloseHandle(process);
+        if ok == 0 {
+            return "?".into();
+        }
+        let full = String::from_utf16_lossy(&path[..len as usize]);
+        full.rsplit('\\').next().unwrap_or(&full).to_string()
+    }
+}
+
+/// The nearest visible window stacked above the overlay, if any: whatever is drawn over it.
+fn window_above_overlay(overlay: HWND) -> Option<HWND> {
+    let mut hwnd = unsafe { GetWindow(overlay, GW_HWNDPREV) };
+    while hwnd != 0 {
+        if unsafe { IsWindowVisible(hwnd) } != 0 {
+            return Some(hwnd);
+        }
+        hwnd = unsafe { GetWindow(hwnd, GW_HWNDPREV) };
+    }
+    None
+}
+
+/// Debug log: what is stacked above the overlay right now (`when` names the moment).
+fn log_overlay_stacking(when: &str) {
+    let overlay = OVERLAY_WINDOW.load(Ordering::SeqCst);
+    if overlay == 0 {
+        return;
+    }
+    let overlay_topmost =
+        unsafe { GetWindowLongW(overlay, GWL_EXSTYLE) } as u32 & WS_EX_TOPMOST != 0;
+    let above =
+        window_above_overlay(overlay).map_or_else(|| "nothing".to_string(), describe_window);
+    debug_logger::log(
+        "WINDOW",
+        &format!("{when}: overlay topmost={overlay_topmost}, above overlay: {above}"),
+    );
 }
 
 /// The overlay's extended style: a tool window (no taskbar button, no Alt+Tab entry).
@@ -268,11 +351,33 @@ unsafe extern "system" fn win_event_proc(
     _event_time: u32,
 ) {
     LAST_FOREGROUND_EVENT.store(hwnd, Ordering::SeqCst);
-    if hwnd != 0 && find_diablo_hwnd() == Some(hwnd) {
+    let is_diablo = hwnd != 0 && find_diablo_hwnd() == Some(hwnd);
+    let logging = debug_logger::enabled();
+    if logging {
+        let role = if is_diablo {
+            "diablo"
+        } else if hwnd != 0 && hwnd == OVERLAY_WINDOW.load(Ordering::SeqCst) {
+            "overlay"
+        } else {
+            "other"
+        };
+        debug_logger::log(
+            "WINDOW",
+            &format!("foreground -> {role}: {}", describe_window(hwnd)),
+        );
+    }
+    if is_diablo {
         raise_overlay();
-        std::thread::spawn(|| {
+    }
+    if is_diablo || logging {
+        std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(RAISE_AGAIN_MS));
-            raise_overlay();
+            if logging {
+                log_overlay_stacking(&format!("{RAISE_AGAIN_MS}ms after foreground change"));
+            }
+            if is_diablo {
+                raise_overlay();
+            }
         });
     }
     if let Some(cb) = &*CALLBACK.lock().unwrap() {

@@ -120,6 +120,12 @@ pub fn write_debug_logs(entries: String) -> Result<(), String> {
     debug_logger::write_logs(&entries)
 }
 
+/// Lets native code log into debug.log while the Debug Logging setting is on.
+#[tauri::command]
+pub fn set_debug_logging(enabled: bool) {
+    debug_logger::set_enabled(enabled);
+}
+
 #[tauri::command]
 pub async fn open_oauth_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
     if !url.starts_with("https://") && !url.starts_with("http://") {

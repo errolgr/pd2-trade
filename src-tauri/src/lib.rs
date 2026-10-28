@@ -136,6 +136,7 @@ pub fn run() {
             commands::auto_detect_diablo2_directory,
             commands::open_oauth_url,
             commands::write_debug_logs,
+            commands::set_debug_logging,
             commands::open_sign_in_window,
             commands::close_sign_in_window,
         ])
