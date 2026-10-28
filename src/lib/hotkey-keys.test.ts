@@ -77,6 +77,18 @@ describe('hotkeyKeyFromEvent', () => {
     expect(hotkeyKeyFromEvent({ key: ' ', code: 'Space' })).toBe('space');
   });
 
+  it('records an unshifted US symbol by the character typed, wherever the layout puts it', () => {
+    // Dvorak: ' sits on the US Q key and is VK_OEM_7 (Quote), not VK_Q
+    expect(hotkeyKeyFromEvent({ key: "'", code: 'KeyQ' })).toBe("'");
+    // AZERTY: ; sits on the US comma key
+    expect(hotkeyKeyFromEvent({ key: ';', code: 'Comma' })).toBe(';');
+    expect(hotkeyKeyFromEvent({ key: ',', code: 'KeyM' })).toBe(',');
+  });
+
+  it('records a dead key by its physical key', () => {
+    expect(hotkeyKeyFromEvent({ key: 'Dead', code: 'BracketLeft' })).toBe('[');
+  });
+
   it('ignores modifiers and keys that cannot be a hotkey key', () => {
     for (const [key, code] of [
       ['Control', 'ControlLeft'],

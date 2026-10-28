@@ -85,13 +85,14 @@ export function hotkeyKeyLabel(stored: string | undefined): string {
 
 /**
  * The key to save for a key press in the hotkey settings, or null when the press is not a usable hotkey key.
- * Windows hotkeys match virtual-key codes: on Latin layouts those follow the printed letter (AZERTY's A key
- * is VK_A), so a letter/digit press keeps event.key; anything else (Cyrillic letters, symbols, Shift+= for
- * '+', space) is taken by physical position from event.code, which is where the Cyrillic layouts put their
- * virtual-key codes.
+ * Windows hotkeys match virtual-key codes, which on Latin layouts follow the printed character (AZERTY's A key
+ * is VK_A, Dvorak's ' key is VK_OEM_7), so a letter/digit or unshifted US symbol in event.key is kept as typed.
+ * Anything else (Cyrillic letters, shifted symbols such as Shift+= for '+', dead keys, space) is taken by
+ * physical position from event.code, which is where the Cyrillic layouts put their virtual-key codes.
  */
 export function hotkeyKeyFromEvent({ key, code }: Pick<KeyboardEvent, 'key' | 'code'>): string | null {
   if (/^[a-z0-9]$/i.test(key)) return key.toLowerCase();
+  if (key.length === 1 && key in SYMBOL_TOKENS) return key;
   const physical = /^Key([A-Z])$/.exec(code)?.[1] ?? /^Digit(\d)$/.exec(code)?.[1];
   if (physical) return physical.toLowerCase();
   if (code === 'Space') return SPACE;
