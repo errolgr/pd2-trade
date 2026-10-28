@@ -112,19 +112,21 @@ export function listingArtUrl(item: ArtItem, itemsByKey: Record<string, ItemType
   const jewel = jewelArt(item);
   if (jewel) return `${ITEM_ART}/${jewel}.png`;
 
+  // PD2 lists a few items without a name (a stack of T1 maps, base t18): base art, else the placeholder
+  const name = item.name ?? '';
   const quality = item.quality?.name;
-  if (quality === 'Unique' || quality === 'Set') {
-    const invfile = findItem(itemsByKey, item.name)?.image?.invfile;
+  if (name && (quality === 'Unique' || quality === 'Set')) {
+    const invfile = findItem(itemsByKey, name)?.image?.invfile;
     if (invfile) return `${ITEM_ART}/${invfile}.png`;
   }
 
-  const rune = /^([A-Z][a-z]+) Rune$/.exec(item.name);
+  const rune = /^([A-Z][a-z]+) Rune$/.exec(name);
   if (rune) return `/runes/${rune[1]}_Rune.png`;
 
-  const stem = item.name.replace(/'/g, '').replace(/[\s-]+/g, '_');
+  const stem = name.replace(/'/g, '').replace(/[\s-]+/g, '_');
   if (BUNDLED_ART[stem]) return `/${BUNDLED_ART[stem]}/${stem}.png`;
 
-  const baseName = item.base?.name ?? item.name;
+  const baseName = item.base?.name ?? name;
   const invfile = baseArtFile(baseName) ?? MISC_BASE_ART[baseName.toLowerCase()];
   return invfile ? `${ITEM_ART}/${invfile}.png` : null;
 }

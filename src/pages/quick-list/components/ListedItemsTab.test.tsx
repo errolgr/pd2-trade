@@ -43,7 +43,9 @@ function makeListing(n: number, over: Partial<MarketListingEntry> = {}): MarketL
 }
 
 type Api = {
-  getMarketListings: Mock<(q: MarketListingQuery) => Promise<{ data: MarketListingEntry[]; total: number }>>;
+  getMarketListings: Mock<
+    (q: MarketListingQuery) => Promise<{ data: MarketListingEntry[]; total: number; fetched: number }>
+  >;
   updateMarketListing: Mock<(id: string, fields: Record<string, unknown>) => Promise<void>>;
   updateItemByHash: Mock<(hash: string, fields: Record<string, unknown>) => Promise<void>>;
   deleteMarketListing: Mock<(id: string) => Promise<void>>;
@@ -83,9 +85,11 @@ beforeEach(() => {
   queries.length = 0;
   inView = false;
   api = {
+    // Like the real one: listings without an item are dropped, `fetched` counts the rows PD2 sent
     getMarketListings: vi.fn(async (q) => {
       queries.push({ limit: q.$limit, skip: q.$skip, hc: q.is_hardcore, ladder: q.is_ladder });
-      return { data: server.slice(q.$skip, q.$skip + q.$limit), total: server.length };
+      const rows = server.slice(q.$skip, q.$skip + q.$limit);
+      return { data: rows.filter((l) => l.item), total: server.length, fetched: rows.length };
     }),
     updateMarketListing: vi.fn(async () => {}),
     updateItemByHash: vi.fn(async () => {}),
@@ -155,6 +159,23 @@ describe('loading', () => {
     expect(new Set(queries.map((q) => q.skip))).toEqual(new Set([5]));
     expect(screen.getAllByText('Item 1')).toHaveLength(1);
     expect(screen.getAllByText('Item 6')).toHaveLength(1);
+  });
+
+  it('keeps paging past a page of listings PD2 sent without an item', async () => {
+    server = Array.from({ length: 12 }, (_, i) => makeListing(i + 1, i >= 5 && i < 10 ? { item: undefined } : {}));
+    const first = server.slice(0, 5);
+    const view = renderTab({ initialListings: first, initialTotalCount: 12 });
+    inView = true;
+    view.rerender(
+      <TooltipProvider>
+        <ListedItemsTab onClose={vi.fn()}
+          initialListings={first}
+          initialTotalCount={12} />
+      </TooltipProvider>,
+    );
+    await screen.findByText('Item 11');
+    expect(screen.queryByText('Item 12')).not.toBeNull();
+    expect(new Set(queries.map((q) => q.skip))).toEqual(new Set([5, 10, 15]));
   });
 
   // BUG: the page-change effect (ListedItemsTab.tsx:271-285) depends on listings.length, so appending page N

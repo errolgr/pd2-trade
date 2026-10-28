@@ -81,6 +81,13 @@ vi.mock('@/overlay', () => ({
   useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+// useSocketNotifications fetches the sound at import to make its blob: URL; keep that off the network
+vi.hoisted(() =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  ),
+);
 /** Website owners of in-game accounts (the seller lookup that links whisper senders), by lowercase account. */
 const sellerOwners = vi.hoisted(() => new Map<string, { userId: string; username: string; accounts: string[] }>());
 vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
@@ -2230,6 +2237,25 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
     expect(getChatFeed().items.map((item) => item.kind)).not.toContain('trade');
   });
 
+  it('looking at the offers settles while the acknowledged notifications are still listed', async () => {
+    // The provider drops acknowledged notifications with a lower-priority update than the chat-prefs re-render
+    // the look causes: that render (this stub, always) still lists them, and a running clock gives every look
+    // a new "now" (fake timers freeze it)
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    let clock = NOW.getTime();
+    vi.spyOn(Date, 'now').mockImplementation(() => (clock += 1));
+    vi.mocked(writeTextFile).mockClear();
+
+    await act(async () => fireEvent.click(filterButton('Selling')));
+    await flush();
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    // Marked once, not once per re-render until React gives up ("Maximum update depth exceeded")
+    expect(vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)).toHaveLength(1);
+    expect(filterButton('Selling').getAttribute('aria-checked')).toBe('true');
+  });
+
   it('nothing counts as looked at while the panel is hidden', async () => {
     panel.visible = false;
     offerNotifications = [notification('n1', 'L1', 5)];
@@ -2266,6 +2292,32 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
 
     // (this stub keeps them listed; the real provider drops acknowledged ones and never resends them)
     expect(new Set(acknowledgeOfferNotifications.mock.calls.flat(2))).toEqual(new Set(['n1']));
+  });
+
+  it('an open thread settles on its offers while their notifications are still listed', async () => {
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'carol',
+        itemName: 'Shako',
+        timestamp: new Date(NOW),
+        userId: 'carol',
+        listingId: 'L1',
+      },
+    ];
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    // As in the Selling list test: the stub keeps n1 listed, and the clock runs
+    let clock = NOW.getTime();
+    vi.spyOn(Date, 'now').mockImplementation(() => (clock += 1));
+    vi.mocked(writeTextFile).mockClear();
+
+    await select('carol');
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    expect(vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Trader details' })).not.toBeNull();
   });
 
   it('publishes the peek feed newest first, matched to the offers, and provides its actions', async () => {

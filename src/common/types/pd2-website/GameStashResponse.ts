@@ -213,7 +213,8 @@ export interface Item {
   class_specifics: boolean;
   unique?: UniqueInfo;
   durability: Durability;
-  corruptions: string[];
+  /** Corruption roll names; not always an array, read through itemCorruptions. */
+  corruptions?: unknown;
   socket_count: number;
   modifiers: Modifier[];
   name: string;

@@ -1,16 +1,15 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
+import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
 import { defaultWindowIcon } from '@tauri-apps/api/app';
-import { appConfigDir } from '@tauri-apps/api/path';
 import * as Sentry from '@sentry/react';
-import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
 
 type TrayContextValue = {
@@ -20,6 +19,9 @@ type TrayContextValue = {
 const TrayContext = createContext<TrayContextValue>({ tray: null });
 
 export const useTray = () => useContext(TrayContext);
+
+/** Rust → Main: the app was launched again while it runs (src-tauri lib.rs, single-instance). */
+export const APP_RELAUNCHED_EVENT = 'app-relaunched';
 
 // The tray lives in Rust and outlives the page, so every reload or remount would add another icon
 // unless the previous one (found by this fixed id) is removed first. Queued so create/remove never interleave.
@@ -37,9 +39,11 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const lastShortcutRef = useRef<string | null>(null);
   // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
-    if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+    const key = hotkeyKeyToken(settings?.hotkeyKeySettings);
+    // A key the parser cannot take is flagged in the settings window; register nothing for it
+    if (!isTauri() || !settings?.hotkeyModifierSettings || !key) return;
 
-    const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
+    const shortcut = `${settings.hotkeyModifierSettings}+${key}`.toLowerCase();
 
     const unregisterShortcut = async () => {
       if (lastShortcutRef.current) {
@@ -128,14 +132,12 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               id: 'open-config',
               text: 'Open config location',
               action: async () => {
-                let configPath: string | undefined;
                 try {
-                  configPath = await appConfigDir();
-                  await openPath(configPath);
+                  await invoke('open_config_dir');
                 } catch (err) {
                   // Fixed message so every user's home path groups into one Sentry issue.
                   Sentry.captureException(new Error('Failed to open config location'), {
-                    extra: { path: configPath, cause: String(err) },
+                    extra: { cause: String(err) },
                   });
                 }
               },
@@ -188,6 +190,17 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
     // openPanel is stable: the tray is created once.
   }, [openPanel]);
+
+  // Launching the app again while it runs shows Settings, like the tray's Settings item: the new launch exits, and
+  // nothing else of this one may be on screen
+  useEffect(
+    () =>
+      holdListener(
+        listen(APP_RELAUNCHED_EVENT, () => openPanel('settings')),
+        APP_RELAUNCHED_EVENT,
+      ),
+    [openPanel],
+  );
 
   return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
 };

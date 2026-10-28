@@ -149,7 +149,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const result = await getMarketListings(marketQuery);
       const duration = performance.now() - startTime;
 
-      if (result.data.length === 0) {
+      // Rows PD2 sent, not listings shown: a page of item-less listings is not the end
+      if (result.fetched === 0) {
         setHasReachedEnd(true);
       }
 
