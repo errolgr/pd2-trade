@@ -56,7 +56,7 @@ const bus = vi.hoisted(() => {
 const pd2 = vi.hoisted(() => ({ isConnected: false, refresh: vi.fn() }));
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
-vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+vi.mock('@/assets/poe_whisper.wav', () => ({ default: 'whisper.wav' }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
 vi.mock('@/lib/browser-fs', () => ({

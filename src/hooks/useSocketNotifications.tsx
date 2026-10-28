@@ -6,7 +6,9 @@ import { usePd2Website } from './pd2website/usePD2Website';
 import { toOfferNotification } from './pd2website/useOfferNotifications';
 import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { ISettings } from './useOptions';
-import poeWhisperSound from '@/assets/poe_whisper.mp3';
+// PCM WAV, not MP3: Linux WebKitGTK without an MP3 GStreamer decoder rejects MP3 with NotSupportedError, while
+// WAV only needs the plugins every GStreamer audio output already pulls in (WebView2 / WKWebView play both).
+import poeWhisperSound from '@/assets/poe_whisper.wav';
 import { showToast } from '@/overlay';
 import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
 import { normalizeName as personKey } from '@/lib/whisper-history';
