@@ -129,11 +129,14 @@ export interface MarketListingDetail {
   status: MarketListingStatus;
 }
 
-/** One listing by its PD2 id from pd2trader.com (also sold/removed ones, kept 30 days); null when unknown. */
+/**
+ * One listing by its PD2 id from pd2trader.com (also sold/removed ones, kept 30 days); null when unknown or
+ * when it has no item (nothing to show).
+ */
 export async function fetchMarketListing(id: string): Promise<MarketListingDetail | null> {
   const response = await fetch(`${BACKEND_URL}/api/market/listing/${encodeURIComponent(id)}`);
   if (response.status === 404 || response.status === 400) return null;
   if (!response.ok) throw await errorFrom(response);
   const body = (await response.json()) as { listing?: MarketListingEntry; status?: MarketListingStatus };
-  return body.listing ? { listing: body.listing, status: body.status ?? 'active' } : null;
+  return body.listing?.item ? { listing: body.listing, status: body.status ?? 'active' } : null;
 }

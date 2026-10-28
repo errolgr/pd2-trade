@@ -13,6 +13,7 @@
     "timedOut": "Se agotó el tiempo de inicio de sesión. Vuelve a intentarlo.",
     "success": "¡Autenticación correcta!",
     "failed": "Error de autenticación. Vuelve a intentarlo.",
+    "unreachable": "No se pudo conectar con pd2trader.com. Revisa tu conexión a internet, el cortafuegos o el antivirus y vuelve a intentarlo.",
     "loggedOut": "Sesión cerrada correctamente."
   },
   "updates": {

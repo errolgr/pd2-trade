@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Posición del temporizador",
-        "description": "Fija el temporizador en una esquina del juego o arrástralo a cualquier lugar de la pantalla (cambia a Personalizada).",
+        "description": "Fija el temporizador en una esquina del juego o arrástralo a cualquier lugar de la pantalla (cambia a Personalizada) si no está bloqueado.",
         "placeholder": "Posición"
+      },
+      "locked": {
+        "label": "Bloquear la posición del temporizador",
+        "description": "Arrastrar el temporizador ya no lo mueve; al hacer clic sigue mostrando las próximas zonas. También se activa con el candado bajo las próximas zonas."
+      },
+      "layout": {
+        "label": "Diseño del temporizador",
+        "description": "Horizontal, o una columna estrecha con las próximas zonas apiladas encima o debajo, para el borde izquierdo o derecho de la pantalla.",
+        "placeholder": "Diseño"
       },
       "zones": {
         "label": "El temporizador muestra",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Todas las zonas",
       "followed": "Solo las zonas que sigo"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical (bordes de la pantalla)"
     }
   },
   "networth": {
@@ -176,18 +189,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Introduce una tecla",
-      "oneChar": "Solo se permite un carácter",
-      "letterOrNumber": "Debe ser una letra o un número",
+      "invalidKey": "No se puede usar como atajo",
       "ctrlC": "Ctrl + C no está permitido (atajo reservado del sistema)."
     },
     "warning": {
       "ctrlC": "Ctrl + C está reservado para copiar objetos. Elige otra tecla.",
-      "clash": "También lo usa {{action}}."
+      "clash": "También lo usa {{action}}.",
+      "invalidKey": "{{key}} no se puede usar como atajo. Haz clic en la casilla y pulsa otra tecla."
     },
     "group": "Atajos",
     "modifierLabel": "Modificador de {{action}}",
     "off": "Desactivado",
-    "hint": "Deja vacía la tecla de instantánea, mercado o builds para desactivar ese atajo.",
+    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado o builds para desactivar ese atajo.",
     "rows": {
       "priceCheck": {
         "label": "Consulta de precio",
@@ -313,6 +326,10 @@
     "logOut": "Cerrar sesión",
     "loggingIn": "Iniciando sesión...",
     "logIn": "Iniciar sesión",
+    "signInLink": {
+      "openFailed": "No se pudo abrir tu navegador: copia el enlace de inicio de sesión y ábrelo allí.",
+      "notOpened": "¿No se abrió el navegador? Copia en él el enlace de inicio de sesión."
+    },
     "group": "Cuenta de PD2"
   },
   "stats": {

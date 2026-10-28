@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Posição do timer",
-        "description": "Fixe o timer em um canto do jogo ou arraste-o para qualquer lugar da tela (muda para Personalizada).",
+        "description": "Fixe o timer em um canto do jogo ou arraste-o para qualquer lugar da tela (muda para Personalizada) se ele não estiver travado.",
         "placeholder": "Posição"
+      },
+      "locked": {
+        "label": "Travar a posição do timer",
+        "description": "Arrastar o timer não o move mais; clicar nele ainda mostra as próximas zonas. Também pode ser alternado pelo cadeado abaixo das próximas zonas."
+      },
+      "layout": {
+        "label": "Layout do timer",
+        "description": "Horizontal, ou uma coluna estreita com as próximas zonas empilhadas acima ou abaixo, para a borda esquerda ou direita da tela.",
+        "placeholder": "Layout"
       },
       "zones": {
         "label": "O timer mostra",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Todas as zonas",
       "followed": "Só zonas que sigo"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical (laterais da tela)"
     }
   },
   "networth": {
@@ -176,18 +189,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Digite uma tecla",
-      "oneChar": "Só um caractere é permitido",
-      "letterOrNumber": "Deve ser uma letra ou número",
+      "invalidKey": "Não pode ser usada como atalho",
       "ctrlC": "Ctrl + C não é permitido (atalho reservado do sistema)."
     },
     "warning": {
       "ctrlC": "Ctrl + C é reservado para copiar itens. Escolha outra tecla.",
-      "clash": "Também usado por {{action}}."
+      "clash": "Também usado por {{action}}.",
+      "invalidKey": "{{key}} não pode ser usada como atalho. Clique na caixa e pressione outra tecla."
     },
     "group": "Atalhos",
     "modifierLabel": "Modificador de {{action}}",
     "off": "Desligado",
-    "hint": "Deixe a tecla de registro, mercado ou builds vazia para desativar esse atalho.",
+    "hint": "Clique em uma caixa de tecla e pressione a tecla desejada. Pressione Backspace na caixa de registro, mercado ou builds para desativar esse atalho.",
     "rows": {
       "priceCheck": {
         "label": "Consulta de preço",
@@ -313,6 +326,10 @@
     "logOut": "Sair",
     "loggingIn": "Entrando...",
     "logIn": "Entrar",
+    "signInLink": {
+      "openFailed": "Não foi possível abrir o navegador: copie o link de login e abra-o nele.",
+      "notOpened": "O navegador não abriu? Copie o link de login nele."
+    },
     "group": "Conta PD2"
   },
   "stats": {

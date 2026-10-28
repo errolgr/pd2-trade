@@ -104,8 +104,8 @@
     "days_other": "{{count}} dias",
     "source": {
       "label": "Origem dos anúncios",
-      "live": "Anúncios ativos",
-      "archive": "Arquivo de vendidos",
+      "live": "Ativos",
+      "archive": "Arquivo",
       "archiveTitle": "Anúncios vendidos / removidos"
     },
     "clearAll": "Limpar todos os filtros",
@@ -189,7 +189,7 @@
     "removeName": "Remover {{name}}",
     "hasCorruption": "O item tem esta corrupção",
     "addLabel": "Adicionar filtro de stat",
-    "addPlaceholder": "Adicionar stat…  ( ? )",
+    "addPlaceholder": "Adicionar…  ( ? )",
     "filterKind": "Tipo de filtro",
     "emptyHint": "Busque mods, <sigma></sigma> pseudo stats (resistências totais, vida total…) ou corrupções, ou comece por uma predefinição.",
     "groups": {
@@ -222,7 +222,7 @@
     "deleteLabel": "Excluir predefinição {{name}}",
     "deleteTitle": "Excluir predefinição (Del)",
     "menuLabel": "Predefinições de stats",
-    "button": "Predefinições",
+    "button": "Presets",
     "yours": "Suas predefinições",
     "builtIn": "Integradas",
     "empty": "Nenhuma predefinição. Salve os stats atuais com o marcador.",

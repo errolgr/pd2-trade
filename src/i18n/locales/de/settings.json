@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Timer-Position",
-        "description": "Hefte den Timer an eine Ecke des Spiels oder ziehe ihn an eine beliebige Stelle (wechselt zu Benutzerdefiniert).",
+        "description": "Hefte den Timer an eine Ecke des Spiels oder ziehe ihn an eine beliebige Stelle (wechselt zu Benutzerdefiniert), sofern er nicht gesperrt ist.",
         "placeholder": "Position"
+      },
+      "locked": {
+        "label": "Timer-Position sperren",
+        "description": "Ziehen verschiebt den Timer nicht mehr; ein Klick zeigt weiterhin die kommenden Zonen. Lässt sich auch über das Schloss unter den kommenden Zonen umschalten."
+      },
+      "layout": {
+        "label": "Timer-Layout",
+        "description": "Horizontal oder als schmale Spalte mit den kommenden Zonen darüber oder darunter, für den linken oder rechten Bildschirmrand.",
+        "placeholder": "Layout"
       },
       "zones": {
         "label": "Timer zeigt",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Alle Zonen",
       "followed": "Nur Zonen, denen ich folge"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertikal (Bildschirmränder)"
     }
   },
   "networth": {
@@ -174,18 +187,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Gib eine Taste ein",
-      "oneChar": "Nur ein Zeichen erlaubt",
-      "letterOrNumber": "Muss ein Buchstabe oder eine Zahl sein",
+      "invalidKey": "Kann nicht als Hotkey verwendet werden",
       "ctrlC": "Ctrl + C ist nicht erlaubt (reserviertes Systemkürzel)."
     },
     "warning": {
       "ctrlC": "Ctrl + C ist zum Kopieren von Items reserviert. Wähle eine andere Taste.",
-      "clash": "Wird auch von {{action}} verwendet."
+      "clash": "Wird auch von {{action}} verwendet.",
+      "invalidKey": "{{key}} kann nicht als Hotkey verwendet werden. Klicke auf das Feld und drücke eine andere Taste."
     },
     "group": "Tastenkürzel",
     "modifierLabel": "Modifikator für {{action}}",
     "off": "Aus",
-    "hint": "Lass die Taste für Snapshot, Markt oder Builds leer, um diesen Hotkey zu deaktivieren.",
+    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt oder Builds die Rücktaste, um diesen Hotkey zu deaktivieren.",
     "rows": {
       "priceCheck": {
         "label": "Preischeck",
@@ -310,6 +323,10 @@
     "logOut": "Abmelden",
     "loggingIn": "Wird angemeldet...",
     "logIn": "Anmelden",
+    "signInLink": {
+      "openFailed": "Dein Browser konnte nicht geöffnet werden: Kopiere den Anmeldelink und öffne ihn dort.",
+      "notOpened": "Browser nicht geöffnet? Kopiere den Anmeldelink hinein."
+    },
     "group": "PD2-Konto"
   },
   "stats": {

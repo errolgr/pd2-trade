@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Pozycja licznika",
-        "description": "Przypnij licznik do rogu gry lub przeciągnij go w dowolne miejsce ekranu (przełącza na Własna).",
+        "description": "Przypnij licznik do rogu gry lub przeciągnij go w dowolne miejsce ekranu (przełącza na Własna), jeśli nie jest zablokowany.",
         "placeholder": "Pozycja"
+      },
+      "locked": {
+        "label": "Zablokuj pozycję licznika",
+        "description": "Przeciąganie nie przesuwa już licznika; kliknięcie nadal pokazuje nadchodzące strefy. Można to też przełączyć kłódką pod nadchodzącymi strefami."
+      },
+      "layout": {
+        "label": "Układ licznika",
+        "description": "Poziomy lub wąska kolumna z nadchodzącymi strefami nad nią lub pod nią, do umieszczenia przy lewej lub prawej krawędzi ekranu.",
+        "placeholder": "Układ"
       },
       "zones": {
         "label": "Licznik pokazuje",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Każda strefa",
       "followed": "Tylko obserwowane strefy"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Poziomy",
+      "vertical": "Pionowy (boki ekranu)"
     }
   },
   "networth": {
@@ -178,18 +191,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Wpisz klawisz",
-      "oneChar": "Dozwolony tylko jeden znak",
-      "letterOrNumber": "Musi to być litera lub cyfra",
+      "invalidKey": "Nie może być użyty jako skrót",
       "ctrlC": "Ctrl + C jest niedozwolony (zastrzeżony skrót systemowy)."
     },
     "warning": {
       "ctrlC": "Ctrl + C służy do kopiowania przedmiotów. Wybierz inny klawisz.",
-      "clash": "Używany też przez: {{action}}."
+      "clash": "Używany też przez: {{action}}.",
+      "invalidKey": "{{key}} nie może być użyty jako skrót. Kliknij pole i naciśnij inny klawisz."
     },
     "group": "Skróty",
     "modifierLabel": "Modyfikator: {{action}}",
     "off": "Wył.",
-    "hint": "Zostaw puste pole klawisza migawki, rynku lub buildów, aby wyłączyć ten skrót.",
+    "hint": "Kliknij pole klawisza i naciśnij klawisz, którego chcesz użyć. Naciśnij Backspace w polu migawki, rynku lub buildów, aby wyłączyć ten skrót.",
     "rows": {
       "priceCheck": {
         "label": "Wycena",
@@ -316,6 +329,10 @@
     "logOut": "Wyloguj",
     "loggingIn": "Logowanie...",
     "logIn": "Zaloguj",
+    "signInLink": {
+      "openFailed": "Nie udało się otworzyć przeglądarki: skopiuj link logowania i otwórz go w niej.",
+      "notOpened": "Przeglądarka się nie otworzyła? Skopiuj do niej link logowania."
+    },
     "group": "Konto PD2"
   },
   "stats": {

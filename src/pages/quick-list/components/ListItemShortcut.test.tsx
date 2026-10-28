@@ -17,6 +17,7 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
+import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
 import ListItemShortcutForm from './ListItemShortcut';
 
 const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
@@ -177,6 +178,17 @@ describe('tabs', () => {
     renderForm();
     await flush();
     expect(tab(/Manage/).textContent).toBe('Manage12');
+  });
+
+  it('refetches the count when a listing is removed elsewhere (Ctrl+U delist, chat)', async () => {
+    userListings = [marketListing(5), marketListing(6)];
+    userTotal = 12;
+    renderForm();
+    await flush();
+    userTotal = 11;
+    await act(async () => publishListingDeleted('L5'));
+    await flush();
+    expect(tab(/Manage/).textContent).toBe('Manage11');
   });
 
   it('close closes the panel', async () => {

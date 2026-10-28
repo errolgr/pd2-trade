@@ -24,7 +24,7 @@ import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/li
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import poeWhisperSound from '@/assets/poe_whisper.mp3';
+import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { findMarketLinks } from '../lib/market-links';
 import {
   buildInbox,
@@ -36,7 +36,7 @@ import {
   type InboxThread,
 } from '../lib/inbox';
 import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed';
-import { markOffersSeen, newTrades, offerThreadId, type NewTrade } from '../lib/offers-seen';
+import { markOffersSeen, newTrades, offersSeenUpTo, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { useResolvedSellers } from '../hooks/useResolvedSellers';
@@ -154,19 +154,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
-
-  // Play notification sound
-  const playNotificationSound = useCallback((volume: number = 70) => {
-    try {
-      const audio = new Audio(poeWhisperSound);
-      audio.volume = volume / 100; // Convert 0-100 to 0-1
-      audio.play().catch((error) => {
-        console.error('Failed to play notification sound:', error);
-      });
-    } catch (error) {
-      console.error('Failed to create audio element:', error);
-    }
-  }, []);
 
   const api = useMemo(
     () => ({ getConversations, getMessages, sendMessage, markMessagesAsRead, deleteConversation }),
@@ -361,20 +348,24 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   );
   /**
    * Acknowledges the notifications on PD2 (the website's bell clears too) and marks everything up to now (or the
-   * newest item, if later) looked at: in the thread known by `threadIds`, else everywhere.
+   * newest item, if later) looked at: in the thread known by `threadIds`, else everywhere. Items looked at already
+   * leave the mark where it is: the mark re-renders the panel, which looks again at what it shows, and the
+   * acknowledged notifications are still listed then (the provider drops them in a lower-priority update than
+   * this chat prefs change). A new "now" on every look would re-render it again and again, until React gives up
+   * (Maximum update depth exceeded).
    */
   const seeOffers = useCallback(
     ({ notifications, accepted, trades }: OffersSeen, threadIds?: readonly string[]) => {
       if (notifications.length === 0 && accepted.length === 0 && trades.length === 0) return;
       if (notifications.length > 0) acknowledgeOfferNotifications(notifications.map((n) => n.id));
       changeChatPrefs((current) => {
-        const at = Math.max(
-          Date.now(),
+        const newest = Math.max(
           ...notifications.map((n) => n.at),
           ...accepted.map((offer) => current.acceptedOffers?.[offer.id] ?? 0),
           ...trades.map(({ trade }) => trade.timestamp),
         );
-        return markOffersSeen(current, at, threadIds);
+        if (newest <= offersSeenUpTo(current, threadIds)) return current;
+        return markOffersSeen(current, Math.max(Date.now(), newest), threadIds);
       });
     },
     [acknowledgeOfferNotifications],

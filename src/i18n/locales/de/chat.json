@@ -145,6 +145,7 @@
     "deleteListingConfirm": "Möchtest du das Inserat für {{item}} wirklich löschen?",
     "deleteListingConfirmThis": "Möchtest du dieses Inserat wirklich löschen?",
     "deleteListing": "Inserat löschen",
+    "soldAndDeleteListing": "Verkauft & Inserat löschen",
     "unhideTitle": "Dieses Angebot wieder anzeigen",
     "unhide": "Einblenden",
     "revokeTitle": "Angebot zurückziehen",

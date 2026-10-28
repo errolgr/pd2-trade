@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "se está ejecutando en segundo plano...",
     "itemNotSupported": "El objeto no es compatible o no es válido.",
+    "nothingCopied": "No se copió ningún objeto. Pasa el cursor sobre un objeto en el juego y vuelve a intentarlo, o pulsa antes Ctrl+C sobre él.",
     "cannotListItem": "No se puede anunciar el objeto",
     "notInSharedStash": "Este objeto no está en tu alijo compartido y no se puede anunciar.",
     "delist": "Retirar",
@@ -62,10 +63,14 @@
       "readOnlyStash": "Alijo de solo lectura"
     },
     "openingBrowser": "Abriendo el navegador…",
+    "waitingForSignIn": "Esperando el inicio de sesión…",
     "signInWithPd2": "Iniciar sesión con PD2",
     "finishInBrowser": "Termina de iniciar sesión en tu navegador y vuelve aquí.",
+    "openFailed": "No se pudo abrir tu navegador: copia el enlace en él.",
     "opensSite": "Abre projectdiablo2.com en tu navegador.",
     "later": "Más tarde",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
     "accounts": {
       "eyebrow": "Casi listo",
       "lead": "Hay varias cuentas de juego vinculadas a este inicio de sesión. Elige con cuál comerciar.",
@@ -86,11 +91,17 @@
     "liveTitleNextAt": "Corrupta en partidas de Hell creadas hasta las {{until}}. Siguiente: {{zone}} a las {{time}}.",
     "followedTitle": "Siguiente zona seguida: corrupta en partidas de Hell creadas de {{from}} a {{until}}.",
     "pillTitle": "{{title}} Haz clic para ver el horario, arrastra para mover.",
+    "pillTitleLocked": "{{title}} Haz clic para ver el horario.",
     "timeUntilNext": "Tiempo hasta la siguiente zona",
     "timeUntilThis": "Tiempo hasta esta zona",
     "inTime": "en {{time}}",
     "upcoming": "Próximas zonas corruptas",
     "slotWhen": "{{time}} · en {{wait}}",
+    "lock": {
+      "label": "Bloquear posición",
+      "lockedTitle": "Bloqueado: arrastrar no mueve el temporizador. Haz clic para desbloquear.",
+      "unlockedTitle": "Evita que el temporizador se mueva al arrastrarlo."
+    },
     "toastTitle": "Zona corrupta",
     "toastDescription": "{{zone}}: crea una nueva partida de Hell (hasta las {{until}})"
   }

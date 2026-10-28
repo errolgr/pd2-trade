@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Position du minuteur",
-        "description": "Épinglez le minuteur dans un coin du jeu, ou faites-le glisser n'importe où à l'écran (passe en Personnalisé).",
+        "description": "Épinglez le minuteur dans un coin du jeu, ou faites-le glisser n'importe où à l'écran (passe en Personnalisé) s'il n'est pas verrouillé.",
         "placeholder": "Position"
+      },
+      "locked": {
+        "label": "Verrouiller la position du minuteur",
+        "description": "Le glisser ne déplace plus le minuteur ; un clic affiche toujours les zones à venir. Se bascule aussi via le cadenas sous les zones à venir."
+      },
+      "layout": {
+        "label": "Disposition du minuteur",
+        "description": "Horizontale, ou une colonne étroite avec les zones à venir empilées au-dessus ou en dessous, à placer sur le bord gauche ou droit de l'écran.",
+        "placeholder": "Disposition"
       },
       "zones": {
         "label": "Le minuteur affiche",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Toutes les zones",
       "followed": "Seulement mes zones suivies"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontale",
+      "vertical": "Verticale (bords de l'écran)"
     }
   },
   "networth": {
@@ -176,18 +189,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Saisissez une touche",
-      "oneChar": "Un seul caractère autorisé",
-      "letterOrNumber": "Doit être une lettre ou un chiffre",
+      "invalidKey": "Ne peut pas servir de raccourci",
       "ctrlC": "Ctrl + C n'est pas autorisé (raccourci système réservé)."
     },
     "warning": {
       "ctrlC": "Ctrl + C est réservé à la copie des objets. Choisissez une autre touche.",
-      "clash": "Également utilisé par {{action}}."
+      "clash": "Également utilisé par {{action}}.",
+      "invalidKey": "{{key}} ne peut pas servir de raccourci. Cliquez dans la case et appuyez sur une autre touche."
     },
     "group": "Raccourcis",
     "modifierLabel": "Modificateur de {{action}}",
     "off": "Désactivé",
-    "hint": "Laissez vide la touche d'instantané, de marché ou de builds pour désactiver ce raccourci.",
+    "hint": "Cliquez dans une case de touche et appuyez sur la touche à utiliser. Appuyez sur Retour arrière dans la case d'instantané, de marché ou de builds pour désactiver ce raccourci.",
     "rows": {
       "priceCheck": {
         "label": "Estimation",
@@ -313,6 +326,10 @@
     "logOut": "Se déconnecter",
     "loggingIn": "Connexion...",
     "logIn": "Se connecter",
+    "signInLink": {
+      "openFailed": "Impossible d'ouvrir votre navigateur : copiez le lien de connexion et ouvrez-le dedans.",
+      "notOpened": "Le navigateur ne s'est pas ouvert ? Copiez-y le lien de connexion."
+    },
     "group": "Compte PD2"
   },
   "stats": {

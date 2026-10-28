@@ -13,6 +13,7 @@
     "timedOut": "Zeitüberschreitung bei der Anmeldung. Bitte versuche es erneut.",
     "success": "Anmeldung erfolgreich!",
     "failed": "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
+    "unreachable": "pd2trader.com ist nicht erreichbar. Prüfe deine Internetverbindung, Firewall oder dein Antivirenprogramm und versuche es dann erneut.",
     "loggedOut": "Erfolgreich abgemeldet."
   },
   "updates": {

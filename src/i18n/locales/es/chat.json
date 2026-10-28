@@ -147,6 +147,7 @@
     "deleteListingConfirm": "¿Seguro que quieres eliminar el anuncio de {{item}}?",
     "deleteListingConfirmThis": "¿Seguro que quieres eliminar este anuncio?",
     "deleteListing": "Eliminar anuncio",
+    "soldAndDeleteListing": "Vendido y eliminar anuncio",
     "unhideTitle": "Volver a mostrar esta oferta",
     "unhide": "Mostrar",
     "revokeTitle": "Revocar oferta",

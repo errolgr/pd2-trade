@@ -2,7 +2,7 @@ import React from 'react';
 import { useRemoteSignIn, useSignIn, type SignInAction, type SignInState } from '@/hooks/useSignIn';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
-import { X, Check, ChevronRight, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
+import { X, Check, ChevronRight, Copy, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { WindowPanel } from '@/components/custom/window-chrome';
@@ -59,10 +59,12 @@ interface SignInViewProps {
 /** The sign-in prompt; Main runs the sign-in (useSignIn), this only shows its state and reports the buttons. */
 function SignInView({ state, dispatch, showClose }: SignInViewProps) {
   const { t } = useTranslation('app');
-  const { flowActive, busy: loading, accounts, selectedAccount } = state;
+  const { flowActive, busy: loading, accounts, selectedAccount, link, linkCopied } = state;
   const handleSignIn = () => dispatch({ type: 'start' });
   const handleSelectAccount = (account: string) => dispatch({ type: 'select', account });
   const handleLater = () => dispatch({ type: 'later' });
+  // No browser opened: the sign-in waits on the user opening the link themselves
+  const openFailed = loading && !!link?.openFailed;
 
   const closeButton = showClose && (
     <button
@@ -200,27 +202,47 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
                 className="size-5 rounded-full ring-1 ring-primary-foreground/30"
               />
             )}
-            {loading ? t('signIn.openingBrowser') : t('signIn.signInWithPd2')}
+            {loading
+              ? openFailed
+                ? t('signIn.waitingForSignIn')
+                : t('signIn.openingBrowser')
+              : t('signIn.signInWithPd2')}
           </span>
           {!loading && (
             <ArrowRight className="size-4 opacity-60 transition-[opacity,transform] duration-(--dur-fast) group-hover:translate-x-0.5 group-hover:opacity-100" />
           )}
         </Button>
 
-        <p className="h-4 text-[11px] text-muted-foreground"
-          aria-live="polite">
-          {loading ? t('signIn.finishInBrowser') : t('signIn.opensSite')}
+        <p
+          className={cn('h-4 text-[11px]', openFailed ? 'text-destructive' : 'text-muted-foreground')}
+          aria-live="polite"
+        >
+          {loading ? (openFailed ? t('signIn.openFailed') : t('signIn.finishInBrowser')) : t('signIn.opensSite')}
         </p>
 
-        {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => dispatch({ type: flowActive ? 'cancel' : 'later' })}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          {flowActive ? t('common:actions.cancel') : t('signIn.later')}
-        </Button>
+        <div className="flex items-center gap-1">
+          {/* The browser may not show up even when it "opened" */}
+          {flowActive && link && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => dispatch({ type: 'copyLink' })}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {linkCopied ? <Check className="text-success" /> : <Copy />}
+              {linkCopied ? t('signIn.linkCopied') : t('signIn.copyLink')}
+            </Button>
+          )}
+          {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => dispatch({ type: flowActive ? 'cancel' : 'later' })}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            {flowActive ? t('common:actions.cancel') : t('signIn.later')}
+          </Button>
+        </div>
       </motion.div>
     </WindowPanel>
   );

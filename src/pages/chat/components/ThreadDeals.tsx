@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
+import { useDelist } from '@/pages/delist/DelistHandler';
 import { ListingDetails, ListingThumb } from './ListingCard';
 import { Tip } from './chat-parts';
 
@@ -394,6 +395,8 @@ export function ThreadDeals({
     refresh,
   } = usePd2Website();
   const { settings } = useOptions();
+  // The whisper only names the item: the delist flow finds the listing (confirm one, pick among several)
+  const { delistTrade } = useDelist();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   // Shared by every accept in the panel, so one game serves several buyers
@@ -662,6 +665,30 @@ export function ThreadDeals({
         >
           <Trash2 className="size-3.5" />
         </ActionButton>
+        {trade.isIncoming &&
+          moreMenu(
+            trade.itemName,
+            <>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => {
+                  onWhisper(person, template('soldOfferMessageTemplate', vars));
+                  void run(trade.id, () => delistTrade(trade));
+                }}
+              >
+                <CheckSquare className="size-4" />
+                {t('deals.soldAndDeleteListing')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                className="cursor-pointer"
+                onSelect={() => void run(trade.id, () => delistTrade(trade))}
+              >
+                <Trash2 className="size-4" />
+                {t('deals.deleteListing')}
+              </DropdownMenuItem>
+            </>,
+          )}
       </>
     );
   };

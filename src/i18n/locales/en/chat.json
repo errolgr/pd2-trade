@@ -145,6 +145,7 @@
     "deleteListingConfirm": "Are you sure you want to delete the listing for {{item}}?",
     "deleteListingConfirmThis": "Are you sure you want to delete this listing?",
     "deleteListing": "Delete listing",
+    "soldAndDeleteListing": "Sold & delete listing",
     "unhideTitle": "Show this offer again",
     "unhide": "Unhide",
     "revokeTitle": "Revoke offer",

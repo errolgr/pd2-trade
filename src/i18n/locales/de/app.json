@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "läuft jetzt im Hintergrund...",
     "itemNotSupported": "Item wird nicht unterstützt oder ist ungültig.",
+    "nothingCopied": "Es wurde kein Item kopiert. Fahre im Spiel über ein Item und versuche es erneut, oder drücke zuerst Ctrl+C darauf.",
     "cannotListItem": "Item kann nicht inseriert werden",
     "notInSharedStash": "Dieses Item liegt nicht in deiner geteilten Truhe und kann nicht inseriert werden.",
     "delist": "Inserat entfernen",
@@ -60,10 +61,14 @@
       "readOnlyStash": "Truhe nur lesend"
     },
     "openingBrowser": "Browser wird geöffnet…",
+    "waitingForSignIn": "Warte auf Anmeldung…",
     "signInWithPd2": "Mit PD2 anmelden",
     "finishInBrowser": "Schließe die Anmeldung im Browser ab und kehre dann hierher zurück.",
+    "openFailed": "Dein Browser konnte nicht geöffnet werden: Kopiere den Link hinein.",
     "opensSite": "Öffnet projectdiablo2.com in deinem Browser.",
     "later": "Später",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert",
     "accounts": {
       "eyebrow": "Fast geschafft",
       "lead": "Mit diesem Login sind mehrere Spielkonten verknüpft. Wähle das Konto zum Handeln.",
@@ -83,11 +88,17 @@
     "liveTitleNextAt": "Corrupted in Hell-Spielen, die bis {{until}} erstellt werden. Nächste: {{zone}} um {{time}}.",
     "followedTitle": "Nächste verfolgte Zone: corrupted in Hell-Spielen, die von {{from}} bis {{until}} erstellt werden.",
     "pillTitle": "{{title}} Klicken für den Zeitplan, ziehen zum Verschieben.",
+    "pillTitleLocked": "{{title}} Klicken für den Zeitplan.",
     "timeUntilNext": "Zeit bis zur nächsten Zone",
     "timeUntilThis": "Zeit bis zu dieser Zone",
     "inTime": "in {{time}}",
     "upcoming": "Kommende Corrupted Zones",
     "slotWhen": "{{time}} · in {{wait}}",
+    "lock": {
+      "label": "Position sperren",
+      "lockedTitle": "Gesperrt: Ziehen verschiebt den Timer nicht. Klicken zum Entsperren.",
+      "unlockedTitle": "Verhindert, dass sich der Timer beim Ziehen bewegt."
+    },
     "toastTitle": "Corrupted Zone",
     "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})"
   }

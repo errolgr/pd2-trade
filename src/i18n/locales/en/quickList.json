@@ -153,15 +153,20 @@
     "notInStash": "Item not found in stash.",
     "noMatchingListings": "No active listings match this item.",
     "noListingsFound": "No active listings found for this item.",
+    "tradeNoMatch": "No active listing of yours matches {{name}}.",
+    "tradeNoItem": "This trade names no item to delist.",
     "removed": "Removed {{name}} listing.",
     "failed": "Failed to delist item.",
+    "lookupFailed": "Failed to look up your listings.",
     "removeFailed": "Failed to remove listing.",
+    "confirmDeleteWithPrice": "Are you sure you want to delete the listing for {{name}} ({{price}})?",
     "pageTitle": "Select listing to remove",
     "listingsCount_one": "{{count}} listing",
     "listingsCount_other": "{{count}} listings",
     "listingsLabel": "Listings for this item",
     "removeItem": "Remove {{name}} listing",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Listed {{time}}",
     "removing": "Removing..."
   }
 }

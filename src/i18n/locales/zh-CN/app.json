@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "正在后台运行…",
     "itemNotSupported": "物品不受支持或无效。",
+    "nothingCopied": "未复制任何物品。请在游戏中将鼠标悬停在物品上后重试，或先在物品上按 Ctrl+C。",
     "cannotListItem": "无法挂单",
     "notInSharedStash": "此物品不在你的共享储物箱中，无法挂单。",
     "delist": "下架",
@@ -58,10 +59,14 @@
       "readOnlyStash": "只读储物箱"
     },
     "openingBrowser": "正在打开浏览器…",
+    "waitingForSignIn": "正在等待登录…",
     "signInWithPd2": "使用 PD2 登录",
     "finishInBrowser": "请在浏览器中完成登录，然后返回此处。",
+    "openFailed": "无法打开浏览器：请将链接复制到浏览器中。",
     "opensSite": "将在浏览器中打开 projectdiablo2.com。",
     "later": "稍后",
+    "copyLink": "复制链接",
+    "linkCopied": "链接已复制",
     "accounts": {
       "eyebrow": "即将完成",
       "lead": "此登录关联了多个游戏账号。请选择用于交易的账号。",
@@ -80,11 +85,17 @@
     "liveTitleNextAt": "在 {{until}} 前创建的 Hell 游戏中已腐化。下一个：{{zone}}，{{time}}。",
     "followedTitle": "下一个关注区域：在 {{from}} 至 {{until}} 之间创建的 Hell 游戏中腐化。",
     "pillTitle": "{{title}} 点击查看时间表，拖动以移动。",
+    "pillTitleLocked": "{{title}} 点击查看时间表。",
     "timeUntilNext": "距下一个区域的时间",
     "timeUntilThis": "距此区域的时间",
     "inTime": "{{time}}后",
     "upcoming": "即将腐化的区域",
     "slotWhen": "{{time}} · {{wait}}后",
+    "lock": {
+      "label": "锁定位置",
+      "lockedTitle": "已锁定：拖动不会移动计时器。点击解锁。",
+      "unlockedTitle": "拖动时不移动计时器。"
+    },
     "toastTitle": "腐化区域",
     "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）"
   }

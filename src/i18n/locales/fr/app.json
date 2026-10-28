@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "s'exécute maintenant en arrière-plan...",
     "itemNotSupported": "Objet non pris en charge ou invalide.",
+    "nothingCopied": "Aucun objet n'a été copié. Survolez un objet en jeu et réessayez, ou appuyez d'abord sur Ctrl+C dessus.",
     "cannotListItem": "Impossible de mettre en vente",
     "notInSharedStash": "Cet objet n'est pas dans votre coffre partagé et ne peut pas être mis en vente.",
     "delist": "Retirer",
@@ -62,10 +63,14 @@
       "readOnlyStash": "Coffre en lecture seule"
     },
     "openingBrowser": "Ouverture du navigateur…",
+    "waitingForSignIn": "En attente de la connexion…",
     "signInWithPd2": "Se connecter avec PD2",
     "finishInBrowser": "Terminez la connexion dans votre navigateur, puis revenez ici.",
+    "openFailed": "Impossible d'ouvrir votre navigateur : copiez-y le lien.",
     "opensSite": "Ouvre projectdiablo2.com dans votre navigateur.",
     "later": "Plus tard",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié",
     "accounts": {
       "eyebrow": "Presque terminé",
       "lead": "Plusieurs comptes de jeu sont liés à cette connexion. Choisissez celui avec lequel échanger.",
@@ -86,11 +91,17 @@
     "liveTitleNextAt": "Corrompue dans les parties Hell créées jusqu'à {{until}}. Suivante : {{zone}} à {{time}}.",
     "followedTitle": "Prochaine zone suivie : corrompue dans les parties Hell créées de {{from}} à {{until}}.",
     "pillTitle": "{{title}} Cliquez pour le planning, glissez pour déplacer.",
+    "pillTitleLocked": "{{title}} Cliquez pour le planning.",
     "timeUntilNext": "Temps avant la prochaine zone",
     "timeUntilThis": "Temps avant cette zone",
     "inTime": "dans {{time}}",
     "upcoming": "Prochaines zones corrompues",
     "slotWhen": "{{time}} · dans {{wait}}",
+    "lock": {
+      "label": "Verrouiller la position",
+      "lockedTitle": "Verrouillé : le glisser ne déplace pas le minuteur. Cliquez pour déverrouiller.",
+      "unlockedTitle": "Empêche le minuteur de bouger quand on le glisse."
+    },
     "toastTitle": "Zone corrompue",
     "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})"
   }

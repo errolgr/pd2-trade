@@ -156,9 +156,13 @@
     "notInStash": "Objet introuvable dans le coffre.",
     "noMatchingListings": "Aucune annonce active ne correspond à cet objet.",
     "noListingsFound": "Aucune annonce active trouvée pour cet objet.",
+    "tradeNoMatch": "Aucune de vos annonces actives ne correspond à {{name}}.",
+    "tradeNoItem": "Cet échange ne mentionne aucun objet à retirer.",
     "removed": "Annonce {{name}} retirée.",
     "failed": "Échec du retrait de l'objet.",
+    "lookupFailed": "Impossible de récupérer vos annonces.",
     "removeFailed": "Échec du retrait de l'annonce.",
+    "confirmDeleteWithPrice": "Voulez-vous vraiment supprimer l'annonce de {{name}} ({{price}}) ?",
     "pageTitle": "Choisir l'annonce à retirer",
     "listingsCount_one": "{{count}} annonce",
     "listingsCount_many": "{{count}} d'annonces",
@@ -166,6 +170,7 @@
     "listingsLabel": "Annonces de cet objet",
     "removeItem": "Retirer l'annonce {{name}}",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Publiée {{time}}",
     "removing": "Retrait..."
   }
 }

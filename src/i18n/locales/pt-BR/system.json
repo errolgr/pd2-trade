@@ -13,6 +13,7 @@
     "timedOut": "O login expirou. Tente novamente.",
     "success": "Autenticação concluída!",
     "failed": "Falha na autenticação. Tente novamente.",
+    "unreachable": "Não foi possível acessar pd2trader.com. Verifique sua conexão com a internet, o firewall ou o antivírus e tente novamente.",
     "loggedOut": "Você saiu da conta."
   },
   "updates": {

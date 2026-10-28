@@ -150,14 +150,19 @@
     "notInStash": "储物箱中未找到物品。",
     "noMatchingListings": "没有与此物品匹配的有效挂单。",
     "noListingsFound": "未找到此物品的有效挂单。",
+    "tradeNoMatch": "你没有与 {{name}} 匹配的有效挂单。",
+    "tradeNoItem": "此交易未指明要下架的物品。",
     "removed": "已移除 {{name}} 的挂单。",
     "failed": "下架物品失败。",
+    "lookupFailed": "查询你的挂单失败。",
     "removeFailed": "移除挂单失败。",
+    "confirmDeleteWithPrice": "确定要删除 {{name}}（{{price}}）的挂单吗？",
     "pageTitle": "选择要移除的挂单",
     "listingsCount_other": "{{count}} 个挂单",
     "listingsLabel": "此物品的挂单",
     "removeItem": "移除 {{name}} 的挂单",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "{{time}}上架",
     "removing": "正在移除…"
   }
 }

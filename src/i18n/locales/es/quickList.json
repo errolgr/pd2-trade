@@ -156,9 +156,13 @@
     "notInStash": "No se encontró el objeto en el alijo.",
     "noMatchingListings": "Ningún anuncio activo coincide con este objeto.",
     "noListingsFound": "No se encontraron anuncios activos para este objeto.",
+    "tradeNoMatch": "Ninguno de tus anuncios activos coincide con {{name}}.",
+    "tradeNoItem": "Este intercambio no menciona ningún objeto que retirar.",
     "removed": "Anuncio de {{name}} quitado.",
     "failed": "No se pudo retirar el objeto.",
+    "lookupFailed": "No se pudieron consultar tus anuncios.",
     "removeFailed": "No se pudo quitar el anuncio.",
+    "confirmDeleteWithPrice": "¿Seguro que quieres eliminar el anuncio de {{name}} ({{price}})?",
     "pageTitle": "Selecciona el anuncio que quieres quitar",
     "listingsCount_one": "{{count}} anuncio",
     "listingsCount_many": "{{count}} de anuncios",
@@ -166,6 +170,7 @@
     "listingsLabel": "Anuncios de este objeto",
     "removeItem": "Quitar anuncio de {{name}}",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Publicado {{time}}",
     "removing": "Quitando..."
   }
 }

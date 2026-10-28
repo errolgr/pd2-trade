@@ -113,7 +113,7 @@
     "source": {
       "label": "Источник объявлений",
       "live": "Активные",
-      "archive": "Архив продаж",
+      "archive": "Архив",
       "archiveTitle": "Проданные / снятые объявления"
     },
     "clearAll": "Сбросить все фильтры",
@@ -197,7 +197,7 @@
     "removeName": "Убрать {{name}}",
     "hasCorruption": "У предмета есть эта corruption",
     "addLabel": "Добавить фильтр стата",
-    "addPlaceholder": "Добавить стат…  ( ? )",
+    "addPlaceholder": "Добавить…  ( ? )",
     "filterKind": "Тип фильтра",
     "emptyHint": "Ищите моды, <sigma></sigma> псевдостаты (сумма сопротивлений, сумма здоровья…) или corruptions, либо начните с пресета.",
     "groups": {

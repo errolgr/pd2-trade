@@ -46,6 +46,7 @@ import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
+import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { exactStashMatches } from '../lib/exact-stash-match';
 import { useTranslation } from '@/i18n';
 
@@ -280,6 +281,17 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   useEffect(() => {
     fetchAllListings();
   }, [fetchAllListings]);
+
+  // A listing removed anywhere (Manage tab, Ctrl+U delist, chat): drop it from the item's listings and
+  // refetch the badge count and the Manage tab's first page
+  useEffect(
+    () =>
+      subscribeListingDeleted((listingId) => {
+        setCurrentListings((prev) => prev.filter((l) => l._id !== listingId));
+        void fetchAllListings();
+      }),
+    [fetchAllListings],
+  );
 
   // Process a queued listing once item is found
   const processQueuedListing = useCallback(

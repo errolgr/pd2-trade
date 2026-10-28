@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Lock, LockOpen } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
@@ -39,7 +39,9 @@ interface BoxSize {
  * the next rotation; click lists the upcoming zones, below or above the pill. With "Only zones I follow" (and at
  * least one zone followed) both show followed zones only: the pill shows the next one and the time until it starts
  * while it is not corrupted yet. Sized to its content and placed like the net worth ticker: at its anchor on the
- * game (following it), or for `custom` where the user dragged it (the panel layout keeps it).
+ * game (following it), or for `custom` where the user dragged it (the panel layout keeps it). Locked, a drag does
+ * not move it. The vertical layout is a narrow column (pill and list share one width, names wrap; no rotated text,
+ * which reads poorly at overlay sizes) for the side of the screen, its list still opening up or down.
  */
 const CorruptedZoneTimer: React.FC = () => {
   const { t } = useTranslation('app');
@@ -55,6 +57,8 @@ const CorruptedZoneTimer: React.FC = () => {
   // opens and kept until it opens again, so closing it (or dragging it meanwhile) lands the pill where it was
   const [listAbove, setListAbove] = useState(false);
   const anchor = settings.corruptedZoneTimerAnchor ?? 'top-right';
+  const locked = settings.corruptedZoneTimerLocked === true;
+  const vertical = settings.corruptedZoneTimerLayout === 'vertical';
   const dockOffset = useChatDockOffset();
   // A finished drag switches the timer to Custom; the panel layout keeps the dragged position
   const drag = useDragToMove(rect, setRect, () => {
@@ -163,6 +167,35 @@ const CorruptedZoneTimer: React.FC = () => {
         ? 'items-center'
         : 'items-start';
 
+  const dot = (
+    <span
+      aria-hidden
+      className={cn(
+        'size-2 shrink-0 rounded-full',
+        vertical && 'mt-1',
+        live ? 'bg-q-corrupted-zone ring-[3px] ring-q-corrupted-zone/25' : 'border border-q-corrupted-zone',
+      )}
+    />
+  );
+  const zone = <span className={cn('font-semibold', live && 'text-q-corrupted-zone')}>{head.zone}</span>;
+  const countdown = (
+    <span
+      className="tabular-nums text-muted-foreground"
+      aria-label={live ? t('corruptedZones.timeUntilNext') : t('corruptedZones.timeUntilThis')}
+    >
+      {live ? formatCountdown(head.end - now) : t('corruptedZones.inTime', { time: formatCountdown(head.start - now) })}
+    </span>
+  );
+  const chevron = (
+    <ChevronDown
+      aria-hidden
+      className={cn(
+        'size-3.5 shrink-0 text-muted-foreground transition-transform duration-(--dur-fast)',
+        expanded !== opensUp && 'rotate-180',
+      )}
+    />
+  );
+
   return (
     <div
       ref={boxRef}
@@ -179,53 +212,79 @@ const CorruptedZoneTimer: React.FC = () => {
           if (!expanded) setListAbove(lowOnScreen);
           setExpanded((open) => !open);
         }}
-        {...drag.handlers}
+        {...(locked ? {} : drag.handlers)}
         aria-expanded={expanded}
-        className="pointer-events-auto flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-q-corrupted-zone/45 bg-surface pl-3 pr-2 text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted"
-        title={t('corruptedZones.pillTitle', { title })}
+        className={cn(
+          'pointer-events-auto flex cursor-pointer select-none border border-q-corrupted-zone/45 bg-surface text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted',
+          vertical
+            ? 'w-44 flex-col gap-1 rounded-lg px-2.5 py-1.5 text-left'
+            : 'h-7 items-center gap-2 whitespace-nowrap rounded-full pl-3 pr-2',
+        )}
+        title={t(locked ? 'corruptedZones.pillTitleLocked' : 'corruptedZones.pillTitle', { title })}
       >
-        <span
-          aria-hidden
-          className={cn(
-            'size-2 shrink-0 rounded-full',
-            live ? 'bg-q-corrupted-zone ring-[3px] ring-q-corrupted-zone/25' : 'border border-q-corrupted-zone',
-          )}
-        />
-        <span className={cn('font-semibold', live && 'text-q-corrupted-zone')}>{head.zone}</span>
-        <span aria-hidden
-          className="h-3 w-px bg-border" />
-        <span
-          className="tabular-nums text-muted-foreground"
-          aria-label={live ? t('corruptedZones.timeUntilNext') : t('corruptedZones.timeUntilThis')}
-        >
-          {live
-            ? formatCountdown(head.end - now)
-            : t('corruptedZones.inTime', { time: formatCountdown(head.start - now) })}
-        </span>
-        <ChevronDown
-          aria-hidden
-          className={cn(
-            'size-3.5 text-muted-foreground transition-transform duration-(--dur-fast)',
-            expanded !== opensUp && 'rotate-180',
-          )}
-        />
+        {vertical ? (
+          <>
+            <span className="flex items-start gap-2">
+              {dot}
+              {zone}
+            </span>
+            <span className="flex items-center justify-between gap-2 pl-4">
+              {countdown}
+              {chevron}
+            </span>
+          </>
+        ) : (
+          <>
+            {dot}
+            {zone}
+            <span aria-hidden
+              className="h-3 w-px bg-border" />
+            {countdown}
+            {chevron}
+          </>
+        )}
       </button>
       {expanded && (
-        <ol
+        <div
           data-interactive="true"
-          aria-label={t('corruptedZones.upcoming')}
-          className="pointer-events-auto flex flex-col gap-1 rounded-lg border border-q-corrupted-zone/30 bg-surface px-3 py-2 text-xs text-surface-foreground shadow-[inset_3px_0_0_var(--q-corrupted-zone)] backdrop-blur-md"
+          className={cn(
+            'pointer-events-auto flex flex-col gap-1.5 rounded-lg border border-q-corrupted-zone/30 bg-surface py-2 text-xs text-surface-foreground shadow-[inset_3px_0_0_var(--q-corrupted-zone)] backdrop-blur-md',
+            vertical ? 'w-44 px-2.5' : 'px-3',
+          )}
         >
-          {upcoming.map((slot) => (
-            <li key={slot.start}
-              className="flex items-baseline justify-between gap-4 whitespace-nowrap">
-              <span>{slot.zone}</span>
-              <span className="tabular-nums text-muted-foreground">
-                {t('corruptedZones.slotWhen', { time: slotTime(slot.start, now), wait: formatWait(slot.start - now) })}
-              </span>
-            </li>
-          ))}
-        </ol>
+          <ol aria-label={t('corruptedZones.upcoming')}
+            className={cn('flex flex-col', vertical ? 'gap-1.5' : 'gap-1')}>
+            {upcoming.map((slot) => (
+              <li
+                key={slot.start}
+                className={vertical ? 'flex flex-col' : 'flex items-baseline justify-between gap-4 whitespace-nowrap'}
+              >
+                <span>{slot.zone}</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {t('corruptedZones.slotWhen', {
+                    time: slotTime(slot.start, now),
+                    wait: formatWait(slot.start - now),
+                  })}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <button
+            type="button"
+            aria-pressed={locked}
+            onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
+            title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 self-start border-t border-border/60 pt-1.5 text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-surface-foreground focus-visible:text-surface-foreground',
+              locked && 'text-q-corrupted-zone',
+            )}
+          >
+            {locked ? <Lock aria-hidden
+              className="size-3" /> : <LockOpen aria-hidden
+                className="size-3" />}
+            {t('corruptedZones.lock.label')}
+          </button>
+        </div>
       )}
     </div>
   );

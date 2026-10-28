@@ -13,6 +13,7 @@
     "timedOut": "Login timed out. Please try again.",
     "success": "Authentication successful!",
     "failed": "Authentication failed. Please try again.",
+    "unreachable": "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again.",
     "loggedOut": "Logged out successfully."
   },
   "updates": {

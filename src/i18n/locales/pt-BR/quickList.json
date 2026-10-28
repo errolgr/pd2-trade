@@ -156,9 +156,13 @@
     "notInStash": "Item não encontrado no baú.",
     "noMatchingListings": "Nenhum anúncio ativo corresponde a este item.",
     "noListingsFound": "Nenhum anúncio ativo encontrado para este item.",
+    "tradeNoMatch": "Nenhum dos seus anúncios ativos corresponde a {{name}}.",
+    "tradeNoItem": "Esta troca não indica nenhum item para remover.",
     "removed": "Anúncio de {{name}} removido.",
     "failed": "Falha ao remover anúncio do item.",
+    "lookupFailed": "Não foi possível consultar seus anúncios.",
     "removeFailed": "Falha ao remover anúncio.",
+    "confirmDeleteWithPrice": "Tem certeza de que deseja excluir o anúncio de {{name}} ({{price}})?",
     "pageTitle": "Selecione o anúncio a remover",
     "listingsCount_one": "{{count}} anúncio",
     "listingsCount_many": "{{count}} de anúncios",
@@ -166,6 +170,7 @@
     "listingsLabel": "Anúncios deste item",
     "removeItem": "Remover anúncio de {{name}}",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Anunciado {{time}}",
     "removing": "Removendo..."
   }
 }

@@ -104,8 +104,8 @@
     "days_other": "{{count}} días",
     "source": {
       "label": "Origen de los anuncios",
-      "live": "Anuncios activos",
-      "archive": "Archivo de vendidos",
+      "live": "Activos",
+      "archive": "Archivo",
       "archiveTitle": "Anuncios vendidos / retirados"
     },
     "clearAll": "Limpiar todos los filtros",
@@ -189,7 +189,7 @@
     "removeName": "Quitar {{name}}",
     "hasCorruption": "El objeto tiene esta corrupción",
     "addLabel": "Añadir un filtro de estadística",
-    "addPlaceholder": "Añadir estadística…  ( ? )",
+    "addPlaceholder": "Añadir…  ( ? )",
     "filterKind": "Tipo de filtro",
     "emptyHint": "Busca mods, pseudoestadísticas <sigma></sigma> (resistencias totales, vida total…) o corrupciones, o empieza desde un preajuste.",
     "groups": {

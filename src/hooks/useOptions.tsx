@@ -94,6 +94,8 @@ export interface ISettings {
   corruptedZoneTimerEnabled?: boolean; // Corrupted zone timer overlay (src/lib/corrupted-zones.ts)
   corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
   corruptedZoneTimerOpacity?: number; // 30-100
+  corruptedZoneTimerLocked?: boolean; // true: dragging the timer does not move it (clicks still open the schedule)
+  corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
@@ -165,6 +167,8 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
+  corruptedZoneTimerLocked: false,
+  corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],

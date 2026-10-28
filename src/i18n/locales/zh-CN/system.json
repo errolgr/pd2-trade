@@ -13,6 +13,7 @@
     "timedOut": "登录超时，请重试。",
     "success": "验证成功！",
     "failed": "验证失败，请重试。",
+    "unreachable": "无法连接 pd2trader.com。请检查网络连接、防火墙或杀毒软件，然后重试。",
     "loggedOut": "已成功退出登录。"
   },
   "updates": {

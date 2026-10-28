@@ -153,15 +153,20 @@
     "notInStash": "Item nicht in der Truhe gefunden.",
     "noMatchingListings": "Keine aktiven Inserate passen zu diesem Item.",
     "noListingsFound": "Keine aktiven Inserate für dieses Item gefunden.",
+    "tradeNoMatch": "Keines deiner aktiven Inserate passt zu {{name}}.",
+    "tradeNoItem": "Dieser Handel nennt kein Item zum Entfernen.",
     "removed": "Inserat für {{name}} entfernt.",
     "failed": "Inserat konnte nicht entfernt werden.",
+    "lookupFailed": "Deine Inserate konnten nicht abgerufen werden.",
     "removeFailed": "Inserat konnte nicht entfernt werden.",
+    "confirmDeleteWithPrice": "Möchtest du das Inserat für {{name}} ({{price}}) wirklich löschen?",
     "pageTitle": "Zu entfernendes Inserat wählen",
     "listingsCount_one": "{{count}} Inserat",
     "listingsCount_other": "{{count}} Inserate",
     "listingsLabel": "Inserate für dieses Item",
     "removeItem": "Inserat für {{name}} entfernen",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Eingestellt {{time}}",
     "removing": "Wird entfernt..."
   }
 }

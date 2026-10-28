@@ -4,7 +4,10 @@ import { MotionGlobalConfig } from 'framer-motion';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ItemValue, RuneCombination } from '../lib/types';
+import { openUrl } from '@/lib/browser-opener';
 import { RunePricePopover } from './RunePricePopover';
+
+vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn(async () => {}) }));
 
 // happy-dom's WAAPI rejects cancelled animations as unhandled errors; finish motion instantly instead.
 beforeAll(() => {
@@ -150,6 +153,15 @@ describe('RunePricePopover', () => {
   it('shows no breakdown when the selected rune has no combinations', () => {
     const { dialog } = open({ selectedRuneBreakdown: 'Ber Rune', selectedRuneCombinations: [] });
     expect(within(dialog).queryByText(/Breakdown:/)).toBeNull();
+  });
+
+  it("opens pd2trader.com's rune prices through the app's opener", () => {
+    const { dialog } = open();
+    const link = within(dialog).getByRole('link', { name: /View on pd2trader.com/ });
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    fireEvent(link, click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(openUrl).toHaveBeenCalledWith('https://pd2trader.com/?category=runes');
   });
 
   it('clicking a rune in a stateful parent swaps the breakdown target', async () => {

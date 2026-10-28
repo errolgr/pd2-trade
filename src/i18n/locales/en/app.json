@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "is now running in the background...",
     "itemNotSupported": "Item is not supported or invalid.",
+    "nothingCopied": "No item was copied. Hover over an item in game and try again, or press Ctrl+C on it first.",
     "cannotListItem": "Cannot List Item",
     "notInSharedStash": "This item is not in your shared stash and cannot be listed.",
     "delist": "Delist",
@@ -60,10 +61,14 @@
       "readOnlyStash": "Read-only stash"
     },
     "openingBrowser": "Opening browser…",
+    "waitingForSignIn": "Waiting for sign-in…",
     "signInWithPd2": "Sign in with PD2",
     "finishInBrowser": "Finish signing in in your browser, then come back here.",
+    "openFailed": "Couldn't open your browser: copy the link into it.",
     "opensSite": "Opens projectdiablo2.com in your browser.",
     "later": "Later",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
     "accounts": {
       "eyebrow": "Almost there",
       "lead": "Several game accounts are linked to this login. Pick the one to trade with.",
@@ -83,11 +88,17 @@
     "liveTitleNextAt": "Corrupted in Hell games made until {{until}}. Next: {{zone}} at {{time}}.",
     "followedTitle": "Next followed zone: corrupted in Hell games made from {{from}} to {{until}}.",
     "pillTitle": "{{title}} Click for the schedule, drag to move.",
+    "pillTitleLocked": "{{title}} Click for the schedule.",
     "timeUntilNext": "Time until the next zone",
     "timeUntilThis": "Time until this zone",
     "inTime": "in {{time}}",
     "upcoming": "Upcoming corrupted zones",
     "slotWhen": "{{time}} · in {{wait}}",
+    "lock": {
+      "label": "Lock position",
+      "lockedTitle": "Locked: dragging does not move the timer. Click to unlock.",
+      "unlockedTitle": "Stop the timer from moving when dragged."
+    },
     "toastTitle": "Corrupted zone",
     "toastDescription": "{{zone}}: make a new Hell game (until {{until}})"
   }

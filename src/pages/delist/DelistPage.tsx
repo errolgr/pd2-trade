@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { MotionConfig, motion } from 'framer-motion';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Clock, Loader2, Trash2 } from 'lucide-react';
+import moment from 'moment';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -125,6 +126,15 @@ export const DelistPage: React.FC = () => {
                             </span>
                           ) : null}
                           {listing.price && <span className="truncate">{listing.price}</span>}
+                          {listing.created_at && (
+                            <span
+                              className="ml-auto flex shrink-0 items-center gap-1"
+                              title={moment(listing.created_at).format('LLL')}
+                            >
+                              <Clock className="size-3" />
+                              {t('delist.listedAgo', { time: moment(listing.created_at).fromNow() })}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {isDeleting ? (

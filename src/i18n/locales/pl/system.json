@@ -13,6 +13,7 @@
     "timedOut": "Upłynął limit czasu logowania. Spróbuj ponownie.",
     "success": "Uwierzytelnianie zakończone sukcesem!",
     "failed": "Uwierzytelnianie nie powiodło się. Spróbuj ponownie.",
+    "unreachable": "Nie można połączyć się z pd2trader.com. Sprawdź połączenie z internetem, zaporę lub antywirusa i spróbuj ponownie.",
     "loggedOut": "Wylogowano."
   },
   "updates": {

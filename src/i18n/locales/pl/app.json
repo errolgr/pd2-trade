@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "działa teraz w tle...",
     "itemNotSupported": "Przedmiot nie jest obsługiwany lub jest nieprawidłowy.",
+    "nothingCopied": "Nie skopiowano żadnego przedmiotu. Najedź kursorem na przedmiot w grze i spróbuj ponownie albo najpierw naciśnij na nim Ctrl+C.",
     "cannotListItem": "Nie można wystawić przedmiotu",
     "notInSharedStash": "Tego przedmiotu nie ma w twojej wspólnej skrzyni, więc nie można go wystawić.",
     "delist": "Wycofaj",
@@ -64,10 +65,14 @@
       "readOnlyStash": "Skrzynia tylko do odczytu"
     },
     "openingBrowser": "Otwieranie przeglądarki…",
+    "waitingForSignIn": "Oczekiwanie na logowanie…",
     "signInWithPd2": "Zaloguj się przez PD2",
     "finishInBrowser": "Dokończ logowanie w przeglądarce, a potem wróć tutaj.",
+    "openFailed": "Nie udało się otworzyć przeglądarki: skopiuj do niej link.",
     "opensSite": "Otwiera projectdiablo2.com w przeglądarce.",
     "later": "Później",
+    "copyLink": "Kopiuj link",
+    "linkCopied": "Link skopiowany",
     "accounts": {
       "eyebrow": "Prawie gotowe",
       "lead": "Z tym logowaniem powiązano kilka kont gry. Wybierz to, którym chcesz handlować.",
@@ -89,11 +94,17 @@
     "liveTitleNextAt": "Skażona w grach Hell utworzonych do {{until}}. Następna: {{zone}} o {{time}}.",
     "followedTitle": "Następna obserwowana strefa: skażona w grach Hell utworzonych od {{from}} do {{until}}.",
     "pillTitle": "{{title}} Kliknij, aby zobaczyć harmonogram, przeciągnij, aby przesunąć.",
+    "pillTitleLocked": "{{title}} Kliknij, aby zobaczyć harmonogram.",
     "timeUntilNext": "Czas do następnej strefy",
     "timeUntilThis": "Czas do tej strefy",
     "inTime": "za {{time}}",
     "upcoming": "Nadchodzące skażone strefy",
     "slotWhen": "{{time}} · za {{wait}}",
+    "lock": {
+      "label": "Zablokuj pozycję",
+      "lockedTitle": "Zablokowany: przeciąganie nie przesuwa licznika. Kliknij, aby odblokować.",
+      "unlockedTitle": "Nie pozwól, by licznik przesuwał się przy przeciąganiu."
+    },
     "toastTitle": "Skażona strefa",
     "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})"
   }

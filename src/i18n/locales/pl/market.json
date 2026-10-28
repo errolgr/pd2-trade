@@ -112,8 +112,8 @@
     "days_other": "{{count}} dnia",
     "source": {
       "label": "Źródło ogłoszeń",
-      "live": "Aktywne ogłoszenia",
-      "archive": "Archiwum sprzedanych",
+      "live": "Aktywne",
+      "archive": "Archiwum",
       "archiveTitle": "Sprzedane / wycofane ogłoszenia"
     },
     "clearAll": "Wyczyść wszystkie filtry",
@@ -197,7 +197,7 @@
     "removeName": "Usuń {{name}}",
     "hasCorruption": "Przedmiot ma tę korupcję",
     "addLabel": "Dodaj filtr statystyki",
-    "addPlaceholder": "Dodaj statystykę…  ( ? )",
+    "addPlaceholder": "Dodaj stat…  ( ? )",
     "filterKind": "Rodzaj filtra",
     "emptyHint": "Szukaj modów, pseudostatystyk <sigma></sigma> (suma odporności, suma życia…) lub korupcji albo zacznij od presetu.",
     "groups": {

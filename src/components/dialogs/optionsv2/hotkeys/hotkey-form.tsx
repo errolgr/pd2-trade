@@ -8,42 +8,43 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { hotkeyKeyFromEvent, hotkeyKeyLabel, hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
 import { SettingsGroup, SettingsHint, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import type { TFunction } from 'i18next';
 import { useTranslation } from '@/i18n';
 
 /** Built per render language so validation messages follow the UI language. */
 const makeHotkeyFormSchema = (t: TFunction) => {
-  const key = (optional = false) => {
-    const base = z.string();
-    return (optional ? base : base.min(1, t('hotkeys.validation.enterKey')))
-      .max(1, t('hotkeys.validation.oneChar'))
-      .regex(optional ? /^[a-z0-9]?$/i : /^[a-z0-9]$/i, t('hotkeys.validation.letterOrNumber'));
-  };
+  const invalidKey = t('hotkeys.validation.invalidKey');
+  const requiredKey = z
+    .string()
+    .min(1, t('hotkeys.validation.enterKey'))
+    .refine((key) => normalizeHotkeyKey(key) !== null, invalidKey);
+  const optionalKey = z.string().refine((key) => key === '' || normalizeHotkeyKey(key) !== null, invalidKey);
   return z
     .object({
       hotkeyModifier: z.enum(['ctrl', 'alt']),
-      hotkeyKey: key(),
+      hotkeyKey: requiredKey,
       hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
-      hotkeyKeyListItem: key(),
+      hotkeyKeyListItem: requiredKey,
       hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
-      hotkeyKeySettings: key(),
+      hotkeyKeySettings: requiredKey,
       hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
-      hotkeyKeyCurrencyValuation: key(),
+      hotkeyKeyCurrencyValuation: requiredKey,
       hotkeyModifierChat: z.enum(['ctrl', 'alt']),
-      hotkeyKeyChat: key(),
+      hotkeyKeyChat: requiredKey,
       hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
-      hotkeyKeyOffers: key(),
+      hotkeyKeyOffers: requiredKey,
       hotkeyModifierDelist: z.enum(['ctrl', 'alt']),
-      hotkeyKeyDelist: key(),
+      hotkeyKeyDelist: requiredKey,
       hotkeyModifierSnapshot: z.enum(['ctrl', 'alt']),
-      hotkeyKeySnapshot: key(true),
+      hotkeyKeySnapshot: optionalKey,
       hotkeyModifierMarket: z.enum(['ctrl', 'alt']),
-      hotkeyKeyMarket: key(true),
+      hotkeyKeyMarket: optionalKey,
       hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
-      hotkeyKeyBuilds: key(true),
+      hotkeyKeyBuilds: optionalKey,
     })
-    .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
+    .refine((data) => !(data.hotkeyModifier === 'ctrl' && hotkeyKeyToken(data.hotkeyKey) === 'C'), {
       message: t('hotkeys.validation.ctrlC'),
       path: ['hotkeyKey'],
     });
@@ -187,14 +188,17 @@ export function HotkeyForm() {
   }
 
   const values = form.watch();
+  // Compared by parser token, so a key saved by an older version ('х') clashes with its translation ('[')
   const comboOf = (row: HotkeyRowConfig) => {
-    const key = (values[row.key] as string | undefined)?.toLowerCase();
-    return key ? `${values[row.modifier]}+${key}` : null;
+    const token = hotkeyKeyToken(values[row.key] as string | undefined);
+    return token ? `${values[row.modifier]}+${token}` : null;
   };
   const warningFor = (row: HotkeyRowConfig): string | null => {
+    const key = values[row.key] as string | undefined;
+    if (key && !normalizeHotkeyKey(key)) return t('hotkeys.warning.invalidKey', { key: key.toUpperCase() });
     const combo = comboOf(row);
     if (!combo) return null;
-    if (combo === 'ctrl+c') return t('hotkeys.warning.ctrlC');
+    if (combo === 'ctrl+C') return t('hotkeys.warning.ctrlC');
     const clash = HOTKEY_ROWS.find((other) => other !== row && comboOf(other) === combo);
     return clash ? t('hotkeys.warning.clash', { action: t(clash.labelKey) }) : null;
   };
@@ -205,6 +209,7 @@ export function HotkeyForm() {
         <SettingsGroup title={t('hotkeys.group')}>
           {HOTKEY_ROWS.map((row) => {
             const warning = warningFor(row);
+            const label = hotkeyKeyLabel(values[row.key] as string | undefined);
             return (
               <FormField
                 key={row.key}
@@ -247,17 +252,30 @@ export function HotkeyForm() {
                         <FormControl>
                           <Input
                             type="text"
-                            maxLength={1}
+                            readOnly
                             placeholder={row.optional ? t('hotkeys.off') : undefined}
-                            value={(keyField.value as string | undefined)?.toUpperCase() ?? ''}
+                            value={label}
                             aria-invalid={warning ? true : undefined}
                             className={cn(
                               'h-9 w-11 rounded-md border-b-[3px] px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-[10px] placeholder:font-normal',
                               'focus-visible:border-b-primary',
+                              label.length > 1 && 'w-16 text-xs',
                               warning &&
                                 'aria-invalid:border-warning/80 aria-invalid:ring-warning/30 dark:aria-invalid:ring-warning/30',
                             )}
-                            onChange={(e) => keyField.onChange(e.target.value.toLowerCase())}
+                            // The key is recorded from the key press, not typed text: a Russian-layout press of
+                            // the [ key types 'х', which no global shortcut can be registered for
+                            onKeyDown={(e) => {
+                              if (row.optional && (e.key === 'Backspace' || e.key === 'Delete')) {
+                                e.preventDefault();
+                                keyField.onChange('');
+                                return;
+                              }
+                              const key = hotkeyKeyFromEvent(e);
+                              if (!key) return;
+                              e.preventDefault();
+                              keyField.onChange(key);
+                            }}
                           />
                         </FormControl>
                       </>

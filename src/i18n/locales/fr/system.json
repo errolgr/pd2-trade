@@ -13,6 +13,7 @@
     "timedOut": "La connexion a expiré. Veuillez réessayer.",
     "success": "Authentification réussie !",
     "failed": "Échec de l'authentification. Veuillez réessayer.",
+    "unreachable": "Impossible de joindre pd2trader.com. Vérifiez votre connexion Internet, votre pare-feu ou votre antivirus, puis réessayez.",
     "loggedOut": "Déconnexion réussie."
   },
   "updates": {

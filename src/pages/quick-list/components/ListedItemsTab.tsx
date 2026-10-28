@@ -46,6 +46,7 @@ import EmptyState from './EmptyState';
 import { countChip, itemCard } from './styles';
 import { showToast } from '@/overlay';
 import { useTranslation } from '@/i18n';
+import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 
 interface ListedItemsTabProps {
   onClose: () => void;
@@ -150,7 +151,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const result = await getMarketListings(marketQuery);
       const duration = performance.now() - startTime;
 
-      if (result.data.length === 0) {
+      // Rows PD2 sent, not listings shown: a page of item-less listings is not the end
+      if (result.fetched === 0) {
         setHasReachedEnd(true);
       }
 
@@ -326,6 +328,25 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     }
   }, [initialListings, initialTotalCount, hasInitialized, currentPage, marketQuery, listings.length]);
 
+  // A listing removed anywhere (this tab, Ctrl+U delist and its picker, chat) leaves the tab. The count drops
+  // with a loaded row; the parent refetches its first page and real total, which the effect above syncs.
+  const loadedRef = React.useRef({ listings, allListingsForSearch });
+  useEffect(() => {
+    loadedRef.current = { listings, allListingsForSearch };
+  }, [listings, allListingsForSearch]);
+  useEffect(
+    () =>
+      subscribeListingDeleted((listingId) => {
+        const loaded = loadedRef.current;
+        const isOther = (l: MarketListingEntry) => l._id !== listingId;
+        if (loaded.listings.every(isOther) && loaded.allListingsForSearch.every(isOther)) return;
+        setListings((prev) => prev.filter(isOther));
+        setAllListingsForSearch((prev) => prev.filter(isOther));
+        setTotalCount((prev) => Math.max(0, prev - 1));
+      }),
+    [],
+  );
+
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);
     const startTime = performance.now();
@@ -397,29 +418,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     isDeletingRef.current = true;
     const startTime = performance.now();
     try {
+      // The row leaves through the listing-deleted subscription, like listings removed elsewhere
       await deleteMarketListing(listing._id);
-
-      // Optimistically remove the item from local state using functional updates
-      setListings((prev) => {
-        const updatedListings = prev.filter((l) => l._id !== listing._id);
-        // Update parent component if callback provided
-        if (onListingsChange) {
-          onListingsChange(updatedListings);
-        }
-        return updatedListings;
-      });
-
-      setAllListingsForSearch((prev) => prev.filter((l) => l._id !== listing._id));
-
-      // Decrement total count
-      setTotalCount((prev) => {
-        const newTotalCount = Math.max(0, prev - 1);
-        // Update parent component if callback provided
-        if (onTotalCountChange) {
-          onTotalCountChange(newTotalCount);
-        }
-        return newTotalCount;
-      });
 
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'success' });

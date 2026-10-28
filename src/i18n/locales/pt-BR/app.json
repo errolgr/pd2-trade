@@ -15,6 +15,7 @@
   "controller": {
     "runningInBackground": "agora está rodando em segundo plano...",
     "itemNotSupported": "Item não suportado ou inválido.",
+    "nothingCopied": "Nenhum item foi copiado. Passe o mouse sobre um item no jogo e tente novamente, ou pressione Ctrl+C nele primeiro.",
     "cannotListItem": "Não é possível anunciar o item",
     "notInSharedStash": "Este item não está no seu baú compartilhado e não pode ser anunciado.",
     "delist": "Remover anúncio",
@@ -62,10 +63,14 @@
       "readOnlyStash": "Baú somente leitura"
     },
     "openingBrowser": "Abrindo o navegador…",
+    "waitingForSignIn": "Aguardando o login…",
     "signInWithPd2": "Entrar com PD2",
     "finishInBrowser": "Conclua o login no navegador e depois volte aqui.",
+    "openFailed": "Não foi possível abrir o navegador: copie o link nele.",
     "opensSite": "Abre projectdiablo2.com no seu navegador.",
     "later": "Depois",
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado",
     "accounts": {
       "eyebrow": "Quase lá",
       "lead": "Várias contas de jogo estão vinculadas a este login. Escolha a que você usará para trocas.",
@@ -86,11 +91,17 @@
     "liveTitleNextAt": "Corrupted em jogos Hell criados até {{until}}. Próxima: {{zone}} às {{time}}.",
     "followedTitle": "Próxima zona seguida: Corrupted em jogos Hell criados de {{from}} até {{until}}.",
     "pillTitle": "{{title}} Clique para ver o cronograma, arraste para mover.",
+    "pillTitleLocked": "{{title}} Clique para ver o cronograma.",
     "timeUntilNext": "Tempo até a próxima zona",
     "timeUntilThis": "Tempo até esta zona",
     "inTime": "em {{time}}",
     "upcoming": "Próximas zonas Corrupted",
     "slotWhen": "{{time}} · em {{wait}}",
+    "lock": {
+      "label": "Travar posição",
+      "lockedTitle": "Travado: arrastar não move o timer. Clique para destravar.",
+      "unlockedTitle": "Impede que o timer se mova ao ser arrastado."
+    },
     "toastTitle": "Zona Corrupted",
     "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})"
   }

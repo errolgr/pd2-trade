@@ -181,7 +181,7 @@
     "removeName": "{{name}} entfernen",
     "hasCorruption": "Item hat diese Corruption",
     "addLabel": "Wertefilter hinzufügen",
-    "addPlaceholder": "Wert hinzufügen…  ( ? )",
+    "addPlaceholder": "Hinzufügen…  ( ? )",
     "filterKind": "Filterart",
     "emptyHint": "Suche Mods, <sigma></sigma> Pseudo-Werte (Gesamtresistenzen, Gesamtleben…) oder Corruptions, oder starte mit einem Preset.",
     "groups": {

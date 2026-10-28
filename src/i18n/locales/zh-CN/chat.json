@@ -143,6 +143,7 @@
     "deleteListingConfirm": "确定要删除 {{item}} 的挂单吗？",
     "deleteListingConfirmThis": "确定要删除此挂单吗？",
     "deleteListing": "删除挂单",
+    "soldAndDeleteListing": "已售出并删除挂单",
     "unhideTitle": "重新显示此报价",
     "unhide": "取消隐藏",
     "revokeTitle": "撤回报价",

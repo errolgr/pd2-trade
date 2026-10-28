@@ -159,6 +159,9 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
                 await onRefresh();
                 showToast(t('toasts.removedMarketListing', { name: stashItem?.name || '' }));
                 close();
+              } catch (err) {
+                console.error('Failed to remove listing:', err);
+                showToast(t('delist.removeFailed'));
               } finally {
                 setDeleting(false);
               }

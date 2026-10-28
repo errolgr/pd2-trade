@@ -159,9 +159,13 @@
     "notInStash": "Nie znaleziono przedmiotu w skrzyni.",
     "noMatchingListings": "Żadne aktywne ogłoszenie nie pasuje do tego przedmiotu.",
     "noListingsFound": "Nie znaleziono aktywnych ogłoszeń tego przedmiotu.",
+    "tradeNoMatch": "Żadne z twoich aktywnych ogłoszeń nie pasuje do {{name}}.",
+    "tradeNoItem": "Ta wymiana nie wskazuje przedmiotu do wycofania.",
     "removed": "Usunięto ogłoszenie {{name}}.",
     "failed": "Nie udało się wycofać przedmiotu.",
+    "lookupFailed": "Nie udało się pobrać twoich ogłoszeń.",
     "removeFailed": "Nie udało się usunąć ogłoszenia.",
+    "confirmDeleteWithPrice": "Czy na pewno chcesz usunąć ogłoszenie {{name}} ({{price}})?",
     "pageTitle": "Wybierz ogłoszenie do usunięcia",
     "listingsCount_one": "{{count}} ogłoszenie",
     "listingsCount_few": "{{count}} ogłoszenia",
@@ -170,6 +174,7 @@
     "listingsLabel": "Ogłoszenia tego przedmiotu",
     "removeItem": "Usuń ogłoszenie {{name}}",
     "hrPrice": "{{price}} HR",
+    "listedAgo": "Wystawiono {{time}}",
     "removing": "Usuwanie..."
   }
 }

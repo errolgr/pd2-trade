@@ -104,8 +104,8 @@
     "days_other": "{{count}} jours",
     "source": {
       "label": "Source des annonces",
-      "live": "Annonces actives",
-      "archive": "Archive des ventes",
+      "live": "Actives",
+      "archive": "Archives",
       "archiveTitle": "Annonces vendues / retirées"
     },
     "clearAll": "Effacer tous les filtres",
@@ -189,7 +189,7 @@
     "removeName": "Retirer {{name}}",
     "hasCorruption": "L'objet a cette corruption",
     "addLabel": "Ajouter un filtre de stat",
-    "addPlaceholder": "Ajouter une stat…  ( ? )",
+    "addPlaceholder": "Ajouter…  ( ? )",
     "filterKind": "Type de filtre",
     "emptyHint": "Recherchez des mods, des pseudo-stats <sigma></sigma> (résistances totales, vie totale…) ou des corruptions, ou partez d'un préréglage.",
     "groups": {

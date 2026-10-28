@@ -24,12 +24,19 @@ const TIMER_ZONES_OPTIONS = [
   { value: 'followed', labelKey: 'interface.timerZonesOptions.followed' },
 ] as const;
 
+const TIMER_LAYOUT_OPTIONS = [
+  { value: 'horizontal', labelKey: 'interface.timerLayoutOptions.horizontal' },
+  { value: 'vertical', labelKey: 'interface.timerLayoutOptions.vertical' },
+] as const;
+
 const interfaceFormSchema = z.object({
   language: z.enum(['system', ...SUPPORTED_LANGUAGES]),
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
+  corruptedZoneTimerLocked: z.boolean(),
+  corruptedZoneTimerLayout: z.enum(['horizontal', 'vertical']),
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
   corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
@@ -45,6 +52,8 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
+    corruptedZoneTimerLocked: settings?.corruptedZoneTimerLocked ?? false,
+    corruptedZoneTimerLayout: settings?.corruptedZoneTimerLayout ?? 'horizontal',
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
     corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
@@ -224,6 +233,54 @@ export function InterfaceForm() {
                     </FormControl>
                     <SelectContent>
                       {TICKER_ANCHOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {t(option.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerLocked"
+            render={({ field }) => (
+              <SettingsRow
+                label={t('interface.zoneTimer.locked.label')}
+                description={t('interface.zoneTimer.locked.description')}
+                control={
+                  <FormControl>
+                    <Switch checked={field.value}
+                      onCheckedChange={field.onChange} />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerLayout"
+            render={({ field }) => (
+              <SettingsRow
+                label={t('interface.zoneTimer.layout.label')}
+                description={t('interface.zoneTimer.layout.description')}
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder={t('interface.zoneTimer.layout.placeholder')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIMER_LAYOUT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
                           {t(option.labelKey)}

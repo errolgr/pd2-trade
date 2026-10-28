@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "Timer position",
-        "description": "Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom).",
+        "description": "Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom) unless it is locked.",
         "placeholder": "Position"
+      },
+      "locked": {
+        "label": "Lock timer position",
+        "description": "Dragging the timer no longer moves it; clicking it still shows the upcoming zones. Also toggled from the lock under the upcoming zones."
+      },
+      "layout": {
+        "label": "Timer layout",
+        "description": "Horizontal, or a narrow column with the upcoming zones stacked above or below it, to sit at the left or right edge of the screen.",
+        "placeholder": "Layout"
       },
       "zones": {
         "label": "Timer shows",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "Every zone",
       "followed": "Only zones I follow"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical (screen sides)"
     }
   },
   "networth": {
@@ -174,18 +187,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "Enter a key",
-      "oneChar": "Only one character allowed",
-      "letterOrNumber": "Must be a letter or number",
+      "invalidKey": "Can't be used as a hotkey",
       "ctrlC": "Ctrl + C is not allowed (reserved system shortcut)."
     },
     "warning": {
       "ctrlC": "Ctrl + C is reserved for copying items. Pick another key.",
-      "clash": "Also used by {{action}}."
+      "clash": "Also used by {{action}}.",
+      "invalidKey": "{{key}} can't be used as a hotkey. Click the box and press another key."
     },
     "group": "Shortcuts",
     "modifierLabel": "{{action}} modifier",
     "off": "Off",
-    "hint": "Leave the snapshot, market or builds key empty to turn that hotkey off.",
+    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market or builds box to turn that hotkey off.",
     "rows": {
       "priceCheck": {
         "label": "Price check",
@@ -310,6 +323,10 @@
     "logOut": "Log out",
     "loggingIn": "Logging in...",
     "logIn": "Log in",
+    "signInLink": {
+      "openFailed": "Couldn't open your browser: copy the sign-in link and open it there.",
+      "notOpened": "Browser didn't open? Copy the sign-in link into it."
+    },
     "group": "PD2 account"
   },
   "stats": {

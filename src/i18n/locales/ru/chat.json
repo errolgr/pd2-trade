@@ -149,6 +149,7 @@
     "deleteListingConfirm": "Удалить объявление {{item}}?",
     "deleteListingConfirmThis": "Удалить это объявление?",
     "deleteListing": "Удалить объявление",
+    "soldAndDeleteListing": "Продано, удалить объявление",
     "unhideTitle": "Снова показать это предложение",
     "unhide": "Показать",
     "revokeTitle": "Отозвать предложение",

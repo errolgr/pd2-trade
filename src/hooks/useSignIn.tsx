@@ -2,12 +2,13 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { emitTo } from '@tauri-apps/api/event';
 import { usePanelOpen, useOverlay } from '@/overlay';
-import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from './useOAuth';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive, useOAuthFlowLink, type OAuthFlowLink } from './useOAuth';
 import { useOptions } from './useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
+import { writeText } from '@/lib/browser-clipboard';
 
 /** What the sign-in view shows. */
 export interface SignInState {
@@ -18,12 +19,17 @@ export interface SignInState {
   /** Several game accounts are linked to the login: pick one. */
   accounts: string[] | null;
   selectedAccount: string | null;
+  /** The running sign-in's link, to copy into a browser when none opened. */
+  link: OAuthFlowLink | null;
+  /** That link is on the clipboard. */
+  linkCopied: boolean;
 }
 
 export type SignInAction =
   | { type: 'start' }
   | { type: 'cancel' }
   | { type: 'later' }
+  | { type: 'copyLink' }
   | { type: 'select'; account: string };
 
 /** Label of the native sign-in window (src-tauri commands::SIGN_IN_LABEL). */
@@ -63,12 +69,21 @@ export function SignInProvider({ children }: { children: React.ReactNode }) {
   const isOpen = native ? windowOpen : panelOpen;
 
   const flowActive = useOAuthFlowActive();
+  const link = useOAuthFlowLink();
   const [lookingUp, setLookingUp] = useState(false);
   const [accounts, setAccounts] = useState<string[] | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const state = useMemo<SignInState>(
-    () => ({ flowActive, busy: flowActive || lookingUp, accounts, selectedAccount }),
-    [flowActive, lookingUp, accounts, selectedAccount],
+    () => ({
+      flowActive,
+      busy: flowActive || lookingUp,
+      accounts,
+      selectedAccount,
+      link,
+      linkCopied: link !== null && copiedUrl === link.url,
+    }),
+    [flowActive, lookingUp, accounts, selectedAccount, link, copiedUrl],
   );
 
   const openSignIn = useCallback(() => {
@@ -140,13 +155,22 @@ export function SignInProvider({ children }: { children: React.ReactNode }) {
         case 'later':
           closeSignIn();
           break;
+        case 'copyLink':
+          // The window's view can't reach the clipboard; Main copies
+          if (link) {
+            writeText(link.url).then(
+              () => setCopiedUrl(link.url),
+              (error) => console.warn('[SignIn] Could not copy the sign-in link:', error),
+            );
+          }
+          break;
         case 'select':
           setSelectedAccount(action.account);
           void updateSettings({ account: action.account }).then(closeSignIn);
           break;
       }
     },
-    [signIn, closeSignIn, updateSettings],
+    [signIn, closeSignIn, updateSettings, link],
   );
 
   // The native window: send it the state, take its button presses, notice it closing.

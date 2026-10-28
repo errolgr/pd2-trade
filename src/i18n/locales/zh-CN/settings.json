@@ -21,8 +21,17 @@
       },
       "position": {
         "label": "计时器位置",
-        "description": "将计时器固定在游戏的某个角落，或拖到屏幕任意位置（切换为自定义）。",
+        "description": "将计时器固定在游戏的某个角落，或在未锁定时拖到屏幕任意位置（切换为自定义）。",
         "placeholder": "位置"
+      },
+      "locked": {
+        "label": "锁定计时器位置",
+        "description": "拖动不再移动计时器；点击仍会显示即将腐化的区域。也可通过即将腐化区域下方的锁图标切换。"
+      },
+      "layout": {
+        "label": "计时器布局",
+        "description": "水平排列，或窄列并将即将腐化的区域堆叠在其上方或下方，适合放在屏幕左侧或右侧边缘。",
+        "placeholder": "布局"
       },
       "zones": {
         "label": "计时器显示",
@@ -49,6 +58,10 @@
     "timerZonesOptions": {
       "all": "所有区域",
       "followed": "仅我关注的区域"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "水平",
+      "vertical": "垂直（屏幕两侧）"
     }
   },
   "networth": {
@@ -172,18 +185,18 @@
   "hotkeys": {
     "validation": {
       "enterKey": "请输入一个按键",
-      "oneChar": "只能输入一个字符",
-      "letterOrNumber": "必须是字母或数字",
+      "invalidKey": "不能用作快捷键",
       "ctrlC": "不允许使用 Ctrl + C（系统保留快捷键）。"
     },
     "warning": {
       "ctrlC": "Ctrl + C 用于复制物品，请选择其他按键。",
-      "clash": "也被 {{action}} 使用。"
+      "clash": "也被 {{action}} 使用。",
+      "invalidKey": "{{key}} 不能用作快捷键。请点击输入框并按下其他按键。"
     },
     "group": "快捷键",
     "modifierLabel": "{{action}} 修饰键",
     "off": "关闭",
-    "hint": "将快照、市场或配装的按键留空即可关闭该快捷键。",
+    "hint": "点击按键框并按下要使用的按键。在快照、市场或配装的按键框中按 Backspace 即可关闭该快捷键。",
     "rows": {
       "priceCheck": {
         "label": "查价",
@@ -307,6 +320,10 @@
     "logOut": "退出登录",
     "loggingIn": "正在登录…",
     "logIn": "登录",
+    "signInLink": {
+      "openFailed": "无法打开浏览器：请复制登录链接并在浏览器中打开。",
+      "notOpened": "浏览器没有打开？请将登录链接复制到浏览器中。"
+    },
     "group": "PD2 账号"
   },
   "stats": {
