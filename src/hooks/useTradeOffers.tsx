@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { useEffect, useState, useCallback } from 'react';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
@@ -405,8 +406,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Revoked',
-          description: offer ? `Your offer on ${offer.itemName || 'item'} has been revoked` : 'Offer has been revoked',
+          title: t('system:offers.revoked'),
+          description: offer
+            ? t('system:offers.revokedDescription', { item: offer.itemName || t('system:offers.item') })
+            : t('system:offers.revokedFallback'),
           variant: 'success',
         });
 
@@ -417,8 +420,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         void refresh();
         // Show error toast
         showToast({
-          title: 'Failed to Revoke Offer',
-          description: 'An error occurred while revoking the offer',
+          title: t('system:offers.revokeFailed'),
+          description: t('system:offers.revokeFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -440,10 +443,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Accepted',
+          title: t('system:offers.accepted'),
           description: offer
-            ? `You accepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been accepted',
+            ? t('system:offers.acceptedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.acceptedFallback'),
           variant: 'success',
         });
 
@@ -452,8 +458,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         console.error('Failed to accept offer:', error);
         // Show error toast
         showToast({
-          title: 'Failed to Accept Offer',
-          description: 'An error occurred while accepting the offer',
+          title: t('system:offers.acceptFailed'),
+          description: t('system:offers.acceptFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -479,10 +485,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Rejected',
+          title: t('system:offers.rejected'),
           description: offer
-            ? `You rejected ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been rejected',
+            ? t('system:offers.rejectedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.rejectedFallback'),
           variant: 'success',
         });
 
@@ -493,8 +502,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         void refresh();
         // Show error toast
         showToast({
-          title: 'Failed to Reject Offer',
-          description: 'An error occurred while rejecting the offer',
+          title: t('system:offers.rejectFailed'),
+          description: t('system:offers.rejectFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -516,10 +525,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Unaccepted',
+          title: t('system:offers.unaccepted'),
           description: offer
-            ? `You unaccepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been unaccepted',
+            ? t('system:offers.unacceptedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.unacceptedFallback'),
           variant: 'success',
         });
 
@@ -528,8 +540,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         console.error('Failed to unaccept offer:', error);
         // Show error toast
         showToast({
-          title: 'Failed to Unaccept Offer',
-          description: 'An error occurred while unaccepting the offer',
+          title: t('system:offers.unacceptFailed'),
+          description: t('system:offers.unacceptFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -554,10 +566,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
       // Show success toast
       showToast({
-        title: 'Offer Hidden',
+        title: t('system:offers.hidden'),
         description: offer
-          ? `Your offer on ${offer.itemName || 'item'} has been hidden. It will be removed after 7 days.`
-          : 'Offer has been hidden',
+          ? t('system:offers.hiddenDescription', { item: offer.itemName || t('system:offers.item') })
+          : t('system:offers.hiddenFallback'),
         variant: 'success',
       });
     },
@@ -580,8 +592,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
       // Show success toast
       showToast({
-        title: 'Offer Restored',
-        description: offer ? `Your offer on ${offer.itemName || 'item'} has been restored` : 'Offer has been restored',
+        title: t('system:offers.restored'),
+        description: offer
+          ? t('system:offers.restoredDescription', { item: offer.itemName || t('system:offers.item') })
+          : t('system:offers.restoredFallback'),
         variant: 'success',
       });
     },

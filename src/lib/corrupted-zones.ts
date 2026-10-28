@@ -7,6 +7,7 @@
  * the group. Same algorithm and group order as https://pd2.tools/tools/corrupted-zone-tracker and
  * https://exiledagain.github.io/past-dinosaurs/ (checked against both on 2026-10-25).
  */
+import { t } from '@/i18n';
 
 export const CORRUPTED_ZONE_SLOT_MS = 15 * 60_000;
 const DAY_MS = 86_400_000;
@@ -110,5 +111,7 @@ export function formatCountdown(ms: number): string {
 /** Rounded-up wait for the schedule list: `5m`, `1h 20m`, `26h 5m`. */
 export function formatWait(ms: number): string {
   const minutes = Math.max(0, Math.ceil(ms / 60_000));
-  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return minutes < 60
+    ? t('system:corruptedZones.waitMinutes', { minutes })
+    : t('system:corruptedZones.waitHours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
 }

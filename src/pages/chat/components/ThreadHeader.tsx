@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
@@ -83,6 +84,7 @@ export function ThreadHeader({
   onDeleteConversation?: () => void;
   onForgetWhispers?: () => void;
 }) {
+  const { t } = useTranslation('chat');
   const { openPanel } = useOverlay();
   const username = participant?.username;
   return (
@@ -91,8 +93,8 @@ export function ThreadHeader({
         {onBack && (
           <button
             type="button"
-            aria-label="Back to conversations"
-            title="Back to conversations (Esc)"
+            aria-label={t('header.back')}
+            title={t('header.backHint')}
             onClick={onBack}
             className={cn(iconButtonClass, '-ml-1')}
           >
@@ -102,7 +104,7 @@ export function ThreadHeader({
         <button
           type="button"
           tabIndex={-1}
-          aria-label={`Trader details for ${name}`}
+          aria-label={t('bubble.traderDetails', { name })}
           onClick={traderOpen ? undefined : onToggleTrader}
           className="shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
         >
@@ -119,16 +121,18 @@ export function ThreadHeader({
             >
               {name}
             </button>
-            {muted && <BellOff role="img"
-              aria-label="Muted"
-              className="size-3 shrink-0 text-muted-foreground" />}
+            {muted && (
+              <BellOff role="img"
+                aria-label={t('thread.muted')}
+                className="size-3 shrink-0 text-muted-foreground" />
+            )}
             {pinned && <Pin role="img"
-              aria-label="Pinned"
+              aria-label={t('thread.pinned')}
               className="size-3 shrink-0 text-primary/80" />}
           </h3>
           <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             {username && (
-              <Tip label="Open their Project Diablo 2 profile"
+              <Tip label={t('header.openProfile')}
                 side="bottom">
                 <button
                   type="button"
@@ -152,7 +156,7 @@ export function ThreadHeader({
             {account && (
               <span
                 className="ml-0.5 flex min-w-0 items-center gap-1 rounded-full border border-border/70 bg-background/50 px-1.5 py-px"
-                title="In-game account"
+                title={t('header.inGameAccount')}
               >
                 <Gamepad2 aria-hidden
                   className="size-3 shrink-0" />
@@ -162,20 +166,20 @@ export function ThreadHeader({
             {inGameOnly && (
               <span
                 className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide"
-                title="Not linked to a website account: replies are copied as in-game whispers"
+                title={t('header.inGameOnlyHint')}
               >
-                in-game only
+                {t('header.inGameOnly')}
               </span>
             )}
           </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        <Tip label={traderOpen ? 'Hide trader details' : 'Show trader details'}
+        <Tip label={traderOpen ? t('header.hideTrader') : t('header.showTrader')}
           side="bottom">
           <button
             type="button"
-            aria-label="Trader details"
+            aria-label={t('header.traderDetails')}
             aria-pressed={traderOpen}
             onClick={onToggleTrader}
             className={cn(
@@ -187,7 +191,7 @@ export function ThreadHeader({
           </button>
         </Tip>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label="Conversation options"
+          <DropdownMenuTrigger aria-label={t('header.options')}
             className={iconButtonClass}>
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
@@ -197,31 +201,31 @@ export function ThreadHeader({
             <DropdownMenuItem onSelect={onTogglePin}
               className="cursor-pointer">
               {pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
-              {pinned ? 'Unpin' : 'Pin'}
+              {pinned ? t('header.unpin') : t('header.pin')}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onToggleMute}
               className="cursor-pointer">
               {muted ? <Bell className="size-4" /> : <BellOff className="size-4" />}
-              {muted ? 'Unmute' : 'Mute'}
+              {muted ? t('header.unmute') : t('header.mute')}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onToggleArchive}
               className="cursor-pointer">
               {archived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-              {archived ? 'Unarchive' : 'Archive'}
+              {archived ? t('header.unarchive') : t('header.archive')}
             </DropdownMenuItem>
             {(username || characterName) && <DropdownMenuSeparator />}
             {username && (
               <DropdownMenuItem onSelect={() => openUrl(profileUrl(username))}
                 className="cursor-pointer">
                 <UserRound className="size-4" />
-                View Profile
+                {t('header.viewProfile')}
               </DropdownMenuItem>
             )}
             {characterName && (
               <DropdownMenuItem onSelect={() => openUrl(characterUrl(characterName))}
                 className="cursor-pointer">
                 <Swords className="size-4" />
-                View Character
+                {t('header.viewCharacter')}
               </DropdownMenuItem>
             )}
             {characterName && (
@@ -230,7 +234,7 @@ export function ThreadHeader({
                 className="cursor-pointer"
               >
                 <Shield className="size-4" />
-                View Build
+                {t('header.viewBuild')}
               </DropdownMenuItem>
             )}
             {(onForgetWhispers || onDeleteConversation) && <DropdownMenuSeparator />}
@@ -239,7 +243,7 @@ export function ThreadHeader({
                 onSelect={onForgetWhispers}
                 className="cursor-pointer">
                 <Eraser className="size-4" />
-                Delete Whisper History
+                {t('header.deleteWhispers')}
               </DropdownMenuItem>
             )}
             {onDeleteConversation && (
@@ -247,7 +251,7 @@ export function ThreadHeader({
                 onSelect={onDeleteConversation}
                 className="cursor-pointer">
                 <Trash2 className="size-4" />
-                Delete Conversation
+                {t('header.deleteConversation')}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

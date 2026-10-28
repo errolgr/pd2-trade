@@ -46,14 +46,6 @@ async function flush() {
   }
 }
 
-/** Native code (window/focus events) writes to the same debug.log only while the setting is on. */
-function setNativeLogging(enabled: boolean) {
-  if (!isTauri()) return;
-  invoke('set_debug_logging', { enabled }).catch((err) =>
-    originalConsole.error('[debug-logger] Failed to toggle native logging:', err),
-  );
-}
-
 export function startDebugLogging() {
   if (active) return;
   active = true;
@@ -74,7 +66,6 @@ export function startDebugLogging() {
   };
 
   flushTimer = setInterval(flush, FLUSH_INTERVAL);
-  setNativeLogging(true);
   originalConsole.log('[debug-logger] Debug logging started');
 }
 
@@ -104,7 +95,6 @@ export function stopDebugLogging() {
   console.error = originalConsole.error;
 
   flush();
-  setNativeLogging(false);
 
   if (flushTimer) {
     clearInterval(flushTimer);

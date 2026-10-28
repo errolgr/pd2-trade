@@ -11,6 +11,8 @@ import { offerStatus, ThreadDeals } from './ThreadDeals';
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), showToast: vi.fn() }));
+const delist = vi.hoisted(() => ({ delistTrade: vi.fn(async (_trade: unknown) => {}) }));
+vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => delist }));
 
 const offer = (over: Partial<TradeOffer>): TradeOffer => ({
   id: 'o1',
@@ -286,7 +288,45 @@ describe('ThreadDeals trade whispers', () => {
   it('only offers Dismiss on a trade whisper you sent', () => {
     renderDeals({ whisperTrades: [{ person, trade: trade({ isIncoming: false }) }], listingIds: [] });
     expect(rows()[0].textContent).toMatch(/^your in-game offer · /);
-    expect(screen.queryByRole('button', { name: /Accept|Reject|Sold/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Accept|Reject|Sold|More actions/ })).toBeNull();
     expect(button(/Dismiss/)).not.toBeNull();
+  });
+
+  /** Opens the row's ⋯ menu and picks `item`. */
+  async function pickMore(item: RegExp) {
+    await act(async () => {
+      fireEvent.pointerDown(button('More actions for Shako'), { button: 0, ctrlKey: false, pointerType: 'mouse' });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: item }));
+    });
+  }
+
+  it("deletes the whispered item's listing from the ⋯ menu, as website offers do", async () => {
+    const t = trade();
+    renderDeals({ whisperTrades: [{ person, trade: t }], listingIds: [] });
+    expect(screen.queryByRole('button', { name: /Delete listing/ })).toBeNull();
+    await pickMore(/^Delete listing/);
+    expect(delist.delistTrade).toHaveBeenCalledWith(t);
+    expect(onWhisper).not.toHaveBeenCalled();
+  });
+
+  it('"Sold & delete listing" copies the sold whisper and delists the item', async () => {
+    const t = trade();
+    renderDeals({ whisperTrades: [{ person, trade: t }], listingIds: [] });
+    await pickMore(/Sold & delete listing/);
+    expect(onWhisper).toHaveBeenCalledWith(person, 'Shako is sold.');
+    expect(delist.delistTrade).toHaveBeenCalledWith(t);
+    expect(onDismissTrade).not.toHaveBeenCalled();
+  });
+
+  it('keeps the row busy while the listing is looked up', async () => {
+    const lookup = Promise.withResolvers<void>();
+    delist.delistTrade.mockImplementationOnce(() => lookup.promise);
+    renderDeals({ whisperTrades: [{ person, trade: trade() }], listingIds: [] });
+    await pickMore(/^Delete listing/);
+    expect(button(/Dismiss/)).toHaveProperty('disabled', true);
+    await act(async () => lookup.resolve());
+    expect(button(/Dismiss/)).toHaveProperty('disabled', false);
   });
 });

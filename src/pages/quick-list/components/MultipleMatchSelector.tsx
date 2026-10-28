@@ -7,6 +7,7 @@ import ItemStatsDisplay from './ItemStatsDisplay';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 import { fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { countChip, itemCard, sectionLabel } from './styles';
 
@@ -27,6 +28,7 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
   onExpandAll,
   onCollapseAll,
 }) => {
+  const { t } = useTranslation('quickList');
   const anyExpanded = expandedItems.size > 0;
 
   return (
@@ -42,18 +44,18 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
           <AlertCircle className="size-4" />
         </span>
         <div className="flex-1">
-          <div className="text-sm font-semibold text-foreground">Multiple items found</div>
-          <div className="text-xs text-muted-foreground">Please select which item you want to list:</div>
+          <div className="text-sm font-semibold text-foreground">{t('selection.multipleTitle')}</div>
+          <div className="text-xs text-muted-foreground">{t('selection.multiplePrompt')}</div>
         </div>
       </motion.div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className={sectionLabel}>Select Item</span>
+          <span className={sectionLabel}>{t('selection.selectItem')}</span>
           <span className={countChip}
             aria-hidden>
             {matchingItems.length}
           </span>
-          <span className="sr-only">({matchingItems.length} found)</span>
+          <span className="sr-only">{t('selection.foundCount', { count: matchingItems.length })}</span>
         </div>
         <button
           type="button"
@@ -61,14 +63,16 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
           className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           {anyExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
-          {anyExpanded ? 'Show Less' : 'Show All Stats'}
+          {anyExpanded ? t('selection.showLess') : t('selection.showAllStats')}
         </button>
       </div>
       <ScrollArea className="pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
-        <motion.div className="flex max-h-[20rem] flex-col gap-2 p-px"
+        <motion.div
+          className="flex max-h-[20rem] flex-col gap-2 p-px"
           variants={listStagger}
           initial="hidden"
-          animate="visible">
+          animate="visible"
+        >
           {matchingItems.map((stashItem, index) => (
             <motion.div
               variants={listItem}
@@ -77,8 +81,10 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
               onClick={() => onItemSelect(stashItem)}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className={cn('truncate', qualityColor(stashItem.quality.name))}
-                  style={{ fontFamily: 'DiabloFont' }}>
+                <div
+                  className={cn('truncate', qualityColor(stashItem.quality.name))}
+                  style={{ fontFamily: 'DiabloFont' }}
+                >
                   {stashItem.name}
                 </div>
                 <Button
@@ -91,7 +97,7 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
                     onItemSelect(stashItem);
                   }}
                 >
-                  Select
+                  {t('selection.select')}
                 </Button>
               </div>
               <ItemStatsDisplay

@@ -3,6 +3,7 @@ import { Column } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
@@ -14,19 +15,25 @@ export function DataTableColumnHeader<TData, TValue>({
   title,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  const { t } = useTranslation('currency');
   const alignRight = column.columnDef.meta?.align === 'right';
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }
 
   const sorted = column.getIsSorted();
-  const nextLabel = sorted === 'desc' ? 'clear sorting' : sorted === 'asc' ? 'sort descending' : 'sort ascending';
+  const nextLabel =
+    sorted === 'desc'
+      ? t('table.clearSorting')
+      : sorted === 'asc'
+        ? t('table.sortDescending')
+        : t('table.sortAscending');
 
   return (
     <div className={cn('flex items-center', alignRight && 'justify-end', className)}>
       <button
         type="button"
-        aria-label={`${title}: ${nextLabel}`}
+        aria-label={t('table.sortLabel', { title, action: nextLabel })}
         className={cn(
           'group/sort inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium uppercase tracking-wide outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-[0.97]',
           alignRight ? '-mr-2 flex-row-reverse' : '-ml-2',

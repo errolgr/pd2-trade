@@ -1,39 +1,55 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { useOptions } from '@/hooks/useOptions';
+import {
+  buildGetAllUserMarketListingsQuery,
+  buildGetMarketListingByStashItemQuery,
+} from '@/pages/price-check/lib/tradeUrlBuilder';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { showToast, useOverlay } from '@/overlay';
+import { itemDisplayName } from '@/pages/market/lib/listing';
+import { confirmToast, showToast, useOverlay } from '@/overlay';
+import { t } from '@/i18n';
+import { matchTradeListings, whisperedItemName, type WhisperedItem } from './trade-match';
 
 const AUTH_WAIT_TIMEOUT = 5000;
 const AUTH_POLL_INTERVAL = 200;
+/** The user's listings searched for a whispered item (the Manage tab's search fetches as many). */
+const TRADE_LISTINGS_LIMIT = 1000;
 
 type DelistFn = (raw: string) => Promise<void>;
+type DelistTradeFn = (trade: WhisperedItem) => Promise<void>;
 
-/** The mounted DelistHandler's implementation (it needs the Pd2Website/overlay contexts). */
-let activeDelist: DelistFn | null = null;
+/** The mounted DelistHandler's implementations (they need the Pd2Website/overlay contexts). */
+let activeDelist: { item: DelistFn; trade: DelistTradeFn } | null = null;
 
 export interface DelistApi {
   /** Delist the raw clipboard item: deletes a single matching listing, or opens the picker for several. */
   delistItem(raw: string): Promise<void>;
+  /**
+   * Delist the item of an in-game trade whisper (it names the item, maybe its price): asks to confirm a single
+   * matching listing, opens the picker for several, says so when none match. Resolves once that is shown.
+   */
+  delistTrade(trade: WhisperedItem): Promise<void>;
+}
+
+function notMounted(): Promise<void> {
+  console.warn('[DelistHandler] delist called while DelistHandler is not mounted');
+  return Promise.resolve();
 }
 
 const delistApi: DelistApi = {
-  delistItem: (raw) => {
-    if (!activeDelist) {
-      console.warn('[DelistHandler] delistItem called while DelistHandler is not mounted');
-      return Promise.resolve();
-    }
-    return activeDelist(raw);
-  },
+  delistItem: (raw) => (activeDelist ? activeDelist.item(raw) : notMounted()),
+  delistTrade: (trade) => (activeDelist ? activeDelist.trade(trade) : notMounted()),
 };
 
-/** Stable delist API; works anywhere (AppController is a sibling of DelistHandler, not a child). */
+/** Stable delist API; works anywhere (AppController and chat are not children of DelistHandler). */
 export function useDelist(): DelistApi {
   return delistApi;
 }
 
 const DelistHandler: React.FC = () => {
   const { findMatchingItems, getMarketListings, deleteMarketListing, authData } = usePd2Website();
+  const { settings } = useOptions();
   const { openPanel } = useOverlay();
   const isDelistingRef = useRef(false);
   const authDataRef = useRef(authData);
@@ -67,8 +83,8 @@ const DelistHandler: React.FC = () => {
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
       showToast({
-        title: 'Delist',
-        description: 'You must be logged in to delist items.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.mustLogIn'),
         variant: 'error',
       });
       return;
@@ -81,8 +97,8 @@ const DelistHandler: React.FC = () => {
 
       if (matchingStashItems.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'Item not found in stash.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.notInStash'),
           variant: 'error',
         });
         return;
@@ -91,8 +107,8 @@ const DelistHandler: React.FC = () => {
       const query = buildGetMarketListingByStashItemQuery(matchingStashItems, authDataRef.current.user._id);
       if (!query) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings match this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noMatchingListings'),
           variant: 'info',
         });
         return;
@@ -103,15 +119,15 @@ const DelistHandler: React.FC = () => {
 
       if (listings.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings found for this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noListingsFound'),
           variant: 'info',
         });
       } else if (listings.length === 1) {
         await deleteMarketListing(listings[0]._id);
         showToast({
-          title: 'Delist',
-          description: `Removed ${listings[0].item.name} listing.`,
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.removed', { name: listings[0].item.name }),
         });
       } else {
         // Multiple matches: let the user pick (replaces the list if the picker is already open)
@@ -119,13 +135,93 @@ const DelistHandler: React.FC = () => {
       }
     } catch (err) {
       if (err instanceof NoAccountSelectedError) {
-        showToast({ title: 'Delist', description: err.message, variant: 'error' });
+        showToast({ title: t('quickList:delist.title'), description: err.message, variant: 'error' });
         return;
       }
       console.error('[DelistHandler] Error:', err);
       showToast({
-        title: 'Delist',
-        description: 'Failed to delist item.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.failed'),
+        variant: 'error',
+      });
+    } finally {
+      isDelistingRef.current = false;
+    }
+  };
+
+  const handleDelistTradeRef = useRef<DelistTradeFn>();
+
+  handleDelistTradeRef.current = async (trade: WhisperedItem) => {
+    if (isDelistingRef.current) return;
+
+    const hasAuth = await waitForAuth();
+    if (!hasAuth) {
+      showToast({
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.mustLogIn'),
+        variant: 'error',
+      });
+      return;
+    }
+
+    isDelistingRef.current = true;
+    try {
+      // The whisper only names the item: search the user's listings in the current realm (as the Manage tab)
+      const result = await getMarketListings(
+        buildGetAllUserMarketListingsQuery(
+          authDataRef.current.user._id,
+          settings?.mode === 'hardcore',
+          settings?.ladder === 'ladder',
+          TRADE_LISTINGS_LIMIT,
+          0,
+        ),
+      );
+      const listings = matchTradeListings(result.data, trade);
+
+      if (listings.length === 0) {
+        const name = whisperedItemName(trade);
+        showToast({
+          title: t('quickList:delist.title'),
+          description: name ? t('quickList:delist.tradeNoMatch', { name }) : t('quickList:delist.tradeNoItem'),
+          variant: 'info',
+        });
+      } else if (listings.length === 1) {
+        const [listing] = listings;
+        const name = itemDisplayName(listing.item);
+        const price =
+          listing.hr_price > 0 ? t('quickList:delist.hrPrice', { price: listing.hr_price }) : listing.price?.trim();
+        // Matched by name only: confirm, as the chat's website-offer "Delete listing" does
+        confirmToast({
+          title: t('chat:deals.deleteListingTitle'),
+          description: price
+            ? t('quickList:delist.confirmDeleteWithPrice', { name, price })
+            : t('chat:deals.deleteListingConfirm', { item: name }),
+          confirmLabel: t('common:actions.delete'),
+          variant: 'warning',
+          duration: 10000,
+          onConfirm: async () => {
+            try {
+              await deleteMarketListing(listing._id);
+              showToast({ title: t('quickList:delist.title'), description: t('quickList:delist.removed', { name }) });
+            } catch (err) {
+              console.error('[DelistHandler] Delete failed:', err);
+              showToast({
+                title: t('quickList:delist.title'),
+                description: t('quickList:delist.removeFailed'),
+                variant: 'error',
+              });
+            }
+          },
+        });
+      } else {
+        // Several (charms, jewels, runes, rares): the user picks, as for Ctrl+U
+        openPanel('delist', { listings });
+      }
+    } catch (err) {
+      console.error('[DelistHandler] Error:', err);
+      showToast({
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.lookupFailed'),
         variant: 'error',
       });
     } finally {
@@ -134,7 +230,10 @@ const DelistHandler: React.FC = () => {
   };
 
   useEffect(() => {
-    const impl: DelistFn = (raw) => handleDelistRef.current!(raw);
+    const impl = {
+      item: (raw: string) => handleDelistRef.current!(raw),
+      trade: (trade: WhisperedItem) => handleDelistTradeRef.current!(trade),
+    };
     activeDelist = impl;
     return () => {
       if (activeDelist === impl) activeDelist = null;

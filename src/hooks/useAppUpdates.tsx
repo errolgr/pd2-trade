@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { useEffect, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { useUpdater } from './useUpdater';
@@ -119,10 +120,10 @@ export const useAppUpdates = () => {
             const updateToastPayload: CustomToastPayload = isManualUpdateRequired()
               ? manualUpdateToast(update.version)
               : {
-                  title: 'PD2 Trader - Update Available',
-                  description: `Version ${update.version} is available. Click to download and restart.`,
+                  title: t('system:updates.availableTitle'),
+                  description: t('system:updates.availableDescription', { version: update.version }),
                   action: {
-                    label: 'Download & Restart',
+                    label: t('system:updates.downloadAndRestart'),
                     type: ToastActionType.UPDATE_AVAILABLE,
                     data: {
                       version: update.version,

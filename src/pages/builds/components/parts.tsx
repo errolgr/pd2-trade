@@ -16,6 +16,7 @@ import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
 import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, qualityText, skillIconUrl } from '../lib/format';
 import { itemArtCandidates } from '../lib/item-art';
+import { Trans, useTranslation } from '@/i18n';
 
 /** In-game class portrait (46×41 art); `size` is the height. Unknown classes get a lettered tile. */
 export function ClassEmblem({ className, size = 32 }: { className: string; size?: number }) {
@@ -136,18 +137,19 @@ export function PriceChip({
   unpriced?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation('builds');
   if (hr == null) {
     return unpriced ? (
       <span className={cn('text-[11px] text-muted-foreground', className)}
-        title="No reliable market price">
-        n/a
+        title={t('price.noReliablePrice')}>
+        {t('price.na')}
       </span>
     ) : null;
   }
   return (
     <span
       className={cn('shrink-0 text-[11px] font-medium whitespace-nowrap text-q-gold tabular-nums', className)}
-      title={`${hr} HR at current market prices`}
+      title={t('price.hrTitle', { hr })}
     >
       {fmtHr(hr)} <span className="text-[10px] opacity-75">HR</span>
     </span>
@@ -176,6 +178,7 @@ type TooltipItem = Pick<
 
 /** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
 export function ItemTooltipCard({ item }: { item: TooltipItem }) {
+  const { t } = useTranslation('builds');
   const nameClass = qualityText(item.quality, item.runeword);
   const flagCorrupted = item.corrupted && !item.mods.some((m) => /^corrupted$/i.test(m));
   return (
@@ -224,10 +227,15 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
         <div className="mt-2 border-t border-border/60 pt-1.5 text-[11px]">
           {item.priceHr != null ? (
             <span className="text-muted-foreground">
-              Market value <span className="font-semibold text-q-gold tabular-nums">{fmtHr(item.priceHr)} HR</span>
+              <Trans
+                t={t}
+                i18nKey="price.marketValue"
+                values={{ value: fmtHr(item.priceHr) }}
+                components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
+              />
             </span>
           ) : (
-            <span className="text-muted-foreground">No reliable market price</span>
+            <span className="text-muted-foreground">{t('price.noReliablePrice')}</span>
           )}
         </div>
       )}
@@ -245,6 +253,7 @@ export function SearchMarketButton({
   label?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation('builds');
   const { searchMarket, mode } = useBuildsActions();
   if (!marketFiltersFor(item, mode)) return null;
   return (
@@ -252,8 +261,8 @@ export function SearchMarketButton({
       type="button"
       variant="ghost"
       size="sm"
-      aria-label={`Search market for ${item.name}`}
-      title={`Search market for ${item.name}`}
+      aria-label={t('itemActions.searchMarketFor', { name: item.name })}
+      title={t('itemActions.searchMarketFor', { name: item.name })}
       onClick={(e) => {
         e.stopPropagation();
         searchMarket(item);
@@ -265,7 +274,7 @@ export function SearchMarketButton({
       )}
     >
       <Store className="size-3.5" />
-      {label && 'Search market'}
+      {label && t('itemActions.searchMarket')}
     </Button>
   );
 }
@@ -281,6 +290,7 @@ export function ItemActionsMenu({
   /** The trigger (a button); default a small "…" button. */
   children?: React.ReactElement;
 }) {
+  const { t } = useTranslation('builds');
   const { searchMarket, filterMetaByItem, mode } = useBuildsActions();
   return (
     <DropdownMenu modal={false}>
@@ -288,7 +298,7 @@ export function ItemActionsMenu({
         {children ?? (
           <button
             type="button"
-            aria-label={`Actions for ${item.name}`}
+            aria-label={t('itemActions.actionsFor', { name: item.name })}
             className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <MoreHorizontal className="size-3.5" />
@@ -299,10 +309,10 @@ export function ItemActionsMenu({
         className="min-w-48">
         <DropdownMenuItem disabled={!marketFiltersFor(item, mode)}
           onSelect={() => searchMarket(item)}>
-          <Store /> Search market
+          <Store /> {t('itemActions.searchMarket')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => filterMetaByItem({ key: item.key, name: item.name }, merc)}>
-          <Filter /> Filter Meta by this item
+          <Filter /> {t('itemActions.filterMeta')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -312,7 +322,7 @@ export function ItemActionsMenu({
 /** A failed request: what went wrong and Retry (429: wait a moment). */
 export function QueryError({
   query,
-  title = "Couldn't load builds",
+  title,
   className,
   compact = false,
 }: {
@@ -321,12 +331,9 @@ export function QueryError({
   className?: string;
   compact?: boolean;
 }) {
+  const { t } = useTranslation(['builds', 'common']);
   const message =
-    query.status === 429
-      ? 'Too many requests. Wait a moment, then retry.'
-      : query.status === 0
-        ? "Couldn't reach pd2trader.com. Check your connection."
-        : query.error;
+    query.status === 429 ? t('error.tooManyRequests') : query.status === 0 ? t('error.unreachable') : query.error;
   return (
     <div
       role="alert"
@@ -338,7 +345,7 @@ export function QueryError({
     >
       <AlertTriangle className="size-4 shrink-0 text-destructive" />
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">{title}</p>
+        <p className="font-medium text-foreground">{title ?? t('error.loadBuilds')}</p>
         {message && <p className="text-xs text-muted-foreground">{message}</p>}
       </div>
       <Button size="sm"
@@ -346,7 +353,7 @@ export function QueryError({
         className="h-7 shrink-0 gap-1.5 px-2.5 text-xs"
         onClick={query.retry}>
         <RefreshCw className={cn('size-3.5', query.loading && 'animate-spin')} />
-        Retry
+        {t('common:actions.retry')}
       </Button>
     </div>
   );

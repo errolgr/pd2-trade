@@ -36,6 +36,11 @@ export interface MarketSearchPage {
    * bound) or, with a Seller online filter, estimated it from the listings it read. Older services omit it: exact.
    */
   totalExact: boolean;
+  /**
+   * Rows the service sent for this page. `items` leaves out rows without a listing item, so page on this,
+   * never on `items.length`.
+   */
+  fetched: number;
 }
 
 /**
@@ -110,7 +115,8 @@ function parsePage(body: unknown): MarketSearchPage {
   for (const row of body.items as unknown[]) {
     if (!row || typeof row !== 'object' || !('listing' in row)) continue;
     const listing = row.listing as MarketListingEntry;
-    if (!listing?._id) continue;
+    // A row without an item has no card to show (art, mods, prices all read it)
+    if (!listing?._id || !listing.item) continue;
     const pseudo =
       'pseudo' in row && row.pseudo && typeof row.pseudo === 'object' ? (row.pseudo as Record<string, number>) : {};
     items.push({
@@ -120,7 +126,7 @@ function parsePage(body: unknown): MarketSearchPage {
       value: 'value' in row ? finiteOrNull(row.value) : null,
     });
   }
-  return { items, total: total ?? items.length, totalExact };
+  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {

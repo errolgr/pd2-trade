@@ -5,8 +5,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { isAccepted, type ListingOffers } from '../lib/listing-offers';
+import { useTranslation } from '@/i18n';
 
 function OfferLines({ title, offers, showPlayer }: { title: string; offers: TradeOffer[]; showPlayer: boolean }) {
+  const { t } = useTranslation('market');
   return (
     <div className="space-y-0.5">
       <div className="font-semibold">{title}</div>
@@ -14,9 +16,9 @@ function OfferLines({ title, offers, showPlayer }: { title: string; offers: Trad
         <div key={o.id}
           className="flex gap-1.5">
           {showPlayer && <span className="font-medium">{o.playerName}</span>}
-          <span className="max-w-56 truncate">{o.price || 'No offer text'}</span>
+          <span className="max-w-56 truncate">{o.price || t('offerBadge.noText')}</span>
           <span className="text-muted-foreground">{moment(o.timestamp).fromNow()}</span>
-          {isAccepted(o) && <span className="text-success">accepted</span>}
+          {isAccepted(o) && <span className="text-success">{t('offerBadge.acceptedLower')}</span>}
         </div>
       ))}
     </div>
@@ -29,17 +31,18 @@ function OfferLines({ title, offers, showPlayer }: { title: string; offers: Trad
  * Host mounts a TooltipProvider.
  */
 export function OfferBadge({ offers, compact = false }: { offers: ListingOffers | undefined; compact?: boolean }) {
+  const { t } = useTranslation('market');
   if (!offers || (offers.mine.length === 0 && offers.received.length === 0)) return null;
   const { mine, received } = offers;
   const accepted = mine.some(isAccepted) || received.some(isAccepted);
   const latest = mine[0]?.price;
   const text = accepted
-    ? 'Offer accepted'
+    ? t('offerBadge.accepted')
     : mine.length > 0
       ? compact || !latest
-        ? 'Offered'
-        : `Offered ${latest}`
-      : `${received.length} offer${received.length === 1 ? '' : 's'}`;
+        ? t('offerBadge.offered')
+        : t('offerBadge.offeredPrice', { price: latest })
+      : t('offerBadge.received', { count: received.length });
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -57,10 +60,10 @@ export function OfferBadge({ offers, compact = false }: { offers: ListingOffers 
       </TooltipTrigger>
       <TooltipContent side="top">
         <div className="space-y-1.5">
-          {mine.length > 0 && <OfferLines title="Your offers"
+          {mine.length > 0 && <OfferLines title={t('offerBadge.yours')}
             offers={mine}
             showPlayer={false} />}
-          {received.length > 0 && <OfferLines title="Offers on your listing"
+          {received.length > 0 && <OfferLines title={t('offerBadge.onYourListing')}
             offers={received}
             showPlayer />}
         </div>

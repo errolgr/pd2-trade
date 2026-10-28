@@ -103,7 +103,6 @@ export async function showOverFullscreenGame(): Promise<void> {
   }
   // canClaim again: a claim (e.g. a text field the panel focused) may have landed meanwhile
   if (!game.inGame || !game.fullscreen || !canClaim()) return;
-  console.log('[overlay] Diablo II fills its monitor: the overlay takes the foreground so the panel shows');
   await claim(game);
 }
 

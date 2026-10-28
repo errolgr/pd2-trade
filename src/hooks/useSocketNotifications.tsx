@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { useEffect, useRef } from 'react';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
@@ -34,10 +35,21 @@ interface ChatMessagePush {
   sender?: { _id?: string; display_name?: string; username?: string };
 }
 
+// Linux WebKitGTK only loads media from blob:, data:, file: and http(s): URLs, so an <audio> pointed at the bundled
+// tauri://localhost/assets/… file fails with NotSupportedError. A blob: URL of the same bytes plays in every webview;
+// it is made at startup, long before the first notification, and the asset URL stays the fallback.
+let whisperSoundSrc: string = poeWhisperSound;
+void fetch(poeWhisperSound)
+  .then((response) => response.blob())
+  .then((blob) => {
+    whisperSoundSrc = URL.createObjectURL(blob);
+  })
+  .catch(() => {});
+
 /** Plays the whisper notification sound at `volume` (0-100); also the market alert sound. */
 export function playNotificationSound(volume: number = 70) {
   try {
-    const audio = new Audio(poeWhisperSound);
+    const audio = new Audio(whisperSoundSrc);
     audio.volume = volume / 100; // Convert 0-100 to 0-1
     audio.play().catch((error) => {
       console.error('Failed to play notification sound:', error);
@@ -93,7 +105,9 @@ export const useSocketNotifications = ({
 
       const { listingId } = notification;
       const accepted = notification.type === 'offer_accepted';
-      const offerMessage = notification.text || (accepted ? 'Your offer was accepted' : 'New offer received');
+      const offerMessage =
+        notification.text ||
+        (accepted ? t('system:notifications.offerAcceptedText') : t('system:notifications.newOfferText'));
 
       // Play notification sound if trade notifications are enabled
       const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
@@ -105,10 +119,14 @@ export const useSocketNotifications = ({
       // Show toast notification with link to listing
       if (isToastEnabled(settings, 'offers')) {
         showToast({
-          title: accepted ? 'Offer Accepted' : 'New Offer',
+          title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
           action: listingId
-            ? { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId } }
+            ? {
+                label: t('system:notifications.viewListing'),
+                type: ToastActionType.OPEN_MARKET_LISTING,
+                data: { listingId },
+              }
             : undefined,
         });
       }
@@ -142,7 +160,7 @@ export const useSocketNotifications = ({
         const threadId = whisperThreadId(personKey(whisper.from));
         if (isThreadMuted([threadId])) return;
         const reply = {
-          label: 'Reply',
+          label: t('system:notifications.reply'),
           type: ToastActionType.OPEN_CHAT_CONVERSATION,
           data: { threadId },
         };
@@ -158,8 +176,8 @@ export const useSocketNotifications = ({
 
             if (isToastEnabled(settings, 'joins')) {
               const toastPayload: GenericToastPayload = {
-                title: 'Player Joined',
-                description: `${whisper.from} joined the game`,
+                title: t('system:notifications.playerJoined'),
+                description: t('system:notifications.playerJoinedDescription', { player: whisper.from }),
                 duration: 5000,
                 variant: 'default',
               };
@@ -218,7 +236,7 @@ export const useSocketNotifications = ({
             // Show toast with item name only if Diablo is not focused
             if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
               showToast({
-                title: 'Trade Whisper',
+                title: t('system:notifications.tradeWhisper'),
                 description: `${whisper.from}: ${whisper.itemName}`,
                 duration: 5000,
                 action: reply,
@@ -238,7 +256,7 @@ export const useSocketNotifications = ({
           // Show toast when tabbed out of Diablo
           if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
             showToast({
-              title: `Whisper from ${whisper.from}`,
+              title: t('system:notifications.whisperFrom', { player: whisper.from }),
               description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
               duration: 5000,
               action: reply,
@@ -284,10 +302,10 @@ export const useSocketNotifications = ({
 
       // Toasts can't take typing: Reply opens the conversation with the composer focused
       showToast({
-        title: 'New Chat Message',
+        title: t('system:notifications.newChatMessage'),
         description: messagePreview,
         action: {
-          label: 'Reply',
+          label: t('system:notifications.reply'),
           type: ToastActionType.OPEN_CHAT_CONVERSATION,
           data: { conversationId: msg.conversation_id },
         },

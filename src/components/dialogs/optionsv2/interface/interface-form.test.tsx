@@ -27,6 +27,8 @@ const transparency = () => screen.getAllByRole('slider')[0];
 const TIMER_DEFAULTS = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerLocked: false,
+  corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerOpacity: 90,
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
@@ -61,6 +63,7 @@ describe('InterfaceForm', () => {
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledWith({
+      language: 'system',
       chatButtonOverlayEnabled: false,
       windowTransparency: 0,
       ...TIMER_DEFAULTS,
@@ -87,10 +90,35 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).not.toHaveBeenCalled();
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
+      language: 'system',
       chatButtonOverlayEnabled: true,
       windowTransparency: 90,
       ...TIMER_DEFAULTS,
     });
+  });
+
+  it('offers System default and each language in its own name', () => {
+    renderForm({});
+    const language = screen.getByLabelText('Language') as HTMLSelectElement;
+    expect(language.value).toBe('system');
+    expect([...language.options].slice(1).map((option) => option.textContent)).toEqual([
+      'System default',
+      'English',
+      'Deutsch',
+      'Français',
+      'Русский',
+      'Español',
+      'Português (Brasil)',
+      'Polski',
+      '简体中文',
+    ]);
+  });
+
+  it('saves the picked language', async () => {
+    renderForm({});
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'de' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ language: 'de' }));
   });
 
   it('starts the corrupted zone timer off, top right', () => {
@@ -106,6 +134,7 @@ describe('InterfaceForm', () => {
     fireEvent.change(timerPosition(), { target: { value: 'bottom-left' } });
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith({
+      language: 'system',
       chatButtonOverlayEnabled: true,
       windowTransparency: 0,
       ...TIMER_DEFAULTS,
@@ -120,6 +149,17 @@ describe('InterfaceForm', () => {
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ corruptedZoneTimerZones: 'followed' }),
+    );
+  });
+
+  it('saves the timer lock and layout', async () => {
+    renderForm({});
+    expect((screen.getByLabelText('Timer layout') as HTMLSelectElement).value).toBe('horizontal');
+    fireEvent.click(screen.getByRole('switch', { name: 'Lock timer position' }));
+    fireEvent.change(screen.getByLabelText('Timer layout'), { target: { value: 'vertical' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ corruptedZoneTimerLocked: true, corruptedZoneTimerLayout: 'vertical' }),
     );
   });
 

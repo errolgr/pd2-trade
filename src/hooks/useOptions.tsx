@@ -12,6 +12,7 @@ import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templat
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
+import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -93,6 +94,8 @@ export interface ISettings {
   corruptedZoneTimerEnabled?: boolean; // Corrupted zone timer overlay (src/lib/corrupted-zones.ts)
   corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
   corruptedZoneTimerOpacity?: number; // 30-100
+  corruptedZoneTimerLocked?: boolean; // true: dragging the timer does not move it (clicks still open the schedule)
+  corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
@@ -107,6 +110,7 @@ export interface ISettings {
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
+  language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
 }
 
 interface OptionsContextProps {
@@ -163,6 +167,8 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
+  corruptedZoneTimerLocked: false,
+  corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],
@@ -177,6 +183,7 @@ const DEFAULT_SETTINGS: ISettings = {
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
+  language: 'system',
 };
 
 /** The hotkeys besides the market one, as [modifier field, key field]. */
@@ -328,7 +335,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         showToast({
           title: 'PD2 Trader',
-          description: 'Token loaded from URL successfully!',
+          description: t('system:options.tokenLoaded'),
         });
       }
     }
@@ -352,6 +359,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (settings.debugLoggingEnabled) startDebugLogging();
     else stopDebugLogging();
   }, [isLoading, settings.debugLoggingEnabled]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyLanguage(settings.language);
+  }, [isLoading, settings.language]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

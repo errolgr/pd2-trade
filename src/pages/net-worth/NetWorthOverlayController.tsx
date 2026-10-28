@@ -6,6 +6,7 @@ import type { SnapshotResponse, ValuationLine } from '@/lib/networth-api';
 import type { GenericToastPayload } from '@/common/types/Events';
 import { showToast, useOverlay } from '@/overlay';
 import { formatSignedHr } from './overlay';
+import { t } from '@/i18n';
 
 /**
  * Names the holdings that moved the most between two valuations, in the direction of the total change,
@@ -62,8 +63,10 @@ const NetWorthOverlayController: React.FC = () => {
 
     const movers = previous ? describeTopChanges(previous.valuation.lines, latest.valuation.lines, change > 0) : '';
     const payload: GenericToastPayload = {
-      title: 'Net Worth',
-      description: `${formatSignedHr(change)} HR${movers ? ` · ${movers}` : ''}`,
+      title: t('netWorth:toast.title'),
+      description: movers
+        ? t('netWorth:toast.changeWithMovers', { change: formatSignedHr(change), movers })
+        : t('netWorth:toast.change', { change: formatSignedHr(change) }),
       variant: change > 0 ? 'success' : 'warning',
     };
     showToast(payload);

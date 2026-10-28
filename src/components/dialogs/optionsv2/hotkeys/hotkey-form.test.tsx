@@ -38,7 +38,8 @@ function renderForm(settings: Partial<ISettings> = HOTKEYS, isLoading = false) {
 }
 
 const keyInput = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
-const type = (label: string, value: string) => fireEvent.change(keyInput(label), { target: { value } });
+const pressKey = (label: string, key: string, code = /^[a-z]$/i.test(key) ? `Key${key.toUpperCase()}` : key) =>
+  fireEvent.keyDown(keyInput(label), { key, code });
 
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -58,9 +59,9 @@ describe('HotkeyForm', () => {
     expect(keyInput('Delist Item').value).toBe('U');
   });
 
-  it('saves a typed key lower-cased along with the rest of the hotkeys', () => {
+  it('saves a pressed key lower-cased along with the rest of the hotkeys', () => {
     renderForm();
-    type('Price check', 'Q');
+    pressKey('Price check', 'Q');
     expect(store.updateSettings).toHaveBeenCalledTimes(1);
     const saved = store.updateSettings.mock.calls[0][0];
     expect(saved.hotkeyKey).toBe('q');
@@ -79,25 +80,58 @@ describe('HotkeyForm', () => {
     });
   });
 
-  it('lets the snapshot key be cleared to unbind it', () => {
+  it('lets the snapshot key be cleared with Backspace to unbind it', () => {
     renderForm({ ...HOTKEYS, hotkeyKeySnapshot: 'n' });
-    type('Net Worth Snapshot', '');
+    pressKey('Net Worth Snapshot', 'Backspace');
     expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeySnapshot).toBe('');
   });
 
-  it('lets the market key be cleared to unbind it', () => {
+  it('lets the market key be cleared with Delete to unbind it', () => {
     renderForm(HOTKEYS);
-    type('Market', '');
+    pressKey('Market', 'Delete');
     expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeyMarket).toBe('');
+  });
+
+  it('does not clear a hotkey that must stay bound', () => {
+    renderForm();
+    pressKey('Price check', 'Backspace');
+    expect(store.updateSettings).not.toHaveBeenCalled();
+    expect(keyInput('Price check').value).toBe('D');
+  });
+
+  it('records the physical key on a non-Latin layout', () => {
+    renderForm();
+    // Russian layout: the [ key types х
+    pressKey('Open Settings', 'х', 'BracketLeft');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeySettings).toBe('[');
+    expect(keyInput('Open Settings').value).toBe('[');
+  });
+
+  it('records space and shifted keys as the key pressed', () => {
+    renderForm();
+    pressKey('Chat Window', ' ', 'Space');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeyChat).toBe('space');
+    expect(keyInput('Chat Window').value).toBe('Space');
+
+    pressKey('Offers', '+', 'Equal');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeyOffers).toBe('=');
+    expect(keyInput('Offers').value).toBe('=');
+  });
+
+  it('ignores presses that cannot be a hotkey key', () => {
+    renderForm();
+    for (const key of ['Shift', 'Enter', 'Tab', 'Escape', 'F5']) pressKey('Price check', key, key);
+    expect(store.updateSettings).not.toHaveBeenCalled();
+    expect(keyInput('Price check').value).toBe('D');
   });
 
   it('warns on both rows when two actions share a combo, and clears once resolved', () => {
     renderForm();
-    type('Chat Window', 'd');
+    pressKey('Chat Window', 'd');
     const warnings = screen.getAllByRole('status').map((el) => el.textContent);
     expect(warnings).toEqual(['Also used by Chat Window.', 'Also used by Price check.']);
 
-    type('Chat Window', 'k');
+    pressKey('Chat Window', 'k');
     expect(screen.queryAllByRole('status')).toHaveLength(0);
   });
 
@@ -108,23 +142,28 @@ describe('HotkeyForm', () => {
 
   it('warns that Ctrl + C is reserved', () => {
     renderForm();
-    type('Net Worth', 'c');
+    pressKey('Net Worth', 'c');
     expect(screen.getByRole('status').textContent).toContain('Ctrl + C is reserved');
     expect(keyInput('Net Worth').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('shows a key saved by an older version as the key it registers', () => {
+    renderForm({ ...HOTKEYS, hotkeyKeySettings: 'х', hotkeyKeyChat: ' ' });
+    expect(keyInput('Open Settings').value).toBe('[');
+    expect(keyInput('Chat Window').value).toBe('Space');
+    expect(screen.queryAllByRole('status')).toHaveLength(0);
+  });
+
+  it('flags a saved key that cannot be a hotkey', () => {
+    renderForm({ ...HOTKEYS, hotkeyKeyChat: 'é' });
+    expect(screen.getByRole('status').textContent).toContain("É can't be used as a hotkey");
+    expect(keyInput('Chat Window').getAttribute('aria-invalid')).toBe('true');
   });
 
   it('follows external settings changes without echoing them back as a save', () => {
     renderForm();
     act(() => store.replace({ ...HOTKEYS, hotkeyKey: 'p' }));
     expect(keyInput('Price check').value).toBe('P');
-    expect(store.updateSettings).not.toHaveBeenCalled();
-  });
-
-  // BUG: the zod schema is never run — the form auto-saves from `watch` without validating, so a key the
-  // schema rejects ("Must be a letter or number") is persisted and handed to the global-shortcut registrar.
-  it.fails('does not persist a key the schema rejects', () => {
-    renderForm();
-    type('Price check', '!');
     expect(store.updateSettings).not.toHaveBeenCalled();
   });
 });

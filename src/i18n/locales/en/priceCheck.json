@@ -1,0 +1,177 @@
+{
+  "itemPage": {
+    "noItem": "No item data provided or failed to parse.",
+    "noItemHint": "Hover an item in game and press your price check hotkey to try again."
+  },
+  "overlay": {
+    "title": "Price Check",
+    "toolbar": {
+      "netWorth": "Net Worth",
+      "copyImage": "Copy image",
+      "settings": "Settings"
+    },
+    "update": {
+      "updating": "Updating…",
+      "retry": "Retry update",
+      "get": "Get update",
+      "restart": "Restart to update",
+      "failedHint": "Updating to v{{version}} failed. Click to try again.",
+      "manualHint": "Version {{version}} is available. This install can't update itself: click to open the release page, or use your package manager.",
+      "availableHint": "Version {{version}} is available. Downloads, installs and restarts PD2 Trader."
+    },
+    "copyImage": {
+      "copiedTitle": "Image copied",
+      "copiedDescription": "Paste it into Discord or a trade post.",
+      "failedTitle": "Could not copy image"
+    },
+    "header": {
+      "base": "Base: {{type}}",
+      "type": "Type: {{type}}",
+      "toggleSearchMode": "Click to toggle search mode",
+      "cycleQuality": "Click to cycle quality",
+      "defense": "Defense: <value>{{defense}}</value>",
+      "appraisalNote": "Appraisal note: {{note}}"
+    },
+    "price": {
+      "loading": "Loading price data...",
+      "noData": "No price data available",
+      "fetchFailed": "Failed to fetch price data",
+      "median": "Median",
+      "min": "Min",
+      "max": "Max",
+      "samples": "Samples",
+      "change7d": "7d Change",
+      "last30Days": "Last 30 days",
+      "openOnPd2Trader": "Open on pd2trader.com",
+      "viewOnWeb": "View on Web"
+    },
+    "corruptions": {
+      "thisItem": "This Item's Corruption",
+      "top": "Top Corruptions",
+      "showLess": "Show Less",
+      "showMore_one": "Show More ({{count}} more)",
+      "showMore_other": "Show More ({{count}} more)",
+      "loading": "Loading corruption prices...",
+      "searchTitle": "Click to search for items with this corruption",
+      "noPriceData": "No price data",
+      "link": "Link",
+      "socketPrices": "{{name}} - Socket Prices",
+      "filterBySocket": "Click to filter by this socket count"
+    },
+    "sockets_one": "{{count}} Socket",
+    "sockets_other": "{{count}} Sockets",
+    "stats": {
+      "title": "Stats",
+      "selected_one": "{{count}} selected",
+      "selected_other": "{{count}} selected",
+      "clearRanges": "Clear ranges",
+      "clearRangesTitle": "Empty every min and max; the stats stay selected",
+      "clearTitle": "Untick every stat"
+    },
+    "actions": {
+      "openTradeAria": "Open search on projectdiablo2.com",
+      "openTradeTooltip": "Open this search on projectdiablo2.com",
+      "openInMarket": "Open in market",
+      "list": "List",
+      "listDisabled": "Item must be in your shared stash to list.",
+      "showExpired": "Show Expired"
+    },
+    "results": {
+      "matches": "Matches: <value>{{total}}</value>",
+      "showing": "· showing {{shown}}",
+      "loading": "Loading market listings...",
+      "errorTitle": "Couldn't load listings",
+      "fetchFailed": "Failed to fetch market listings",
+      "noListings": "No listings found",
+      "loosenFilters": "Try loosening your stat filters.",
+      "loosenFiltersOrExpired": "Try loosening your stat filters or turn on Show Expired.",
+      "readyTitle": "Ready to search",
+      "readyHint": "Pick the stats that matter, then hit Search or press Enter in a min/max field.",
+      "price": "Price",
+      "listed": "Listed",
+      "loadingMore": "Loading more...",
+      "loadMore": "Load more"
+    },
+    "listing": {
+      "copyWhisper": "Copy whisper",
+      "whisperCopied": "Copied whisper, right click to paste",
+      "onlineCopyWhisper": "Online in-game · click to copy whisper",
+      "seller": "Seller: <name>{{seller}}</name>",
+      "online": "Online in-game"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "Stat range shown on the PD2 tooltip",
+    "corruptedFilter": "Corrupted filter",
+    "unknown": "Unknown",
+    "keyFromTitle": "This stat starts to add value on this slot from {{value}}",
+    "valuableFrom": "valuable from {{value}}",
+    "corruptedOnly": "only",
+    "corruptedExcluded": "excluded",
+    "injectedCorruptedHint": "This item can be corrupted. Use this filter to search for corrupted or non-corrupted versions.",
+    "corruptedStat": "Corrupted stat",
+    "minDamage": "Min dmg",
+    "maxDamage": "Max dmg",
+    "minDamageAria": "{{name}} min damage",
+    "maxDamageAria": "{{name}} max damage",
+    "minPlaceholder": "min",
+    "maxPlaceholder": "max",
+    "minimumAria": "{{label}} minimum",
+    "maximumAria": "{{label}} maximum",
+    "clearRangeAria": "Clear {{label}} range",
+    "clearRangeTitle": "Clear min and max",
+    "unfold": "Unfold"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "Change or unfold this total",
+    "searchTotalAria": "Search a total instead",
+    "searchTotalTitle": "Search a total (Σ) instead of this line",
+    "menuLabel": "Search a total — folds the rows it covers"
+  },
+  "wornBy": {
+    "title": "Show the builds that wear it",
+    "line": "Worn by <pct>{{pct}}%</pct> of level {{level}}+ ladder characters"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "Appraising crafted item...",
+    "appraisingRare": "Appraising rare...",
+    "estimatedFrom": "{{slot}} · est. from {{season}} listings",
+    "ofSlots": "of {{slots}}",
+    "usuallyListed": "usually listed"
+  },
+  "runePrices": {
+    "label": "Rune prices",
+    "title": "Current Rune Prices",
+    "info": "Rune prices are calculated from market listings using the median price over the last 7 days. Prices are updated daily.",
+    "viewOnPd2Trader": "View on pd2trader.com",
+    "loading": "Loading rune data...",
+    "fixed": "fixed",
+    "listings_one": "{{count}} listings",
+    "listings_other": "{{count}} listings",
+    "showLess": "Show Less",
+    "showMoreLower_one": "Show More ({{count}} lower runes)",
+    "showMoreLower_other": "Show More ({{count}} lower runes)",
+    "breakdown": "<rune>{{rune}}</rune> Breakdown:",
+    "target": "target {{value}} HR",
+    "diff": "Diff: {{value}} HR",
+    "fixedNote": "* Fixed pricing used with Vex and below, as it generally does not change or when <10 listings available"
+  },
+  "sparkline": {
+    "loading": "Loading price history...",
+    "notEnough": "Not enough sales in the last 30 days for a trend.",
+    "aria_one": "Price over the last {{count}} days with sales: {{first}} to {{last}} HR",
+    "aria_other": "Price over the last {{count}} days with sales: {{first}} to {{last}} HR"
+  },
+  "itemCard": {
+    "median": "median {{price}}",
+    "sales_one": "{{count}} sales",
+    "sales_other": "{{count}} sales",
+    "recentlySold": "Recently sold",
+    "listedNow": "Listed now",
+    "from": "from {{price}}",
+    "soldDetail_one": "{{count}} sold · median {{price}}",
+    "soldDetail_other": "{{count}} sold · median {{price}}",
+    "listingsDetail_one": "{{count}} listing · median {{price}}",
+    "listingsDetail_other": "{{count}} listings · median {{price}}"
+  }
+}

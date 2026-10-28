@@ -1,0 +1,122 @@
+{
+  "tray": {
+    "settings": "设置",
+    "openConfig": "打开配置目录",
+    "quit": "退出"
+  },
+  "options": {
+    "tokenLoaded": "已成功从 URL 加载令牌！"
+  },
+  "auth": {
+    "banned": "此 PD2 账号已被 PD2 Trader 封禁。",
+    "popupBlocked": "浏览器拦截了登录窗口。请允许此网站的弹出窗口后重试。",
+    "timedOut": "登录超时，请重试。",
+    "success": "验证成功！",
+    "failed": "验证失败，请重试。",
+    "unreachable": "无法连接 pd2trader.com。请检查网络连接、防火墙或杀毒软件，然后重试。",
+    "loggedOut": "已成功退出登录。"
+  },
+  "updates": {
+    "availableTitle": "PD2 Trader - 有可用更新",
+    "availableDescription": "版本 {{version}} 已发布。点击下载并重启。",
+    "downloadAndRestart": "下载并重启",
+    "manualTitle": "PD2 Trader - 更新 {{version}} 可用",
+    "manualDescription": "PD2 Trader 无法在此安装位置自动更新。请从发布页面下载新版本，或使用你的包管理器更新。",
+    "openReleasePage": "打开发布页面",
+    "downloading": "正在下载更新…",
+    "downloadingProgress": "正在下载更新… {{progress}}%",
+    "downloaded": "更新已下载！正在重启…",
+    "manualRequired": "需要手动安装更新",
+    "downloadFailed": "下载更新失败，请稍后重试。",
+    "dialogTitle": "正在下载更新",
+    "dialogDescription": "正在下载更新，请稍候。"
+  },
+  "notifications": {
+    "offerAccepted": "报价已接受",
+    "newOffer": "新报价",
+    "offerAcceptedText": "你的报价已被接受",
+    "newOfferText": "收到新报价",
+    "viewListing": "查看挂单",
+    "reply": "回复",
+    "playerJoined": "玩家加入",
+    "playerJoinedDescription": "{{player}} 加入了游戏",
+    "tradeWhisper": "交易私聊",
+    "whisperFrom": "来自 {{player}} 的私聊",
+    "newChatMessage": "新聊天消息"
+  },
+  "offers": {
+    "item": "物品",
+    "revoked": "报价已撤回",
+    "revokedDescription": "你对 {{item}} 的报价已撤回",
+    "revokedFallback": "报价已撤回",
+    "revokeFailed": "撤回报价失败",
+    "revokeFailedDescription": "撤回报价时出错",
+    "accepted": "报价已接受",
+    "acceptedDescription": "你接受了 {{player}} 对 {{item}} 的报价",
+    "acceptedFallback": "报价已接受",
+    "acceptFailed": "接受报价失败",
+    "acceptFailedDescription": "接受报价时出错",
+    "rejected": "报价已拒绝",
+    "rejectedDescription": "你拒绝了 {{player}} 对 {{item}} 的报价",
+    "rejectedFallback": "报价已拒绝",
+    "rejectFailed": "拒绝报价失败",
+    "rejectFailedDescription": "拒绝报价时出错",
+    "unaccepted": "已取消接受报价",
+    "unacceptedDescription": "你取消接受了 {{player}} 对 {{item}} 的报价",
+    "unacceptedFallback": "已取消接受报价",
+    "unacceptFailed": "取消接受报价失败",
+    "unacceptFailedDescription": "取消接受报价时出错",
+    "hidden": "报价已隐藏",
+    "hiddenDescription": "你对 {{item}} 的报价已隐藏，将在 7 天后移除。",
+    "hiddenFallback": "报价已隐藏",
+    "restored": "报价已恢复",
+    "restoredDescription": "你对 {{item}} 的报价已恢复",
+    "restoredFallback": "报价已恢复"
+  },
+  "netWorth": {
+    "accountMismatch": "所选账号未关联到你的 PD2 登录。请检查账号设置。",
+    "sessionExpired": "你的 PD2 会话已过期，请重新登录。",
+    "rateLimited": "请求过多，请一分钟后重试。"
+  },
+  "seasons": {
+    "current": "{{season}}（当前）",
+    "currentGeneric": "当前赛季"
+  },
+  "priceWindow": {
+    "options": {
+      "hours24": "24 小时",
+      "days3": "3 天",
+      "days7": "7 天",
+      "days30": "30 天"
+    },
+    "seasonAvg": "赛季均价",
+    "dayAvg_other": "{{count}} 天均价",
+    "hourAvg_other": "{{count}} 小时均价",
+    "lastSeason": "上赛季",
+    "seasonTag": "赛季",
+    "basis": {
+      "last30Days": "最近 30 天",
+      "wholeSeason": "整个赛季",
+      "last30DaysOf": "{{season}} 的最后 30 天",
+      "lastWindow": "最近 {{window}}"
+    },
+    "notEnoughSalesThisWeek": "本周成交不足 — 基于{{basis}}",
+    "notEnoughSalesInWindow": "最近 {{window}} 成交不足 — 基于{{basis}}"
+  },
+  "chatTemplates": {
+    "nameRequired": "请为模板命名",
+    "nameTooLong": "名称：最多 {{max}} 个字符",
+    "textRequired": "请输入消息",
+    "textTooLong": "消息：最多 {{max}} 个字符",
+    "tokens": {
+      "accountName": "对方的账号名",
+      "characterName": "对方的角色名",
+      "itemName": "最近链接或私聊提到的物品",
+      "price": "其价格"
+    }
+  },
+  "corruptedZones": {
+    "waitMinutes": "{{minutes}}分钟",
+    "waitHours": "{{hours}}小时{{minutes}}分钟"
+  }
+}

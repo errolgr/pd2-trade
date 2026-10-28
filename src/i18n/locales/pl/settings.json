@@ -1,0 +1,537 @@
+{
+  "interface": {
+    "language": {
+      "label": "Język",
+      "description": "Język nakładki. Domyślny systemowy jest zgodny z językiem systemu. Nazwy przedmiotów, statystyki i terminy z gry pozostają po angielsku, jak w grze.",
+      "group": "Język"
+    },
+    "overlays": "Nakładki",
+    "chatButton": {
+      "label": "Nakładka przycisku czatu",
+      "description": "Pokazuj pływający przycisk czatu w prawym dolnym rogu ekranu."
+    },
+    "windowTransparency": {
+      "label": "Przezroczystość okien: <num>{{value}}%</num>",
+      "description": "Widok gry przez tła okien. 0% to pełne krycie."
+    },
+    "zoneTimer": {
+      "enabled": {
+        "label": "Licznik skażonych stref",
+        "description": "Pokazuj, które strefy są skażone w nowych grach Hell, i czas do następnej rotacji (co 15 minut). Kliknij, aby zobaczyć nadchodzące strefy."
+      },
+      "position": {
+        "label": "Pozycja licznika",
+        "description": "Przypnij licznik do rogu gry lub przeciągnij go w dowolne miejsce ekranu (przełącza na Własna), jeśli nie jest zablokowany.",
+        "placeholder": "Pozycja"
+      },
+      "locked": {
+        "label": "Zablokuj pozycję licznika",
+        "description": "Przeciąganie nie przesuwa już licznika; kliknięcie nadal pokazuje nadchodzące strefy. Można to też przełączyć kłódką pod nadchodzącymi strefami."
+      },
+      "layout": {
+        "label": "Układ licznika",
+        "description": "Poziomy lub wąska kolumna z nadchodzącymi strefami nad nią lub pod nią, do umieszczenia przy lewej lub prawej krawędzi ekranu.",
+        "placeholder": "Układ"
+      },
+      "zones": {
+        "label": "Licznik pokazuje",
+        "description": "Każdą strefę lub tylko obserwowane: licznik odlicza wtedy do następnej z nich i pokazuje tylko je (każdą strefę, gdy nie obserwujesz żadnej).",
+        "placeholder": "Strefy"
+      },
+      "alerts": {
+        "label": "Powiadomienia o strefach",
+        "description": "Pokazuj powiadomienie, gdy zmienia się skażona strefa: przy każdej nowej strefie lub tylko obserwowanych. Powiadomienia zależą od przełącznika Wyskakujące powiadomienia w ustawieniach czatu.",
+        "placeholder": "Powiadomienia"
+      },
+      "followed": {
+        "label": "Obserwowane strefy",
+        "description": "Strefy, za którymi podążają licznik i powiadomienia przy ustawieniu Tylko obserwowane strefy."
+      },
+      "group": "Licznik skażonych stref",
+      "opacity": "Krycie licznika: <num>{{value}}%</num>"
+    },
+    "zoneAlertOptions": {
+      "off": "Wył.",
+      "all": "Każda rotacja",
+      "followed": "Tylko obserwowane strefy"
+    },
+    "timerZonesOptions": {
+      "all": "Każda strefa",
+      "followed": "Tylko obserwowane strefy"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Poziomy",
+      "vertical": "Pionowy (boki ekranu)"
+    }
+  },
+  "networth": {
+    "autoSnapshotOptions": {
+      "off": "Wył.",
+      "every5": "Co 5 minut",
+      "every10": "Co 10 minut",
+      "every15": "Co 15 minut",
+      "every30": "Co 30 minut"
+    },
+    "ticker": {
+      "opacity": "Krycie paska: <num>{{value}}%</num>",
+      "group": "Nakładka paska",
+      "enabled": {
+        "label": "Pasek majątku",
+        "description": "Pokazuj majątek, zmianę w sesji i HR na godzinę nad grą. Kliknij, aby zobaczyć szczegóły."
+      },
+      "position": {
+        "label": "Pozycja paska",
+        "description": "Przypnij pasek do rogu gry lub przeciągnij go w dowolne miejsce ekranu (przełącza na Własna).",
+        "placeholder": "Pozycja"
+      },
+      "preview": "Podgląd"
+    },
+    "toastThreshold": {
+      "description": "Gdy pasek jest włączony, pokazuj powiadomienie, gdy migawka zmieni majątek co najmniej o tyle. Typ powiadomień Majątek przełączysz w <section>ustawieniach czatu</section>.",
+      "group": "Powiadomienia",
+      "label": "Próg powiadomienia o migawce (HR)"
+    },
+    "hotkeyHint": "Skrót migawki konfigurujesz w sekcji <section>Skróty klawiszowe</section>.",
+    "history": {
+      "group": "Historia",
+      "tracking": {
+        "label": "Zapisuj historię majątku",
+        "description": "Przechowuj migawki majątku na pd2trader.com, aby widzieć historię i sesje. Gdy wyłączone, wartości są nadal liczone, ale nic nie jest zapisywane."
+      },
+      "autoSnapshot": {
+        "label": "Automatyczne migawki",
+        "description": "Rób migawkę w tym odstępie, gdy Diablo II jest aktywne.",
+        "placeholder": "Odstęp"
+      }
+    }
+  },
+  "tickerAnchor": {
+    "topLeft": "Lewy górny",
+    "topCenter": "Górny środek",
+    "topRight": "Prawy górny",
+    "bottomLeft": "Lewy dolny",
+    "bottomRight": "Prawy dolny",
+    "aboveChat": "Nad przyciskiem czatu",
+    "custom": "Własna (przeciągnij)"
+  },
+  "publicProfile": {
+    "loadFailed": "Nie udało się wczytać ustawień profilu",
+    "saveFailed": "Nie udało się zapisać",
+    "saving": "Zapisywanie",
+    "description": {
+      "signedOut": "Zaloguj się na konto PD2, aby zdecydować, czy pojawiasz się w rankingach.",
+      "notLive": "Rankingi wystartują z Sezonem 14. Po ich uruchomieniu możesz upublicznić swój profil.",
+      "default": "Pokazuj swój majątek w rankingach pd2trader.com i na publicznej stronie profilu. Domyślnie wyłączone: tylko ty widzisz swoją historię."
+    },
+    "viewProfile": "Zobacz profil",
+    "group": "Rankingi",
+    "optedIn": "Profil publiczny",
+    "displayName": {
+      "label": "Wyświetlany jako",
+      "description": "Które z kont gry nadaje nazwę twojemu profilowi.",
+      "placeholder": "Konto"
+    },
+    "showHoldings": {
+      "label": "Pokazuj zasoby",
+      "description": "Pokazuj też na profilu najcenniejsze przedmioty i podział na kategorie."
+    }
+  },
+  "nav": {
+    "general": "Ogólne",
+    "account": "Konto",
+    "chat": "Czat",
+    "interface": "Interfejs",
+    "priceCheck": "Wycena",
+    "netWorth": "Majątek",
+    "hotkeys": "Skróty klawiszowe",
+    "about": "O aplikacji"
+  },
+  "layout": {
+    "title": "Ustawienia",
+    "subtitle": "Zarządzaj ustawieniami i preferencjami",
+    "saved": "Zapisano",
+    "autoSave": "Zmiany zapisują się automatycznie",
+    "closeLabel": "Zamknij ustawienia",
+    "navLabel": "Sekcje ustawień"
+  },
+  "zonePicker": {
+    "pick": "Wybierz strefy",
+    "count_one": "{{count}} strefa",
+    "count_few": "{{count}} strefy",
+    "count_many": "{{count}} stref",
+    "count_other": "{{count}} strefy",
+    "noMatch": "Brak pasujących stref",
+    "followedCount_one": "{{count}} obserwowana",
+    "followedCount_few": "{{count}} obserwowane",
+    "followedCount_many": "{{count}} obserwowanych",
+    "followedCount_other": "{{count}} obserwowanej",
+    "triggerLabel": "Obserwowane strefy",
+    "search": "Szukaj stref",
+    "listLabel": "Strefy"
+  },
+  "theme": {
+    "preview": {
+      "list": "Lista",
+      "offers": "Oferty"
+    },
+    "filter": {
+      "all": "Wszystkie",
+      "dark": "Ciemne",
+      "light": "Jasne"
+    },
+    "current": "Bieżący: <name>{{name}}</name>",
+    "optionLabel": "{{name}} ({{mode}})",
+    "mode": {
+      "dark": "ciemny",
+      "light": "jasny"
+    },
+    "filterLabel": "Filtruj motywy wg trybu",
+    "groupLabel": "Motyw kolorów"
+  },
+  "hotkeys": {
+    "validation": {
+      "enterKey": "Wpisz klawisz",
+      "invalidKey": "Nie może być użyty jako skrót",
+      "ctrlC": "Ctrl + C jest niedozwolony (zastrzeżony skrót systemowy)."
+    },
+    "warning": {
+      "ctrlC": "Ctrl + C służy do kopiowania przedmiotów. Wybierz inny klawisz.",
+      "clash": "Używany też przez: {{action}}.",
+      "invalidKey": "{{key}} nie może być użyty jako skrót. Kliknij pole i naciśnij inny klawisz."
+    },
+    "group": "Skróty",
+    "modifierLabel": "Modyfikator: {{action}}",
+    "off": "Wył.",
+    "hint": "Kliknij pole klawisza i naciśnij klawisz, którego chcesz użyć. Naciśnij Backspace w polu migawki, rynku lub buildów, aby wyłączyć ten skrót.",
+    "rows": {
+      "priceCheck": {
+        "label": "Wycena",
+        "description": "Wyceń przedmiot pod kursorem."
+      },
+      "listItem": {
+        "label": "Wystaw przedmiot",
+        "description": "Wystaw wskazany przedmiot na rynku."
+      },
+      "settings": {
+        "label": "Otwórz ustawienia",
+        "description": "Otwórz to okno ustawień."
+      },
+      "netWorth": {
+        "label": "Majątek",
+        "description": "Otwórz okno majątku."
+      },
+      "chat": {
+        "label": "Okno czatu",
+        "description": "Pokaż lub ukryj okno czatu."
+      },
+      "offers": {
+        "label": "Oferty",
+        "description": "Otwórz czat z osobami, którym sprzedajesz."
+      },
+      "delist": {
+        "label": "Wycofaj przedmiot",
+        "description": "Wycofaj wskazany przedmiot z rynku."
+      },
+      "snapshot": {
+        "label": "Migawka majątku",
+        "description": "Zrób migawkę majątku od razu."
+      },
+      "market": {
+        "label": "Rynek",
+        "description": "Pokaż lub ukryj przeglądarkę rynku."
+      },
+      "builds": {
+        "label": "Buildy",
+        "description": "Pokaż lub ukryj buildy ladder."
+      }
+    }
+  },
+  "general": {
+    "validation": {
+      "mode": "Wybierz tryb.",
+      "ladder": "Wybierz ladder."
+    },
+    "directory": {
+      "detected": "Wykryto: {{path}}",
+      "description": "Ścieżka do folderu instalacji Diablo II. Zostaw puste, aby wykryć automatycznie.",
+      "detectFailed": {
+        "title": "Wykrywanie nie powiodło się",
+        "description": "Nie udało się automatycznie wykryć folderu Diablo II. Wpisz go ręcznie."
+      },
+      "autoDetect": "Wykryj automatycznie",
+      "label": "Folder Diablo II"
+    },
+    "game": {
+      "group": "Gra",
+      "mode": "Tryb",
+      "season": {
+        "label": "Sezon",
+        "description": "Filtruj dane o cenach wg sezonu. Poprzednie sezony wymagają dostępnych danych historycznych."
+      }
+    },
+    "troubleshooting": {
+      "group": "Rozwiązywanie problemów",
+      "debugLogging": {
+        "label": "Logowanie debugowania",
+        "description": "Zapisuj wyjście konsoli do pliku logu w celu diagnozy."
+      }
+    }
+  },
+  "about": {
+    "downloadFailed": "Nie udało się pobrać aktualizacji. Spróbuj później.",
+    "version": "Wersja: {{version}}",
+    "updateAvailable": "Dostępna aktualizacja (v{{version}})",
+    "updateNow": "Aktualizuj teraz (v{{version}})",
+    "latest": "Masz najnowszą wersję",
+    "lastChecked": "Ostatnio sprawdzono: {{ago}}",
+    "checking": "Sprawdzanie...",
+    "checkForUpdates": "Sprawdź aktualizacje",
+    "viewChangelog": "Zobacz listę zmian",
+    "credits": {
+      "developer": "Twórca",
+      "contributors": "Współtwórcy"
+    },
+    "logoAlt": "Logo PD2 Trader",
+    "updates": {
+      "group": "Aktualizacje",
+      "auto": {
+        "label": "Automatyczne aktualizacje",
+        "description": "Pobieraj i instaluj nowe wersje przy uruchomieniu, a potem uruchamiaj ponownie. Gdy wyłączone, nadal dostaniesz powiadomienie o dostępnej aktualizacji."
+      }
+    }
+  },
+  "account": {
+    "noAccounts": {
+      "title": "Brak dostępnych kont",
+      "description": "Jeśli nie wybrano właściwego konta, przy wystawianiu przedmiotów mogą pojawiać się błędy 404. Uwierzytelnij się, aby wczytać konta."
+    },
+    "status": {
+      "signedInAs": "Zalogowano jako {{username}}",
+      "signedIn": "Zalogowano",
+      "signedOut": "Wylogowano"
+    },
+    "token": {
+      "description": "Pobierz token z <site>projectdiablo2.com<icon></icon></site> po zalogowaniu. Sprawdź localStorage przeglądarki pod kluczem 'pd2-token'.",
+      "label": "Token PD2",
+      "placeholder": "Wpisz swój token PD2"
+    },
+    "account": {
+      "linked_one": "{{count}} powiązane konto gry. Używane do ogłoszeń i ofert.",
+      "linked_few": "{{count}} powiązane konta gry. Używane do ogłoszeń i ofert.",
+      "linked_many": "{{count}} powiązanych kont gry. Używanych do ogłoszeń i ofert.",
+      "linked_other": "{{count}} powiązanego konta gry. Używane do ogłoszeń i ofert.",
+      "signInToLoad": "Zaloguj się, aby wczytać konta gry powiązane z profilem PD2.",
+      "authenticateFirst": "Najpierw się uwierzytelnij",
+      "select": "Wybierz konto",
+      "label": "Konto"
+    },
+    "loggingOut": "Wylogowywanie...",
+    "logOut": "Wyloguj",
+    "loggingIn": "Logowanie...",
+    "logIn": "Zaloguj",
+    "signInLink": {
+      "openFailed": "Nie udało się otworzyć przeglądarki: skopiuj link logowania i otwórz go w niej.",
+      "notOpened": "Przeglądarka się nie otworzyła? Skopiuj do niej link logowania."
+    },
+    "group": "Konto PD2"
+  },
+  "stats": {
+    "fillStatValue": {
+      "labelPercent": "Margines wartości statystyki (%)",
+      "labelFlat": "Margines wartości statystyki (stały)",
+      "descriptionPercent": "Procent wylosowanej wartości używany jako margines ± przy wypełnianiu zakresów statystyk.",
+      "descriptionFlat": "Stała wartość używana jako margines ± przy wypełnianiu zakresów statystyk (np. 2 → ±2)."
+    },
+    "marginUnit": {
+      "percent": "Procent (%)",
+      "flat": "Stała",
+      "label": "Jednostka marginesu",
+      "description": "Jak interpretować powyższą wartość. Stała przydaje się przy statystykach o niskich wartościach, jak odporności czy +umiejętności.",
+      "placeholder": "Jednostka marginesu"
+    },
+    "corruptedFilter": {
+      "both": "Oba",
+      "corrupted": "Tylko Corrupted",
+      "nonCorrupted": "Tylko bez korupcji",
+      "label": "Domyślny filtr korupcji",
+      "description": "Początkowy filtr korupcji przy otwieraniu wyceny przedmiotu, który można skazić.",
+      "placeholder": "Filtr korupcji"
+    },
+    "rankDisplay": {
+      "bar": "Pasek (percentyl + linie sprzedaj/zachowaj)",
+      "blocks": "Bloki (6 segmentów pozycji)",
+      "label": "Wyświetlanie pozycji rare",
+      "description": "Jak w okienku wyceny pokazywana jest pozycja cenowa rare wśród przedmiotów tego slotu.",
+      "placeholder": "Wyświetlanie pozycji"
+    },
+    "prices": {
+      "group": "Ceny"
+    },
+    "priceWindow": {
+      "label": "Okres cen",
+      "description": "Ostatnie sprzedaże, na których opiera się średnia wyceny. Rzadko handlowane przedmioty używają dłuższego okresu, oznaczonego etykietą."
+    },
+    "statRanges": {
+      "group": "Zakresy statystyk"
+    },
+    "leaveMinEmpty": {
+      "label": "Zostaw puste min",
+      "description": "Przy wypełnianiu zakresu statystyki zostaw minimum puste, aby wyszukiwanie obejmowało wszystko do maksimum."
+    },
+    "leaveMaxEmpty": {
+      "label": "Zostaw puste maks",
+      "description": "Przy wypełnianiu zakresu statystyki zostaw maksimum puste, aby wyszukiwanie obejmowało wylosowaną wartość lub lepszą."
+    },
+    "filters": {
+      "group": "Filtry"
+    },
+    "rareAppraisal": {
+      "group": "Wycena rare"
+    }
+  },
+  "chatTemplates": {
+    "intro": "Wpisz <kbd>/</kbd> w wiadomości czatu, aby ich użyć. Tokeny wypełniają się z rozmowy; o każdy inny {{placeholder}} zostaniesz zapytany przy użyciu szablonu. Oznacz szablon gwiazdką, aby przypiąć go nad polem wiadomości.",
+    "listLabel": "Twoje szablony",
+    "editNamed": "Edytuj {{name}}",
+    "unstarNamed": "Usuń gwiazdkę {{name}}",
+    "starNamed": "Oznacz gwiazdką {{name}}",
+    "starredTitle": "Z gwiazdką: pokazywany nad polem wiadomości",
+    "starTitle": "Gwiazdka: pokaż nad polem wiadomości",
+    "moveUpNamed": "Przesuń {{name}} w górę",
+    "moveUp": "Przesuń w górę",
+    "moveDownNamed": "Przesuń {{name}} w dół",
+    "moveDown": "Przesuń w dół",
+    "deleteNamed": "Usuń {{name}}",
+    "empty": "Nie masz jeszcze własnych szablonów.",
+    "newTemplate": "Nowy szablon",
+    "addTemplate": "Dodaj szablon"
+  },
+  "chat": {
+    "toastTypes": {
+      "whispers": "Szepty",
+      "trade": "Handel",
+      "joins": "Dołączenia",
+      "offers": "Oferty",
+      "networth": "Majątek"
+    },
+    "timing": {
+      "off": "Powiadomienia są wyłączone. Wybierz inną opcję, aby edytować poniższe ustawienia.",
+      "label": "Powiadamiaj:",
+      "description": "Określ, kiedy odtwarzać powiadomienia o szeptach w zależności od tego, czy Diablo jest aktywne.",
+      "placeholder": "Wybierz, kiedy powiadamiać",
+      "options": {
+        "inGame": "Tylko w grze",
+        "outOfGame": "Tylko poza grą",
+        "always": "Zawsze",
+        "never": "Nigdy"
+      }
+    },
+    "ignore": {
+      "count_one": "{{count}} gracz",
+      "count_few": "{{count}} gracze",
+      "count_many": "{{count}} graczy",
+      "count_other": "{{count}} gracza",
+      "removeNamed": "Usuń {{name}}",
+      "empty": "Brak ignorowanych graczy.",
+      "group": "Lista ignorowanych",
+      "label": "Lista ignorowanych",
+      "description": "Gracze z tej listy nie wywołują powiadomień o szeptach.",
+      "placeholder": "Wpisz nazwę gracza do ignorowania"
+    },
+    "sound": {
+      "notificationVolume": {
+        "label": "Głośność powiadomień: <num>{{value}}%</num>",
+        "description": "Dostosuj głośność dźwięków powiadomień o szeptach (0-100%)."
+      },
+      "marketVolume": {
+        "label": "Głośność alertów rynku: <num>{{value}}%</num>",
+        "description": "Głośność dźwięku alertu rynku (0-100%).",
+        "ariaLabel": "Głośność alertów rynku"
+      },
+      "group": "Dźwięk",
+      "marketSound": {
+        "label": "Dźwięk alertu rynku",
+        "description": "Odtwarzaj dźwięk z powiadomieniem o nowym ogłoszeniu pasującym do obserwowanego wyszukiwania."
+      }
+    },
+    "templates": {
+      "accept": {
+        "intro": "Dostosuj wiadomość kopiowaną przy przyjmowaniu oferty. Dostępne symbole zastępcze:",
+        "label": "Szablon wiadomości przyjęcia oferty"
+      },
+      "reject": {
+        "intro": "Dostosuj wiadomość kopiowaną przy odrzucaniu oferty. Dostępne symbole zastępcze:",
+        "label": "Szablon wiadomości odrzucenia oferty"
+      },
+      "sold": {
+        "intro": "Dostosuj wiadomość kopiowaną przy oznaczaniu przedmiotu jako sprzedany. Dostępne symbole zastępcze:",
+        "label": "Szablon wiadomości o sprzedaży"
+      },
+      "insertToken": "Wstaw {{token}}",
+      "asks": "Pyta przy użyciu w czacie: {{placeholders}}",
+      "group": "Szablony wiadomości"
+    },
+    "notifications": {
+      "group": "Powiadomienia"
+    },
+    "general": {
+      "label": "Powiadomienia ogólne",
+      "description": "Odtwarzaj dźwięk, gdy otrzymasz od graczy szepty niehandlowe lub nowe wiadomości na czacie strony."
+    },
+    "toasts": {
+      "label": "Wyskakujące powiadomienia",
+      "description": "Pokazuj wyskakujące powiadomienia, gdy Diablo jest zminimalizowane lub w tle.",
+      "typesLabel": "Typy wyskakujących powiadomień"
+    },
+    "trade": {
+      "label": "Powiadomienia handlowe",
+      "description": "Odtwarzaj dźwięk, gdy otrzymasz szepty handlowe lub oferty handlu ze strony."
+    },
+    "announcements": {
+      "label": "Powiadomienia o ogłoszeniach",
+      "description": "Włącz powiadomienia o wiadomościach od *announcements. Domyślnie komunikaty są ignorowane."
+    },
+    "joins": {
+      "label": "Powiadomienia o dołączeniu",
+      "description": "Pokazuj powiadomienie, gdy gracz dołączy do gry (tylko gdy Diablo nie jest aktywne). Domyślnie wyłączone."
+    }
+  },
+  "sections": {
+    "interface": {
+      "title": "Interfejs",
+      "description": "Konfiguruj interfejs i nakładki."
+    },
+    "theme": {
+      "title": "Motyw",
+      "description": "Motyw kolorów każdego okna nakładki. Działa natychmiast."
+    },
+    "chat": {
+      "title": "Czat",
+      "description": "Konfiguruj powiadomienia czatu i szeptów oraz szablony wiadomości."
+    },
+    "general": {
+      "title": "Ogólne",
+      "description": "Ogólne ustawienia aplikacji."
+    },
+    "hotkeys": {
+      "title": "Skróty klawiszowe",
+      "description": "Skonfiguruj tu swoje skróty klawiszowe."
+    },
+    "about": {
+      "title": "O aplikacji",
+      "description": "Informacje o aplikacji, jej wersji i twórcy."
+    },
+    "account": {
+      "title": "Konto",
+      "description": "Zarządzaj tu ustawieniami konta."
+    },
+    "networth": {
+      "title": "Majątek",
+      "description": "Śledź majątek w czasie i pokazuj go w nakładce podczas gry."
+    },
+    "stats": {
+      "title": "Wycena",
+      "description": "Konfiguruj okres cen oraz sposób wypełniania zakresów statystyk i filtrów w wyszukiwaniach wyceny."
+    }
+  }
+}

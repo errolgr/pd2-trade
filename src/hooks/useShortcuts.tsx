@@ -3,6 +3,7 @@ import { isTauri, invoke } from '@tauri-apps/api/core';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
+import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { useOptions } from './useOptions';
 
 type ShortcutHandler = () => void | Promise<void>;
@@ -15,8 +16,10 @@ interface ShortcutConfig {
 
 // Right Alt is AltGr on many keyboard layouts; Windows reports it as Ctrl+Alt, so an Alt
 // shortcut also needs a Control+Alt alias to fire from the right Alt key.
+// A key the parser cannot take (the settings window flags it) registers nothing.
 const formatShortcuts = (modifier: 'ctrl' | 'alt', key: string): string[] => {
-  const k = key.toUpperCase();
+  const k = hotkeyKeyToken(key);
+  if (!k) return [];
   return modifier === 'ctrl' ? [`Control+${k}`] : [`Alt+${k}`, `Control+Alt+${k}`];
 };
 

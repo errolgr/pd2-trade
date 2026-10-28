@@ -10,6 +10,7 @@ import { chatDockSize } from '@/pages/chat/chat-dock';
 import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
+import { t } from '@/i18n';
 
 const DEFAULT_TITLE = 'PD2 Trader';
 const TOAST_MARGIN = 16;
@@ -120,7 +121,7 @@ export function showToast(payload: ToastPayload): void {
       onClick: () => void runToastAction(action),
     },
     // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
-    ...(listing && { cancel: { label: 'Details', onClick: () => bridge?.openListing(listing) } }),
+    ...(listing && { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }),
   });
 }
 
@@ -171,8 +172,8 @@ export interface ConfirmToastOptions {
 export function confirmToast({
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = t('common:actions.confirm'),
+  cancelLabel = t('common:actions.cancel'),
   variant = 'default',
   duration = 5000,
   onConfirm,
@@ -203,7 +204,7 @@ export interface UndoToastOptions {
 
 /** A toast with an Undo button; returns a function that dismisses it (e.g. once the undo window closed). */
 export function undoToast({ title, description, duration, onUndo }: UndoToastOptions): () => void {
-  const id = toast(title, { description, duration, action: { label: 'Undo', onClick: onUndo } });
+  const id = toast(title, { description, duration, action: { label: t('app:toast.undo'), onClick: onUndo } });
   return () => toast.dismiss(id);
 }
 

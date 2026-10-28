@@ -1,0 +1,529 @@
+{
+  "interface": {
+    "language": {
+      "label": "Sprache",
+      "description": "Die Sprache des Overlays. Systemstandard folgt deiner Systemsprache. Item-Namen, Werte und Spielbegriffe bleiben wie im Spiel auf Englisch.",
+      "group": "Sprache"
+    },
+    "overlays": "Overlays",
+    "chatButton": {
+      "label": "Chat-Button-Overlay",
+      "description": "Den schwebenden Chat-Button unten rechts auf dem Bildschirm anzeigen."
+    },
+    "windowTransparency": {
+      "label": "Fenstertransparenz: <num>{{value}}%</num>",
+      "description": "Das Spiel durch Fensterhintergründe sehen. 0 % ist vollständig deckend."
+    },
+    "zoneTimer": {
+      "enabled": {
+        "label": "Corrupted-Zone-Timer",
+        "description": "Zeigt, welche Zonen neue Hell-Spiele corrupten, und die Zeit bis zur nächsten Rotation (alle 15 Minuten). Klicke darauf für die kommenden Zonen."
+      },
+      "position": {
+        "label": "Timer-Position",
+        "description": "Hefte den Timer an eine Ecke des Spiels oder ziehe ihn an eine beliebige Stelle (wechselt zu Benutzerdefiniert), sofern er nicht gesperrt ist.",
+        "placeholder": "Position"
+      },
+      "locked": {
+        "label": "Timer-Position sperren",
+        "description": "Ziehen verschiebt den Timer nicht mehr; ein Klick zeigt weiterhin die kommenden Zonen. Lässt sich auch über das Schloss unter den kommenden Zonen umschalten."
+      },
+      "layout": {
+        "label": "Timer-Layout",
+        "description": "Horizontal oder als schmale Spalte mit den kommenden Zonen darüber oder darunter, für den linken oder rechten Bildschirmrand.",
+        "placeholder": "Layout"
+      },
+      "zones": {
+        "label": "Timer zeigt",
+        "description": "Alle Zonen oder nur die Zonen, denen du folgst: Der Timer zählt dann bis zur nächsten davon herunter und listet nur diese (alle Zonen, solange du keiner folgst).",
+        "placeholder": "Zonen"
+      },
+      "alerts": {
+        "label": "Zonen-Benachrichtigungen",
+        "description": "Zeigt eine Benachrichtigung, wenn sich die Corrupted Zone ändert: bei jeder neuen Zone oder nur bei Zonen, denen du folgst. Benachrichtigungen richten sich nach dem Schalter „Popup-Benachrichtigungen“ in den Chat-Einstellungen.",
+        "placeholder": "Benachrichtigungen"
+      },
+      "followed": {
+        "label": "Gefolgte Zonen",
+        "description": "Die Zonen, denen Timer und Benachrichtigungen folgen, wenn „Nur Zonen, denen ich folge“ eingestellt ist."
+      },
+      "group": "Corrupted-Zone-Timer",
+      "opacity": "Timer-Deckkraft: <num>{{value}}%</num>"
+    },
+    "zoneAlertOptions": {
+      "off": "Aus",
+      "all": "Jede Rotation",
+      "followed": "Nur Zonen, denen ich folge"
+    },
+    "timerZonesOptions": {
+      "all": "Alle Zonen",
+      "followed": "Nur Zonen, denen ich folge"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertikal (Bildschirmränder)"
+    }
+  },
+  "networth": {
+    "autoSnapshotOptions": {
+      "off": "Aus",
+      "every5": "Alle 5 Minuten",
+      "every10": "Alle 10 Minuten",
+      "every15": "Alle 15 Minuten",
+      "every30": "Alle 30 Minuten"
+    },
+    "ticker": {
+      "opacity": "Ticker-Deckkraft: <num>{{value}}%</num>",
+      "group": "Ticker-Overlay",
+      "enabled": {
+        "label": "Vermögens-Ticker",
+        "description": "Zeigt dein Vermögen, die Sitzungsänderung und HR pro Stunde über dem Spiel. Klicke darauf für Details."
+      },
+      "position": {
+        "label": "Ticker-Position",
+        "description": "Hefte den Ticker an eine Ecke des Spiels oder ziehe ihn an eine beliebige Stelle (wechselt zu Benutzerdefiniert).",
+        "placeholder": "Position"
+      },
+      "preview": "Vorschau"
+    },
+    "toastThreshold": {
+      "description": "Solange der Ticker an ist, eine Benachrichtigung zeigen, wenn ein Snapshot dein Vermögen um mindestens diesen Wert ändert. Den Benachrichtigungstyp Vermögen schaltest du unter <section>Chat-Einstellungen</section>.",
+      "group": "Benachrichtigungen",
+      "label": "Schwelle für Snapshot-Benachrichtigung (HR)"
+    },
+    "hotkeyHint": "Den Snapshot-Hotkey stellst du unter <section>Hotkeys</section> ein.",
+    "history": {
+      "group": "Verlauf",
+      "tracking": {
+        "label": "Vermögensverlauf speichern",
+        "description": "Speichert Snapshots deines Vermögens auf pd2trader.com, damit du Verlauf und Sitzungen sehen kannst. Wenn aus, werden Werte weiter berechnet, aber nichts gespeichert."
+      },
+      "autoSnapshot": {
+        "label": "Automatische Snapshots",
+        "description": "In diesem Intervall einen Snapshot erstellen, solange Diablo II im Fokus ist.",
+        "placeholder": "Intervall"
+      }
+    }
+  },
+  "tickerAnchor": {
+    "topLeft": "Oben links",
+    "topCenter": "Oben mittig",
+    "topRight": "Oben rechts",
+    "bottomLeft": "Unten links",
+    "bottomRight": "Unten rechts",
+    "aboveChat": "Über dem Chat-Button",
+    "custom": "Benutzerdefiniert (ziehen)"
+  },
+  "publicProfile": {
+    "loadFailed": "Profileinstellungen konnten nicht geladen werden",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "saving": "Wird gespeichert",
+    "description": {
+      "signedOut": "Melde dich mit deinem PD2-Konto an, um zu wählen, ob du in den Bestenlisten erscheinst.",
+      "notLive": "Die Bestenlisten starten mit Season 14. Sobald sie live sind, kannst du dein Profil öffentlich machen.",
+      "default": "Zeigt dein Vermögen in den Bestenlisten auf pd2trader.com und auf einer öffentlichen Profilseite. Standardmäßig aus: Nur du siehst deinen Verlauf."
+    },
+    "viewProfile": "Profil ansehen",
+    "group": "Bestenlisten",
+    "optedIn": "Öffentliches Profil",
+    "displayName": {
+      "label": "Angezeigt als",
+      "description": "Welches deiner Spielkonten dein Profil benennt.",
+      "placeholder": "Konto"
+    },
+    "showHoldings": {
+      "label": "Bestände zeigen",
+      "description": "Zeigt auf deinem Profil auch deine Top-Items und die Aufteilung nach Kategorien."
+    }
+  },
+  "nav": {
+    "general": "Allgemein",
+    "account": "Konto",
+    "chat": "Chat",
+    "interface": "Oberfläche",
+    "priceCheck": "Preischeck",
+    "netWorth": "Vermögen",
+    "hotkeys": "Hotkeys",
+    "about": "Über"
+  },
+  "layout": {
+    "title": "Einstellungen",
+    "subtitle": "Verwalte deine Einstellungen und Vorlieben",
+    "saved": "Gespeichert",
+    "autoSave": "Änderungen werden automatisch gespeichert",
+    "closeLabel": "Einstellungen schließen",
+    "navLabel": "Einstellungsbereiche"
+  },
+  "zonePicker": {
+    "pick": "Zonen wählen",
+    "count_one": "{{count}} Zone",
+    "count_other": "{{count}} Zonen",
+    "noMatch": "Keine passenden Zonen",
+    "followedCount_one": "{{count}} gefolgt",
+    "followedCount_other": "{{count}} gefolgt",
+    "triggerLabel": "Gefolgte Zonen",
+    "search": "Zonen suchen",
+    "listLabel": "Zonen"
+  },
+  "theme": {
+    "preview": {
+      "list": "Inserieren",
+      "offers": "Angebote"
+    },
+    "filter": {
+      "all": "Alle",
+      "dark": "Dunkel",
+      "light": "Hell"
+    },
+    "current": "Aktuell: <name>{{name}}</name>",
+    "optionLabel": "{{name}} ({{mode}})",
+    "mode": {
+      "dark": "dunkel",
+      "light": "hell"
+    },
+    "filterLabel": "Themes nach Modus filtern",
+    "groupLabel": "Farbschema"
+  },
+  "hotkeys": {
+    "validation": {
+      "enterKey": "Gib eine Taste ein",
+      "invalidKey": "Kann nicht als Hotkey verwendet werden",
+      "ctrlC": "Ctrl + C ist nicht erlaubt (reserviertes Systemkürzel)."
+    },
+    "warning": {
+      "ctrlC": "Ctrl + C ist zum Kopieren von Items reserviert. Wähle eine andere Taste.",
+      "clash": "Wird auch von {{action}} verwendet.",
+      "invalidKey": "{{key}} kann nicht als Hotkey verwendet werden. Klicke auf das Feld und drücke eine andere Taste."
+    },
+    "group": "Tastenkürzel",
+    "modifierLabel": "Modifikator für {{action}}",
+    "off": "Aus",
+    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt oder Builds die Rücktaste, um diesen Hotkey zu deaktivieren.",
+    "rows": {
+      "priceCheck": {
+        "label": "Preischeck",
+        "description": "Preischeck für das Item unter deinem Mauszeiger."
+      },
+      "listItem": {
+        "label": "Item inserieren",
+        "description": "Das Item unter dem Mauszeiger auf dem Markt inserieren."
+      },
+      "settings": {
+        "label": "Einstellungen öffnen",
+        "description": "Dieses Einstellungsfenster öffnen."
+      },
+      "netWorth": {
+        "label": "Vermögen",
+        "description": "Das Vermögensfenster öffnen."
+      },
+      "chat": {
+        "label": "Chatfenster",
+        "description": "Das Chatfenster ein- oder ausblenden."
+      },
+      "offers": {
+        "label": "Angebote",
+        "description": "Chat mit den Leuten öffnen, an die du verkaufst."
+      },
+      "delist": {
+        "label": "Inserat entfernen",
+        "description": "Das Inserat des Items unter dem Mauszeiger vom Markt entfernen."
+      },
+      "snapshot": {
+        "label": "Vermögens-Snapshot",
+        "description": "Sofort einen Vermögens-Snapshot erstellen."
+      },
+      "market": {
+        "label": "Markt",
+        "description": "Den Marktbrowser ein- oder ausblenden."
+      },
+      "builds": {
+        "label": "Builds",
+        "description": "Die Ladder-Builds ein- oder ausblenden."
+      }
+    }
+  },
+  "general": {
+    "validation": {
+      "mode": "Bitte wähle einen Modus.",
+      "ladder": "Bitte wähle eine Ladder."
+    },
+    "directory": {
+      "detected": "Erkannt: {{path}}",
+      "description": "Pfad zu deinem Diablo II-Installationsordner. Leer lassen für automatische Erkennung.",
+      "detectFailed": {
+        "title": "Erkennung fehlgeschlagen",
+        "description": "Der Diablo II-Ordner konnte nicht automatisch erkannt werden. Bitte gib ihn manuell ein."
+      },
+      "autoDetect": "Automatisch erkennen",
+      "label": "Diablo II-Ordner"
+    },
+    "game": {
+      "group": "Spiel",
+      "mode": "Modus",
+      "season": {
+        "label": "Saison",
+        "description": "Preisdaten nach Saison filtern. Vergangene Saisons erfordern verfügbare historische Daten."
+      }
+    },
+    "troubleshooting": {
+      "group": "Fehlerbehebung",
+      "debugLogging": {
+        "label": "Debug-Protokoll",
+        "description": "Konsolenausgabe zur Fehlerbehebung in eine Logdatei schreiben."
+      }
+    }
+  },
+  "about": {
+    "downloadFailed": "Update konnte nicht heruntergeladen werden. Bitte versuche es später erneut.",
+    "version": "Version: {{version}}",
+    "updateAvailable": "Update verfügbar (v{{version}})",
+    "updateNow": "Jetzt aktualisieren (v{{version}})",
+    "latest": "Du hast die neueste Version",
+    "lastChecked": "Zuletzt geprüft: {{ago}}",
+    "checking": "Wird geprüft...",
+    "checkForUpdates": "Nach Updates suchen",
+    "viewChangelog": "Changelog ansehen",
+    "credits": {
+      "developer": "Entwickler",
+      "contributors": "Mitwirkende"
+    },
+    "logoAlt": "PD2 Trader-Logo",
+    "updates": {
+      "group": "Updates",
+      "auto": {
+        "label": "Automatische Updates",
+        "description": "Neue Versionen beim Start herunterladen, installieren und neu starten. Wenn aus, wirst du trotzdem benachrichtigt, sobald ein Update verfügbar ist."
+      }
+    }
+  },
+  "account": {
+    "noAccounts": {
+      "title": "Keine Konten verfügbar",
+      "description": "Wenn nicht das richtige Konto gewählt ist, kannst du beim Inserieren 404-Fehler erhalten. Bitte melde dich an, um deine Konten zu laden."
+    },
+    "status": {
+      "signedInAs": "Angemeldet als {{username}}",
+      "signedIn": "Angemeldet",
+      "signedOut": "Abgemeldet"
+    },
+    "token": {
+      "description": "Hol dir dein Token nach dem Einloggen auf <site>projectdiablo2.com<icon></icon></site>. Sieh im localStorage deines Browsers unter 'pd2-token' nach.",
+      "label": "PD2-Token",
+      "placeholder": "Gib dein PD2-Token ein"
+    },
+    "account": {
+      "linked_one": "{{count}} verknüpftes Spielkonto. Wird für Inserate und Angebote verwendet.",
+      "linked_other": "{{count}} verknüpfte Spielkonten. Werden für Inserate und Angebote verwendet.",
+      "signInToLoad": "Melde dich an, um die mit deinem PD2-Profil verknüpften Spielkonten zu laden.",
+      "authenticateFirst": "Zuerst anmelden",
+      "select": "Konto wählen",
+      "label": "Konto"
+    },
+    "loggingOut": "Wird abgemeldet...",
+    "logOut": "Abmelden",
+    "loggingIn": "Wird angemeldet...",
+    "logIn": "Anmelden",
+    "signInLink": {
+      "openFailed": "Dein Browser konnte nicht geöffnet werden: Kopiere den Anmeldelink und öffne ihn dort.",
+      "notOpened": "Browser nicht geöffnet? Kopiere den Anmeldelink hinein."
+    },
+    "group": "PD2-Konto"
+  },
+  "stats": {
+    "fillStatValue": {
+      "labelPercent": "Werte-Spielraum (%)",
+      "labelFlat": "Werte-Spielraum (absolut)",
+      "descriptionPercent": "Prozentsatz des gerollten Werts, der beim Füllen von Wertebereichen als ±-Spielraum genutzt wird.",
+      "descriptionFlat": "Fester Betrag, der beim Füllen von Wertebereichen als ±-Spielraum genutzt wird (z. B. 2 → ±2)."
+    },
+    "marginUnit": {
+      "percent": "Prozent (%)",
+      "flat": "Absolut",
+      "label": "Spielraum-Einheit",
+      "description": "Wie der Wert oben interpretiert wird. Absolut ist nützlich für niedrig rollende Werte wie Resistenzen oder +Skills.",
+      "placeholder": "Spielraum-Einheit"
+    },
+    "corruptedFilter": {
+      "both": "Beide",
+      "corrupted": "Nur corrupted",
+      "nonCorrupted": "Nur nicht corrupted",
+      "label": "Standard-Corrupted-Filter",
+      "description": "Anfänglicher Corruption-Filter beim Öffnen des Preischecks für ein corruptbares Item.",
+      "placeholder": "Corrupted-Filter"
+    },
+    "rankDisplay": {
+      "bar": "Balken (Perzentil + Verkaufen/Behalten-Linien)",
+      "blocks": "Blöcke (6 Rangsegmente)",
+      "label": "Rare-Rangansicht",
+      "description": "Wie der Preisrang eines Rares in seinem Slot im Bewertungs-Popover des Preischecks dargestellt wird.",
+      "placeholder": "Rangansicht"
+    },
+    "prices": {
+      "group": "Preise"
+    },
+    "priceWindow": {
+      "label": "Preiszeitraum",
+      "description": "Die letzten Verkäufe, auf denen der Preischeck-Durchschnitt basiert. Selten gehandelte Items nutzen einen längeren Zeitraum, markiert mit einem Tag."
+    },
+    "statRanges": {
+      "group": "Wertebereiche"
+    },
+    "leaveMinEmpty": {
+      "label": "Min leer lassen",
+      "description": "Beim Füllen eines Wertebereichs das Minimum leer lassen, damit Suchen alles bis zum Maximum finden."
+    },
+    "leaveMaxEmpty": {
+      "label": "Max leer lassen",
+      "description": "Beim Füllen eines Wertebereichs das Maximum leer lassen, damit Suchen den gerollten Wert oder besser finden."
+    },
+    "filters": {
+      "group": "Filter"
+    },
+    "rareAppraisal": {
+      "group": "Rare-Bewertung"
+    }
+  },
+  "chatTemplates": {
+    "intro": "Tippe <kbd>/</kbd> in einer Chatnachricht, um diese zu nutzen. Tokens werden aus der Unterhaltung gefüllt; jeder andere {{placeholder}} wird abgefragt, wenn du die Vorlage verwendest. Markiere eine mit einem Stern, um sie als Chip über dem Eingabefeld anzuheften.",
+    "listLabel": "Deine Vorlagen",
+    "editNamed": "{{name}} bearbeiten",
+    "unstarNamed": "Markierung von {{name}} entfernen",
+    "starNamed": "{{name}} markieren",
+    "starredTitle": "Markiert: wird über dem Eingabefeld angezeigt",
+    "starTitle": "Markieren: über dem Eingabefeld anzeigen",
+    "moveUpNamed": "{{name}} nach oben",
+    "moveUp": "Nach oben",
+    "moveDownNamed": "{{name}} nach unten",
+    "moveDown": "Nach unten",
+    "deleteNamed": "{{name}} löschen",
+    "empty": "Noch keine eigenen Vorlagen.",
+    "newTemplate": "Neue Vorlage",
+    "addTemplate": "Vorlage hinzufügen"
+  },
+  "chat": {
+    "toastTypes": {
+      "whispers": "Flüstern",
+      "trade": "Handel",
+      "joins": "Beitritte",
+      "offers": "Angebote",
+      "networth": "Vermögen"
+    },
+    "timing": {
+      "off": "Benachrichtigungen sind aus. Wähle eine andere Option, um die Einstellungen unten zu bearbeiten.",
+      "label": "Benachrichtigen:",
+      "description": "Steuere, wann Flüster-Benachrichtigungen abhängig vom Fokus von Diablo abgespielt werden.",
+      "placeholder": "Wann benachrichtigen",
+      "options": {
+        "inGame": "Nur im Spiel",
+        "outOfGame": "Nur außerhalb des Spiels",
+        "always": "Immer",
+        "never": "Nie"
+      }
+    },
+    "ignore": {
+      "count_one": "{{count}} Spieler",
+      "count_other": "{{count}} Spieler",
+      "removeNamed": "{{name}} entfernen",
+      "empty": "Noch keine ignorierten Spieler.",
+      "group": "Ignorierliste",
+      "label": "Ignorierliste",
+      "description": "Spieler auf dieser Liste lösen keine Flüster-Benachrichtigungen aus.",
+      "placeholder": "Spielername zum Ignorieren eingeben"
+    },
+    "sound": {
+      "notificationVolume": {
+        "label": "Benachrichtigungslautstärke: <num>{{value}}%</num>",
+        "description": "Lautstärke der Töne für Flüster-Benachrichtigungen (0–100 %)."
+      },
+      "marketVolume": {
+        "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
+        "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
+        "ariaLabel": "Lautstärke Marktalarm"
+      },
+      "group": "Ton",
+      "marketSound": {
+        "label": "Marktalarm-Ton",
+        "description": "Einen Ton mit der Benachrichtigung abspielen, wenn ein neues Inserat zu einer beobachteten Marktsuche passt."
+      }
+    },
+    "templates": {
+      "accept": {
+        "intro": "Passe die Nachricht an, die beim Annehmen eines Angebots kopiert wird. Verfügbare Platzhalter:",
+        "label": "Nachrichtenvorlage: Angebot annehmen"
+      },
+      "reject": {
+        "intro": "Passe die Nachricht an, die beim Ablehnen eines Angebots kopiert wird. Verfügbare Platzhalter:",
+        "label": "Nachrichtenvorlage: Angebot ablehnen"
+      },
+      "sold": {
+        "intro": "Passe die Nachricht an, die beim Markieren eines Items als verkauft kopiert wird. Verfügbare Platzhalter:",
+        "label": "Nachrichtenvorlage: Item verkauft"
+      },
+      "insertToken": "{{token}} einfügen",
+      "asks": "Fragt bei Verwendung im Chat: {{placeholders}}",
+      "group": "Nachrichtenvorlagen"
+    },
+    "notifications": {
+      "group": "Benachrichtigungen"
+    },
+    "general": {
+      "label": "Allgemeine Benachrichtigungen",
+      "description": "Einen Ton abspielen, wenn du Flüstern ohne Handelsbezug von Spielern oder neue Nachrichten im Website-Chat erhältst."
+    },
+    "toasts": {
+      "label": "Popup-Benachrichtigungen",
+      "description": "Popup-Benachrichtigungen zeigen, wenn du aus Diablo herausgetabbt bist.",
+      "typesLabel": "Arten von Popup-Benachrichtigungen"
+    },
+    "trade": {
+      "label": "Handelsbenachrichtigungen",
+      "description": "Einen Ton abspielen, wenn du Handels-Flüstern oder Handelsangebote von der Website erhältst."
+    },
+    "announcements": {
+      "label": "Ankündigungs-Benachrichtigungen",
+      "description": "Benachrichtigungen für Nachrichten von *announcements aktivieren. Standardmäßig werden Ankündigungen ignoriert."
+    },
+    "joins": {
+      "label": "Beitritts-Benachrichtigungen",
+      "description": "Eine Benachrichtigung zeigen, wenn ein Spieler dem Spiel beitritt (nur wenn Diablo nicht im Fokus ist). Standardmäßig deaktiviert."
+    }
+  },
+  "sections": {
+    "interface": {
+      "title": "Oberfläche",
+      "description": "Oberflächen- und Overlay-Einstellungen festlegen."
+    },
+    "theme": {
+      "title": "Theme",
+      "description": "Farbschema für alle Overlay-Fenster. Wird sofort angewendet."
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Chat- und Flüster-Benachrichtigungen sowie deine Nachrichtenvorlagen einstellen."
+    },
+    "general": {
+      "title": "Allgemein",
+      "description": "Allgemeine Einstellungen der Anwendung."
+    },
+    "hotkeys": {
+      "title": "Hotkeys",
+      "description": "Lege hier deine Hotkeys fest."
+    },
+    "about": {
+      "title": "Über",
+      "description": "Informationen über die Anwendung, ihre Version und den Entwickler."
+    },
+    "account": {
+      "title": "Konto",
+      "description": "Verwalte hier deine Kontoeinstellungen."
+    },
+    "networth": {
+      "title": "Vermögen",
+      "description": "Verfolge dein Vermögen über die Zeit und zeige es beim Spielen in einem Overlay an."
+    },
+    "stats": {
+      "title": "Preischeck",
+      "description": "Lege den Preiszeitraum fest und wie Wertebereiche und Filter für Preischeck-Suchen befüllt werden."
+    }
+  }
+}

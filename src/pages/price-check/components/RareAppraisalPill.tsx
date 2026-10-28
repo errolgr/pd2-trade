@@ -13,12 +13,14 @@ import {
   isCrafted,
   MODEL_SEASON,
   rankText,
-  SLOT_LABELS,
-  SLOT_PLURALS,
+  slotLabel,
+  slotPlural,
 } from '@/components/rares/rares-format';
+import { useTranslation } from '@/i18n';
 
 /** Header placeholder while the rare is appraised (same footprint as the uniques' price pill skeleton). */
 export function RareAppraisalPillSkeleton({ crafted = false }: { crafted?: boolean }) {
+  const { t } = useTranslation('priceCheck');
   return (
     <div
       className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
@@ -29,7 +31,7 @@ export function RareAppraisalPillSkeleton({ crafted = false }: { crafted?: boole
         <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="size-3 animate-spin" />
-          {crafted ? 'Appraising crafted item...' : 'Appraising rare...'}
+          {crafted ? t('rareAppraisal.appraisingCrafted') : t('rareAppraisal.appraisingRare')}
         </span>
       </div>
     </div>
@@ -53,9 +55,10 @@ export function RareAppraisalPill({
   /** Price check runs in hardcore mode: note that verdict/stars are softcore-trained (pill tooltip + popover line). */
   hardcore?: boolean;
 }) {
+  const { t } = useTranslation('priceCheck');
   const market = appraisal.market;
   const hcNote = hardcoreNote(appraisal, hardcore);
-  const slots = (SLOT_PLURALS[appraisal.slot] ?? 'items').toLowerCase();
+  const slots = slotPlural(appraisal.slot, true);
   return (
     <motion.div className="inline-block"
       variants={scaleIn}
@@ -71,7 +74,7 @@ export function RareAppraisalPill({
                 {title}
               </span>
               <span className="shrink-0 text-[11px] text-muted-foreground">
-                {SLOT_LABELS[appraisal.slot]} · est. from {MODEL_SEASON} listings
+                {t('rareAppraisal.estimatedFrom', { slot: slotLabel(appraisal.slot), season: MODEL_SEASON })}
               </span>
             </div>
             <CraftedBadges rare={appraisal} />
@@ -91,7 +94,9 @@ export function RareAppraisalPill({
             className="flex-col items-start" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">of {slots}</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t('rareAppraisal.ofSlots', { slots })}
+            </span>
           </div>
           {market && (
             <>
@@ -101,7 +106,9 @@ export function RareAppraisalPill({
                 <span className="text-sm font-semibold tabular-nums text-foreground">
                   {bandRange(market.lowHr, market.highHr)} HR
                 </span>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">usually listed</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t('rareAppraisal.usuallyListed')}
+                </span>
               </div>
             </>
           )}

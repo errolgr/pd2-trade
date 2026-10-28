@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Patrimônio",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Patrimônio — clique para detalhes, arraste para mover",
+    "snapshotFailed": "Falha no registro",
+    "lastSnapshot": "Último registro {{time}}",
+    "noSnapshot": "Nenhum registro ainda",
+    "session": "sessão"
+  },
+  "panel": {
+    "title": "Patrimônio",
+    "hide": "Ocultar",
+    "openFullView": "Abrir visão completa",
+    "signInPrompt": "Entre com sua conta PD2 para acompanhar seu patrimônio.",
+    "signIn": "Entrar",
+    "uncertain": "+{{value}} HR incerto",
+    "sessionDelta": "{{change}} HR na sessão",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} min",
+    "thisSession": "Esta sessão",
+    "last24Hours": "Últimas 24 horas",
+    "notEnoughSnapshots": "Registros insuficientes ainda",
+    "recentSnapshots": "Registros recentes",
+    "noChanges": "Nenhuma alteração registrada ainda.",
+    "historyOff": "O histórico está desativado. Ative \"Salvar histórico de patrimônio\" em Configurações → Patrimônio para ver sessões e alterações.",
+    "snapshotNow": "Registrar agora",
+    "startSession": "Iniciar sessão",
+    "stopSession": "Encerrar sessão"
+  },
+  "profile": {
+    "publicProfile": "Perfil público",
+    "private": "Privado",
+    "publicTooltip": "O nome da sua conta, classificações, patrimônio, gráfico, emblemas e achados notáveis ficam públicos em pd2trader.com.",
+    "privateTooltip": "Só você pode ver seu patrimônio. Ative para aparecer nos rankings do pd2trader.com com um perfil público.",
+    "saveFailed": "Falha ao salvar",
+    "couldNotSave": "Não foi possível salvar",
+    "viewProfile": "Ver perfil"
+  }
+}

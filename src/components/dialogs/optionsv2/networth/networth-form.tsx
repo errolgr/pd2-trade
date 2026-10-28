@@ -10,24 +10,25 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { PublicProfileGroup } from './public-profile';
+import { Trans, useTranslation } from '@/i18n';
 
 const AUTO_SNAPSHOT_OPTIONS = [
-  { value: '0', label: 'Off' },
-  { value: '5', label: 'Every 5 minutes' },
-  { value: '10', label: 'Every 10 minutes' },
-  { value: '15', label: 'Every 15 minutes' },
-  { value: '30', label: 'Every 30 minutes' },
-];
+  { value: '0', labelKey: 'networth.autoSnapshotOptions.off' },
+  { value: '5', labelKey: 'networth.autoSnapshotOptions.every5' },
+  { value: '10', labelKey: 'networth.autoSnapshotOptions.every10' },
+  { value: '15', labelKey: 'networth.autoSnapshotOptions.every15' },
+  { value: '30', labelKey: 'networth.autoSnapshotOptions.every30' },
+] as const;
 
 /** Ticker positions (net worth ticker, corrupted zone timer). */
-export const TICKER_ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; label: string }[] = [
-  { value: 'top-left', label: 'Top left' },
-  { value: 'top-center', label: 'Top center' },
-  { value: 'top-right', label: 'Top right' },
-  { value: 'bottom-left', label: 'Bottom left' },
-  { value: 'bottom-right', label: 'Bottom right' },
-  { value: 'above-chat', label: 'Above chat button' },
-  { value: 'custom', label: 'Custom (drag to move)' },
+export const TICKER_ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; labelKey: string }[] = [
+  { value: 'top-left', labelKey: 'tickerAnchor.topLeft' },
+  { value: 'top-center', labelKey: 'tickerAnchor.topCenter' },
+  { value: 'top-right', labelKey: 'tickerAnchor.topRight' },
+  { value: 'bottom-left', labelKey: 'tickerAnchor.bottomLeft' },
+  { value: 'bottom-right', labelKey: 'tickerAnchor.bottomRight' },
+  { value: 'above-chat', labelKey: 'tickerAnchor.aboveChat' },
+  { value: 'custom', labelKey: 'tickerAnchor.custom' },
 ];
 
 export const tickerAnchorSchema = z.enum([
@@ -63,6 +64,7 @@ function toFormValues(settings: ISettings | undefined): NetWorthFormValues {
 }
 
 export function NetWorthForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
   const debounceRef = React.useRef<number | undefined>(undefined);
 
@@ -112,14 +114,14 @@ export function NetWorthForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title="History">
+        <SettingsGroup title={t('networth.history.group')}>
           <FormField
             control={form.control}
             name="netWorthTrackingEnabled"
             render={({ field }) => (
               <SettingsRow
-                label="Save net worth history"
-                description="Store snapshots of your net worth on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
+                label={t('networth.history.tracking.label')}
+                description={t('networth.history.tracking.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value}
@@ -136,21 +138,21 @@ export function NetWorthForm() {
             name="netWorthAutoSnapshotMinutes"
             render={({ field }) => (
               <SettingsRow
-                label="Automatic snapshots"
-                description="Take a snapshot on this interval while Diablo II is focused."
+                label={t('networth.history.autoSnapshot.label')}
+                description={t('networth.history.autoSnapshot.description')}
                 control={
                   <Select value={String(field.value)}
                     onValueChange={(value) => field.onChange(Number(value))}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Interval" />
+                        <SelectValue placeholder={t('networth.history.autoSnapshot.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {AUTO_SNAPSHOT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
-                          {option.label}
+                          {t(option.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -165,14 +167,14 @@ export function NetWorthForm() {
 
         <PublicProfileGroup />
 
-        <SettingsGroup title="Ticker overlay">
+        <SettingsGroup title={t('networth.ticker.group')}>
           <FormField
             control={form.control}
             name="netWorthTickerEnabled"
             render={({ field }) => (
               <SettingsRow
-                label="Net worth ticker"
-                description="Show your net worth, session change and HR per hour over the game. Click it for details."
+                label={t('networth.ticker.enabled.label')}
+                description={t('networth.ticker.enabled.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value}
@@ -189,21 +191,21 @@ export function NetWorthForm() {
             name="netWorthTickerAnchor"
             render={({ field }) => (
               <SettingsRow
-                label="Ticker position"
-                description="Pin the ticker to a corner of the game, or drag it anywhere on screen (switches to Custom)."
+                label={t('networth.ticker.position.label')}
+                description={t('networth.ticker.position.description')}
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Position" />
+                        <SelectValue placeholder={t('networth.ticker.position.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {TICKER_ANCHOR_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
-                          {option.label}
+                          {t(option.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -220,9 +222,12 @@ export function NetWorthForm() {
             render={({ field }) => (
               <SettingsRow
                 label={
-                  <>
-                    Ticker opacity: <span className="tabular-nums">{field.value}%</span>
-                  </>
+                  <Trans
+                    t={t}
+                    i18nKey="networth.ticker.opacity"
+                    values={{ value: field.value }}
+                    components={{ num: <span className="tabular-nums" /> }}
+                  />
                 }
                 control={
                   <div className="flex w-[220px] items-center gap-3">
@@ -238,7 +243,7 @@ export function NetWorthForm() {
                     </FormControl>
                     <span
                       aria-hidden
-                      title="Preview"
+                      title={t('networth.ticker.preview')}
                       style={{ opacity: field.value / 100 }}
                       className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
                     >
@@ -253,18 +258,19 @@ export function NetWorthForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Notifications">
+        <SettingsGroup title={t('networth.toastThreshold.group')}>
           <FormField
             control={form.control}
             name="netWorthToastThresholdHr"
             render={({ field }) => (
               <SettingsRow
-                label="Snapshot toast threshold (HR)"
+                label={t('networth.toastThreshold.label')}
                 description={
-                  <>
-                    While the ticker is on, show a toast when a snapshot changes your net worth by at least this much.
-                    Toggle the Net Worth toast type under <SettingsLink to="Chat">Chat settings</SettingsLink>.
-                  </>
+                  <Trans
+                    t={t}
+                    i18nKey="networth.toastThreshold.description"
+                    components={{ section: <SettingsLink to="Chat" /> }}
+                  />
                 }
                 control={
                   <div className="flex items-center gap-2">
@@ -289,7 +295,9 @@ export function NetWorthForm() {
         </SettingsGroup>
 
         <SettingsHint>
-          The snapshot hotkey is configured under <SettingsLink to="Hotkeys">Hotkeys</SettingsLink>.
+          <Trans t={t}
+            i18nKey="networth.hotkeyHint"
+            components={{ section: <SettingsLink to="Hotkeys" /> }} />
         </SettingsHint>
       </div>
     </Form>

@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
+import { useTranslation } from '@/i18n';
 
 /**
  * The Σ chip on a resist row (or a folded Σ row): a menu of the totals the row feeds. Picking one folds the rows
@@ -26,13 +27,14 @@ export function PseudoChip({
   active?: string;
   onPick: (id: string) => void;
 }) {
+  const { t } = useTranslation('priceCheck');
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <motion.button
           type="button"
-          aria-label={active ? 'Change or unfold this total' : 'Search a total instead'}
-          title={active ? 'Change or unfold this total' : 'Search a total (Σ) instead of this line'}
+          aria-label={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalAria')}
+          title={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalTitle')}
           // Inside the row's <label>: keep the click from toggling the row's checkbox
           onClick={(e) => e.stopPropagation()}
           whileHover={{ scale: 1.08 }}
@@ -60,7 +62,7 @@ export function PseudoChip({
       <DropdownMenuContent align="start"
         className="min-w-56">
         <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
-          Search a total — folds the rows it covers
+          {t('pseudoChip.menuLabel')}
         </DropdownMenuLabel>
         {options.map((o) => (
           <DropdownMenuItem key={o.id}

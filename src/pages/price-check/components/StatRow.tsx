@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,7 +7,6 @@ import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
-import { fuzzyMatchCharacterSkill } from '@/assets/character-skills';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
@@ -15,8 +14,9 @@ import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { starsText, starTitle } from '@/components/rares/rares-format';
-import { formatStatRange } from '@/pages/price-check/lib/stat-ranges';
+import { formatStatRange, skillByName } from '@/pages/price-check/lib/stat-ranges';
 import { getStatKey } from '@/pages/price-check/lib/utils';
+import { useTranslation } from '@/i18n';
 
 /**
  * The row as the item's tooltip draws it ("+20% Faster Cast Rate", "Adds 4-14 fire damage", "Socketed (4)"),
@@ -94,11 +94,6 @@ const rowPresence = {
 const numberInputClass =
   'h-7 w-16 rounded-md border border-input bg-background/60 px-2 text-xs tabular-nums text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-(--dur-fast) placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/30';
 
-const CORRUPTED_STATE_HINT: Record<number, string> = {
-  1: 'only',
-  2: 'excluded',
-};
-
 export const StatRow: React.FC<StatRowProps> = ({
   stat,
   nested,
@@ -114,6 +109,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   item,
   wipe,
 }) => {
+  const { t } = useTranslation('priceCheck');
   const statKey = getStatKey(stat);
   const isSocket = stat.stat_id === StatId.Socket;
   const isCorrupted = stat.stat_id === StatId.Corrupted;
@@ -121,7 +117,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSkill = 'skill' in stat;
   const isUnknownSkill =
     isSkill &&
-    !fuzzyMatchCharacterSkill(stat.skill.toLowerCase()) &&
+    !skillByName(stat.skill) &&
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase());
   const isDamagePair = stat.maxValue !== undefined;
@@ -138,9 +134,17 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSelected = selected.has(statKey);
   const isActive = isCorrupted ? corruptedState !== 0 : isSelected;
   const showRangeInputs = !isCorrupted && !isEthereal && isSelected;
-  const corruptedHint = isCorrupted ? CORRUPTED_STATE_HINT[corruptedState] : undefined;
+  const corruptedHint = !isCorrupted
+    ? undefined
+    : corruptedState === 1
+      ? t('statRow.corruptedOnly')
+      : corruptedState === 2
+        ? t('statRow.corruptedExcluded')
+        : undefined;
   /** Clears per range line (`min` / `maxMin`): each one replays the clear sweep. */
   const [clearNonce, setClearNonce] = useState<Partial<Record<string, number>>>({});
+  /** The current press started in a min/max input (see the label's onClickCapture). */
+  const pressInInput = useRef(false);
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
@@ -163,7 +167,7 @@ export const StatRow: React.FC<StatRowProps> = ({
 
   const rangeBracket = !isSocket && rangeText && stat.value !== undefined && (
     <span className="ml-1 text-xs tabular-nums text-muted-foreground"
-      title="Stat range shown on the PD2 tooltip">
+      title={t('statRow.rangeTitle')}>
       {rangeText}
     </span>
   );
@@ -204,6 +208,14 @@ export const StatRow: React.FC<StatRowProps> = ({
       )}
     >
       <label
+        // A drag that selects an input's text and is released elsewhere on the row clicks the row (the press and
+        // release's common ancestor): that must not toggle the stat and drop its range
+        onMouseDown={(e) => {
+          pressInInput.current = e.target instanceof Element && !!e.target.closest('input');
+        }}
+        onClickCapture={(e) => {
+          if (pressInInput.current && !(e.target instanceof Element && e.target.closest('input'))) e.preventDefault();
+        }}
         key={statKey}
         className={cn(
           'group/row relative flex min-h-10 flex-row items-center justify-between gap-2 overflow-hidden rounded-md px-2.5 py-1',
@@ -239,7 +251,7 @@ export const StatRow: React.FC<StatRowProps> = ({
               onClick={() => toggle(stat)}
               role="checkbox"
               aria-checked={corruptedChecked ? 'true' : corruptedIndeterminate ? 'mixed' : 'false'}
-              aria-label="Corrupted filter"
+              aria-label={t('statRow.corruptedFilter')}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -266,7 +278,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                 </span>
                 <Badge variant="destructive"
                   className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
-                  Unknown
+                  {t('statRow.unknown')}
                 </Badge>
               </div>
             )}
@@ -297,16 +309,16 @@ export const StatRow: React.FC<StatRowProps> = ({
                   {rare && rare.stars === null && rare.keyFrom !== null && (
                     <span
                       className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70"
-                      title={`This stat starts to add value on this slot from ${rare.keyFrom}`}
+                      title={t('statRow.keyFromTitle', { value: rare.keyFrom })}
                     >
-                      valuable from {rare.keyFrom}
+                      {t('statRow.valuableFrom', { value: rare.keyFrom })}
                     </span>
                   )}
                 </span>
                 <AnimatePresence initial={false}>
                   {corruptedHint && (
                     <motion.span
-                      key={corruptedHint}
+                      key={corruptedState}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
@@ -326,7 +338,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                   <HoverPopover
                     content={
                       <div className="max-w-xs rounded-lg border border-border bg-popover p-2.5 text-xs leading-relaxed text-popover-foreground shadow-panel">
-                        This item can be corrupted. Use this filter to search for corrupted or non-corrupted versions.
+                        {t('statRow.injectedCorruptedHint')}
                       </div>
                     }
                   >
@@ -335,7 +347,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                 )}
                 {stat.corrupted && (
                   <span className="text-q-corrupted"
-                    title="Corrupted stat">
+                    title={t('statRow.corruptedStat')}>
                     *
                   </span>
                 )}
@@ -361,8 +373,8 @@ export const StatRow: React.FC<StatRowProps> = ({
             >
               {(isDamagePair
                 ? ([
-                    ['min', 'max', 'Min dmg', `${stat.name} min damage`],
-                    ['maxMin', 'maxMax', 'Max dmg', `${stat.name} max damage`],
+                    ['min', 'max', t('statRow.minDamage'), t('statRow.minDamageAria', { name: stat.name })],
+                    ['maxMin', 'maxMax', t('statRow.maxDamage'), t('statRow.maxDamageAria', { name: stat.name })],
                   ] as const)
                 : ([['min', 'max', null, stat.name]] as const)
               ).map(([lo, hi, label, aria]) => {
@@ -382,8 +394,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                       <input
                         type="number"
                         className={numberInputClass}
-                        placeholder="min"
-                        aria-label={`${aria} minimum`}
+                        placeholder={t('statRow.minPlaceholder')}
+                        aria-label={t('statRow.minimumAria', { label: aria })}
                         value={filters[statKey]?.[lo] ?? ''}
                         onChange={(e) => updateFilter(statKey, lo, e.target.value)}
                         onKeyDown={handleInputKeyDown}
@@ -402,8 +414,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                         </span>
                         <button
                           type="button"
-                          aria-label={`Clear ${aria} range`}
-                          title="Clear min and max"
+                          aria-label={t('statRow.clearRangeAria', { label: aria })}
+                          title={t('statRow.clearRangeTitle')}
                           tabIndex={hasRange ? 0 : -1}
                           aria-hidden={!hasRange}
                           onClick={(e) => {
@@ -412,7 +424,10 @@ export const StatRow: React.FC<StatRowProps> = ({
                             updateFilter(statKey, hi, '');
                             setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
                             // Ready to type the new min
-                            e.currentTarget.closest('[data-range-line]')?.querySelector('input')?.focus({ preventScroll: true });
+                            e.currentTarget
+                              .closest('[data-range-line]')
+                              ?.querySelector('input')
+                              ?.focus({ preventScroll: true });
                           }}
                           className={cn(
                             'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -425,8 +440,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                       <input
                         type="number"
                         className={numberInputClass}
-                        placeholder="max"
-                        aria-label={`${aria} maximum`}
+                        placeholder={t('statRow.maxPlaceholder')}
+                        aria-label={t('statRow.maximumAria', { label: aria })}
                         value={filters[statKey]?.[hi] ?? ''}
                         onChange={(e) => updateFilter(statKey, hi, e.target.value)}
                         onKeyDown={handleInputKeyDown}
@@ -441,7 +456,11 @@ export const StatRow: React.FC<StatRowProps> = ({
                               className="pointer-events-none absolute inset-y-0 w-2/3 bg-linear-to-r from-transparent via-glow/55 to-transparent"
                               initial={{ left: '-70%', opacity: 1 }}
                               animate={{ left: '110%', opacity: [1, 1, 0] }}
-                              transition={{ duration: 0.5, ease: EASE_OUT, opacity: { duration: 0.5, times: [0, 0.75, 1] } }}
+                              transition={{
+                                duration: 0.5,
+                                ease: EASE_OUT,
+                                opacity: { duration: 0.5, times: [0, 0.75, 1] },
+                              }}
                             />
                             <motion.span
                               aria-hidden
@@ -489,7 +508,7 @@ export const StatRow: React.FC<StatRowProps> = ({
             className="ml-1 inline-flex h-5 items-center gap-0.5 rounded-sm px-1 text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <X className="size-3" />
-            Unfold
+            {t('statRow.unfold')}
           </motion.button>
         </motion.div>
       )}

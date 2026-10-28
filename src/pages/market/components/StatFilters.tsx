@@ -20,18 +20,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
-import {
-  MAX_OR_BLOCKS,
-  compactBlocks,
-  groupOf,
-  moveToGroup,
-  orBlockNumbers,
-  type StatGroup,
-} from '../lib/stat-groups';
+import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, NumberInput, fieldInputClass } from './controls';
 import { choiceText, filterName } from './stat-text';
+import { Trans, useTranslation } from '@/i18n';
 
 const MAX_SUGGESTIONS = 40;
 
@@ -50,11 +44,14 @@ function StatNumber({
   value: number | undefined;
   onChange: (v: number | undefined) => void;
 }) {
+  const { t } = useTranslation('market');
   return (
     <label className="flex min-w-0 items-center gap-1">
-      <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label === 'Min' ? t('stats.min') : t('stats.max')}
+      </span>
       <NumberInput
-        ariaLabel={`${name} ${label.toLowerCase()}`}
+        ariaLabel={label === 'Min' ? t('controls.minLabel', { label: name }) : t('controls.maxLabel', { label: name })}
         value={value}
         onChange={onChange}
         className="h-6 px-1 text-center"
@@ -65,12 +62,13 @@ function StatNumber({
 
 /** Marks a corruption row / picker entry. */
 function CorruptionBadge() {
+  const { t } = useTranslation('market');
   return (
     <span
-      title="Cube corruption"
+      title={t('stats.cubeCorruption')}
       className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase"
     >
-      Corr
+      {t('stats.corrBadge')}
     </span>
   );
 }
@@ -93,10 +91,10 @@ export interface StatFiltersProps {
 
 /** Picker tabs: what kind of filter a suggestion adds. */
 type StatTab = 'mod' | 'pseudo' | 'corruption';
-const TABS: { id: StatTab; label: string }[] = [
-  { id: 'mod', label: 'Mods' },
-  { id: 'pseudo', label: 'Pseudo' },
-  { id: 'corruption', label: 'Corruptions' },
+const TABS: { id: StatTab; labelKey: string }[] = [
+  { id: 'mod', labelKey: 'stats.tabs.mods' },
+  { id: 'pseudo', labelKey: 'stats.tabs.pseudo' },
+  { id: 'corruption', labelKey: 'stats.tabs.corruptions' },
 ];
 const tabOf = (choice: StatChoice): StatTab =>
   isPseudo(choice) ? 'pseudo' : isCorruption(choice) ? 'corruption' : 'mod';
@@ -147,6 +145,7 @@ export function StatFilters({
   searchRef,
   highlight,
 }: StatFiltersProps) {
+  const { t: tr } = useTranslation('market');
   const [query, setQuery] = useState('');
   // The tab the user picked, and the tab on screen: both hold while they have matches, so typing on doesn't
   // flip the list between tabs whenever the best match changes kind
@@ -288,7 +287,7 @@ export function StatFilters({
           <div className="flex min-w-0 items-center gap-1">
             <span
               aria-hidden
-              title="Drag to another group"
+              title={tr('stats.dragHint')}
               data-stat-grip={s.id}
               className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
               {...gripHandlers(s, name)}
@@ -297,12 +296,12 @@ export function StatFilters({
             </span>
             <Checkbox
               checked={s.enabled}
-              aria-label={`${s.enabled ? 'Disable' : 'Enable'} ${name}`}
+              aria-label={s.enabled ? tr('stats.disable', { name }) : tr('stats.enable', { name })}
               onCheckedChange={(v) => update(s.id, { enabled: v === true })}
               className="size-3.5"
             />
             {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
-              aria-label="Pseudo stat" />}
+              aria-label={tr('stats.pseudoStat')} />}
             {corruption && <CorruptionBadge />}
             <span className="min-w-0 flex-1 truncate text-xs"
               title={name}>
@@ -317,8 +316,8 @@ export function StatFilters({
             />
             <button
               type="button"
-              aria-label={`Remove ${name}`}
-              title="Remove"
+              aria-label={tr('stats.removeName', { name })}
+              title={tr('common:actions.remove')}
               onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
               className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
             >
@@ -337,7 +336,7 @@ export function StatFilters({
                 onChange={(max) => update(s.id, { max })} />
             </div>
           ) : (
-            <p className="pl-9 text-[10px] text-muted-foreground">Item has this corruption</p>
+            <p className="pl-9 text-[10px] text-muted-foreground">{tr('stats.hasCorruption')}</p>
           )}
         </div>
       </motion.li>
@@ -364,8 +363,8 @@ export function StatFilters({
       <div className="flex items-center gap-1">
         <Autocomplete<StatChoice>
           inputRef={inputRef}
-          ariaLabel="Add a stat filter"
-          placeholder="Add stat…  ( ? )"
+          ariaLabel={tr('stats.addLabel')}
+          placeholder={tr('stats.addPlaceholder')}
           value={query}
           onQuery={(q) => {
             if (!q.trim()) {
@@ -388,9 +387,11 @@ export function StatFilters({
             }
           }}
           header={
-            <div role="tablist"
-              aria-label="Filter kind"
-              className="mb-1 flex gap-0.5 border-b border-border pb-1">
+            <div
+              role="tablist"
+              aria-label={tr('stats.filterKind')}
+              className="mb-1 flex gap-0.5 border-b border-border pb-1"
+            >
               {TABS.map((t) => (
                 <button
                   key={t.id}
@@ -408,7 +409,7 @@ export function StatFilters({
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t.label}
+                  {tr(t.labelKey)}
                   {counts[t.id] > 0 && <span className="ml-1 tabular-nums opacity-70">{counts[t.id]}</span>}
                 </button>
               ))}
@@ -419,7 +420,7 @@ export function StatFilters({
               {/* Pseudo marker stays (Σ also tags pseudo rows); the Corruptions tab needs no per-row badge */}
               {isPseudo(choice) ? (
                 <Sigma className="size-3 shrink-0 text-info"
-                  aria-label="Pseudo stat" />
+                  aria-label={tr('stats.pseudoStat')} />
               ) : (
                 <span className="size-3 shrink-0" />
               )}
@@ -453,18 +454,18 @@ export function StatFilters({
           {required.length > 0 ? (
             <ul
               {...dropProps('and')}
-              aria-label="All of"
+              aria-label={tr('stats.groups.allOf')}
               className={cn('divide-y divide-border/50 overflow-hidden rounded-md border border-border/60', overClass)}
             >
               <AnimatePresence initial={false}>{required.map(renderRow)}</AnimatePresence>
             </ul>
           ) : (
-            activeDrag && dropZone('and', 'Required (AND)', 'border-border text-muted-foreground')
+            activeDrag && dropZone('and', tr('stats.groups.requiredDrop'), 'border-border text-muted-foreground')
           )}
           {blocks.map((n) => {
             const rows = blockRows(n);
             const enabled = rows.filter((s) => s.enabled).length;
-            const label = blocks.length > 1 ? `Any of ${n}` : 'Any of';
+            const label = blocks.length > 1 ? tr('stats.groups.anyOfN', { n }) : tr('stats.groups.anyOf');
             return (
               <section
                 key={n}
@@ -475,7 +476,7 @@ export function StatFilters({
                 <header className="flex items-baseline justify-between gap-2 border-b border-info/20 px-1.5 py-0.5">
                   <span className="text-[10px] font-semibold tracking-wider text-info uppercase">{label}</span>
                   <span className="truncate text-[10px] text-muted-foreground">
-                    {enabled > 1 ? `at least 1 of ${enabled} must match` : 'add or drag in another row'}
+                    {enabled > 1 ? tr('stats.groups.atLeastOne', { count: enabled }) : tr('stats.groups.addAnother')}
                   </span>
                 </header>
                 <ul className="divide-y divide-border/50">
@@ -487,17 +488,23 @@ export function StatFilters({
           {activeDrag &&
             dragged &&
             canOpenBlock(dragged) &&
-            dropZone('new', blocks.length ? 'New any-of block (OR)' : 'Any of (OR)', 'border-info/50 text-info')}
+            dropZone(
+              'new',
+              blocks.length ? tr('stats.groups.newBlockDrop') : tr('stats.groups.anyOfDrop'),
+              'border-info/50 text-info',
+            )}
           {excluded.length > 0 ? (
             <section
               {...dropProps('not')}
-              aria-label="None of"
+              aria-label={tr('stats.groups.noneOf')}
               className={cn('overflow-hidden rounded-md border border-destructive/40 bg-destructive/5', overClass)}
             >
               <header className="flex items-baseline justify-between gap-2 border-b border-destructive/20 px-1.5 py-0.5">
-                <span className="text-[10px] font-semibold tracking-wider text-destructive uppercase">None of</span>
+                <span className="text-[10px] font-semibold tracking-wider text-destructive uppercase">
+                  {tr('stats.groups.noneOf')}
+                </span>
                 <span className="truncate text-[10px] text-muted-foreground">
-                  {excluded.length > 1 ? 'listings with any of these are hidden' : 'listings with this are hidden'}
+                  {excluded.length > 1 ? tr('stats.groups.hiddenMany') : tr('stats.groups.hiddenOne')}
                 </span>
               </header>
               <ul className="divide-y divide-border/50">
@@ -505,14 +512,17 @@ export function StatFilters({
               </ul>
             </section>
           ) : (
-            activeDrag && dropZone('not', 'Exclude (NOT)', 'border-destructive/50 text-destructive')
+            activeDrag && dropZone('not', tr('stats.groups.excludeDrop'), 'border-destructive/50 text-destructive')
           )}
         </div>
       )}
       {stats.length === 0 && (
         <p className="px-0.5 text-[11px] leading-snug text-muted-foreground">
-          Search mods, <Sigma className="inline size-3 text-info" /> pseudo stats (total resists, total life…) or
-          corruptions, or start from a preset.
+          <Trans
+            t={tr}
+            i18nKey="stats.emptyHint"
+            components={{ sigma: <Sigma className="inline size-3 text-info" /> }}
+          />
         </p>
       )}
       {activeDrag &&
@@ -563,45 +573,52 @@ function GroupMenu({
   canOpenBlock: boolean;
   onMove: (target: DropTarget) => void;
 }) {
+  const { t } = useTranslation('market');
   const description =
-    group === 'and' ? 'required (AND)' : group === 'not' ? 'excluded (NOT)' : `in any-of block ${group} (OR)`;
+    group === 'and'
+      ? t('stats.groups.requiredDescription')
+      : group === 'not'
+        ? t('stats.groups.excludedDescription')
+        : t('stats.groups.blockDescription', { n: group });
   // Badges number the blocks once there are several (a new block makes several when one exists)
   const options: { target: DropTarget; group: StatGroup; badge: string; label: string }[] = [
-    { target: 'and', group: 'and', badge: 'AND', label: 'Required' },
+    { target: 'and', group: 'and', badge: 'AND', label: t('stats.groups.required') },
     ...blocks.map((n) => ({
       target: n,
       group: n,
       badge: blocks.length > 1 ? `OR ${n}` : 'OR',
-      label: blocks.length > 1 ? `Any of ${n}` : 'Any of',
+      label: blocks.length > 1 ? t('stats.groups.anyOfN', { n }) : t('stats.groups.anyOf'),
     })),
     ...(canOpenBlock
       ? [
-        {
-          target: 'new' as const,
-          group: blocks.length + 1,
-          badge: blocks.length ? `OR ${blocks.length + 1}` : 'OR',
-          label: blocks.length ? 'New any-of block' : 'Any of',
-        },
-      ]
+          {
+            target: 'new' as const,
+            group: blocks.length + 1,
+            badge: blocks.length ? `OR ${blocks.length + 1}` : 'OR',
+            label: blocks.length ? t('stats.groups.newBlock') : t('stats.groups.anyOf'),
+          },
+        ]
       : []),
-    { target: 'not', group: 'not', badge: 'NOT', label: 'Exclude' },
+    { target: 'not', group: 'not', badge: 'NOT', label: t('stats.groups.exclude') },
   ];
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`${name}: ${description}`}
-          title="AND: required · OR: at least one row of its block · NOT: excluded. Click to move it, or drag the grip."
+          aria-label={t('stats.groups.rowLabel', { name, description })}
+          title={t('stats.groups.badgeHint')}
           className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
         >
-          <GroupBadge group={group}
-            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'} />
+          <GroupBadge
+            group={group}
+            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end"
         className="min-w-44">
-        <DropdownMenuLabel className="text-xs">Move to</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs">{t('stats.groups.moveTo')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={String(group)}
           onValueChange={(v) => onMove(options.find((o) => String(o.target) === v)?.target ?? group)}
@@ -635,6 +652,21 @@ function PresetMenu({
   onRemove: (preset: StatPreset) => void;
   onRestore?: () => void;
 }) {
+  const { t } = useTranslation('market');
+  /** Built-in presets show a translated name; user presets keep theirs. */
+  const presetName = (p: StatPreset) => {
+    if (!p.builtIn) return p.name;
+    switch (p.id) {
+      case 'builtin-caster-amulet':
+        return t('presets.builtInNames.casterAmulet');
+      case 'builtin-skiller-gc':
+        return t('presets.builtInNames.skillerGc');
+      case 'builtin-mf-gear':
+        return t('presets.builtInNames.mfGear');
+      default:
+        return p.name;
+    }
+  };
   const item = (p: StatPreset) => (
     <DropdownMenuItem
       key={p.id}
@@ -647,13 +679,13 @@ function PresetMenu({
       }}
       className="group text-xs"
     >
-      <span className="min-w-0 flex-1 truncate">{p.name}</span>
+      <span className="min-w-0 flex-1 truncate">{presetName(p)}</span>
       <span className="text-[10px] text-muted-foreground">{p.stats.length}</span>
       <button
         type="button"
         tabIndex={-1}
-        aria-label={`Delete preset ${p.name}`}
-        title="Delete preset (Del)"
+        aria-label={t('presets.deleteLabel', { name: presetName(p) })}
+        title={t('presets.deleteTitle')}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.preventDefault();
@@ -673,9 +705,9 @@ function PresetMenu({
         <Button variant="outline"
           size="sm"
           className="h-7 gap-1 px-2 text-xs"
-          aria-label="Stat presets">
+          aria-label={t('presets.menuLabel')}>
           <Sparkles className="size-3.5" />
-          Presets
+          {t('presets.button')}
           <ChevronDown className="size-3 opacity-60" />
         </Button>
       </DropdownMenuTrigger>
@@ -683,21 +715,19 @@ function PresetMenu({
         className="max-h-80 w-64 overflow-y-auto">
         {user.length > 0 && (
           <>
-            <DropdownMenuLabel className={sectionLabel}>Your presets</DropdownMenuLabel>
+            <DropdownMenuLabel className={sectionLabel}>{t('presets.yours')}</DropdownMenuLabel>
             {user.map(item)}
           </>
         )}
         {user.length > 0 && builtIn.length > 0 && <DropdownMenuSeparator />}
         {builtIn.length > 0 && (
           <>
-            <DropdownMenuLabel className={sectionLabel}>Built-in</DropdownMenuLabel>
+            <DropdownMenuLabel className={sectionLabel}>{t('presets.builtIn')}</DropdownMenuLabel>
             {builtIn.map(item)}
           </>
         )}
         {user.length === 0 && builtIn.length === 0 && (
-          <p className="px-2 py-1.5 text-xs text-muted-foreground">
-            No presets. Save the current stats with the bookmark.
-          </p>
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('presets.empty')}</p>
         )}
         {onRestore && (
           <>
@@ -705,7 +735,7 @@ function PresetMenu({
             <DropdownMenuItem onSelect={onRestore}
               className="text-xs text-muted-foreground">
               <RotateCcw className="size-3.5" />
-              Restore default presets
+              {t('presets.restore')}
             </DropdownMenuItem>
           </>
         )}
@@ -715,6 +745,7 @@ function PresetMenu({
 }
 
 function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (name: string) => void }) {
+  const { t } = useTranslation(['market', 'common']);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const submit = () => {
@@ -733,8 +764,8 @@ function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (na
           size="sm"
           disabled={disabled}
           className="size-7 p-0"
-          aria-label="Save stats as preset"
-          title="Save stats as preset"
+          aria-label={t('presets.save')}
+          title={t('presets.save')}
         >
           <BookmarkPlus className="size-3.5" />
         </Button>
@@ -750,8 +781,8 @@ function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (na
         >
           <Input
             autoFocus
-            aria-label="Preset name"
-            placeholder="Preset name"
+            aria-label={t('presets.name')}
+            placeholder={t('presets.name')}
             maxLength={40}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -761,7 +792,7 @@ function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (na
             size="sm"
             className="h-7 px-2 text-xs"
             disabled={!name.trim()}>
-            Save
+            {t('common:actions.save')}
           </Button>
         </form>
       </PopoverContent>

@@ -37,6 +37,7 @@ import { OpenOnSiteButton } from './components/OpenOnSiteButton';
 import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
+import { useTranslation } from '@/i18n';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
 const CARD_HOTKEYS: Record<string, CardCommand['action']> = { o: 'offer', w: 'whisper', f: 'favorite' };
@@ -50,6 +51,7 @@ const SKELETON_CARDS = 3;
 
 /** `market` panel: filters | results | detail, with Favorites and Saved searches tabs. */
 const MarketBrowserPage: React.FC = () => {
+  const { t } = useTranslation('market');
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
   const { openSignIn } = useSignIn();
   const { settings } = useOptions();
@@ -266,7 +268,7 @@ const MarketBrowserPage: React.FC = () => {
         itemName: filters.itemName,
         rarity: filters.rarity.length ? filters.rarity : undefined,
       });
-      showToast({ title: 'Preset saved', description: name, variant: 'success' });
+      showToast({ title: t('page.presetSaved'), description: name, variant: 'success' });
     },
     onRemovePreset: (preset: StatPreset) =>
       preset.builtIn ? store.hideBuiltInPreset(preset.id) : store.removePreset(preset.id),
@@ -357,10 +359,10 @@ const MarketBrowserPage: React.FC = () => {
             className="relative z-10 h-full w-full outline-none"
           >
             <WindowChrome
-              title="Market"
+              title={t('page.title')}
               icon={<Store className="text-primary" />}
               onClose={close}
-              closeLabel="Close market"
+              closeLabel={t('page.closeLabel')}
               center={
                 tab === 'search' &&
                 filters && (
@@ -400,7 +402,11 @@ const MarketBrowserPage: React.FC = () => {
                               />
                             )}
                             <span className="relative">
-                              {value === 'search' ? 'Search' : value === 'favorites' ? 'Favorites' : 'Saved'}
+                              {value === 'search'
+                                ? t('page.tabs.search')
+                                : value === 'favorites'
+                                  ? t('page.tabs.favorites')
+                                  : t('page.tabs.saved')}
                               {count > 0 && (
                                 <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">{count}</span>
                               )}
@@ -415,10 +421,10 @@ const MarketBrowserPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     className={cn('size-7 p-0', tab === 'saved' && 'invisible')}
-                    aria-label="Refresh"
+                    aria-label={t('common:actions.refresh')}
                     aria-hidden={tab === 'saved' || undefined}
                     tabIndex={tab === 'saved' ? -1 : undefined}
-                    title="Refresh"
+                    title={t('common:actions.refresh')}
                     onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
                   >
                     <RefreshCw
@@ -610,14 +616,15 @@ const MarketBrowserPage: React.FC = () => {
 
 /** Rows | Cards switch of the results header (icon segmented control). */
 function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: (mode: MarketViewMode) => void }) {
+  const { t } = useTranslation('market');
   const options: { mode: MarketViewMode; label: string; icon: React.ReactNode }[] = [
-    { mode: 'rows', label: 'Rows (with detail pane)', icon: <List className="size-3.5" /> },
-    { mode: 'cards', label: 'Cards (everything on the card)', icon: <LayoutGrid className="size-3.5" /> },
+    { mode: 'rows', label: t('viewMode.rows'), icon: <List className="size-3.5" /> },
+    { mode: 'cards', label: t('viewMode.cards'), icon: <LayoutGrid className="size-3.5" /> },
   ];
   return (
     <div
       role="radiogroup"
-      aria-label="Results view"
+      aria-label={t('viewMode.label')}
       className="flex h-6 shrink-0 rounded-md border border-input bg-background/40 p-0.5"
     >
       {options.map((o) => (
@@ -679,17 +686,18 @@ function ResultsPane({
   toolbar: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation(['market', 'common']);
   if (!signedIn || (tab === 'search' && search.status === 'auth')) {
     return (
       <EmptyState
         className="m-6"
         icon={<LogIn />}
-        title="Sign in to browse the market"
-        description="Favorites, offers and messages use your projectdiablo2.com account."
+        title={t('results.signInTitle')}
+        description={t('results.signInDescription')}
         action={
           <Button size="sm"
             onClick={onSignIn}>
-            Sign in
+            {t('common:actions.signIn')}
           </Button>
         }
       />
@@ -709,11 +717,11 @@ function ResultsPane({
 
   let status: React.ReactNode;
   if (tab === 'favorites') {
-    status = `${rows.length} favorite${rows.length === 1 ? '' : 's'}`;
+    status = t('results.favoritesCount', { count: rows.length });
   } else if (search.status === 'ready') {
     status = searchCountText(search);
   } else if (loading) {
-    status = 'Searching…';
+    status = t('results.searching');
   }
 
   let body: React.ReactNode = children;
@@ -722,13 +730,13 @@ function ResultsPane({
       <EmptyState
         className="m-6 border-destructive/30 bg-destructive/5"
         icon={<AlertTriangle />}
-        title="Search failed"
+        title={t('results.searchFailed')}
         description={error}
         action={
           <Button size="sm"
             variant="outline"
             onClick={retry}>
-            Try again
+            {t('common:actions.tryAgain')}
           </Button>
         }
       />
@@ -770,19 +778,19 @@ function ResultsPane({
         <EmptyState
           className="m-6"
           icon={<Heart />}
-          title="No favorites yet"
-          description="Heart a listing to keep it here; favorites sync with projectdiablo2.com."
+          title={t('results.noFavoritesTitle')}
+          description={t('results.noFavoritesDescription')}
         />
       ) : onSearchArchive ? (
         <EmptyState
           className="m-6"
           icon={<SearchX />}
-          title={itemName ? `No live listings for ${itemName}` : 'No live listings match'}
-          description="Search the sold archive to see what it sold for recently?"
+          title={itemName ? t('results.noLiveListingsFor', { itemName }) : t('results.noLiveListings')}
+          description={t('results.searchArchivePrompt')}
           action={
             <Button size="sm"
               onClick={onSearchArchive}>
-              Search sold archive
+              {t('results.searchArchive')}
             </Button>
           }
         />
@@ -790,8 +798,8 @@ function ResultsPane({
         <EmptyState
           className="m-6"
           icon={<SearchX />}
-          title="No listings match"
-          description="Loosen a filter, widen the age window or switch the mode."
+          title={t('results.noListingsTitle')}
+          description={t('results.noListingsDescription')}
         />
       );
   }
@@ -810,7 +818,7 @@ function ResultsPane({
             <motion.div
               key="refetch"
               role="progressbar"
-              aria-label="Refreshing results"
+              aria-label={t('results.refreshing')}
               className="absolute inset-x-0 -bottom-px h-0.5 overflow-hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

@@ -1,0 +1,126 @@
+{
+  "tray": {
+    "settings": "Configurações",
+    "openConfig": "Abrir local da configuração",
+    "quit": "Sair"
+  },
+  "options": {
+    "tokenLoaded": "Token carregado da URL com sucesso!"
+  },
+  "auth": {
+    "banned": "Esta conta do PD2 está banida do PD2 Trader.",
+    "popupBlocked": "Seu navegador bloqueou a janela de login. Permita pop-ups para este site e tente novamente.",
+    "timedOut": "O login expirou. Tente novamente.",
+    "success": "Autenticação concluída!",
+    "failed": "Falha na autenticação. Tente novamente.",
+    "unreachable": "Não foi possível acessar pd2trader.com. Verifique sua conexão com a internet, o firewall ou o antivírus e tente novamente.",
+    "loggedOut": "Você saiu da conta."
+  },
+  "updates": {
+    "availableTitle": "PD2 Trader - Atualização disponível",
+    "availableDescription": "A versão {{version}} está disponível. Clique para baixar e reiniciar.",
+    "downloadAndRestart": "Baixar e reiniciar",
+    "manualTitle": "PD2 Trader - Atualização {{version}} disponível",
+    "manualDescription": "O PD2 Trader não consegue se atualizar neste local de instalação. Baixe a nova versão na página de lançamento ou atualize pelo seu gerenciador de pacotes.",
+    "openReleasePage": "Abrir página de lançamento",
+    "downloading": "Baixando atualização...",
+    "downloadingProgress": "Baixando atualização... {{progress}}%",
+    "downloaded": "Atualização baixada! Reiniciando...",
+    "manualRequired": "A atualização precisa ser instalada manualmente",
+    "downloadFailed": "Falha ao baixar a atualização. Tente novamente mais tarde.",
+    "dialogTitle": "Baixando atualização",
+    "dialogDescription": "Aguarde enquanto a atualização é baixada."
+  },
+  "notifications": {
+    "offerAccepted": "Oferta aceita",
+    "newOffer": "Nova oferta",
+    "offerAcceptedText": "Sua oferta foi aceita",
+    "newOfferText": "Nova oferta recebida",
+    "viewListing": "Ver anúncio",
+    "reply": "Responder",
+    "playerJoined": "Jogador entrou",
+    "playerJoinedDescription": "{{player}} entrou no jogo",
+    "tradeWhisper": "Sussurro de troca",
+    "whisperFrom": "Sussurro de {{player}}",
+    "newChatMessage": "Nova mensagem no chat"
+  },
+  "offers": {
+    "item": "item",
+    "revoked": "Oferta revogada",
+    "revokedDescription": "Sua oferta em {{item}} foi revogada",
+    "revokedFallback": "A oferta foi revogada",
+    "revokeFailed": "Falha ao revogar oferta",
+    "revokeFailedDescription": "Ocorreu um erro ao revogar a oferta",
+    "accepted": "Oferta aceita",
+    "acceptedDescription": "Você aceitou a oferta de {{player}} em {{item}}",
+    "acceptedFallback": "A oferta foi aceita",
+    "acceptFailed": "Falha ao aceitar oferta",
+    "acceptFailedDescription": "Ocorreu um erro ao aceitar a oferta",
+    "rejected": "Oferta recusada",
+    "rejectedDescription": "Você recusou a oferta de {{player}} em {{item}}",
+    "rejectedFallback": "A oferta foi recusada",
+    "rejectFailed": "Falha ao recusar oferta",
+    "rejectFailedDescription": "Ocorreu um erro ao recusar a oferta",
+    "unaccepted": "Aceite desfeito",
+    "unacceptedDescription": "Você desfez o aceite da oferta de {{player}} em {{item}}",
+    "unacceptedFallback": "O aceite da oferta foi desfeito",
+    "unacceptFailed": "Falha ao desfazer aceite",
+    "unacceptFailedDescription": "Ocorreu um erro ao desfazer o aceite da oferta",
+    "hidden": "Oferta ocultada",
+    "hiddenDescription": "Sua oferta em {{item}} foi ocultada. Ela será removida após 7 dias.",
+    "hiddenFallback": "A oferta foi ocultada",
+    "restored": "Oferta restaurada",
+    "restoredDescription": "Sua oferta em {{item}} foi restaurada",
+    "restoredFallback": "A oferta foi restaurada"
+  },
+  "netWorth": {
+    "accountMismatch": "A conta selecionada não está vinculada ao seu login do PD2. Verifique as configurações da conta.",
+    "sessionExpired": "Sua sessão do PD2 expirou. Entre novamente.",
+    "rateLimited": "Muitas solicitações. Tente novamente em um minuto."
+  },
+  "seasons": {
+    "current": "{{season}} (atual)",
+    "currentGeneric": "Temporada atual"
+  },
+  "priceWindow": {
+    "options": {
+      "hours24": "24 horas",
+      "days3": "3 dias",
+      "days7": "7 dias",
+      "days30": "30 dias"
+    },
+    "seasonAvg": "média da temporada",
+    "dayAvg_one": "média de {{count}} dia",
+    "dayAvg_many": "média de {{count}} de dias",
+    "dayAvg_other": "média de {{count}} dias",
+    "hourAvg_one": "média de {{count}} hora",
+    "hourAvg_many": "média de {{count}} de horas",
+    "hourAvg_other": "média de {{count}} horas",
+    "lastSeason": "temporada passada",
+    "seasonTag": "temporada",
+    "basis": {
+      "last30Days": "os últimos 30 dias",
+      "wholeSeason": "a temporada inteira",
+      "last30DaysOf": "os últimos 30 dias de {{season}}",
+      "lastWindow": "os últimos {{window}}"
+    },
+    "notEnoughSalesThisWeek": "Vendas insuficientes nesta semana — com base em {{basis}}",
+    "notEnoughSalesInWindow": "Vendas insuficientes nos últimos {{window}} — com base em {{basis}}"
+  },
+  "chatTemplates": {
+    "nameRequired": "Dê um nome ao modelo",
+    "nameTooLong": "Nome: no máximo {{max}} caracteres",
+    "textRequired": "Escreva a mensagem",
+    "textTooLong": "Mensagem: no máximo {{max}} caracteres",
+    "tokens": {
+      "accountName": "Nome da conta dele",
+      "characterName": "Nome do personagem dele",
+      "itemName": "O último item linkado ou sussurrado",
+      "price": "O preço dele"
+    }
+  },
+  "corruptedZones": {
+    "waitMinutes": "{{minutes}} min",
+    "waitHours": "{{hours}} h {{minutes}} min"
+  }
+}

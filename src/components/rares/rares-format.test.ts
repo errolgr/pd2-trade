@@ -12,7 +12,6 @@ import {
   marketBandText,
   marketSource,
   ordinalPercentile,
-  plural,
   RANK_BLOCKS,
   rankBlockIndex,
   rankedStats,
@@ -93,8 +92,13 @@ describe('rankBlockIndex', () => {
       expect(blockDir, `rank ${rank}`).toBe(dir);
       // The block is the tightest one containing the printed percentage.
       expect(pct, `rank ${rank}`).toBeLessThanOrEqual(blockPct);
-      const tighter = RANK_BLOCKS.filter((b) => b.label.startsWith(dir)).map((b) => parseInt(b.label.split(' ')[1], 10));
-      expect(tighter.filter((p) => p >= pct && p < blockPct), `rank ${rank}`).toEqual([]);
+      const tighter = RANK_BLOCKS.filter((b) => b.label.startsWith(dir)).map((b) =>
+        parseInt(b.label.split(' ')[1], 10),
+      );
+      expect(
+        tighter.filter((p) => p >= pct && p < blockPct),
+        `rank ${rank}`,
+      ).toEqual([]);
     }
   });
 
@@ -295,13 +299,5 @@ describe('compareStash', () => {
 
   it('treats two unpositioned items in a tab as equal', () => {
     expect(compareStash(rare({ position: null }), rare({ position: null }))).toBe(0);
-  });
-});
-
-describe('plural', () => {
-  it('pluralises everything but one', () => {
-    expect(plural(1, 'rare')).toBe('1 rare');
-    expect(plural(0, 'rare')).toBe('0 rares');
-    expect(plural(2, 'rare')).toBe('2 rares');
   });
 });

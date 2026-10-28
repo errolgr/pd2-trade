@@ -15,6 +15,7 @@ import { computePseudo } from '../lib/pseudo';
 import { readStatValue } from '../lib/stats';
 import type { StatFilter } from '../lib/types';
 import { formatStat, statName, templateName } from './stat-text';
+import { useTranslation } from '@/i18n';
 
 /** Filter row to merge (by kind + key) into the current search. */
 export type StatFilterRow = Omit<StatFilter, 'id' | 'enabled'>;
@@ -54,6 +55,7 @@ export function ModMenu({
   className?: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation('market');
   const actions = useContext(ModActionsContext);
   const [open, setOpen] = useState(false);
   const key = useMemo(() => modToStatKey(mod), [mod]);
@@ -73,7 +75,7 @@ export function ModMenu({
       <DropdownMenuTrigger asChild>
         <div
           tabIndex={0}
-          title="Filter or sort by this stat"
+          title={t('modMenu.title')}
           onContextMenu={(e) => {
             e.preventDefault();
             setOpen(true);
@@ -96,18 +98,20 @@ export function ModMenu({
           <>
             <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value }])}>
               <Filter className="size-3.5" />
-              {socketLine ? `Filter ${name} ≥ ${formatStat(value)} (item total)` : `Filter ≥ ${formatStat(value)}`}
+              {socketLine
+                ? t('modMenu.filterItemTotal', { name, value: formatStat(value) })
+                : t('modMenu.filterMin', { value: formatStat(value) })}
             </DropdownMenuItem>
             {ranged && (
               <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: lo, max: hi }])}>
                 <Filter className="size-3.5" />
-                {`Filter ${lo}–${hi} range`}
+                {t('modMenu.filterRange', { lo, hi })}
               </DropdownMenuItem>
             )}
             {!socketLine && (
               <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value, max: value }])}>
                 <Filter className="size-3.5" />
-                {`Filter exactly ${formatStat(value)}`}
+                {t('modMenu.filterExact', { value: formatStat(value) })}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -117,11 +121,11 @@ export function ModMenu({
           <>
             <DropdownMenuItem onSelect={() => actions.sortByStat(key, 'desc')}>
               <ArrowDownWideNarrow className="size-3.5" />
-              Sort by this ↓
+              {t('modMenu.sortDesc')}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.sortByStat(key, 'asc')}>
               <ArrowUpNarrowWide className="size-3.5" />
-              Sort by this ↑
+              {t('modMenu.sortAsc')}
             </DropdownMenuItem>
           </>
         )}
@@ -137,7 +141,9 @@ export function ModMenu({
                   onSelect={() => actions.addFilters([{ kind: 'pseudo', key: p.id, min: total }])}
                 >
                   <Sigma className="size-3.5 text-info" />
-                  <span className="min-w-0">{`Filter ${pseudoName} ≥ ${formatStat(total)}`}</span>
+                  <span className="min-w-0">
+                    {t('modMenu.filterPseudo', { name: pseudoName, value: formatStat(total) })}
+                  </span>
                 </DropdownMenuItem>
               );
             })}
@@ -159,6 +165,7 @@ export function AddAllModsButton({
   /** Text next to the icon (icon-only without). */
   label?: string;
 }) {
+  const { t } = useTranslation('market');
   const actions = useContext(ModActionsContext);
   if (!actions) return null;
   const rows = modsAsFilters(item.modifiers ?? [], actions.fill);
@@ -167,8 +174,8 @@ export function AddAllModsButton({
     <button
       type="button"
       className={className}
-      title={`Add all ${rows.length} mods as stat filters`}
-      aria-label="Add all mods as filters"
+      title={t('modMenu.addAllTitle', { count: rows.length })}
+      aria-label={t('modMenu.addAllLabel')}
       onClick={(e) => {
         e.stopPropagation();
         actions.addFilters(rows);

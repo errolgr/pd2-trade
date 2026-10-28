@@ -3,6 +3,8 @@ import { isTauri } from '@tauri-apps/api/core';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
+// UI language: initialized before the first render (bundled resources, synchronous)
+import '@/i18n';
 import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';

@@ -1,0 +1,168 @@
+{
+  "itemPage": {
+    "noItem": "未提供物品数据或解析失败。",
+    "noItemHint": "在游戏中将鼠标悬停在物品上，然后按查价快捷键重试。"
+  },
+  "overlay": {
+    "title": "查价",
+    "toolbar": {
+      "netWorth": "净资产",
+      "copyImage": "复制图片",
+      "settings": "设置"
+    },
+    "update": {
+      "updating": "更新中…",
+      "retry": "重试更新",
+      "get": "获取更新",
+      "restart": "重启以更新",
+      "failedHint": "更新到 v{{version}} 失败。点击重试。",
+      "manualHint": "版本 {{version}} 已发布。此安装无法自动更新：点击打开发布页面，或使用你的包管理器。",
+      "availableHint": "版本 {{version}} 已发布。将下载、安装并重启 PD2 Trader。"
+    },
+    "copyImage": {
+      "copiedTitle": "图片已复制",
+      "copiedDescription": "可粘贴到 Discord 或交易帖中。",
+      "failedTitle": "无法复制图片"
+    },
+    "header": {
+      "base": "底材：{{type}}",
+      "type": "类型：{{type}}",
+      "toggleSearchMode": "点击切换搜索模式",
+      "cycleQuality": "点击切换品质",
+      "defense": "防御：<value>{{defense}}</value>",
+      "appraisalNote": "估价说明：{{note}}"
+    },
+    "price": {
+      "loading": "正在加载价格数据…",
+      "noData": "暂无价格数据",
+      "fetchFailed": "获取价格数据失败",
+      "median": "中位数",
+      "min": "最低",
+      "max": "最高",
+      "samples": "样本",
+      "change7d": "7 天变化",
+      "last30Days": "最近 30 天",
+      "openOnPd2Trader": "在 pd2trader.com 打开",
+      "viewOnWeb": "网页查看"
+    },
+    "corruptions": {
+      "thisItem": "此物品的腐化",
+      "top": "热门腐化",
+      "showLess": "收起",
+      "showMore_other": "显示更多（还有 {{count}} 个）",
+      "loading": "正在加载腐化价格…",
+      "searchTitle": "点击搜索带有此腐化的物品",
+      "noPriceData": "暂无价格数据",
+      "link": "链接",
+      "socketPrices": "{{name}} - 孔数价格",
+      "filterBySocket": "点击按此孔数筛选"
+    },
+    "sockets_other": "{{count}} 孔",
+    "stats": {
+      "title": "属性",
+      "selected_other": "已选 {{count}} 项",
+      "clearRanges": "清除范围",
+      "clearRangesTitle": "清空所有最小值和最大值；属性保持选中",
+      "clearTitle": "取消勾选所有属性"
+    },
+    "actions": {
+      "openTradeAria": "在 projectdiablo2.com 打开搜索",
+      "openTradeTooltip": "在 projectdiablo2.com 打开此搜索",
+      "openInMarket": "在市场中打开",
+      "list": "挂单",
+      "listDisabled": "物品必须在共享储物箱中才能挂单。",
+      "showExpired": "显示已过期"
+    },
+    "results": {
+      "matches": "匹配：<value>{{total}}</value>",
+      "showing": "· 显示 {{shown}} 条",
+      "loading": "正在加载市场挂单…",
+      "errorTitle": "无法加载挂单",
+      "fetchFailed": "获取市场挂单失败",
+      "noListings": "未找到挂单",
+      "loosenFilters": "请尝试放宽属性筛选。",
+      "loosenFiltersOrExpired": "请尝试放宽属性筛选或开启“显示已过期”。",
+      "readyTitle": "准备搜索",
+      "readyHint": "选择需要的属性，然后点击搜索或在最小/最大值框中按 Enter。",
+      "price": "价格",
+      "listed": "挂出时间",
+      "loadingMore": "正在加载更多…",
+      "loadMore": "加载更多"
+    },
+    "listing": {
+      "copyWhisper": "复制私聊",
+      "whisperCopied": "已复制私聊，右键粘贴",
+      "onlineCopyWhisper": "游戏内在线 · 点击复制私聊",
+      "seller": "卖家：<name>{{seller}}</name>",
+      "online": "游戏内在线"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "PD2 提示框中显示的属性范围",
+    "corruptedFilter": "腐化筛选",
+    "unknown": "未知",
+    "keyFromTitle": "此属性在该部位上从 {{value}} 起开始增值",
+    "valuableFrom": "{{value}} 起有价值",
+    "corruptedOnly": "仅限",
+    "corruptedExcluded": "排除",
+    "injectedCorruptedHint": "此物品可被腐化。使用此筛选搜索已腐化或未腐化的版本。",
+    "corruptedStat": "腐化属性",
+    "minDamage": "最小伤害",
+    "maxDamage": "最大伤害",
+    "minDamageAria": "{{name}} 最小伤害",
+    "maxDamageAria": "{{name}} 最大伤害",
+    "minPlaceholder": "最小",
+    "maxPlaceholder": "最大",
+    "minimumAria": "{{label}} 最小值",
+    "maximumAria": "{{label}} 最大值",
+    "clearRangeAria": "清除 {{label}} 范围",
+    "clearRangeTitle": "清除最小值和最大值",
+    "unfold": "展开"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "更改或展开此合计",
+    "searchTotalAria": "改为搜索合计",
+    "searchTotalTitle": "搜索合计（Σ）而非此行",
+    "menuLabel": "搜索合计 — 折叠其涵盖的行"
+  },
+  "wornBy": {
+    "title": "显示使用它的配装",
+    "line": "<pct>{{pct}}%</pct> 的 {{level}}+ 级 Ladder 角色在用"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "正在估价 Crafted 物品…",
+    "appraisingRare": "正在估价 Rare…",
+    "estimatedFrom": "{{slot}} · 基于 {{season}} 挂单估算",
+    "ofSlots": "/ {{slots}}",
+    "usuallyListed": "常见挂价"
+  },
+  "runePrices": {
+    "label": "符文价格",
+    "title": "当前符文价格",
+    "info": "符文价格根据市场挂单最近 7 天的中位价计算，每日更新。",
+    "viewOnPd2Trader": "在 pd2trader.com 查看",
+    "loading": "正在加载符文数据…",
+    "fixed": "固定",
+    "listings_other": "{{count}} 个挂单",
+    "showLess": "收起",
+    "showMoreLower_other": "显示更多（{{count}} 个低级符文）",
+    "breakdown": "<rune>{{rune}}</rune> 明细：",
+    "target": "目标 {{value}} HR",
+    "diff": "差值：{{value}} HR",
+    "fixedNote": "* Vex 及以下符文使用固定价格，因为其价格通常不变，或挂单少于 10 个时也使用固定价格"
+  },
+  "sparkline": {
+    "loading": "正在加载价格历史…",
+    "notEnough": "最近 30 天成交不足，无法显示趋势。",
+    "aria_other": "最近 {{count}} 个有成交日的价格：{{first}} 至 {{last}} HR"
+  },
+  "itemCard": {
+    "median": "中位数 {{price}}",
+    "sales_other": "{{count}} 笔成交",
+    "recentlySold": "最近售出",
+    "listedNow": "当前挂单",
+    "from": "{{price}} 起",
+    "soldDetail_other": "已售 {{count}} · 中位数 {{price}}",
+    "listingsDetail_other": "{{count}} 个挂单 · 中位数 {{price}}"
+  }
+}

@@ -28,6 +28,7 @@ import { SellerName } from './SellerName';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
+import { useTranslation } from '@/i18n';
 
 const ESTIMATED_CARD_HEIGHT = 340;
 const GAP = 8;
@@ -104,6 +105,7 @@ export function ResultCards({
   onLoadMore,
   loadMore,
 }: ResultCardsProps) {
+  const { t } = useTranslation('market');
   const containerRef = useRef<HTMLDivElement>(null);
   /** Glows already played (`nonce:id`): a card scrolled back into view doesn't glow again. */
   const playedGlows = useRef(new Set<string>());
@@ -139,7 +141,7 @@ export function ResultCards({
     >
       <div
         role="listbox"
-        aria-label="Listings"
+        aria-label={t('results.listings')}
         className="relative w-full"
         style={{ height: virtualizer.getTotalSize() }}
       >
@@ -270,6 +272,7 @@ const ResultCard = React.memo(function ResultCard({
   takeCommand: (nonce: number) => boolean;
   pin: CardPin | null;
 }) {
+  const { t } = useTranslation('market');
   const { listing } = row;
   const { item } = listing;
   const model = useMemo(() => buildCardModel(item), [item]);
@@ -324,13 +327,13 @@ const ResultCard = React.memo(function ResultCard({
         <div className="flex items-center gap-1.5 border-b border-primary/30 bg-primary/10 px-3 py-1 text-[11px] text-primary">
           <Bell className="size-3 shrink-0" />
           <span className="min-w-0 flex-1 truncate">
-            {pin.searchName ? `From alert: ${pin.searchName}` : 'From alert'}
-            <span className="text-muted-foreground"> · not in the current results</span>
+            {pin.searchName ? t('cards.fromAlertNamed', { name: pin.searchName }) : t('cards.fromAlert')}
+            <span className="text-muted-foreground">{t('cards.notInResults')}</span>
           </span>
           <button
             type="button"
-            aria-label="Dismiss alert listing"
-            title="Dismiss"
+            aria-label={t('cards.dismissAlert')}
+            title={t('cards.dismiss')}
             onClick={(e) => {
               e.stopPropagation();
               pin.onDismiss();
@@ -370,7 +373,7 @@ const ResultCard = React.memo(function ResultCard({
             )}
             <AddAllModsButton
               item={item}
-              label="Filter all mods"
+              label={t('cards.filterAllMods')}
               className={cn(
                 pill,
                 'cursor-pointer gap-1 border-dashed border-border/70 text-muted-foreground hover:border-border hover:text-foreground',
@@ -386,12 +389,12 @@ const ResultCard = React.memo(function ResultCard({
             )}
             title={listing.price || undefined}
           >
-            {price ?? (listing.price || 'No price')}
+            {price ?? (listing.price || t('cards.noPrice'))}
           </span>
           {price && listing.price && (
             <span className="max-w-full truncate text-[11px] text-muted-foreground"
               title={listing.price}>
-              {`note: "${listing.price}"`}
+              {t('cards.note', { note: listing.price })}
             </span>
           )}
           <DealBadge deal={deal} />
@@ -492,7 +495,7 @@ const ResultCard = React.memo(function ResultCard({
                   className="h-3 w-px bg-border" />
                 <span
                   className="inline-flex min-w-0 items-center gap-1 text-muted-foreground"
-                  title={`In game as ${item.character_id}`}
+                  title={t('cards.inGameAs', { character: item.character_id })}
                 >
                   <Gamepad2
                     className={cn('size-3 shrink-0', isUserOnlineIngame(listing.user_last_ingame) && 'text-success')}
@@ -505,7 +508,7 @@ const ResultCard = React.memo(function ResultCard({
           {/* When / where */}
           <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1 tabular-nums"
-              title="Last bumped">
+              title={t('filters.sort.bumpedTitle')}>
               <Clock className="size-3" />
               {listingAge(listing)}
             </span>
@@ -520,8 +523,8 @@ const ResultCard = React.memo(function ResultCard({
             size="sm"
             className={cn(iconActionClass, favorite && 'text-destructive hover:text-destructive')}
             aria-pressed={favorite}
-            aria-label={favorite ? 'Remove from favorites (F)' : 'Add to favorites (F)'}
-            title={favorite ? 'Remove from favorites (F)' : 'Add to favorites (F)'}
+            aria-label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
+            title={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
             onClick={() => onToggleFavorite(listing)}
           >
             <HeartPop favorite={favorite} />
@@ -530,8 +533,8 @@ const ResultCard = React.memo(function ResultCard({
             variant="ghost"
             size="sm"
             className={iconActionClass}
-            aria-label="Message seller"
-            title="Message seller"
+            aria-label={t('actions.messageSeller')}
+            title={t('actions.messageSeller')}
             onClick={actions.openDm}
           >
             <MessageSquare className="size-3.5" />
@@ -540,8 +543,8 @@ const ResultCard = React.memo(function ResultCard({
             variant="ghost"
             size="sm"
             className={iconActionClass}
-            aria-label="Open on projectdiablo2.com"
-            title="Open on projectdiablo2.com"
+            aria-label={t('drawer.openOnSite')}
+            title={t('drawer.openOnSite')}
             onClick={actions.openWebsite}
           >
             <ExternalLink className="size-3.5" />
@@ -600,18 +603,24 @@ function SourceSuffix({
   groupListings: MarketListingEntry[];
   onHoverGroup: (g: number | null) => void;
 }) {
+  const { t } = useTranslation('market');
   const { mod, own, ownKind, sources, socketOnly } = line;
   const added = sources.reduce((sum, s) => sum + s.amount, 0);
-  const ownText = own === null ? '' : ownKind === 'corruption' ? `${formatStat(own)} corr` : formatStat(own);
+  const ownText =
+    own === null
+      ? ''
+      : ownKind === 'corruption'
+        ? t('cards.source.corrShort', { value: formatStat(own) })
+        : formatStat(own);
   const icons = sources.flatMap((s) => groups[s.group].items.map(() => s.group)).slice(0, MAX_STACK_ICONS);
   const ownLabel =
     own === null || socketOnly
       ? null
       : ownKind === 'roll'
-        ? `${formatStat(own)} roll [${mod.min} – ${mod.max}]`
+        ? t('cards.source.roll', { value: formatStat(own), min: mod.min, max: mod.max })
         : ownKind === 'corruption'
-          ? `${formatStat(own)} corruption`
-          : `${formatStat(own)} item`;
+          ? t('cards.source.corruption', { value: formatStat(own) })
+          : t('cards.source.item', { value: formatStat(own) });
 
   return (
     <Tooltip>
@@ -620,7 +629,7 @@ function SourceSuffix({
           tabIndex={0}
           className="ml-1.5 inline-flex items-center gap-1 rounded-sm align-middle text-xs font-normal text-muted-foreground outline-none tabular-nums focus-visible:ring-2 focus-visible:ring-ring/60"
         >
-          {socketOnly ? 'from' : `${ownText} + ${formatStat(added)}`}
+          {socketOnly ? t('cards.source.from') : `${ownText} + ${formatStat(added)}`}
           <span className="inline-flex items-center pl-0.5">
             {icons.map((g, i) => (
               <span
@@ -675,6 +684,7 @@ function ModLine({
   highlighted: boolean;
   onHoverGroup: (g: number | null) => void;
 }) {
+  const { t } = useTranslation('market');
   const { mod, own, sources, socketOnly } = line;
   const hasRange = mod.min !== undefined && mod.max !== undefined && mod.min !== mod.max;
   const split = sources.length > 0 && (socketOnly || own !== null);
@@ -699,7 +709,7 @@ function ModLine({
       >
         {line.label}
         {hasRange && <span className="text-muted-foreground">{` [${mod.min} – ${mod.max}]`}</span>}
-        {line.perLevel && <span className="text-muted-foreground"> per level</span>}
+        {line.perLevel && <span className="text-muted-foreground">{t('cards.perLevel')}</span>}
         {split && (
           <SourceSuffix line={line}
             groups={groups}
@@ -707,7 +717,7 @@ function ModLine({
             onHoverGroup={onHoverGroup} />
         )}
       </span>
-      {matched && <span className="relative shrink-0 text-[11px] text-primary">✓ filter</span>}
+      {matched && <span className="relative shrink-0 text-[11px] text-primary">{t('cards.matchedFilter')}</span>}
     </ModMenu>
   );
 }
@@ -733,6 +743,7 @@ function SocketSection({
   onHover: (g: number | null) => void;
   groupHr: (g: number) => number | null;
 }) {
+  const { t } = useTranslation('market');
   const filled = socketGroups.length;
   const values = groups.map((_, i) => groupHr(i));
   const total = values.length > 0 && values.every((v) => v !== null) ? values.reduce((s, v) => s + (v ?? 0), 0) : null;
@@ -741,7 +752,9 @@ function SocketSection({
     <section className="border-t border-border/50 px-3 py-2"
       onMouseLeave={() => onHover(null)}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{`Socketed (${filled})`}</span>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {t('cards.socketed', { count: filled })}
+        </span>
         <span className="flex items-center gap-1">
           {socketGroups.map((g, socket) => (
             <span
@@ -766,10 +779,12 @@ function SocketSection({
           ))}
         </span>
         {emptySockets > 0 && (
-          <span className="text-[11px] text-muted-foreground">{`${emptySockets} empty socket${emptySockets > 1 ? 's' : ''}`}</span>
+          <span className="text-[11px] text-muted-foreground">{t('cards.emptySockets', { count: emptySockets })}</span>
         )}
         {total !== null && total > 0 && (
-          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{`~${formatStat(total)} HR of sockets`}</span>
+          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+            {t('cards.socketsValue', { value: formatStat(total) })}
+          </span>
         )}
       </div>
       {groups.length > 0 && (
@@ -801,7 +816,9 @@ function SocketSection({
                     const text = (
                       <>
                         {l.each}
-                        {l.total && <span className="text-muted-foreground">{` each · ${l.total} total`}</span>}
+                        {l.total && (
+                          <span className="text-muted-foreground">{t('cards.eachTotal', { total: l.total })}</span>
+                        )}
                       </>
                     );
                     const lineClass = 'truncate rounded-sm text-[11px] text-q-magic/80';

@@ -1,0 +1,152 @@
+{
+  "notes": {
+    "craftedUnreliable": "此部位的 Crafted 物品暂时无法可靠估价（Crafted 数据太少）"
+  },
+  "slots": {
+    "ring": {
+      "label": "戒指",
+      "plural": "戒指",
+      "inSentence": "戒指"
+    },
+    "amul": {
+      "label": "项链",
+      "plural": "项链",
+      "inSentence": "项链"
+    },
+    "circ": {
+      "label": "头环",
+      "plural": "头环",
+      "inSentence": "头环"
+    },
+    "jewl": {
+      "label": "珠宝",
+      "plural": "珠宝",
+      "inSentence": "珠宝"
+    },
+    "glov": {
+      "label": "手套",
+      "plural": "手套",
+      "inSentence": "手套"
+    },
+    "boot": {
+      "label": "靴子",
+      "plural": "靴子",
+      "inSentence": "靴子"
+    },
+    "belt": {
+      "label": "腰带",
+      "plural": "腰带",
+      "inSentence": "腰带"
+    },
+    "tors": {
+      "label": "身体护甲",
+      "plural": "身体护甲",
+      "inSentence": "身体护甲"
+    },
+    "helm": {
+      "label": "头盔",
+      "plural": "头盔",
+      "inSentence": "头盔"
+    },
+    "shield": {
+      "label": "盾牌",
+      "plural": "盾牌",
+      "inSentence": "盾牌"
+    },
+    "quiver": {
+      "label": "箭袋",
+      "plural": "箭袋",
+      "inSentence": "箭袋"
+    },
+    "weapon": {
+      "label": "武器",
+      "plural": "武器",
+      "inSentence": "武器"
+    },
+    "unknown": {
+      "plural": "物品",
+      "inSentence": "物品"
+    }
+  },
+  "verdicts": {
+    "keep": "保留",
+    "check": "查看",
+    "vendor": "卖店"
+  },
+  "priority": {
+    "high": "有 ★★ 或更高的关键属性",
+    "medium": "有 ★ 关键属性",
+    "low": "无关键属性"
+  },
+  "crafted": {
+    "lowConfidence": "低置信度",
+    "lowConfidenceTitle": "低置信度：此部位的 Crafted 模型基于有限的 Crafted 挂单数据，判定和区间仅供粗略参考。"
+  },
+  "rank": {
+    "top": "前 {{percent}}%",
+    "bottom": "后 {{percent}}%"
+  },
+  "ordinal": {
+    "st": "第{{n}}",
+    "nd": "第{{n}}",
+    "rd": "第{{n}}",
+    "th": "第{{n}}"
+  },
+  "keyStatTitle": "关键属性：此档位赛季末价格 {{multiplier}}",
+  "marketSource": {
+    "atThisRank": "此排名的{{slots}} · {{where}}",
+    "lastSeason": "上赛季",
+    "hardcoreListings": "Hardcore 挂单"
+  },
+  "rankBar": {
+    "ariaLabel": "预测位于{{slots}}价格的第 {{percentile}} 百分位，误差约 {{error}} 点",
+    "vendor": "卖店",
+    "keep": "保留"
+  },
+  "rankBlocks": {
+    "title": "在{{slots}}中的排名 <note>（本赛季）</note>",
+    "ariaLabel": "在{{slots}}中的排名：{{block}}",
+    "bottom25": "后 25%",
+    "bottom50": "后 50%",
+    "top50": "前 50%",
+    "top25": "前 25%",
+    "top15": "前 15%",
+    "top5": "前 5%"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{slots}}上的 {{stat}} 只能通过腐化获得",
+    "nearMiss": "差一点：{{slots}}上 {{from}}+ 为 {{multiplier}}",
+    "nearMissCorruption": "差一点：{{slots}}上 {{from}}+ 为 {{multiplier}}（仅限腐化）",
+    "valuableFrom": "{{slots}}上 {{from}} 起有价值",
+    "valuableFromCorruption": "{{slots}}上 {{from}} 起有价值（仅限腐化）"
+  },
+  "stats": {
+    "title": "此物品的属性",
+    "keyStats_other": "{{count}} 个关键属性",
+    "noKeyStats": "无关键属性",
+    "roll": "数值 {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore：价格模型和星级来自 Softcore 数据",
+    "rankedHardcore": "对比 Hardcore 挂单排名",
+    "rankedBlended": "对比 Hardcore 与 Softcore 混合挂单排名（{{percent}}% Hardcore）",
+    "rankedSoftcore": "对比 Softcore 挂单排名",
+    "pricesHardcore": "价格来自 Hardcore 挂单",
+    "pricesSoftcore": "价格来自 Softcore 挂单"
+  },
+  "stashPosition": "第 {{column}} 列，第 {{row}} 行",
+  "detail": {
+    "verdict": "判定",
+    "howVerdictsWork": "判定规则说明",
+    "usuallyListed": "常见挂价",
+    "samples": "样本",
+    "comparedWith": "对比",
+    "stash": "储物箱"
+  },
+  "history": {
+    "title": "物品历史",
+    "aside_other": "{{times}}× · {{count}} 位卖家 · 自 {{date}}",
+    "newOwner": "新主人",
+    "noPrice": "无价格"
+  }
+}

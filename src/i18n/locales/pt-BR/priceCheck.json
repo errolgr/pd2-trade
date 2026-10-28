@@ -1,0 +1,186 @@
+{
+  "itemPage": {
+    "noItem": "Nenhum dado de item fornecido ou falha ao interpretar.",
+    "noItemHint": "Passe o mouse sobre um item no jogo e pressione seu atalho de consulta de preço para tentar novamente."
+  },
+  "overlay": {
+    "title": "Consulta de preço",
+    "toolbar": {
+      "netWorth": "Patrimônio",
+      "copyImage": "Copiar imagem",
+      "settings": "Configurações"
+    },
+    "update": {
+      "updating": "Atualizando…",
+      "retry": "Tentar de novo",
+      "get": "Atualizar",
+      "restart": "Reiniciar para atualizar",
+      "failedHint": "Falha ao atualizar para a v{{version}}. Clique para tentar novamente.",
+      "manualHint": "A versão {{version}} está disponível. Esta instalação não pode se atualizar sozinha: clique para abrir a página de lançamento ou use seu gerenciador de pacotes.",
+      "availableHint": "A versão {{version}} está disponível. Baixa, instala e reinicia o PD2 Trader."
+    },
+    "copyImage": {
+      "copiedTitle": "Imagem copiada",
+      "copiedDescription": "Cole no Discord ou em um post de troca.",
+      "failedTitle": "Não foi possível copiar a imagem"
+    },
+    "header": {
+      "base": "Base: {{type}}",
+      "type": "Tipo: {{type}}",
+      "toggleSearchMode": "Clique para alternar o modo de busca",
+      "cycleQuality": "Clique para alternar a qualidade",
+      "defense": "Defesa: <value>{{defense}}</value>",
+      "appraisalNote": "Nota de avaliação: {{note}}"
+    },
+    "price": {
+      "loading": "Carregando dados de preço...",
+      "noData": "Sem dados de preço",
+      "fetchFailed": "Falha ao buscar dados de preço",
+      "median": "Mediana",
+      "min": "Mín",
+      "max": "Máx",
+      "samples": "Amostras",
+      "change7d": "Variação 7d",
+      "last30Days": "Últimos 30 dias",
+      "openOnPd2Trader": "Abrir no pd2trader.com",
+      "viewOnWeb": "Ver na web"
+    },
+    "corruptions": {
+      "thisItem": "Corrupção deste item",
+      "top": "Principais corrupções",
+      "showLess": "Mostrar menos",
+      "showMore_one": "Mostrar mais (mais {{count}})",
+      "showMore_many": "Mostrar mais (mais {{count}})",
+      "showMore_other": "Mostrar mais (mais {{count}})",
+      "loading": "Carregando preços de corrupção...",
+      "searchTitle": "Clique para buscar itens com esta corrupção",
+      "noPriceData": "Sem dados de preço",
+      "link": "Link",
+      "socketPrices": "{{name}} - Preços por soquete",
+      "filterBySocket": "Clique para filtrar por este número de soquetes"
+    },
+    "sockets_one": "{{count}} soquete",
+    "sockets_many": "{{count}} de soquetes",
+    "sockets_other": "{{count}} soquetes",
+    "stats": {
+      "title": "Atributos",
+      "selected_one": "{{count}} selecionado",
+      "selected_many": "{{count}} de selecionados",
+      "selected_other": "{{count}} selecionados",
+      "clearRanges": "Limpar faixas",
+      "clearRangesTitle": "Esvazia todos os mín e máx; os atributos continuam selecionados",
+      "clearTitle": "Desmarcar todos os atributos"
+    },
+    "actions": {
+      "openTradeAria": "Abrir busca no projectdiablo2.com",
+      "openTradeTooltip": "Abrir esta busca no projectdiablo2.com",
+      "openInMarket": "Abrir no mercado",
+      "list": "Anunciar",
+      "listDisabled": "O item precisa estar no seu baú compartilhado para ser anunciado.",
+      "showExpired": "Mostrar expirados"
+    },
+    "results": {
+      "matches": "Resultados: <value>{{total}}</value>",
+      "showing": "· mostrando {{shown}}",
+      "loading": "Carregando anúncios do mercado...",
+      "errorTitle": "Não foi possível carregar os anúncios",
+      "fetchFailed": "Falha ao buscar anúncios do mercado",
+      "noListings": "Nenhum anúncio encontrado",
+      "loosenFilters": "Tente afrouxar seus filtros de atributos.",
+      "loosenFiltersOrExpired": "Tente afrouxar seus filtros de atributos ou ative Mostrar expirados.",
+      "readyTitle": "Pronto para buscar",
+      "readyHint": "Escolha os atributos relevantes e clique em Buscar ou pressione Enter em um campo mín/máx.",
+      "price": "Preço",
+      "listed": "Anunciado",
+      "loadingMore": "Carregando mais...",
+      "loadMore": "Carregar mais"
+    },
+    "listing": {
+      "copyWhisper": "Copiar sussurro",
+      "whisperCopied": "Sussurro copiado, clique com o botão direito para colar",
+      "onlineCopyWhisper": "Online no jogo · clique para copiar o sussurro",
+      "seller": "Vendedor: <name>{{seller}}</name>",
+      "online": "Online no jogo"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "Faixa do atributo mostrada na tooltip do PD2",
+    "corruptedFilter": "Filtro de Corrupted",
+    "unknown": "Desconhecido",
+    "keyFromTitle": "Este atributo começa a agregar valor neste slot a partir de {{value}}",
+    "valuableFrom": "valioso a partir de {{value}}",
+    "corruptedOnly": "somente",
+    "corruptedExcluded": "excluído",
+    "injectedCorruptedHint": "Este item pode ser Corrupted. Use este filtro para buscar versões Corrupted ou não Corrupted.",
+    "corruptedStat": "Atributo Corrupted",
+    "minDamage": "Dano mín",
+    "maxDamage": "Dano máx",
+    "minDamageAria": "{{name}} dano mínimo",
+    "maxDamageAria": "{{name}} dano máximo",
+    "minPlaceholder": "mín",
+    "maxPlaceholder": "máx",
+    "minimumAria": "{{label}} mínimo",
+    "maximumAria": "{{label}} máximo",
+    "clearRangeAria": "Limpar faixa de {{label}}",
+    "clearRangeTitle": "Limpar mín e máx",
+    "unfold": "Expandir"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "Alterar ou expandir este total",
+    "searchTotalAria": "Buscar um total",
+    "searchTotalTitle": "Buscar um total (Σ) em vez desta linha",
+    "menuLabel": "Buscar um total — agrupa as linhas que ele abrange"
+  },
+  "wornBy": {
+    "title": "Mostrar as builds que o usam",
+    "line": "Usado por <pct>{{pct}}%</pct> dos personagens Ladder de nível {{level}}+"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "Avaliando item criado...",
+    "appraisingRare": "Avaliando raro...",
+    "estimatedFrom": "{{slot}} · est. a partir de anúncios da {{season}}",
+    "ofSlots": "de {{slots}}",
+    "usuallyListed": "geralmente anunciado"
+  },
+  "runePrices": {
+    "label": "Preços de runas",
+    "title": "Preços atuais de runas",
+    "info": "Os preços das runas são calculados a partir dos anúncios do mercado usando a mediana dos últimos 7 dias. Os preços são atualizados diariamente.",
+    "viewOnPd2Trader": "Ver no pd2trader.com",
+    "loading": "Carregando dados de runas...",
+    "fixed": "fixo",
+    "listings_one": "{{count}} anúncio",
+    "listings_many": "{{count}} de anúncios",
+    "listings_other": "{{count}} anúncios",
+    "showLess": "Mostrar menos",
+    "showMoreLower_one": "Mostrar mais ({{count}} runa inferior)",
+    "showMoreLower_many": "Mostrar mais ({{count}} de runas inferiores)",
+    "showMoreLower_other": "Mostrar mais ({{count}} runas inferiores)",
+    "breakdown": "Detalhamento de <rune>{{rune}}</rune>:",
+    "target": "alvo {{value}} HR",
+    "diff": "Dif.: {{value}} HR",
+    "fixedNote": "* Preço fixo usado para Vex e inferiores, pois geralmente não muda, ou quando há <10 anúncios disponíveis"
+  },
+  "sparkline": {
+    "loading": "Carregando histórico de preços...",
+    "notEnough": "Vendas insuficientes nos últimos 30 dias para uma tendência.",
+    "aria_one": "Preço no último {{count}} dia com vendas: {{first}} a {{last}} HR",
+    "aria_many": "Preço nos últimos {{count}} de dias com vendas: {{first}} a {{last}} HR",
+    "aria_other": "Preço nos últimos {{count}} dias com vendas: {{first}} a {{last}} HR"
+  },
+  "itemCard": {
+    "median": "mediana {{price}}",
+    "sales_one": "{{count}} venda",
+    "sales_many": "{{count}} de vendas",
+    "sales_other": "{{count}} vendas",
+    "recentlySold": "Vendidos recentemente",
+    "listedNow": "Anunciados agora",
+    "from": "a partir de {{price}}",
+    "soldDetail_one": "{{count}} vendido · mediana {{price}}",
+    "soldDetail_many": "{{count}} de vendidos · mediana {{price}}",
+    "soldDetail_other": "{{count}} vendidos · mediana {{price}}",
+    "listingsDetail_one": "{{count}} anúncio · mediana {{price}}",
+    "listingsDetail_many": "{{count}} de anúncios · mediana {{price}}",
+    "listingsDetail_other": "{{count}} anúncios · mediana {{price}}"
+  }
+}

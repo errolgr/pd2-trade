@@ -1,0 +1,108 @@
+{
+  "panel": {
+    "crashed": "Este painel travou."
+  },
+  "toast": {
+    "details": "Detalhes",
+    "undo": "Desfazer"
+  },
+  "ui": {
+    "more": "Mais"
+  },
+  "errorHandler": {
+    "title": "Erro"
+  },
+  "controller": {
+    "runningInBackground": "agora está rodando em segundo plano...",
+    "itemNotSupported": "Item não suportado ou inválido.",
+    "nothingCopied": "Nenhum item foi copiado. Passe o mouse sobre um item no jogo e tente novamente, ou pressione Ctrl+C nele primeiro.",
+    "cannotListItem": "Não é possível anunciar o item",
+    "notInSharedStash": "Este item não está no seu baú compartilhado e não pode ser anunciado.",
+    "delist": "Remover anúncio",
+    "noItemUnderCursor": "Nenhum item válido encontrado sob o cursor."
+  },
+  "chatButton": {
+    "dragToMove": "Arraste para mover",
+    "openChat": "Abrir chat do PD2",
+    "chat": "Chat",
+    "offers": "Ofertas",
+    "more": "Mais",
+    "unreadMessages_one": "{{count}} mensagem não lida",
+    "unreadMessages_many": "{{count}} de mensagens não lidas",
+    "unreadMessages_other": "{{count}} mensagens não lidas",
+    "tradeOffers_one": "{{count}} oferta de troca",
+    "tradeOffers_many": "{{count}} de ofertas de troca",
+    "tradeOffers_other": "{{count}} ofertas de troca",
+    "disableOverlay": "Desativar overlay",
+    "menu": {
+      "chat": "Chat",
+      "market": "Navegador do mercado",
+      "builds": "Builds",
+      "netWorth": "Patrimônio",
+      "stashValue": "Valor do baú",
+      "offers": "Ofertas",
+      "manageListings": "Gerenciar anúncios",
+      "settings": "Configurações"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Nome",
+    "namePlaceholder": "ex.: Ainda disponível?",
+    "message": "Mensagem",
+    "messagePlaceholder": "ex.: Oi, seu {itemName} ainda está disponível?",
+    "asksWhenUsed": "Pergunta ao usar:",
+    "asksNone": "Qualquer outro {name} é perguntado quando o modelo é usado."
+  },
+  "signIn": {
+    "eyebrow": "Entrar no",
+    "lead": "Vincule sua conta do Project Diablo 2 para consultar preços, anunciar itens e conversar no jogo.",
+    "howItWorks": "Como funciona o login",
+    "trust": {
+      "officialLogin": "Login oficial do PD2",
+      "noPassword": "Nenhuma senha compartilhada",
+      "readOnlyStash": "Baú somente leitura"
+    },
+    "openingBrowser": "Abrindo o navegador…",
+    "waitingForSignIn": "Aguardando o login…",
+    "signInWithPd2": "Entrar com PD2",
+    "finishInBrowser": "Conclua o login no navegador e depois volte aqui.",
+    "openFailed": "Não foi possível abrir o navegador: copie o link nele.",
+    "opensSite": "Abre projectdiablo2.com no seu navegador.",
+    "later": "Depois",
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado",
+    "accounts": {
+      "eyebrow": "Quase lá",
+      "lead": "Várias contas de jogo estão vinculadas a este login. Escolha a que você usará para trocas.",
+      "label": "Contas de jogo"
+    }
+  },
+  "changeLog": {
+    "title": "Novidades",
+    "close": "Fechar novidades",
+    "current": "Atual",
+    "changes_one": "{{count}} alteração",
+    "changes_many": "{{count}} de alterações",
+    "changes_other": "{{count}} alterações"
+  },
+  "corruptedZones": {
+    "liveTitle": "Corrupted em jogos Hell criados até {{until}}.",
+    "liveTitleNext": "Corrupted em jogos Hell criados até {{until}}. Próxima: {{zone}}.",
+    "liveTitleNextAt": "Corrupted em jogos Hell criados até {{until}}. Próxima: {{zone}} às {{time}}.",
+    "followedTitle": "Próxima zona seguida: Corrupted em jogos Hell criados de {{from}} até {{until}}.",
+    "pillTitle": "{{title}} Clique para ver o cronograma, arraste para mover.",
+    "pillTitleLocked": "{{title}} Clique para ver o cronograma.",
+    "timeUntilNext": "Tempo até a próxima zona",
+    "timeUntilThis": "Tempo até esta zona",
+    "inTime": "em {{time}}",
+    "upcoming": "Próximas zonas Corrupted",
+    "slotWhen": "{{time}} · em {{wait}}",
+    "lock": {
+      "label": "Travar posição",
+      "lockedTitle": "Travado: arrastar não move o timer. Clique para destravar.",
+      "unlockedTitle": "Impede que o timer se mova ao ser arrastado."
+    },
+    "toastTitle": "Zona Corrupted",
+    "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})"
+  }
+}
