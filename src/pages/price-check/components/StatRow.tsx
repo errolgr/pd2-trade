@@ -163,7 +163,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const line = isUnknown ? null : itemLine(stat, item);
 
   const rangeBracket = !isSocket && rangeText && stat.value !== undefined && (
-    <span className="ml-1 text-xs tabular-nums text-muted-foreground" title="Stat range shown on the PD2 tooltip">
+    <span className="ml-1 text-xs tabular-nums text-muted-foreground"
+      title="Stat range shown on the PD2 tooltip">
       {rangeText}
     </span>
   );
@@ -175,7 +176,8 @@ export const StatRow: React.FC<StatRowProps> = ({
           <span className="text-muted-foreground">: </span>
           <span className="font-semibold tabular-nums">
             {stat.folded?.length ? (
-              <CountUp from={stat.folded[0].value ?? 0} value={stat.value} />
+              <CountUp from={stat.folded[0].value ?? 0}
+                value={stat.value} />
             ) : isDamagePair && stat.maxValue !== stat.value ? (
               `${stat.value}-${stat.maxValue}`
             ) : (
@@ -259,7 +261,9 @@ export const StatRow: React.FC<StatRowProps> = ({
               {corruptedIndeterminate && <X className="size-3.5 motion-safe:animate-in motion-safe:zoom-in-50" />}
             </div>
           ) : (
-            <Checkbox checked={isSelected} onCheckedChange={() => toggle(stat)} disabled={isUnknown} />
+            <Checkbox checked={isSelected}
+              onCheckedChange={() => toggle(stat)}
+              disabled={isUnknown} />
           )}
 
           <div className="flex min-w-0 flex-row items-center">
@@ -269,7 +273,8 @@ export const StatRow: React.FC<StatRowProps> = ({
                   {stat.name}
                   {valueParts(true)}
                 </span>
-                <Badge variant="destructive" className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
+                <Badge variant="destructive"
+                  className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
                   Unknown
                 </Badge>
               </div>
@@ -338,12 +343,15 @@ export const StatRow: React.FC<StatRowProps> = ({
                   </HoverPopover>
                 )}
                 {stat.corrupted && (
-                  <span className="text-q-corrupted" title="Corrupted stat">
+                  <span className="text-q-corrupted"
+                    title="Corrupted stat">
                     *
                   </span>
                 )}
                 {pseudoOptions && pseudoOptions.length > 0 && onPseudo && (
-                  <PseudoChip options={pseudoOptions} active={stat.pseudo} onPick={onPseudo} />
+                  <PseudoChip options={pseudoOptions}
+                    active={stat.pseudo}
+                    onPick={onPseudo} />
                 )}
               </div>
             )}
@@ -371,13 +379,15 @@ export const StatRow: React.FC<StatRowProps> = ({
                 // The line's own clears and "Clear ranges" both replay the wipe
                 const clears = clearNonce[lo] !== undefined || wipe ? `${wipe ?? 0}:${clearNonce[lo] ?? 0}` : undefined;
                 return (
-                  <div key={lo} className="flex items-center gap-1.5">
+                  <div key={lo}
+                    className="flex items-center gap-1.5">
                     {label && (
                       <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
                         {label}
                       </span>
                     )}
-                    <span data-range-line className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
+                    <span data-range-line
+                      className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
                       <input
                         type="number"
                         className={numberInputClass}

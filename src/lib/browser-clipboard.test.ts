@@ -42,6 +42,57 @@ describe('Tauri mode', () => {
     await expect(writeText('x')).rejects.toBe(failure);
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
   });
+
+  describe('while another app holds the clipboard (Windows)', () => {
+    const occupied = () => new Error('The native clipboard is not accessible due to being held by another party.');
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.mocked(tauriWriteText).mockReset();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('retries until the clipboard is free', async () => {
+      vi.mocked(tauriWriteText).mockRejectedValueOnce(occupied()).mockRejectedValueOnce(occupied()).mockResolvedValue();
+
+      const write = writeText('/w *seller hi');
+      await vi.runAllTimersAsync();
+
+      await expect(write).resolves.toBeUndefined();
+      expect(tauriWriteText).toHaveBeenCalledTimes(3);
+    });
+
+    it('gives up and rethrows after the last retry', async () => {
+      const failure = occupied();
+      vi.mocked(tauriWriteText).mockRejectedValue(failure);
+
+      const write = writeText('x');
+      const settled = expect(write).rejects.toBe(failure);
+      await vi.runAllTimersAsync();
+
+      await settled;
+      expect(tauriWriteText).toHaveBeenCalledTimes(4);
+    });
+
+    it('does not retry other write failures', async () => {
+      vi.mocked(tauriWriteText).mockRejectedValue(new Error('denied'));
+
+      await expect(writeText('x')).rejects.toThrow('denied');
+      expect(tauriWriteText).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries a read too (the price-check hotkey reads right after the game copied)', async () => {
+      vi.mocked(tauriReadText).mockReset().mockRejectedValueOnce(occupied()).mockResolvedValue('Shako');
+
+      const read = readText();
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('Shako');
+      expect(tauriReadText).toHaveBeenCalledTimes(2);
+    });
+  });
 });
 
 describe('browser mode', () => {

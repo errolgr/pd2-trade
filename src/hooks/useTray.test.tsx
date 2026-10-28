@@ -256,6 +256,22 @@ describe('settings hotkey', () => {
     expect(register).not.toHaveBeenCalled();
   });
 
+  it('translates a key an older version saved as typed on a Russian layout', async () => {
+    setHotkey('ctrl', 'х');
+    await renderTray();
+    await fire('diablo-focus-changed', true);
+    expect([...state.owned.keys()]).toEqual(['ctrl+bracketleft']);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('is skipped when the saved key cannot be a hotkey', async () => {
+    setHotkey('ctrl', 'é');
+    await renderTray();
+    await fire('diablo-focus-changed', true);
+    expect(register).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   it('is released on unmount', async () => {
     const { unmount } = await renderTray();
     await fire('diablo-focus-changed', true);

@@ -139,6 +139,15 @@ describe('AppController price check hotkey', () => {
     expect(h.overlay.openPanel).not.toHaveBeenCalledWith('itemSearch', expect.anything());
   });
 
+  it('opens the price check without waiting for the clipboard restore (it may retry a busy clipboard)', async () => {
+    const restore = () => Promise.withResolvers<void>().promise; // never settles
+    vi.mocked(useClipboard).mockReturnValue({ read: async () => clipboard, copy: restore } as never);
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
+  });
+
   it("says nothing was copied when the game didn't copy anything (no item, or the Ctrl+C never reached it)", async () => {
     keyPress.mockImplementation(async () => {}); // e.g. a Linux desktop that blocks simulated keys
     await mount();

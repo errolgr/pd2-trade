@@ -8,69 +8,40 @@ import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { hotkeyKeyFromEvent, hotkeyKeyLabel, hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
 import { SettingsGroup, SettingsHint, SettingsRow, SettingsSkeleton } from '../settings-ui';
+
+const INVALID_KEY = "Can't be used as a hotkey";
+const requiredKey = z
+  .string()
+  .min(1, 'Enter a key')
+  .refine((key) => normalizeHotkeyKey(key) !== null, INVALID_KEY);
+const optionalKey = z.string().refine((key) => key === '' || normalizeHotkeyKey(key) !== null, INVALID_KEY);
 
 const hotkeyFormSchema = z
   .object({
     hotkeyModifier: z.enum(['ctrl', 'alt']),
-    hotkeyKey: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKey: requiredKey,
     hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
-    hotkeyKeyListItem: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeyListItem: requiredKey,
     hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
-    hotkeyKeySettings: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeySettings: requiredKey,
     hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
-    hotkeyKeyCurrencyValuation: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeyCurrencyValuation: requiredKey,
     hotkeyModifierChat: z.enum(['ctrl', 'alt']),
-    hotkeyKeyChat: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeyChat: requiredKey,
     hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
-    hotkeyKeyOffers: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeyOffers: requiredKey,
     hotkeyModifierDelist: z.enum(['ctrl', 'alt']),
-    hotkeyKeyDelist: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyKeyDelist: requiredKey,
     hotkeyModifierSnapshot: z.enum(['ctrl', 'alt']),
-    hotkeyKeySnapshot: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
+    hotkeyKeySnapshot: optionalKey,
     hotkeyModifierMarket: z.enum(['ctrl', 'alt']),
-    hotkeyKeyMarket: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
+    hotkeyKeyMarket: optionalKey,
     hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
-    hotkeyKeyBuilds: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
+    hotkeyKeyBuilds: optionalKey,
   })
-  .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
+  .refine((data) => !(data.hotkeyModifier === 'ctrl' && hotkeyKeyToken(data.hotkeyKey) === 'C'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
     path: ['hotkeyKey'],
   });
@@ -211,14 +182,19 @@ export function HotkeyForm() {
   }
 
   const values = form.watch();
+  // Compared by parser token, so a key saved by an older version ('х') clashes with its translation ('[')
   const comboOf = (row: HotkeyRowConfig) => {
-    const key = (values[row.key] as string | undefined)?.toLowerCase();
-    return key ? `${values[row.modifier]}+${key}` : null;
+    const token = hotkeyKeyToken(values[row.key] as string | undefined);
+    return token ? `${values[row.modifier]}+${token}` : null;
   };
   const warningFor = (row: HotkeyRowConfig): string | null => {
+    const key = values[row.key] as string | undefined;
+    if (key && !normalizeHotkeyKey(key)) {
+      return `${key.toUpperCase()} can't be used as a hotkey. Click the box and press another key.`;
+    }
     const combo = comboOf(row);
     if (!combo) return null;
-    if (combo === 'ctrl+c') return 'Ctrl + C is reserved for copying items. Pick another key.';
+    if (combo === 'ctrl+C') return 'Ctrl + C is reserved for copying items. Pick another key.';
     const clash = HOTKEY_ROWS.find((other) => other !== row && comboOf(other) === combo);
     return clash ? `Also used by ${clash.label}.` : null;
   };
@@ -229,6 +205,7 @@ export function HotkeyForm() {
         <SettingsGroup title="Shortcuts">
           {HOTKEY_ROWS.map((row) => {
             const warning = warningFor(row);
+            const label = hotkeyKeyLabel(values[row.key] as string | undefined);
             return (
               <FormField
                 key={row.key}
@@ -269,17 +246,30 @@ export function HotkeyForm() {
                         <FormControl>
                           <Input
                             type="text"
-                            maxLength={1}
+                            readOnly
                             placeholder={row.optional ? 'Off' : undefined}
-                            value={(keyField.value as string | undefined)?.toUpperCase() ?? ''}
+                            value={label}
                             aria-invalid={warning ? true : undefined}
                             className={cn(
                               'h-9 w-11 rounded-md border-b-[3px] px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-[10px] placeholder:font-normal',
                               'focus-visible:border-b-primary',
+                              label.length > 1 && 'w-16 text-xs',
                               warning &&
                                 'aria-invalid:border-warning/80 aria-invalid:ring-warning/30 dark:aria-invalid:ring-warning/30',
                             )}
-                            onChange={(e) => keyField.onChange(e.target.value.toLowerCase())}
+                            // The key is recorded from the key press, not typed text: a Russian-layout press of
+                            // the [ key types 'х', which no global shortcut can be registered for
+                            onKeyDown={(e) => {
+                              if (row.optional && (e.key === 'Backspace' || e.key === 'Delete')) {
+                                e.preventDefault();
+                                keyField.onChange('');
+                                return;
+                              }
+                              const key = hotkeyKeyFromEvent(e);
+                              if (!key) return;
+                              e.preventDefault();
+                              keyField.onChange(key);
+                            }}
                           />
                         </FormControl>
                       </>
@@ -299,7 +289,10 @@ export function HotkeyForm() {
             );
           })}
         </SettingsGroup>
-        <SettingsHint>Leave the snapshot, market or builds key empty to turn that hotkey off.</SettingsHint>
+        <SettingsHint>
+          Click a key box and press the key to use. Press Backspace in the snapshot, market or builds box to turn that
+          hotkey off.
+        </SettingsHint>
       </div>
     </Form>
   );

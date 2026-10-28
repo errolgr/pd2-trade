@@ -32,12 +32,14 @@ afterEach(() => {
 });
 
 describe('searchMarketListings', () => {
-  it('POSTs the filters with page and limit, and maps the rows', async () => {
+  it('POSTs the filters with page and limit, maps the rows and drops those without an item', async () => {
     const listing = { _id: 'L1', price: '2 hr', hr_price: 2, item: { name: 'Dread Visage' } };
+    const unscored = { _id: 'L3', item: { name: 'Shako' } };
     respond(200, {
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
-        { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
+        { listing: { _id: 'L2' }, pseudo: {}, score: 1, value: 1 },
+        { listing: unscored, pseudo: {}, score: null, value: null },
       ],
       total: 312,
       page: 1,
@@ -55,9 +57,11 @@ describe('searchMarketListings', () => {
     expect(result).toEqual({
       total: 312,
       totalExact: true,
+      // Rows the service sent, the dropped one included: paging reads this
+      fetched: 3,
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
-        { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
+        { listing: unscored, pseudo: {}, score: null, value: null },
       ],
     });
   });

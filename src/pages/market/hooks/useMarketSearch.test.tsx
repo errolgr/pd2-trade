@@ -137,6 +137,23 @@ describe('useMarketSearch', () => {
     expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: MARKET_PAGE_SIZE });
   });
 
+  it('keeps paging past a page whose rows were all item-less: rows, not shown items, decide', async () => {
+    const pages: SearchResult[] = [
+      result([row('a'), row('b')], { total: 60, fetched: MARKET_PAGE_SIZE }),
+      result([], { total: 60, fetched: MARKET_PAGE_SIZE }),
+      result([row('c')], { total: 60, fetched: 10 }),
+    ];
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => pages[opts!.page!]);
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    await act(() => hook.current.loadMore());
+    expect(hook.current.hasMore).toBe(true);
+    await act(() => hook.current.loadMore());
+    expect(hook.current.items.map((r) => r.listing._id)).toEqual(['a', 'b', 'c']);
+    expect(hook.current.hasMore).toBe(false);
+  });
+
   it('asks to sign in when signed out, and says the service is unavailable when it is', async () => {
     const f = filters();
     const { result: signedOut } = renderHook(() => useMarketSearch(api, f, { signedIn: false }));
