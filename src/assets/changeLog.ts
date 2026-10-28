@@ -17,6 +17,7 @@ export const changeLog = {
     "🔧 Hotkeys: press the key to set it; Space, symbol keys and keys on Cyrillic layouts (e.g. х) now register, and a key that can't be used is flagged in settings",
     '🔧 Copying (whispers, trade links, item images) and the price check / quick list hotkeys retry when another app briefly holds the Windows clipboard',
     '🔧 Linux: whisper and market alert sounds play again',
+    '🔧 Linux: "Login in browser" opens your browser from the AppImage, sign-in offers a link you can copy, and NVIDIA systems no longer get a black window',
     '🔧 Price check: searching an ethereal item keeps your stat filters (e.g. Enhanced Damage) instead of dropping them',
     '🔧 Price check: chance-to-cast and aura lines from a previously checked item no longer stay in the stat list',
     '✨ List Item from a price check goes straight to that exact item in your stash when it can tell which one it is',
