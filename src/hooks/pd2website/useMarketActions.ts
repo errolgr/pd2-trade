@@ -10,6 +10,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
 import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import { publishListingDeleted } from './listing-events';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -188,8 +189,8 @@ export function useMarketActions({
         },
       });
       // Already gone (sold, expired, or removed elsewhere): what the user asked for
-      if (response.status === 404) return;
-      await handleApiResponse(response, onAuthError, { listingId });
+      if (response.status !== 404) await handleApiResponse(response, onAuthError, { listingId });
+      publishListingDeleted(listingId);
     },
     [settings, onAuthError],
   );

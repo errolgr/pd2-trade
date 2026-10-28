@@ -61,6 +61,15 @@ describe('DelistPage', () => {
     expect(screen.getByLabelText('2 listings').textContent).toBe('2');
   });
 
+  it('shows when each listing was listed, so same-named ones can be told apart', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T12:00:00Z'));
+    renderPage([listing(1, { created_at: '2026-10-02T12:00:00Z' }), listing(2)]);
+    expect(screen.queryByText('Listed 3 days ago')).not.toBeNull();
+    expect(screen.queryAllByText(/^Listed /)).toHaveLength(1);
+    vi.useRealTimers();
+  });
+
   it('renders nothing (and does not crash) without a payload', () => {
     renderPage(undefined);
     expect(screen.queryAllByRole('button', { name: /^Remove/ })).toHaveLength(0);
