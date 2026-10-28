@@ -4,6 +4,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
+import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
@@ -37,9 +38,11 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const lastShortcutRef = useRef<string | null>(null);
   // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
-    if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+    const key = hotkeyKeyToken(settings?.hotkeyKeySettings);
+    // A key the parser cannot take is flagged in the settings window; register nothing for it
+    if (!isTauri() || !settings?.hotkeyModifierSettings || !key) return;
 
-    const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
+    const shortcut = `${settings.hotkeyModifierSettings}+${key}`.toLowerCase();
 
     const unregisterShortcut = async () => {
       if (lastShortcutRef.current) {
