@@ -37,12 +37,7 @@ export function SettingsSection({ title, description, children, as = 'h3', class
   return (
     <section className={cn('flex flex-col gap-y-4', className)}>
       <header className="space-y-1">
-        <Heading
-          className={cn(
-            'font-semibold tracking-tight text-foreground',
-            as === 'h3' ? 'text-xl' : 'text-base',
-          )}
-        >
+        <Heading className={cn('font-semibold tracking-tight text-foreground', as === 'h3' ? 'text-xl' : 'text-base')}>
           {title}
         </Heading>
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -117,8 +112,7 @@ export function SettingsRow({
   labelClassName,
 }: SettingsRowProps) {
   const stacked = layout === 'stacked';
-  const labelBase =
-    'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground';
+  const labelBase = 'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground';
   const descriptionBase = 'text-[13px] leading-relaxed';
   return (
     <FormItem
@@ -159,8 +153,11 @@ export function SettingsHint({ children, className }: { children: React.ReactNod
   );
 }
 
-/** Link-styled button that switches to another settings section; plain text outside the settings window. */
-export function SettingsLink({ to, children }: { to: SettingsSectionId; children: React.ReactNode }) {
+/**
+ * Link-styled button that switches to another settings section; plain text outside the settings window.
+ * `children` is optional for use as a <Trans> component, which supplies the translated link text.
+ */
+export function SettingsLink({ to, children }: { to: SettingsSectionId; children?: React.ReactNode }) {
   const go = React.useContext(SettingsNavContext);
   if (!go) return <>{children}</>;
   return (

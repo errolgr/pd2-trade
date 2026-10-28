@@ -21,14 +21,10 @@ import {
 import { openOffers } from '@/pages/chat/chat-feed';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
+import { t } from '@/i18n';
 
 /** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
 const CHAT_LOG_MISSING = 'Could not find or create chat log file';
-
-const UNSUPPORTED_ITEM = 'Item is not supported or invalid.';
-/** The clipboard didn't change: no item under the cursor, or the game never got the Ctrl+C (e.g. a Linux desktop
- * that blocks simulated keys). An item the user copied themselves still works. */
-const NOTHING_COPIED = 'No item was copied. Hover over an item in game and try again, or press Ctrl+C on it first.';
 
 /**
  * App-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket
@@ -50,7 +46,7 @@ const AppController: React.FC = () => {
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
-    const timer = setTimeout(() => showToast('is now running in the background...'), 2000);
+    const timer = setTimeout(() => showToast(t('app:controller.runningInBackground')), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -96,7 +92,13 @@ const AppController: React.FC = () => {
       !(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c'),
     );
     if (!clipboardContainsValidItem(raw)) {
-      showToast({ title: 'PD2 Trader', description: copied ? UNSUPPORTED_ITEM : NOTHING_COPIED, variant: 'error' });
+      // Not copied: the clipboard didn't change (no item under the cursor, or the game never got the Ctrl+C, e.g. a
+      // Linux desktop that blocks simulated keys). An item the user copied themselves still works.
+      showToast({
+        title: 'PD2 Trader',
+        description: t(copied ? 'app:controller.itemNotSupported' : 'app:controller.nothingCopied'),
+        variant: 'error',
+      });
       return;
     }
     openPanel('itemSearch', { text: encodeItem(raw) });
@@ -114,14 +116,14 @@ const AppController: React.FC = () => {
     // After opening so the toast shows above the panel
     if (!raw) {
       showToast({
-        title: 'Cannot List Item',
-        description: copied ? UNSUPPORTED_ITEM : NOTHING_COPIED,
+        title: t('app:controller.cannotListItem'),
+        description: t(copied ? 'app:controller.itemNotSupported' : 'app:controller.nothingCopied'),
         variant: 'error',
       });
     } else if (!isStashItem(raw)) {
       showToast({
-        title: 'Cannot List Item',
-        description: 'This item is not in your shared stash and cannot be listed.',
+        title: t('app:controller.cannotListItem'),
+        description: t('app:controller.notInSharedStash'),
         variant: 'error',
       });
     }
@@ -131,7 +133,11 @@ const AppController: React.FC = () => {
     if (!(await checkDiabloFocus())) return;
     const { raw } = await copyItemUnderCursor(true);
     if (!clipboardContainsValidItem(raw)) {
-      showToast({ title: 'Delist', description: 'No valid item found under cursor.', variant: 'error' });
+      showToast({
+        title: t('app:controller.delist'),
+        description: t('app:controller.noItemUnderCursor'),
+        variant: 'error',
+      });
       return;
     }
     void delistItem(raw);

@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { useCallback, useSyncExternalStore } from 'react';
 import { useOptions } from './useOptions';
 import { fetch as tauriFetch } from '@/lib/browser-http';
@@ -82,10 +83,8 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /** Shown when pd2trader.com refuses a banned account (403 from poll, refresh or /me). */
-export const BANNED_MESSAGE = 'This PD2 account is banned from PD2 Trader.';
-
 export function showBannedToast(): void {
-  showToast({ title: 'PD2 Trader', description: BANNED_MESSAGE, variant: 'error' });
+  showToast({ title: 'PD2 Trader', description: t('system:auth.banned'), variant: 'error' });
 }
 
 async function pollForTokens(
@@ -182,7 +181,7 @@ export function useOAuth() {
           if (!tab) {
             showToast({
               title: 'PD2 Trader',
-              description: 'Your browser blocked the sign-in window. Allow pop-ups for this site and try again.',
+              description: t('system:auth.popupBlocked'),
               variant: 'error',
             });
             return false;
@@ -200,7 +199,7 @@ export function useOAuth() {
         if (!tokens) {
           const timeoutToast: GenericToastPayload = {
             title: 'PD2 Trader',
-            description: 'Login timed out. Please try again.',
+            description: t('system:auth.timedOut'),
             variant: 'warning',
           };
           showToast(timeoutToast);
@@ -216,7 +215,7 @@ export function useOAuth() {
 
         const successToast: GenericToastPayload = {
           title: 'PD2 Trader',
-          description: 'Authentication successful!',
+          description: t('system:auth.success'),
         };
         showToast(successToast);
         return tokens.accessToken;
@@ -228,9 +227,7 @@ export function useOAuth() {
         else console.error('[OAuth] Flow failed:', error);
         const errorToast: GenericToastPayload = {
           title: 'PD2 Trader',
-          description: unreachable
-            ? "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again."
-            : 'Authentication failed. Please try again.',
+          description: unreachable ? t('system:auth.unreachable') : t('system:auth.failed'),
           variant: 'error',
         };
         showToast(errorToast);

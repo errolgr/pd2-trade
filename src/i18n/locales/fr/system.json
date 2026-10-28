@@ -1,0 +1,126 @@
+{
+  "tray": {
+    "settings": "Paramètres",
+    "openConfig": "Ouvrir le dossier de configuration",
+    "quit": "Quitter"
+  },
+  "options": {
+    "tokenLoaded": "Jeton chargé depuis l'URL avec succès !"
+  },
+  "auth": {
+    "banned": "Ce compte PD2 est banni de PD2 Trader.",
+    "popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les pop-ups pour ce site et réessayez.",
+    "timedOut": "La connexion a expiré. Veuillez réessayer.",
+    "success": "Authentification réussie !",
+    "failed": "Échec de l'authentification. Veuillez réessayer.",
+    "unreachable": "Impossible de joindre pd2trader.com. Vérifiez votre connexion Internet, votre pare-feu ou votre antivirus, puis réessayez.",
+    "loggedOut": "Déconnexion réussie."
+  },
+  "updates": {
+    "availableTitle": "PD2 Trader - Mise à jour disponible",
+    "availableDescription": "La version {{version}} est disponible. Cliquez pour télécharger et redémarrer.",
+    "downloadAndRestart": "Télécharger et redémarrer",
+    "manualTitle": "PD2 Trader - Mise à jour {{version}} disponible",
+    "manualDescription": "PD2 Trader ne peut pas se mettre à jour dans cet emplacement d'installation. Téléchargez la nouvelle version depuis la page de publication ou mettez-le à jour avec votre gestionnaire de paquets.",
+    "openReleasePage": "Ouvrir la page de publication",
+    "downloading": "Téléchargement de la mise à jour...",
+    "downloadingProgress": "Téléchargement de la mise à jour... {{progress}} %",
+    "downloaded": "Mise à jour téléchargée ! Redémarrage...",
+    "manualRequired": "La mise à jour doit être installée manuellement",
+    "downloadFailed": "Échec du téléchargement de la mise à jour. Veuillez réessayer plus tard.",
+    "dialogTitle": "Téléchargement de la mise à jour",
+    "dialogDescription": "Veuillez patienter pendant le téléchargement de la mise à jour."
+  },
+  "notifications": {
+    "offerAccepted": "Offre acceptée",
+    "newOffer": "Nouvelle offre",
+    "offerAcceptedText": "Votre offre a été acceptée",
+    "newOfferText": "Nouvelle offre reçue",
+    "viewListing": "Voir l'annonce",
+    "reply": "Répondre",
+    "playerJoined": "Joueur arrivé",
+    "playerJoinedDescription": "{{player}} a rejoint la partie",
+    "tradeWhisper": "Message privé d'échange",
+    "whisperFrom": "Message privé de {{player}}",
+    "newChatMessage": "Nouveau message de chat"
+  },
+  "offers": {
+    "item": "objet",
+    "revoked": "Offre révoquée",
+    "revokedDescription": "Votre offre sur {{item}} a été révoquée",
+    "revokedFallback": "L'offre a été révoquée",
+    "revokeFailed": "Échec de la révocation",
+    "revokeFailedDescription": "Une erreur s'est produite lors de la révocation de l'offre",
+    "accepted": "Offre acceptée",
+    "acceptedDescription": "Vous avez accepté l'offre de {{player}} sur {{item}}",
+    "acceptedFallback": "L'offre a été acceptée",
+    "acceptFailed": "Échec de l'acceptation",
+    "acceptFailedDescription": "Une erreur s'est produite lors de l'acceptation de l'offre",
+    "rejected": "Offre refusée",
+    "rejectedDescription": "Vous avez refusé l'offre de {{player}} sur {{item}}",
+    "rejectedFallback": "L'offre a été refusée",
+    "rejectFailed": "Échec du refus",
+    "rejectFailedDescription": "Une erreur s'est produite lors du refus de l'offre",
+    "unaccepted": "Acceptation annulée",
+    "unacceptedDescription": "Vous avez annulé l'acceptation de l'offre de {{player}} sur {{item}}",
+    "unacceptedFallback": "L'acceptation de l'offre a été annulée",
+    "unacceptFailed": "Échec de l'annulation de l'acceptation",
+    "unacceptFailedDescription": "Une erreur s'est produite lors de l'annulation de l'acceptation",
+    "hidden": "Offre masquée",
+    "hiddenDescription": "Votre offre sur {{item}} a été masquée. Elle sera supprimée après 7 jours.",
+    "hiddenFallback": "L'offre a été masquée",
+    "restored": "Offre restaurée",
+    "restoredDescription": "Votre offre sur {{item}} a été restaurée",
+    "restoredFallback": "L'offre a été restaurée"
+  },
+  "netWorth": {
+    "accountMismatch": "Le compte sélectionné n'est pas lié à votre connexion PD2. Vérifiez les paramètres de votre compte.",
+    "sessionExpired": "Votre session PD2 a expiré. Reconnectez-vous.",
+    "rateLimited": "Trop de requêtes. Réessayez dans une minute."
+  },
+  "seasons": {
+    "current": "{{season}} (actuelle)",
+    "currentGeneric": "Saison actuelle"
+  },
+  "priceWindow": {
+    "options": {
+      "hours24": "24 heures",
+      "days3": "3 jours",
+      "days7": "7 jours",
+      "days30": "30 jours"
+    },
+    "seasonAvg": "moy. saison",
+    "dayAvg_one": "moy. {{count}} jour",
+    "dayAvg_many": "moy. {{count}} de jours",
+    "dayAvg_other": "moy. {{count}} jours",
+    "hourAvg_one": "moy. {{count}} heure",
+    "hourAvg_many": "moy. {{count}} d'heures",
+    "hourAvg_other": "moy. {{count}} heures",
+    "lastSeason": "saison précédente",
+    "seasonTag": "saison",
+    "basis": {
+      "last30Days": "les 30 derniers jours",
+      "wholeSeason": "toute la saison",
+      "last30DaysOf": "les 30 derniers jours de {{season}}",
+      "lastWindow": "les dernières {{window}}"
+    },
+    "notEnoughSalesThisWeek": "Pas assez de ventes cette semaine — basé sur {{basis}}",
+    "notEnoughSalesInWindow": "Pas assez de ventes sur les dernières {{window}} — basé sur {{basis}}"
+  },
+  "chatTemplates": {
+    "nameRequired": "Donnez un nom au modèle",
+    "nameTooLong": "Nom : {{max}} caractères maximum",
+    "textRequired": "Rédigez le message",
+    "textTooLong": "Message : {{max}} caractères maximum",
+    "tokens": {
+      "accountName": "Son nom de compte",
+      "characterName": "Le nom de son personnage",
+      "itemName": "Le dernier objet lié ou mentionné en message privé",
+      "price": "Son prix"
+    }
+  },
+  "corruptedZones": {
+    "waitMinutes": "{{minutes}} min",
+    "waitHours": "{{hours}} h {{minutes}} min"
+  }
+}

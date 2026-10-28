@@ -13,11 +13,13 @@ import { useBuildsActions } from '../lib/context';
 import { useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
 import { signatureSkills } from '../lib/gear-up';
 import { classMeta, timeAgo } from '../lib/format';
+import { currentLocale, useTranslation } from '@/i18n';
 import { ClassEmblem, PriceChip, QueryError, Segmented, SkillIcon } from './parts';
 
 export type CharactersView = 'mine' | 'following' | 'recent';
 
 export function CharactersTab({ view, onView }: { view: CharactersView; onView: (view: CharactersView) => void }) {
+  const { t } = useTranslation(['builds', 'common']);
   const { settings, updateSettings } = useOptions();
   const followed = settings?.followedBuildCharacters ?? [];
   const recent = settings?.recentBuildCharacters ?? [];
@@ -25,14 +27,30 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border/60 px-3">
         <Segmented
-          label="Characters"
+          label={t('page.tabs.characters')}
           layoutId="builds-characters-view"
           value={view}
           onChange={onView}
           options={[
-            { value: 'mine', label: 'Mine' },
-            { value: 'following', label: <>Following{followed.length > 0 && <Count n={followed.length} />}</> },
-            { value: 'recent', label: <>Recent{recent.length > 0 && <Count n={recent.length} />}</> },
+            { value: 'mine', label: t('characters.mine') },
+            {
+              value: 'following',
+              label: (
+                <>
+                  {t('characters.following')}
+                  {followed.length > 0 && <Count n={followed.length} />}
+                </>
+              ),
+            },
+            {
+              value: 'recent',
+              label: (
+                <>
+                  {t('characters.recent')}
+                  {recent.length > 0 && <Count n={recent.length} />}
+                </>
+              ),
+            },
           ]}
         />
         {view === 'recent' && recent.length > 0 && (
@@ -42,7 +60,7 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
             className="ml-auto h-7 gap-1.5 text-xs text-muted-foreground"
             onClick={() => updateSettings({ recentBuildCharacters: [] })}
           >
-            <Trash2 className="size-3.5" /> Clear
+            <Trash2 className="size-3.5" /> {t('common:actions.clear')}
           </Button>
         )}
       </div>
@@ -53,8 +71,8 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
             <EmptyState
               className="m-6"
               icon={<Star />}
-              title="Not following anyone yet"
-              description="Star a character in its build view to keep it here."
+              title={t('characters.followingEmptyTitle')}
+              description={t('characters.followingEmptyDescription')}
             />
           ) : (
             <CharacterRows>
@@ -67,7 +85,8 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
                       followedBuildCharacters: followed.filter((r) => !(r.name === ref.name && r.mode === ref.mode)),
                     })
                   }
-                  removeLabel="Unfollow"
+                  removeLabel={t('characters.unfollow')}
+                  unfollow
                 />
               ))}
             </CharacterRows>
@@ -77,8 +96,8 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
             <EmptyState
               className="m-6"
               icon={<Clock />}
-              title="No characters viewed yet"
-              description="Characters you open show up here."
+              title={t('characters.recentEmptyTitle')}
+              description={t('characters.recentEmptyDescription')}
             />
           ) : (
             <CharacterRows>
@@ -102,6 +121,7 @@ function CharacterRows({ children }: { children: React.ReactNode }) {
 // ───────────────────────────── Mine ─────────────────────────────
 
 function MineView() {
+  const { t } = useTranslation(['builds', 'common']);
   const { settings } = useOptions();
   const { openSignIn } = useSignIn();
   const { authData } = usePd2Website();
@@ -110,12 +130,12 @@ function MineView() {
       <EmptyState
         className="m-6"
         icon={<LogIn />}
-        title="Sign in to see your characters"
-        description="Your linked projectdiablo2.com game accounts list their characters here, with their tracked builds."
+        title={t('characters.signInTitle')}
+        description={t('characters.signInDescription')}
         action={
           <Button size="sm"
             onClick={openSignIn}>
-            Sign in
+            {t('common:actions.signIn')}
           </Button>
         }
       />
@@ -136,8 +156,8 @@ function MineView() {
       <EmptyState
         className="m-6"
         icon={<UserRound />}
-        title="No game account linked"
-        description="Link your in-game account on projectdiablo2.com to see its characters here."
+        title={t('characters.noAccountTitle')}
+        description={t('characters.noAccountDescription')}
       />
     );
   }
@@ -152,6 +172,7 @@ function MineView() {
 }
 
 function AccountSection({ account }: { account: string }) {
+  const { t } = useTranslation('builds');
   const { mode } = useBuildsActions();
   const query = useBuildsQuery(`account|${account.toLowerCase()}`, (signal) => getAccountCharacters(account, signal));
   const characters = query.data ?? [];
@@ -161,13 +182,16 @@ function AccountSection({ account }: { account: string }) {
   const others = characters.filter((c) => !isPrimary(c)).sort(byLevel);
 
   return (
-    <section aria-label={`Account ${account}`}>
+    <section aria-label={t('characters.accountLabel', { account })}>
       <h3 className="flex h-8 items-center gap-2 border-b border-border/50 bg-muted/20 px-3 text-xs font-semibold text-foreground">
         <UserRound className="size-3.5 text-muted-foreground" />
         {account}
         {query.data && (
           <span className="font-normal text-muted-foreground">
-            {characters.length} character{characters.length === 1 ? '' : 's'}
+            {t('characters.count', {
+              count: characters.length,
+              formatted: characters.length.toLocaleString(currentLocale()),
+            })}
           </span>
         )}
       </h3>
@@ -175,7 +199,7 @@ function AccountSection({ account }: { account: string }) {
         <QueryError query={query}
           className="m-2"
           compact
-          title={`Couldn't load ${account}'s characters from PD2`} />
+          title={t('characters.loadAccountError', { account })} />
       ) : query.loading && !query.data ? (
         <CharacterRows>
           {[0, 1, 2].map((i) => (
@@ -184,9 +208,9 @@ function AccountSection({ account }: { account: string }) {
           ))}
         </CharacterRows>
       ) : query.data === null ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">PD2 doesn&apos;t know this account.</p>
+        <p className="px-3 py-2 text-xs text-muted-foreground">{t('characters.unknownAccount')}</p>
       ) : characters.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">No characters on this account.</p>
+        <p className="px-3 py-2 text-xs text-muted-foreground">{t('characters.noCharacters')}</p>
       ) : (
         <>
           {primary.length > 0 ? (
@@ -197,12 +221,12 @@ function AccountSection({ account }: { account: string }) {
               ))}
             </CharacterRows>
           ) : (
-            <p className="px-3 py-2 text-xs text-muted-foreground">No ladder {mode} characters on this account.</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">{t('characters.noLadderCharacters', { mode })}</p>
           )}
           {others.length > 0 && (
             <>
               <p className="border-t border-border/50 px-3 pt-2 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
-                Other modes
+                {t('characters.otherModes')}
               </p>
               <CharacterRows>
                 {others.map((c) => (
@@ -220,6 +244,7 @@ function AccountSection({ account }: { account: string }) {
 }
 
 function MyCharacterCard({ character: c, secondary = false }: { character: AccountCharacter; secondary?: boolean }) {
+  const { t } = useTranslation('builds');
   const charMode: BuildsMode = c.hardcore ? 'hardcore' : 'softcore';
   const tracked = c.ladder && c.level >= BUILDS_MIN_LEVEL;
   return (
@@ -230,7 +255,7 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
         <div className="min-w-0 flex-1">
           <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
           <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
-            <span className="tabular-nums">Level {c.level}</span>
+            <span className="tabular-nums">{t('characters.level', { level: c.level })}</span>
             <span style={{ color: classMeta(c.className).color }}>{c.className}</span>
           </div>
         </div>
@@ -252,7 +277,7 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
           <TrackedSummary name={c.name}
             mode={charMode} />
         ) : !c.ladder ? (
-          <p className="text-[11px] text-muted-foreground">Only ladder characters are tracked.</p>
+          <p className="text-[11px] text-muted-foreground">{t('characters.onlyLadder')}</p>
         ) : (
           <BelowMinLevel className={c.className} />
         )}
@@ -262,15 +287,18 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
 }
 
 function BelowMinLevel({ className }: { className: string }) {
+  const { t } = useTranslation('builds');
   const { showClassMeta } = useBuildsActions();
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-[11px] text-muted-foreground">Builds are tracked from level {BUILDS_MIN_LEVEL}</span>
+      <span className="text-[11px] text-muted-foreground">
+        {t('characters.trackedFrom', { level: BUILDS_MIN_LEVEL })}
+      </span>
       <Button variant="outline"
         size="sm"
         className="h-6 px-2 text-[11px]"
         onClick={() => showClassMeta(className)}>
-        See level {BUILDS_MIN_LEVEL}+ {className} builds
+        {t('characters.seeClassBuilds', { level: BUILDS_MIN_LEVEL, className })}
       </Button>
     </div>
   );
@@ -278,14 +306,15 @@ function BelowMinLevel({ className }: { className: string }) {
 
 /** A tracked character's build in one line (top skills, gear value); click opens it. */
 function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
+  const { t } = useTranslation('builds');
   const { openCharacter } = useBuildsActions();
   const query = useBuildCharacter(name, mode);
   if (query.status === 404) {
-    return <p className="text-[11px] text-muted-foreground">Not crawled yet; characters refresh about once a day.</p>;
+    return <p className="text-[11px] text-muted-foreground">{t('characters.notCrawled')}</p>;
   }
   if (query.error) return <QueryError query={query}
     compact
-    title="Couldn't load the build" />;
+    title={t('characters.loadBuildError')} />;
   const detail = query.data && !query.stale ? query.data : null;
   if (!detail) return <Skeleton className="h-6 w-full" />;
   return (
@@ -300,7 +329,7 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
           size={20} />
       ))}
       <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
-        {signatureSkills(detail.skills, 1)[0]?.name ?? 'Build'} · {timeAgo(detail.lastUpdated)}
+        {signatureSkills(detail.skills, 1)[0]?.name ?? t('characters.build')} · {timeAgo(detail.lastUpdated)}
       </span>
       <PriceChip hr={detail.gearValueHr} />
       <ChevronRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
@@ -314,11 +343,14 @@ function TrackedCard({
   charRef,
   onRemove,
   removeLabel,
+  unfollow = false,
 }: {
   charRef: BuildCharacterRef;
   onRemove?: () => void;
   removeLabel?: string;
+  unfollow?: boolean;
 }) {
+  const { t } = useTranslation('builds');
   const { openCharacter } = useBuildsActions();
   const query = useBuildCharacter(charRef.name, charRef.mode);
   const detail = query.data && !query.stale ? query.data : null;
@@ -336,17 +368,17 @@ function TrackedCard({
             {charRef.name}
             {detail?.isDead && charRef.mode === 'hardcore' && (
               <Skull className="size-3 text-destructive"
-                aria-label="Dead" />
+                aria-label={t('characters.dead')} />
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
             {query.status === 404 ? (
-              `Not in ${charRef.mode} builds`
+              t('characters.notInMode', { mode: charRef.mode })
             ) : query.error ? (
-              "Couldn't load"
+              t('characters.couldntLoad')
             ) : detail ? (
               <>
-                <span className="tabular-nums">Level {detail.level}</span>{' '}
+                <span className="tabular-nums">{t('characters.level', { level: detail.level })}</span>{' '}
                 <span style={{ color: classMeta(detail.className).color }}>{detail.className}</span>
                 {charRef.mode === 'hardcore' && ' · HC'}
               </>
@@ -361,12 +393,12 @@ function TrackedCard({
       {onRemove && (
         <button
           type="button"
-          aria-label={`${removeLabel} ${charRef.name}`}
+          aria-label={t('characters.removeLabel', { action: removeLabel, name: charRef.name })}
           title={removeLabel}
           onClick={onRemove}
           className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-60 outline-none hover:bg-accent hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50"
         >
-          {removeLabel === 'Unfollow' ? <StarOff className="size-3.5" /> : <X className="size-3.5" />}
+          {unfollow ? <StarOff className="size-3.5" /> : <X className="size-3.5" />}
         </button>
       )}
     </div>

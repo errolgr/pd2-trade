@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "净资产",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "净资产 — 点击查看详情，拖动以移动",
+    "snapshotFailed": "快照失败",
+    "lastSnapshot": "上次快照 {{time}}",
+    "noSnapshot": "暂无快照",
+    "session": "本次"
+  },
+  "panel": {
+    "title": "净资产",
+    "hide": "隐藏",
+    "openFullView": "打开完整视图",
+    "signInPrompt": "使用 PD2 账号登录以追踪你的净资产。",
+    "signIn": "登录",
+    "uncertain": "+{{value}} HR 待定",
+    "sessionDelta": "本次 {{change}} HR",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} 分钟",
+    "thisSession": "本次会话",
+    "last24Hours": "过去 24 小时",
+    "notEnoughSnapshots": "快照数量不足",
+    "recentSnapshots": "最近快照",
+    "noChanges": "暂无变化记录。",
+    "historyOff": "历史记录已关闭。请在 设置 → 净资产 中开启“保存净资产历史”以查看会话和变化。",
+    "snapshotNow": "立即快照",
+    "startSession": "开始会话",
+    "stopSession": "结束会话"
+  },
+  "profile": {
+    "publicProfile": "公开资料",
+    "private": "私密",
+    "publicTooltip": "你的账号名、排名、资产、图表、徽章和重要掉落将在 pd2trader.com 上公开。",
+    "privateTooltip": "只有你能看到你的净资产。开启后将以公开资料出现在 pd2trader.com 排行榜上。",
+    "saveFailed": "保存失败",
+    "couldNotSave": "无法保存",
+    "viewProfile": "查看资料"
+  }
+}

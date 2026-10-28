@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { showToast, useOverlay } from '@/overlay';
 import { corruptedZoneAt } from '@/lib/corrupted-zones';
+import { currentLocale, t } from '@/i18n';
 
 /** Past the slot boundary before reading the new zone, so a timer firing a hair early still sees it. */
 const ROTATION_SLACK_MS = 500;
@@ -31,10 +32,13 @@ const CorruptedZoneTimerController: React.FC = () => {
         () => {
           const slot = corruptedZoneAt(Date.now());
           if (alerts === 'all' || follows.has(slot.zone)) {
-            const until = new Date(slot.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const until = new Date(slot.end).toLocaleTimeString(currentLocale(), {
+              hour: 'numeric',
+              minute: '2-digit',
+            });
             showToast({
-              title: 'Corrupted zone',
-              description: `${slot.zone}: make a new Hell game (until ${until})`,
+              title: t('app:corruptedZones.toastTitle'),
+              description: t('app:corruptedZones.toastDescription', { zone: slot.zone, until }),
               variant: 'corrupted-zone',
               duration: 10_000,
             });

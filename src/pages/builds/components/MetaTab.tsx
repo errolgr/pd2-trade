@@ -48,6 +48,7 @@ import {
   ShareBar,
   SkillIcon,
 } from './parts';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 export const BUDGET_STEPS = [0.5, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 75, 100, 150, 200, 300, 500];
 const LEVEL_PRESETS = [
@@ -109,10 +110,14 @@ export function MetaTab({
         selected={filters.classes}
         onToggle={(c) => toggle('classes', c)}
       />
-      <FilterBar filters={filters} onChange={onChange} itemNames={itemNames} />
+      <FilterBar filters={filters}
+        onChange={onChange}
+        itemNames={itemNames} />
       <div className="flex min-h-0 flex-1 border-t border-border/50">
         <aside className="flex w-[260px] shrink-0 flex-col border-r border-border/50">
-          <UsagePanel usage={usage} filters={filters} onToggle={toggle} />
+          <UsagePanel usage={usage}
+            filters={filters}
+            onToggle={toggle} />
         </aside>
         <main className="@container flex min-w-0 flex-1 flex-col">
           <CharacterList
@@ -125,7 +130,9 @@ export function MetaTab({
           />
         </main>
         <aside className="flex w-[260px] shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-l border-border/50">
-          <CoreKit query={shopping} filters={filters} onToggleItem={(key) => toggle('items', key)} />
+          <CoreKit query={shopping}
+            filters={filters}
+            onToggleItem={(key) => toggle('items', key)} />
         </aside>
       </div>
     </div>
@@ -143,13 +150,14 @@ function ClassBar({
   selected: string[];
   onToggle: (className: string) => void;
 }) {
+  const { t } = useTranslation('builds');
   const total = breakdown ? Object.values(breakdown).reduce((a, b) => a + b, 0) : 0;
   const classes = BUILD_CLASSES.map((name) => ({ name, count: breakdown?.[name] ?? 0 }));
   return (
     <div
       className="flex shrink-0 divide-x divide-border/50 border-b border-border/50"
       role="group"
-      aria-label="Classes"
+      aria-label={t('meta.classes')}
     >
       {classes.map(({ name, count }) => {
         const meta = classMeta(name);
@@ -161,7 +169,11 @@ function ClassBar({
             key={name}
             type="button"
             aria-pressed={active}
-            title={`${name}: ${count.toLocaleString()} characters${active ? ' (click to remove)' : ''}`}
+            title={
+              active
+                ? t('meta.classTitleActive', { name, count, formatted: count.toLocaleString(currentLocale()) })
+                : t('meta.classTitle', { name, count, formatted: count.toLocaleString(currentLocale()) })
+            }
             onClick={() => onToggle(name)}
             className={cn(
               'group relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-3 py-2 text-left outline-none transition-[opacity,background-color] duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/40',
@@ -169,15 +181,17 @@ function ClassBar({
               dim && 'opacity-45 hover:opacity-90',
             )}
           >
-            <ClassEmblem className={name} size={26} />
+            <ClassEmblem className={name}
+              size={26} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium" style={{ color: meta.color }}>
+              <span className="block truncate text-xs font-medium"
+                style={{ color: meta.color }}>
                 {meta.name}
               </span>
               <span className="block text-[11px] text-muted-foreground tabular-nums">
                 {breakdown ? (
                   <>
-                    {count.toLocaleString()} <span className="opacity-70">· {fmtPct(pct)}</span>
+                    {count.toLocaleString(currentLocale())} <span className="opacity-70">· {fmtPct(pct)}</span>
                   </>
                 ) : (
                   <Skeleton className="mt-0.5 h-2.5 w-12" />
@@ -212,27 +226,29 @@ function FilterBar({
   onChange: (filters: BuildsFilters) => void;
   itemNames: ReadonlyMap<string, string>;
 }) {
+  const { t } = useTranslation(['builds', 'common']);
   const chips: { key: string; label: React.ReactNode; remove: () => void }[] = [];
   const listChip = (list: ListKey, value: string, label: React.ReactNode) =>
     chips.push({ key: `${list}:${value}`, label, remove: () => onChange(toggleListFilter(filters, list, value)) });
   for (const c of filters.classes) listChip('classes', c, <span style={{ color: classMeta(c).color }}>{c}</span>);
   for (const s of filters.skills) listChip('skills', s, skillLabel(s));
   for (const i of filters.items) listChip('items', i, itemNames.get(i) ?? keyLabel(i));
-  for (const m of filters.mercTypes) listChip('mercTypes', m, `Merc: ${m}`);
-  for (const i of filters.mercItems) listChip('mercItems', i, `Merc: ${itemNames.get(i) ?? keyLabel(i)}`);
+  for (const m of filters.mercTypes) listChip('mercTypes', m, t('meta.mercChip', { name: m }));
+  for (const i of filters.mercItems)
+    listChip('mercItems', i, t('meta.mercChip', { name: itemNames.get(i) ?? keyLabel(i) }));
   if (filters.minLevel || filters.maxLevel) {
     const label =
       filters.minLevel && filters.maxLevel
-        ? `Level ${filters.minLevel}–${filters.maxLevel}`
+        ? t('meta.levelRange', { min: filters.minLevel, max: filters.maxLevel })
         : filters.minLevel
-          ? `Level ${filters.minLevel}+`
-          : `Level ≤ ${filters.maxLevel}`;
+          ? t('meta.levelMin', { min: filters.minLevel })
+          : t('meta.levelMax', { max: filters.maxLevel });
     chips.push({ key: 'level', label, remove: () => onChange({ ...filters, minLevel: null, maxLevel: null }) });
   }
   if (filters.maxCostHr != null) {
     chips.push({
       key: 'budget',
-      label: `Gear ≤ ${fmtHr(filters.maxCostHr)} HR`,
+      label: t('meta.gearMax', { value: fmtHr(filters.maxCostHr) }),
       remove: () => onChange({ ...filters, maxCostHr: null }),
     });
   }
@@ -242,16 +258,22 @@ function FilterBar({
   return (
     <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-1.5">
       <Segmented
-        label="Level"
+        label={t('timeline.level')}
         layoutId="builds-level"
         value={levelPreset || ('' as string)}
-        options={LEVEL_PRESETS.map((p) => ({ value: p.value, label: p.label, title: `Level ${p.label}` }))}
+        options={LEVEL_PRESETS.map((p) => ({
+          value: p.value,
+          label: p.label,
+          title: t('meta.levelPresetTitle', { level: p.label }),
+        }))}
         onChange={(v) =>
           onChange({ ...filters, minLevel: LEVEL_PRESETS.find((p) => p.value === v)?.min ?? null, maxLevel: null })
         }
       />
-      <BudgetControl value={filters.maxCostHr ?? null} onChange={(maxCostHr) => onChange({ ...filters, maxCostHr })} />
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1" aria-label="Active filters">
+      <BudgetControl value={filters.maxCostHr ?? null}
+        onChange={(maxCostHr) => onChange({ ...filters, maxCostHr })} />
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
+        aria-label={t('meta.activeFilters')}>
         {chips.map((chip) => (
           <span
             key={chip.key}
@@ -260,7 +282,7 @@ function FilterBar({
             {chip.label}
             <button
               type="button"
-              aria-label="Remove filter"
+              aria-label={t('meta.removeFilter')}
               onClick={chip.remove}
               className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
             >
@@ -287,14 +309,10 @@ function FilterBar({
               })
             }
           >
-            <RotateCcw className="size-3" /> Reset
+            <RotateCcw className="size-3" /> {t('common:actions.reset')}
           </Button>
         )}
-        {chips.length === 0 && (
-          <span className="text-[11px] text-muted-foreground">
-            Click a class, skill or item to filter. Ladder characters level 80+, refreshed daily.
-          </span>
-        )}
+        {chips.length === 0 && <span className="text-[11px] text-muted-foreground">{t('meta.filterHint')}</span>}
       </div>
     </div>
   );
@@ -309,14 +327,16 @@ function BudgetControl({ value, onChange }: { value: number | null; onChange: (v
           0,
           BUDGET_STEPS.findIndex((s) => s >= v),
         );
+  const { t } = useTranslation('builds');
   const [drag, setDrag] = useState<number | null>(null);
   const index = drag ?? indexOf(value);
   const any = index >= BUDGET_STEPS.length;
   return (
-    <div className="flex items-center gap-2" title="Maximum gear value">
-      <span className="text-[11px] text-muted-foreground">Gear</span>
+    <div className="flex items-center gap-2"
+      title={t('meta.maxGearValue')}>
+      <span className="text-[11px] text-muted-foreground">{t('meta.gear')}</span>
       <Slider
-        aria-label="Maximum gear value"
+        aria-label={t('meta.maxGearValue')}
         className="w-28 [&_[role=slider]]:size-3.5"
         min={0}
         max={BUDGET_STEPS.length}
@@ -329,7 +349,7 @@ function BudgetControl({ value, onChange }: { value: number | null; onChange: (v
         }}
       />
       <span className={cn('w-16 text-[11px] tabular-nums', any ? 'text-muted-foreground' : 'text-q-gold')}>
-        {any ? 'Any' : `≤ ${fmtHr(BUDGET_STEPS[index])} HR`}
+        {any ? t('meta.any') : t('meta.atMostHr', { value: fmtHr(BUDGET_STEPS[index]) })}
       </span>
     </div>
   );
@@ -348,6 +368,7 @@ function UsagePanel({
   filters: BuildsFilters;
   onToggle: (list: ListKey, value: string) => void;
 }) {
+  const { t } = useTranslation('builds');
   const [view, setView] = useState<UsageView>('skills');
   const [search, setSearch] = useState('');
   const data = usage.data;
@@ -369,18 +390,18 @@ function UsagePanel({
       className="flex min-h-0 flex-1 flex-col"
       bodyClassName="min-h-0 flex-1 overflow-y-auto px-0 py-1"
       icon={<Flame />}
-      title="Usage"
+      title={t('meta.usage')}
       action={
         <Segmented
-          label="Usage"
+          label={t('meta.usage')}
           layoutId="builds-usage-view"
           className="h-6"
           value={view}
           onChange={setView}
           options={[
-            { value: 'skills', label: 'Skills' },
-            { value: 'items', label: 'Items' },
-            { value: 'merc', label: 'Merc' },
+            { value: 'skills', label: t('character.skills') },
+            { value: 'items', label: t('meta.items') },
+            { value: 'merc', label: t('gearUp.merc') },
           ]}
         />
       }
@@ -391,35 +412,48 @@ function UsagePanel({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={view === 'skills' ? 'Search skills…' : view === 'items' ? 'Search items…' : 'Search merc…'}
-          aria-label={`Search ${view === 'merc' ? 'merc types and items' : view}`}
+          placeholder={
+            view === 'skills' ? t('meta.searchSkills') : view === 'items' ? t('meta.searchItems') : t('meta.searchMerc')
+          }
+          aria-label={
+            view === 'skills'
+              ? t('meta.searchSkillsLabel')
+              : view === 'items'
+                ? t('meta.searchItemsLabel')
+                : t('meta.searchMercLabel')
+          }
           spellCheck={false}
           autoComplete="off"
           className="h-7 w-full rounded-md border border-input bg-background/60 pr-2 pl-7 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
         />
       </div>
       {usage.error ? (
-        <QueryError query={usage} className="m-2" compact />
+        <QueryError query={usage}
+          className="m-2"
+          compact />
       ) : !data ? (
         <ListSkeleton rows={12} />
       ) : data.total === 0 ? (
-        <p className="p-3 text-center text-xs text-muted-foreground">No characters match these filters.</p>
+        <p className="p-3 text-center text-xs text-muted-foreground">{t('meta.noMatchFilters')}</p>
       ) : (
         <div className={cn('transition-opacity duration-(--dur-med)', usage.stale && 'opacity-60')}>
           {needle && empty && (
-            <p className="p-3 text-center text-xs text-muted-foreground">Nothing matches “{search.trim()}”.</p>
+            <p className="p-3 text-center text-xs text-muted-foreground">
+              {t('meta.nothingMatches', { search: search.trim() })}
+            </p>
           )}
           {view === 'skills' && (
             <>
               {skills.length > 0 && (
                 <p className="px-3 pt-1 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
-                  Maxed skills (20 hard points)
+                  {t('meta.maxedSkills')}
                 </p>
               )}
               {skills.map((s) => (
                 <UsageRow
                   key={s.name}
-                  icon={<SkillIcon name={s.name} size={22} />}
+                  icon={<SkillIcon name={s.name}
+                    size={22} />}
                   name={s.name}
                   usage={s}
                   active={filters.skills.includes(skillFilter(s.name))}
@@ -440,7 +474,9 @@ function UsagePanel({
           {view === 'merc' && (
             <>
               {mercTypes.length > 0 && (
-                <p className="px-3 pt-1 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">Merc types</p>
+                <p className="px-3 pt-1 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+                  {t('meta.mercTypes')}
+                </p>
               )}
               {mercTypes.map((m) => (
                 <UsageRow
@@ -454,7 +490,7 @@ function UsagePanel({
               ))}
               {mercItems.length > 0 && (
                 <p className="mt-1 border-t border-border/50 px-3 pt-2 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
-                  Merc items
+                  {t('meta.mercItems')}
                 </p>
               )}
               {mercItems.map((item) => (
@@ -491,6 +527,7 @@ function UsageRow({
   onClick: () => void;
   trailing?: React.ReactNode;
 }) {
+  const { t } = useTranslation('builds');
   return (
     <div
       className={cn(
@@ -501,7 +538,7 @@ function UsageRow({
       <button
         type="button"
         aria-pressed={active}
-        title={active ? `Remove filter: ${name}` : `Filter by ${name}`}
+        title={active ? t('meta.removeFilterName', { name }) : t('meta.filterBy', { name })}
         onClick={onClick}
         className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
@@ -511,12 +548,16 @@ function UsageRow({
             <span className={cn('min-w-0 flex-1 truncate text-xs', nameClassName)}>{name}</span>
             <span
               className="shrink-0 text-[11px] text-muted-foreground tabular-nums"
-              title={`${usage.count.toLocaleString()} characters`}
+              title={t('meta.usageCount', {
+                count: usage.count,
+                formatted: usage.count.toLocaleString(currentLocale()),
+              })}
             >
               {fmtPct(usage.pct)}
             </span>
           </span>
-          <ShareBar pct={usage.pct} className="mt-1" />
+          <ShareBar pct={usage.pct}
+            className="mt-1" />
         </span>
       </button>
       {trailing}
@@ -537,7 +578,8 @@ function ItemUsageRow({
 }) {
   return (
     <UsageRow
-      icon={<ItemIcon item={item} size={24} />}
+      icon={<ItemIcon item={item}
+        size={24} />}
       name={item.name}
       nameClassName={qualityText(item.quality)}
       usage={item}
@@ -546,7 +588,8 @@ function ItemUsageRow({
       trailing={
         <span className="flex w-[74px] shrink-0 items-center justify-end gap-0.5">
           <PriceChip hr={item.priceHr} />
-          <ItemActionsMenu item={item} merc={merc} />
+          <ItemActionsMenu item={item}
+            merc={merc} />
         </span>
       }
     />
@@ -555,9 +598,11 @@ function ItemUsageRow({
 
 function ListSkeleton({ rows }: { rows: number }) {
   return (
-    <div aria-busy className="space-y-1.5 p-1">
+    <div aria-busy
+      className="space-y-1.5 p-1">
       {Array.from({ length: rows }, (_, i) => (
-        <Skeleton key={i} className="h-7 w-full" />
+        <Skeleton key={i}
+          className="h-7 w-full" />
       ))}
     </div>
   );
@@ -575,21 +620,27 @@ function CoreKit({
   onToggleItem: (key: string) => void;
 }) {
   const data = query.data;
+  const { t } = useTranslation('builds');
   const total = data ? coreKitTotal(data.items) : 0;
   return (
-    <Section icon={<ShoppingBag />} title="Core kit" bodyClassName="px-0 py-1">
+    <Section icon={<ShoppingBag />}
+      title={t('meta.coreKit')}
+      bodyClassName="px-0 py-1">
       {query.error ? (
-        <QueryError query={query} className="m-2" compact />
+        <QueryError query={query}
+          className="m-2"
+          compact />
       ) : !data ? (
         <ListSkeleton rows={6} />
       ) : data.items.length === 0 ? (
-        <p className="p-2 text-center text-xs text-muted-foreground">No priced uniques, sets or runewords here.</p>
+        <p className="p-2 text-center text-xs text-muted-foreground">{t('meta.noPricedItems')}</p>
       ) : (
         <div className={cn('transition-opacity duration-(--dur-med)', query.stale && 'opacity-60')}>
           {data.items.map((item) => (
             <UsageRow
               key={item.key}
-              icon={<ItemIcon item={item} size={24} />}
+              icon={<ItemIcon item={item}
+                size={24} />}
               name={item.name}
               nameClassName={qualityText(item.quality)}
               usage={item}
@@ -606,18 +657,16 @@ function CoreKit({
           <p className="mt-1 flex items-center justify-between border-t border-border/50 px-3 pt-1.5 pb-0.5 text-xs">
             {data.items.some((i) => i.pct >= CORE_SHARE) ? (
               <>
-                <span
-                  className="text-muted-foreground"
-                  title={`Items worn by ${CORE_SHARE}% or more of these characters`}
-                >
-                  Core kit (worn by {CORE_SHARE}%+)
+                <span className="text-muted-foreground"
+                  title={t('meta.coreKitTitle', { share: CORE_SHARE })}>
+                  {t('meta.coreKitShare', { share: CORE_SHARE })}
                 </span>
                 <span className="font-semibold text-q-gold tabular-nums">
-                  {total > 0 ? `≈ ${fmtHr(total)} HR` : 'Unpriced'}
+                  {total > 0 ? t('gearUp.approxHr', { value: fmtHr(total) }) : t('gearUp.unpriced')}
                 </span>
               </>
             ) : (
-              <span className="text-muted-foreground">No item is worn by {CORE_SHARE}%+. Filter to a build.</span>
+              <span className="text-muted-foreground">{t('meta.noCoreItem', { share: CORE_SHARE })}</span>
             )}
           </p>
         </div>
@@ -644,6 +693,7 @@ function CharacterList({
   onSort: (sort: CharacterSort, dir: 'asc' | 'desc') => void;
 }) {
   const data = query.data;
+  const { t } = useTranslation('builds');
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
   return (
     <Section
@@ -653,39 +703,59 @@ function CharacterList({
       title={
         data ? (
           <span>
-            {data.total.toLocaleString()} <span className="font-normal text-muted-foreground">characters</span>
+            <Trans
+              t={t}
+              i18nKey="meta.characterCount"
+              count={data.total}
+              values={{ count: data.total, formatted: data.total.toLocaleString(currentLocale()) }}
+              components={{ muted: <span className="font-normal text-muted-foreground" /> }}
+            />
           </span>
         ) : (
-          'Characters'
+          t('page.tabs.characters')
         )
       }
     >
       {query.error ? (
-        <QueryError query={query} className="m-3" />
+        <QueryError query={query}
+          className="m-3" />
       ) : !data ? (
-        <div aria-busy className="space-y-1 p-2">
+        <div aria-busy
+          className="space-y-1 p-2">
           {Array.from({ length: 10 }, (_, i) => (
-            <Skeleton key={i} className="h-11 w-full" />
+            <Skeleton key={i}
+              className="h-11 w-full" />
           ))}
         </div>
       ) : data.characters.length === 0 ? (
-        <p className="p-6 text-center text-xs text-muted-foreground">
-          No characters match. Remove a filter or raise the gear budget.
-        </p>
+        <p className="p-6 text-center text-xs text-muted-foreground">{t('meta.noCharactersMatch')}</p>
       ) : (
         <>
           <div
             role="row"
             className="sticky top-0 z-10 flex items-center gap-2.5 border-b border-border/50 bg-surface/95 px-3 py-1 text-[10px] tracking-wide text-muted-foreground uppercase backdrop-blur-sm"
           >
-            <SortHeader className="w-[216px]" label="Character" by="level" sort={sort} dir={dir} onSort={onSort} />
-            <span role="columnheader" className="w-[74px] shrink-0">
-              Skills
+            <SortHeader
+              className="w-[216px]"
+              label={t('meta.columns.character')}
+              by="level"
+              sort={sort}
+              dir={dir}
+              onSort={onSort}
+            />
+            <span role="columnheader"
+              className="w-[74px] shrink-0">
+              {t('character.skills')}
             </span>
-            <SortHeader className="w-14 justify-end" label="Life" by="life" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader className="w-14 justify-end"
+              label="Life"
+              by="life"
+              sort={sort}
+              dir={dir}
+              onSort={onSort} />
             <SortHeader
               className="ml-auto w-20 justify-end"
-              label="Gear"
+              label={t('meta.gear')}
               by="gearValueHr"
               sort={sort}
               dir={dir}
@@ -693,7 +763,7 @@ function CharacterList({
             />
             <SortHeader
               className="w-16 justify-end"
-              label="Updated"
+              label={t('meta.columns.updated')}
               by="lastUpdated"
               sort={sort}
               dir={dir}
@@ -707,7 +777,8 @@ function CharacterList({
             )}
           >
             {data.characters.map((c) => (
-              <CharacterRow key={c.name} character={c} />
+              <CharacterRow key={c.name}
+                character={c} />
             ))}
           </ul>
         </>
@@ -718,20 +789,23 @@ function CharacterList({
             variant="ghost"
             size="sm"
             className="size-6 p-0"
-            aria-label="Previous page"
+            aria-label={t('meta.previousPage')}
             disabled={page <= 1}
             onClick={() => onPage(page - 1)}
           >
             <ChevronLeft className="size-3.5" />
           </Button>
           <span className="tabular-nums">
-            Page {page} of {pages.toLocaleString()}
+            {t('meta.pageOf', {
+              page: page.toLocaleString(currentLocale()),
+              pages: pages.toLocaleString(currentLocale()),
+            })}
           </span>
           <Button
             variant="ghost"
             size="sm"
             className="size-6 p-0"
-            aria-label="Next page"
+            aria-label={t('meta.nextPage')}
             disabled={page >= pages}
             onClick={() => onPage(page + 1)}
           >
@@ -759,6 +833,7 @@ function SortHeader({
   onSort: (sort: CharacterSort, dir: 'asc' | 'desc') => void;
   className?: string;
 }) {
+  const { t } = useTranslation('builds');
   const active = sort === by;
   const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
   return (
@@ -766,13 +841,7 @@ function SortHeader({
       type="button"
       role="columnheader"
       aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
-      title={
-        active
-          ? dir === 'desc'
-            ? 'Highest first (click for lowest)'
-            : 'Lowest first (click for highest)'
-          : `Sort by ${label}`
-      }
+      title={active ? (dir === 'desc' ? t('meta.sortHighest') : t('meta.sortLowest')) : t('meta.sortBy', { label })}
       onClick={() => onSort(by, active && dir === 'desc' ? 'asc' : 'desc')}
       className={cn(
         'flex shrink-0 items-center gap-0.5 rounded-sm uppercase outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
@@ -787,6 +856,7 @@ function SortHeader({
 }
 
 function CharacterRow({ character: c }: { character: CharacterListEntry }) {
+  const { t } = useTranslation('builds');
   const { openCharacter, mode } = useBuildsActions();
   const meta = classMeta(c.className);
   return (
@@ -803,16 +873,19 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
         }}
         className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50"
       >
-        <ClassEmblem className={c.className} size={30} />
+        <ClassEmblem className={c.className}
+          size={30} />
         <div className="w-44 min-w-0 shrink-0">
           <div className="flex items-center gap-1">
             <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
             {c.isDead && mode === 'hardcore' && (
-              <Skull className="size-3 shrink-0 text-destructive" aria-label="Dead" />
+              <Skull className="size-3 shrink-0 text-destructive"
+                aria-label={t('characters.dead')} />
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            <span className="tabular-nums">Lv {c.level}</span> · <span style={{ color: meta.color }}>{meta.name}</span>
+            <span className="tabular-nums">{t('meta.lv', { level: c.level })}</span> ·{' '}
+            <span style={{ color: meta.color }}>{meta.name}</span>
           </div>
         </div>
         <div className="flex w-[74px] shrink-0 gap-1">
@@ -820,20 +893,22 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
             <Tooltip key={s.name}>
               <TooltipTrigger asChild>
                 <span>
-                  <SkillIcon name={s.name} size={22} />
+                  <SkillIcon name={s.name}
+                    size={22} />
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                {s.name} <span className="text-muted-foreground">· level {s.total}</span>
+                {s.name} <span className="text-muted-foreground">{t('meta.skillLevel', { level: s.total })}</span>
               </TooltipContent>
             </Tooltip>
           ))}
         </div>
         <span className="w-14 shrink-0 text-right text-xs text-destructive/90 tabular-nums">
-          {c.life.toLocaleString()}
+          {c.life.toLocaleString(currentLocale())}
         </span>
         <span className="ml-auto flex w-20 shrink-0 justify-end">
-          <PriceChip hr={c.gearValueHr} unpriced />
+          <PriceChip hr={c.gearValueHr}
+            unpriced />
         </span>
         <span className="w-16 shrink-0 text-right text-[10px] text-muted-foreground">{timeAgo(c.lastUpdated)}</span>
       </div>

@@ -5,6 +5,7 @@ export const changeLog = {
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
+    '🌐 PD2 Trader in your language: Deutsch, Français, Русский, Español, Português (Brasil), Polski and 简体中文. It follows your system language; change it in Settings → Interface → Language. Item names, stats and game terms stay in English, as in the game',
     '🆕 Chat: an in-game trade whisper\'s ⋯ menu has "Delete listing" and "Sold & delete listing": it finds your listing of the whispered item and asks before removing it, or lets you pick when several match (charms, jewels, runes, rares); no need to hover the item for Ctrl+U',
     '✨ Delist picker: each listing shows when it was listed, so same-named ones are easy to tell apart',
     '🔧 List Item / Manage tab: a listing removed elsewhere (Ctrl+U, chat) leaves the list and the count straight away',

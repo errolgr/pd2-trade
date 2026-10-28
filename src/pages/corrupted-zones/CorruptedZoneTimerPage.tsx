@@ -13,17 +13,19 @@ import {
 } from '@/lib/corrupted-zones';
 import { clampToArea, tickerPosition } from '@/pages/net-worth/overlay';
 import { useChatDockOffset } from '@/pages/chat/chat-dock';
+import { currentLocale, useTranslation } from '@/i18n';
 
 /** Upcoming slots listed next to the pill when it is expanded. */
 const UPCOMING_SLOTS = 6;
 
-const clockTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const clockTime = (ts: number) =>
+  new Date(ts).toLocaleTimeString(currentLocale(), { hour: 'numeric', minute: '2-digit' });
 
 /** `clockTime`, with the weekday when `ts` is not on the same day as `now` (followed zones can be days away). */
 const slotTime = (ts: number, now: number) =>
   new Date(ts).toDateString() === new Date(now).toDateString()
     ? clockTime(ts)
-    : new Date(ts).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+    : new Date(ts).toLocaleString(currentLocale(), { weekday: 'short', hour: 'numeric', minute: '2-digit' });
 
 interface BoxSize {
   width: number;
@@ -42,6 +44,7 @@ interface BoxSize {
  * which reads poorly at overlay sizes) for the side of the screen, its list still opening up or down.
  */
 const CorruptedZoneTimer: React.FC = () => {
+  const { t } = useTranslation('app');
   const { settings, updateSettings } = useOptions();
   const { gameRect } = useOverlay();
   const { rect, setRect } = usePanel<'corruptedZoneTimer'>();
@@ -142,10 +145,20 @@ const CorruptedZoneTimer: React.FC = () => {
   // False when the pill shows a followed zone that is still to come
   const live = head.start <= now;
   const next = upcoming[0];
-  const title = live
-    ? `Corrupted in Hell games made until ${clockTime(head.end)}.` +
-      (next ? ` Next: ${next.zone}${onlyFollowed ? ` at ${slotTime(next.start, now)}` : ''}.` : '')
-    : `Next followed zone: corrupted in Hell games made from ${slotTime(head.start, now)} to ${clockTime(head.end)}.`;
+  let title: string;
+  if (!live) {
+    title = t('corruptedZones.followedTitle', { from: slotTime(head.start, now), until: clockTime(head.end) });
+  } else if (!next) {
+    title = t('corruptedZones.liveTitle', { until: clockTime(head.end) });
+  } else if (onlyFollowed) {
+    title = t('corruptedZones.liveTitleNextAt', {
+      until: clockTime(head.end),
+      zone: next.zone,
+      time: slotTime(next.start, now),
+    });
+  } else {
+    title = t('corruptedZones.liveTitleNext', { until: clockTime(head.end), zone: next.zone });
+  }
   // The pill hugs the anchored side
   const align =
     anchor.endsWith('right') || anchor === 'above-chat'
@@ -168,9 +181,9 @@ const CorruptedZoneTimer: React.FC = () => {
   const countdown = (
     <span
       className="tabular-nums text-muted-foreground"
-      aria-label={live ? 'Time until the next zone' : 'Time until this zone'}
+      aria-label={live ? t('corruptedZones.timeUntilNext') : t('corruptedZones.timeUntilThis')}
     >
-      {live ? formatCountdown(head.end - now) : `in ${formatCountdown(head.start - now)}`}
+      {live ? formatCountdown(head.end - now) : t('corruptedZones.inTime', { time: formatCountdown(head.start - now) })}
     </span>
   );
   const chevron = (
@@ -207,7 +220,7 @@ const CorruptedZoneTimer: React.FC = () => {
             ? 'w-44 flex-col gap-1 rounded-lg px-2.5 py-1.5 text-left'
             : 'h-7 items-center gap-2 whitespace-nowrap rounded-full pl-3 pr-2',
         )}
-        title={`${title} Click for the schedule${locked ? '' : ', drag to move'}.`}
+        title={t(locked ? 'corruptedZones.pillTitleLocked' : 'corruptedZones.pillTitle', { title })}
       >
         {vertical ? (
           <>
@@ -239,7 +252,7 @@ const CorruptedZoneTimer: React.FC = () => {
             vertical ? 'w-44 px-2.5' : 'px-3',
           )}
         >
-          <ol aria-label="Upcoming corrupted zones"
+          <ol aria-label={t('corruptedZones.upcoming')}
             className={cn('flex flex-col', vertical ? 'gap-1.5' : 'gap-1')}>
             {upcoming.map((slot) => (
               <li
@@ -248,7 +261,10 @@ const CorruptedZoneTimer: React.FC = () => {
               >
                 <span>{slot.zone}</span>
                 <span className="tabular-nums text-muted-foreground">
-                  {slotTime(slot.start, now)} · in {formatWait(slot.start - now)}
+                  {t('corruptedZones.slotWhen', {
+                    time: slotTime(slot.start, now),
+                    wait: formatWait(slot.start - now),
+                  })}
                 </span>
               </li>
             ))}
@@ -257,11 +273,7 @@ const CorruptedZoneTimer: React.FC = () => {
             type="button"
             aria-pressed={locked}
             onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
-            title={
-              locked
-                ? 'Locked: dragging does not move the timer. Click to unlock.'
-                : 'Stop the timer from moving when dragged.'
-            }
+            title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
             className={cn(
               'flex cursor-pointer items-center gap-1.5 self-start border-t border-border/60 pt-1.5 text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-surface-foreground focus-visible:text-surface-foreground',
               locked && 'text-q-corrupted-zone',
@@ -270,7 +282,7 @@ const CorruptedZoneTimer: React.FC = () => {
             {locked ? <Lock aria-hidden
               className="size-3" /> : <LockOpen aria-hidden
                 className="size-3" />}
-            Lock position
+            {t('corruptedZones.lock.label')}
           </button>
         </div>
       )}

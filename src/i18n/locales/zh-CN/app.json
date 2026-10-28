@@ -1,0 +1,102 @@
+{
+  "panel": {
+    "crashed": "此面板已崩溃。"
+  },
+  "toast": {
+    "details": "详情",
+    "undo": "撤销"
+  },
+  "ui": {
+    "more": "更多"
+  },
+  "errorHandler": {
+    "title": "错误"
+  },
+  "controller": {
+    "runningInBackground": "正在后台运行…",
+    "itemNotSupported": "物品不受支持或无效。",
+    "nothingCopied": "未复制任何物品。请在游戏中将鼠标悬停在物品上后重试，或先在物品上按 Ctrl+C。",
+    "cannotListItem": "无法挂单",
+    "notInSharedStash": "此物品不在你的共享储物箱中，无法挂单。",
+    "delist": "下架",
+    "noItemUnderCursor": "光标下未找到有效物品。"
+  },
+  "chatButton": {
+    "dragToMove": "拖动以移动",
+    "openChat": "打开 PD2 聊天",
+    "chat": "聊天",
+    "offers": "报价",
+    "more": "更多",
+    "unreadMessages_other": "{{count}} 条未读消息",
+    "tradeOffers_other": "{{count}} 个交易报价",
+    "disableOverlay": "关闭悬浮窗",
+    "menu": {
+      "chat": "聊天",
+      "market": "市场浏览",
+      "builds": "配装",
+      "netWorth": "净资产",
+      "stashValue": "储物箱价值",
+      "offers": "报价",
+      "manageListings": "管理挂单",
+      "settings": "设置"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "名称",
+    "namePlaceholder": "例如：还在吗？",
+    "message": "消息",
+    "messagePlaceholder": "例如：你好，你的 {itemName} 还在吗？",
+    "asksWhenUsed": "使用时询问：",
+    "asksNone": "使用模板时会询问其他任何 {name}。"
+  },
+  "signIn": {
+    "eyebrow": "登录到",
+    "lead": "关联你的 Project Diablo 2 账号，即可在游戏内查价、挂单和聊天。",
+    "howItWorks": "登录原理",
+    "trust": {
+      "officialLogin": "PD2 官方登录",
+      "noPassword": "无需共享密码",
+      "readOnlyStash": "只读储物箱"
+    },
+    "openingBrowser": "正在打开浏览器…",
+    "waitingForSignIn": "正在等待登录…",
+    "signInWithPd2": "使用 PD2 登录",
+    "finishInBrowser": "请在浏览器中完成登录，然后返回此处。",
+    "openFailed": "无法打开浏览器：请将链接复制到浏览器中。",
+    "opensSite": "将在浏览器中打开 projectdiablo2.com。",
+    "later": "稍后",
+    "copyLink": "复制链接",
+    "linkCopied": "链接已复制",
+    "accounts": {
+      "eyebrow": "即将完成",
+      "lead": "此登录关联了多个游戏账号。请选择用于交易的账号。",
+      "label": "游戏账号"
+    }
+  },
+  "changeLog": {
+    "title": "更新内容",
+    "close": "关闭更新日志",
+    "current": "当前",
+    "changes_other": "{{count}} 项更改"
+  },
+  "corruptedZones": {
+    "liveTitle": "在 {{until}} 前创建的 Hell 游戏中已腐化。",
+    "liveTitleNext": "在 {{until}} 前创建的 Hell 游戏中已腐化。下一个：{{zone}}。",
+    "liveTitleNextAt": "在 {{until}} 前创建的 Hell 游戏中已腐化。下一个：{{zone}}，{{time}}。",
+    "followedTitle": "下一个关注区域：在 {{from}} 至 {{until}} 之间创建的 Hell 游戏中腐化。",
+    "pillTitle": "{{title}} 点击查看时间表，拖动以移动。",
+    "pillTitleLocked": "{{title}} 点击查看时间表。",
+    "timeUntilNext": "距下一个区域的时间",
+    "timeUntilThis": "距此区域的时间",
+    "inTime": "{{time}}后",
+    "upcoming": "即将腐化的区域",
+    "slotWhen": "{{time}} · {{wait}}后",
+    "lock": {
+      "label": "锁定位置",
+      "lockedTitle": "已锁定：拖动不会移动计时器。点击解锁。",
+      "unlockedTitle": "拖动时不移动计时器。"
+    },
+    "toastTitle": "腐化区域",
+    "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）"
+  }
+}

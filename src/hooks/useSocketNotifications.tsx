@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { useEffect, useRef } from 'react';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
@@ -104,7 +105,9 @@ export const useSocketNotifications = ({
 
       const { listingId } = notification;
       const accepted = notification.type === 'offer_accepted';
-      const offerMessage = notification.text || (accepted ? 'Your offer was accepted' : 'New offer received');
+      const offerMessage =
+        notification.text ||
+        (accepted ? t('system:notifications.offerAcceptedText') : t('system:notifications.newOfferText'));
 
       // Play notification sound if trade notifications are enabled
       const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
@@ -116,10 +119,14 @@ export const useSocketNotifications = ({
       // Show toast notification with link to listing
       if (isToastEnabled(settings, 'offers')) {
         showToast({
-          title: accepted ? 'Offer Accepted' : 'New Offer',
+          title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
           action: listingId
-            ? { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId } }
+            ? {
+                label: t('system:notifications.viewListing'),
+                type: ToastActionType.OPEN_MARKET_LISTING,
+                data: { listingId },
+              }
             : undefined,
         });
       }
@@ -153,7 +160,7 @@ export const useSocketNotifications = ({
         const threadId = whisperThreadId(personKey(whisper.from));
         if (isThreadMuted([threadId])) return;
         const reply = {
-          label: 'Reply',
+          label: t('system:notifications.reply'),
           type: ToastActionType.OPEN_CHAT_CONVERSATION,
           data: { threadId },
         };
@@ -169,8 +176,8 @@ export const useSocketNotifications = ({
 
             if (isToastEnabled(settings, 'joins')) {
               const toastPayload: GenericToastPayload = {
-                title: 'Player Joined',
-                description: `${whisper.from} joined the game`,
+                title: t('system:notifications.playerJoined'),
+                description: t('system:notifications.playerJoinedDescription', { player: whisper.from }),
                 duration: 5000,
                 variant: 'default',
               };
@@ -229,7 +236,7 @@ export const useSocketNotifications = ({
             // Show toast with item name only if Diablo is not focused
             if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
               showToast({
-                title: 'Trade Whisper',
+                title: t('system:notifications.tradeWhisper'),
                 description: `${whisper.from}: ${whisper.itemName}`,
                 duration: 5000,
                 action: reply,
@@ -249,7 +256,7 @@ export const useSocketNotifications = ({
           // Show toast when tabbed out of Diablo
           if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
             showToast({
-              title: `Whisper from ${whisper.from}`,
+              title: t('system:notifications.whisperFrom', { player: whisper.from }),
               description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
               duration: 5000,
               action: reply,
@@ -295,10 +302,10 @@ export const useSocketNotifications = ({
 
       // Toasts can't take typing: Reply opens the conversation with the composer focused
       showToast({
-        title: 'New Chat Message',
+        title: t('system:notifications.newChatMessage'),
         description: messagePreview,
         action: {
-          label: 'Reply',
+          label: t('system:notifications.reply'),
           type: ToastActionType.OPEN_CHAT_CONVERSATION,
           data: { conversationId: msg.conversation_id },
         },

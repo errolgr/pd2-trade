@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 const TRUST_POINTS = [
-  { icon: ShieldCheck, label: 'Official PD2 login' },
-  { icon: KeyRound, label: 'No password shared' },
-  { icon: Eye, label: 'Read-only stash' },
+  { icon: ShieldCheck, labelKey: 'signIn.trust.officialLogin' },
+  { icon: KeyRound, labelKey: 'signIn.trust.noPassword' },
+  { icon: Eye, labelKey: 'signIn.trust.readOnlyStash' },
 ] as const;
 
 /** Themed backdrop: accent bloom behind the header and a hairline highlight along the top edge. */
@@ -57,6 +58,7 @@ interface SignInViewProps {
 
 /** The sign-in prompt; Main runs the sign-in (useSignIn), this only shows its state and reports the buttons. */
 function SignInView({ state, dispatch, showClose }: SignInViewProps) {
+  const { t } = useTranslation('app');
   const { flowActive, busy: loading, accounts, selectedAccount, link, linkCopied } = state;
   const handleSignIn = () => dispatch({ type: 'start' });
   const handleSelectAccount = (account: string) => dispatch({ type: 'select', account });
@@ -69,7 +71,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
       type="button"
       onClick={handleLater}
       className="absolute top-2.5 right-2.5 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
-      aria-label="Close"
+      aria-label={t('common:actions.close')}
     >
       <X className="w-4 h-4" />
     </button>
@@ -83,18 +85,16 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
         <Backdrop />
         {closeButton}
 
-        <BrandHeader
-          compact
-          eyebrow="Almost there"
-          lead="Several game accounts are linked to this login. Pick the one to trade with."
-        />
+        <BrandHeader compact
+          eyebrow={t('signIn.accounts.eyebrow')}
+          lead={t('signIn.accounts.lead')} />
 
         <ScrollArea className="relative w-full min-h-0 flex-1"
           data-no-drag>
           <motion.div
             className="flex flex-col gap-2 p-0.5"
             role="listbox"
-            aria-label="Game accounts"
+            aria-label={t('signIn.accounts.label')}
             variants={listStagger}
             initial="hidden"
             animate="visible"
@@ -154,27 +154,25 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
       <Backdrop />
       {closeButton}
 
-      <BrandHeader
-        eyebrow="Sign in to"
-        lead="Link your Project Diablo 2 account to price check, list items and chat in-game."
-      />
+      <BrandHeader eyebrow={t('signIn.eyebrow')}
+        lead={t('signIn.lead')} />
 
       <motion.ul
         variants={listStagger}
         initial="hidden"
         animate="visible"
         className="relative flex items-center justify-center gap-x-4"
-        aria-label="How sign-in works"
+        aria-label={t('signIn.howItWorks')}
       >
-        {TRUST_POINTS.map(({ icon: Icon, label }) => (
+        {TRUST_POINTS.map(({ icon: Icon, labelKey }) => (
           <motion.li
-            key={label}
+            key={labelKey}
             variants={listItem}
             className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-muted-foreground"
           >
             <Icon aria-hidden
               className="size-3 text-glow" />
-            {label}
+            {t(labelKey)}
           </motion.li>
         ))}
       </motion.ul>
@@ -204,7 +202,11 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
                 className="size-5 rounded-full ring-1 ring-primary-foreground/30"
               />
             )}
-            {loading ? (openFailed ? 'Waiting for sign-in…' : 'Opening browser…') : 'Sign in with PD2'}
+            {loading
+              ? openFailed
+                ? t('signIn.waitingForSignIn')
+                : t('signIn.openingBrowser')
+              : t('signIn.signInWithPd2')}
           </span>
           {!loading && (
             <ArrowRight className="size-4 opacity-60 transition-[opacity,transform] duration-(--dur-fast) group-hover:translate-x-0.5 group-hover:opacity-100" />
@@ -215,11 +217,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
           className={cn('h-4 text-[11px]', openFailed ? 'text-destructive' : 'text-muted-foreground')}
           aria-live="polite"
         >
-          {loading
-            ? openFailed
-              ? "Couldn't open your browser: copy the link into it."
-              : 'Finish signing in in your browser, then come back here.'
-            : 'Opens projectdiablo2.com in your browser.'}
+          {loading ? (openFailed ? t('signIn.openFailed') : t('signIn.finishInBrowser')) : t('signIn.opensSite')}
         </p>
 
         <div className="flex items-center gap-1">
@@ -232,7 +230,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
               className="text-muted-foreground hover:text-foreground"
             >
               {linkCopied ? <Check className="text-success" /> : <Copy />}
-              {linkCopied ? 'Link copied' : 'Copy link'}
+              {linkCopied ? t('signIn.linkCopied') : t('signIn.copyLink')}
             </Button>
           )}
           {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
@@ -242,7 +240,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
             onClick={() => dispatch({ type: flowActive ? 'cancel' : 'later' })}
             className="text-muted-foreground hover:text-foreground"
           >
-            {flowActive ? 'Cancel' : 'Later'}
+            {flowActive ? t('common:actions.cancel') : t('signIn.later')}
           </Button>
         </div>
       </motion.div>

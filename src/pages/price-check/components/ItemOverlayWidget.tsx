@@ -94,6 +94,7 @@ import { PriceSparkline } from './PriceSparkline';
 import { WornByLine } from './WornByLine';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /** The search whose results are listed. */
 interface ActiveSearch {
@@ -107,6 +108,7 @@ interface ActiveSearch {
 }
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
+  const { t } = useTranslation(['priceCheck', 'common']);
   const { settings, isLoading: settingsLoading } = useOptions();
   const { getMarketListings, getMarketListingsArchive } = usePd2Website();
   const { findOneByName } = useItems();
@@ -141,7 +143,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [marketListings, setMarketListings] = useState<MarketListingEntry[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [marketLoading, setMarketLoading] = useState(false);
-  const [marketError, setMarketError] = useState<string | null>(null);
+  // `message` is the service's error text, when it sent one
+  const [marketError, setMarketError] = useState<{ message?: string } | null>(null);
   const [searchArchived, setSearchArchived] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   // True once a new search has completed for the current item (drives the "no listings" empty state)
@@ -158,7 +161,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
   const [averagePriceLoading, setAveragePriceLoading] = useState(false);
-  const [averagePriceError, setAveragePriceError] = useState<string | null>(null);
+  const [averagePriceError, setAveragePriceError] = useState<{ reason: 'noData' | 'failed'; message?: string } | null>(
+    null,
+  );
 
   // Corruption prices state
   const [corruptionPrices, setCorruptionPrices] = useState<CorruptionPricesResponse | null>(null);
@@ -559,12 +564,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           setAveragePriceData(priceData);
           setAveragePriceLoading(false);
         } else {
-          setAveragePriceError('No price data available');
+          setAveragePriceError({ reason: 'noData' });
           setAveragePriceLoading(false);
         }
       } catch (error: any) {
         console.error('[ItemOverlayWidget] Error fetching average price:', error);
-        setAveragePriceError(error.message || 'Failed to fetch price data');
+        setAveragePriceError({ reason: 'failed', message: error.message || undefined });
         setAveragePriceLoading(false);
       }
     };
@@ -784,13 +789,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const getSearchModeDisplay = useCallback(() => {
     switch (searchMode) {
       case 0:
-        return `Base: ${item.type}`;
+        return t('overlay.header.base', { type: item.type });
       case 1:
-        return matchedItemType ? `Type: ${matchedItemType.typeLabel}` : `Base: ${item.type}`;
+        return matchedItemType
+          ? t('overlay.header.type', { type: matchedItemType.typeLabel })
+          : t('overlay.header.base', { type: item.type });
       default:
-        return `Base: ${item.type}`;
+        return t('overlay.header.base', { type: item.type });
     }
-  }, [searchMode, item.type, matchedItemType]);
+  }, [searchMode, item.type, matchedItemType, t]);
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
@@ -867,7 +874,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           { outcome: 'error', archived: search.archived, search_mode: search.searchMode },
         );
         console.log(e.message || 'Failed to fetch market listings');
-        setMarketError(e.message || 'Failed to fetch market listings');
+        setMarketError({ message: e.message || undefined });
         // Retry starts a new search; scrolling must not keep re-requesting the failed page
         setHasMore(false);
       } finally {
@@ -1118,7 +1125,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       const context = [
         season && (/\((S\d+)\)/.exec(season.label)?.[1] ?? season.label),
         `${settings.mode === 'hardcore' ? 'Hardcore' : 'Softcore'} ${settings.ladder === 'ladder' ? 'Ladder' : 'Non-Ladder'}`,
-        new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+        new Date().toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric', year: 'numeric' }),
       ]
         .filter(Boolean)
         .join(' · ');
@@ -1141,13 +1148,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       await writePng(png);
       trackEvent('item_overlay_image_copied', { quality: item.quality, prices: card.prices.length });
       imageToast({
-        title: 'Image copied',
-        description: 'Paste it into Discord or a trade post.',
+        title: t('overlay.copyImage.copiedTitle'),
+        description: t('overlay.copyImage.copiedDescription'),
         imageUrl: URL.createObjectURL(png),
       });
     } catch (error) {
       console.error('[ItemOverlayWidget] Failed to copy the item image:', error);
-      showToast({ title: 'Could not copy image', description: String(error), variant: 'error' });
+      showToast({ title: t('overlay.copyImage.failedTitle'), description: String(error), variant: 'error' });
     } finally {
       setCopyingImage(false);
     }
@@ -1200,7 +1207,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             data-panel-drag
             className="flex-none bg-muted/30">
             <WindowChrome
-              title="Price Check"
+              title={t('overlay.title')}
               titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
               showGrip={false}
               icon={
@@ -1213,7 +1220,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     selectedRuneCombinations={selectedRuneCombinations}
                     onRuneBreakdownSelect={setSelectedRuneBreakdown}
                   />
-                  <ToolbarButton label="Net Worth"
+                  <ToolbarButton label={t('overlay.toolbar.netWorth')}
                     onClick={openCurrencyValuation}>
                     <LuggageIcon />
                   </ToolbarButton>
@@ -1222,18 +1229,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               actions={
                 <>
                   <UpdatePill />
-                  <ToolbarButton label="Copy image"
+                  <ToolbarButton label={t('overlay.toolbar.copyImage')}
                     onClick={copyItemImage}>
                     {copyingImage ? <Loader2 className="animate-spin" /> : <ImageDown />}
                   </ToolbarButton>
-                  <ToolbarButton label="Settings"
+                  <ToolbarButton label={t('overlay.toolbar.settings')}
                     onClick={openSettingsPage}>
                     <SettingsIcon />
                   </ToolbarButton>
                 </>
               }
               onClose={onClose}
-              closeLabel="Close"
+              closeLabel={t('common:actions.close')}
             />
           </div>
 
@@ -1261,7 +1268,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   {shouldUseToggle ? (
                     <HeaderToggle
                       onClick={toggleSearchMode}
-                      title="Click to toggle search mode"
+                      title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
                     >
                       {getSearchModeDisplay()}
@@ -1269,7 +1276,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   ) : (
                     <div className="px-1.5 text-muted-foreground"
                       style={{ fontFamily: 'DiabloFont' }}>
-                      Base: {item.type}
+                      {t('overlay.header.base', { type: item.type })}
                     </div>
                   )}
                   {shouldUseToggle && (
@@ -1278,7 +1285,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         className="h-4 w-px bg-border" />
                       <HeaderToggle
                         onClick={cycleQuality}
-                        title="Click to cycle quality"
+                        title={t('overlay.header.cycleQuality')}
                         className={qualityColor(effectiveQuality)}
                       >
                         {effectiveQuality}
@@ -1295,7 +1302,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 className="gap-1.5 rounded-md border-border bg-background/40 px-2 py-0.5 text-xs text-muted-foreground"
               >
                 <ShieldIcon className="text-muted-foreground" />
-                Defense: <span className="font-semibold tabular-nums text-foreground">{item.defense}</span>
+                <Trans
+                  t={t}
+                  i18nKey="overlay.header.defense"
+                  values={{ defense: item.defense }}
+                  components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
+                />
               </Badge>
             )}
 
@@ -1318,7 +1330,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {appraisalNoteText && (
               <span className="text-[11px] text-muted-foreground/70"
                 title={appraisalNoteText.title}>
-                Appraisal note: {appraisalNoteText.text}
+                {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
               </span>
             )}
             <WornByLine
@@ -1341,7 +1353,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Loader2 className="size-3 animate-spin" />
-                        Loading price data...
+                        {t('overlay.price.loading')}
                       </span>
                     </div>
                   </div>
@@ -1349,7 +1361,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 {averagePriceError && !averagePriceLoading && (
                   <div className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
                     <AlertCircle className="size-3.5" />
-                    {averagePriceError}
+                    {averagePriceError.reason === 'noData'
+                      ? t('overlay.price.noData')
+                      : averagePriceError.message || t('overlay.price.fetchFailed')}
                   </div>
                 )}
                 {averagePriceData && !averagePriceLoading && itemIcon && (
@@ -1366,14 +1380,22 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                               emphasis>
                               {headlinePrice?.toFixed(2)} HR
                             </PopoverTile>
-                            <PopoverTile label="Median">{averagePriceData.medianPrice.toFixed(2)} HR</PopoverTile>
-                            <PopoverTile label="Min">{averagePriceData.minPrice.toFixed(2)} HR</PopoverTile>
-                            <PopoverTile label="Max">{averagePriceData.maxPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label={t('overlay.price.median')}>
+                              {averagePriceData.medianPrice.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label={t('overlay.price.min')}>
+                              {averagePriceData.minPrice.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label={t('overlay.price.max')}>
+                              {averagePriceData.maxPrice.toFixed(2)} HR
+                            </PopoverTile>
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
-                            <PopoverKeyValue label="Samples">{averagePriceData.sampleCount}</PopoverKeyValue>
+                            <PopoverKeyValue label={t('overlay.price.samples')}>
+                              {averagePriceData.sampleCount}
+                            </PopoverKeyValue>
                             {averagePriceData.priceChange7Days && (
-                              <PopoverKeyValue label="7d Change">
+                              <PopoverKeyValue label={t('overlay.price.change7d')}>
                                 <ChangeLabel
                                   change={averagePriceData.priceChange7Days.change}
                                   percent={averagePriceData.priceChange7Days.changePercent}
@@ -1383,10 +1405,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           </div>
                           <div className="space-y-1.5 border-t border-border pt-2">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-xs font-semibold">Last 30 days</span>
+                              <span className="text-xs font-semibold">{t('overlay.price.last30Days')}</span>
                               <WebLink onClick={openPd2Trader}
                                 inPopover>
-                                Open on pd2trader.com
+                                {t('overlay.price.openOnPd2Trader')}
                               </WebLink>
                             </div>
                             <PriceSparkline
@@ -1403,7 +1425,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {itemCorruptions && (
                             <div className="border-t border-border pt-2">
                               <PopoverSectionTitle className="text-q-corrupted">
-                                This Item&apos;s Corruption
+                                {t('overlay.corruptions.thisItem')}
                               </PopoverSectionTitle>
                               {renderCorruptionRow(itemCorruptions, itemCorruptions.priceData, 'item')}
                             </div>
@@ -1411,7 +1433,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {/* Corruption Prices */}
                           {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
                             <div className="border-t border-border pt-2">
-                              <PopoverSectionTitle>Top Corruptions</PopoverSectionTitle>
+                              <PopoverSectionTitle>{t('overlay.corruptions.top')}</PopoverSectionTitle>
                               {showAllCorruptions ? (
                                 <ScrollArea className="w-full overflow-x-hidden"
                                   viewportClassName="max-h-[200px]">
@@ -1438,12 +1460,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                   {showAllCorruptions ? (
                                     <>
                                       <ChevronUp className="size-3" />
-                                      Show Less
+                                      {t('overlay.corruptions.showLess')}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="size-3" />
-                                      {`Show More (${otherCorruptions.length - 5} more)`}
+                                      {t('overlay.corruptions.showMore', { count: otherCorruptions.length - 5 })}
                                     </>
                                   )}
                                 </button>
@@ -1453,7 +1475,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {corruptionPricesLoading && (
                             <div className="flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
                               <Loader2 className="size-3 animate-spin" />
-                              Loading corruption prices...
+                              {t('overlay.corruptions.loading')}
                             </div>
                           )}
                         </div>
@@ -1491,8 +1513,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 )}
                 {!averagePriceLoading && !averagePriceError && !averagePriceData && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">No price data available</span>
-                    <WebLink onClick={openPd2Trader}>View on Web</WebLink>
+                    <span className="text-xs text-muted-foreground">{t('overlay.price.noData')}</span>
+                    <WebLink onClick={openPd2Trader}>{t('overlay.price.viewOnWeb')}</WebLink>
                   </div>
                 )}
               </div>
@@ -1505,7 +1527,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               <section className="flex flex-none flex-col gap-1">
                 <div className="flex h-5 items-center justify-between px-2">
                   <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Stats
+                    {t('overlay.stats.title')}
                   </span>
                   <AnimatePresence initial={false}>
                     {(selected.size > 0 || corruptedState !== 0) && (
@@ -1516,7 +1538,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         transition={{ duration: DUR.fast, ease: EASE_OUT }}
                         className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
                       >
-                        <span className="tabular-nums">{selected.size} selected</span>
+                        <span className="tabular-nums">{t('overlay.stats.selected', { count: selected.size })}</span>
                         {/* Empties every selected stat's min / max (stats stay selected); only while one is set */}
                         {hasAnyRange && (
                           <>
@@ -1524,10 +1546,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <button
                               type="button"
                               onClick={clearAllRanges}
-                              title="Empty every min and max; the stats stay selected"
+                              title={t('overlay.stats.clearRangesTitle')}
                               className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
                             >
-                              Clear ranges
+                              {t('overlay.stats.clearRanges')}
                             </button>
                           </>
                         )}
@@ -1535,10 +1557,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         <button
                           type="button"
                           onClick={clearSelectedStats}
-                          title="Untick every stat"
+                          title={t('overlay.stats.clearTitle')}
                           className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
                         >
-                          Clear
+                          {t('common:actions.clear')}
                         </button>
                       </motion.div>
                     )}
@@ -1582,31 +1604,31 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <Button className="min-w-24 cursor-pointer"
                   onClick={handleSearch}>
                   {marketLoading ? <Loader2 className="animate-spin" /> : <SearchIcon />}
-                  Search
+                  {t('common:actions.search')}
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      aria-label="Open search on projectdiablo2.com"
+                      aria-label={t('overlay.actions.openTradeAria')}
                       className="cursor-pointer border-l border-primary-foreground/15 px-3"
                       onClick={openTradeUrl}
                     >
                       <SquareArrowOutUpRight />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Open this search on projectdiablo2.com</TooltipContent>
+                  <TooltipContent side="top">{t('overlay.actions.openTradeTooltip')}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      aria-label="Open in market"
+                      aria-label={t('overlay.actions.openInMarket')}
                       className="cursor-pointer border-l border-primary-foreground/15 px-3"
                       onClick={openInMarket}
                     >
                       <Store />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Open in market</TooltipContent>
+                  <TooltipContent side="top">{t('overlay.actions.openInMarket')}</TooltipContent>
                 </Tooltip>
               </ButtonGroup>
 
@@ -1618,13 +1640,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       onClick={openListWindow}
                       disabled={!canList}>
                       <ListPlus />
-                      List
+                      {t('overlay.actions.list')}
                     </Button>
                   </span>
                 </TooltipTrigger>
                 {!canList && (
                   <TooltipContent side="top">
-                    <p>Item must be in your shared stash to list.</p>
+                    <p>{t('overlay.actions.listDisabled')}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -1641,7 +1663,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   htmlFor="archived-toggle"
                   className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Show Expired
+                  {t('overlay.actions.showExpired')}
                 </Label>
               </div>
             </div>
@@ -1657,10 +1679,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   className="-mb-1 flex flex-none items-center gap-2 px-2 text-xs text-muted-foreground"
                 >
                   <span>
-                    Matches: <span className="font-semibold tabular-nums text-foreground">{totalCount}</span>
+                    <Trans
+                      t={t}
+                      i18nKey="overlay.results.matches"
+                      values={{ total: totalCount }}
+                      components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
+                    />
                   </span>
                   {marketListings.length < totalCount && (
-                    <span className="tabular-nums">· showing {marketListings.length}</span>
+                    <span className="tabular-nums">
+                      {t('overlay.results.showing', { shown: marketListings.length })}
+                    </span>
                   )}
                   {marketLoading && <Loader2 className="size-3 animate-spin" />}
                 </motion.div>
@@ -1672,7 +1701,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <div aria-busy="true">
                   <div className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" />
-                    <span>Loading market listings...</span>
+                    <span>{t('overlay.results.loading')}</span>
                   </div>
                   <div className="space-y-1.5 pr-3">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -1698,8 +1727,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">Couldn&apos;t load listings</div>
-                    <div className="text-xs break-words opacity-90">{marketError}</div>
+                    <div className="font-medium">{t('overlay.results.errorTitle')}</div>
+                    <div className="text-xs break-words opacity-90">
+                      {marketError.message || t('overlay.results.fetchFailed')}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -1708,23 +1739,21 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     onClick={handleSearch}
                   >
                     <RotateCw />
-                    Retry
+                    {t('common:actions.retry')}
                   </Button>
                 </motion.div>
               )}
               {showNoResults && (
                 <EmptyState icon={<SearchX />}
-                  title="No listings found">
-                  {searchArchived
-                    ? 'Try loosening your stat filters.'
-                    : 'Try loosening your stat filters or turn on Show Expired.'}
+                  title={t('overlay.results.noListings')}>
+                  {searchArchived ? t('overlay.results.loosenFilters') : t('overlay.results.loosenFiltersOrExpired')}
                 </EmptyState>
               )}
               {showIdleHint && (
                 <EmptyState icon={<SearchIcon />}
-                  title="Ready to search"
+                  title={t('overlay.results.readyTitle')}
                   subtle>
-                  Pick the stats that matter, then hit Search or press Enter in a min/max field.
+                  {t('overlay.results.readyHint')}
                 </EmptyState>
               )}
               {marketListings.length > 0 && (
@@ -1733,10 +1762,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     <thead>
                       <tr>
                         <th className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          Price
+                          {t('overlay.results.price')}
                         </th>
                         <th className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1.5 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          Listed
+                          {t('overlay.results.listed')}
                         </th>
                       </tr>
                     </thead>
@@ -1755,7 +1784,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       className="flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground"
                     >
                       {marketLoading && <Loader2 className="size-3 animate-spin" />}
-                      {marketLoading ? 'Loading more...' : 'Load more'}
+                      {marketLoading ? t('overlay.results.loadingMore') : t('overlay.results.loadMore')}
                     </div>
                   )}
                 </div>
@@ -1770,6 +1799,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
 /** "Restart to update" in the title bar: price check is the window users look at most. */
 function UpdatePill() {
+  const { t } = useTranslation('priceCheck');
   const version = useAvailableUpdate();
   const [state, setState] = useState<'idle' | 'installing' | 'failed' | 'manual'>(() =>
     isManualUpdateRequired() ? 'manual' : 'idle',
@@ -1790,18 +1820,18 @@ function UpdatePill() {
   // Short labels: the title bar also holds the title, toolbar icons and close in a narrow window
   const label =
     state === 'installing'
-      ? 'Updating…'
+      ? t('overlay.update.updating')
       : state === 'failed'
-        ? 'Retry update'
+        ? t('overlay.update.retry')
         : state === 'manual'
-          ? 'Get update'
-          : 'Restart to update';
+          ? t('overlay.update.get')
+          : t('overlay.update.restart');
   const hint =
     state === 'failed'
-      ? `Updating to v${version} failed. Click to try again.`
+      ? t('overlay.update.failedHint', { version })
       : state === 'manual'
-        ? `Version ${version} is available. This install can't update itself: click to open the release page, or use your package manager.`
-        : `Version ${version} is available. Downloads, installs and restarts PD2 Trader.`;
+        ? t('overlay.update.manualHint', { version })
+        : t('overlay.update.availableHint', { version });
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -2012,6 +2042,7 @@ function CorruptionRow({
   onSocketSelect,
   onOpenWeb,
 }: CorruptionRowProps) {
+  const { t } = useTranslation('priceCheck');
   const isTruncated = name.length > 40;
   const socketPrices = price?.socketPrices ?? [];
   const hasSocketPrices = socketPrices.length > 0;
@@ -2040,7 +2071,7 @@ function CorruptionRow({
         e.stopPropagation();
         onSelect();
       }}
-      title="Click to search for items with this corruption"
+      title={t('overlay.corruptions.searchTitle')}
     >
       <div className="min-w-0 flex-1 overflow-hidden">
         {isTruncated ? (
@@ -2062,7 +2093,7 @@ function CorruptionRow({
             className="-mr-0.5 size-3 text-muted-foreground" />}
         </div>
       ) : (
-        <span className="shrink-0 text-[10px] text-muted-foreground">No price data</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
       )}
     </div>
   );
@@ -2078,10 +2109,10 @@ function CorruptionRow({
             <span className="truncate">{itemTitle}</span>
             <WebLink onClick={onOpenWeb}
               inPopover>
-              Link
+              {t('overlay.corruptions.link')}
             </WebLink>
           </div>
-          <div className="mb-2 text-xs font-semibold">{name} - Socket Prices</div>
+          <div className="mb-2 text-xs font-semibold">{t('overlay.corruptions.socketPrices', { name })}</div>
           <div className="space-y-0.5">
             {socketPrices.map((socketPrice, socketIdx) => (
               <div
@@ -2093,11 +2124,10 @@ function CorruptionRow({
                   e.stopPropagation();
                   onSocketSelect(socketPrice.socketCount);
                 }}
-                title="Click to filter by this socket count"
+                title={t('overlay.corruptions.filterBySocket')}
               >
                 <span className="text-muted-foreground">
-                  {socketPrice.socketCount} Socket
-                  {socketPrice.socketCount !== 1 ? 's' : ''}
+                  {t('overlay.sockets', { count: socketPrice.socketCount })}
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
@@ -2137,6 +2167,7 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
 }
 
 const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
+  const { t } = useTranslation('priceCheck');
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
   const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
@@ -2225,15 +2256,13 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
                         'mx-0.5 size-2.5 cursor-pointer rounded-full bg-success ring-2 ring-success/25 outline-none transition-[transform,box-shadow] duration-(--dur-fast) hover:scale-125 hover:ring-success/45 focus-visible:ring-ring/60',
                         whisperCopied && 'scale-125 ring-4 ring-success/40',
                       )}
-                      aria-label="Copy whisper"
+                      aria-label={t('overlay.listing.copyWhisper')}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="pointer-events-none">
                     <p className="flex items-center gap-1.5">
                       {whisperCopied && <Check className="size-3 text-success" />}
-                      {whisperCopied
-                        ? 'Copied whisper, right click to paste'
-                        : 'Online in-game · click to copy whisper'}
+                      {whisperCopied ? t('overlay.listing.whisperCopied') : t('overlay.listing.onlineCopyWhisper')}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -2259,7 +2288,7 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
               {(listing.item.socket_count || 0) > 0 && (
                 <ListingBadge
                   label={listing.item.socket_count}
-                  tooltip={`${listing.item.socket_count} ${listing.item.socket_count === 1 ? 'Socket' : 'Sockets'}`}
+                  tooltip={t('overlay.sockets', { count: listing.item.socket_count })}
                   className="border-border bg-secondary text-secondary-foreground"
                 />
               )}
@@ -2291,11 +2320,18 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
               <UserIcon className="size-3" />
               <span>
-                Seller: <span className="text-foreground">{listing.user.username}</span>
+                <Trans
+                  t={t}
+                  i18nKey="overlay.listing.seller"
+                  values={{ seller: listing.user.username }}
+                  components={{ name: <span className="text-foreground" /> }}
+                />
               </span>
               {online && (
-                <div className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                  title="Online in-game" />
+                <div
+                  className="size-2 rounded-full bg-success ring-2 ring-success/25"
+                  title={t('overlay.listing.online')}
+                />
               )}
             </div>
           )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
 import { AlertCircle, ClipboardCopy, Copy, Gamepad2, Globe, HandCoins, Loader2, RotateCw } from 'lucide-react';
+import { t, Trans, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
 import { fadeInUp, slideInRight } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -11,7 +12,7 @@ import type { TimelineEntry } from '../lib/inbox';
 import { OfferListingHoverCard } from './OfferListingHoverCard';
 import { MessageContent } from './MessageContent';
 import { ChatAvatar, ReadReceipt, Tip } from './chat-parts';
-import { offerStatus, STATUS_CLASS } from './ThreadDeals';
+import { dealStatusLabel, offerStatus, STATUS_CLASS } from './ThreadDeals';
 
 /** Messages from one side and source less than this far apart form a group (tight spacing, shared corners). */
 const GROUP_GAP_MINUTES = 5;
@@ -50,8 +51,8 @@ export function buildRows(entries: TimelineEntry[]): MessageRow[] {
 
 function formatDayLabel(timestamp: string) {
   const day = moment(timestamp);
-  if (day.isSame(moment(), 'day')) return 'Today';
-  if (day.isSame(moment().subtract(1, 'day'), 'day')) return 'Yesterday';
+  if (day.isSame(moment(), 'day')) return t('chat:bubble.today');
+  if (day.isSame(moment().subtract(1, 'day'), 'day')) return t('chat:bubble.yesterday');
   return day.format(day.isSame(moment(), 'year') ? 'ddd, MMM D' : 'MMM D, YYYY');
 }
 
@@ -60,10 +61,14 @@ async function copyMessage(content: string) {
   try {
     await writeText(content);
   } catch {
-    showToast({ title: 'Message not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
+    showToast({
+      title: t('chat:bubble.copyFailedTitle'),
+      description: t('chat:bubble.copyFailedDescription'),
+      variant: 'error',
+    });
     return;
   }
-  showToast({ title: 'Copied' });
+  showToast({ title: t('common:actions.copied') });
 }
 
 export function MessageBubble({
@@ -86,6 +91,7 @@ export function MessageBubble({
   listings: ReadonlyMap<string, ChatListingState>;
   onRetry: (conversationId: string, clientId: string) => void;
 }) {
+  const { t } = useTranslation(['chat', 'common']);
   const { entry, startsDay, continuesGroup: followsInGroup, groupContinues } = row;
   // The divider splits a group: the bubble below it starts fresh
   const continuesGroup = followsInGroup && !startsUnread;
@@ -96,10 +102,10 @@ export function MessageBubble({
   const whisper = entry.source === 'whisper';
   const SourceIcon = whisper ? Gamepad2 : Globe;
   const copyButton = (
-    <Tip label="Copy message">
+    <Tip label={t('bubble.copyMessage')}>
       <button
         type="button"
-        aria-label="Copy message"
+        aria-label={t('bubble.copyMessage')}
         onClick={() => void copyMessage(entry.content)}
         className="shrink-0 self-center rounded-md p-1 text-muted-foreground opacity-0 transition-opacity duration-(--dur-fast) hover:bg-muted/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/msg:opacity-100"
       >
@@ -127,11 +133,11 @@ export function MessageBubble({
       )}
       {startsUnread && (
         <div role="separator"
-          aria-label="New messages"
+          aria-label={t('bubble.newMessages')}
           className="mb-2.5 flex items-center gap-2 px-1">
           <span className="h-px flex-1 bg-linear-to-r from-transparent to-destructive/60" />
           <span className="rounded-full bg-destructive/12 px-2 py-px text-[10px] font-semibold uppercase tracking-wider text-destructive ring-1 ring-inset ring-destructive/30">
-            New
+            {t('bubble.new')}
           </span>
           <span className="h-px flex-1 bg-linear-to-l from-transparent to-destructive/60" />
         </div>
@@ -144,8 +150,21 @@ export function MessageBubble({
               <HandCoins aria-hidden
                 className="size-3.5 shrink-0" />
               <span className="truncate">
-                Your offer <span className="font-medium text-foreground/80">{entry.offer.price ?? '?'}</span>
-                {entry.offer.itemName && <> for {entry.offer.itemName}</>}
+                {entry.offer.itemName ? (
+                  <Trans
+                    t={t}
+                    i18nKey="bubble.yourOfferFor"
+                    values={{ price: entry.offer.price ?? '?', item: entry.offer.itemName }}
+                    components={{ price: <span className="font-medium text-foreground/80" /> }}
+                  />
+                ) : (
+                  <Trans
+                    t={t}
+                    i18nKey="bubble.yourOffer"
+                    values={{ price: entry.offer.price ?? '?' }}
+                    components={{ price: <span className="font-medium text-foreground/80" /> }}
+                  />
+                )}
               </span>
               <span
                 className={cn(
@@ -153,7 +172,7 @@ export function MessageBubble({
                   STATUS_CLASS[offerStatus(entry.offer)],
                 )}
               >
-                {offerStatus(entry.offer)}
+                {dealStatusLabel(offerStatus(entry.offer))}
               </span>
               <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
             </div>
@@ -169,7 +188,7 @@ export function MessageBubble({
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={`Trader details for ${otherName}`}
+                aria-label={t('bubble.traderDetails', { name: otherName })}
                 onClick={onOpenTrader}
                 className="mt-0.5 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
               >
@@ -204,32 +223,32 @@ export function MessageBubble({
               {failed && message.clientId ? (
                 <span className="flex items-center gap-1 text-destructive">
                   <AlertCircle className="size-3" />
-                  Failed to send ·
+                  {t('bubble.failedToSend')}
                   <button
                     type="button"
                     onClick={() => onRetry(message.conversation_id, message.clientId!)}
                     className="inline-flex items-center gap-0.5 rounded-sm font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
                     <RotateCw className="size-2.5" />
-                    Retry
+                    {t('common:actions.retry')}
                   </button>
                 </span>
               ) : (
                 <>
                   <SourceIcon
                     role="img"
-                    aria-label={whisper ? 'In-game whisper' : 'Website message'}
+                    aria-label={whisper ? t('bubble.inGameWhisper') : t('bubble.websiteMessage')}
                     className="size-2.5 text-muted-foreground/70"
                   />
                   <span>{time}</span>
                   {entry.copied && (
                     <span
-                      title="Copied to your clipboard as /w *account … — paste it in the game chat (Enter, Ctrl+V) to send it. Marked sent once the game shows it."
+                      title={t('bubble.copiedHint')}
                       className="ml-0.5 inline-flex cursor-help items-center gap-0.5 rounded-sm bg-warning/15 px-1 font-medium text-warning"
                     >
                       <ClipboardCopy aria-hidden
                         className="size-2.5" />
-                      copied
+                      {t('bubble.copied')}
                     </span>
                   )}
                   {sending && <Loader2 aria-hidden

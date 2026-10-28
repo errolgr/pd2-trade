@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Trans, useTranslation } from '@/i18n';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { itemCorruptions } from '@/lib/item-utils';
@@ -18,6 +19,7 @@ const COLLAPSED_COUNT = 3;
 const chip = 'inline-flex h-5 items-center gap-1 rounded-full border px-2 text-[11px] font-medium leading-none';
 
 const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpanded, onToggleExpanded, hideToggle }) => {
+  const { t } = useTranslation('quickList');
   const hasModifiers = stashItem.modifiers && stashItem.modifiers.length > 0;
 
   const filteredModifiers = stashItem.modifiers.filter((mod) => {
@@ -55,19 +57,30 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
     <div className="text-xs">
       {hasBadges && (
         <div className="mt-1.5 flex flex-row flex-wrap gap-1">
-          {stashItem.is_ethereal && <span className={cn(chip, 'border-info/30 bg-info/10 text-info')}>Ethereal</span>}
+          {stashItem.is_ethereal && (
+            <span className={cn(chip, 'border-info/30 bg-info/10 text-info')}>{t('itemStats.ethereal')}</span>
+          )}
           {stashItem.corrupted && (
-            <span className={cn(chip, 'border-destructive/35 bg-destructive/12 text-q-corrupted')}>Corrupted</span>
+            <span className={cn(chip, 'border-destructive/35 bg-destructive/12 text-q-corrupted')}>
+              {t('itemStats.corrupted')}
+            </span>
           )}
           {stashItem.is_runeword && (
-            <span className={cn(chip, 'border-q-rune/30 bg-q-rune/10 text-q-rune')}>Runeword</span>
+            <span className={cn(chip, 'border-q-rune/30 bg-q-rune/10 text-q-rune')}>{t('itemStats.runeword')}</span>
           )}
           {stashItem.socket_count > 0 && (
             <span className={cn(chip, 'border-border bg-secondary/70 pl-0.5 text-secondary-foreground')}>
-              <span className="inline-flex size-4 items-center justify-center rounded-full bg-foreground/90 text-[10px] font-semibold tabular-nums text-background">
-                {stashItem.socket_count}
-              </span>
-              Socket{stashItem.socket_count > 1 ? 's' : ''}
+              <Trans
+                t={t}
+                i18nKey="itemStats.sockets"
+                count={stashItem.socket_count}
+                values={{ count: stashItem.socket_count }}
+                components={{
+                  num: (
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-foreground/90 text-[10px] font-semibold tabular-nums text-background" />
+                  ),
+                }}
+              />
             </span>
           )}
         </div>
@@ -96,7 +109,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
               onClick={toggle}
               className="group mt-1 inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring/60"
             >
-              Show More
+              {t('itemStats.showMore')}
               <span className="text-muted-foreground">({extraModifiers.length})</span>
               <ChevronDown className="size-3 transition-transform duration-(--dur-fast) group-hover:translate-y-px" />
             </button>
@@ -107,7 +120,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
               onClick={toggle}
               className="mt-1 inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
             >
-              Show Less
+              {t('itemStats.showLess')}
               <ChevronDown className="size-3 rotate-180" />
             </button>
           )}

@@ -2,6 +2,7 @@ import type { AveragePriceResponse } from '@/pages/currency/lib/price-api';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { Item } from './interfaces';
 import { tooltipLines, type TooltipColor, type TooltipLine, type TooltipLines } from './tooltip-lines';
+import { t } from '@/i18n';
 
 /** One price fact under the tooltip, e.g. "7-day avg · 3.25 HR". */
 export interface ItemCardPrice {
@@ -37,8 +38,8 @@ export function buildItemCard({ item, average, listings, context }: ItemCardInpu
     const { data } = average;
     const change = data.priceChange7Days;
     const detail = [
-      `median ${hr(data.medianPrice)}`,
-      `${data.sampleCount} sales`,
+      t('priceCheck:itemCard.median', { price: hr(data.medianPrice) }),
+      t('priceCheck:itemCard.sales', { count: data.sampleCount }),
       change ? `${change.changePercent >= 0 ? '▲' : '▼'} ${Math.abs(change.changePercent).toFixed(0)}% 7d` : null,
     ].filter(Boolean);
     prices.push({ label: average.basis, value: hr(average.headline), detail: detail.join(' · ') });
@@ -51,9 +52,11 @@ export function buildItemCard({ item, average, listings, context }: ItemCardInpu
     const median = priced[Math.floor(priced.length / 2)];
     const count = Math.max(listings.total, priced.length);
     prices.push({
-      label: listings.archived ? 'Recently sold' : 'Listed now',
-      value: `from ${hr(priced[0])}`,
-      detail: `${count} ${listings.archived ? 'sold' : count === 1 ? 'listing' : 'listings'} · median ${hr(median)}`,
+      label: listings.archived ? t('priceCheck:itemCard.recentlySold') : t('priceCheck:itemCard.listedNow'),
+      value: t('priceCheck:itemCard.from', { price: hr(priced[0]) }),
+      detail: listings.archived
+        ? t('priceCheck:itemCard.soldDetail', { count, price: hr(median) })
+        : t('priceCheck:itemCard.listingsDetail', { count, price: hr(median) }),
     });
   }
 
@@ -171,10 +174,9 @@ function runsWidth(ctx: CanvasRenderingContext2D, runs: Run[]): number {
  * `scale` is the device pixel ratio of the image (2 = crisp on HiDPI and after Discord's downscale).
  */
 export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
-  await Promise.all([
-    document.fonts.load(font(TITLE_SIZE)),
-    document.fonts.load(font(LINE_SIZE)),
-  ]).catch(() => undefined);
+  await Promise.all([document.fonts.load(font(TITLE_SIZE)), document.fonts.load(font(LINE_SIZE))]).catch(
+    () => undefined,
+  );
   const logo = await loadImage('/logo2.png');
 
   const canvas = document.createElement('canvas');
@@ -195,7 +197,8 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
   ];
   let contentWidth = MIN_WIDTH - PAD_X * 2;
   for (const s of sized) {
-    if (typeof s !== 'string') contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(fullText(s.line), s.size, '')));
+    if (typeof s !== 'string')
+      contentWidth = Math.max(contentWidth, runsWidth(ctx, lineRuns(fullText(s.line), s.size, '')));
   }
   // Footer: logo + brand + context on one line.
   ctx.font = font(13);
@@ -213,7 +216,10 @@ export async function renderItemCard(card: ItemCard, scale = 2): Promise<Blob> {
     return { lines: wrap(ctx, fullText(s.line), contentWidth, s.size), size: s.size, spans: rowSpans(s.line) };
   });
   const lineHeight = (size: number) => (size === TITLE_SIZE ? 23 : LINE_HEIGHT);
-  const tooltipHeight = rows.reduce<number>((h, r) => h + (typeof r === 'number' ? r : r.lines.length * lineHeight(r.size)), 0);
+  const tooltipHeight = rows.reduce<number>(
+    (h, r) => h + (typeof r === 'number' ? r : r.lines.length * lineHeight(r.size)),
+    0,
+  );
 
   // Price rows: label left, value right, optional detail line below.
   const PRICE_ROW = 22;

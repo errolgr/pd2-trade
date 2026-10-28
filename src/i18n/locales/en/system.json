@@ -1,0 +1,124 @@
+{
+  "tray": {
+    "settings": "Settings",
+    "openConfig": "Open config location",
+    "quit": "Quit"
+  },
+  "options": {
+    "tokenLoaded": "Token loaded from URL successfully!"
+  },
+  "auth": {
+    "banned": "This PD2 account is banned from PD2 Trader.",
+    "popupBlocked": "Your browser blocked the sign-in window. Allow pop-ups for this site and try again.",
+    "timedOut": "Login timed out. Please try again.",
+    "success": "Authentication successful!",
+    "failed": "Authentication failed. Please try again.",
+    "unreachable": "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again.",
+    "loggedOut": "Logged out successfully."
+  },
+  "updates": {
+    "availableTitle": "PD2 Trader - Update Available",
+    "availableDescription": "Version {{version}} is available. Click to download and restart.",
+    "downloadAndRestart": "Download & Restart",
+    "manualTitle": "PD2 Trader - Update {{version}} Available",
+    "manualDescription": "PD2 Trader can't update itself in this install location. Download the new version from the release page, or update it with your package manager.",
+    "openReleasePage": "Open Release Page",
+    "downloading": "Downloading update...",
+    "downloadingProgress": "Downloading update... {{progress}}%",
+    "downloaded": "Update downloaded! Restarting...",
+    "manualRequired": "Update must be installed manually",
+    "downloadFailed": "Failed to download update. Please try again later.",
+    "dialogTitle": "Downloading Update",
+    "dialogDescription": "Please wait while the update is being downloaded."
+  },
+  "notifications": {
+    "offerAccepted": "Offer Accepted",
+    "newOffer": "New Offer",
+    "offerAcceptedText": "Your offer was accepted",
+    "newOfferText": "New offer received",
+    "viewListing": "View Listing",
+    "reply": "Reply",
+    "playerJoined": "Player Joined",
+    "playerJoinedDescription": "{{player}} joined the game",
+    "tradeWhisper": "Trade Whisper",
+    "whisperFrom": "Whisper from {{player}}",
+    "newChatMessage": "New Chat Message"
+  },
+  "offers": {
+    "item": "item",
+    "revoked": "Offer Revoked",
+    "revokedDescription": "Your offer on {{item}} has been revoked",
+    "revokedFallback": "Offer has been revoked",
+    "revokeFailed": "Failed to Revoke Offer",
+    "revokeFailedDescription": "An error occurred while revoking the offer",
+    "accepted": "Offer Accepted",
+    "acceptedDescription": "You accepted {{player}}'s offer on {{item}}",
+    "acceptedFallback": "Offer has been accepted",
+    "acceptFailed": "Failed to Accept Offer",
+    "acceptFailedDescription": "An error occurred while accepting the offer",
+    "rejected": "Offer Rejected",
+    "rejectedDescription": "You rejected {{player}}'s offer on {{item}}",
+    "rejectedFallback": "Offer has been rejected",
+    "rejectFailed": "Failed to Reject Offer",
+    "rejectFailedDescription": "An error occurred while rejecting the offer",
+    "unaccepted": "Offer Unaccepted",
+    "unacceptedDescription": "You unaccepted {{player}}'s offer on {{item}}",
+    "unacceptedFallback": "Offer has been unaccepted",
+    "unacceptFailed": "Failed to Unaccept Offer",
+    "unacceptFailedDescription": "An error occurred while unaccepting the offer",
+    "hidden": "Offer Hidden",
+    "hiddenDescription": "Your offer on {{item}} has been hidden. It will be removed after 7 days.",
+    "hiddenFallback": "Offer has been hidden",
+    "restored": "Offer Restored",
+    "restoredDescription": "Your offer on {{item}} has been restored",
+    "restoredFallback": "Offer has been restored"
+  },
+  "netWorth": {
+    "accountMismatch": "The selected account is not linked to your PD2 login. Check your account settings.",
+    "sessionExpired": "Your PD2 session expired. Sign in again.",
+    "rateLimited": "Too many requests. Try again in a minute."
+  },
+  "seasons": {
+    "current": "{{season}} (current)",
+    "currentGeneric": "Current season"
+  },
+  "priceWindow": {
+    "options": {
+      "hours24": "24 hours",
+      "days3": "3 days",
+      "days7": "7 days",
+      "days30": "30 days"
+    },
+    "seasonAvg": "season avg",
+    "dayAvg_one": "{{count}}-day avg",
+    "dayAvg_other": "{{count}}-day avg",
+    "hourAvg_one": "{{count}}-hour avg",
+    "hourAvg_other": "{{count}}-hour avg",
+    "lastSeason": "last season",
+    "seasonTag": "season",
+    "basis": {
+      "last30Days": "the last 30 days",
+      "wholeSeason": "the whole season",
+      "last30DaysOf": "the last 30 days of {{season}}",
+      "lastWindow": "the last {{window}}"
+    },
+    "notEnoughSalesThisWeek": "Not enough sales this week — based on {{basis}}",
+    "notEnoughSalesInWindow": "Not enough sales in the last {{window}} — based on {{basis}}"
+  },
+  "chatTemplates": {
+    "nameRequired": "Give the template a name",
+    "nameTooLong": "Name: at most {{max}} characters",
+    "textRequired": "Write the message",
+    "textTooLong": "Message: at most {{max}} characters",
+    "tokens": {
+      "accountName": "Their account name",
+      "characterName": "Their character's name",
+      "itemName": "The item last linked or whispered about",
+      "price": "Its price"
+    }
+  },
+  "corruptedZones": {
+    "waitMinutes": "{{minutes}}m",
+    "waitHours": "{{hours}}h {{minutes}}m"
+  }
+}

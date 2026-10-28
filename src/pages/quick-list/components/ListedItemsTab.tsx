@@ -45,6 +45,7 @@ import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import EmptyState from './EmptyState';
 import { countChip, itemCard } from './styles';
 import { showToast } from '@/overlay';
+import { useTranslation } from '@/i18n';
 import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 
 interface ListedItemsTabProps {
@@ -79,6 +80,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     bumpAllMarketListings,
     authData,
   } = usePd2Website();
+  const { t } = useTranslation(['quickList', 'common']);
   const { settings } = useOptions();
   const [listings, setListings] = useState<MarketListingEntry[]>(initialListings || []);
   const [isLoading, setIsLoading] = useState(false);
@@ -185,7 +187,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_fetch', { duration_ms: duration }, { outcome: 'error', page: currentPage });
       console.error('Failed to fetch market listings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch listings');
+      setError(err instanceof Error ? err.message : t('listed.fetchFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -365,7 +367,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { duration_ms: duration },
         { outcome: 'success', source: 'listed_items_tab' },
       );
-      showToast('Item bumped successfully!');
+      showToast(t('toasts.bumpSuccess'));
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement(
@@ -374,7 +376,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { outcome: 'error', source: 'listed_items_tab' },
       );
       console.error('Failed to bump item:', err);
-      showToast('Failed to bump item');
+      showToast(t('toasts.bumpFailed'));
     } finally {
       setBumpingListingId(null);
     }
@@ -382,7 +384,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleBumpAll = async () => {
     if (!authData) {
-      showToast('Unable to bump listings: not authenticated');
+      showToast(t('toasts.bumpAllNotAuthenticated'));
       return;
     }
 
@@ -400,12 +402,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'success' });
-      showToast('Successfully bumped all items!');
+      showToast(t('toasts.bumpAllSuccess'));
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_bump_all', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to bump all items:', err);
-      showToast('Failed to bump all items');
+      showToast(t('toasts.bumpAllFailed'));
     } finally {
       setIsBumpingAll(false);
     }
@@ -421,12 +423,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'success' });
-      showToast(`Removed ${listing.item.name} market listing.`);
+      showToast(t('toasts.removedMarketListing', { name: listing.item.name }));
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_delete', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to delete listing:', err);
-      showToast('Failed to delete listing');
+      showToast(t('toasts.deleteFailed'));
       // Refresh on error to restore correct state
       setCurrentPage(0);
       await fetchListings();
@@ -494,12 +496,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         { duration_ms: duration, price_hr: hasPrice ? numericPrice : undefined },
         { outcome: 'success', listing_type: listingType },
       );
-      showToast('Listing updated!');
+      showToast(t('toasts.listingUpdated'));
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('listed_items_edit_save', { duration_ms: duration }, { outcome: 'error' });
       console.error('Failed to update listing:', err);
-      showToast('Failed to update listing');
+      showToast(t('toasts.updateFailed'));
     }
   };
 
@@ -570,7 +572,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         <div className="flex items-center gap-2 pb-1 text-sm text-muted-foreground"
           role="status">
           <Loader2 className="size-4 animate-spin text-primary" />
-          <span>Loading listings...</span>
+          <span>{t('listed.loading')}</span>
         </div>
         {[0, 1, 2].map((i) => (
           <div key={i}
@@ -599,7 +601,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   if (error && listings.length === 0 && !searchQuery.trim()) {
     return (
       <EmptyState icon={<CircleAlert />}
-        title="Couldn't load listings">
+        title={t('listed.loadError')}>
         <p className="mb-4 text-destructive">{error}</p>
         <Button
           onClick={() => {
@@ -608,7 +610,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           }}
         >
           <RotateCw className="size-4" />
-          Retry
+          {t('common:actions.retry')}
         </Button>
       </EmptyState>
     );
@@ -627,8 +629,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search item by name..."
-              aria-label="Search listings"
+              placeholder={t('listed.searchPlaceholder')}
+              aria-label={t('listed.searchLabel')}
               value={searchQuery}
               onChange={(e) => {
                 const newQuery = e.target.value;
@@ -650,7 +652,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               {searchQuery && (
                 <motion.button
                   type="button"
-                  aria-label="Clear search"
+                  aria-label={t('listed.clearSearch')}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
@@ -666,7 +668,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             </AnimatePresence>
           </div>
           <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            Listed Items
+            {t('listed.listedItems')}
             <span className={countChip}>{isSearching ? filteredListings.length : totalCount}</span>
             <span className="sr-only">({isSearching ? filteredListings.length : totalCount})</span>
           </span>
@@ -683,17 +685,17 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
               {isBumpingAll ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  Bumping...
+                  {t('listed.bumping')}
                 </>
               ) : (
                 <>
                   <ChevronsUp className="h-3.5 w-3.5" />
-                  Bump All
+                  {t('listed.bumpAll')}
                 </>
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Bump all items that are eligible to be bumped</TooltipContent>
+          <TooltipContent>{t('listed.bumpAllTooltip')}</TooltipContent>
         </Tooltip>
       </div>
 
@@ -708,7 +710,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           >
             <div className="flex items-center gap-2 p-3">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Searching...</span>
+              <span className="text-sm text-muted-foreground">{t('listed.searching')}</span>
             </div>
           </motion.div>
         )}
@@ -720,17 +722,15 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           animate="visible">
           {displayListings.length === 0 && isSearching && !isLoadingAllListings && (
             <EmptyState icon={<SearchX />}
-              title="No matches"
+              title={t('listed.noMatches')}
               className="p-6">
-              No items found matching &quot;{searchQuery}&quot;
+              {t('listed.noMatchesFor', { query: searchQuery })}
             </EmptyState>
           )}
           {showEmpty && (
             <EmptyState icon={<Store />}
-              title={authData ? 'No active listings' : 'Not signed in'}>
-              {authData
-                ? 'Items you list from your shared stash will show up here.'
-                : 'Sign in to your PD2 account to manage your listings.'}
+              title={authData ? t('listed.noActiveTitle') : t('listed.notSignedInTitle')}>
+              {authData ? t('listed.noActiveDescription') : t('listed.notSignedInDescription')}
             </EmptyState>
           )}
           <AnimatePresence initial={false}>
@@ -802,8 +802,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                     <FormItem className="m-0 p-0 min-w-0 flex-1">
                                       <FormControl>
                                         <Input
-                                          placeholder="Note..."
-                                          aria-label="Note"
+                                          placeholder={t('form.notePlaceholder')}
+                                          aria-label={t('form.note')}
                                           {...field}
                                           className="h-8 text-xs"
                                           autoComplete="off"
@@ -824,8 +824,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                           type="number"
                                           min={0}
                                           step={0.01}
-                                          placeholder="HR"
-                                          aria-label="HR price"
+                                          placeholder={t('form.hr')}
+                                          aria-label={t('form.hrPrice')}
                                           {...field}
                                           className="h-8 text-xs tabular-nums"
                                           value={editForm.getValues('price') || ''}
@@ -842,7 +842,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                     disabled={isEditing && !isEditFormValid}
                                   >
                                     <Check className="size-3.5" />
-                                    Save
+                                    {t('common:actions.save')}
                                   </Button>
                                   <Button
                                     type="button"
@@ -851,7 +851,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                     className="h-8 text-xs"
                                     onClick={() => setEditingListingId(null)}
                                   >
-                                    Cancel
+                                    {t('common:actions.cancel')}
                                   </Button>
                                 </ButtonGroup>
                               </form>
@@ -881,12 +881,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                     ) : (
                                       <>
                                         <ArrowUp className="size-3.5" />
-                                        Bump
+                                        {t('listing.bump')}
                                       </>
                                     )}
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Bump listing to top</TooltipContent>
+                                <TooltipContent>{t('listing.bumpToTop')}</TooltipContent>
                               </Tooltip>
                             ) : (
                               <Tooltip delayDuration={0}>
@@ -897,11 +897,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                       className="h-7 gap-1 px-2.5 text-xs"
                                       disabled>
                                       <Clock className="size-3.5" />
-                                      Bump
+                                      {t('listing.bump')}
                                     </Button>
                                   </span>
                                 </TooltipTrigger>
-                                <TooltipContent>You can bump this item {timeUntilBump(listing)}</TooltipContent>
+                                <TooltipContent>
+                                  {t('listing.canBumpIn', { time: timeUntilBump(listing) })}
+                                </TooltipContent>
                               </Tooltip>
                             )}
                             <Tooltip delayDuration={0}>
@@ -913,16 +915,16 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                   onClick={() => handleEdit(listing)}
                                 >
                                   <Pencil className="size-3" />
-                                  Edit
+                                  {t('common:actions.edit')}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Edit price</TooltipContent>
+                              <TooltipContent>{t('listing.editPrice')}</TooltipContent>
                             </Tooltip>
                             <Tooltip delayDuration={0}>
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  aria-label={isDeleting ? 'Deleting...' : 'Remove listing'}
+                                  aria-label={isDeleting ? t('listing.deleting') : t('listing.removeListing')}
                                   disabled={isDeleting}
                                   className={cn(
                                     iconButton,
@@ -937,13 +939,15 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                   {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent>{isDeleting ? 'Deleting...' : 'Remove listing'}</TooltipContent>
+                              <TooltipContent>
+                                {isDeleting ? t('listing.deleting') : t('listing.removeListing')}
+                              </TooltipContent>
                             </Tooltip>
                             <Tooltip delayDuration={0}>
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  aria-label="Go to trade website"
+                                  aria-label={t('listing.goToTrade')}
                                   className={cn(iconButton, 'hover:bg-accent hover:text-accent-foreground')}
                                   onClick={() => {
                                     trackEvent('listed_items_trade_url_opened');
@@ -953,7 +957,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                                   <SquareArrowOutUpRight />
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent>Go to trade website</TooltipContent>
+                              <TooltipContent>{t('listing.goToTrade')}</TooltipContent>
                             </Tooltip>
                           </motion.div>
                         )}
@@ -968,7 +972,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                         aria-expanded={statsOpen}
                         className="inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring/60"
                       >
-                        {statsOpen ? 'Show Less' : 'Show Stats'}
+                        {statsOpen ? t('listing.showLess') : t('listing.showStats')}
                         <ChevronDown
                           className={cn('size-3 transition-transform duration-(--dur-fast)', statsOpen && 'rotate-180')}
                         />

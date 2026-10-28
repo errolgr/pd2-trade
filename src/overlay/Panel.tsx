@@ -7,6 +7,7 @@ import { viewportRect } from './game';
 import { isPanelVisible, useOverlay, useOverlayInternals } from './OverlayProvider';
 import { PanelPortalContext } from './portal';
 import type { OverlayRect, PanelId, PanelPayloads } from './types';
+import { t } from '@/i18n';
 
 export interface PanelContextValue<K extends PanelId = PanelId> {
   id: K;
@@ -212,7 +213,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
           <Sentry.ErrorBoundary
             fallback={({ resetError }) => (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border bg-popover p-4 text-sm text-popover-foreground">
-                <span>This panel crashed.</span>
+                <span>{t('app:panel.crashed')}</span>
                 <button
                   type="button"
                   className="rounded-md bg-muted px-2.5 py-1 text-xs"
@@ -221,7 +222,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
                     close();
                   }}
                 >
-                  Close
+                  {t('common:actions.close')}
                 </button>
               </div>
             )}

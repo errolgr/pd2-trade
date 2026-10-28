@@ -1,0 +1,533 @@
+{
+  "interface": {
+    "language": {
+      "label": "Idioma",
+      "description": "El idioma del overlay. Predeterminado del sistema sigue el idioma de tu sistema. Los nombres de objetos, estadísticas y términos del juego se mantienen en inglés, como en el juego.",
+      "group": "Idioma"
+    },
+    "overlays": "Overlays",
+    "chatButton": {
+      "label": "Botón de chat del overlay",
+      "description": "Muestra el botón flotante de chat en la esquina inferior derecha de la pantalla."
+    },
+    "windowTransparency": {
+      "label": "Transparencia de ventana: <num>{{value}}%</num>",
+      "description": "Ve el juego a través del fondo de las ventanas. 0% es totalmente opaco."
+    },
+    "zoneTimer": {
+      "enabled": {
+        "label": "Temporizador de zonas corruptas",
+        "description": "Muestra qué zonas corrompen las nuevas partidas de Hell y el tiempo hasta la siguiente rotación (cada 15 minutos). Haz clic para ver las próximas zonas."
+      },
+      "position": {
+        "label": "Posición del temporizador",
+        "description": "Fija el temporizador en una esquina del juego o arrástralo a cualquier lugar de la pantalla (cambia a Personalizada) si no está bloqueado.",
+        "placeholder": "Posición"
+      },
+      "locked": {
+        "label": "Bloquear la posición del temporizador",
+        "description": "Arrastrar el temporizador ya no lo mueve; al hacer clic sigue mostrando las próximas zonas. También se activa con el candado bajo las próximas zonas."
+      },
+      "layout": {
+        "label": "Diseño del temporizador",
+        "description": "Horizontal, o una columna estrecha con las próximas zonas apiladas encima o debajo, para el borde izquierdo o derecho de la pantalla.",
+        "placeholder": "Diseño"
+      },
+      "zones": {
+        "label": "El temporizador muestra",
+        "description": "Todas las zonas, o solo las que sigues: el temporizador cuenta hasta la siguiente de ellas y solo muestra esas (todas si no sigues ninguna).",
+        "placeholder": "Zonas"
+      },
+      "alerts": {
+        "label": "Notificaciones de zona",
+        "description": "Muestra una notificación cuando cambia la zona corrupta: para cada nueva zona o solo para las que sigues. Las notificaciones dependen del interruptor Notificaciones emergentes de los ajustes de Chat.",
+        "placeholder": "Notificaciones"
+      },
+      "followed": {
+        "label": "Zonas seguidas",
+        "description": "Las zonas que siguen el temporizador y las notificaciones cuando está seleccionado Solo las zonas que sigo."
+      },
+      "group": "Temporizador de zonas corruptas",
+      "opacity": "Opacidad del temporizador: <num>{{value}}%</num>"
+    },
+    "zoneAlertOptions": {
+      "off": "Desactivado",
+      "all": "Cada rotación",
+      "followed": "Solo las zonas que sigo"
+    },
+    "timerZonesOptions": {
+      "all": "Todas las zonas",
+      "followed": "Solo las zonas que sigo"
+    },
+    "timerLayoutOptions": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical (bordes de la pantalla)"
+    }
+  },
+  "networth": {
+    "autoSnapshotOptions": {
+      "off": "Desactivado",
+      "every5": "Cada 5 minutos",
+      "every10": "Cada 10 minutos",
+      "every15": "Cada 15 minutos",
+      "every30": "Cada 30 minutos"
+    },
+    "ticker": {
+      "opacity": "Opacidad del indicador: <num>{{value}}%</num>",
+      "group": "Indicador en overlay",
+      "enabled": {
+        "label": "Indicador de patrimonio",
+        "description": "Muestra tu patrimonio, el cambio de la sesión y las HR por hora sobre el juego. Haz clic para ver detalles."
+      },
+      "position": {
+        "label": "Posición del indicador",
+        "description": "Fija el indicador en una esquina del juego o arrástralo a cualquier lugar de la pantalla (cambia a Personalizada).",
+        "placeholder": "Posición"
+      },
+      "preview": "Vista previa"
+    },
+    "toastThreshold": {
+      "description": "Con el indicador activado, muestra una notificación cuando una instantánea cambia tu patrimonio al menos esta cantidad. Activa el tipo de notificación Patrimonio en <section>Ajustes de chat</section>.",
+      "group": "Notificaciones",
+      "label": "Umbral de notificación de instantánea (HR)"
+    },
+    "hotkeyHint": "El atajo de instantánea se configura en <section>Atajos</section>.",
+    "history": {
+      "group": "Historial",
+      "tracking": {
+        "label": "Guardar historial de patrimonio",
+        "description": "Guarda instantáneas de tu patrimonio en pd2trader.com para ver el historial y las sesiones. Si está desactivado, los valores se siguen calculando pero no se guarda nada."
+      },
+      "autoSnapshot": {
+        "label": "Instantáneas automáticas",
+        "description": "Toma una instantánea con este intervalo mientras Diablo II tiene el foco.",
+        "placeholder": "Intervalo"
+      }
+    }
+  },
+  "tickerAnchor": {
+    "topLeft": "Arriba a la izquierda",
+    "topCenter": "Arriba al centro",
+    "topRight": "Arriba a la derecha",
+    "bottomLeft": "Abajo a la izquierda",
+    "bottomRight": "Abajo a la derecha",
+    "aboveChat": "Encima del botón de chat",
+    "custom": "Personalizada (arrastra para mover)"
+  },
+  "publicProfile": {
+    "loadFailed": "No se pudieron cargar los ajustes del perfil",
+    "saveFailed": "Error al guardar",
+    "saving": "Guardando",
+    "description": {
+      "signedOut": "Inicia sesión con tu cuenta de PD2 para elegir si apareces en las clasificaciones.",
+      "notLive": "Las clasificaciones llegan con la Season 14. Podrás hacer público tu perfil cuando estén disponibles.",
+      "default": "Muestra tu patrimonio en las clasificaciones de pd2trader.com y en una página de perfil público. Desactivado por defecto: solo tú puedes ver tu historial."
+    },
+    "viewProfile": "Ver perfil",
+    "group": "Clasificaciones",
+    "optedIn": "Perfil público",
+    "displayName": {
+      "label": "Mostrar como",
+      "description": "Cuál de tus cuentas de juego da nombre a tu perfil.",
+      "placeholder": "Cuenta"
+    },
+    "showHoldings": {
+      "label": "Mostrar posesiones",
+      "description": "Muestra también tus mejores objetos y el reparto por categoría en tu perfil."
+    }
+  },
+  "nav": {
+    "general": "General",
+    "account": "Cuenta",
+    "chat": "Chat",
+    "interface": "Interfaz",
+    "priceCheck": "Consulta de precio",
+    "netWorth": "Patrimonio",
+    "hotkeys": "Atajos",
+    "about": "Acerca de"
+  },
+  "layout": {
+    "title": "Ajustes",
+    "subtitle": "Gestiona tus ajustes y preferencias",
+    "saved": "Guardado",
+    "autoSave": "Los cambios se guardan automáticamente",
+    "closeLabel": "Cerrar ajustes",
+    "navLabel": "Secciones de ajustes"
+  },
+  "zonePicker": {
+    "pick": "Elegir zonas",
+    "count_one": "{{count}} zona",
+    "count_many": "{{count}} de zonas",
+    "count_other": "{{count}} zonas",
+    "noMatch": "Ninguna zona coincide",
+    "followedCount_one": "{{count}} seguida",
+    "followedCount_many": "{{count}} de seguidas",
+    "followedCount_other": "{{count}} seguidas",
+    "triggerLabel": "Zonas seguidas",
+    "search": "Buscar zonas",
+    "listLabel": "Zonas"
+  },
+  "theme": {
+    "preview": {
+      "list": "Lista",
+      "offers": "Ofertas"
+    },
+    "filter": {
+      "all": "Todos",
+      "dark": "Oscuros",
+      "light": "Claros"
+    },
+    "current": "Actual: <name>{{name}}</name>",
+    "optionLabel": "{{name}} ({{mode}})",
+    "mode": {
+      "dark": "oscuro",
+      "light": "claro"
+    },
+    "filterLabel": "Filtrar temas por modo",
+    "groupLabel": "Tema de color"
+  },
+  "hotkeys": {
+    "validation": {
+      "enterKey": "Introduce una tecla",
+      "invalidKey": "No se puede usar como atajo",
+      "ctrlC": "Ctrl + C no está permitido (atajo reservado del sistema)."
+    },
+    "warning": {
+      "ctrlC": "Ctrl + C está reservado para copiar objetos. Elige otra tecla.",
+      "clash": "También lo usa {{action}}.",
+      "invalidKey": "{{key}} no se puede usar como atajo. Haz clic en la casilla y pulsa otra tecla."
+    },
+    "group": "Atajos",
+    "modifierLabel": "Modificador de {{action}}",
+    "off": "Desactivado",
+    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado o builds para desactivar ese atajo.",
+    "rows": {
+      "priceCheck": {
+        "label": "Consulta de precio",
+        "description": "Consulta el precio del objeto bajo el cursor."
+      },
+      "listItem": {
+        "label": "Anunciar objeto",
+        "description": "Anuncia en el mercado el objeto bajo el cursor."
+      },
+      "settings": {
+        "label": "Abrir ajustes",
+        "description": "Abre esta ventana de ajustes."
+      },
+      "netWorth": {
+        "label": "Patrimonio",
+        "description": "Abre la ventana de patrimonio."
+      },
+      "chat": {
+        "label": "Ventana de chat",
+        "description": "Muestra u oculta la ventana de chat."
+      },
+      "offers": {
+        "label": "Ofertas",
+        "description": "Abre el chat con las personas a las que vendes."
+      },
+      "delist": {
+        "label": "Retirar objeto",
+        "description": "Retira del mercado el objeto bajo el cursor."
+      },
+      "snapshot": {
+        "label": "Instantánea de patrimonio",
+        "description": "Toma una instantánea del patrimonio de inmediato."
+      },
+      "market": {
+        "label": "Mercado",
+        "description": "Muestra u oculta el explorador del mercado."
+      },
+      "builds": {
+        "label": "Builds",
+        "description": "Muestra u oculta las builds ladder."
+      }
+    }
+  },
+  "general": {
+    "validation": {
+      "mode": "Selecciona un modo.",
+      "ladder": "Selecciona un ladder."
+    },
+    "directory": {
+      "detected": "Detectado: {{path}}",
+      "description": "Ruta a tu directorio de instalación de Diablo II. Déjalo vacío para detectarlo automáticamente.",
+      "detectFailed": {
+        "title": "Error de detección",
+        "description": "No se pudo detectar automáticamente el directorio de Diablo II. Introdúcelo manualmente."
+      },
+      "autoDetect": "Detectar",
+      "label": "Directorio de Diablo II"
+    },
+    "game": {
+      "group": "Juego",
+      "mode": "Modo",
+      "season": {
+        "label": "Temporada",
+        "description": "Filtra los datos de precios por temporada. Las temporadas pasadas requieren datos históricos disponibles."
+      }
+    },
+    "troubleshooting": {
+      "group": "Solución de problemas",
+      "debugLogging": {
+        "label": "Registro de depuración",
+        "description": "Escribe la salida de la consola en un archivo de registro para solucionar problemas."
+      }
+    }
+  },
+  "about": {
+    "downloadFailed": "No se pudo descargar la actualización. Inténtalo más tarde.",
+    "version": "Versión: {{version}}",
+    "updateAvailable": "Actualización disponible (v{{version}})",
+    "updateNow": "Actualizar ahora (v{{version}})",
+    "latest": "Tienes la última versión",
+    "lastChecked": "Última comprobación: {{ago}}",
+    "checking": "Comprobando...",
+    "checkForUpdates": "Buscar actualizaciones",
+    "viewChangelog": "Ver registro de cambios",
+    "credits": {
+      "developer": "Desarrollador",
+      "contributors": "Colaboradores"
+    },
+    "logoAlt": "Logo de PD2 Trader",
+    "updates": {
+      "group": "Actualizaciones",
+      "auto": {
+        "label": "Actualizaciones automáticas",
+        "description": "Descarga e instala nuevas versiones al iniciar y luego reinicia. Si está desactivado, igualmente recibirás una notificación cuando haya una actualización."
+      }
+    }
+  },
+  "account": {
+    "noAccounts": {
+      "title": "No hay cuentas disponibles",
+      "description": "Si no tienes seleccionada la cuenta correcta, puedes recibir errores 404 al anunciar objetos. Autentícate para cargar tus cuentas."
+    },
+    "status": {
+      "signedInAs": "Sesión iniciada como {{username}}",
+      "signedIn": "Sesión iniciada",
+      "signedOut": "Sesión cerrada"
+    },
+    "token": {
+      "description": "Obtén tu token en <site>projectdiablo2.com<icon></icon></site> tras iniciar sesión. Busca 'pd2-token' en el localStorage de tu navegador.",
+      "label": "Token de PD2",
+      "placeholder": "Introduce tu token de PD2"
+    },
+    "account": {
+      "linked_one": "{{count}} cuenta de juego vinculada. Se usa para anuncios y ofertas.",
+      "linked_many": "{{count}} de cuentas de juego vinculadas. Se usan para anuncios y ofertas.",
+      "linked_other": "{{count}} cuentas de juego vinculadas. Se usan para anuncios y ofertas.",
+      "signInToLoad": "Inicia sesión para cargar las cuentas de juego vinculadas a tu perfil de PD2.",
+      "authenticateFirst": "Autentícate primero",
+      "select": "Selecciona una cuenta",
+      "label": "Cuenta"
+    },
+    "loggingOut": "Cerrando sesión...",
+    "logOut": "Cerrar sesión",
+    "loggingIn": "Iniciando sesión...",
+    "logIn": "Iniciar sesión",
+    "signInLink": {
+      "openFailed": "No se pudo abrir tu navegador: copia el enlace de inicio de sesión y ábrelo allí.",
+      "notOpened": "¿No se abrió el navegador? Copia en él el enlace de inicio de sesión."
+    },
+    "group": "Cuenta de PD2"
+  },
+  "stats": {
+    "fillStatValue": {
+      "labelPercent": "Margen de estadística (%)",
+      "labelFlat": "Margen de estadística (fijo)",
+      "descriptionPercent": "Porcentaje del valor obtenido usado como margen ± al rellenar rangos de estadísticas.",
+      "descriptionFlat": "Cantidad fija aplicada como margen ± al rellenar rangos de estadísticas (p. ej. 2 → ±2)."
+    },
+    "marginUnit": {
+      "percent": "Porcentaje (%)",
+      "flat": "Fijo",
+      "label": "Unidad del margen",
+      "description": "Cómo se interpreta el valor de arriba. Fijo es útil para estadísticas con valores bajos como resistencias o +habilidades.",
+      "placeholder": "Unidad del margen"
+    },
+    "corruptedFilter": {
+      "both": "Ambos",
+      "corrupted": "Solo corruptos",
+      "nonCorrupted": "Solo no corruptos",
+      "label": "Filtro de Corrupted predeterminado",
+      "description": "Filtro de corrupción inicial al abrir la consulta de precio de un objeto que se puede corromper.",
+      "placeholder": "Filtro de Corrupted"
+    },
+    "rankDisplay": {
+      "bar": "Barra (percentil + líneas vender/guardar)",
+      "blocks": "Bloques (6 segmentos de rango)",
+      "label": "Visualización del rango de raros",
+      "description": "Cómo se dibuja el rango de precio de un raro entre los de su ranura en la ventana de tasación de la consulta de precio.",
+      "placeholder": "Visualización del rango"
+    },
+    "prices": {
+      "group": "Precios"
+    },
+    "priceWindow": {
+      "label": "Ventana de precios",
+      "description": "Ventas recientes en las que se basa la media de la consulta de precio. Los objetos con poco volumen usan una ventana más larga, marcada con una etiqueta."
+    },
+    "statRanges": {
+      "group": "Rangos de estadísticas"
+    },
+    "leaveMinEmpty": {
+      "label": "Dejar mín. vacío",
+      "description": "Al rellenar un rango de estadística, deja el mínimo en blanco para que las búsquedas coincidan con cualquier valor hasta el máximo."
+    },
+    "leaveMaxEmpty": {
+      "label": "Dejar máx. vacío",
+      "description": "Al rellenar un rango de estadística, deja el máximo en blanco para que las búsquedas coincidan con el valor obtenido o mejor."
+    },
+    "filters": {
+      "group": "Filtros"
+    },
+    "rareAppraisal": {
+      "group": "Tasación de raros"
+    }
+  },
+  "chatTemplates": {
+    "intro": "Escribe <kbd>/</kbd> en un mensaje de chat para usarlas. Los tokens se rellenan a partir de la conversación; cualquier otro {{placeholder}} se pregunta al usar la plantilla. Destaca una para fijarla como chip encima del cuadro de mensaje.",
+    "listLabel": "Tus plantillas",
+    "editNamed": "Editar {{name}}",
+    "unstarNamed": "Quitar destacado de {{name}}",
+    "starNamed": "Destacar {{name}}",
+    "starredTitle": "Destacada: se muestra encima del cuadro de mensaje",
+    "starTitle": "Destacar: mostrarla encima del cuadro de mensaje",
+    "moveUpNamed": "Subir {{name}}",
+    "moveUp": "Subir",
+    "moveDownNamed": "Bajar {{name}}",
+    "moveDown": "Bajar",
+    "deleteNamed": "Eliminar {{name}}",
+    "empty": "Aún no tienes plantillas propias.",
+    "newTemplate": "Nueva plantilla",
+    "addTemplate": "Añadir plantilla"
+  },
+  "chat": {
+    "toastTypes": {
+      "whispers": "Susurros",
+      "trade": "Intercambio",
+      "joins": "Uniones",
+      "offers": "Ofertas",
+      "networth": "Patrimonio"
+    },
+    "timing": {
+      "off": "Las notificaciones están desactivadas. Elige otra opción para editar los ajustes de abajo.",
+      "label": "Notificar cuando:",
+      "description": "Controla cuándo se reproducen las notificaciones de susurros según si Diablo tiene el foco.",
+      "placeholder": "Elige cuándo notificar",
+      "options": {
+        "inGame": "Solo en el juego",
+        "outOfGame": "Solo fuera del juego",
+        "always": "Siempre",
+        "never": "Nunca"
+      }
+    },
+    "ignore": {
+      "count_one": "{{count}} jugador",
+      "count_many": "{{count}} de jugadores",
+      "count_other": "{{count}} jugadores",
+      "removeNamed": "Quitar {{name}}",
+      "empty": "Aún no hay jugadores ignorados.",
+      "group": "Lista de ignorados",
+      "label": "Lista de ignorados",
+      "description": "Los jugadores de esta lista no activarán notificaciones de susurros.",
+      "placeholder": "Introduce el nombre del jugador a ignorar"
+    },
+    "sound": {
+      "notificationVolume": {
+        "label": "Volumen de notificaciones: <num>{{value}}%</num>",
+        "description": "Ajusta el volumen de los sonidos de notificación de susurros (0-100%)."
+      },
+      "marketVolume": {
+        "label": "Volumen de alertas del mercado: <num>{{value}}%</num>",
+        "description": "Volumen del sonido de alerta del mercado (0-100%).",
+        "ariaLabel": "Volumen de alertas del mercado"
+      },
+      "group": "Sonido",
+      "marketSound": {
+        "label": "Sonido de alerta del mercado",
+        "description": "Reproduce un sonido con la notificación de un nuevo anuncio que coincida con una búsqueda que vigilas."
+      }
+    },
+    "templates": {
+      "accept": {
+        "intro": "Personaliza el mensaje que se copia al aceptar una oferta. Marcadores disponibles:",
+        "label": "Plantilla de mensaje al aceptar oferta"
+      },
+      "reject": {
+        "intro": "Personaliza el mensaje que se copia al rechazar una oferta. Marcadores disponibles:",
+        "label": "Plantilla de mensaje al rechazar oferta"
+      },
+      "sold": {
+        "intro": "Personaliza el mensaje que se copia al marcar un objeto como vendido. Marcadores disponibles:",
+        "label": "Plantilla de mensaje de objeto vendido"
+      },
+      "insertToken": "Insertar {{token}}",
+      "asks": "Pregunta al usarse en el chat: {{placeholders}}",
+      "group": "Plantillas de mensaje"
+    },
+    "notifications": {
+      "group": "Notificaciones"
+    },
+    "general": {
+      "label": "Notificaciones generales",
+      "description": "Reproduce un sonido cuando recibes susurros de jugadores que no son de intercambio o mensajes nuevos en el chat web."
+    },
+    "toasts": {
+      "label": "Notificaciones emergentes",
+      "description": "Muestra notificaciones emergentes cuando estás fuera de la ventana de Diablo.",
+      "typesLabel": "Tipos de notificaciones emergentes"
+    },
+    "trade": {
+      "label": "Notificaciones de intercambio",
+      "description": "Reproduce un sonido cuando recibes susurros de intercambio u ofertas desde la web."
+    },
+    "announcements": {
+      "label": "Notificaciones de anuncios oficiales",
+      "description": "Activa las notificaciones de mensajes de *announcements. Por defecto, se ignoran."
+    },
+    "joins": {
+      "label": "Notificaciones de unión",
+      "description": "Muestra una notificación cuando un jugador se une a la partida (solo si Diablo no tiene el foco). Por defecto están desactivadas."
+    }
+  },
+  "sections": {
+    "interface": {
+      "title": "Interfaz",
+      "description": "Configura la interfaz y el overlay."
+    },
+    "theme": {
+      "title": "Tema",
+      "description": "Tema de color para todas las ventanas del overlay. Se aplica al instante."
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Configura las notificaciones de chat y susurros, y tus plantillas de mensaje."
+    },
+    "general": {
+      "title": "General",
+      "description": "Ajustes generales de la aplicación."
+    },
+    "hotkeys": {
+      "title": "Atajos",
+      "description": "Configura aquí tus atajos de teclado."
+    },
+    "about": {
+      "title": "Acerca de",
+      "description": "Información sobre la aplicación, su versión y el desarrollador."
+    },
+    "account": {
+      "title": "Cuenta",
+      "description": "Gestiona aquí los ajustes de tu cuenta."
+    },
+    "networth": {
+      "title": "Patrimonio",
+      "description": "Sigue tu patrimonio a lo largo del tiempo y muéstralo en un overlay mientras juegas."
+    },
+    "stats": {
+      "title": "Consulta de precio",
+      "description": "Configura la ventana de precios y cómo se rellenan los rangos de estadísticas y los filtros en las búsquedas de consulta de precio."
+    }
+  }
+}

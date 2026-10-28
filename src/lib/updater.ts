@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { isTauri } from '@tauri-apps/api/core';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
@@ -5,7 +6,7 @@ import { toast } from 'sonner';
 import { resetUpdateNotification } from '@/hooks/useAppUpdates';
 import { openUrl } from '@/lib/browser-opener';
 import {
-  MANUAL_UPDATE_DESCRIPTION,
+  manualUpdateDescription,
   RELEASE_PAGE_URL,
   markManualUpdateRequired,
   requiresManualUpdate,
@@ -24,7 +25,7 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
   try {
     const update = await check();
     if (update?.available) {
-      const loadingToast = toast.loading('Downloading update...', {
+      const loadingToast = toast.loading(t('system:updates.downloading'), {
         position: 'bottom-right',
       });
 
@@ -39,14 +40,14 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
           case 'Progress': {
             downloaded += event.data.chunkLength;
             const progress = contentLength ? Math.min(100, Math.floor((downloaded / contentLength) * 100)) : 0;
-            toast.loading(`Downloading update... ${progress}%`, {
+            toast.loading(t('system:updates.downloadingProgress', { progress }), {
               id: loadingToast,
               position: 'bottom-right',
             });
             break;
           }
           case 'Finished':
-            toast.success('Update downloaded! Restarting...', {
+            toast.success(t('system:updates.downloaded'), {
               id: loadingToast,
               position: 'bottom-right',
             });
@@ -63,18 +64,18 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
       // Expected for Linux deb/rpm installs: retrying can't help, so link the release page instead of reporting it
       console.warn('Update must be installed manually:', error);
       markManualUpdateRequired();
-      toast.error('Update must be installed manually', {
-        description: MANUAL_UPDATE_DESCRIPTION,
+      toast.error(t('system:updates.manualRequired'), {
+        description: manualUpdateDescription(),
         duration: Infinity,
         position: 'bottom-right',
-        action: { label: 'Open Release Page', onClick: () => void openUrl(RELEASE_PAGE_URL) },
+        action: { label: t('system:updates.openReleasePage'), onClick: () => void openUrl(RELEASE_PAGE_URL) },
       });
       return false;
     }
     // Offline / GitHub unreachable is the user's network, not an app bug: same toast, no error report
     if (isNetworkError(error)) console.warn('Could not download update:', error);
     else console.error('Failed to download/install update:', error);
-    toast.error('Failed to download update. Please try again later.', {
+    toast.error(t('system:updates.downloadFailed'), {
       position: 'bottom-right',
     });
     // Reset notification state so user can try again

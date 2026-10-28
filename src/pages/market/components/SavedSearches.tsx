@@ -15,6 +15,7 @@ import { groupOf, orBlockNumbers } from '../lib/stat-groups';
 import { filterName } from './stat-text';
 import type { MarketFilters, SavedSearch, StatFilter } from '../lib/types';
 import { fieldInputClass } from './controls';
+import { t, useTranslation } from '@/i18n';
 
 const UNDO_MS = 6000;
 
@@ -22,19 +23,28 @@ const UNDO_MS = 6000;
 export function describeFilters(f: MarketFilters): string {
   const parts: string[] = [];
   if (f.itemName) parts.push(f.itemName);
-  if (f.typeCode) parts.push(ITEM_TYPES.find((t) => t.code === f.typeCode)?.label ?? 'Type');
+  if (f.typeCode) parts.push(ITEM_TYPES.find((t) => t.code === f.typeCode)?.label ?? t('market:filters.type'));
   if (f.rarity.length) parts.push(f.rarity.join('/'));
   const stats = f.stats.filter((s) => s.enabled);
   const row = (s: StatFilter) =>
-    `${s.kind === 'corruption' ? 'corrupted ' : ''}${filterName(s)}${s.min != null ? ` ≥${s.min}` : ''}`;
+    `${s.kind === 'corruption' ? t('market:describe.corrupted', { name: filterName(s) }) : filterName(s)}${s.min != null ? ` ≥${s.min}` : ''}`;
   const required = stats.filter((s) => groupOf(s) === 'and').map(row);
   for (const block of orBlockNumbers(stats))
-    required.push(`any of (${stats.filter((s) => !s.not && s.or === block).map(row).join(' / ')})`);
+    required.push(
+      t('market:describe.anyOf', {
+        rows: stats
+          .filter((s) => !s.not && s.or === block)
+          .map(row)
+          .join(' / '),
+      }),
+    );
   const excluded = stats.filter((s) => s.not).map(row);
-  if (excluded.length) required.push(`none of (${excluded.join(' / ')})`);
+  if (excluded.length) required.push(t('market:describe.noneOf', { rows: excluded.join(' / ') }));
   if (required.length) parts.push(required.join(', '));
-  if (f.sellerName) parts.push(`seller ${f.sellerName}`);
-  parts.push(`${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? ' · sold' : ''}`);
+  if (f.sellerName) parts.push(t('market:describe.seller', { name: f.sellerName }));
+  parts.push(
+    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.sold') : ''}`,
+  );
   return parts.join(' · ');
 }
 
@@ -46,6 +56,7 @@ export interface SavedSearchesProps {
 
 /** Saved tab: run, rename, delete, live-alert toggle and "save current search". */
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
+  const { t } = useTranslation(['market', 'common']);
   const [name, setName] = useState('');
   const { openSignIn } = useSignIn();
   const alerting = store.savedSearches.filter((s) => s.alert).length;
@@ -61,14 +72,14 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     if (!trimmed) return;
     if (!store.saveSearch(trimmed, current)) return;
     setName('');
-    showToast({ title: 'Search saved', description: trimmed, variant: 'success' });
+    showToast({ title: t('saved.savedToast'), description: trimmed, variant: 'success' });
   };
 
   const remove = (search: SavedSearch) => {
     const removed = store.removeSearch(search.id);
     if (!removed) return;
     undoToast({
-      title: 'Search deleted',
+      title: t('saved.deletedToast'),
       description: removed.name,
       duration: UNDO_MS,
       onUndo: () => store.restoreSearch(removed),
@@ -78,8 +89,8 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const toggleAlert = (search: SavedSearch, on: boolean) => {
     if (!store.setSearchAlert(search.id, on)) {
       showToast({
-        title: 'Too many alerts',
-        description: `Up to ${store.limits.maxAlerting} saved searches can alert at once. Turn one off first.`,
+        title: t('saved.tooManyTitle'),
+        description: t('saved.tooManyDescription', { count: store.limits.maxAlerting }),
         variant: 'warning',
       });
     }
@@ -90,8 +101,8 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
       <form onSubmit={save}
         className="flex items-center gap-1.5 border-b border-border px-3 py-2">
         <Input
-          aria-label="Name for the current search"
-          placeholder={`Save current search… (${describeFilters(current)})`}
+          aria-label={t('saved.nameLabel')}
+          placeholder={t('saved.namePlaceholder', { description: describeFilters(current) })}
           maxLength={60}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -102,20 +113,20 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           size="sm"
           className="h-7 px-2.5 text-xs"
           disabled={!name.trim() || !synced}
-          title={synced ? undefined : 'Saving needs your saved searches loaded from pd2trader.com first'}
+          title={synced ? undefined : t('saved.needsSync')}
         >
           <Plus className="size-3.5" />
-          Save
+          {t('common:actions.save')}
         </Button>
       </form>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <span>{`${alerting}/${store.limits.maxAlerting} alerting · popups for new matches while the overlay runs`}</span>
+        <span>{t('saved.alertingSummary', { alerting, max: store.limits.maxAlerting })}</span>
         <label className="flex items-center gap-1.5">
-          Alerts
+          {t('saved.alerts')}
           <Switch
             checked={store.alertsEnabled}
             onCheckedChange={store.setAlertsEnabled}
-            aria-label="Enable live alerts"
+            aria-label={t('saved.enableAlerts')}
             className="scale-75"
           />
         </label>
@@ -124,41 +135,41 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
-          title="Sign in to save searches"
-          description="Saved searches and watches are kept with your PD2 account on pd2trader.com."
+          title={t('saved.signInTitle')}
+          description={t('saved.signInDescription')}
         />
       ) : store.syncStatus === 'unauthorized' ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
-          title="Sign in again to load your saved searches"
-          description="pd2trader.com no longer accepts your PD2 session. Saving and Watch are paused until you sign in again."
+          title={t('saved.reauthTitle')}
+          description={t('saved.reauthDescription')}
           action={
             <Button size="sm"
               className="h-7 px-2.5 text-xs"
               onClick={openSignIn}>
               <LogIn className="size-3.5" />
-              Sign in
+              {t('common:actions.signIn')}
             </Button>
           }
         />
       ) : store.syncStatus === 'loading' && store.savedSearches.length === 0 ? (
         <EmptyState className="m-4"
           icon={<Bookmark />}
-          title="Loading saved searches…" />
+          title={t('saved.loading')} />
       ) : store.syncStatus === 'error' && store.savedSearches.length === 0 ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
-          title="Couldn't load saved searches"
-          description="pd2trader.com did not answer. Retrying automatically; saving and Watch are paused until they load."
+          title={t('saved.loadFailedTitle')}
+          description={t('saved.loadFailedDescription')}
           action={
             <Button size="sm"
               variant="outline"
               className="h-7 px-2.5 text-xs"
               onClick={retrySavedSearchSync}>
               <RotateCw className="size-3.5" />
-              Retry now
+              {t('saved.retryNow')}
             </Button>
           }
         />
@@ -166,8 +177,8 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
-          title="No saved searches"
-          description="Set up filters on the Search tab, then save them here (or press Watch) to rerun with a click or get popups for new listings."
+          title={t('saved.emptyTitle')}
+          description={t('saved.emptyDescription')}
         />
       ) : (
         <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
@@ -205,6 +216,7 @@ function SavedRow({
   onAlert: (on: boolean) => void;
   alertsEnabled: boolean;
 }) {
+  const { t } = useTranslation('market');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(search.name);
   const commit = () => {
@@ -218,7 +230,7 @@ function SavedRow({
         variant="ghost"
         size="sm"
         className="size-7 shrink-0 p-0 text-primary"
-        aria-label={`Run ${search.name}`}
+        aria-label={t('saved.run', { name: search.name })}
         onClick={onRun}
       >
         <Play className="size-3.5" />
@@ -234,7 +246,7 @@ function SavedRow({
           >
             <Input
               autoFocus
-              aria-label="Search name"
+              aria-label={t('saved.searchName')}
               value={draft}
               maxLength={60}
               onChange={(e) => setDraft(e.target.value)}
@@ -251,7 +263,7 @@ function SavedRow({
               variant="ghost"
               size="sm"
               className="size-7 p-0"
-              aria-label="Save name">
+              aria-label={t('saved.saveName')}>
               <Check className="size-3.5" />
             </Button>
             <Button
@@ -259,7 +271,7 @@ function SavedRow({
               variant="ghost"
               size="sm"
               className="size-7 p-0"
-              aria-label="Cancel rename"
+              aria-label={t('saved.cancelRename')}
               onClick={() => {
                 setDraft(search.name);
                 setEditing(false);
@@ -276,7 +288,10 @@ function SavedRow({
           >
             <div className="truncate text-sm font-medium">{search.name}</div>
             <div className="truncate text-[11px] text-muted-foreground">
-              {`${describeFilters(search.filters)} · saved ${moment(search.createdAt).fromNow()}`}
+              {t('saved.rowDescription', {
+                description: describeFilters(search.filters),
+                saved: moment(search.createdAt).fromNow(),
+              })}
             </div>
           </button>
         )}
@@ -286,7 +301,7 @@ function SavedRow({
           variant="ghost"
           size="sm"
           className="size-7 shrink-0 p-0 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-          aria-label={`Rename ${search.name}`}
+          aria-label={t('saved.rename', { name: search.name })}
           onClick={() => {
             setDraft(search.name);
             setEditing(true);
@@ -297,7 +312,7 @@ function SavedRow({
       )}
       <label
         className="flex shrink-0 items-center gap-1"
-        title={alertsEnabled ? 'Toast new matches' : 'Alerts are off (switch above)'}
+        title={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}
       >
         {search.alert && alertsEnabled ? (
           <Bell className="size-3.5 text-primary" />
@@ -307,7 +322,7 @@ function SavedRow({
         <Switch
           checked={search.alert}
           onCheckedChange={onAlert}
-          aria-label={`Alerts for ${search.name}`}
+          aria-label={t('saved.alertsFor', { name: search.name })}
           className="scale-75"
         />
       </label>
@@ -315,7 +330,7 @@ function SavedRow({
         variant="ghost"
         size="sm"
         className="size-7 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-        aria-label={`Delete ${search.name}`}
+        aria-label={t('saved.delete', { name: search.name })}
         onClick={onRemove}
       >
         <Trash2 className="size-3.5" />

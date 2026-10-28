@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 /**
  * A seller's name that opens their trader panel (the chat thread with the Trader sidebar). Stops the click so a
@@ -14,10 +15,11 @@ export function SellerName({
   className?: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation('market');
   return (
     <button
       type="button"
-      title="Open trader"
+      title={t('seller.openTrader')}
       onClick={(e) => {
         e.stopPropagation();
         onOpen();

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import { useOptions } from '@/hooks/useOptions';
+import { useTranslation } from '@/i18n';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation, Participant } from '@/common/types/pd2-website/ChatTypes';
@@ -121,6 +122,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // One column (list or thread) when the panel itself is narrow, whatever the window size
   const compact = rect.width < COMPACT_BELOW_PX;
   const wide = rect.width >= WIDE_FROM_PX;
+  const { t } = useTranslation('chat');
   const { settings } = useOptions();
   const prefs = useChatPrefs();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
@@ -398,8 +400,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     markWhispersRead(peopleList.filter((p) => unreadWhispers(p) > 0).map((p) => p.key));
     if (!(await chat.markAllRead())) {
       showToast({
-        title: "Couldn't mark every chat read",
-        description: 'Check your connection and try again.',
+        title: t('widget.markAllFailed'),
+        description: t('messages.loadFailedDescription'),
         variant: 'error',
       });
     }
@@ -607,8 +609,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       clearDraft(conversationId);
     } else {
       showToast({
-        title: "Couldn't delete the conversation",
-        description: 'It is back in your list.',
+        title: t('widget.deleteFailedTitle'),
+        description: t('widget.deleteFailedDescription'),
         variant: 'error',
       });
     }
@@ -620,8 +622,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     setDeleting((current) => new Set(current).add(conversationId));
     setSelectedThreadId((current) => (current === conversationId ? null : current));
     const dismiss = undoToast({
-      title: 'Conversation deleted',
-      description: `Your chat with ${name}.`,
+      title: t('widget.conversationDeleted'),
+      description: t('widget.conversationDeletedDescription', { name }),
       duration: DELETE_UNDO_MS,
       onUndo: () => {
         if (!takePendingDelete(conversationId)) return;
@@ -662,7 +664,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       return await chat.send(created._id, text);
     } catch (error) {
       console.error('Failed to start chat:', error);
-      showToast({ title: 'Message not sent', description: "Couldn't start the conversation.", variant: 'error' });
+      showToast({ title: t('widget.notSentTitle'), description: t('widget.notSentDescription'), variant: 'error' });
       return false;
     }
   };
@@ -673,11 +675,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     try {
       await writeText(whisperCommand(account, text));
     } catch {
-      showToast({ title: 'Whisper not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
+      showToast({
+        title: t('widget.whisperNotCopied'),
+        description: t('bubble.copyFailedDescription'),
+        variant: 'error',
+      });
       return;
     }
     recordCopied(target, text);
-    showToast({ title: 'Whisper copied', description: `Paste it into the game chat to send it to *${account}.` });
+    showToast({ title: t('widget.whisperCopied'), description: t('widget.whisperCopiedDescription', { account }) });
   };
 
   // In-panel keys: Alt+↑/↓ switch to the previous/next thread of the list as filtered; Esc closes the open
@@ -714,15 +720,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         {/* Top Bar (WindowChrome is the panel drag handle) */}
         <div id="titlebar-drag-handle">
           <WindowChrome
-            title="PD2 Chat"
+            title={t('widget.title')}
             icon={<MessageSquare className="text-primary" />}
             onClose={onClose}
-            closeLabel="Close chat"
+            closeLabel={t('widget.close')}
             actions={
               !signedIn && (
                 <Badge variant="destructive"
                   className="mr-1 text-xs">
-                  Not authenticated
+                  {t('widget.notAuthenticated')}
                 </Badge>
               )
             }
@@ -846,8 +852,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     }}
                     placeholder={
                       channel === 'whisper'
-                        ? `Whisper *${whisperAccount} — copied for in-game chat`
-                        : `Message ${selectedThread.name}…  (/ for templates)`
+                        ? t('widget.whisperPlaceholder', { account: whisperAccount })
+                        : t('widget.messagePlaceholder', { name: selectedThread.name })
                     }
                     templateVars={templateVars}
                     channel={channel}
@@ -890,7 +896,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                             now={now}
                             onInsertListing={insertListing}
                             onClose={() => setTraderOverlay(false)}
-                            closeLabel="Close trader details"
+                            closeLabel={t('widget.closeTrader')}
                             className="max-w-full bg-card shadow-panel"
                           />
                         </motion.div>
@@ -902,8 +908,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 <EmptyState
                   className="m-auto max-w-sm"
                   icon={<MessagesSquare />}
-                  title="Select a conversation to view messages"
-                  description={threads.length > 0 ? 'Pick a chat on the left.' : undefined}
+                  title={t('widget.selectTitle')}
+                  description={threads.length > 0 ? t('widget.selectDescription') : undefined}
                 />
               )}
             </section>
@@ -930,7 +936,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                   now={now}
                   onInsertListing={insertListing}
                   onClose={() => setTraderShown(false)}
-                  closeLabel="Collapse trader details"
+                  closeLabel={t('widget.collapseTrader')}
                 />
               </motion.div>
             )}

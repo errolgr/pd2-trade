@@ -27,21 +27,23 @@ import SettingsInterface from './interface/layout';
 import SettingsStats from './stats/layout';
 import SettingsNetWorth from './networth/layout';
 import { SettingsNavContext, type SettingsSectionId } from './settings-ui';
+import { useTranslation } from '@/i18n';
 
 interface INavItem {
   title: SettingsSectionId;
+  titleKey: string;
   icon: LucideIcon;
   content: React.ReactNode;
 }
 const sidebarNavItems: INavItem[] = [
-  { title: 'General', icon: SlidersHorizontal, content: <SettingGenereal /> },
-  { title: 'Account', icon: UserRound, content: <SettingsAccount /> },
-  { title: 'Chat', icon: MessageSquare, content: <SettingsChat /> },
-  { title: 'Interface', icon: LayoutPanelTop, content: <SettingsInterface /> },
-  { title: 'Price Check', icon: Search, content: <SettingsStats /> },
-  { title: 'Net Worth', icon: TrendingUp, content: <SettingsNetWorth /> },
-  { title: 'Hotkeys', icon: Keyboard, content: <SettingsHotkeys /> },
-  { title: 'About', icon: Info, content: <SettingsAbout /> },
+  { title: 'General', titleKey: 'nav.general', icon: SlidersHorizontal, content: <SettingGenereal /> },
+  { title: 'Account', titleKey: 'nav.account', icon: UserRound, content: <SettingsAccount /> },
+  { title: 'Chat', titleKey: 'nav.chat', icon: MessageSquare, content: <SettingsChat /> },
+  { title: 'Interface', titleKey: 'nav.interface', icon: LayoutPanelTop, content: <SettingsInterface /> },
+  { title: 'Price Check', titleKey: 'nav.priceCheck', icon: Search, content: <SettingsStats /> },
+  { title: 'Net Worth', titleKey: 'nav.netWorth', icon: TrendingUp, content: <SettingsNetWorth /> },
+  { title: 'Hotkeys', titleKey: 'nav.hotkeys', icon: Keyboard, content: <SettingsHotkeys /> },
+  { title: 'About', titleKey: 'nav.about', icon: Info, content: <SettingsAbout /> },
 ];
 
 const NAV_KEYS: Record<string, (i: number, n: number) => number> = {
@@ -94,6 +96,7 @@ const findSection = (section: SettingsSectionId | undefined) =>
   section ? sidebarNavItems.find((i) => i.title === section) : undefined;
 
 export default function SettingsLayout() {
+  const { t } = useTranslation('settings');
   // keepMounted panel: every openPanel('settings', { section }) switches to that section
   const { close, payload, payloadVersion } = usePanel<'settings'>();
   const [selectedItem, setSelectedItem] = useState<INavItem>(() => findSection(payload?.section) ?? sidebarNavItems[0]);
@@ -132,15 +135,15 @@ export default function SettingsLayout() {
         <WindowChrome
           title={
             <span className="flex items-baseline gap-2">
-              <span className="text-[15px]">Settings</span>
+              <span className="text-[15px]">{t('layout.title')}</span>
               <span className="hidden truncate text-xs font-normal text-muted-foreground md:inline">
-                Manage your settings and set preferences
+                {t('layout.subtitle')}
               </span>
             </span>
           }
           gripId="titlebar-drag-handle"
           onClose={close}
-          closeLabel="Close settings"
+          closeLabel={t('layout.closeLabel')}
           className="h-12 px-4"
         />
 
@@ -150,7 +153,7 @@ export default function SettingsLayout() {
               <nav
                 role="tablist"
                 aria-orientation="vertical"
-                aria-label="Settings sections"
+                aria-label={t('layout.navLabel')}
                 className="flex flex-col gap-0.5"
               >
                 {sidebarNavItems.map((item, index) => {
@@ -194,7 +197,7 @@ export default function SettingsLayout() {
                           active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
                         )}
                       />
-                      <span className="relative truncate">{item.title}</span>
+                      <span className="relative truncate">{t(item.titleKey)}</span>
                     </button>
                   );
                 })}
@@ -214,7 +217,7 @@ export default function SettingsLayout() {
                     saved && 'motion-safe:scale-125',
                   )}
                 />
-                <span>{saved ? 'Saved' : 'Changes save automatically'}</span>
+                <span>{saved ? t('layout.saved') : t('layout.autoSave')}</span>
               </div>
             </aside>
 

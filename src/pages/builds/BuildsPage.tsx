@@ -15,6 +15,7 @@ import { MetaTab, toggleListFilter } from './components/MetaTab';
 import { CharactersTab, type CharactersView } from './components/CharactersTab';
 import { CharacterView } from './components/CharacterView';
 import { Segmented } from './components/parts';
+import { useTranslation } from '@/i18n';
 
 /** Typing into a field: the panel's shortcuts stand aside. */
 const isTextEntry = (target: EventTarget | null) =>
@@ -25,6 +26,7 @@ const BuildsPage: React.FC = () => {
   const { payload, payloadVersion, close, visible } = usePanel<'builds'>();
   const { openPanel } = useOverlay();
   const { settings } = useOptions();
+  const { t } = useTranslation('builds');
 
   const [tab, setTab] = useState<BuildsTab>('meta');
   const [charactersView, setCharactersView] = useState<CharactersView>('mine');
@@ -133,10 +135,10 @@ const BuildsPage: React.FC = () => {
             className="relative z-10 h-full w-full outline-none"
           >
             <WindowChrome
-              title="Builds"
+              title={t('page.title')}
               icon={<Trophy className="text-primary" />}
               onClose={close}
-              closeLabel="Close builds"
+              closeLabel={t('page.close')}
               center={
                 <form
                   role="search"
@@ -151,8 +153,8 @@ const BuildsPage: React.FC = () => {
                     ref={lookupRef}
                     value={lookup}
                     onChange={(e) => setLookup(e.target.value)}
-                    placeholder="Character name…"
-                    aria-label="Look up a character"
+                    placeholder={t('page.lookupPlaceholder')}
+                    aria-label={t('page.lookupLabel')}
                     spellCheck={false}
                     autoComplete="off"
                     className="h-7 w-60 rounded-md border border-input bg-background/60 pr-2 pl-7 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -162,7 +164,7 @@ const BuildsPage: React.FC = () => {
               actions={
                 <>
                   <Segmented
-                    label="Mode"
+                    label={t('page.mode')}
                     layoutId="builds-mode"
                     value={mode}
                     onChange={changeMode}
@@ -193,7 +195,9 @@ const BuildsPage: React.FC = () => {
                               className="absolute inset-0 rounded-md bg-background shadow-sm"
                             />
                           )}
-                          <span className="relative">{value === 'meta' ? 'Meta' : 'Characters'}</span>
+                          <span className="relative">
+                            {value === 'meta' ? t('page.tabs.meta') : t('page.tabs.characters')}
+                          </span>
                         </TabsTrigger>
                       ))}
                     </TabsList>

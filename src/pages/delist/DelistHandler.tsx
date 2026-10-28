@@ -8,6 +8,7 @@ import {
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { itemDisplayName } from '@/pages/market/lib/listing';
 import { confirmToast, showToast, useOverlay } from '@/overlay';
+import { t } from '@/i18n';
 import { matchTradeListings, whisperedItemName, type WhisperedItem } from './trade-match';
 
 const AUTH_WAIT_TIMEOUT = 5000;
@@ -82,8 +83,8 @@ const DelistHandler: React.FC = () => {
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
       showToast({
-        title: 'Delist',
-        description: 'You must be logged in to delist items.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.mustLogIn'),
         variant: 'error',
       });
       return;
@@ -96,8 +97,8 @@ const DelistHandler: React.FC = () => {
 
       if (matchingStashItems.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'Item not found in stash.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.notInStash'),
           variant: 'error',
         });
         return;
@@ -106,8 +107,8 @@ const DelistHandler: React.FC = () => {
       const query = buildGetMarketListingByStashItemQuery(matchingStashItems, authDataRef.current.user._id);
       if (!query) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings match this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noMatchingListings'),
           variant: 'info',
         });
         return;
@@ -118,15 +119,15 @@ const DelistHandler: React.FC = () => {
 
       if (listings.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings found for this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noListingsFound'),
           variant: 'info',
         });
       } else if (listings.length === 1) {
         await deleteMarketListing(listings[0]._id);
         showToast({
-          title: 'Delist',
-          description: `Removed ${listings[0].item.name} listing.`,
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.removed', { name: listings[0].item.name }),
         });
       } else {
         // Multiple matches: let the user pick (replaces the list if the picker is already open)
@@ -134,13 +135,13 @@ const DelistHandler: React.FC = () => {
       }
     } catch (err) {
       if (err instanceof NoAccountSelectedError) {
-        showToast({ title: 'Delist', description: err.message, variant: 'error' });
+        showToast({ title: t('quickList:delist.title'), description: err.message, variant: 'error' });
         return;
       }
       console.error('[DelistHandler] Error:', err);
       showToast({
-        title: 'Delist',
-        description: 'Failed to delist item.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.failed'),
         variant: 'error',
       });
     } finally {
@@ -156,8 +157,8 @@ const DelistHandler: React.FC = () => {
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
       showToast({
-        title: 'Delist',
-        description: 'You must be logged in to delist items.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.mustLogIn'),
         variant: 'error',
       });
       return;
@@ -180,28 +181,35 @@ const DelistHandler: React.FC = () => {
       if (listings.length === 0) {
         const name = whisperedItemName(trade);
         showToast({
-          title: 'Delist',
-          description: name ? `No active listing of yours matches ${name}.` : 'This trade names no item to delist.',
+          title: t('quickList:delist.title'),
+          description: name ? t('quickList:delist.tradeNoMatch', { name }) : t('quickList:delist.tradeNoItem'),
           variant: 'info',
         });
       } else if (listings.length === 1) {
         const [listing] = listings;
         const name = itemDisplayName(listing.item);
-        const price = listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price?.trim();
+        const price =
+          listing.hr_price > 0 ? t('quickList:delist.hrPrice', { price: listing.hr_price }) : listing.price?.trim();
         // Matched by name only: confirm, as the chat's website-offer "Delete listing" does
         confirmToast({
-          title: 'Delete Listing?',
-          description: `Are you sure you want to delete the listing for ${name}${price ? ` (${price})` : ''}?`,
-          confirmLabel: 'Delete',
+          title: t('chat:deals.deleteListingTitle'),
+          description: price
+            ? t('quickList:delist.confirmDeleteWithPrice', { name, price })
+            : t('chat:deals.deleteListingConfirm', { item: name }),
+          confirmLabel: t('common:actions.delete'),
           variant: 'warning',
           duration: 10000,
           onConfirm: async () => {
             try {
               await deleteMarketListing(listing._id);
-              showToast({ title: 'Delist', description: `Removed ${name} listing.` });
+              showToast({ title: t('quickList:delist.title'), description: t('quickList:delist.removed', { name }) });
             } catch (err) {
               console.error('[DelistHandler] Delete failed:', err);
-              showToast({ title: 'Delist', description: 'Failed to remove listing.', variant: 'error' });
+              showToast({
+                title: t('quickList:delist.title'),
+                description: t('quickList:delist.removeFailed'),
+                variant: 'error',
+              });
             }
           },
         });
@@ -212,8 +220,8 @@ const DelistHandler: React.FC = () => {
     } catch (err) {
       console.error('[DelistHandler] Error:', err);
       showToast({
-        title: 'Delist',
-        description: 'Failed to look up your listings.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.lookupFailed'),
         variant: 'error',
       });
     } finally {

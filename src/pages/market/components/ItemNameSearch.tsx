@@ -14,6 +14,7 @@ import {
 import { itemNameOptions, type ItemNameOption } from '../lib/catalog';
 import { Autocomplete, ClearButton } from './controls';
 import { formatHrPrice } from './ResultsList';
+import { useTranslation } from '@/i18n';
 
 const NAME_SUGGESTIONS = 30;
 /** Prices are fetched once typing pauses this long (names show at once). */
@@ -23,12 +24,14 @@ const optionKey = (o: ItemNameOption) => `${o.quality}:${o.name}`;
 
 /** Second line, right side: change this week and listings, the fallback window, or why there is no price. */
 function PriceDetail({ price, priced }: { price: ListingMarketPrice | null | undefined; priced: boolean }) {
+  const { t } = useTranslation('market');
   if (!priced) return null;
   if (price === undefined) return <span className="inline-block h-2 w-14 animate-pulse rounded-full bg-muted" />;
-  if (price === null) return <span>no sales</span>;
-  const listings = `${price.samples} listing${price.samples === 1 ? '' : 's'}`;
+  if (price === null) return <span>{t('nameSearch.noSales')}</span>;
+  const listings = t('nameSearch.listings', { count: price.samples });
   // Too few recent sales: the server priced it over a longer window (tagged like the price check does)
-  if (price.fellBack) return <span className="text-warning">{`${price.window} avg · ${listings}`}</span>;
+  if (price.fellBack)
+    return <span className="text-warning">{t('nameSearch.fallbackWindow', { window: price.window, listings })}</span>;
   const change = price.changePercent;
   if (change === undefined || Math.round(change) === 0) return <span>{`±0% · ${listings}`}</span>;
   return (
@@ -56,6 +59,7 @@ export function ItemNameSearch({
   hardcore: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
+  const { t } = useTranslation('market');
   const [text, setText] = useState(value ?? '');
   // A new value from outside (preset, payload, Clear) replaces the typed text
   const [shownValue, setShownValue] = useState(value);
@@ -91,8 +95,8 @@ export function ItemNameSearch({
         className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground"
       />
       <Autocomplete
-        ariaLabel="Item name"
-        placeholder="Search items…  ( / )"
+        ariaLabel={t('nameSearch.label')}
+        placeholder={t('nameSearch.placeholder')}
         inputRef={inputRef}
         value={text}
         onQuery={(q) => {
@@ -137,7 +141,7 @@ export function ItemNameSearch({
           </div>
         }
       />
-      {value && <ClearButton label="Clear item name"
+      {value && <ClearButton label={t('nameSearch.clear')}
         onClick={() => onChange(undefined)} />}
     </div>
   );

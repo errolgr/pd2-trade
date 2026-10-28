@@ -1,0 +1,105 @@
+{
+  "panel": {
+    "crashed": "Dieses Panel ist abgestürzt."
+  },
+  "toast": {
+    "details": "Details",
+    "undo": "Rückgängig"
+  },
+  "ui": {
+    "more": "Mehr"
+  },
+  "errorHandler": {
+    "title": "Fehler"
+  },
+  "controller": {
+    "runningInBackground": "läuft jetzt im Hintergrund...",
+    "itemNotSupported": "Item wird nicht unterstützt oder ist ungültig.",
+    "nothingCopied": "Es wurde kein Item kopiert. Fahre im Spiel über ein Item und versuche es erneut, oder drücke zuerst Ctrl+C darauf.",
+    "cannotListItem": "Item kann nicht inseriert werden",
+    "notInSharedStash": "Dieses Item liegt nicht in deiner geteilten Truhe und kann nicht inseriert werden.",
+    "delist": "Inserat entfernen",
+    "noItemUnderCursor": "Kein gültiges Item unter dem Mauszeiger gefunden."
+  },
+  "chatButton": {
+    "dragToMove": "Zum Verschieben ziehen",
+    "openChat": "PD2-Chat öffnen",
+    "chat": "Chat",
+    "offers": "Angebote",
+    "more": "Mehr",
+    "unreadMessages_one": "{{count}} ungelesene Nachricht",
+    "unreadMessages_other": "{{count}} ungelesene Nachrichten",
+    "tradeOffers_one": "{{count}} Handelsangebot",
+    "tradeOffers_other": "{{count}} Handelsangebote",
+    "disableOverlay": "Overlay deaktivieren",
+    "menu": {
+      "chat": "Chat",
+      "market": "Marktbrowser",
+      "builds": "Builds",
+      "netWorth": "Vermögen",
+      "stashValue": "Truhenwert",
+      "offers": "Angebote",
+      "manageListings": "Inserate verwalten",
+      "settings": "Einstellungen"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Name",
+    "namePlaceholder": "z. B. Noch verfügbar?",
+    "message": "Nachricht",
+    "messagePlaceholder": "z. B. Hi, ist dein {itemName} noch verfügbar?",
+    "asksWhenUsed": "Fragt bei Verwendung:",
+    "asksNone": "Jedes andere {name} wird abgefragt, wenn die Vorlage verwendet wird."
+  },
+  "signIn": {
+    "eyebrow": "Anmelden bei",
+    "lead": "Verknüpfe dein Project Diablo 2-Konto, um Preischecks zu machen, Items zu inserieren und im Spiel zu chatten.",
+    "howItWorks": "So funktioniert die Anmeldung",
+    "trust": {
+      "officialLogin": "Offizieller PD2-Login",
+      "noPassword": "Kein Passwort geteilt",
+      "readOnlyStash": "Truhe nur lesend"
+    },
+    "openingBrowser": "Browser wird geöffnet…",
+    "waitingForSignIn": "Warte auf Anmeldung…",
+    "signInWithPd2": "Mit PD2 anmelden",
+    "finishInBrowser": "Schließe die Anmeldung im Browser ab und kehre dann hierher zurück.",
+    "openFailed": "Dein Browser konnte nicht geöffnet werden: Kopiere den Link hinein.",
+    "opensSite": "Öffnet projectdiablo2.com in deinem Browser.",
+    "later": "Später",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert",
+    "accounts": {
+      "eyebrow": "Fast geschafft",
+      "lead": "Mit diesem Login sind mehrere Spielkonten verknüpft. Wähle das Konto zum Handeln.",
+      "label": "Spielkonten"
+    }
+  },
+  "changeLog": {
+    "title": "Neuigkeiten",
+    "close": "Changelog schließen",
+    "current": "Aktuell",
+    "changes_one": "{{count}} Änderung",
+    "changes_other": "{{count}} Änderungen"
+  },
+  "corruptedZones": {
+    "liveTitle": "Corrupted in Hell-Spielen, die bis {{until}} erstellt werden.",
+    "liveTitleNext": "Corrupted in Hell-Spielen, die bis {{until}} erstellt werden. Nächste: {{zone}}.",
+    "liveTitleNextAt": "Corrupted in Hell-Spielen, die bis {{until}} erstellt werden. Nächste: {{zone}} um {{time}}.",
+    "followedTitle": "Nächste verfolgte Zone: corrupted in Hell-Spielen, die von {{from}} bis {{until}} erstellt werden.",
+    "pillTitle": "{{title}} Klicken für den Zeitplan, ziehen zum Verschieben.",
+    "pillTitleLocked": "{{title}} Klicken für den Zeitplan.",
+    "timeUntilNext": "Zeit bis zur nächsten Zone",
+    "timeUntilThis": "Zeit bis zu dieser Zone",
+    "inTime": "in {{time}}",
+    "upcoming": "Kommende Corrupted Zones",
+    "slotWhen": "{{time}} · in {{wait}}",
+    "lock": {
+      "label": "Position sperren",
+      "lockedTitle": "Gesperrt: Ziehen verschiebt den Timer nicht. Klicken zum Entsperren.",
+      "unlockedTitle": "Verhindert, dass sich der Timer beim Ziehen bewegt."
+    },
+    "toastTitle": "Corrupted Zone",
+    "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})"
+  }
+}

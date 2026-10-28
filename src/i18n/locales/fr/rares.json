@@ -1,0 +1,105 @@
+{
+  "notes": {
+    "craftedUnreliable": "les objets craftés de cet emplacement ne peuvent pas encore être évalués de façon fiable (trop peu de données)"
+  },
+  "slots": {
+    "ring": { "label": "Anneau", "plural": "Anneaux", "inSentence": "anneaux" },
+    "amul": { "label": "Amulette", "plural": "Amulettes", "inSentence": "amulettes" },
+    "circ": { "label": "Diadème", "plural": "Diadèmes", "inSentence": "diadèmes" },
+    "jewl": { "label": "Joyau", "plural": "Joyaux", "inSentence": "joyaux" },
+    "glov": { "label": "Gants", "plural": "Gants", "inSentence": "gants" },
+    "boot": { "label": "Bottes", "plural": "Bottes", "inSentence": "bottes" },
+    "belt": { "label": "Ceinture", "plural": "Ceintures", "inSentence": "ceintures" },
+    "tors": { "label": "Armure", "plural": "Armures", "inSentence": "armures" },
+    "helm": { "label": "Casque", "plural": "Casques", "inSentence": "casques" },
+    "shield": { "label": "Bouclier", "plural": "Boucliers", "inSentence": "boucliers" },
+    "quiver": { "label": "Carquois", "plural": "Carquois", "inSentence": "carquois" },
+    "weapon": { "label": "Arme", "plural": "Armes", "inSentence": "armes" },
+    "unknown": { "plural": "Objets", "inSentence": "objets" }
+  },
+  "verdicts": {
+    "keep": "Garder",
+    "check": "Vérifier",
+    "vendor": "Vendre au PNJ"
+  },
+  "priority": {
+    "high": "A une stat clé ★★ ou mieux",
+    "medium": "A une stat clé ★",
+    "low": "Aucune stat clé"
+  },
+  "crafted": {
+    "lowConfidence": "Fiabilité faible",
+    "lowConfidenceTitle": "Fiabilité faible : le modèle crafté de cet emplacement repose sur peu d'annonces craftées, considérez le verdict et la fourchette comme une indication approximative."
+  },
+  "rank": {
+    "top": "top {{percent}} %",
+    "bottom": "derniers {{percent}} %"
+  },
+  "ordinal": {
+    "st": "{{n}}e",
+    "nd": "{{n}}e",
+    "rd": "{{n}}e",
+    "th": "{{n}}e"
+  },
+  "keyStatTitle": "Stat clé : prix de fin de saison {{multiplier}} pour ce palier",
+  "marketSource": {
+    "atThisRank": "{{slots}} à ce rang · {{where}}",
+    "lastSeason": "saison précédente",
+    "hardcoreListings": "annonces hardcore"
+  },
+  "rankBar": {
+    "ariaLabel": "Prédit au {{percentile}} centile des prix des {{slots}}, à {{error}} points près",
+    "vendor": "PNJ",
+    "keep": "garder"
+  },
+  "rankBlocks": {
+    "title": "Rang parmi les {{slots}} <note>(cette saison)</note>",
+    "ariaLabel": "Rang parmi les {{slots}} : {{block}}",
+    "bottom25": "derniers 25 %",
+    "bottom50": "derniers 50 %",
+    "top50": "top 50 %",
+    "top25": "top 25 %",
+    "top15": "top 15 %",
+    "top5": "top 5 %"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} sur {{slots}} uniquement via corruption",
+    "nearMiss": "presque : {{from}}+ vaut {{multiplier}} sur {{slots}}",
+    "nearMissCorruption": "presque : {{from}}+ vaut {{multiplier}} sur {{slots}} (uniquement via corruption)",
+    "valuableFrom": "intéressant à partir de {{from}} sur {{slots}}",
+    "valuableFromCorruption": "intéressant à partir de {{from}} sur {{slots}} (uniquement via corruption)"
+  },
+  "stats": {
+    "title": "Stats de cet objet",
+    "keyStats_one": "{{count}} stat clé",
+    "keyStats_many": "{{count}} de stats clés",
+    "keyStats_other": "{{count}} stats clés",
+    "noKeyStats": "aucune stat clé",
+    "roll": "jet {{percent}} %"
+  },
+  "hardcore": {
+    "model": "Hardcore : modèle de prix et étoiles issus des données softcore",
+    "rankedHardcore": "classé par rapport aux annonces hardcore",
+    "rankedBlended": "classé par rapport aux annonces hardcore mêlées aux softcore ({{percent}} % hardcore)",
+    "rankedSoftcore": "classé par rapport aux annonces softcore",
+    "pricesHardcore": "prix issus des annonces hardcore",
+    "pricesSoftcore": "prix issus des annonces softcore"
+  },
+  "stashPosition": "col. {{column}}, ligne {{row}}",
+  "detail": {
+    "verdict": "Verdict",
+    "howVerdictsWork": "Fonctionnement des verdicts",
+    "usuallyListed": "Prix habituel",
+    "samples": "Échantillons",
+    "comparedWith": "Comparé à",
+    "stash": "Coffre"
+  },
+  "history": {
+    "title": "Historique de l'objet",
+    "aside_one": "{{times}}× · {{count}} vendeur · depuis le {{date}}",
+    "aside_many": "{{times}}× · {{count}} de vendeurs · depuis le {{date}}",
+    "aside_other": "{{times}}× · {{count}} vendeurs · depuis le {{date}}",
+    "newOwner": "nouveau propriétaire",
+    "noPrice": "sans prix"
+  }
+}

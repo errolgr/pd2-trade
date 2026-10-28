@@ -5,6 +5,7 @@ import { Search, Loader2, AlertTriangle, CircleAlert } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fadeIn, fadeInUp } from '@/lib/motion';
+import { Trans, useTranslation } from '@/i18n';
 
 interface LoadingAndErrorStatesProps {
   isLoading: boolean;
@@ -21,6 +22,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   onRetry,
   isAccountMismatch = false,
 }) => {
+  const { t } = useTranslation(['quickList', 'common']);
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -35,7 +37,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
           <div className="flex items-center gap-2 text-sm text-muted-foreground"
             role="status">
             <Loader2 className="size-4 animate-spin text-primary" />
-            <span>Searching for items...</span>
+            <span>{t('states.searching')}</span>
           </div>
           {[0, 1].map((i) => (
             <div key={i}
@@ -66,16 +68,18 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
             <Alert variant="destructive"
               className="mb-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Wrong account detected</AlertTitle>
+              <AlertTitle>{t('states.wrongAccountTitle')}</AlertTitle>
               <AlertDescription className="text-xs mt-1 space-y-2">
+                <p>{t('states.wrongAccountBody')}</p>
                 <p>
-                  You&apos;re likely signed in with your in-game account instead of your web account. You&apos;ll need
-                  to log out and sign in again with the correct account.
-                </p>
-                <p>
-                  <strong>Important:</strong> Before logging in again, clear your browser cookies for{' '}
-                  <span className="rounded bg-destructive/10 px-1 font-mono">api.projectdiablo2.com</span> — otherwise
-                  you&apos;ll be logged into the same session automatically.
+                  <Trans
+                    t={t}
+                    i18nKey="states.wrongAccountCookies"
+                    components={{
+                      strong: <strong />,
+                      host: <span className="rounded bg-destructive/10 px-1 font-mono" />,
+                    }}
+                  />
                 </p>
               </AlertDescription>
             </Alert>
@@ -85,14 +89,14 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
               <span className="flex size-10 items-center justify-center rounded-full bg-destructive/12 text-destructive">
                 <CircleAlert className="size-5" />
               </span>
-              <div className="text-sm font-semibold">Something went wrong</div>
+              <div className="text-sm font-semibold">{t('common:status.error')}</div>
               <div className="max-w-sm text-xs text-destructive">{error}</div>
             </div>
           )}
           <Button onClick={onRetry}
             className="w-full">
             <Search className="h-4 w-4" />
-            Retry Search
+            {t('states.retrySearch')}
           </Button>
         </motion.div>
       );

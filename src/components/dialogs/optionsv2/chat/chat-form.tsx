@@ -17,14 +17,15 @@ import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { ChatTemplatesEditor } from './chat-templates-editor';
+import { Trans, useTranslation } from '@/i18n';
 
 const TOAST_TYPES = [
-  { id: 'whispers', label: 'Whispers' },
-  { id: 'trade', label: 'Trade' },
-  { id: 'joins', label: 'Joins' },
-  { id: 'offers', label: 'Offers' },
-  { id: 'networth', label: 'Net Worth' },
-];
+  { id: 'whispers', labelKey: 'chat.toastTypes.whispers' },
+  { id: 'trade', labelKey: 'chat.toastTypes.trade' },
+  { id: 'joins', labelKey: 'chat.toastTypes.joins' },
+  { id: 'offers', labelKey: 'chat.toastTypes.offers' },
+  { id: 'networth', labelKey: 'chat.toastTypes.networth' },
+] as const;
 
 const COMMON_TOKENS = ['{accountName}', '{characterName}', '{itemName}', '{price}'];
 
@@ -48,6 +49,7 @@ const chatFormSchema = z.object({
 type ChatFormValues = z.infer<typeof chatFormSchema>;
 
 export function ChatForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
   const [newIgnorePlayer, setNewIgnorePlayer] = React.useState('');
   const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -144,27 +146,27 @@ export function ChatForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title="Notifications">
+        <SettingsGroup title={t('chat.notifications.group')}>
           <FormField
             control={form.control}
             name="whisperNotificationTiming"
             render={({ field }) => (
               <SettingsRow
-                label="Notify when:"
-                description="Control when whisper notifications are played based on Diablo focus state."
+                label={t('chat.timing.label')}
+                description={t('chat.timing.description')}
                 control={
                   <Select onValueChange={field.onChange}
                     value={field.value || 'both'}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Select when to notify" />
+                        <SelectValue placeholder={t('chat.timing.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="in-game">Only when in game</SelectItem>
-                      <SelectItem value="out-of-game">Only when out of game</SelectItem>
-                      <SelectItem value="both">Always</SelectItem>
-                      <SelectItem value="never">Never</SelectItem>
+                      <SelectItem value="in-game">{t('chat.timing.options.inGame')}</SelectItem>
+                      <SelectItem value="out-of-game">{t('chat.timing.options.outOfGame')}</SelectItem>
+                      <SelectItem value="both">{t('chat.timing.options.always')}</SelectItem>
+                      <SelectItem value="never">{t('chat.timing.options.never')}</SelectItem>
                     </SelectContent>
                   </Select>
                 }
@@ -180,7 +182,7 @@ export function ChatForm() {
                       className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning"
                     >
                       <BellOff className="size-3.5 shrink-0" />
-                      Notifications are off. Pick another option to edit the settings below.
+                      {t('chat.timing.off')}
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -194,8 +196,8 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
-                label="General Notifications"
-                description="Play a notification sound when you receive non-trade whispers from players or new messages in the website chat."
+                label={t('chat.general.label')}
+                description={t('chat.general.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
@@ -212,8 +214,8 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
-                label="Toast Popups"
-                description="Show toast popup notifications when you are tabbed out of Diablo."
+                label={t('chat.toasts.label')}
+                description={t('chat.toasts.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
@@ -238,13 +240,13 @@ export function ChatForm() {
                           const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
                           const toggleType = (typeId: string) => {
                             const updated = types.includes(typeId)
-                              ? types.filter((t: string) => t !== typeId)
+                              ? types.filter((type: string) => type !== typeId)
                               : [...types, typeId];
                             typesField.onChange(updated);
                           };
                           return (
                             <div role="group"
-                              aria-label="Toast popup types"
+                              aria-label={t('chat.toasts.typesLabel')}
                               className="flex flex-wrap gap-2">
                               {TOAST_TYPES.map((type) => {
                                 const isActive = types.includes(type.id);
@@ -264,7 +266,7 @@ export function ChatForm() {
                                     )}
                                   >
                                     {isActive ? <Check className="size-3" /> : <Plus className="size-3" />}
-                                    {type.label}
+                                    {t(type.labelKey)}
                                   </button>
                                 );
                               })}
@@ -284,8 +286,8 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
-                label="Trade Notifications"
-                description="Play a notification sound when you receive trade whispers or trade offers from the website."
+                label={t('chat.trade.label')}
+                description={t('chat.trade.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
@@ -302,8 +304,8 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
-                label="Announcement Notifications"
-                description="Enable notifications for messages from *announcements. By default, announcements are ignored."
+                label={t('chat.announcements.label')}
+                description={t('chat.announcements.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
@@ -320,8 +322,8 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
-                label="Join Notifications"
-                description="Show a notification popup when a player joins the game (only when Diablo is not focused). By default, join notifications are disabled."
+                label={t('chat.joins.label')}
+                description={t('chat.joins.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
@@ -335,11 +337,11 @@ export function ChatForm() {
         </SettingsGroup>
 
         <SettingsGroup
-          title="Ignore list"
+          title={t('chat.ignore.group')}
           aside={
             ignoreList.length > 0 && (
               <span className="text-xs tabular-nums text-muted-foreground">
-                {ignoreList.length} player{ignoreList.length === 1 ? '' : 's'}
+                {t('chat.ignore.count', { count: ignoreList.length })}
               </span>
             )
           }
@@ -351,13 +353,13 @@ export function ChatForm() {
               <SettingsRow
                 layout="stacked"
                 disabled={isDisabled}
-                label="Ignore List"
-                description="Players in this list will not trigger whisper notifications."
+                label={t('chat.ignore.label')}
+                description={t('chat.ignore.description')}
                 control={
                   <>
                     <FormControl>
                       <Input
-                        placeholder="Enter player name to ignore"
+                        placeholder={t('chat.ignore.placeholder')}
                         value={newIgnorePlayer}
                         onChange={(e) => setNewIgnorePlayer(e.target.value)}
                         onKeyDown={(e) => {
@@ -377,7 +379,7 @@ export function ChatForm() {
                       disabled={!newIgnorePlayer.trim() || isDisabled}
                     >
                       <UserX />
-                      Add
+                      {t('common:actions.add')}
                     </Button>
                   </>
                 }
@@ -399,7 +401,7 @@ export function ChatForm() {
                             {playerName}
                             <button
                               type="button"
-                              aria-label={`Remove ${playerName}`}
+                              aria-label={t('chat.ignore.removeNamed', { name: playerName })}
                               onClick={() => removeFromIgnoreList(playerName)}
                               className="ml-0.5 rounded-full p-0.5 text-muted-foreground outline-none transition-colors hover:bg-destructive/20 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none"
                               disabled={isDisabled}
@@ -413,7 +415,7 @@ export function ChatForm() {
                   </div>
                 ) : (
                   <p className="rounded-md border border-dashed border-border/70 px-3 py-2.5 text-center text-xs text-muted-foreground">
-                    No ignored players yet.
+                    {t('chat.ignore.empty')}
                   </p>
                 )}
                 <FormMessage />
@@ -422,7 +424,7 @@ export function ChatForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Sound">
+        <SettingsGroup title={t('chat.sound.group')}>
           <FormField
             control={form.control}
             name="whisperNotificationVolume"
@@ -433,11 +435,14 @@ export function ChatForm() {
                 <SettingsRow
                   disabled={isDisabled}
                   label={
-                    <>
-                      Notification Volume: <span className="tabular-nums">{volume}%</span>
-                    </>
+                    <Trans
+                      t={t}
+                      i18nKey="chat.sound.notificationVolume.label"
+                      values={{ value: volume }}
+                      components={{ num: <span className="tabular-nums" /> }}
+                    />
                   }
-                  description="Adjust the volume for whisper notification sounds (0-100%)."
+                  description={t('chat.sound.notificationVolume.description')}
                   control={
                     <div className="flex w-[240px] items-center gap-3">
                       <VolumeIcon aria-hidden
@@ -466,8 +471,8 @@ export function ChatForm() {
             name="marketAlertSoundEnabled"
             render={({ field }) => (
               <SettingsRow
-                label="Market Alert Sound"
-                description="Play a sound with the popup for a new listing matching a market search you watch."
+                label={t('chat.sound.marketSound.label')}
+                description={t('chat.sound.marketSound.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? true}
@@ -488,18 +493,21 @@ export function ChatForm() {
                 <SettingsRow
                   disabled={soundOff}
                   label={
-                    <>
-                      Market Alert Volume: <span className="tabular-nums">{volume}%</span>
-                    </>
+                    <Trans
+                      t={t}
+                      i18nKey="chat.sound.marketVolume.label"
+                      values={{ value: volume }}
+                      components={{ num: <span className="tabular-nums" /> }}
+                    />
                   }
-                  description="Volume of the market alert sound (0-100%)."
+                  description={t('chat.sound.marketVolume.description')}
                   control={
                     <div className="flex w-[240px] items-center gap-3">
                       <VolumeIcon aria-hidden
                         className="size-4 shrink-0 text-muted-foreground" />
                       <FormControl>
                         <Slider
-                          aria-label="Market alert volume"
+                          aria-label={t('chat.sound.marketVolume.ariaLabel')}
                           min={0}
                           max={100}
                           step={1}
@@ -519,7 +527,7 @@ export function ChatForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Message templates">
+        <SettingsGroup title={t('chat.templates.group')}>
           <ChatTemplatesEditor />
           <FormField
             control={form.control}
@@ -527,10 +535,10 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
-                label="Accept Offer Message Template"
+                label={t('chat.templates.accept.label')}
                 description={
                   <PlaceholderHint
-                    action="accepting an offer"
+                    intro={t('chat.templates.accept.intro')}
                     tokens={['{gameInfo}', ...COMMON_TOKENS]}
                     text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
@@ -556,10 +564,10 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
-                label="Reject Offer Message Template"
+                label={t('chat.templates.reject.label')}
                 description={
                   <PlaceholderHint
-                    action="rejecting an offer"
+                    intro={t('chat.templates.reject.intro')}
                     tokens={COMMON_TOKENS}
                     text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
@@ -583,10 +591,10 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
-                label="Sold Item Message Template"
+                label={t('chat.templates.sold.label')}
                 description={
                   <PlaceholderHint
-                    action="marking an item as sold"
+                    intro={t('chat.templates.sold.intro')}
                     tokens={COMMON_TOKENS}
                     text={field.value ?? ''}
                     onInsert={(token) => field.onChange(`${field.value ?? ''}${token}`)}
@@ -615,26 +623,27 @@ export function ChatForm() {
  * custom placeholders the template asks for when used from the chat's "/" menu.
  */
 function PlaceholderHint({
-  action,
+  intro,
   tokens,
   text,
   onInsert,
 }: {
-  action: string;
+  intro: string;
   tokens: string[];
   text: string;
   onInsert: (token: string) => void;
 }) {
+  const { t } = useTranslation('settings');
   const asks = templatePlaceholders(text);
   return (
     <span className="flex flex-col gap-1.5">
-      <span>Customize the message copied when {action}. Available placeholders:</span>
+      <span>{intro}</span>
       <span className="flex flex-wrap gap-1.5">
         {tokens.map((token) => (
           <button
             key={token}
             type="button"
-            title={`Insert ${token}`}
+            title={t('chat.templates.insertToken', { token })}
             onClick={() => onInsert(token)}
             className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
           >
@@ -642,7 +651,9 @@ function PlaceholderHint({
           </button>
         ))}
       </span>
-      {asks.length > 0 && <span>Asks when used in chat: {asks.map((name) => `{${name}}`).join(' ')}</span>}
+      {asks.length > 0 && (
+        <span>{t('chat.templates.asks', { placeholders: asks.map((name) => `{${name}}`).join(' ') })}</span>
+      )}
     </span>
   );
 }

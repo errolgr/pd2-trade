@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
 import { showToast } from '@/overlay';
+import { t } from '@/i18n';
 
 export function GlobalErrorHandler() {
   useEffect(
@@ -10,7 +11,7 @@ export function GlobalErrorHandler() {
       holdListener(
         listen<string>('error', (event) => {
           showToast({
-            title: 'Error',
+            title: t('app:errorHandler.title'),
             description: event.payload,
             variant: 'error',
           });

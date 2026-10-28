@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
+import { t } from '@/i18n';
 
 /** Rows per page — the list loads the next page when scrolled to the end. */
 export const MARKET_PAGE_SIZE = 25;
@@ -84,11 +85,11 @@ const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortEr
 /** What the results pane says when a search fails; retry is the pane's refresh. */
 export function searchErrorMessage(e: unknown): string {
   if (e instanceof MarketBackendError) {
-    if (e.kind === 'rate-limited') return 'Too many market searches. Try again in a moment.';
-    if (e.kind === 'invalid') return `The market service rejected these filters: ${e.message}`;
-    return 'Market service unavailable. Retry in a moment.';
+    if (e.kind === 'rate-limited') return t('market:search.rateLimited');
+    if (e.kind === 'invalid') return t('market:search.invalid', { message: e.message });
+    return t('market:search.unavailable');
   }
-  return e instanceof Error ? e.message.split('\n')[0] : 'Search failed';
+  return e instanceof Error ? e.message.split('\n')[0] : t('market:results.searchFailed');
 }
 
 /**
@@ -100,11 +101,10 @@ export function searchCountText({
   totalExact,
   filters,
 }: Pick<MarketSearchState, 'total' | 'totalExact' | 'filters'>): string {
-  const n = total.toLocaleString();
-  if (totalExact) return `${n} listing${total === 1 ? '' : 's'}`;
+  if (totalExact) return t('market:search.count', { count: total });
   const sellerOnline = !!filters && (filters.userOnlineSite !== 'all' || filters.userOnlineGame !== 'all');
-  if (sellerOnline) return `~${n} listing${total === 1 ? '' : 's'}`;
-  return `${n}+ listings`;
+  if (sellerOnline) return t('market:search.countEstimate', { count: total });
+  return t('market:search.countCapped', { count: total });
 }
 
 /** Wait before retrying a page when a 429 named no Retry-After. */

@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
@@ -58,12 +59,12 @@ const NetWorthContext = createContext<NetWorthContextValue | undefined>(undefine
 
 function describeError(error: unknown): string {
   if (error instanceof AccountMismatchError) {
-    return error.message || 'The selected account is not linked to your PD2 login. Check your account settings.';
+    return error.message || t('system:netWorth.accountMismatch');
   }
-  if (error instanceof AuthenticationError) return 'Your PD2 session expired. Sign in again.';
+  if (error instanceof AuthenticationError) return t('system:netWorth.sessionExpired');
   if (error instanceof NetWorthApiError) {
-    if (error.status === 401) return 'Your PD2 session expired. Sign in again.';
-    if (error.status === 429) return 'Too many requests. Try again in a minute.';
+    if (error.status === 401) return t('system:netWorth.sessionExpired');
+    if (error.status === 429) return t('system:netWorth.rateLimited');
     return error.message;
   }
   return error instanceof Error ? error.message : String(error);

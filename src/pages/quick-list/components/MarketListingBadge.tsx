@@ -10,6 +10,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
+import { useTranslation } from '@/i18n';
 
 interface MarketListingBadgeProps {
   stashItem: GameStashItem;
@@ -32,6 +33,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   deleteMarketListing,
   onRefresh,
 }) => {
+  const { t } = useTranslation('quickList');
   const { close } = usePanel<'quickList'>();
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
@@ -68,10 +70,10 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
       await onBump(marketId, stashItem.hash);
       await onRefresh();
       setJustBumped(stashItem.hash);
-      showToast('Item bumped successfully!');
+      showToast(t('toasts.bumpSuccess'));
     } catch (err) {
       console.error('Failed to bump item:', err);
-      showToast('Failed to bump item');
+      showToast(t('toasts.bumpFailed'));
     } finally {
       setBumping(null);
     }
@@ -86,7 +88,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   const listedPill = (cooldown: boolean) => (
     <span className={cn(pill, 'border-success/35 bg-success/12 text-success', cooldown && 'cursor-not-allowed')}>
       <span className="size-1.5 rounded-full bg-current" />
-      Listed
+      {t('listing.listed')}
     </span>
   );
 
@@ -130,12 +132,12 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
               ) : (
                 <ArrowUp className="size-3" />
               )}
-              Bump
+              {t('listing.bump')}
             </button>
           ) : state === 'cooldown' ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>{listedPill(true)}</TooltipTrigger>
-              <TooltipContent>{`You can bump this item ${timeUntilBump(stashItem)}`}</TooltipContent>
+              <TooltipContent>{t('listing.canBumpIn', { time: timeUntilBump(stashItem) })}</TooltipContent>
             </Tooltip>
           ) : (
             listedPill(false)
@@ -146,7 +148,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
         <TooltipTrigger asChild>
           <button
             type="button"
-            aria-label="Remove listing"
+            aria-label={t('listing.removeListing')}
             disabled={deleting}
             className={cn(iconButton, 'text-destructive/80 hover:bg-destructive/15 hover:text-destructive')}
             onClick={async (e) => {
@@ -155,11 +157,11 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
               try {
                 await deleteMarketListing(listing._id);
                 await onRefresh();
-                showToast(`Removed ${stashItem?.name || ''} market listing.`);
+                showToast(t('toasts.removedMarketListing', { name: stashItem?.name || '' }));
                 close();
               } catch (err) {
                 console.error('Failed to remove listing:', err);
-                showToast('Failed to remove listing');
+                showToast(t('delist.removeFailed'));
               } finally {
                 setDeleting(false);
               }
@@ -168,14 +170,14 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
             {deleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
           </button>
         </TooltipTrigger>
-        <TooltipContent>{`Remove listing`}</TooltipContent>
+        <TooltipContent>{t('listing.removeListing')}</TooltipContent>
       </Tooltip>
 
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
           <button
             type="button"
-            aria-label="Go to trade website"
+            aria-label={t('listing.goToTrade')}
             className={cn(iconButton, 'hover:bg-accent hover:text-accent-foreground')}
             onClick={(e) => {
               e.stopPropagation();
@@ -185,7 +187,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
             <SquareArrowOutUpRight />
           </button>
         </TooltipTrigger>
-        <TooltipContent>{`Go to trade website`}</TooltipContent>
+        <TooltipContent>{t('listing.goToTrade')}</TooltipContent>
       </Tooltip>
     </div>
   );

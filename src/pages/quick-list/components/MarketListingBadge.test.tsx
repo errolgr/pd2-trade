@@ -134,7 +134,7 @@ describe('MarketListingBadge', () => {
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Remove listing'));
     });
-    expect(toasts()).toEqual(['Failed to remove listing']);
+    expect(toasts()).toEqual(['Failed to remove listing.']);
     expect(onRefresh).not.toHaveBeenCalled();
     expect(close).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Remove listing') as HTMLButtonElement).disabled).toBe(false);

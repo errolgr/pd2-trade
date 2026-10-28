@@ -22,14 +22,12 @@ import {
   locationText,
   marketBandText,
   MODEL_SEASON,
-  plural,
   stashPositionText,
   starsText,
   starTitle,
 } from '@/components/rares/rares-format';
 import { EmptyState } from './StatePanel';
-
-const EST_TITLE = `Estimated from ${MODEL_SEASON} asking prices of similar rares — not part of the total`;
+import { Trans, useTranslation } from '@/i18n';
 
 /**
  * Net Worth "Rares" tab: verdict summary + Keep band, Keep and worth-a-look rares as expandable rows,
@@ -51,6 +49,7 @@ export function RaresTab({
   /** Stash owner plays hardcore: notes that verdicts are softcore-trained and where prices come from. */
   hardcore?: boolean;
 }) {
+  const { t } = useTranslation('currency');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -67,7 +66,7 @@ export function RaresTab({
     for (const r of rares) {
       const kind = r.verdict === 'vendor' ? 'vendor' : isLowValue(r) ? 'low' : null;
       if (!kind) continue;
-      const tab = r.tab ?? 'Stash';
+      const tab = r.tab ?? t('rares.stashFallback');
       const key = `${kind}|${tab}`;
       const group = groups.get(key) ?? { kind, tab, items: [] };
       group.items.push(r);
@@ -84,16 +83,12 @@ export function RaresTab({
             a.tab.localeCompare(b.tab, undefined, { numeric: true }),
         ),
     };
-  }, [rares]);
+  }, [rares, t]);
 
   if (rares.length === 0) {
-    return (
-      <EmptyState
-        icon={<Gem />}
-        title="No rares in your stash"
-        description="Rare rings, amulets, jewels, armor and weapons in your stash are appraised here (Keep · Check · Vendor)."
-      />
-    );
+    return <EmptyState icon={<Gem />}
+      title={t('rares.emptyTitle')}
+      description={t('rares.emptyDescription')} />;
   }
 
   return (
@@ -103,7 +98,7 @@ export function RaresTab({
         crafted />}
 
       {keep.length > 0 && (
-        <RareGroup title="Keep"
+        <RareGroup title={t('rares.groups.keep')}
           count={keep.length}>
           {keep.map((r) => (
             <RareRow
@@ -119,7 +114,7 @@ export function RaresTab({
       )}
 
       {worth.length > 0 && (
-        <RareGroup title="Worth a look"
+        <RareGroup title={t('rares.groups.worthALook')}
           count={worth.length}>
           {worth.map((r) => (
             <RareRow
@@ -156,29 +151,59 @@ export function RaresTab({
 
 /** "Rares: N Keep · N worth a look · N likely vendor (frees N slots)" + the Keep band (never in the total). */
 export function RaresSummaryCard({ summary, crafted = false }: { summary: RaresSummary; crafted?: boolean }) {
+  const { t } = useTranslation('currency');
   const { keep, checkHigh, vendor, keepLowHr, keepHighHr, keepUnpriced } = summary;
   const priced = keep - keepUnpriced;
-  const keepNoun = crafted ? 'Keep crafted item' : 'Keep rare';
+  const unpriced = crafted
+    ? t('rares.summary.unpricedCrafted', { count: keepUnpriced })
+    : t('rares.summary.unpricedRares', { count: keepUnpriced });
+  const lineComponents = {
+    label: <span className="text-muted-foreground" />,
+    keep: <span className="font-medium text-success" />,
+    sep: <span className="text-muted-foreground" />,
+    check: <span className="font-medium text-warning" />,
+    vendor: <span className="font-medium" />,
+    note: <span className="text-muted-foreground" />,
+  };
+  const bandValues = { low: fmtBandHr(keepLowHr), high: fmtBandHr(keepHighHr) };
+  const bandComponents = { band: <span className="font-semibold tabular-nums text-foreground" /> };
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm">
       <p>
-        <span className="text-muted-foreground">{crafted ? 'Crafted: ' : 'Rares: '}</span>
-        <span className="font-medium text-success">{keep} Keep</span>
-        <span className="text-muted-foreground"> · </span>
-        <span className="font-medium text-warning">{checkHigh} worth a look</span>
-        <span className="text-muted-foreground"> · </span>
-        <span className="font-medium">{vendor} likely vendor</span>{' '}
-        <span className="text-muted-foreground">(frees {plural(vendor, 'slot')})</span>
+        {crafted ? (
+          <Trans
+            t={t}
+            i18nKey="rares.summary.craftedLine"
+            count={vendor}
+            values={{ keep, checkHigh, count: vendor }}
+            components={lineComponents}
+          />
+        ) : (
+          <Trans
+            t={t}
+            i18nKey="rares.summary.raresLine"
+            count={vendor}
+            values={{ keep, checkHigh, count: vendor }}
+            components={lineComponents}
+          />
+        )}
       </p>
       {priced > 0 && (
         <p
           className="text-xs text-muted-foreground"
-          title={`${EST_TITLE}${keepUnpriced ? `; ${plural(keepUnpriced, keepNoun)} without a market band not included` : ''}`}
+          title={`${t('rares.estTitle', { season: MODEL_SEASON })}${keepUnpriced ? `; ${unpriced}` : ''}`}
         >
-          <span className="font-semibold tabular-nums text-foreground">
-            + ~{fmtBandHr(keepLowHr)}–{fmtBandHr(keepHighHr)} HR
-          </span>{' '}
-          in {keepNoun}s (estimated, not in total)
+          {crafted ? (
+            <Trans t={t}
+              i18nKey="rares.summary.bandCrafted"
+              values={bandValues}
+              components={bandComponents} />
+          ) : (
+            <Trans t={t}
+              i18nKey="rares.summary.bandRares"
+              values={bandValues}
+              components={bandComponents} />
+          )}
         </p>
       )}
     </div>
@@ -305,6 +330,7 @@ function RareRow({
   expanded: boolean;
   onToggle: (id: string) => void;
 }) {
+  const { t } = useTranslation('currency');
   const band = marketBandText(rare);
   return (
     <li className="border-b border-border/50 last:border-b-0">
@@ -340,8 +366,10 @@ function RareRow({
             <RowChips rare={rare} />
           </span>
         </span>
-        <span className="shrink-0 text-sm font-semibold tabular-nums"
-          title={EST_TITLE}>
+        <span
+          className="shrink-0 text-sm font-semibold tabular-nums"
+          title={t('rares.estTitle', { season: MODEL_SEASON })}
+        >
           {band ?? <span className="text-muted-foreground/70">—</span>}
         </span>
         <ChevronDown
@@ -359,17 +387,6 @@ function RareRow({
     </li>
   );
 }
-
-const FOLD_TEXT = {
-  vendor: {
-    title: (n: number, tab: string) => `${n} likely vendor · ${tab}`,
-    note: (n: number) => `Frees ${plural(n, 'stash slot')}`,
-  },
-  low: {
-    title: (n: number, tab: string) => `${n} likely low value · ${tab}`,
-    note: () => 'Check items without a key stat',
-  },
-};
 
 /** Folded rares of one stash tab ("N likely vendor · Shared 3"), expanding to compact rows. */
 function RareFold({
@@ -389,8 +406,11 @@ function RareFold({
   expanded: Set<string>;
   onToggleItem: (id: string) => void;
 }) {
+  const { t } = useTranslation('currency');
   const [open, setOpen] = useState(false);
-  const text = FOLD_TEXT[kind];
+  const n = items.length;
+  const title = kind === 'vendor' ? t('rares.fold.vendorTitle', { n, tab }) : t('rares.fold.lowTitle', { n, tab });
+  const note = kind === 'vendor' ? t('rares.fold.vendorNote', { count: n }) : t('rares.fold.lowNote');
   return (
     <div className="overflow-hidden rounded-lg border border-dashed border-border bg-card/20">
       <button
@@ -408,8 +428,8 @@ function RareFold({
           {items.length}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm">{text.title(items.length, tab)}</span>
-          <span className="text-[11px] text-muted-foreground">{text.note(items.length)}</span>
+          <span className="truncate text-sm">{title}</span>
+          <span className="text-[11px] text-muted-foreground">{note}</span>
         </span>
         <ChevronDown
           className={cn(

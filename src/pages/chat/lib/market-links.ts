@@ -2,6 +2,8 @@
  * Market listing links in chat messages. The site's "I'm interested" message links
  * https://projectdiablo2.com/market/listing/<id>?display="<name>" (with or without www).
  */
+import { t } from '@/i18n';
+
 const MARKET_LISTING_URL =
   /https?:\/\/(?:www\.)?projectdiablo2\.com\/market\/listing\/([a-f0-9]+)(?:\?display=((?:"[^"]+")|(?:[^\s"<>]+)))?/gi;
 
@@ -77,7 +79,7 @@ export function parseMessage(text: string): MessageSegment[] {
       if (before) segments.push({ type: 'text', content: before });
       segments.push({
         type: 'link',
-        content: displayName || `Market Listing ${listingId.substring(0, 8)}...`,
+        content: displayName || t('chat:links.marketListing', { id: listingId.substring(0, 8) }),
         url,
         listingId,
       });

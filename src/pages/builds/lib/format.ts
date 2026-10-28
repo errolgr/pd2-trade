@@ -1,3 +1,5 @@
+import { t, currentLocale } from '@/i18n';
+
 /** Class metadata, asset URLs and number/time formatting for the builds panel (ported from pd2trader.com /builds). */
 
 const SITE = 'https://pd2trader.com';
@@ -74,14 +76,14 @@ export function fmtPct(v: number | null | undefined): string {
 export function timeAgo(iso: string | null | undefined, now = Date.now()): string {
   if (!iso) return '—';
   const s = Math.max(0, (now - Date.parse(iso)) / 1000);
-  if (s < 90) return 'just now';
-  if (s < 3600) return `${Math.round(s / 60)}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return `${Math.round(s / 86400)}d ago`;
+  if (s < 90) return t('common:time.justNow');
+  if (s < 3600) return t('common:time.minutesAgoShort', { count: Math.round(s / 60) });
+  if (s < 86400) return t('common:time.hoursAgoShort', { count: Math.round(s / 3600) });
+  return t('common:time.daysAgoShort', { count: Math.round(s / 86400) });
 }
 
 export const fmtDateTime = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleString(currentLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 /** Label for an item key the usage lists don't name: 'rw:call_to_arms' → Call To Arms. */
 export function keyLabel(key: string): string {

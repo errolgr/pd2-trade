@@ -33,6 +33,7 @@ import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
 import { PublicProfileToggle } from '../net-worth/PublicProfileToggle';
+import { currentLocale, useTranslation } from '@/i18n';
 
 type WindowTab =
   | 'overview'
@@ -45,13 +46,13 @@ type WindowTab =
   | 'rares'
   | 'history';
 
-const HOLDING_TABS: { value: WindowTab; label: string; categories: NetWorthCategory[]; showTab?: boolean }[] = [
-  { value: 'runes', label: 'Runes', categories: ['runes'] },
-  { value: 'currency', label: 'Currency', categories: ['currency'] },
-  { value: 'ubers', label: 'Uber Mats', categories: ['ubers'] },
-  { value: 'gems-mats', label: 'Gems & Mats', categories: ['gems', 'mats'] },
-  { value: 'uniques-sets', label: 'Uniques & Sets', categories: ['uniques', 'sets'], showTab: true },
-  { value: 'other', label: 'Other', categories: ['other'], showTab: true },
+const HOLDING_TABS: { value: WindowTab; labelKey: string; categories: NetWorthCategory[]; showTab?: boolean }[] = [
+  { value: 'runes', labelKey: 'window.tabs.runes', categories: ['runes'] },
+  { value: 'currency', labelKey: 'window.tabs.currency', categories: ['currency'] },
+  { value: 'ubers', labelKey: 'window.tabs.ubers', categories: ['ubers'] },
+  { value: 'gems-mats', labelKey: 'window.tabs.gemsMats', categories: ['gems', 'mats'] },
+  { value: 'uniques-sets', labelKey: 'window.tabs.uniquesSets', categories: ['uniques', 'sets'], showTab: true },
+  { value: 'other', labelKey: 'window.tabs.other', categories: ['other'], showTab: true },
 ];
 
 /** Re-value on open/focus when the latest snapshot is older than this. */
@@ -60,6 +61,7 @@ const STALE_ON_OPEN_MS = 2 * 60 * 1000;
 const TRIGGER_CLASS = 'shrink-0 px-2 text-xs';
 
 export function StashValueWindow() {
+  const { t } = useTranslation('currency');
   const netWorth = useNetWorth();
   const { owner, latest, status, error, trackingEnabled, takeSnapshot, lastSnapshotAt } = netWorth;
   const { settings } = useOptions();
@@ -148,7 +150,7 @@ export function StashValueWindow() {
                           variant="outline"
                           onClick={() => takeSnapshot('manual')}>
                           <RefreshCw className="size-3.5" />
-                          Retry
+                          {t('window.retry')}
                         </Button>
                       }
                     >
@@ -170,25 +172,25 @@ export function StashValueWindow() {
                   >
                     <TabsTrigger value="overview"
                       className={TRIGGER_CLASS}>
-                      Overview
+                      {t('window.tabs.overview')}
                     </TabsTrigger>
-                    {HOLDING_TABS.map((t) => (
-                      <TabsTrigger key={t.value}
-                        value={t.value}
+                    {HOLDING_TABS.map((holding) => (
+                      <TabsTrigger key={holding.value}
+                        value={holding.value}
                         className={TRIGGER_CLASS}>
-                        {t.label}
+                        {t(holding.labelKey)}
                       </TabsTrigger>
                     ))}
                     {rares && (
                       <TabsTrigger value="rares"
                         className={TRIGGER_CLASS}>
-                        {rares.some(isCrafted) ? 'Rares & Crafted' : 'Rares'}
+                        {rares.some(isCrafted) ? t('window.tabs.raresCrafted') : t('window.tabs.rares')}
                       </TabsTrigger>
                     )}
                     <TabsTrigger value="history"
                       className={cn(TRIGGER_CLASS, 'gap-1')}>
                       <History className="size-3.5" />
-                      History
+                      {t('window.tabs.history')}
                     </TabsTrigger>
                   </TabsList>
 
@@ -197,16 +199,16 @@ export function StashValueWindow() {
                     {valuation ? <OverviewTab valuation={valuation} /> : <TabSkeleton failed={status === 'error'} />}
                   </TabsContent>
 
-                  {HOLDING_TABS.map((t) => (
-                    <TabsContent key={t.value}
-                      value={t.value}
+                  {HOLDING_TABS.map((holding) => (
+                    <TabsContent key={holding.value}
+                      value={holding.value}
                       className="pt-1">
                       {valuation ? (
                         <HoldingsTable
-                          lines={valuation.lines.filter((line) => t.categories.includes(line.category))}
+                          lines={valuation.lines.filter((line) => holding.categories.includes(line.category))}
                           totalHr={valuation.totalHr}
-                          showTab={t.showTab}
-                          toolbar={t.value === 'runes' ? <RuneExchange /> : undefined}
+                          showTab={holding.showTab}
+                          toolbar={holding.value === 'runes' ? <RuneExchange /> : undefined}
                         />
                       ) : (
                         <TabSkeleton failed={status === 'error'} />
@@ -264,6 +266,7 @@ function WindowTitle({
   seasonLabel?: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('currency');
   return (
     <WindowChrome
       className="sticky top-0 z-30 h-12 border-border/70 bg-background/85 px-4 backdrop-blur-md"
@@ -272,7 +275,7 @@ function WindowTitle({
       onClose={onClose}
       title={
         <>
-          <span className="shrink-0">Net Worth</span>
+          <span className="shrink-0">{t('window.title')}</span>
           {owner && (
             <span className="flex min-w-0 items-center gap-1.5 text-xs font-normal">
               <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
@@ -313,15 +316,18 @@ function Header({
   onRefresh: () => void;
   token: string | null;
 }) {
+  const { t } = useTranslation('currency');
   const deltas = useMemo(() => {
     if (!valuation) return [];
     const total = valuation.totalHr;
-    const result: { label: string; value: number | null }[] = [{ label: 'last', value: sincePrevious }];
+    const result: { id: string; labelKey: string; value: number | null }[] = [
+      { id: 'last', labelKey: 'header.deltaLast', value: sincePrevious },
+    ];
     if (seasonPoints && seasonPoints.length > 0) {
       const dayAgo = moment().subtract(24, 'hours').toISOString();
       const baseline = [...seasonPoints].reverse().find((p) => p.takenAt <= dayAgo) ?? seasonPoints[0];
-      result.push({ label: '24h', value: total - baseline.totalHr });
-      result.push({ label: 'season', value: total - seasonPoints[0].totalHr });
+      result.push({ id: '24h', labelKey: 'header.delta24h', value: total - baseline.totalHr });
+      result.push({ id: 'season', labelKey: 'header.deltaSeason', value: total - seasonPoints[0].totalHr });
     }
     return result;
   }, [valuation, sincePrevious, seasonPoints]);
@@ -350,7 +356,7 @@ function Header({
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1.5">
           <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Net worth
+            {t('header.netWorth')}
             {wealthRank && (
               <span className="rounded-full border border-glow/40 bg-glow/10 px-2 py-px font-semibold normal-case tracking-normal text-foreground tabular-nums">
                 {wealthRank}
@@ -366,14 +372,14 @@ function Header({
             <span className="flex flex-wrap items-center gap-1.5">
               {deltas.map((d) => (
                 <span
-                  key={d.label}
+                  key={d.id}
                   className={cn(
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
                     deltaPillClass(d.value),
                   )}
                 >
                   {d.value === null ? '—' : formatSignedHr(d.value)}{' '}
-                  <span className="font-normal opacity-75">({d.label})</span>
+                  <span className="font-normal opacity-75">({t(d.labelKey)})</span>
                 </span>
               ))}
             </span>
@@ -387,30 +393,31 @@ function Header({
                 variant="outline"
                 disabled={loading}
                 onClick={onRefresh}>
-                <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} /> {loading ? 'Refreshing' : 'Refresh'}
+                <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />{' '}
+                {loading ? t('header.refreshing') : t('header.refresh')}
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent>Re-value your stash now</TooltipContent>
+          <TooltipContent>{t('header.refreshTooltip')}</TooltipContent>
         </Tooltip>
       </div>
       <div className="relative mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <Clock className="size-3" />
-          as of {moment(valuation.takenAt).format('HH:mm')}
+          {t('header.asOf', { time: moment(valuation.takenAt).format('HH:mm') })}
         </span>
         <span className="inline-flex items-center gap-1">
           <Tag className="size-3" />
-          prices {valuation.priceDay}
+          {t('header.prices', { day: valuation.priceDay })}
         </span>
         <span className="inline-flex items-center gap-1">
           <Coins className="size-3 text-q-gold" />
-          {valuation.gold.toLocaleString()} gold
+          {t('header.gold', { amount: valuation.gold.toLocaleString(currentLocale()) })}
         </span>
         {valuation.priceSource === 'ladder-fallback' && (
           <span className="inline-flex items-center gap-1 rounded-full bg-warning/12 px-2 py-0.5 text-warning">
             <AlertTriangle className="size-3" />
-            valued with ladder prices (no non-ladder market data)
+            {t('header.ladderFallback')}
           </span>
         )}
         {token && (
@@ -424,33 +431,33 @@ function Header({
 }
 
 function TrackingDisabled() {
+  const { t } = useTranslation('currency');
   return (
     <EmptyState
       icon={<History />}
-      title="History is off."
-      description='Turn on "Save net worth history" in Settings → Net Worth to see a chart, sessions with HR/hour, and what changed between snapshots.'
+      title={t('trackingDisabled.title')}
+      description={t('trackingDisabled.description')}
     />
   );
 }
 
 function SignedOut({ hasToken }: { hasToken: boolean }) {
+  const { t } = useTranslation('currency');
   const { openSignIn } = useSignIn();
   return hasToken ? (
-    <EmptyState
-      className="mt-6"
+    <EmptyState className="mt-6"
       icon={<UserRound />}
-      title="Choose your PD2 account in Settings to value your stash."
-    />
+      title={t('signedOut.chooseAccount')} />
   ) : (
     <EmptyState
       className="mt-6"
       icon={<LogIn />}
-      title="Sign in with your PD2 account to value your stash."
+      title={t('signedOut.signInPrompt')}
       action={
         <Button size="sm"
           onClick={openSignIn}>
           <LogIn className="size-3.5" />
-          Sign in
+          {t('signedOut.signIn')}
         </Button>
       }
     />
@@ -458,14 +465,15 @@ function SignedOut({ hasToken }: { hasToken: boolean }) {
 }
 
 function TabSkeleton({ failed }: { failed: boolean }) {
+  const { t } = useTranslation('currency');
   if (failed) {
     return (
       <EmptyState
         compact
         className="py-10"
         icon={<PackageOpen />}
-        title="No valuation yet."
-        description="Your stash couldn't be valued. Use Retry above once PD2 is reachable."
+        title={t('tabSkeleton.title')}
+        description={t('tabSkeleton.description')}
       />
     );
   }

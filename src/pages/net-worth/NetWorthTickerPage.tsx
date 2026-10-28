@@ -20,6 +20,7 @@ import {
 } from './overlay';
 import { useChatDockOffset } from '@/pages/chat/chat-dock';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
+import { currentLocale, useTranslation } from '@/i18n';
 
 /** Px between the ticker and the mini panel opened from it. */
 const PANEL_GAP = 6;
@@ -46,6 +47,7 @@ async function legacyTickerOrigin(position: { x: number; y: number }): Promise<{
  * game), or for `custom` where the user dragged it (the panel layout persists it). Click toggles the mini panel.
  */
 const NetWorthTicker: React.FC = () => {
+  const { t } = useTranslation('netWorth');
   const { settings, updateSettings } = useOptions();
   const { latest, status, lastSnapshotAt, currentSession } = useNetWorth();
   const { gameRect, togglePanel } = useOverlay();
@@ -142,10 +144,10 @@ const NetWorthTicker: React.FC = () => {
       ? 'bg-success ring-success/25'
       : 'bg-warning ring-warning/25';
   const dotTitle = failed
-    ? 'Snapshot failed'
+    ? t('ticker.snapshotFailed')
     : lastSnapshotAt
-      ? `Last snapshot ${new Date(lastSnapshotAt).toLocaleTimeString()}`
-      : 'No snapshot yet';
+      ? t('ticker.lastSnapshot', { time: new Date(lastSnapshotAt).toLocaleTimeString(currentLocale()) })
+      : t('ticker.noSnapshot');
 
   const total = latest?.valuation.totalHr ?? null;
   const flash = useChangeFlash(total);
@@ -163,7 +165,7 @@ const NetWorthTicker: React.FC = () => {
           {...drag.handlers}
           style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
           className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
-          title="Net worth — click for details, drag to move"
+          title={t('ticker.title')}
         >
           <span
             className={cn(
@@ -182,7 +184,7 @@ const NetWorthTicker: React.FC = () => {
                 className="h-3 w-px bg-border" />
               <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-success' : 'text-destructive')}>
                 <span className="text-[10px]">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
-                <span className="font-normal opacity-80">session</span>
+                <span className="font-normal opacity-80">{t('ticker.session')}</span>
               </span>
             </>
           )}

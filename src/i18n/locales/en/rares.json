@@ -1,0 +1,103 @@
+{
+  "notes": {
+    "craftedUnreliable": "crafted items in this slot can't be appraised reliably yet (too little crafted data)"
+  },
+  "slots": {
+    "ring": { "label": "Ring", "plural": "Rings", "inSentence": "rings" },
+    "amul": { "label": "Amulet", "plural": "Amulets", "inSentence": "amulets" },
+    "circ": { "label": "Circlet", "plural": "Circlets", "inSentence": "circlets" },
+    "jewl": { "label": "Jewel", "plural": "Jewels", "inSentence": "jewels" },
+    "glov": { "label": "Gloves", "plural": "Gloves", "inSentence": "gloves" },
+    "boot": { "label": "Boots", "plural": "Boots", "inSentence": "boots" },
+    "belt": { "label": "Belt", "plural": "Belts", "inSentence": "belts" },
+    "tors": { "label": "Body armor", "plural": "Body armors", "inSentence": "body armors" },
+    "helm": { "label": "Helm", "plural": "Helms", "inSentence": "helms" },
+    "shield": { "label": "Shield", "plural": "Shields", "inSentence": "shields" },
+    "quiver": { "label": "Quiver", "plural": "Quivers", "inSentence": "quivers" },
+    "weapon": { "label": "Weapon", "plural": "Weapons", "inSentence": "weapons" },
+    "unknown": { "plural": "Items", "inSentence": "items" }
+  },
+  "verdicts": {
+    "keep": "Keep",
+    "check": "Check",
+    "vendor": "Vendor"
+  },
+  "priority": {
+    "high": "Has a ★★ or better key stat",
+    "medium": "Has a ★ key stat",
+    "low": "No key stats"
+  },
+  "crafted": {
+    "lowConfidence": "Low confidence",
+    "lowConfidenceTitle": "Low confidence: this slot's crafted model is based on limited crafted listing data, so treat the verdict and band as a rough guide."
+  },
+  "rank": {
+    "top": "top {{percent}}%",
+    "bottom": "bottom {{percent}}%"
+  },
+  "ordinal": {
+    "st": "{{n}}st",
+    "nd": "{{n}}nd",
+    "rd": "{{n}}rd",
+    "th": "{{n}}th"
+  },
+  "keyStatTitle": "Key stat: {{multiplier}} late-season price for this tier",
+  "marketSource": {
+    "atThisRank": "{{slots}} at this rank · {{where}}",
+    "lastSeason": "last season",
+    "hardcoreListings": "hardcore listings"
+  },
+  "rankBar": {
+    "ariaLabel": "Predicted at the {{percentile}} percentile of {{slots}} prices, give or take {{error}} points",
+    "vendor": "vendor",
+    "keep": "keep"
+  },
+  "rankBlocks": {
+    "title": "Rank among {{slots}} <note>(this season)</note>",
+    "ariaLabel": "Rank among {{slots}}: {{block}}",
+    "bottom25": "bottom 25%",
+    "bottom50": "bottom 50%",
+    "top50": "top 50%",
+    "top25": "top 25%",
+    "top15": "top 15%",
+    "top5": "top 5%"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} on {{slots}} only via corruption",
+    "nearMiss": "near miss: {{from}}+ is {{multiplier}} on {{slots}}",
+    "nearMissCorruption": "near miss: {{from}}+ is {{multiplier}} on {{slots}} (only via corruption)",
+    "valuableFrom": "valuable from {{from}} on {{slots}}",
+    "valuableFromCorruption": "valuable from {{from}} on {{slots}} (only via corruption)"
+  },
+  "stats": {
+    "title": "Stats on this item",
+    "keyStats_one": "{{count}} key stat",
+    "keyStats_other": "{{count}} key stats",
+    "noKeyStats": "no key stats",
+    "roll": "roll {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore: price model and stars from softcore data",
+    "rankedHardcore": "ranked against hardcore listings",
+    "rankedBlended": "ranked against hardcore listings blended with softcore ({{percent}}% hardcore)",
+    "rankedSoftcore": "ranked against softcore listings",
+    "pricesHardcore": "prices from hardcore listings",
+    "pricesSoftcore": "prices from softcore listings"
+  },
+  "stashPosition": "col {{column}}, row {{row}}",
+  "detail": {
+    "verdict": "Verdict",
+    "howVerdictsWork": "How verdicts work",
+    "usuallyListed": "Usually listed",
+    "samples": "Samples",
+    "comparedWith": "Compared with",
+    "stash": "Stash"
+  },
+  "history": {
+    "title": "Item history",
+    "aside_one": "{{times}}× · {{count}} seller · since {{date}}",
+    "aside_other": "{{times}}× · {{count}} sellers · since {{date}}",
+    "newOwner": "new owner",
+    "noPrice": "no price"
+  }
+}

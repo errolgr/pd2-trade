@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { ValuationLine } from '@/lib/networth-api';
 import { CATEGORY_COLORS, CATEGORY_NAME_CLASS } from '../lib/networth-format';
+import { useTranslation } from '@/i18n';
 
 export function HoldingName({ line, showTab = false }: { line: ValuationLine; showTab?: boolean }) {
   const [iconFailed, setIconFailed] = useState(false);
@@ -61,35 +62,36 @@ export function PriceChange({ percent }: { percent: number | null }) {
 
 const CONFIDENCE_LABELS: Record<
   ValuationLine['confidence'],
-  { label: string; className: string; dot: string; hint: string }
+  { labelKey: string; className: string; dot: string; tooltipKey: string }
 > = {
   ok: {
-    label: 'market',
+    labelKey: 'confidence.ok.label',
     className: 'text-muted-foreground border-border bg-muted/40',
     dot: 'bg-success',
-    hint: '7-day market average',
+    tooltipKey: 'confidence.ok.hint',
   },
   fixed: {
-    label: 'fixed',
+    labelKey: 'confidence.fixed.label',
     className: 'text-info border-info/35 bg-info/10',
     dot: 'bg-info',
-    hint: 'Fixed rune value (few listings)',
+    tooltipKey: 'confidence.fixed.hint',
   },
   low: {
-    label: 'low',
+    labelKey: 'confidence.low.label',
     className: 'text-warning border-warning/40 bg-warning/10',
     dot: 'bg-warning',
-    hint: 'Fewer than 10 listings — counted as uncertain, not in the total',
+    tooltipKey: 'confidence.low.hint',
   },
   none: {
-    label: 'unpriced',
+    labelKey: 'confidence.none.label',
     className: 'text-muted-foreground border-dashed border-muted-foreground/40',
     dot: 'bg-muted-foreground/50',
-    hint: 'No price data — valued at 0',
+    tooltipKey: 'confidence.none.hint',
   },
 };
 
 export function ConfidenceBadge({ line }: { line: ValuationLine }) {
+  const { t } = useTranslation('currency');
   const meta = CONFIDENCE_LABELS[line.confidence];
   return (
     <Tooltip>
@@ -108,13 +110,13 @@ export function ConfidenceBadge({ line }: { line: ValuationLine }) {
           >
             <span aria-hidden
               className={cn('size-1.5 rounded-full', meta.dot)} />
-            {meta.label}
+            {t(meta.labelKey)}
           </Badge>
         </span>
       </TooltipTrigger>
       <TooltipContent>
-        {meta.hint}
-        {line.sampleCount > 0 ? ` · ${line.sampleCount} listings` : ''}
+        {t(meta.tooltipKey)}
+        {line.sampleCount > 0 ? ` · ${t('confidence.listings', { count: line.sampleCount })}` : ''}
       </TooltipContent>
     </Tooltip>
   );
