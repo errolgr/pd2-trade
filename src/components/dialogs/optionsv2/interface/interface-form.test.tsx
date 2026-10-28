@@ -27,6 +27,8 @@ const transparency = () => screen.getAllByRole('slider')[0];
 const TIMER_DEFAULTS = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerLocked: false,
+  corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerOpacity: 90,
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
@@ -120,6 +122,17 @@ describe('InterfaceForm', () => {
     await advance(300);
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ corruptedZoneTimerZones: 'followed' }),
+    );
+  });
+
+  it('saves the timer lock and layout', async () => {
+    renderForm({});
+    expect((screen.getByLabelText('Timer layout') as HTMLSelectElement).value).toBe('horizontal');
+    fireEvent.click(screen.getByRole('switch', { name: 'Lock timer position' }));
+    fireEvent.change(screen.getByLabelText('Timer layout'), { target: { value: 'vertical' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ corruptedZoneTimerLocked: true, corruptedZoneTimerLayout: 'vertical' }),
     );
   });
 

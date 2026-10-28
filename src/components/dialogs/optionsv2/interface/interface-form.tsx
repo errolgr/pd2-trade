@@ -23,11 +23,18 @@ const TIMER_ZONES_OPTIONS = [
   { value: 'followed', label: 'Only zones I follow' },
 ] as const;
 
+const TIMER_LAYOUT_OPTIONS = [
+  { value: 'horizontal', label: 'Horizontal' },
+  { value: 'vertical', label: 'Vertical (screen sides)' },
+] as const;
+
 const interfaceFormSchema = z.object({
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
+  corruptedZoneTimerLocked: z.boolean(),
+  corruptedZoneTimerLayout: z.enum(['horizontal', 'vertical']),
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
   corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
@@ -42,6 +49,8 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
+    corruptedZoneTimerLocked: settings?.corruptedZoneTimerLocked ?? false,
+    corruptedZoneTimerLayout: settings?.corruptedZoneTimerLayout ?? 'horizontal',
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
     corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
@@ -171,7 +180,7 @@ export function InterfaceForm() {
             render={({ field }) => (
               <SettingsRow
                 label="Timer position"
-                description="Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom)."
+                description="Pin the timer to a corner of the game, or drag it anywhere on screen (switches to Custom) unless it is locked."
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}>
@@ -182,6 +191,54 @@ export function InterfaceForm() {
                     </FormControl>
                     <SelectContent>
                       {TICKER_ANCHOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerLocked"
+            render={({ field }) => (
+              <SettingsRow
+                label="Lock timer position"
+                description="Dragging the timer no longer moves it; clicking it still shows the upcoming zones. Also toggled from the lock under the upcoming zones."
+                control={
+                  <FormControl>
+                    <Switch checked={field.value}
+                      onCheckedChange={field.onChange} />
+                  </FormControl>
+                }
+              >
+                <FormMessage />
+              </SettingsRow>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="corruptedZoneTimerLayout"
+            render={({ field }) => (
+              <SettingsRow
+                label="Timer layout"
+                description="Horizontal, or a narrow column with the upcoming zones stacked above or below it, to sit at the left or right edge of the screen."
+                control={
+                  <Select value={field.value}
+                    onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Layout" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIMER_LAYOUT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
                           {option.label}
