@@ -29,7 +29,9 @@ export interface MessageRow {
 
 const sameGroup = (previous: TimelineEntry, entry: TimelineEntry) =>
   !previous.offer &&
+  !previous.trade &&
   !entry.offer &&
+  !entry.trade &&
   previous.own === entry.own &&
   previous.source === entry.source &&
   moment(entry.createdAt).isSame(previous.createdAt, 'day') &&
@@ -177,6 +179,31 @@ export function MessageBubble({
               <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
             </div>
           </OfferListingHoverCard>
+        </div>
+      ) : entry.trade ? (
+        // A trade whisper you settled: the same event row, with how it ended
+        <div className="flex justify-center px-2">
+          <div className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground">
+            <Gamepad2 aria-hidden
+              className="size-3.5 shrink-0" />
+            <span className="truncate">
+              <Trans
+                t={t}
+                i18nKey={entry.trade.itemName ? 'bubble.inGameOfferFor' : 'bubble.inGameOffer'}
+                values={{ price: entry.trade.price ?? '?', item: entry.trade.itemName }}
+                components={{ price: <span className="font-medium text-foreground/80" /> }}
+              />
+            </span>
+            <span
+              className={cn(
+                'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                STATUS_CLASS[entry.trade.outcome],
+              )}
+            >
+              {dealStatusLabel(entry.trade.outcome)}
+            </span>
+            <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
+          </div>
         </div>
       ) : (
         <div className={cn('group/msg flex items-start gap-2', isOwnMessage ? 'justify-end' : 'justify-start')}>

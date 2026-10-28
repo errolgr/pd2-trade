@@ -30,7 +30,7 @@ import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { t as tGlobal, useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
-import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
+import type { TradeOutcome, WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
 import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
@@ -39,8 +39,10 @@ import { shortAgo } from '../hooks/useTraderProfile';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { ListingDetails, ListingThumb } from './ListingCard';
 import { Tip } from './chat-parts';
+import type { ReplyChannel } from './Composer';
 
-export type DealStatus = 'open' | 'accepted' | 'declined' | 'closed' | 'hidden' | 'in-game';
+/** A trade whisper's outcome is the status chip of its event row in the conversation. */
+export type DealStatus = 'open' | 'accepted' | 'declined' | 'closed' | 'hidden' | 'in-game' | TradeOutcome;
 
 /** A status chip's text (shown uppercased). */
 export function dealStatusLabel(status: DealStatus): string {
@@ -55,6 +57,12 @@ export function dealStatusLabel(status: DealStatus): string {
       return tGlobal('chat:dealStatus.closed');
     case 'hidden':
       return tGlobal('chat:dealStatus.hidden');
+    case 'sold':
+      return tGlobal('chat:dealStatus.sold');
+    case 'rejected':
+      return tGlobal('chat:dealStatus.rejected');
+    case 'delisted':
+      return tGlobal('chat:dealStatus.delisted');
     default:
       return tGlobal('chat:dealStatus.inGame');
   }
@@ -90,6 +98,9 @@ export const STATUS_CLASS: Record<DealStatus, string> = {
   closed: 'bg-muted text-muted-foreground',
   hidden: 'bg-muted text-muted-foreground',
   'in-game': 'bg-muted text-muted-foreground',
+  sold: 'bg-success/15 text-success',
+  rejected: 'bg-muted text-muted-foreground',
+  delisted: 'bg-muted text-muted-foreground',
 };
 
 /**
@@ -278,11 +289,15 @@ function ActionButton({
  */
 function AcceptButton({
   requireGame,
+  tip,
+  prompt,
   disabled,
   game,
   onAccept,
 }: {
   requireGame: boolean;
+  tip: string;
+  prompt: string;
   disabled: boolean;
   game: { name: string; password: string; set: (name: string, password: string) => void };
   onAccept: (gameInfo: string) => Promise<void> | void;
@@ -303,7 +318,7 @@ function AcceptButton({
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <Tip label={requireGame ? t('deals.acceptTipWhisper') : t('deals.acceptOffer')}>
+      <Tip label={tip}>
         <PopoverTrigger disabled={disabled}
           className={cn(actionClass, ACTION_TONE.filled)}>
           <Check className="size-3.5" />
@@ -319,9 +334,7 @@ function AcceptButton({
             void submit();
           }}
         >
-          <p className="px-0.5 text-xs font-medium text-muted-foreground">
-            {requireGame ? t('deals.acceptPromptWhisper') : t('deals.acceptPromptOffer')}
-          </p>
+          <p className="px-0.5 text-xs font-medium text-muted-foreground">{prompt}</p>
           {/* Fields on one row, the button below: fits a narrow (360px) chat panel */}
           <div className="flex gap-2">
             <Input
@@ -364,8 +377,10 @@ export function ThreadDeals({
   now,
   onCounter,
   onSendWebsite,
-  onWhisper,
+  replyChannel,
+  onReply,
   onDismissTrade,
+  onSettleTrade,
 }: {
   /** Website offers with this person, both directions. */
   offers: readonly TradeOffer[];
@@ -379,9 +394,13 @@ export function ThreadDeals({
   onCounter: (text: string) => void;
   /** Sends a website message in this thread (the accept message with game info); resolves whether it was delivered. */
   onSendWebsite: (text: string) => Promise<boolean>;
-  /** Copies `/w *<person> <text>` and records it. */
-  onWhisper: (person: WhisperPerson, text: string) => void;
+  /** Where trade-whisper replies go: the thread's reply channel (the composer's Website/Whisper switch). */
+  replyChannel: ReplyChannel;
+  /** Sends a reply to a trade whisper on `replyChannel`; resolves whether it went out (sent, or copied). */
+  onReply: (person: WhisperPerson, text: string) => Promise<boolean>;
   onDismissTrade: (person: WhisperPerson, tradeId: string) => void;
+  /** Closes a trade whisper: it leaves the pinned deals for an event row in the conversation. */
+  onSettleTrade: (person: WhisperPerson, tradeId: string, outcome: TradeOutcome) => void;
 }): React.JSX.Element | null {
   const { t } = useTranslation(['chat', 'common']);
   const {
@@ -553,6 +572,8 @@ export function ThreadDeals({
         {status === 'open' && listingId && (
           <AcceptButton
             requireGame={false}
+            tip={t('deals.acceptOffer')}
+            prompt={t('deals.acceptPromptOffer')}
             disabled={disabled}
             game={game}
             onAccept={(gameInfo) =>
@@ -626,31 +647,43 @@ export function ThreadDeals({
       itemName: trade.itemName,
       price: trade.price,
     };
+    const website = replyChannel === 'website';
+    /** Replies with a template, then closes the trade as `outcome` once the reply went out. */
+    const settleWith = async (
+      key: 'soldOfferMessageTemplate' | 'rejectOfferMessageTemplate',
+      outcome: TradeOutcome,
+    ) => {
+      if (await onReply(person, template(key, vars))) onSettleTrade(person, trade.id, outcome);
+    };
     return (
       <>
         {trade.isIncoming && (
           <>
             <AcceptButton
               requireGame
+              tip={t(website ? 'deals.acceptTipWebsite' : 'deals.acceptTipWhisper')}
+              prompt={t(website ? 'deals.acceptPromptWebsite' : 'deals.acceptPromptWhisper')}
               disabled={disabled}
               game={game}
-              onAccept={(gameInfo) => onWhisper(person, template('acceptOfferMessageTemplate', { ...vars, gameInfo }))}
+              onAccept={async (gameInfo) => {
+                await onReply(person, template('acceptOfferMessageTemplate', { ...vars, gameInfo }));
+              }}
             />
             <ActionButton
-              title={t('deals.soldTitle')}
+              title={t(website ? 'deals.soldTitleWebsite' : 'deals.soldTitleWhisper')}
               label={t('deals.sold')}
               tone="outline"
               disabled={disabled}
-              onClick={() => onWhisper(person, template('soldOfferMessageTemplate', vars))}
+              onClick={() => void run(trade.id, () => settleWith('soldOfferMessageTemplate', 'sold'))}
             >
               <CheckSquare className="size-3.5" />
             </ActionButton>
             <ActionButton
-              title={t('deals.rejectTitle')}
+              title={t(website ? 'deals.rejectTitleWebsite' : 'deals.rejectTitleWhisper')}
               label={t('deals.reject')}
               tone="destructive"
               disabled={disabled}
-              onClick={() => onWhisper(person, template('rejectOfferMessageTemplate', vars))}
+              onClick={() => void run(trade.id, () => settleWith('rejectOfferMessageTemplate', 'rejected'))}
             >
               <X className="size-3.5" />
             </ActionButton>
@@ -671,10 +704,12 @@ export function ThreadDeals({
             <>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onSelect={() => {
-                  onWhisper(person, template('soldOfferMessageTemplate', vars));
-                  void run(trade.id, () => delistTrade(trade));
-                }}
+                onSelect={() =>
+                  void run(trade.id, async () => {
+                    await settleWith('soldOfferMessageTemplate', 'sold');
+                    await delistTrade(trade);
+                  })
+                }
               >
                 <CheckSquare className="size-4" />
                 {t('deals.soldAndDeleteListing')}
@@ -682,7 +717,10 @@ export function ThreadDeals({
               <DropdownMenuItem
                 variant="destructive"
                 className="cursor-pointer"
-                onSelect={() => void run(trade.id, () => delistTrade(trade))}
+                // Closed once a listing actually goes (confirmed, or picked among several)
+                onSelect={() =>
+                  void run(trade.id, () => delistTrade(trade, () => onSettleTrade(person, trade.id, 'delisted')))
+                }
               >
                 <Trash2 className="size-4" />
                 {t('deals.deleteListing')}

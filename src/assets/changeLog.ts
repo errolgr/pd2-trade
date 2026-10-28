@@ -7,6 +7,8 @@ export const changeLog = {
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
     '🌐 PD2 Trader in your language: Deutsch, Français, Русский, Español, Português (Brasil), Polski and 简体中文. It follows your system language; change it in Settings → Interface → Language. Item names, stats and game terms stay in English, as in the game',
     '🆕 Chat: an in-game trade whisper\'s ⋯ menu has "Delete listing" and "Sold & delete listing": it finds your listing of the whispered item and asks before removing it, or lets you pick when several match (charms, jewels, runes, rares); no need to hover the item for Ctrl+U',
+    '✨ Chat: Sold, Reject, "Sold & delete listing" and "Delete listing" on an in-game trade whisper close it: the offer leaves the pinned deals and shows in the conversation as SOLD, REJECTED or DELISTED (Delete listing waits until the listing is actually deleted)',
+    "✨ Chat: trade whisper replies (Accept, Sold, Reject) follow the thread's Reply via switch: sent as a website message on Website, copied as a /w whisper on Whisper",
     '✨ Delist picker: each listing shows when it was listed, so same-named ones are easy to tell apart',
     '🔧 List Item / Manage tab: a listing removed elsewhere (Ctrl+U, chat) leaves the list and the count straight away',
     '🆕 Corrupted zone timer: lock it in place (Settings → Interface, or the lock under the upcoming zones) so a drag no longer moves it; clicking it still shows the upcoming zones',

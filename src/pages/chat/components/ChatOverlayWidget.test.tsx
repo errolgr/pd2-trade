@@ -1383,7 +1383,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(overlayOpenPanel).toHaveBeenCalledWith('builds', { character: { name: 'DanChar' } });
   });
 
-  it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
+  it("pins a trade whisper in the sender's thread; Sold copies the template whisper and moves the trade into the conversation", async () => {
     settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
     await renderWidget([]);
     await gameEvent('trade-message', {
@@ -1404,11 +1404,35 @@ describe('ChatOverlayWidget unified inbox', () => {
     await flush();
     expect(writeText).toHaveBeenCalledWith('/w *Dan Sorry, Arach is sold.');
     expect(bubbles().at(-1)).toBe('Sorry, Arach is sold.');
-
-    await act(async () => {
-      fireEvent.click(within(deals).getByRole('button', { name: /Dismiss/ }));
-    });
+    // Closed: off the pinned deals, an event row in the conversation instead
     expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+    expect(screen.getByText(/In-game offer/).closest('div')!.textContent).toMatch(
+      /In-game offer 1 ist for Arach\s*sold/,
+    );
+  });
+
+  it('replies to a trade whisper on the website when the thread replies via Website', async () => {
+    settings.rejectOfferMessageTemplate = 'No thanks.';
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('sent1', c, sender, content, 0));
+    await renderWidget([withAccount(conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }), ['AliceAcc'])]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'AliceAcc',
+      accountName: 'AliceAcc',
+      message: "Hi, I'm interested in your Shako listed for 2 ist",
+      itemName: 'Shako',
+      price: '2 ist',
+    });
+    await select('Alice');
+    const deals = screen.getByRole('list', { name: 'Offers with this user' });
+    await act(async () => {
+      fireEvent.click(within(deals).getByRole('button', { name: /Reject/ }));
+    });
+    await flush();
+    expect(api.sendMessage).toHaveBeenCalledWith('c1', 'No thanks.', ME);
+    expect(writeText).not.toHaveBeenCalled();
+    expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+    expect(screen.getByText(/In-game offer/).closest('div')!.textContent).toMatch(/rejected/);
   });
 
   // #148: a sender saved as "character*account" got `/w *frostwind*tharok …` ("user is not online")

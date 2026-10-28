@@ -669,7 +669,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     }
   };
 
-  /** Copies `/w *<account> <text>` for the game chat and records it as an outgoing whisper. */
+  /** Copies `/w *<account> <text>` for the game chat and records it as an outgoing whisper; resolves whether it was copied. */
   const sendWhisper = async (target: { accountName?: string; playerName: string }, text: string) => {
     const account = whisperTarget(target);
     try {
@@ -680,10 +680,11 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         description: t('bubble.copyFailedDescription'),
         variant: 'error',
       });
-      return;
+      return false;
     }
     recordCopied(target, text);
     showToast({ title: t('widget.whisperCopied'), description: t('widget.whisperCopiedDescription', { account }) });
+    return true;
   };
 
   // In-panel keys: Alt+↑/↓ switch to the previous/next thread of the list as filtered; Esc closes the open
@@ -819,8 +820,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         composerRef.current?.focus();
                       }}
                       onSendWebsite={(text) => sendWebsite(selectedThread, text)}
-                      onWhisper={(target, text) => void sendWhisper(target, text)}
+                      replyChannel={channel}
+                      onReply={(target, text) =>
+                        channel === 'website' ? sendWebsite(selectedThread, text) : sendWhisper(target, text)
+                      }
                       onDismissTrade={(target, tradeId) => whispers.dismissTrade(target.key, tradeId)}
+                      onSettleTrade={(target, tradeId, outcome) => whispers.settleTrade(target.key, tradeId, outcome)}
                     />
                   </div>
                   <MessageList
