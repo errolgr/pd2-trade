@@ -189,7 +189,22 @@ Then re-capture `src/pages/price-check/lib/__fixtures__/stat-ranges-oracle.<seas
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)
 
-### 4. Auto-Update Safety
+### 4. Translations
+
+The overlay UI is localized with [i18next](https://www.i18next.com/) (`src/i18n/`). English is the source; every other language mirrors its keys:
+
+```
+src/i18n/locales/<language>/<namespace>.json   # en, de, fr, ru, es, pt-BR, pl, zh-CN
+```
+
+- **Fix a translation:** edit the string in `src/i18n/locales/<language>/<namespace>.json` and open a PR. Keep every `{{placeholder}}` and `<tag>…</tag>` exactly as in the English string (you may move them within the sentence).
+- **Plurals:** keys ending in `_one` / `_few` / `_many` / `_other` are plural forms; each language has the forms its grammar needs (`new Intl.PluralRules('<language>').resolvedOptions().pluralCategories`), e.g. Russian and Polish `_one`, `_few`, `_many`, `_other`, Chinese only `_other`.
+- **Stays English by design:** item names, bases, runes, stats and tooltip lines from game data, market data, user content, chat/whisper messages sent in-game, and game terms players use in English (HR, Ladder, Hardcore, …). PD2 itself is English-only, so parsing is untouched.
+- **Add a language:** add its code to `SUPPORTED_LANGUAGES` and its own name to `LANGUAGE_NAMES` in `src/i18n/languages.ts` (and the OS-locale mapping in `matchSupportedLanguage` if needed), copy `src/i18n/locales/en/` to `src/i18n/locales/<language>/`, translate, and import its `moment/locale/*` in `src/i18n/index.ts`.
+- **New UI text:** `const { t } = useTranslation('<namespace>')` (or the module-level `t('<namespace>:key')` outside React), always imported from `@/i18n`; add the English string to `src/i18n/locales/en/<namespace>.json` and the translations to every other language. Use literal keys, never call `t()` at module scope, and format dates/numbers with `currentLocale()`.
+- `src/i18n/locales.test.ts` fails when a language is missing a key or plural form, has an extra key, changes a placeholder/tag, or when the source uses a key that English doesn't define.
+
+### 5. Auto-Update Safety
 
 A broken updater can only be fixed by users re-downloading the installer, so it is guarded at every stage:
 

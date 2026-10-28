@@ -1,0 +1,100 @@
+{
+  "panel": {
+    "crashed": "Эта панель аварийно завершилась."
+  },
+  "toast": {
+    "details": "Подробнее",
+    "undo": "Отменить"
+  },
+  "ui": {
+    "more": "Ещё"
+  },
+  "errorHandler": {
+    "title": "Ошибка"
+  },
+  "controller": {
+    "runningInBackground": "теперь работает в фоне...",
+    "itemNotSupported": "Предмет не поддерживается или недействителен.",
+    "cannotListItem": "Нельзя выставить предмет",
+    "notInSharedStash": "Этого предмета нет в вашем общем сундуке, его нельзя выставить.",
+    "delist": "Снять",
+    "noItemUnderCursor": "Под курсором нет подходящего предмета."
+  },
+  "chatButton": {
+    "dragToMove": "Перетащите, чтобы переместить",
+    "openChat": "Открыть чат PD2",
+    "chat": "Чат",
+    "offers": "Предложения",
+    "more": "Ещё",
+    "unreadMessages_one": "{{count}} непрочитанное сообщение",
+    "unreadMessages_few": "{{count}} непрочитанных сообщения",
+    "unreadMessages_many": "{{count}} непрочитанных сообщений",
+    "unreadMessages_other": "{{count}} непрочитанного сообщения",
+    "tradeOffers_one": "{{count}} предложение обмена",
+    "tradeOffers_few": "{{count}} предложения обмена",
+    "tradeOffers_many": "{{count}} предложений обмена",
+    "tradeOffers_other": "{{count}} предложения обмена",
+    "disableOverlay": "Отключить оверлей",
+    "menu": {
+      "chat": "Чат",
+      "market": "Рынок",
+      "builds": "Билды",
+      "netWorth": "Состояние",
+      "stashValue": "Стоимость сундука",
+      "offers": "Предложения",
+      "manageListings": "Мои объявления",
+      "settings": "Настройки"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Название",
+    "namePlaceholder": "напр. Ещё в наличии?",
+    "message": "Сообщение",
+    "messagePlaceholder": "напр. Привет, {itemName} ещё в наличии?",
+    "asksWhenUsed": "Запрашивается при использовании:",
+    "asksNone": "Любое другое {name} запрашивается при использовании шаблона."
+  },
+  "signIn": {
+    "eyebrow": "Вход в",
+    "lead": "Привяжите аккаунт Project Diablo 2, чтобы проверять цены, выставлять предметы и общаться в чате игры.",
+    "howItWorks": "Как работает вход",
+    "trust": {
+      "officialLogin": "Официальный вход PD2",
+      "noPassword": "Пароль не передаётся",
+      "readOnlyStash": "Сундук только для чтения"
+    },
+    "openingBrowser": "Открываем браузер…",
+    "signInWithPd2": "Войти через PD2",
+    "finishInBrowser": "Завершите вход в браузере и вернитесь сюда.",
+    "opensSite": "Откроет projectdiablo2.com в браузере.",
+    "later": "Позже",
+    "accounts": {
+      "eyebrow": "Почти готово",
+      "lead": "К этому входу привязано несколько игровых аккаунтов. Выберите аккаунт для торговли.",
+      "label": "Игровые аккаунты"
+    }
+  },
+  "changeLog": {
+    "title": "Что нового",
+    "close": "Закрыть список изменений",
+    "current": "Текущая",
+    "changes_one": "{{count}} изменение",
+    "changes_few": "{{count}} изменения",
+    "changes_many": "{{count}} изменений",
+    "changes_other": "{{count}} изменения"
+  },
+  "corruptedZones": {
+    "liveTitle": "Corrupted в играх Hell, созданных до {{until}}.",
+    "liveTitleNext": "Corrupted в играх Hell, созданных до {{until}}. Далее: {{zone}}.",
+    "liveTitleNextAt": "Corrupted в играх Hell, созданных до {{until}}. Далее: {{zone}} в {{time}}.",
+    "followedTitle": "Следующая отслеживаемая зона: Corrupted в играх Hell, созданных с {{from}} до {{until}}.",
+    "pillTitle": "{{title}} Нажмите для расписания, перетащите для перемещения.",
+    "timeUntilNext": "Время до следующей зоны",
+    "timeUntilThis": "Время до этой зоны",
+    "inTime": "через {{time}}",
+    "upcoming": "Ближайшие Corrupted-зоны",
+    "slotWhen": "{{time}} · через {{wait}}",
+    "toastTitle": "Corrupted-зона",
+    "toastDescription": "{{zone}}: создайте новую игру Hell (до {{until}})"
+  }
+}

@@ -1,0 +1,508 @@
+{
+  "interface": {
+    "language": {
+      "label": "语言",
+      "description": "悬浮窗的显示语言。“跟随系统”会使用你的系统语言。物品名称、属性和游戏术语与游戏中一致，保持英文。",
+      "group": "语言"
+    },
+    "overlays": "悬浮窗",
+    "chatButton": {
+      "label": "聊天按钮悬浮窗",
+      "description": "在屏幕右下角显示浮动聊天按钮。"
+    },
+    "windowTransparency": {
+      "label": "窗口透明度：<num>{{value}}%</num>",
+      "description": "透过窗口背景看到游戏。0% 为完全不透明。"
+    },
+    "zoneTimer": {
+      "enabled": {
+        "label": "腐化区域计时器",
+        "description": "显示新 Hell 游戏会腐化哪些区域，以及距下次轮换的时间（每 15 分钟）。点击查看即将腐化的区域。"
+      },
+      "position": {
+        "label": "计时器位置",
+        "description": "将计时器固定在游戏的某个角落，或拖到屏幕任意位置（切换为自定义）。",
+        "placeholder": "位置"
+      },
+      "zones": {
+        "label": "计时器显示",
+        "description": "所有区域，或仅你关注的区域：此时计时器会倒计时到下一个关注区域并只列出这些区域（未关注任何区域时显示全部）。",
+        "placeholder": "区域"
+      },
+      "alerts": {
+        "label": "区域通知",
+        "description": "腐化区域变化时弹出通知：每个新区域，或仅你关注的区域。通知遵循聊天设置中的“弹出通知”开关。",
+        "placeholder": "通知"
+      },
+      "followed": {
+        "label": "关注的区域",
+        "description": "设为“仅我关注的区域”时，计时器和通知所关注的区域。"
+      },
+      "group": "腐化区域计时器",
+      "opacity": "计时器不透明度：<num>{{value}}%</num>"
+    },
+    "zoneAlertOptions": {
+      "off": "关闭",
+      "all": "每次轮换",
+      "followed": "仅我关注的区域"
+    },
+    "timerZonesOptions": {
+      "all": "所有区域",
+      "followed": "仅我关注的区域"
+    }
+  },
+  "networth": {
+    "autoSnapshotOptions": {
+      "off": "关闭",
+      "every5": "每 5 分钟",
+      "every10": "每 10 分钟",
+      "every15": "每 15 分钟",
+      "every30": "每 30 分钟"
+    },
+    "ticker": {
+      "opacity": "资产条不透明度：<num>{{value}}%</num>",
+      "group": "资产条悬浮窗",
+      "enabled": {
+        "label": "净资产条",
+        "description": "在游戏上方显示你的净资产、本次变化和每小时 HR。点击查看详情。"
+      },
+      "position": {
+        "label": "资产条位置",
+        "description": "将资产条固定在游戏的某个角落，或拖到屏幕任意位置（切换为自定义）。",
+        "placeholder": "位置"
+      },
+      "preview": "预览"
+    },
+    "toastThreshold": {
+      "description": "资产条开启时，当快照使你的净资产变化至少达到此数值时弹出通知。可在 <section>聊天设置</section> 中切换净资产通知类型。",
+      "group": "通知",
+      "label": "快照通知阈值（HR）"
+    },
+    "hotkeyHint": "快照快捷键在 <section>快捷键</section> 中设置。",
+    "history": {
+      "group": "历史",
+      "tracking": {
+        "label": "保存净资产历史",
+        "description": "将净资产快照存储在 pd2trader.com，以便查看历史和会话。关闭后仍会计算数值，但不会保存任何内容。"
+      },
+      "autoSnapshot": {
+        "label": "自动快照",
+        "description": "Diablo II 处于前台时按此间隔生成快照。",
+        "placeholder": "间隔"
+      }
+    }
+  },
+  "tickerAnchor": {
+    "topLeft": "左上",
+    "topCenter": "顶部居中",
+    "topRight": "右上",
+    "bottomLeft": "左下",
+    "bottomRight": "右下",
+    "aboveChat": "聊天按钮上方",
+    "custom": "自定义（拖动移动）"
+  },
+  "publicProfile": {
+    "loadFailed": "加载资料设置失败",
+    "saveFailed": "保存失败",
+    "saving": "保存中",
+    "description": {
+      "signedOut": "登录你的 PD2 账号以选择是否出现在排行榜上。",
+      "notLive": "排行榜将随 Season 14 上线。上线后你可以选择公开你的资料。",
+      "default": "在 pd2trader.com 排行榜和公开资料页上显示你的净资产。默认关闭：只有你能看到你的历史。"
+    },
+    "viewProfile": "查看资料",
+    "group": "排行榜",
+    "optedIn": "公开资料",
+    "displayName": {
+      "label": "显示为",
+      "description": "用哪个游戏账号名作为你的资料名称。",
+      "placeholder": "账号"
+    },
+    "showHoldings": {
+      "label": "显示持有物品",
+      "description": "同时在资料中列出你的主要物品和类别占比。"
+    }
+  },
+  "nav": {
+    "general": "通用",
+    "account": "账号",
+    "chat": "聊天",
+    "interface": "界面",
+    "priceCheck": "查价",
+    "netWorth": "净资产",
+    "hotkeys": "快捷键",
+    "about": "关于"
+  },
+  "layout": {
+    "title": "设置",
+    "subtitle": "管理你的设置和偏好",
+    "saved": "已保存",
+    "autoSave": "更改会自动保存",
+    "closeLabel": "关闭设置",
+    "navLabel": "设置分区"
+  },
+  "zonePicker": {
+    "pick": "选择区域",
+    "count_other": "{{count}} 个区域",
+    "noMatch": "没有匹配的区域",
+    "followedCount_other": "已关注 {{count}} 个",
+    "triggerLabel": "关注的区域",
+    "search": "搜索区域",
+    "listLabel": "区域"
+  },
+  "theme": {
+    "preview": {
+      "list": "列表",
+      "offers": "报价"
+    },
+    "filter": {
+      "all": "全部",
+      "dark": "深色",
+      "light": "浅色"
+    },
+    "current": "当前：<name>{{name}}</name>",
+    "optionLabel": "{{name}}（{{mode}}）",
+    "mode": {
+      "dark": "深色",
+      "light": "浅色"
+    },
+    "filterLabel": "按模式筛选主题",
+    "groupLabel": "配色主题"
+  },
+  "hotkeys": {
+    "validation": {
+      "enterKey": "请输入一个按键",
+      "oneChar": "只能输入一个字符",
+      "letterOrNumber": "必须是字母或数字",
+      "ctrlC": "不允许使用 Ctrl + C（系统保留快捷键）。"
+    },
+    "warning": {
+      "ctrlC": "Ctrl + C 用于复制物品，请选择其他按键。",
+      "clash": "也被 {{action}} 使用。"
+    },
+    "group": "快捷键",
+    "modifierLabel": "{{action}} 修饰键",
+    "off": "关闭",
+    "hint": "将快照、市场或配装的按键留空即可关闭该快捷键。",
+    "rows": {
+      "priceCheck": {
+        "label": "查价",
+        "description": "查询光标下物品的价格。"
+      },
+      "listItem": {
+        "label": "挂单物品",
+        "description": "将鼠标悬停的物品挂到市场。"
+      },
+      "settings": {
+        "label": "打开设置",
+        "description": "打开此设置窗口。"
+      },
+      "netWorth": {
+        "label": "净资产",
+        "description": "打开净资产窗口。"
+      },
+      "chat": {
+        "label": "聊天窗口",
+        "description": "显示或隐藏聊天窗口。"
+      },
+      "offers": {
+        "label": "报价",
+        "description": "打开与你的买家的聊天。"
+      },
+      "delist": {
+        "label": "下架物品",
+        "description": "将鼠标悬停的物品从市场下架。"
+      },
+      "snapshot": {
+        "label": "净资产快照",
+        "description": "立即生成净资产快照。"
+      },
+      "market": {
+        "label": "市场",
+        "description": "显示或隐藏市场浏览器。"
+      },
+      "builds": {
+        "label": "配装",
+        "description": "显示或隐藏 Ladder 配装。"
+      }
+    }
+  },
+  "general": {
+    "validation": {
+      "mode": "请选择模式。",
+      "ladder": "请选择 Ladder。"
+    },
+    "directory": {
+      "detected": "已检测到：{{path}}",
+      "description": "Diablo II 安装目录的路径。留空则自动检测。",
+      "detectFailed": {
+        "title": "检测失败",
+        "description": "无法自动检测 Diablo II 目录，请手动输入。"
+      },
+      "autoDetect": "自动检测",
+      "label": "Diablo II 目录"
+    },
+    "game": {
+      "group": "游戏",
+      "mode": "模式",
+      "season": {
+        "label": "赛季",
+        "description": "按赛季筛选价格数据。过往赛季需要有历史数据。"
+      }
+    },
+    "troubleshooting": {
+      "group": "故障排查",
+      "debugLogging": {
+        "label": "调试日志",
+        "description": "将控制台输出写入日志文件以便排查问题。"
+      }
+    }
+  },
+  "about": {
+    "downloadFailed": "下载更新失败，请稍后重试。",
+    "version": "版本：{{version}}",
+    "updateAvailable": "有可用更新（v{{version}}）",
+    "updateNow": "立即更新（v{{version}}）",
+    "latest": "已是最新版本",
+    "lastChecked": "上次检查：{{ago}}",
+    "checking": "检查中…",
+    "checkForUpdates": "检查更新",
+    "viewChangelog": "查看更新日志",
+    "credits": {
+      "developer": "开发者",
+      "contributors": "贡献者"
+    },
+    "logoAlt": "PD2 Trader 标志",
+    "updates": {
+      "group": "更新",
+      "auto": {
+        "label": "自动更新",
+        "description": "启动时下载并安装新版本，然后重启。关闭后，有可用更新时仍会收到通知。"
+      }
+    }
+  },
+  "account": {
+    "noAccounts": {
+      "title": "没有可用账号",
+      "description": "如果未选择正确的账号，挂单时可能会出现 404 错误。请验证身份以加载你的账号。"
+    },
+    "status": {
+      "signedInAs": "已登录为 {{username}}",
+      "signedIn": "已登录",
+      "signedOut": "未登录"
+    },
+    "token": {
+      "description": "登录后从 <site>projectdiablo2.com<icon></icon></site> 获取令牌。请在浏览器的 localStorage 中查找 'pd2-token'。",
+      "label": "PD2 令牌",
+      "placeholder": "输入你的 PD2 令牌"
+    },
+    "account": {
+      "linked_other": "已关联 {{count}} 个游戏账号，用于挂单和报价。",
+      "signInToLoad": "登录以加载关联到你 PD2 资料的游戏账号。",
+      "authenticateFirst": "请先验证身份",
+      "select": "选择账号",
+      "label": "账号"
+    },
+    "loggingOut": "正在退出…",
+    "logOut": "退出登录",
+    "loggingIn": "正在登录…",
+    "logIn": "登录",
+    "group": "PD2 账号"
+  },
+  "stats": {
+    "fillStatValue": {
+      "labelPercent": "属性填充值（%）",
+      "labelFlat": "属性填充值（固定）",
+      "descriptionPercent": "填充属性范围时，按数值的百分比作为 ± 余量。",
+      "descriptionFlat": "填充属性范围时，按固定数值作为 ± 余量（例如 2 → ±2）。"
+    },
+    "marginUnit": {
+      "percent": "百分比（%）",
+      "flat": "固定值",
+      "label": "余量单位",
+      "description": "上方填充值的解释方式。固定值适合抗性或 +技能等数值较小的属性。",
+      "placeholder": "余量单位"
+    },
+    "corruptedFilter": {
+      "both": "全部",
+      "corrupted": "仅已腐化",
+      "nonCorrupted": "仅未腐化",
+      "label": "默认腐化筛选",
+      "description": "对可腐化物品打开查价时默认应用的腐化筛选。",
+      "placeholder": "腐化筛选"
+    },
+    "rankDisplay": {
+      "bar": "条形（百分位 + 卖店/保留线）",
+      "blocks": "方块（6 段排名）",
+      "label": "Rare 排名显示",
+      "description": "查价估价弹窗中 Rare 在同部位价格排名的显示方式。",
+      "placeholder": "排名显示"
+    },
+    "prices": {
+      "group": "价格"
+    },
+    "priceWindow": {
+      "label": "价格窗口",
+      "description": "查价均价所依据的近期成交。交易稀少的物品会回退到更长的窗口，并以标签标注。"
+    },
+    "statRanges": {
+      "group": "属性范围"
+    },
+    "leaveMinEmpty": {
+      "label": "最小值留空",
+      "description": "填充属性范围时最小值留空，搜索将匹配不超过最大值的任何数值。"
+    },
+    "leaveMaxEmpty": {
+      "label": "最大值留空",
+      "description": "填充属性范围时最大值留空，搜索将匹配该数值或更好。"
+    },
+    "filters": {
+      "group": "筛选"
+    },
+    "rareAppraisal": {
+      "group": "Rare 估价"
+    }
+  },
+  "chatTemplates": {
+    "intro": "在聊天消息中输入 <kbd>/</kbd> 即可使用。变量会根据会话自动填充；其他任何 {{placeholder}} 会在使用模板时要求填写。加星标可将其固定在聊天消息框上方。",
+    "listLabel": "你的模板",
+    "editNamed": "编辑 {{name}}",
+    "unstarNamed": "取消星标 {{name}}",
+    "starNamed": "星标 {{name}}",
+    "starredTitle": "已星标：显示在聊天消息框上方",
+    "starTitle": "星标：显示在聊天消息框上方",
+    "moveUpNamed": "上移 {{name}}",
+    "moveUp": "上移",
+    "moveDownNamed": "下移 {{name}}",
+    "moveDown": "下移",
+    "deleteNamed": "删除 {{name}}",
+    "empty": "还没有自定义模板。",
+    "newTemplate": "新建模板",
+    "addTemplate": "添加模板"
+  },
+  "chat": {
+    "toastTypes": {
+      "whispers": "私聊",
+      "trade": "交易",
+      "joins": "加入",
+      "offers": "报价",
+      "networth": "净资产"
+    },
+    "timing": {
+      "off": "通知已关闭。选择其他选项以编辑下方设置。",
+      "label": "通知时机：",
+      "description": "根据 Diablo 是否处于前台控制私聊通知的播放时机。",
+      "placeholder": "选择通知时机",
+      "options": {
+        "inGame": "仅在游戏中",
+        "outOfGame": "仅在游戏外",
+        "always": "始终",
+        "never": "从不"
+      }
+    },
+    "ignore": {
+      "count_other": "{{count}} 名玩家",
+      "removeNamed": "移除 {{name}}",
+      "empty": "暂无屏蔽的玩家。",
+      "group": "屏蔽列表",
+      "label": "屏蔽列表",
+      "description": "此列表中的玩家不会触发私聊通知。",
+      "placeholder": "输入要屏蔽的玩家名"
+    },
+    "sound": {
+      "notificationVolume": {
+        "label": "通知音量：<num>{{value}}%</num>",
+        "description": "调整私聊通知音的音量（0-100%）。"
+      },
+      "marketVolume": {
+        "label": "市场提醒音量：<num>{{value}}%</num>",
+        "description": "市场提醒音的音量（0-100%）。",
+        "ariaLabel": "市场提醒音量"
+      },
+      "group": "声音",
+      "marketSound": {
+        "label": "市场提醒音",
+        "description": "当你关注的市场搜索出现新挂单时，弹窗同时播放提示音。"
+      }
+    },
+    "templates": {
+      "accept": {
+        "intro": "自定义接受报价时复制的消息。可用占位符：",
+        "label": "接受报价消息模板"
+      },
+      "reject": {
+        "intro": "自定义拒绝报价时复制的消息。可用占位符：",
+        "label": "拒绝报价消息模板"
+      },
+      "sold": {
+        "intro": "自定义将物品标记为已售出时复制的消息。可用占位符：",
+        "label": "已售物品消息模板"
+      },
+      "insertToken": "插入 {{token}}",
+      "asks": "在聊天中使用时询问：{{placeholders}}",
+      "group": "消息模板"
+    },
+    "notifications": {
+      "group": "通知"
+    },
+    "general": {
+      "label": "常规通知",
+      "description": "收到玩家的非交易私聊或网站聊天新消息时播放提示音。"
+    },
+    "toasts": {
+      "label": "弹出通知",
+      "description": "切出 Diablo 时显示弹出通知。",
+      "typesLabel": "弹出通知类型"
+    },
+    "trade": {
+      "label": "交易通知",
+      "description": "收到交易私聊或网站交易报价时播放提示音。"
+    },
+    "announcements": {
+      "label": "公告通知",
+      "description": "开启来自 *announcements 的消息通知。默认忽略公告。"
+    },
+    "joins": {
+      "label": "加入通知",
+      "description": "玩家加入游戏时显示通知弹窗（仅在 Diablo 不在前台时）。默认关闭加入通知。"
+    }
+  },
+  "sections": {
+    "interface": {
+      "title": "界面",
+      "description": "配置界面和悬浮窗设置。"
+    },
+    "theme": {
+      "title": "主题",
+      "description": "所有悬浮窗的配色主题，即时生效。"
+    },
+    "chat": {
+      "title": "聊天",
+      "description": "配置聊天和私聊通知，以及你的消息模板。"
+    },
+    "general": {
+      "title": "通用",
+      "description": "应用的通用设置。"
+    },
+    "hotkeys": {
+      "title": "快捷键",
+      "description": "在此配置你的快捷键偏好。"
+    },
+    "about": {
+      "title": "关于",
+      "description": "应用信息、版本和开发者。"
+    },
+    "account": {
+      "title": "账号",
+      "description": "在此管理你的账号设置。"
+    },
+    "networth": {
+      "title": "净资产",
+      "description": "追踪净资产随时间的变化，并在游戏时以悬浮窗显示。"
+    },
+    "stats": {
+      "title": "查价",
+      "description": "配置价格窗口，以及查价搜索中属性范围和筛选的填充方式。"
+    }
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "window": {
+    "title": "Patrimonio",
+    "retry": "Reintentar",
+    "tabs": {
+      "overview": "Resumen",
+      "runes": "Runas",
+      "currency": "Moneda",
+      "ubers": "Mats Uber",
+      "gemsMats": "Gemas y mats",
+      "uniquesSets": "Únicos y sets",
+      "other": "Otros",
+      "rares": "Raros",
+      "raresCrafted": "Raros y creados",
+      "history": "Historial"
+    }
+  },
+  "header": {
+    "netWorth": "Patrimonio",
+    "deltaLast": "último",
+    "delta24h": "24 h",
+    "deltaSeason": "temporada",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando",
+    "refreshTooltip": "Volver a valorar tu alijo ahora",
+    "asOf": "a las {{time}}",
+    "prices": "precios {{day}}",
+    "gold": "{{amount}} de oro",
+    "ladderFallback": "valorado con precios ladder (sin datos de mercado non-ladder)"
+  },
+  "trackingDisabled": {
+    "title": "El historial está desactivado.",
+    "description": "Activa \"Guardar historial de patrimonio\" en Ajustes → Patrimonio para ver un gráfico, sesiones con HR/hora y qué cambió entre instantáneas."
+  },
+  "signedOut": {
+    "chooseAccount": "Elige tu cuenta de PD2 en Ajustes para valorar tu alijo.",
+    "signInPrompt": "Inicia sesión con tu cuenta de PD2 para valorar tu alijo.",
+    "signIn": "Iniciar sesión"
+  },
+  "tabSkeleton": {
+    "title": "Aún no hay valoración.",
+    "description": "No se pudo valorar tu alijo. Usa Reintentar arriba cuando PD2 esté accesible."
+  },
+  "categories": {
+    "runes": "Runas",
+    "currency": "Moneda",
+    "ubers": "Mats Uber",
+    "gems": "Gemas",
+    "mats": "Mats",
+    "uniques": "Únicos",
+    "sets": "Sets",
+    "other": "Otros"
+  },
+  "columns": {
+    "item": "Objeto",
+    "qty": "Cant.",
+    "unit": "Unidad",
+    "value": "Valor",
+    "share": "%",
+    "change7d": "7 d",
+    "price": "Precio"
+  },
+  "table": {
+    "noResults": "Sin resultados.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "orden ascendente",
+    "sortDescending": "orden descendente",
+    "clearSorting": "quitar orden"
+  },
+  "confidence": {
+    "ok": {
+      "label": "mercado",
+      "hint": "Media de mercado de 7 días"
+    },
+    "fixed": {
+      "label": "fijo",
+      "hint": "Valor fijo de runa (pocos anuncios)"
+    },
+    "low": {
+      "label": "bajo",
+      "hint": "Menos de 10 anuncios: se cuenta como incierto, no en el total"
+    },
+    "none": {
+      "label": "sin precio",
+      "hint": "Sin datos de precio: valorado en 0"
+    },
+    "listings_one": "{{count}} anuncio",
+    "listings_many": "{{count}} de anuncios",
+    "listings_other": "{{count}} anuncios"
+  },
+  "overview": {
+    "noPricedHoldings": "Aún no hay posesiones con precio.",
+    "topAside_one": "por valor · top {{count}}",
+    "topAside_many": "por valor · top {{count}}",
+    "topAside_other": "por valor · top {{count}}",
+    "topHoldings": "Principales posesiones",
+    "nothingPriced": "Aún no hay nada con precio.",
+    "unpriced_one": "{{count}} objeto sin precio",
+    "unpriced_many": "{{count}} de objetos sin precio",
+    "unpriced_other": "{{count}} objetos sin precio",
+    "uncertain": "{{value}} incierto (baja confianza, no en el total)",
+    "gold": "{{amount}} de oro (sin convertir)",
+    "byStashTab": "Por pestaña del alijo"
+  },
+  "holdings": {
+    "searchPlaceholder": "Buscar…",
+    "searchLabel": "Buscar posesiones",
+    "clearSearch": "Limpiar búsqueda",
+    "hideZero": "Ocultar valor cero",
+    "nothingMatches": "Nada coincide.",
+    "noneInStash": "No hay ninguno en tu alijo.",
+    "zeroHidden_one": "{{count}} fila de valor cero oculta (los objetos sin precio se muestran pero se valoran en 0).",
+    "zeroHidden_many": "{{count}} de filas de valor cero ocultas (los objetos sin precio se muestran pero se valoran en 0).",
+    "zeroHidden_other": "{{count}} filas de valor cero ocultas (los objetos sin precio se muestran pero se valoran en 0).",
+    "count_one": "{{count}} posesión",
+    "count_many": "{{count}} de posesiones",
+    "count_other": "{{count}} posesiones"
+  },
+  "history": {
+    "showMore": "Mostrar más ({{remaining}} anteriores)",
+    "chartRange": "Rango del gráfico",
+    "ranges": {
+      "24h": "24 h",
+      "7d": "7 d",
+      "season": "Temporada",
+      "all": "Todo"
+    },
+    "rangeChange": "Cambio en el rango seleccionado",
+    "stackByCategory": "Apilar por categoría",
+    "chart": {
+      "netWorth": "Patrimonio",
+      "emptyTitle": "Aún no hay instantáneas en este rango.",
+      "emptyDescription": "Las instantáneas se toman al iniciar, cada pocos minutos mientras Diablo tiene el foco y cuando actualizas."
+    },
+    "sessions": {
+      "title": "Sesiones",
+      "start": "Iniciar nueva sesión",
+      "stop": "Detener sesión",
+      "emptyTitle": "Aún no hay sesiones.",
+      "emptyDescription": "Las sesiones se crean automáticamente a partir de instantáneas tomadas con menos de 30 minutos de diferencia.",
+      "columns": {
+        "when": "Cuándo",
+        "duration": "Duración",
+        "farmed": "Farmeado",
+        "drift": "Variación",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Hoy {{time}}",
+      "yesterday": "Ayer {{time}}",
+      "open": "Sesión abierta",
+      "manual": "manual",
+      "best": "Mejor HR/h de esta temporada",
+      "noGains": "Sin ganancias de objetos.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} instantánea",
+      "tooltipSummary_many": "{{from}} → {{to}} HR · {{count}} de instantáneas",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} instantáneas"
+    },
+    "snapshots": {
+      "title": "Instantáneas",
+      "selected": "{{selected}}/2 seleccionadas",
+      "pickTwo": "Elige dos para comparar",
+      "emptyTitle": "No hay instantáneas en este rango.",
+      "select": "Seleccionar instantánea {{time}}",
+      "compareWithPrevious": "Comparar con la anterior"
+    },
+    "diff": {
+      "priceBasis": "Base de precios",
+      "pricesThen": "Precios de entonces",
+      "pricesNow": "Precios actuales",
+      "close": "Cerrar comparación",
+      "farmed": "Farmeado",
+      "marketDrift": "Variación del mercado",
+      "total": "Total",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "No cambió ninguna posesión.",
+      "change": "Cambio"
+    },
+    "delete": {
+      "thisSeason": "esta temporada",
+      "privacy": "El historial es privado para tu inicio de sesión de PD2 y se guarda en pd2trader.com.",
+      "button": "Eliminar historial",
+      "title": "¿Eliminar el historial de patrimonio?",
+      "description": "Elimina las instantáneas guardadas de {{account}} ({{ladder}}, {{core}}). No se puede deshacer.",
+      "season": "Eliminar {{season}}",
+      "allSeasons": "Eliminar todas las temporadas",
+      "deleted_one": "{{count}} instantánea eliminada.",
+      "deleted_many": "{{count}} de instantáneas eliminadas.",
+      "deleted_other": "{{count}} instantáneas eliminadas."
+    }
+  },
+  "rares": {
+    "stashFallback": "Alijo",
+    "emptyTitle": "No hay raros en tu alijo",
+    "emptyDescription": "Aquí se tasan los anillos, amuletos, joyas, armaduras y armas raros de tu alijo (Guardar · Revisar · Vender).",
+    "groups": {
+      "keep": "Guardar",
+      "worthALook": "Vale la pena revisar"
+    },
+    "estTitle": "Estimado a partir de los precios pedidos en {{season}} por raros similares; no forma parte del total",
+    "summary": {
+      "raresLine_one": "<label>Raros: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} casilla)</note>",
+      "raresLine_many": "<label>Raros: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} de casillas)</note>",
+      "raresLine_other": "<label>Raros: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} casillas)</note>",
+      "craftedLine_one": "<label>Creados: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} casilla)</note>",
+      "craftedLine_many": "<label>Creados: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} de casillas)</note>",
+      "craftedLine_other": "<label>Creados: </label><keep>{{keep}} Guardar</keep><sep> · </sep><check>{{checkHigh}} vale la pena revisar</check><sep> · </sep><vendor>{{count}} probablemente vender</vendor> <note>(libera {{count}} casillas)</note>",
+      "unpricedRares_one": "No se incluye {{count}} raro para Guardar sin rango de mercado",
+      "unpricedRares_many": "No se incluyen {{count}} de raros para Guardar sin rango de mercado",
+      "unpricedRares_other": "No se incluyen {{count}} raros para Guardar sin rango de mercado",
+      "unpricedCrafted_one": "No se incluye {{count}} objeto creado para Guardar sin rango de mercado",
+      "unpricedCrafted_many": "No se incluyen {{count}} de objetos creados para Guardar sin rango de mercado",
+      "unpricedCrafted_other": "No se incluyen {{count}} objetos creados para Guardar sin rango de mercado",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> en raros para Guardar (estimado, no en el total)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> en objetos creados para Guardar (estimado, no en el total)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} probablemente vender · {{tab}}",
+      "vendorNote_one": "Libera {{count}} casilla del alijo",
+      "vendorNote_many": "Libera {{count}} de casillas del alijo",
+      "vendorNote_other": "Libera {{count}} casillas del alijo",
+      "lowTitle": "{{n}} probablemente de poco valor · {{tab}}",
+      "lowNote": "Revisa los objetos sin estadística clave"
+    }
+  }
+}

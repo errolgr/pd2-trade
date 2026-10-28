@@ -1,0 +1,156 @@
+{
+  "notes": {
+    "craftedUnreliable": "itens criados neste slot ainda não podem ser avaliados com precisão (poucos dados de itens criados)"
+  },
+  "slots": {
+    "ring": {
+      "label": "Anel",
+      "plural": "Anéis",
+      "inSentence": "anéis"
+    },
+    "amul": {
+      "label": "Amuleto",
+      "plural": "Amuletos",
+      "inSentence": "amuletos"
+    },
+    "circ": {
+      "label": "Diadema",
+      "plural": "Diademas",
+      "inSentence": "diademas"
+    },
+    "jewl": {
+      "label": "Joia",
+      "plural": "Joias",
+      "inSentence": "joias"
+    },
+    "glov": {
+      "label": "Luvas",
+      "plural": "Luvas",
+      "inSentence": "luvas"
+    },
+    "boot": {
+      "label": "Botas",
+      "plural": "Botas",
+      "inSentence": "botas"
+    },
+    "belt": {
+      "label": "Cinto",
+      "plural": "Cintos",
+      "inSentence": "cintos"
+    },
+    "tors": {
+      "label": "Armadura",
+      "plural": "Armaduras",
+      "inSentence": "armaduras"
+    },
+    "helm": {
+      "label": "Elmo",
+      "plural": "Elmos",
+      "inSentence": "elmos"
+    },
+    "shield": {
+      "label": "Escudo",
+      "plural": "Escudos",
+      "inSentence": "escudos"
+    },
+    "quiver": {
+      "label": "Aljava",
+      "plural": "Aljavas",
+      "inSentence": "aljavas"
+    },
+    "weapon": {
+      "label": "Arma",
+      "plural": "Armas",
+      "inSentence": "armas"
+    },
+    "unknown": {
+      "plural": "Itens",
+      "inSentence": "itens"
+    }
+  },
+  "verdicts": {
+    "keep": "Guardar",
+    "check": "Verificar",
+    "vendor": "Vender"
+  },
+  "priority": {
+    "high": "Tem atributo-chave ★★ ou melhor",
+    "medium": "Tem atributo-chave ★",
+    "low": "Sem atributos-chave"
+  },
+  "crafted": {
+    "lowConfidence": "Baixa confiança",
+    "lowConfidenceTitle": "Baixa confiança: o modelo de itens criados deste slot se baseia em poucos dados de anúncios, então use o veredito e a faixa só como referência aproximada."
+  },
+  "rank": {
+    "top": "top {{percent}}%",
+    "bottom": "últimos {{percent}}%"
+  },
+  "ordinal": {
+    "st": "{{n}}º",
+    "nd": "{{n}}º",
+    "rd": "{{n}}º",
+    "th": "{{n}}º"
+  },
+  "keyStatTitle": "Atributo-chave: preço de fim de temporada {{multiplier}} para este nível",
+  "marketSource": {
+    "atThisRank": "{{slots}} nesta posição · {{where}}",
+    "lastSeason": "temporada passada",
+    "hardcoreListings": "anúncios hardcore"
+  },
+  "rankBar": {
+    "ariaLabel": "Previsto no percentil {{percentile}} dos preços de {{slots}}, com margem de {{error}} pontos",
+    "vendor": "vender",
+    "keep": "guardar"
+  },
+  "rankBlocks": {
+    "title": "Posição entre {{slots}} <note>(esta temporada)</note>",
+    "ariaLabel": "Posição entre {{slots}}: {{block}}",
+    "bottom25": "últimos 25%",
+    "bottom50": "últimos 50%",
+    "top50": "top 50%",
+    "top25": "top 25%",
+    "top15": "top 15%",
+    "top5": "top 5%"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} em {{slots}} só via corrupção",
+    "nearMiss": "quase: {{from}}+ é {{multiplier}} em {{slots}}",
+    "nearMissCorruption": "quase: {{from}}+ é {{multiplier}} em {{slots}} (só via corrupção)",
+    "valuableFrom": "valioso a partir de {{from}} em {{slots}}",
+    "valuableFromCorruption": "valioso a partir de {{from}} em {{slots}} (só via corrupção)"
+  },
+  "stats": {
+    "title": "Atributos deste item",
+    "keyStats_one": "{{count}} atributo-chave",
+    "keyStats_many": "{{count}} de atributos-chave",
+    "keyStats_other": "{{count}} atributos-chave",
+    "noKeyStats": "sem atributos-chave",
+    "roll": "rolagem {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore: modelo de preço e estrelas com dados softcore",
+    "rankedHardcore": "classificado com anúncios hardcore",
+    "rankedBlended": "classificado com anúncios hardcore misturados com softcore ({{percent}}% hardcore)",
+    "rankedSoftcore": "classificado com anúncios softcore",
+    "pricesHardcore": "preços de anúncios hardcore",
+    "pricesSoftcore": "preços de anúncios softcore"
+  },
+  "stashPosition": "col. {{column}}, lin. {{row}}",
+  "detail": {
+    "verdict": "Veredito",
+    "howVerdictsWork": "Como funcionam os vereditos",
+    "usuallyListed": "Anunciado por",
+    "samples": "Amostras",
+    "comparedWith": "Comparado com",
+    "stash": "Baú"
+  },
+  "history": {
+    "title": "Histórico do item",
+    "aside_one": "{{times}}× · {{count}} vendedor · desde {{date}}",
+    "aside_many": "{{times}}× · {{count}} de vendedores · desde {{date}}",
+    "aside_other": "{{times}}× · {{count}} vendedores · desde {{date}}",
+    "newOwner": "novo dono",
+    "noPrice": "sem preço"
+  }
+}

@@ -5,6 +5,7 @@ export const changeLog = {
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
+    '🌐 PD2 Trader in your language: Deutsch, Français, Русский, Español, Português (Brasil), Polski and 简体中文. It follows your system language; change it in Settings → Interface → Language. Item names, stats and game terms stay in English, as in the game',
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',

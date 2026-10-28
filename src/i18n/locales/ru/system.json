@@ -1,0 +1,127 @@
+{
+  "tray": {
+    "settings": "Настройки",
+    "openConfig": "Открыть папку конфигурации",
+    "quit": "Выход"
+  },
+  "options": {
+    "tokenLoaded": "Токен из URL успешно загружен!"
+  },
+  "auth": {
+    "banned": "Этот аккаунт PD2 заблокирован в PD2 Trader.",
+    "popupBlocked": "Браузер заблокировал окно входа. Разрешите всплывающие окна для этого сайта и попробуйте снова.",
+    "timedOut": "Время входа истекло. Попробуйте снова.",
+    "success": "Вход выполнен!",
+    "failed": "Не удалось войти. Попробуйте снова.",
+    "loggedOut": "Вы вышли из аккаунта."
+  },
+  "updates": {
+    "availableTitle": "PD2 Trader — доступно обновление",
+    "availableDescription": "Доступна версия {{version}}. Нажмите, чтобы скачать и перезапустить.",
+    "downloadAndRestart": "Скачать и перезапустить",
+    "manualTitle": "PD2 Trader — доступно обновление {{version}}",
+    "manualDescription": "PD2 Trader не может обновиться сам в этой папке установки. Скачайте новую версию со страницы релиза или обновите через менеджер пакетов.",
+    "openReleasePage": "Открыть страницу релиза",
+    "downloading": "Загрузка обновления...",
+    "downloadingProgress": "Загрузка обновления... {{progress}}%",
+    "downloaded": "Обновление загружено! Перезапуск...",
+    "manualRequired": "Обновление нужно установить вручную",
+    "downloadFailed": "Не удалось скачать обновление. Попробуйте позже.",
+    "dialogTitle": "Загрузка обновления",
+    "dialogDescription": "Подождите, пока загружается обновление."
+  },
+  "notifications": {
+    "offerAccepted": "Предложение принято",
+    "newOffer": "Новое предложение",
+    "offerAcceptedText": "Ваше предложение приняли",
+    "newOfferText": "Получено новое предложение",
+    "viewListing": "К объявлению",
+    "reply": "Ответить",
+    "playerJoined": "Игрок зашёл",
+    "playerJoinedDescription": "{{player}} зашёл в игру",
+    "tradeWhisper": "Личное сообщение об обмене",
+    "whisperFrom": "Личное сообщение от {{player}}",
+    "newChatMessage": "Новое сообщение в чате"
+  },
+  "offers": {
+    "item": "предмет",
+    "revoked": "Предложение отозвано",
+    "revokedDescription": "Ваше предложение на {{item}} отозвано",
+    "revokedFallback": "Предложение отозвано",
+    "revokeFailed": "Не удалось отозвать предложение",
+    "revokeFailedDescription": "Ошибка при отзыве предложения",
+    "accepted": "Предложение принято",
+    "acceptedDescription": "Вы приняли предложение {{player}} на {{item}}",
+    "acceptedFallback": "Предложение принято",
+    "acceptFailed": "Не удалось принять предложение",
+    "acceptFailedDescription": "Ошибка при принятии предложения",
+    "rejected": "Предложение отклонено",
+    "rejectedDescription": "Вы отклонили предложение {{player}} на {{item}}",
+    "rejectedFallback": "Предложение отклонено",
+    "rejectFailed": "Не удалось отклонить предложение",
+    "rejectFailedDescription": "Ошибка при отклонении предложения",
+    "unaccepted": "Принятие отменено",
+    "unacceptedDescription": "Вы отменили принятие предложения {{player}} на {{item}}",
+    "unacceptedFallback": "Принятие предложения отменено",
+    "unacceptFailed": "Не удалось отменить принятие",
+    "unacceptFailedDescription": "Ошибка при отмене принятия предложения",
+    "hidden": "Предложение скрыто",
+    "hiddenDescription": "Ваше предложение на {{item}} скрыто. Оно будет удалено через 7 дней.",
+    "hiddenFallback": "Предложение скрыто",
+    "restored": "Предложение восстановлено",
+    "restoredDescription": "Ваше предложение на {{item}} восстановлено",
+    "restoredFallback": "Предложение восстановлено"
+  },
+  "netWorth": {
+    "accountMismatch": "Выбранный аккаунт не привязан к вашему входу PD2. Проверьте настройки аккаунта.",
+    "sessionExpired": "Сессия PD2 истекла. Войдите снова.",
+    "rateLimited": "Слишком много запросов. Попробуйте через минуту."
+  },
+  "seasons": {
+    "current": "{{season}} (текущий)",
+    "currentGeneric": "Текущий сезон"
+  },
+  "priceWindow": {
+    "options": {
+      "hours24": "24 часа",
+      "days3": "3 дня",
+      "days7": "7 дней",
+      "days30": "30 дней"
+    },
+    "seasonAvg": "сред. за сезон",
+    "dayAvg_one": "сред. за {{count}} день",
+    "dayAvg_few": "сред. за {{count}} дня",
+    "dayAvg_many": "сред. за {{count}} дней",
+    "dayAvg_other": "сред. за {{count}} дня",
+    "hourAvg_one": "сред. за {{count}} час",
+    "hourAvg_few": "сред. за {{count}} часа",
+    "hourAvg_many": "сред. за {{count}} часов",
+    "hourAvg_other": "сред. за {{count}} часа",
+    "lastSeason": "прошлый сезон",
+    "seasonTag": "сезон",
+    "basis": {
+      "last30Days": "последних 30 днях",
+      "wholeSeason": "всём сезоне",
+      "last30DaysOf": "последних 30 днях {{season}}",
+      "lastWindow": "последнем периоде {{window}}"
+    },
+    "notEnoughSalesThisWeek": "Мало продаж за эту неделю — на основе данных о {{basis}}",
+    "notEnoughSalesInWindow": "Мало продаж за последние {{window}} — на основе данных о {{basis}}"
+  },
+  "chatTemplates": {
+    "nameRequired": "Дайте шаблону название",
+    "nameTooLong": "Название: не более {{max}} символов",
+    "textRequired": "Напишите сообщение",
+    "textTooLong": "Сообщение: не более {{max}} символов",
+    "tokens": {
+      "accountName": "Имя их аккаунта",
+      "characterName": "Имя их персонажа",
+      "itemName": "Последний упомянутый или обсуждавшийся предмет",
+      "price": "Его цена"
+    }
+  },
+  "corruptedZones": {
+    "waitMinutes": "{{minutes}} мин",
+    "waitHours": "{{hours}} ч {{minutes}} мин"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "panel": {
+    "crashed": "Ce panneau a planté."
+  },
+  "toast": {
+    "details": "Détails",
+    "undo": "Annuler"
+  },
+  "ui": {
+    "more": "Plus"
+  },
+  "errorHandler": {
+    "title": "Erreur"
+  },
+  "controller": {
+    "runningInBackground": "s'exécute maintenant en arrière-plan...",
+    "itemNotSupported": "Objet non pris en charge ou invalide.",
+    "cannotListItem": "Impossible de mettre en vente",
+    "notInSharedStash": "Cet objet n'est pas dans votre coffre partagé et ne peut pas être mis en vente.",
+    "delist": "Retirer",
+    "noItemUnderCursor": "Aucun objet valide sous le curseur."
+  },
+  "chatButton": {
+    "dragToMove": "Glisser pour déplacer",
+    "openChat": "Ouvrir le chat PD2",
+    "chat": "Chat",
+    "offers": "Offres",
+    "more": "Plus",
+    "unreadMessages_one": "{{count}} message non lu",
+    "unreadMessages_many": "{{count}} de messages non lus",
+    "unreadMessages_other": "{{count}} messages non lus",
+    "tradeOffers_one": "{{count}} offre d'échange",
+    "tradeOffers_many": "{{count}} d'offres d'échange",
+    "tradeOffers_other": "{{count}} offres d'échange",
+    "disableOverlay": "Désactiver l'overlay",
+    "menu": {
+      "chat": "Chat",
+      "market": "Marché",
+      "builds": "Builds",
+      "netWorth": "Valeur nette",
+      "stashValue": "Valeur du coffre",
+      "offers": "Offres",
+      "manageListings": "Gérer les annonces",
+      "settings": "Paramètres"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Nom",
+    "namePlaceholder": "ex. Toujours dispo ?",
+    "message": "Message",
+    "messagePlaceholder": "ex. Salut, ton {itemName} est toujours dispo ?",
+    "asksWhenUsed": "Demandé à l'utilisation :",
+    "asksNone": "Tout autre {name} est demandé lors de l'utilisation du modèle."
+  },
+  "signIn": {
+    "eyebrow": "Se connecter à",
+    "lead": "Liez votre compte Project Diablo 2 pour estimer les prix, mettre des objets en vente et discuter en jeu.",
+    "howItWorks": "Fonctionnement de la connexion",
+    "trust": {
+      "officialLogin": "Connexion PD2 officielle",
+      "noPassword": "Aucun mot de passe partagé",
+      "readOnlyStash": "Coffre en lecture seule"
+    },
+    "openingBrowser": "Ouverture du navigateur…",
+    "signInWithPd2": "Se connecter avec PD2",
+    "finishInBrowser": "Terminez la connexion dans votre navigateur, puis revenez ici.",
+    "opensSite": "Ouvre projectdiablo2.com dans votre navigateur.",
+    "later": "Plus tard",
+    "accounts": {
+      "eyebrow": "Presque terminé",
+      "lead": "Plusieurs comptes de jeu sont liés à cette connexion. Choisissez celui avec lequel échanger.",
+      "label": "Comptes de jeu"
+    }
+  },
+  "changeLog": {
+    "title": "Nouveautés",
+    "close": "Fermer le journal des modifications",
+    "current": "Actuelle",
+    "changes_one": "{{count}} modification",
+    "changes_many": "{{count}} de modifications",
+    "changes_other": "{{count}} modifications"
+  },
+  "corruptedZones": {
+    "liveTitle": "Corrompue dans les parties Hell créées jusqu'à {{until}}.",
+    "liveTitleNext": "Corrompue dans les parties Hell créées jusqu'à {{until}}. Suivante : {{zone}}.",
+    "liveTitleNextAt": "Corrompue dans les parties Hell créées jusqu'à {{until}}. Suivante : {{zone}} à {{time}}.",
+    "followedTitle": "Prochaine zone suivie : corrompue dans les parties Hell créées de {{from}} à {{until}}.",
+    "pillTitle": "{{title}} Cliquez pour le planning, glissez pour déplacer.",
+    "timeUntilNext": "Temps avant la prochaine zone",
+    "timeUntilThis": "Temps avant cette zone",
+    "inTime": "dans {{time}}",
+    "upcoming": "Prochaines zones corrompues",
+    "slotWhen": "{{time}} · dans {{wait}}",
+    "toastTitle": "Zone corrompue",
+    "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})"
+  }
+}
