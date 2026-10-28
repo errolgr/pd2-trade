@@ -11,6 +11,13 @@ import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-w
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
+import type { BuildsMode } from '@/lib/builds-api';
+
+/** A tracked character the builds panel remembers (followed / recently viewed). */
+export interface BuildCharacterRef {
+  name: string;
+  mode: BuildsMode;
+}
 
 export type NetWorthTickerAnchor =
   | 'top-left'
@@ -86,12 +93,17 @@ export interface ISettings {
   corruptedZoneTimerEnabled?: boolean; // Corrupted zone timer overlay (src/lib/corrupted-zones.ts)
   corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
   corruptedZoneTimerOpacity?: number; // 30-100
+  corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
-  corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names toasted under 'followed'
+  corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
   hotkeyKeyMarket?: string; // '' = unbound
+  hotkeyModifierBuilds?: 'ctrl' | 'alt';
+  hotkeyKeyBuilds?: string; // '' = unbound
+  followedBuildCharacters?: BuildCharacterRef[]; // builds panel: starred characters
+  recentBuildCharacters?: BuildCharacterRef[]; // builds panel: last viewed characters, newest first
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
@@ -151,12 +163,17 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerEnabled: false,
   corruptedZoneTimerAnchor: 'top-right',
   corruptedZoneTimerOpacity: 90,
+  corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',
   hotkeyKeyMarket: 'm',
+  hotkeyModifierBuilds: 'ctrl',
+  hotkeyKeyBuilds: '',
+  followedBuildCharacters: [],
+  recentBuildCharacters: [],
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
@@ -172,6 +189,7 @@ const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+  ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
 ];
 
 /**

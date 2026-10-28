@@ -14,6 +14,8 @@ export enum StatId {
   ColdDamage = 1006,
   PoisonDamage = 1007,
   Damage = 1008,
+  /** Market pseudo stat rows (`Stat.pseudo` names which): a computed total, filtered by the market service. */
+  Pseudo = 1009,
 }
 
 /** A min/max damage pair the game draws as one line. */
@@ -32,11 +34,51 @@ export interface DamagePair {
 }
 
 export const DAMAGE_PAIRS: DamagePair[] = [
-  { id: StatId.FireDamage, min: 48, max: 49, element: 'fire', label: 'Fire Damage', rangeStat: 48, market: ['firedam', 'firemindam'] },
-  { id: StatId.LightningDamage, min: 50, max: 51, element: 'lightning', label: 'Lightning Damage', rangeStat: 50, market: ['lightdam', 'lightmindam'] },
-  { id: StatId.MagicDamage, min: 52, max: 53, element: 'magic', label: 'Magic Damage', rangeStat: 52, market: ['magicdam', 'magicmindam'] },
-  { id: StatId.ColdDamage, min: 54, max: 55, element: 'cold', label: 'Cold Damage', rangeStat: 54, market: ['colddam', 'coldmindam'] },
-  { id: StatId.PoisonDamage, min: 57, max: 58, element: 'poison', label: 'Poison Damage', rangeStat: 57, market: ['poisondam', 'poisonmindam'] },
+  {
+    id: StatId.FireDamage,
+    min: 48,
+    max: 49,
+    element: 'fire',
+    label: 'Fire Damage',
+    rangeStat: 48,
+    market: ['firedam', 'firemindam'],
+  },
+  {
+    id: StatId.LightningDamage,
+    min: 50,
+    max: 51,
+    element: 'lightning',
+    label: 'Lightning Damage',
+    rangeStat: 50,
+    market: ['lightdam', 'lightmindam'],
+  },
+  {
+    id: StatId.MagicDamage,
+    min: 52,
+    max: 53,
+    element: 'magic',
+    label: 'Magic Damage',
+    rangeStat: 52,
+    market: ['magicdam', 'magicmindam'],
+  },
+  {
+    id: StatId.ColdDamage,
+    min: 54,
+    max: 55,
+    element: 'cold',
+    label: 'Cold Damage',
+    rangeStat: 54,
+    market: ['colddam', 'coldmindam'],
+  },
+  {
+    id: StatId.PoisonDamage,
+    min: 57,
+    max: 58,
+    element: 'poison',
+    label: 'Poison Damage',
+    rangeStat: 57,
+    market: ['poisondam', 'poisonmindam'],
+  },
   { id: StatId.Damage, min: 21, max: 22, element: '', label: 'Damage', rangeStat: 22, market: null },
 ];
 
@@ -54,7 +96,8 @@ export function damagePairValues(
 ): { lo: number; hi: number; seconds?: number; sources: Stat[] } | null {
   const minStat = stats.find((s) => s.stat_id === pair.min);
   const maxStat = stats.find((s) => s.stat_id === pair.max);
-  const value = (s: Stat | undefined) => (typeof s?.value === 'number' && Number.isFinite(s.value) ? s.value : undefined);
+  const value = (s: Stat | undefined) =>
+    typeof s?.value === 'number' && Number.isFinite(s.value) ? s.value : undefined;
   if (pair.id === StatId.PoisonDamage) {
     const lengthStat = stats.find((s) => s.stat_id === POISON_LENGTH_STAT);
     const min = value(minStat);

@@ -46,6 +46,7 @@ import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
+import { exactStashMatches } from '../lib/exact-stash-match';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -92,6 +93,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const isPollRunningRef = useRef(false); // Prevent overlapping poll cycles
   const isProcessingRef = useRef<Set<string>>(new Set()); // Track which items are being processed
   const pendingListingDataRef = useRef<PendingListing | null>(null);
+  // Every stash item findMatchingItems returned, even when the list shows only the exact match: queueing
+  // must wait for an item that is new to all of them.
+  const stashCandidatesRef = useRef<GameStashItem[]>([]);
 
   const form = useForm<ShortcutFormData>({
     resolver: zodResolver(shortcutFormSchema),
@@ -104,6 +108,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
   const resetAllState = useCallback(() => {
     setMatchingItems([]);
+    stashCandidatesRef.current = [];
     setSelectedItem(null);
     setError(null);
     setIsAccountMismatch(false);
@@ -128,15 +133,19 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     setError(null);
     const startTime = performance.now();
     try {
-      const items = await findMatchingItems(item);
+      const candidates = await findMatchingItems(item);
       const duration = performance.now() - startTime;
+      // Narrow to the very item that was copied/inspected when it is identifiable among the candidates.
+      const exact = exactStashMatches(item, candidates);
+      const items = exact.length > 0 ? exact : candidates;
 
       trackMeasurement(
         'list_item_matching_search',
-        { duration_ms: duration, matched_items: items.length },
+        { duration_ms: duration, matched_items: candidates.length, exact_matches: exact.length },
         { outcome: 'success' },
       );
 
+      stashCandidatesRef.current = candidates;
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
@@ -571,9 +580,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         return;
       }
 
-      // Store initial matching hashes if there are multiple matches
-      const initialMatchingHashes =
-        matchingItems.length > 0 ? new Set(matchingItems.map((item) => item.hash)) : undefined;
+      // Store the hashes of every stash candidate so the queue waits for an item new to all of them
+      const candidates = stashCandidatesRef.current;
+      const initialMatchingHashes = candidates.length > 0 ? new Set(candidates.map((item) => item.hash)) : undefined;
 
       const pendingId = addPendingListing(item, values, initialMatchingHashes);
 
@@ -856,7 +865,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             )}
           </AnimatePresence>
         </motion.div>
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 min-h-0 [&_[data-radix-scroll-area-viewport]>div]:!block">
           <motion.div
             className="flex flex-col gap-2 p-px pb-2 pr-2"
             variants={listStagger}

@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '../lib/qualityColor';
-import { StatRow } from './StatRow';
+import { RANGE_FIELDS, StatRow } from './StatRow';
 import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
@@ -51,9 +51,12 @@ import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
-import { priceCheckToMarketFilters } from '@/pages/market/store/priceCheckFilters';
+import { priceCheckToMarketFilters, type PriceCheckSearch } from '@/pages/market/store/priceCheckFilters';
+import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import type { MarketFilters } from '@/pages/market/lib/types';
+import { searchMarketListings } from '@/lib/market-search-api';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey } from '../lib/utils';
+import { getStatKey, PSEUDO_KEY_PREFIX } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -81,18 +84,22 @@ import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writePng, writeText } from '@/lib/browser-clipboard';
+import { whisperCommand } from '@/lib/whisper-history';
 import { buildItemCard, renderItemCard } from '../lib/item-card';
 import { CaptureSweep } from './CaptureSweep';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
 import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
+import { WornByLine } from './WornByLine';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 
 /** The search whose results are listed. */
 interface ActiveSearch {
   query: MarketListingQuery;
+  /** Set when a pseudo stat is selected: PD2 can't filter computed totals, the market service searches instead. */
+  marketFilters: MarketFilters | null;
   archived: boolean;
   searchMode: number;
   /** Listings fetched so far: the `$skip` of the next page. */
@@ -123,6 +130,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle,
     corruptedState,
     setCorruptedState,
+    pseudos,
+    togglePseudo,
+    setActivePseudos,
   } = useStatSelection(item);
 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName]);
@@ -800,7 +810,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       const startTime = performance.now();
 
       try {
-        const result = search.archived ? await getMarketListingsArchive(query) : await getMarketListings(query);
+        const result = search.marketFilters
+          ? await searchMarketListings(search.marketFilters, {
+              page: search.skip / ITEMS_PER_PAGE,
+              limit: ITEMS_PER_PAGE,
+            }).then((page) => ({ data: page.items.map((row) => row.listing), total: page.total }))
+          : search.archived
+            ? await getMarketListingsArchive(query)
+            : await getMarketListings(query);
         if (generation !== searchGeneration.current) return;
 
         const duration = performance.now() - startTime;
@@ -831,6 +848,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           {
             outcome: 'success',
             archived: search.archived,
+            market_service: search.marketFilters !== null,
             search_mode: search.searchMode,
             page: query.$skip / ITEMS_PER_PAGE,
           },
@@ -863,6 +881,21 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       if (settingsLoading) return;
       // Only use searchMode for items that support toggle, otherwise use default (0)
       const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+      const priceCheck: PriceCheckSearch = {
+        item,
+        pd2Item,
+        selected,
+        filters,
+        settings,
+        statMapper,
+        archive: searchArchived,
+        searchMode: effectiveSearchMode,
+        matchedItemType,
+        corruptedState,
+        corruptionNames,
+        qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+      };
+      const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
       const search: ActiveSearch = {
         query: buildGetMarketListingQuery(
           item,
@@ -880,6 +913,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           corruptionNames.length > 0 ? corruptionNames : undefined,
           shouldUseToggle ? effectiveQuality : undefined,
         ),
+        marketFilters: hasPseudo
+          ? mergeFilters(
+              defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
+              priceCheckToMarketFilters(priceCheck),
+            )
+          : null,
         archived: searchArchived,
         searchMode: effectiveSearchMode,
         skip: 0,
@@ -927,6 +966,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Clear existing selections and add the corruption property names to the array for direct filtering
       setSelected(new Set());
       setFilters({});
+      setActivePseudos([]);
       setSelectedCorruptionNames(Array.isArray(corruptionKey) ? corruptionKey : [corruptionKey]); // Set the corruption property names to filter by
       setCorruptedState(1); // Set to corrupted only
       setSearchArchived(true); // Enable expired listings
@@ -982,12 +1022,23 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openSettingsPage = useCallback(() => openPanel('settings'), [openPanel]);
 
-  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`)
+  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`) and the
+  // Σ totals folded in
   const clearSelectedStats = useCallback(() => {
     setSelected(new Set());
     setFilters({});
     setCorruptedState(0);
-  }, [setSelected, setFilters, setCorruptedState]);
+    setActivePseudos([]);
+  }, [setSelected, setFilters, setCorruptedState, setActivePseudos]);
+
+  // "Clear ranges": every selected stat keeps its tick, its min / max empty; each row plays its clear wipe
+  const hasAnyRange = [...selected].some((k) => RANGE_FIELDS.some((field) => !!filters[k]?.[field]));
+  const [rangeWipe, setRangeWipe] = useState(0);
+  const clearAllRanges = () => {
+    const empty = Object.fromEntries(RANGE_FIELDS.map((field) => [field, '']));
+    setFilters((f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, selected.has(k) ? { ...v, ...empty } : v])));
+    setRangeWipe((n) => n + 1);
+  };
 
   const openTradeUrl = () => {
     if (tradeUrl) {
@@ -1263,6 +1314,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 Appraisal note: {appraisalNoteText.text}
               </span>
             )}
+            <WornByLine
+              name={item.isRuneword ? item.runeword : item.name}
+              quality={item.quality}
+              isRuneword={item.isRuneword}
+              mode={settings.mode === 'hardcore' ? 'hardcore' : 'softcore'}
+            />
 
             {/* Average Price Information for Unique Items - Compact */}
             {isUniqueOrSet && (
@@ -1445,39 +1502,68 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </span>
                   <AnimatePresence initial={false}>
                     {(selected.size > 0 || corruptedState !== 0) && (
-                      <motion.button
-                        type="button"
+                      <motion.div
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 6 }}
                         transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                        onClick={clearSelectedStats}
-                        className="inline-flex items-center gap-1 rounded-sm text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
                       >
                         <span className="tabular-nums">{selected.size} selected</span>
+                        {/* Empties every selected stat's min / max (stats stay selected); only while one is set */}
+                        {hasAnyRange && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <button
+                              type="button"
+                              onClick={clearAllRanges}
+                              title="Empty every min and max; the stats stay selected"
+                              className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                            >
+                              Clear ranges
+                            </button>
+                          </>
+                        )}
                         <span aria-hidden>·</span>
-                        <span className="underline-offset-2 hover:underline">Clear</span>
-                      </motion.button>
+                        <button
+                          type="button"
+                          onClick={clearSelectedStats}
+                          title="Untick every stat"
+                          className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          Clear
+                        </button>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
                 <ScrollArea className="flex-none pr-2"
                   viewportClassName="max-h-[30vh]">
                   <div>
-                    {sortedStats.map((s) => (
-                      <StatRow
-                        toggle={toggle}
-                        key={getStatKey(s)}
-                        stat={s}
-                        nested={false}
-                        updateFilter={updateFilter}
-                        filters={filters}
-                        selected={selected}
-                        corruptedState={corruptedState}
-                        onSubmit={handleSearch}
-                        rare={rareStats.get(getStatKey(s))}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {sortedStats.map((s) => {
+                        // Σ chip menu: the totals over this row, or over the rows a Σ row folded in
+                        const keys = s.folded ? s.folded.map(getStatKey) : [getStatKey(s)];
+                        return (
+                          <StatRow
+                            toggle={toggle}
+                            key={getStatKey(s)}
+                            stat={s}
+                            item={item}
+                            nested={false}
+                            updateFilter={updateFilter}
+                            filters={filters}
+                            selected={selected}
+                            corruptedState={corruptedState}
+                            onSubmit={handleSearch}
+                            rare={rareStats.get(getStatKey(s))}
+                            pseudoOptions={pseudos.filter((o) => o.covers.some((k) => keys.includes(k)))}
+                            wipe={rangeWipe}
+                            onPseudo={togglePseudo}
+                          />
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 </ScrollArea>
               </section>
@@ -2056,7 +2142,10 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
     const account = listing.user?.in_game_account || listing.user?.game?.accounts?.[0] || listing.user?.username || '';
     const itemName = listing.item?.name || listing.item?.base?.name || 'item';
     const priceStr = listing.hr_price ? `${listing.hr_price} HR` : listing.price || '';
-    const message = `/w *${account} Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`;
+    const message = whisperCommand(
+      account,
+      `Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`,
+    );
     try {
       await writeText(message);
       setWhisperCopied(true);

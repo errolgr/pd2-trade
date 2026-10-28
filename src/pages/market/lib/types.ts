@@ -33,8 +33,13 @@ export interface StatFilter {
   /** Weight for stat-weighted sort; undefined/0 = not scored. */
   weight?: number;
   enabled: boolean;
-  /** Member of the any-of group: the enabled `or` rows match when one of them does; other rows are all required. */
-  or?: boolean;
+  /**
+   * Any-of block (1…MAX_OR_BLOCKS): each block matches when one of its enabled rows does. Rows with neither
+   * `or` nor `not` are all required.
+   */
+  or?: number;
+  /** Exclusion group: listings matching any enabled `not` row are left out. Never set together with `or`. */
+  not?: boolean;
 }
 
 export interface Requirements {
@@ -143,19 +148,19 @@ export interface SearchOptions {
 export interface SearchResult {
   /** One page, filtered and ordered by the market service. */
   items: ScoredListing[];
-  /** Matches across all pages. */
+  /** Matches across all pages; see `totalExact`. */
   total: number;
+  /** False when `total` is a lower bound (the service's count cap) or an estimate (Seller online filters). */
+  totalExact: boolean;
   /** Listings on this page. */
   fetched: number;
   mode: 'server';
 }
 
-/** Whether a listing still stands as shown, checked against PD2 before acting on it. */
+/** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
 export type ListingFreshness =
   | { status: 'ok'; listing: MarketListingEntry }
   | { status: 'gone' }
-  /** Price note, HR price or item differ from what was shown; `listing` is the current one. */
-  | { status: 'changed'; listing: MarketListingEntry }
   /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
   | { status: 'unknown' };
 
@@ -182,7 +187,7 @@ export interface MarketApi {
   searchListings: (
     filters: MarketFilters,
     opts: { page: number; limit: number; signal?: AbortSignal },
-  ) => Promise<{ items: ScoredListing[]; total: number }>;
+  ) => Promise<{ items: ScoredListing[]; total: number; totalExact: boolean }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
   getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
@@ -215,4 +220,12 @@ export interface MarketPanelPayload {
   savedSearchId?: string;
   focusListingId?: string;
   tab?: MarketTab;
+}
+
+/** Payload for `openPanel('listingDetail', payload)`: the listing drawer. */
+export interface ListingPanelPayload {
+  /** PD2 listing id, looked up on pd2trader.com. */
+  listingId: string;
+  /** The watch that found it: its pseudo stat totals show, as in the market browser. */
+  savedSearchId?: string;
 }

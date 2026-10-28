@@ -5,7 +5,7 @@
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { EMPTY_PREFS, isArchived, prefsFor, type ChatPrefs } from '@/lib/chat-prefs';
-import { isOpenTrade, normalizeName, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
+import { isOpenTrade, nameAliases, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
@@ -64,8 +64,12 @@ export interface InboxInput {
   offers: readonly TradeOffer[];
   now: number;
   prefs?: ChatPrefs;
-  /** Website users opened from elsewhere (a seller in the market) who get a thread even without any history. */
-  contacts?: readonly { userId: string; name: string }[];
+  /**
+   * Website users opened from elsewhere (a seller in the market) who get a thread even without any history.
+   * `user` seeds the thread's participant so an in-game-only trader resolved from their account (see
+   * useResolvedSellers) brings its registered game accounts along, letting whispers link in via linkSender.
+   */
+  contacts?: readonly { userId: string; name: string; user?: Participant }[];
 }
 
 /** Pinned threads first (newest first among them), then the rest newest first (threads without any message last). */
@@ -126,15 +130,32 @@ export function buildInbox({
     thread.participant ??= offer.user;
   }
 
+  // Accounts a contact's user brings to a thread that already has them (its conversation partner may list none)
+  const contactAccounts = new Map<string, { accountName: string }[]>();
   for (const contact of contacts) {
-    if (!byUser.has(contact.userId)) {
-      add({ id: `user:${contact.userId}`, name: contact.name, userId: contact.userId, ...blank() });
+    const existing = byUser.get(contact.userId);
+    if (!existing) {
+      add({
+        id: `user:${contact.userId}`,
+        name: contact.name,
+        userId: contact.userId,
+        participant: contact.user,
+        ...blank(),
+      });
+      continue;
     }
+    existing.participant ??= contact.user;
+    const accounts = contact.user?.game?.accounts ?? [];
+    if (accounts.length > 0)
+      contactAccounts.set(
+        existing.id,
+        accounts.map((accountName) => ({ accountName })),
+      );
   }
 
   // Accounts once every offer is in: a conversation partner may only show accounts on their offers
   const candidates = [...threads.values()].map((thread) => {
-    thread.accounts = knownAccounts(thread.participant, thread.offers);
+    thread.accounts = knownAccounts(thread.participant, [...thread.offers, ...(contactAccounts.get(thread.id) ?? [])]);
     return { threadId: thread.id, accounts: thread.accounts };
   });
 
@@ -203,8 +224,7 @@ export function threadAliases(
     ...thread.people.flatMap((p) => [p.key, p.accountName, p.characterName, p.playerName]),
     ...thread.accounts,
   ]) {
-    const key = normalizeName(name);
-    if (key) ids.add(whisperThreadId(key));
+    for (const key of nameAliases(name)) ids.add(whisperThreadId(key));
   }
   return [...ids];
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { isTauri } from '@tauri-apps/api/core';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
@@ -87,8 +88,9 @@ setTimeout(() => {
   console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);
 }, 1000);
 
-// Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows
-document.addEventListener('contextmenu', (e) => e.preventDefault());
+// Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows; browser mode keeps it
+// (Inspect / DevTools)
+if (isTauri()) document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 /**
  * The single overlay window: every provider mounted once, every UI surface a panel.
@@ -132,8 +134,10 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <Routes>
         <Route path="/"
           element={<AppRoot />} />
-        {/* Browser mode: open straight into the market browser (see overlay/browser-launch.ts) */}
+        {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
         <Route path="/market"
+          element={<AppRoot />} />
+        <Route path="/builds"
           element={<AppRoot />} />
         {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
         {process.env.NODE_ENV !== 'production' && (

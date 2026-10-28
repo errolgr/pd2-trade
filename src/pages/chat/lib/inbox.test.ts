@@ -165,6 +165,34 @@ describe('buildInbox', () => {
     });
   });
 
+  it('links a whisper to a contact resolved from the seller lookup by its game accounts', () => {
+    const resolved = {
+      _id: 'tharok_web',
+      username: 'tharok_web',
+      created_at: '',
+      game: { accounts: ['Tharok'] },
+    };
+    const threads = inbox({
+      people: { tharok: person('tharok', { accountName: 'tharok', characterName: 'frostwind' }) },
+      contacts: [{ userId: 'tharok_web', name: 'tharok_web', user: resolved }],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['user:tharok_web', ['tharok']]]);
+    expect(threads[0]).toMatchObject({ userId: 'tharok_web', participant: resolved });
+    expect(threads[0].accounts).toEqual(['Tharok']);
+  });
+
+  it("adds a resolved contact's accounts to the conversation they already have, so their whispers link there", () => {
+    const resolved = { _id: 'tharok', username: 'tharok_web', created_at: '', game: { accounts: ['Tharok'] } };
+    const threads = inbox({
+      // The conversation partner lists no game accounts
+      conversations: [conversation('c-tharok', { id: 'tharok', username: 'tharok_web' })],
+      people: { tharok: person('tharok') },
+      contacts: [{ userId: 'tharok', name: 'tharok_web', user: resolved }],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['c-tharok', ['tharok']]]);
+    expect(threads[0].accounts).toEqual(['Tharok']);
+  });
+
   it("links whispers to a conversation by an account only its partner's offers carry, and whispers go there", () => {
     const input = {
       conversations: [conversation('c-u2', { id: 'u2', username: 'u2web' })],
@@ -247,6 +275,11 @@ describe('buildInbox', () => {
       people: { acc1: person('acc1', { characterName: 'Sorc' }) },
     });
     expect(threadAliases(thread).sort()).toEqual(['c1', 'user:u1', 'whisper:acc1', 'whisper:sorc'].sort());
+  });
+
+  it('knows a legacy "character*account" sender by the whole name and each half', () => {
+    const [thread] = inbox({ people: { 'frost*tharok': person('frost*tharok', { accountName: undefined }) } });
+    expect(threadAliases(thread).sort()).toEqual(['whisper:frost', 'whisper:frost*tharok', 'whisper:tharok']);
   });
 });
 

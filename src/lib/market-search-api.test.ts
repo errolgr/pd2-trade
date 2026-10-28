@@ -54,11 +54,19 @@ describe('searchMarketListings', () => {
     expect(JSON.parse(init?.body as string)).toEqual(JSON.parse(JSON.stringify(marketSearchBody(f, 1, 25))));
     expect(result).toEqual({
       total: 312,
+      totalExact: true,
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
         { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
       ],
     });
+  });
+
+  it('reads totalExact, an exact count when the service omits it', async () => {
+    respond(200, { items: [], total: 1000, totalExact: false });
+    await expect(search()).resolves.toMatchObject({ total: 1000, totalExact: false });
+    respond(200, { items: [], total: 1000, totalExact: 'no' });
+    await expect(search()).resolves.toMatchObject({ totalExact: true });
   });
 
   it.each([
@@ -146,19 +154,21 @@ describe('marketSearchBody', () => {
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
 
-  it('sends OR and corruption rows, and never text over the service limits', () => {
+  it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
       sellerName: 'CIutch',
       stats: [
-        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
         { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
+        { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
       ],
     });
     const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
     expect(body.filters.stats).toEqual([
-      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
       { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+      { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
     ]);
     expect(body.filters.priceText).toHaveLength(100);
     expect(body.filters.sellerName).toBe('CIutch');

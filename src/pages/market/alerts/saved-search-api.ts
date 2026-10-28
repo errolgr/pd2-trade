@@ -120,11 +120,20 @@ export async function openAlertStream(token: string, signal: AbortSignal): Promi
   return response;
 }
 
+/** Whether a looked-up listing is still for sale. */
+export type MarketListingStatus = 'active' | 'sold' | 'removed';
+
+/** `GET /api/market/listing/:id`: the listing and whether it is still for sale. */
+export interface MarketListingDetail {
+  listing: MarketListingEntry;
+  status: MarketListingStatus;
+}
+
 /** One listing by its PD2 id from pd2trader.com (also sold/removed ones, kept 30 days); null when unknown. */
-export async function fetchMarketListing(id: string): Promise<MarketListingEntry | null> {
+export async function fetchMarketListing(id: string): Promise<MarketListingDetail | null> {
   const response = await fetch(`${BACKEND_URL}/api/market/listing/${encodeURIComponent(id)}`);
   if (response.status === 404 || response.status === 400) return null;
   if (!response.ok) throw await errorFrom(response);
-  const body = (await response.json()) as { listing?: MarketListingEntry };
-  return body.listing ?? null;
+  const body = (await response.json()) as { listing?: MarketListingEntry; status?: MarketListingStatus };
+  return body.listing ? { listing: body.listing, status: body.status ?? 'active' } : null;
 }

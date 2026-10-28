@@ -66,19 +66,37 @@ function Harness({ stat, onSubmit }: { stat: Stat; onSubmit?: () => void }) {
 }
 
 describe('StatRow', () => {
-  it('shows the stat name, rolled value and its possible range', () => {
+  it('reads like the item: the tooltip line, then its possible range', () => {
     const { container } = renderRow({ stat: FCR });
-    expect(container.textContent).toContain('% Faster Cast Rate');
-    expect(container.textContent).toContain('20');
+    expect(container.textContent).toContain('+20% Faster Cast Rate');
     expect(container.textContent).toContain('[10 - 20]');
+    expect(container.textContent).not.toContain('% Faster Cast Rate: 20');
   });
 
-  it('omits the range for socket rows (sockets are a count, not a roll)', () => {
+  it('clears min and max with one click and focuses min for the new value', () => {
+    render(<Harness stat={FCR} />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '20' } });
+    const clear = screen.getByRole('button', { name: 'Clear % Faster Cast Rate range' });
+    fireEvent.click(clear);
+    expect(JSON.parse(screen.getByTestId('filters').textContent ?? '{}')['id:105']).toEqual({ min: '', max: '' });
+    expect(document.activeElement).toBe(screen.getByLabelText('% Faster Cast Rate minimum'));
+  });
+
+  it('draws damage pairs as the one line the game shows', () => {
+    const { container } = renderRow({
+      stat: { stat_id: StatId.FireDamage, name: 'Fire Damage', value: 4, maxValue: 14 },
+    });
+    expect(container.textContent).toContain('Adds 4-14 fire damage');
+  });
+
+  it('shows sockets as "Socketed (n)" without a range (sockets are a count, not a roll)', () => {
     const { container } = renderRow({
       stat: { stat_id: StatId.Socket, name: 'Sockets', value: 4, range: { min: 4, max: 4 } },
     });
-    expect(container.textContent).toContain('Sockets: 4');
-    expect(container.textContent).not.toContain('(4-4)');
+    expect(container.textContent).toContain('Socketed (4)');
+    expect(container.textContent).not.toContain('[4');
   });
 
   it('hides min/max inputs until the stat is selected', () => {

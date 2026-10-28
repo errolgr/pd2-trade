@@ -275,6 +275,12 @@ describe('AppController hotkey registration', () => {
     await press(7);
     expect(h.overlay.togglePanel).toHaveBeenCalledWith('market');
   });
+
+  it('builds hotkey toggles the builds panel', async () => {
+    await mount();
+    await press(8);
+    expect(h.overlay.togglePanel).toHaveBeenCalledWith('builds');
+  });
 });
 
 describe('AppController panels', () => {

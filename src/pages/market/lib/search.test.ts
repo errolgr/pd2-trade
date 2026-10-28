@@ -15,6 +15,7 @@ function fakeApi(
     async (_f: MarketFilters, _opts: { page: number; limit: number; signal?: AbortSignal }) => ({
       items,
       total,
+      totalExact: false,
     }),
   );
   return { api: { searchListings } as unknown as MarketApi, searchListings };
@@ -30,6 +31,7 @@ describe('runSearch', () => {
     expect(result).toEqual({
       items: [{ listing: expect.objectContaining({ _id: 'a' }), pseudo: { pseudo_life: 5 }, score: 3, value: 1.5 }],
       total: 40,
+      totalExact: false,
       fetched: 1,
       mode: 'server',
     });

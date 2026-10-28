@@ -4,6 +4,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invoke } from '@tauri-apps/api/core';
 import {
   CLOSE_ON_BLUR_MS,
@@ -86,7 +87,20 @@ const Probe: React.FC = () => {
         {JSON.stringify(payload ?? null)}#{payloadVersion}
       </div>
       <input data-testid={`field-${id}`} />
+      <Select>
+        <SelectTrigger data-testid={`select-${id}`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="a">a</SelectItem>
+        </SelectContent>
+      </Select>
       <button data-testid={`button-${id}`}>act</button>
+      <div data-keep-keyboard>
+        <p data-testid={`thread-${id}`}>
+          <span data-testid={`text-${id}`}>message</span>
+        </p>
+      </div>
     </>
   );
 };
@@ -118,6 +132,8 @@ const DEFS = {
   netWorthPanel: def('netWorthPanel'),
   market: def('market', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
   corruptedZoneTimer: def('corruptedZoneTimer', { keyboard: 'never' }),
+  listingDetail: def('listingDetail', { placement: 'gameRight', closeOnBlur: true }),
+  builds: def('builds', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;
@@ -396,6 +412,17 @@ describe('OverlayProvider', () => {
     expect(claimKeyboard).toHaveBeenCalledTimes(1);
   });
 
+  it('opening a select keeps the keyboard, so a typed letter jumps to that option', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('select-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
+
   it('a click outside a text field leaves an unclaimed keyboard alone', () => {
     mount();
     act(() => api.openPanel('chat'));
@@ -403,6 +430,38 @@ describe('OverlayProvider', () => {
       screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
     });
     expect(releaseKeyboard).not.toHaveBeenCalled();
+  });
+
+  it('pressing in a [data-keep-keyboard] region (message text to copy) takes the keyboard and never gives it back', () => {
+    mount();
+    act(() => api.openPanel('chat'));
+    act(() => {
+      screen.getByTestId('text-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+
+    // Already claimed (e.g. from the composer): selecting text keeps it
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('thread-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).not.toHaveBeenCalled();
+    expect(claimKeyboard).toHaveBeenCalledTimes(2);
+
+    // Outside the region: released as before
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(releaseKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it("keyboard: 'never' panels ignore [data-keep-keyboard] regions", () => {
+    mount();
+    act(() => api.openPanel('chatButton'));
+    act(() => {
+      screen.getByTestId('text-chatButton').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).not.toHaveBeenCalled();
   });
 
   it("keyboard: 'never' panels never take the keyboard, even from a text field", () => {

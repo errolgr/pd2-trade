@@ -11,6 +11,8 @@ import {
   loadWhisperHistory,
   markRead,
   MAX_MESSAGES_PER_PERSON,
+  accountOf,
+  nameAliases,
   normalizeName,
   OPEN_TRADE_MS,
   parseHistory,
@@ -23,6 +25,8 @@ import {
   saveWhisperHistory,
   unreadWhispers,
   WHISPER_HISTORY_FILENAME,
+  whisperCommand,
+  whisperTarget,
   type TradeMessageEvent,
   type WhisperEvent,
   type WhisperHistory,
@@ -69,6 +73,56 @@ describe('normalizeName and findPerson', () => {
     expect(findPerson(history, ['bobsorc'])?.key).toBe('bob');
     expect(findPerson(history, [' *BOB'])?.key).toBe('bob');
     expect(findPerson(history, ['', undefined, '  '])).toBeUndefined();
+  });
+
+  it('nameAliases expands a legacy "character*account" into the whole, the character and the account', () => {
+    expect(nameAliases('frostwind*tharok')).toEqual(['frostwind*tharok', 'frostwind', 'tharok']);
+    expect(nameAliases('*tharok')).toEqual(['tharok']);
+    expect(nameAliases('plainname')).toEqual(['plainname']);
+    expect(nameAliases('')).toEqual([]);
+  });
+
+  it('finds a legacy "character*account" person by either half (so new whispers merge in)', () => {
+    const legacy = {
+      key: 'frostwind*tharok',
+      accountName: undefined,
+      characterName: undefined,
+      playerName: 'frostwind*tharok',
+      messages: [],
+      trades: [],
+      readAt: 0,
+    };
+    const history: WhisperHistory = { people: { 'frostwind*tharok': legacy } };
+    expect(findPerson(history, ['tharok'])?.key).toBe('frostwind*tharok');
+    expect(findPerson(history, ['frostwind'])?.key).toBe('frostwind*tharok');
+  });
+
+  it('accountOf is the account half of a legacy name, else the name without its "*"', () => {
+    expect(accountOf('frostwind*tharok')).toBe('tharok');
+    expect(accountOf(' *Tharok ')).toBe('Tharok');
+    expect(accountOf('quietvale')).toBe('quietvale');
+    expect(accountOf('odd*')).toBe('odd');
+  });
+
+  it('whispers a legacy "character*account" sender at their account', () => {
+    expect(whisperTarget({ playerName: 'frostwind*tharok' })).toBe('tharok');
+    expect(whisperTarget({ accountName: 'Bob', playerName: 'Bob' })).toBe('Bob');
+  });
+
+  // #148: accepting an offer copied `/w *frostwind*tharok …` ("user is not online")
+  it('copies a whisper with exactly one "*" before the account', () => {
+    const accept = 'Your offer has been accepted. Game: shako1////pw';
+    expect(whisperCommand(whisperTarget({ playerName: 'frostwind*tharok' }), accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand('frostwind*tharok', accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand(whisperTarget({ accountName: 'tharok', playerName: 'tharok' }), 'yes')).toBe(
+      '/w *tharok yes',
+    );
+    expect(whisperCommand('tharok', 'yes')).toBe('/w *tharok yes');
+    expect(whisperCommand('*tharok', 'yes')).toBe('/w *tharok yes');
   });
 });
 

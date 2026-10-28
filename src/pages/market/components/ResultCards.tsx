@@ -25,6 +25,8 @@ import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { OfferBadge } from './OfferBadge';
+import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
 
 const ESTIMATED_CARD_HEIGHT = 340;
@@ -53,6 +55,8 @@ export interface ResultCardsProps {
   /** Click: select (the card is self-contained; no detail pane needed). */
   onSelect: (listingId: string) => void;
   deals: ReadonlyMap<string, Deal>;
+  /** The signed-in user's offers by listing id (made, or received on their listings). */
+  offers: ReadonlyMap<string, ListingOffers>;
   pseudoKeys: string[];
   /** Enabled mod filter keys: matching lines are marked. */
   statKeys: string[];
@@ -83,6 +87,7 @@ export function ResultCards({
   selectedId,
   onSelect,
   deals,
+  offers,
   pseudoKeys,
   statKeys,
   favoriteIds,
@@ -158,6 +163,7 @@ export function ResultCards({
                   selected={id === selectedId}
                   onSelect={onSelect}
                   deal={deals.get(id)}
+                  offers={offers.get(id)}
                   pseudoKeys={pseudoKeys}
                   statKeys={statKeys}
                   favorite={favoriteIds.has(id)}
@@ -238,6 +244,7 @@ const ResultCard = React.memo(function ResultCard({
   selected,
   onSelect,
   deal,
+  offers,
   pseudoKeys,
   statKeys,
   favorite,
@@ -252,6 +259,7 @@ const ResultCard = React.memo(function ResultCard({
   selected: boolean;
   onSelect: (id: string) => void;
   deal: Deal | undefined;
+  offers: ListingOffers | undefined;
   pseudoKeys: string[];
   statKeys: string[];
   favorite: boolean;
@@ -387,6 +395,7 @@ const ResultCard = React.memo(function ResultCard({
             </span>
           )}
           <DealBadge deal={deal} />
+          <OfferBadge offers={offers} />
         </div>
       </header>
 

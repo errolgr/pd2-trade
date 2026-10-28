@@ -1,4 +1,5 @@
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { accountOf, whisperCommand } from '@/lib/whisper-history';
 import { itemDisplayName, sellerAccount } from './listing';
 
 /**
@@ -23,7 +24,7 @@ function oneLine(text: string | undefined, max = 80): string {
  * no price, the default template drops its "listed for" clause.
  */
 export function buildWhisper(listing: MarketListingEntry, template: string = DEFAULT_WHISPER_TEMPLATE): string {
-  const account = oneLine(sellerAccount(listing) || listing.user?.username);
+  const account = accountOf(oneLine(sellerAccount(listing) || listing.user?.username));
   const price = listing.hr_price > 0 ? `${listing.hr_price} HR` : oneLine(listing.price);
   const body = (price || template !== DEFAULT_WHISPER_TEMPLATE ? template : "Hi, I'm interested in your {item}")
     .replace(/\{item\}/g, oneLine(listing.item ? itemDisplayName(listing.item) : 'item'))
@@ -32,5 +33,5 @@ export function buildWhisper(listing: MarketListingEntry, template: string = DEF
     .replace(/\{account\}/g, account)
     .replace(/\s+/g, ' ')
     .trim();
-  return `/w *${account} ${body}`.trim();
+  return whisperCommand(account, body);
 }

@@ -24,7 +24,10 @@ export interface TradeOffer {
   /** The other user's first in-game account. */
   accountName?: string;
   itemName?: string;
+  /** The offer text, or `N HR` when only an HR value was offered. */
   price?: string;
+  /** The offer's HR value, when the offerer gave one. */
+  hrOffer?: number;
   timestamp: Date;
   listingId?: string;
   /** The other user's website id. */
@@ -163,6 +166,7 @@ const getIncomingOffers = async (
             accountName: offer.user?.game?.accounts?.[0],
             itemName: listing.item?.name,
             price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+            hrOffer: offer.hr_offer || undefined,
             timestamp: new Date(offer.created_at),
             listingId: listing._id,
             userId: offer.user?._id,
@@ -228,6 +232,7 @@ const getOutgoingOffers = async (
         accountName: listing?.user?.game?.accounts?.[0],
         itemName: listing?.item?.name,
         price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+        hrOffer: offer.hr_offer || undefined,
         timestamp: new Date(offer.created_at),
         listingId: listing?._id,
         userId: listing?.user?._id,

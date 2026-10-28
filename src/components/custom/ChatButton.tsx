@@ -7,6 +7,7 @@ import {
   type LucideIcon,
   MessageSquare,
   Settings,
+  Shield,
   ShoppingBag,
   Store,
   TrendingUp,
@@ -21,6 +22,7 @@ interface ChatButtonProps {
   onChatClick: () => void;
   onOffersClick: () => void;
   onMarketClick?: () => void;
+  onBuildsClick?: () => void;
   onNetWorthClick?: () => void;
   onStashValueClick?: () => void;
   onManageListingsClick?: () => void;
@@ -96,6 +98,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   onChatClick,
   onOffersClick,
   onMarketClick,
+  onBuildsClick,
   onNetWorthClick,
   onStashValueClick,
   onManageListingsClick,
@@ -216,6 +219,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       badge: { count: unreadCount, className: 'bg-destructive text-destructive-foreground' },
     },
     { label: 'Market browser', icon: Store, onClick: onMarketClick },
+    { label: 'Builds', icon: Shield, onClick: onBuildsClick },
     { label: 'Net worth', icon: TrendingUp, onClick: onNetWorthClick },
     { label: 'Stash value', icon: Coins, onClick: onStashValueClick },
     {

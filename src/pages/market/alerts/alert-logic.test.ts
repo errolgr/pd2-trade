@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ToastActionType } from '@/common/types/Events';
 import { defaultFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
-import { alertListingText, alertToasts, findWatch, MAX_ALERT_TOASTS, watchKey } from './alert-logic';
+import {
+  ALERT_TOAST_DURATION_MS,
+  alertListingText,
+  alertToasts,
+  findWatch,
+  MAX_ALERT_TOASTS,
+  watchKey,
+} from './alert-logic';
 import type { MarketAlert } from './saved-search-api';
 
 const alert = (id: string, over: Partial<MarketAlert['listing']> = {}): MarketAlert => ({
@@ -43,16 +50,18 @@ const search = (id: string, filters: MarketFilters, alert: boolean): SavedSearch
 });
 
 describe('alert popups', () => {
-  it('shows "<search>: <item> — <price>" with a View action on the listing', () => {
+  it('shows "<search>: <item> — <price>" with a View action and the listing for its tooltip and drawer', () => {
     expect(alertToasts([alert('a')])).toEqual([
       {
         title: 'Market watch',
+        duration: ALERT_TOAST_DURATION_MS,
         description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
         action: {
           label: 'View',
           type: ToastActionType.OPEN_MARKET_PANEL,
           data: { savedSearchId: 's1', focusListingId: 'l-a', tab: 'search' },
         },
+        listing: { listingId: 'l-a', savedSearchId: 's1' },
       },
     ]);
   });
@@ -68,6 +77,7 @@ describe('alert popups', () => {
     expect(toasts).toHaveLength(1);
     expect(toasts[0].description).toMatch(/^5 new matches\. Newest: Cheap Shako: /);
     expect(toasts[0].action?.data.focusListingId).toBe(`l-a${many.length - 1}`);
+    expect(toasts[0].listing).toEqual({ listingId: `l-a${many.length - 1}`, savedSearchId: 's1' });
   });
 });
 

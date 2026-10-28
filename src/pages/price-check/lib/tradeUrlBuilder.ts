@@ -38,7 +38,8 @@ export function buildTradeUrl(
 
   [...selected].forEach((key) => {
     const stat = sortedStats.find((s) => getStatKey(s) === key);
-    if (!stat) return;
+    // Pseudo stats are no site property (the market service filters them: priceCheckToMarketFilters)
+    if (!stat || stat.pseudo) return;
 
     const f = filters[key] ?? {};
     let propKey = 'stat_undefined';
@@ -213,7 +214,8 @@ export function buildGetMarketListingQuery(
 
   [...selected].forEach((key) => {
     const stat = sortedStats.find((s) => getStatKey(s) === key);
-    if (!stat) return;
+    // Pseudo stats are no PD2 modifier (the market service filters them: priceCheckToMarketFilters)
+    if (!stat || stat.pseudo) return;
     const f = filters[key] ?? {};
 
     // Sockets, Corrupted, Ethereal handled as top-level query fields
@@ -230,7 +232,7 @@ export function buildGetMarketListingQuery(
       // Already handled above, skip here
       return;
     }
-    if (stat.stat_id === StatId.Ethereal || item.isEthereal) {
+    if (stat.stat_id === StatId.Ethereal) {
       query['item.is_ethereal'] = true;
       return;
     }
@@ -439,7 +441,10 @@ const MAX_DAMAGE_MODS = ['max_damage', 'maxdamage', 'secondary_maxdamage'];
  * Market `$elemMatch`es for a damage pair row. Elemental pairs are one market modifier (`firedam`, values
  * [min, max, …]) under a few names; physical damage is two modifiers.
  */
-export function damagePairMatches(pair: DamagePair, f: StatFilterInput): Array<{ $elemMatch: Record<string, unknown> }> {
+export function damagePairMatches(
+  pair: DamagePair,
+  f: StatFilterInput,
+): Array<{ $elemMatch: Record<string, unknown> }> {
   const minBounds = bounds(f.min, f.max);
   const maxBounds = bounds(f.maxMin, f.maxMax);
   if (pair.market) {

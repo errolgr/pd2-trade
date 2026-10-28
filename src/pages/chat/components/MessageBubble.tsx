@@ -1,13 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
-import { AlertCircle, ClipboardCopy, Gamepad2, Globe, HandCoins, Loader2, RotateCw } from 'lucide-react';
+import { AlertCircle, ClipboardCopy, Copy, Gamepad2, Globe, HandCoins, Loader2, RotateCw } from 'lucide-react';
+import { writeText } from '@/lib/browser-clipboard';
 import { fadeInUp, slideInRight } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { showToast } from '@/overlay';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
+import { OfferListingHoverCard } from './OfferListingHoverCard';
 import { MessageContent } from './MessageContent';
-import { ChatAvatar, ReadReceipt } from './chat-parts';
+import { ChatAvatar, ReadReceipt, Tip } from './chat-parts';
 import { offerStatus, STATUS_CLASS } from './ThreadDeals';
 
 /** Messages from one side and source less than this far apart form a group (tight spacing, shared corners). */
@@ -52,6 +55,17 @@ function formatDayLabel(timestamp: string) {
   return day.format(day.isSame(moment(), 'year') ? 'ddd, MMM D' : 'MMM D, YYYY');
 }
 
+/** Copies a message as written (listing links as their URLs): works even when the game keeps the keyboard. */
+async function copyMessage(content: string) {
+  try {
+    await writeText(content);
+  } catch {
+    showToast({ title: 'Message not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
+    return;
+  }
+  showToast({ title: 'Copied' });
+}
+
 export function MessageBubble({
   row,
   startsUnread = false,
@@ -81,6 +95,19 @@ export function MessageBubble({
   const time = moment(entry.createdAt).format('h:mm A');
   const whisper = entry.source === 'whisper';
   const SourceIcon = whisper ? Gamepad2 : Globe;
+  const copyButton = (
+    <Tip label="Copy message">
+      <button
+        type="button"
+        aria-label="Copy message"
+        onClick={() => void copyMessage(entry.content)}
+        className="shrink-0 self-center rounded-md p-1 text-muted-foreground opacity-0 transition-opacity duration-(--dur-fast) hover:bg-muted/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/msg:opacity-100"
+      >
+        <Copy aria-hidden
+          className="size-3.5" />
+      </button>
+    </Tip>
+  );
   return (
     // Only messages that arrive while open animate in (own ones from the right, theirs from below); history
     // (and rows virtualized back in) appear as-is
@@ -110,28 +137,27 @@ export function MessageBubble({
         </div>
       )}
       {entry.offer ? (
-        // One of your offers that ended: a quiet event row, centered like the day divider
+        // One of your offers that ended: a quiet event row, centered like the day divider; hover for the offer card
         <div className="flex justify-center px-2">
-          <div
-            title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
-            className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground"
-          >
-            <HandCoins aria-hidden
-              className="size-3.5 shrink-0" />
-            <span className="truncate">
-              Your offer <span className="font-medium text-foreground/80">{entry.offer.price ?? '?'}</span>
-              {entry.offer.itemName && <> for {entry.offer.itemName}</>}
-            </span>
-            <span
-              className={cn(
-                'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
-                STATUS_CLASS[offerStatus(entry.offer)],
-              )}
-            >
-              {offerStatus(entry.offer)}
-            </span>
-            <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
-          </div>
+          <OfferListingHoverCard offer={entry.offer}>
+            <div className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground">
+              <HandCoins aria-hidden
+                className="size-3.5 shrink-0" />
+              <span className="truncate">
+                Your offer <span className="font-medium text-foreground/80">{entry.offer.price ?? '?'}</span>
+                {entry.offer.itemName && <> for {entry.offer.itemName}</>}
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                  STATUS_CLASS[offerStatus(entry.offer)],
+                )}
+              >
+                {offerStatus(entry.offer)}
+              </span>
+              <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
+            </div>
+          </OfferListingHoverCard>
         </div>
       ) : (
         <div className={cn('group/msg flex items-start gap-2', isOwnMessage ? 'justify-end' : 'justify-start')}>
@@ -151,6 +177,7 @@ export function MessageBubble({
                   className="size-7 text-xs" />
               </button>
             ))}
+          {isOwnMessage && copyButton}
           <div
             aria-busy={sending || undefined}
             title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
@@ -213,6 +240,7 @@ export function MessageBubble({
               )}
             </div>
           </div>
+          {!isOwnMessage && copyButton}
         </div>
       )}
     </motion.div>

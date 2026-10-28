@@ -91,24 +91,56 @@ export const EMPTY_HISTORY: WhisperHistory = { people: {} };
 export const normalizeName = (name: string | null | undefined) =>
   (name ?? '').trim().replace(/^\*/, '').trim().toLowerCase();
 
+/**
+ * Every normalized form a name matches on. A plain name yields itself; a legacy "character*account" key
+ * (saved before the Rust parser knew that format) yields the whole string plus each half, so matching
+ * against either the character or the account still finds the person.
+ */
+export function nameAliases(name: string | null | undefined): string[] {
+  const normalized = normalizeName(name);
+  if (!normalized) return [];
+  if (!normalized.includes('*')) return [normalized];
+  const parts = normalized
+    .split('*')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length > 1 ? [normalized, ...parts] : [normalized];
+}
+
 let idSeq = 0;
 const nextId = (now: number) => `${now.toString(36)}-${(idSeq++).toString(36)}`;
 
 /** The person any of `names` refers to (empty names never match). */
 export function findPerson(history: WhisperHistory, names: readonly (string | null | undefined)[]) {
-  const wanted = new Set(names.map(normalizeName).filter(Boolean));
+  const wanted = new Set(names.flatMap(nameAliases));
   if (wanted.size === 0) return undefined;
   return Object.values(history.people).find((person) =>
-    [person.key, person.accountName, person.characterName, person.playerName].some((name) => {
-      const normalized = normalizeName(name);
-      return normalized !== '' && wanted.has(normalized);
-    }),
+    [person.key, person.accountName, person.characterName, person.playerName]
+      .flatMap(nameAliases)
+      .some((alias) => wanted.has(alias)),
   );
+}
+
+/**
+ * The account a stored name points at: the part after the "*" of a legacy "character*account" name, else
+ * the name itself (without a leading "*").
+ */
+export function accountOf(name: string): string {
+  const trimmed = name.trim();
+  const star = trimmed.lastIndexOf('*');
+  if (star <= 0) return trimmed.replace(/^\*/, '').trim();
+  return trimmed.slice(star + 1).trim() || trimmed.slice(0, star).trim();
 }
 
 /** Whom `/w *<target>` reaches. */
 export const whisperTarget = (person: Pick<WhisperPerson, 'accountName' | 'playerName'>) =>
-  person.accountName || person.playerName;
+  accountOf(person.accountName || person.playerName);
+
+/**
+ * The game chat command whispering `account`: `/w *<account> <text>`. The one place that adds the `*`, so a
+ * stored "character*account" or "*account" name never comes out as `/w *character*account` or `/w **account`.
+ */
+export const whisperCommand = (account: string, text: string) => `/w *${accountOf(account)} ${text}`.trim();
 
 export const isOpenTrade = (trade: WhisperTrade, now: number) =>
   !trade.dismissed && now - trade.timestamp < OPEN_TRADE_MS;

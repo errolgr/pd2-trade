@@ -19,8 +19,9 @@ import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMar
 import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './lib/defaults';
 import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
+import { indexListingOffers } from './lib/listing-offers';
 import { scoreListings } from './lib/search';
-import { type MarketSearch, useMarketSearch } from './hooks/useMarketSearch';
+import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
@@ -33,7 +34,7 @@ import { type ModActionsApi, ModActionsProvider } from './components/ModMenu';
 import { mergeStatFilters } from './lib/mod-keys';
 import { WatchButton } from './alerts/WatchButton';
 import { OpenOnSiteButton } from './components/OpenOnSiteButton';
-import { fetchMarketListing } from './alerts/saved-search-api';
+import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
 
@@ -52,7 +53,7 @@ const MarketBrowserPage: React.FC = () => {
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
   const { openSignIn } = useSignIn();
   const { settings } = useOptions();
-  const { marketApi } = usePd2Website();
+  const { marketApi, outgoingOffers, hiddenOutgoingOffers, incomingOffers } = usePd2Website();
   const store = useMarketStore();
   const { viewMode } = store;
   const cards = viewMode === 'cards';
@@ -134,6 +135,11 @@ const MarketBrowserPage: React.FC = () => {
   );
   const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
   const deals = useDealIndicators(listings);
+  // Offers hidden from the chat's deals still exist on PD2: they show here too
+  const offers = useMemo(
+    () => indexListingOffers([...outgoingOffers, ...hiddenOutgoingOffers], incomingOffers),
+    [outgoingOffers, hiddenOutgoingOffers, incomingOffers],
+  );
 
   // focusListingId (alert toasts): refetch (the cache predates the new listing), then select it if present
   const { refresh } = search;
@@ -163,9 +169,11 @@ const MarketBrowserPage: React.FC = () => {
   useEffect(() => {
     if (!missingFocus || !filters) return;
     let cancelled = false;
-    fetchMarketListing(missingFocus.id)
-      .then((listing) => {
-        if (cancelled || !listing) return;
+    // Shared with the alert toast: usually already looked up when the toast showed
+    lookupListing(missingFocus.id)
+      .then((detail) => {
+        if (cancelled || !detail) return;
+        const { listing } = detail;
         const [row] = scoreListings([listing], filters);
         setSelectedId(listing._id);
         if (viewMode === 'cards') {
@@ -199,11 +207,11 @@ const MarketBrowserPage: React.FC = () => {
   const glowIds = useLiveAlertGlow(filters, store.savedSearches);
 
   const pseudoKeys = useMemo(
-    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'pseudo').map((s) => s.key),
+    () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
     [filters?.stats],
   );
   const statKeys = useMemo(
-    () => (filters?.stats ?? []).filter((s) => s.enabled && s.kind === 'mod').map((s) => s.key),
+    () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'mod').map((s) => s.key),
     [filters?.stats],
   );
   /** Sold archive results: no offer/whisper (the item is gone). */
@@ -525,6 +533,7 @@ const MarketBrowserPage: React.FC = () => {
                                   command={cardCommands.command}
                                   takeCommand={cardCommands.take}
                                   deals={deals}
+                                  offers={offers}
                                   pseudoKeys={pseudoKeys}
                                   favoriteIds={favoriteIds}
                                   onToggleFavorite={toggleFavorite}
@@ -542,6 +551,7 @@ const MarketBrowserPage: React.FC = () => {
                                   selectedId={selectedId}
                                   onSelect={selectListing}
                                   deals={deals}
+                                  offers={offers}
                                   pseudoKeys={pseudoKeys}
                                   favoriteIds={favoriteIds}
                                   hasMore={tab === 'search' && search.hasMore}
@@ -701,7 +711,7 @@ function ResultsPane({
   if (tab === 'favorites') {
     status = `${rows.length} favorite${rows.length === 1 ? '' : 's'}`;
   } else if (search.status === 'ready') {
-    status = `${search.total.toLocaleString()} listing${search.total === 1 ? '' : 's'}`;
+    status = searchCountText(search);
   } else if (loading) {
     status = 'Searching…';
   }

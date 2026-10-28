@@ -1,3 +1,5 @@
+import type { ListingPanelPayload } from '@/pages/market/lib/types';
+
 export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
@@ -18,6 +20,8 @@ export interface CustomToastPayload {
     type: ToastActionType;
     data?: any; // Additional data needed for the action (e.g., listing ID)
   };
+  /** A market listing: hovering the toast shows its in-game tooltip, and Details opens it in the listing drawer. */
+  listing?: ListingPanelPayload;
 }
 
 export interface GenericToastPayload {

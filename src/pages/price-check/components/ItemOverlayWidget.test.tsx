@@ -28,6 +28,7 @@ import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketLis
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { useRareAppraisal, type RareAppraisalState } from '../hooks/useRareAppraisal';
 import type { Item } from '../lib/interfaces';
+import { loadBuildUsage } from '../lib/build-usage';
 import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -54,6 +55,11 @@ vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
+// Ladder item usage (builds service): none unless a test sets it
+vi.mock('../lib/build-usage', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  loadBuildUsage: vi.fn(async () => null),
+}));
 // Listing hover detail belongs to quick-list; a stub keeps these tests about the price check itself.
 vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
   default: ({ stashItem }: { stashItem: { name?: string } }) => (
@@ -184,6 +190,7 @@ beforeEach(() => {
   vi.mocked(fetchItemPriceByName).mockResolvedValue(null);
   vi.mocked(fetchCorruptionPrices).mockResolvedValue(null);
   vi.mocked(fetchPriceHistory).mockResolvedValue(null);
+  vi.mocked(loadBuildUsage).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -221,7 +228,7 @@ describe('ItemOverlayWidget header', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Harlequin Crest');
     expect(screen.getByText('Base: Shako')).not.toBeNull();
     expect(screen.getByText('141')).not.toBeNull();
-    expect(screen.getByText('to All Skills')).not.toBeNull();
+    expect(screen.getByText('+2 to All Skills')).not.toBeNull();
   });
 
   it('titles a runeword by its runeword name with a badge', () => {
@@ -268,6 +275,30 @@ describe('ItemOverlayWidget header', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
+  });
+
+  it('shows how many ladder characters wear a unique; clicking opens the builds that wear it', async () => {
+    vi.mocked(loadBuildUsage).mockResolvedValue({
+      total: 3000,
+      items: [
+        {
+          key: 'unique:harlequin_crest',
+          name: 'Harlequin Crest',
+          quality: 'Unique',
+          iconUrl: null,
+          count: 657,
+          pct: 21.9,
+          priceHr: 1,
+        },
+      ],
+    });
+    renderWidget(shako());
+    const line = await screen.findByRole('button', { name: /Worn by 21\.9% of level 80\+ ladder characters \(657\)/ });
+    fireEvent.click(line);
+    expect(overlay.openPanel).toHaveBeenCalledWith('builds', {
+      tab: 'meta',
+      filters: { items: ['unique:harlequin_crest'], mode: 'softcore' },
+    });
   });
 });
 
@@ -389,7 +420,7 @@ describe('ItemOverlayWidget stat selection', () => {
     renderWidget(rareRing());
     expect(screen.queryByText(/selected/)).toBeNull();
 
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     // Rings only roll a fixed 10% FCR, so PD2 draws no range and the fill is value ± 5%.
     expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('19');
     expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('21');
@@ -397,7 +428,7 @@ describe('ItemOverlayWidget stat selection', () => {
 
     fireEvent.click(screen.getByText('Clear'));
     await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
-    expect(statCheckbox('% Faster Cast Rate').getAttribute('aria-checked')).toBe('false');
+    expect(statCheckbox('+20% Faster Cast Rate').getAttribute('aria-checked')).toBe('false');
   });
 
   it('Clear also resets the tri-state corrupted filter', async () => {
@@ -409,9 +440,23 @@ describe('ItemOverlayWidget stat selection', () => {
     expect(screen.getByRole('checkbox', { name: 'Corrupted filter' }).getAttribute('aria-checked')).toBe('false');
   });
 
+  it('Clear ranges empties every min/max but keeps the stats selected, so the search only needs the stat', async () => {
+    renderWidget(rareRing());
+    expect(screen.queryByText('Clear ranges')).toBeNull();
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
+    fireEvent.click(screen.getByText('Clear ranges'));
+    expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('% Faster Cast Rate maximum') as HTMLInputElement).value).toBe('');
+    expect(statCheckbox('+20% Faster Cast Rate').getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByText('Clear ranges')).toBeNull();
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(lastQuery())).toContain('{"$elemMatch":{"name":"item_fastercastrate"}}');
+  });
+
   it('edited min/max values are what the search filters on', async () => {
     renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '' } });
     fireEvent.click(searchButton());
@@ -423,7 +468,7 @@ describe('ItemOverlayWidget stat selection', () => {
 
   it('Enter in a range input runs the search', async () => {
     renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.keyDown(screen.getByLabelText('% Faster Cast Rate minimum'), { key: 'Enter' });
     await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
   });
@@ -431,7 +476,7 @@ describe('ItemOverlayWidget stat selection', () => {
   it('a new item clears the previous selection and results', async () => {
     getMarketListings.mockResolvedValue(page([listing()], 1));
     const { rerenderItem } = renderWidget(rareRing());
-    fireEvent.click(statCheckbox('% Faster Cast Rate'));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.click(searchButton());
     await screen.findByText('1.5 HR');
 
@@ -439,6 +484,39 @@ describe('ItemOverlayWidget stat selection', () => {
     await waitFor(() => expect(screen.queryByText('1.5 HR')).toBeNull());
     expect(screen.queryByText(/selected/)).toBeNull();
     expect(screen.getByText('Ready to search')).not.toBeNull();
+  });
+
+  // #147: BH exports chance-to-cast lines without a stat id or skill. Their rows shared one key, so React lost
+  // track of all but one of them and the rest stayed on screen under every later price check.
+  it('a new item shows only its own chance-to-cast rows', async () => {
+    const ctc = (chance: number, level: number, skill: string, when: string) => ({
+      name: `${chance}% Chance to cast level ${level} ${skill} ${when}`,
+      chance,
+      level,
+    });
+    const { rerenderItem } = renderWidget(
+      rareRing({ stats: [FCR, ctc(15, 20, 'Fire Ball', 'on attack'), ctc(2, 20, 'Fire Wall', 'on attack')] }),
+    );
+    expect(screen.getByText('15% Chance to cast level 20 Fire Ball on attack')).not.toBeNull();
+    expect(screen.getByText('2% Chance to cast level 20 Fire Wall on attack')).not.toBeNull();
+
+    rerenderItem(
+      rareRing({
+        name: 'Storm Loop',
+        stats: [MF, ctc(14, 18, 'Ice Blast', 'on striking'), ctc(5, 3, 'Frost Nova', 'when struck')],
+      }),
+    );
+    await waitFor(() => expect(screen.queryByText(/Fire Ball|Fire Wall/)).toBeNull());
+    expect(screen.getAllByText(/Chance to cast/).map((el) => el.textContent)).toEqual([
+      '14% Chance to cast level 18 Ice Blast on striking',
+      '5% Chance to cast level 3 Frost Nova when struck',
+    ]);
+
+    rerenderItem(
+      rareRing({ name: 'Sparkling Large Charm of Balance', quality: 'Magic', type: 'Large Charm', stats: [MF] }),
+    );
+    await waitFor(() => expect(screen.queryByText(/Chance to cast/)).toBeNull());
+    expect(screen.getByText('+30% Better Chance of Getting Magic Items')).not.toBeNull();
   });
 });
 
@@ -562,7 +640,7 @@ describe('ItemOverlayWidget market search', () => {
     getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'a20', hr_price: 21 })], 23));
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
-    fireEvent.click(statCheckbox('% Better Chance of Getting Magic Items'));
+    fireEvent.click(statCheckbox('+30% Better Chance of Getting Magic Items'));
     fireEvent.click(searchButton());
     expect(await screen.findByText('Load more')).not.toBeNull();
     inView = true;
@@ -837,7 +915,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
 describe('ItemOverlayWidget sockets and ethereal rows', () => {
   it('turns item sockets and ethereal flags into filterable rows', async () => {
     renderWidget(rareRing({ type: 'Shako', sockets: 2, isEthereal: true }));
-    fireEvent.click(statCheckbox('Sockets'));
+    fireEvent.click(statCheckbox('Socketed (2)'));
     expect((screen.getByLabelText('Sockets minimum') as HTMLInputElement).value).toBe('2');
     fireEvent.click(statCheckbox('Ethereal'));
     fireEvent.click(searchButton());

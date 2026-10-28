@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Range, Stat, StatFilterInput } from '../lib/interfaces';
 import { StatId } from '../lib/stat-mappings';
-import { getStatKey } from '../lib/utils';
+import { getStatKey, PSEUDO_KEY_PREFIX } from '../lib/utils';
 import { buildStatRows, isItemCorruptable } from '../lib/stat-rows';
+import { foldRows, pseudoOptions } from '../lib/pseudo-fold';
 import { useOptions } from '@/hooks/useOptions';
 
 type MarginFn = (value: number) => number;
@@ -17,7 +18,14 @@ const corruptedFilterToState = (filter: string | undefined): number =>
 function fillAround(v: number, margin: number, range: Range | undefined): [number, number] {
   let min = v - margin;
   let max = v + margin;
-  if (range && !range.perLevel && range.min !== undefined && range.max !== undefined && v >= range.min && v <= range.max) {
+  if (
+    range &&
+    !range.perLevel &&
+    range.min !== undefined &&
+    range.max !== undefined &&
+    v >= range.min &&
+    v <= range.max
+  ) {
     min = Math.max(min, range.min);
     max = Math.min(max, range.max);
   }
@@ -60,7 +68,60 @@ export function useStatSelection(item: any) {
     return (value: number) => Math.ceil(value * (fillStatValue / 100));
   }, [settings?.fillStatValue, settings?.statFillMarginUnit]);
 
-  const sortedStats = useMemo(() => buildStatRows(item), [item]);
+  const rows = useMemo(() => buildStatRows(item), [item]);
+  const pseudos = useMemo(() => pseudoOptions(rows), [rows]);
+  // Σ totals folded in (market pseudo ids); a new item starts with its plain rows
+  const [activePseudos, setActivePseudos] = useState<string[]>([]);
+  useEffect(() => setActivePseudos([]), [item]);
+  const sortedStats = useMemo(() => foldRows(rows, pseudos, activePseudos), [rows, pseudos, activePseudos]);
+
+  /** Filter inputs for a newly selected row: value ± margin, per the fill settings. */
+  const initialInput = (stat: Stat): StatFilterInput => {
+    const v = stat.value ?? 0;
+    const [min, max] = fillAround(v, getMargin(v), stat.range);
+    const input: StatFilterInput = {
+      min: leaveMinEmpty ? '' : String(min),
+      max: leaveMaxEmpty ? '' : String(max),
+    };
+    // Damage pair rows: a second pair around the max damage.
+    if (stat.maxValue !== undefined) {
+      const [maxMin, maxMax] = fillAround(stat.maxValue, getMargin(stat.maxValue), stat.maxRange);
+      input.maxMin = leaveMinEmpty ? '' : String(maxMin);
+      input.maxMax = leaveMaxEmpty ? '' : String(maxMax);
+    }
+    return input;
+  };
+
+  /** Drops `keys` from the selection and their filter inputs. */
+  const deselect = (keys: string[]) => {
+    setSelected((prev) => new Set([...prev].filter((k) => !keys.includes(k))));
+    setFilters((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !keys.includes(k))));
+  };
+
+  /**
+   * Folds the Σ total `id` in (replacing any active total over the same rows), selected with filled inputs; the
+   * rows it covers lose their selections. Picking the active total again unfolds it.
+   */
+  const togglePseudo = (id: string) => {
+    const option = pseudos.find((o) => o.id === id);
+    if (!option) return;
+    const key = `${PSEUDO_KEY_PREFIX}${id}`;
+    if (activePseudos.includes(id)) {
+      setActivePseudos((prev) => prev.filter((p) => p !== id));
+      deselect([key]);
+      return;
+    }
+    const replaced = pseudos.filter(
+      (o) => activePseudos.includes(o.id) && o.covers.some((k) => option.covers.includes(k)),
+    );
+    setActivePseudos((prev) => [...prev.filter((p) => !replaced.some((o) => o.id === p)), id]);
+    deselect([...option.covers, ...replaced.map((o) => `${PSEUDO_KEY_PREFIX}${o.id}`)]);
+    setSelected((prev) => new Set([...prev, key]));
+    setFilters((f) => ({
+      ...f,
+      [key]: initialInput({ stat_id: StatId.Pseudo, name: option.name, value: option.value }),
+    }));
+  };
 
   const updateFilter = (key: string, field: StatFilterField, val: string) =>
     setFilters((f) => ({
@@ -103,21 +164,7 @@ export function useStatSelection(item: any) {
         });
       } else {
         next.add(key);
-        setFilters((f) => {
-          const v = stat.value ?? 0;
-          const [min, max] = fillAround(v, getMargin(v), stat.range);
-          const input: StatFilterInput = {
-            min: leaveMinEmpty ? '' : String(min),
-            max: leaveMaxEmpty ? '' : String(max),
-          };
-          // Damage pair rows: a second pair around the max damage.
-          if (stat.maxValue !== undefined) {
-            const [maxMin, maxMax] = fillAround(stat.maxValue, getMargin(stat.maxValue), stat.maxRange);
-            input.maxMin = leaveMinEmpty ? '' : String(maxMin);
-            input.maxMax = leaveMaxEmpty ? '' : String(maxMax);
-          }
-          return { ...f, [key]: input };
-        });
+        setFilters((f) => ({ ...f, [key]: initialInput(stat) }));
       }
       return next;
     });
@@ -133,5 +180,8 @@ export function useStatSelection(item: any) {
     toggle,
     corruptedState,
     setCorruptedState,
+    pseudos,
+    togglePseudo,
+    setActivePseudos,
   };
 }

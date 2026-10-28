@@ -24,6 +24,7 @@ import {
 import { parseHistory, SAVE_DEBOUNCE_MS, WHISPER_HISTORY_FILENAME } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, type PanelPayloads } from '@/overlay';
 import { chatFeedActions, getChatFeed, resetChatFeed } from '../chat-feed';
+import { _resetResolvedSellers } from '../hooks/useResolvedSellers';
 import ChatOverlayWidget from './ChatOverlayWidget';
 import { typeDraft } from './composer-test-utils';
 
@@ -50,6 +51,7 @@ vi.mock('@/lib/browser-events', () => ({
     return () => gameLog.get(event)!.delete(handler);
   }),
 }));
+const overlayOpenPanel = vi.hoisted(() => vi.fn());
 /**
  * The chat panel's payload/payloadVersion/visible/rect as usePanel() reports them; `openChat()` mimics
  * openPanel('chat', ...). `visible`: on screen, so messages in the open conversation count as read. `rect`:
@@ -76,9 +78,18 @@ vi.mock('@/overlay', () => ({
   },
   usePanel: () => panel,
   // The composer's "Manage templates…"
-  useOverlay: () => ({ openPanel: vi.fn() }),
+  useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+/** Website owners of in-game accounts (the seller lookup that links whisper senders), by lowercase account. */
+const sellerOwners = vi.hoisted(() => new Map<string, { userId: string; username: string; accounts: string[] }>());
+vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/pages/chat/lib/seller-lookup')>()),
+  lookupSellerByName: vi.fn(async (name: string) => {
+    const seller = sellerOwners.get(name.toLowerCase());
+    return seller ? { status: 'found', seller } : { status: 'none' };
+  }),
+}));
 
 const NOW = new Date('2026-05-01T12:00:00Z');
 const ME = 'me';
@@ -339,6 +350,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  _resetResolvedSellers();
+  sellerOwners.clear();
   Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -1222,6 +1235,75 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Whisper copied' }));
   });
 
+  describe('whisper senders linked by the seller lookup', () => {
+    const THAROK = { userId: 'u-tharok', username: 'tharok_web', accounts: ['Tharok'] };
+    const notLinked = () => screen.queryByText('Not linked to a website account');
+
+    beforeEach(() => {
+      // Wide enough for the Trader sidebar
+      panel.rect = { ...panel.rect, width: 1100 };
+    });
+
+    it('links a whisperer to the website user owning their account, and still replies in game', async () => {
+      sellerOwners.set('tharok', THAROK);
+      await renderWidget([]);
+      await gameEvent('trade-message', {
+        isIncoming: true,
+        playerName: 'tharok',
+        accountName: 'tharok',
+        characterName: 'frostwind',
+        message: "Hi, I'm interested in your Entrapping Grand Charm of Quality listed for 9 wss",
+        itemName: 'Entrapping Grand Charm of Quality',
+        price: '9 wss',
+      });
+      await flush();
+
+      await select('tharok_web');
+      expect(heading()).toBe('tharok_web');
+      expect(notLinked()).toBeNull();
+      expect(screen.getAllByRole('button', { name: '@tharok_web' }).length).toBeGreaterThan(0);
+
+      await type('still here');
+      expect(writeText).toHaveBeenCalledWith('/w *tharok still here');
+      expect(api.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('links a sender saved as "character*account" by the account, and whispers that account', async () => {
+      sellerOwners.set('tharok', THAROK);
+      const legacy = JSON.stringify({
+        people: {
+          'frostwind*tharok': {
+            key: 'frostwind*tharok',
+            playerName: 'frostwind*tharok',
+            messages: [{ id: 'm1', isIncoming: true, message: 'still there?', timestamp: NOW.getTime() - 60_000 }],
+            trades: [],
+            readAt: 0,
+          },
+        },
+      });
+      vi.mocked(exists).mockImplementation(async (path) => path === WHISPER_HISTORY_FILENAME);
+      vi.mocked(readTextFile).mockImplementation(async (path) => (path === WHISPER_HISTORY_FILENAME ? legacy : ''));
+      await renderWidget([]);
+      await flush();
+
+      await select('tharok_web');
+      expect(notLinked()).toBeNull();
+      await type('yes');
+      expect(writeText).toHaveBeenCalledWith('/w *tharok yes');
+    });
+
+    it('never links a whisper from one of your own accounts to you', async () => {
+      sellerOwners.set('mymain', { userId: ME, username: 'me', accounts: ['MyMain'] });
+      await renderWidget([]);
+      await whisperFrom('MyMain', 'test');
+      await flush();
+
+      expect(rows()).toHaveLength(1);
+      await select('MyMain');
+      expect(notLinked()).not.toBeNull();
+    });
+  });
+
   it('filters the list to Selling or Buying threads, and the offers payload opens on Selling', async () => {
     incomingOffers = [
       { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol' },
@@ -1277,6 +1359,23 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(refreshOffers).toHaveBeenCalledTimes(2);
   });
 
+  it("View build opens the trader's character in the builds panel", async () => {
+    await renderWidget([]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+    await select('Dan');
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Trader details' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'View build' })));
+    expect(overlayOpenPanel).toHaveBeenCalledWith('builds', { character: { name: 'DanChar' } });
+  });
+
   it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
     settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
     await renderWidget([]);
@@ -1303,6 +1402,67 @@ describe('ChatOverlayWidget unified inbox', () => {
       fireEvent.click(within(deals).getByRole('button', { name: /Dismiss/ }));
     });
     expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+  });
+
+  // #148: a sender saved as "character*account" got `/w *frostwind*tharok …` ("user is not online")
+  it('Accept (Enter in the game field) copies the whisper with one "*" before the account', async () => {
+    settings.acceptOfferMessageTemplate = 'Your offer has been accepted. Game: {gameInfo}';
+    const legacy = JSON.stringify({
+      people: {
+        'frostwind*tharok': {
+          key: 'frostwind*tharok',
+          playerName: 'frostwind*tharok',
+          messages: [
+            {
+              id: 'm1',
+              isIncoming: true,
+              message: "Hi, I'm interested in your Shako",
+              timestamp: NOW.getTime() - 60_000,
+            },
+          ],
+          trades: [
+            {
+              id: 't1',
+              isIncoming: true,
+              message: "Hi, I'm interested in your Shako",
+              itemName: 'Shako',
+              timestamp: NOW.getTime() - 60_000,
+            },
+          ],
+          readAt: 0,
+        },
+      },
+    });
+    vi.mocked(exists).mockImplementation(async (path) => path === WHISPER_HISTORY_FILENAME);
+    vi.mocked(readTextFile).mockImplementation(async (path) => (path === WHISPER_HISTORY_FILENAME ? legacy : ''));
+    await renderWidget([]);
+    await flush();
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: "Hi, I'm interested in your Arach listed for 1 ist",
+      itemName: 'Arach',
+      price: '1 ist',
+    });
+
+    const acceptWithEnter = async (game: string) => {
+      const deals = screen.getByRole('list', { name: 'Offers with this user' });
+      await act(async () => fireEvent.click(within(deals).getByRole('button', { name: /^Accept$/ })));
+      const field = screen.getByRole('textbox', { name: 'Game name' });
+      fireEvent.change(field, { target: { value: game } });
+      await act(async () => fireEvent.submit(field.closest('form')!));
+      await flush();
+    };
+
+    await select('tharok');
+    await acceptWithEnter('shako1');
+    expect(writeText).toHaveBeenLastCalledWith('/w *tharok Your offer has been accepted. Game: shako1');
+
+    await select('Dan');
+    await acceptWithEnter('arach1');
+    expect(writeText).toHaveBeenLastCalledWith('/w *Dan Your offer has been accepted. Game: arach1');
   });
 
   it('starts the conversation on the first website message to an offers-only person', async () => {
@@ -1970,7 +2130,12 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
           .at(-1)?.[1] ?? '',
       ),
     );
-  const notification = (id: string, listingId: string, minutesAgo: number, type: OfferNotification['type'] = 'offer_received') => ({
+  const notification = (
+    id: string,
+    listingId: string,
+    minutesAgo: number,
+    type: OfferNotification['type'] = 'offer_received',
+  ) => ({
     id,
     type,
     listingId,
@@ -2075,8 +2240,24 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
 
   it('an open thread counts as looking at its own offers only', async () => {
     incomingOffers = [
-      { id: 'o1', isIncoming: true, playerName: 'carol', itemName: 'Shako', timestamp: new Date(NOW), userId: 'carol', listingId: 'L1' },
-      { id: 'o2', isIncoming: true, playerName: 'dave', itemName: 'Ber', timestamp: new Date(NOW), userId: 'dave', listingId: 'L2' },
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'carol',
+        itemName: 'Shako',
+        timestamp: new Date(NOW),
+        userId: 'carol',
+        listingId: 'L1',
+      },
+      {
+        id: 'o2',
+        isIncoming: true,
+        playerName: 'dave',
+        itemName: 'Ber',
+        timestamp: new Date(NOW),
+        userId: 'dave',
+        listingId: 'L2',
+      },
     ];
     offerNotifications = [notification('n1', 'L1', 5), notification('n2', 'L2', 4)];
     await renderWidget([]);

@@ -77,8 +77,38 @@ export function corruptedZoneSchedule(now: number, count: number): CorruptedZone
   return Array.from({ length: count }, (_, i) => corruptedZoneAt(first + i * CORRUPTED_ZONE_SLOT_MS));
 }
 
-/** `m:ss` for a countdown of `ms` (a slot is 15 minutes), never negative. */
+/**
+ * Look-ahead of followedZoneSchedule. Every zone came up at least every 45 hours over 2026-2028, so a followed
+ * zone is always found.
+ */
+const FOLLOWED_HORIZON_MS = 3 * DAY_MS;
+
+/** The first `count` slots, from the one containing `now` on, whose zone is in `zones` (within 3 days). */
+export function followedZoneSchedule(now: number, zones: ReadonlySet<string>, count: number): CorruptedZoneSlot[] {
+  const slots: CorruptedZoneSlot[] = [];
+  const first = corruptedZoneAt(now).start;
+  for (
+    let start = first;
+    start < first + FOLLOWED_HORIZON_MS && slots.length < count;
+    start += CORRUPTED_ZONE_SLOT_MS
+  ) {
+    const slot = corruptedZoneAt(start);
+    if (zones.has(slot.zone)) slots.push(slot);
+  }
+  return slots;
+}
+
+/** `m:ss` (or `h:mm:ss` from an hour) for a countdown of `ms`, never negative. */
 export function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  const ss = String(total % 60).padStart(2, '0');
+  const minutes = Math.floor(total / 60);
+  if (minutes < 60) return `${minutes}:${ss}`;
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}:${ss}`;
+}
+
+/** Rounded-up wait for the schedule list: `5m`, `1h 20m`, `26h 5m`. */
+export function formatWait(ms: number): string {
+  const minutes = Math.max(0, Math.ceil(ms / 60_000));
+  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
