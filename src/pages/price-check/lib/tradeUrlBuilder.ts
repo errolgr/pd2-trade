@@ -1,7 +1,7 @@
 import type { Item, Stat, StatFilterInput } from './interfaces';
 import { DAMAGE_PAIRS, type DamagePair, StatId, statIdToProperty } from './stat-mappings';
 import { buildStatRows } from './stat-rows';
-import { skillNameToIdMap } from '@/assets/character-skills';
+import { isOSkill, skillByName } from './stat-ranges';
 import { classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex } from '@/assets/class-skills';
 import { ItemCharmMap, ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType, getStatKey } from './utils';
@@ -45,9 +45,9 @@ export function buildTradeUrl(
     let propKey = 'stat_undefined';
 
     if ('skill' in stat && stat.skill) {
-      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
+      const skillEntry = skillByName(stat.skill);
       if (skillEntry) {
-        propKey = `item_singleskill{${skillEntry.id}}`;
+        propKey = `${isOSkill(item, stat) ? 'item_nonclassskill' : 'item_singleskill'}{${skillEntry.id}}`;
       } else {
         const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
         if (classEntry) {
@@ -239,10 +239,13 @@ export function buildGetMarketListingQuery(
 
     // Skill stats
     if ('skill' in stat && stat.skill) {
-      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
+      const skillEntry = skillByName(stat.skill);
       if (skillEntry) {
-        // Single skill
-        const mod: any = { name: 'item_singleskill', 'values.0': skillEntry.id };
+        // Single skill, or an o-skill (no "(Class Only)" on the line)
+        const mod: any = {
+          name: isOSkill(item, stat) ? 'item_nonclassskill' : 'item_singleskill',
+          'values.0': skillEntry.id,
+        };
         if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
           if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
