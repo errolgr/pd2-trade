@@ -84,6 +84,7 @@ import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/
 import { cubeCorruptions } from '@/assets/cube-corruptions';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writePng, writeText } from '@/lib/browser-clipboard';
+import { whisperCommand } from '@/lib/whisper-history';
 import { buildItemCard, renderItemCard } from '../lib/item-card';
 import { CaptureSweep } from './CaptureSweep';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
@@ -2141,7 +2142,10 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
     const account = listing.user?.in_game_account || listing.user?.game?.accounts?.[0] || listing.user?.username || '';
     const itemName = listing.item?.name || listing.item?.base?.name || 'item';
     const priceStr = listing.hr_price ? `${listing.hr_price} HR` : listing.price || '';
-    const message = `/w *${account} Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`;
+    const message = whisperCommand(
+      account,
+      `Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`,
+    );
     try {
       await writeText(message);
       setWhisperCopied(true);

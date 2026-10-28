@@ -25,6 +25,7 @@ import {
   saveWhisperHistory,
   unreadWhispers,
   WHISPER_HISTORY_FILENAME,
+  whisperCommand,
   whisperTarget,
   type TradeMessageEvent,
   type WhisperEvent,
@@ -106,6 +107,22 @@ describe('normalizeName and findPerson', () => {
   it('whispers a legacy "character*account" sender at their account', () => {
     expect(whisperTarget({ playerName: 'frostwind*tharok' })).toBe('tharok');
     expect(whisperTarget({ accountName: 'Bob', playerName: 'Bob' })).toBe('Bob');
+  });
+
+  // #148: accepting an offer copied `/w *frostwind*tharok …` ("user is not online")
+  it('copies a whisper with exactly one "*" before the account', () => {
+    const accept = 'Your offer has been accepted. Game: shako1////pw';
+    expect(whisperCommand(whisperTarget({ playerName: 'frostwind*tharok' }), accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand('frostwind*tharok', accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand(whisperTarget({ accountName: 'tharok', playerName: 'tharok' }), 'yes')).toBe(
+      '/w *tharok yes',
+    );
+    expect(whisperCommand('tharok', 'yes')).toBe('/w *tharok yes');
+    expect(whisperCommand('*tharok', 'yes')).toBe('/w *tharok yes');
   });
 });
 

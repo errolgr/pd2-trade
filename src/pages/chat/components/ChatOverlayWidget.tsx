@@ -19,7 +19,7 @@ import {
   useChatPrefs,
   type ThreadPrefs,
 } from '@/lib/chat-prefs';
-import { isOpenTrade, unreadWhispers, whisperTarget } from '@/lib/whisper-history';
+import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -680,7 +680,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const sendWhisper = async (target: { accountName?: string; playerName: string }, text: string) => {
     const account = whisperTarget(target);
     try {
-      await writeText(`/w *${account} ${text}`);
+      await writeText(whisperCommand(account, text));
     } catch {
       showToast({ title: 'Whisper not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
       return;

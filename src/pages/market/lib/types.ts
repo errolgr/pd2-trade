@@ -33,8 +33,13 @@ export interface StatFilter {
   /** Weight for stat-weighted sort; undefined/0 = not scored. */
   weight?: number;
   enabled: boolean;
-  /** Member of the any-of group: the enabled `or` rows match when one of them does; other rows are all required. */
-  or?: boolean;
+  /**
+   * Any-of block (1…MAX_OR_BLOCKS): each block matches when one of its enabled rows does. Rows with neither
+   * `or` nor `not` are all required.
+   */
+  or?: number;
+  /** Exclusion group: listings matching any enabled `not` row are left out. Never set together with `or`. */
+  not?: boolean;
 }
 
 export interface Requirements {

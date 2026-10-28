@@ -1,4 +1,5 @@
 import { newStatFilter } from './defaults';
+import { upgradeRowGroup } from './stat-groups';
 import type { MarketFilters, StatPreset } from './types';
 
 /**
@@ -36,12 +37,12 @@ export const BUILT_IN_PRESETS: StatPreset[] = [
 /**
  * Filters with the preset applied: its stat rows replace the current ones, and its rarity, item name and (single)
  * type replace those filters when it sets them (a new type clears the base); everything else is kept. Weights
- * of user presets saved before weights were removed are dropped.
+ * of user presets saved before weights were removed are dropped; an old `or: true` row joins any-of block 1.
  */
 export function applyPreset(f: MarketFilters, preset: StatPreset): MarketFilters {
   const next: MarketFilters = {
     ...f,
-    stats: preset.stats.map(({ weight: _weight, ...row }) => newStatFilter(row)),
+    stats: preset.stats.map(({ weight: _weight, ...row }) => newStatFilter(upgradeRowGroup(row))),
   };
   if (preset.rarity) next.rarity = [...preset.rarity];
   if (preset.itemName) next.itemName = preset.itemName;
