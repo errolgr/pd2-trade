@@ -20,14 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
-import {
-  MAX_OR_BLOCKS,
-  compactBlocks,
-  groupOf,
-  moveToGroup,
-  orBlockNumbers,
-  type StatGroup,
-} from '../lib/stat-groups';
+import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, NumberInput, fieldInputClass } from './controls';
@@ -225,9 +218,10 @@ export function StatFilters({
   const canOpenBlock = (s: StatFilter) =>
     blocks.length < MAX_OR_BLOCKS && !(s.or !== undefined && !s.not && blockRows(s.or).length === 1);
 
-  const gripHandlers = (s: StatFilter, name: string) => ({
+  /** On a row's title line: a press anywhere but its controls (checkbox, group menu, remove) starts a drag. */
+  const dragHandlers = (s: StatFilter, name: string) => ({
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || (e.target instanceof Element && e.target.closest('button, input, a'))) return;
       e.preventDefault();
       // Keep receiving moves while the pointer is over other rows / outside the section
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -285,13 +279,16 @@ export function StatFilters({
         {corruption && <span aria-hidden
           className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />}
         <div className="relative space-y-1 py-1 pr-0.5 pl-1">
-          <div className="flex min-w-0 items-center gap-1">
+          {/* The whole title line drags (grab cursor); its controls keep their own pointer */}
+          <div
+            className="group/line flex min-w-0 cursor-grab touch-none items-center gap-1 active:cursor-grabbing [&_button]:cursor-pointer"
+            {...dragHandlers(s, name)}
+          >
             <span
               aria-hidden
               title="Drag to another group"
               data-stat-grip={s.id}
-              className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
-              {...gripHandlers(s, name)}
+              className="inline-flex h-5 w-3 shrink-0 items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) group-hover/line:text-foreground"
             >
               <GripVertical className="size-3" />
             </span>
@@ -304,7 +301,7 @@ export function StatFilters({
             {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
               aria-label="Pseudo stat" />}
             {corruption && <CorruptionBadge />}
-            <span className="min-w-0 flex-1 truncate text-xs"
+            <span className="min-w-0 flex-1 truncate text-xs select-none"
               title={name}>
               {name}
             </span>
@@ -576,13 +573,13 @@ function GroupMenu({
     })),
     ...(canOpenBlock
       ? [
-        {
-          target: 'new' as const,
-          group: blocks.length + 1,
-          badge: blocks.length ? `OR ${blocks.length + 1}` : 'OR',
-          label: blocks.length ? 'New any-of block' : 'Any of',
-        },
-      ]
+          {
+            target: 'new' as const,
+            group: blocks.length + 1,
+            badge: blocks.length ? `OR ${blocks.length + 1}` : 'OR',
+            label: blocks.length ? 'New any-of block' : 'Any of',
+          },
+        ]
       : []),
     { target: 'not', group: 'not', badge: 'NOT', label: 'Exclude' },
   ];
@@ -595,8 +592,10 @@ function GroupMenu({
           title="AND: required · OR: at least one row of its block · NOT: excluded. Click to move it, or drag the grip."
           className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
         >
-          <GroupBadge group={group}
-            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'} />
+          <GroupBadge
+            group={group}
+            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end"

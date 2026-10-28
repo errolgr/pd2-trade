@@ -119,6 +119,24 @@ describe('StatFilters', () => {
     vi.restoreAllMocks();
   });
 
+  it('drags from anywhere on the title line, but not from its controls', () => {
+    const { latest } = mount([row('a'), row('b', { key: 'maxhp', or: 1 })]);
+    vi.spyOn(document, 'elementFromPoint').mockImplementation(() => document.querySelector('[data-stat-drop="1"]'));
+    const press = (el: HTMLElement) => {
+      fireEvent.pointerDown(el, { button: 0, clientX: 10, clientY: 10, pointerId: 1 });
+      fireEvent.pointerMove(el, { clientX: 10, clientY: 60, pointerId: 1 });
+      fireEvent.pointerUp(el, { pointerId: 1 });
+    };
+    const before = latest();
+    press(screen.getByRole('checkbox', { name: 'Disable Faster Cast Rate' }));
+    press(screen.getByRole('button', { name: /Faster Cast Rate: required/ }));
+    expect(latest()).toBe(before);
+
+    press(screen.getByText('Faster Cast Rate'));
+    expect(latest().find((s) => s.id === 'a')?.or).toBe(1);
+    vi.restoreAllMocks();
+  });
+
   it('adds cube corruptions from the stat search; unrolled ones have no min/max', () => {
     const { latest } = mount([]);
     const search = screen.getByRole('combobox', { name: 'Add a stat filter' });

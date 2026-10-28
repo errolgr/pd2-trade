@@ -1,7 +1,7 @@
 export const changeLog = {
   '0.10.8': [
     '🆕 Market stat filters: up to 5 "Any of" (OR) blocks, each needing at least one of its stats, and a "None of" (NOT) group that hides listings with any of its stats',
-    '✨ Market stat filters: drag a stat by its grip into another block, or pick its block from the AND / OR / NOT button',
+    '✨ Market stat filters: drag a stat by its title into another block, or pick its block from the AND / OR / NOT button',
     '🔧 Market stat search: picking a stat clears the search box, ready for the next one',
     '✨ Price check: hover a stat and the "–" between its min and max becomes an eraser that clears both at once (with a quick wipe), ready to type your own range',
     '✨ Price check: "Clear ranges" in the Stats header empties every min / max and keeps the stats selected',
