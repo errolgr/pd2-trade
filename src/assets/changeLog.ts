@@ -9,8 +9,8 @@ export const changeLog = {
     '🔧 Chat, trader profile, market and offers no longer crash on a PD2 listing that comes without its item',
     '🔧 Quick list, delist and price check no longer crash on items whose corruptions PD2 sends in another shape',
     "🔧 Hotkeys: press the key to set it; Space, symbol keys and keys on Cyrillic layouts (e.g. х) now register, and a key that can't be used is flagged in settings",
-    '🔧 Copying (whispers, trade links, item images) retries when another app briefly holds the Windows clipboard',
-    '🔧 Linux: whisper and market alert sounds play without an MP3 GStreamer decoder',
+    '🔧 Copying (whispers, trade links, item images) and the price check / quick list hotkeys retry when another app briefly holds the Windows clipboard',
+    '🔧 Linux: whisper and market alert sounds play again',
   ],
   '0.10.7': [
     '✨ Corrupted zone timer: the upcoming zones open upwards when the timer sits in the lower half of the screen (dragged there too), downwards otherwise',
