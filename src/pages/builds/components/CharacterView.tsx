@@ -29,6 +29,7 @@ import {
   SkillIcon,
 } from './parts';
 import { GearUp } from './GearUp';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
 type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null };
@@ -36,30 +37,30 @@ type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null
 interface DollCellDef {
   area: string;
   slots: string[];
-  label: string;
+  labelKey: string;
 }
 
 // Paper-doll cells in the in-game inventory layout.
 const DOLL: DollCellDef[] = [
-  { area: 'helm', slots: ['Helm'], label: 'Helm' },
-  { area: 'amul', slots: ['Amulet'], label: 'Amulet' },
-  { area: 'weap', slots: ['Right Hand', 'Right Hand Switch'], label: 'Weapon' },
-  { area: 'armr', slots: ['Armor'], label: 'Armor' },
-  { area: 'shld', slots: ['Left Hand', 'Left Hand Switch'], label: 'Off-hand' },
-  { area: 'rrng', slots: ['Right Ring'], label: 'Ring' },
-  { area: 'belt', slots: ['Belt'], label: 'Belt' },
-  { area: 'lrng', slots: ['Left Ring'], label: 'Ring' },
-  { area: 'glov', slots: ['Gloves'], label: 'Gloves' },
-  { area: 'boot', slots: ['Boots'], label: 'Boots' },
+  { area: 'helm', slots: ['Helm'], labelKey: 'character.slots.helm' },
+  { area: 'amul', slots: ['Amulet'], labelKey: 'character.slots.amulet' },
+  { area: 'weap', slots: ['Right Hand', 'Right Hand Switch'], labelKey: 'character.slots.weapon' },
+  { area: 'armr', slots: ['Armor'], labelKey: 'character.slots.armor' },
+  { area: 'shld', slots: ['Left Hand', 'Left Hand Switch'], labelKey: 'character.slots.offHand' },
+  { area: 'rrng', slots: ['Right Ring'], labelKey: 'character.slots.ring' },
+  { area: 'belt', slots: ['Belt'], labelKey: 'character.slots.belt' },
+  { area: 'lrng', slots: ['Left Ring'], labelKey: 'character.slots.ring' },
+  { area: 'glov', slots: ['Gloves'], labelKey: 'character.slots.gloves' },
+  { area: 'boot', slots: ['Boots'], labelKey: 'character.slots.boots' },
 ];
 const MERC_DOLL: DollCellDef[] = [
-  { area: 'helm', slots: ['Helm'], label: 'Helm' },
-  { area: 'weap', slots: ['Right Hand'], label: 'Weapon' },
-  { area: 'armr', slots: ['Armor'], label: 'Armor' },
-  { area: 'shld', slots: ['Left Hand'], label: 'Shield' },
-  { area: 'glov', slots: ['Gloves'], label: 'Gloves' },
-  { area: 'belt', slots: ['Belt'], label: 'Belt' },
-  { area: 'boot', slots: ['Boots'], label: 'Boots' },
+  { area: 'helm', slots: ['Helm'], labelKey: 'character.slots.helm' },
+  { area: 'weap', slots: ['Right Hand'], labelKey: 'character.slots.weapon' },
+  { area: 'armr', slots: ['Armor'], labelKey: 'character.slots.armor' },
+  { area: 'shld', slots: ['Left Hand'], labelKey: 'character.slots.shield' },
+  { area: 'glov', slots: ['Gloves'], labelKey: 'character.slots.gloves' },
+  { area: 'belt', slots: ['Belt'], labelKey: 'character.slots.belt' },
+  { area: 'boot', slots: ['Boots'], labelKey: 'character.slots.boots' },
 ];
 const DOLL_AREAS = `". helm amul" "weap armr shld" "rrng belt lrng" "glov . boot"`;
 const MERC_AREAS = `". helm ." "weap armr shld" "glov belt boot"`;
@@ -88,6 +89,7 @@ type Pane = 'gear-up' | 'timeline';
 
 /** One character's build: header, paper dolls, skills, Gear up and Timeline. */
 export function CharacterView({ name, mode, onBack }: { name: string; mode?: BuildsMode; onBack: () => void }) {
+  const { t } = useTranslation('builds');
   const { settings, updateSettings } = useOptions();
   const query = useBuildCharacter(name, mode);
   const detail = query.data && !query.stale && query.data.name.toLowerCase() === name.toLowerCase() ? query.data : null;
@@ -142,13 +144,13 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
           <EmptyState
             className="m-6"
             icon={<SearchX />}
-            title={`No tracked character named ${name}${mode ? ` in ${mode}` : ''}`}
-            description="Ladder characters level 80 and up are tracked, refreshed about once a day. A character that just hit 80, or a typo, may not be here yet."
+            title={mode ? t('character.notFoundInMode', { name, mode }) : t('character.notFound', { name })}
+            description={t('character.notFoundDescription')}
           />
         ) : (
           <QueryError query={query}
             className="m-4"
-            title="Couldn't load this character" />
+            title={t('character.loadError')} />
         )}
       </div>
     );
@@ -167,12 +169,14 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         className="relative flex shrink-0 items-center gap-3 border-b border-border/60 px-3 py-2.5"
         style={{ backgroundImage: `linear-gradient(90deg, ${meta.color}1f, transparent 45%)` }}
       >
-        <Button variant="ghost"
+        <Button
+          variant="ghost"
           size="sm"
           className="size-8 p-0"
-          aria-label="Back"
-          title="Back"
-          onClick={onBack}>
+          aria-label={t('common:actions.back')}
+          title={t('common:actions.back')}
+          onClick={onBack}
+        >
           <ArrowLeft className="size-4" />
         </Button>
         <ClassEmblem className={detail.className}
@@ -192,18 +196,18 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             {shown.isDead && detail.mode === 'hardcore' && (
               <Badge variant="outline"
                 className="gap-1 border-destructive/40 px-1.5 py-0 text-[10px] text-destructive">
-                <Skull /> Dead
+                <Skull /> {t('characters.dead')}
               </Badge>
             )}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
             <span>
-              <span className="text-foreground tabular-nums">Level {shown.level}</span>{' '}
+              <span className="text-foreground tabular-nums">{t('characters.level', { level: shown.level })}</span>{' '}
               <span style={{ color: meta.color }}>{detail.className}</span>
             </span>
             <span className="tabular-nums">
-              <span className="text-destructive/90">Life {shown.life.toLocaleString()}</span> ·{' '}
-              <span className="text-q-magic">Mana {shown.mana.toLocaleString()}</span>
+              <span className="text-destructive/90">Life {shown.life.toLocaleString(currentLocale())}</span> ·{' '}
+              <span className="text-q-magic">Mana {shown.mana.toLocaleString(currentLocale())}</span>
             </span>
             <span className="tabular-nums">
               {ATTRS.map(([key, label]) => `${label} ${shown.attributes[key]}`).join(' · ')}
@@ -212,14 +216,18 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         </div>
         <div className="ml-auto flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] tracking-wide text-muted-foreground uppercase">Gear value</div>
+            <div className="text-[10px] tracking-wide text-muted-foreground uppercase">{t('character.gearValue')}</div>
             <div className="text-base font-semibold text-q-gold tabular-nums">
-              {shown.gearValueHr != null ? `${fmtHr(shown.gearValueHr)} HR` : '—'}
+              {shown.gearValueHr != null ? t('character.hr', { value: fmtHr(shown.gearValueHr) }) : '—'}
             </div>
           </div>
           <div className="text-right text-[11px] text-muted-foreground">
-            <div title={fmtDateTime(detail.lastUpdated)}>Updated {timeAgo(detail.lastUpdated)}</div>
-            <div title={fmtDateTime(detail.firstSeenAt)}>First seen {timeAgo(detail.firstSeenAt)}</div>
+            <div title={fmtDateTime(detail.lastUpdated)}>
+              {t('character.updated', { time: timeAgo(detail.lastUpdated) })}
+            </div>
+            <div title={fmtDateTime(detail.firstSeenAt)}>
+              {t('character.firstSeen', { time: timeAgo(detail.firstSeenAt) })}
+            </div>
           </div>
           <Button
             variant={followed ? 'secondary' : 'outline'}
@@ -231,14 +239,14 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             }
           >
             <Star className={cn('size-3.5', followed && 'fill-q-gold text-q-gold')} />
-            {followed ? 'Following' : 'Follow'}
+            {followed ? t('characters.following') : t('character.follow')}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="size-8 p-0"
-            aria-label="Open on pd2trader.com"
-            title="Open on pd2trader.com"
+            aria-label={t('character.openSite')}
+            title={t('character.openSite')}
             onClick={() => void openUrl(characterSiteUrl(detail.name))}
           >
             <ExternalLink className="size-4" />
@@ -253,14 +261,18 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         >
           <History className="size-3.5 text-primary" />
           <span>
-            Viewing <span className="font-medium">{fmtDateTime(viewing.takenAt)}</span>
-            <span className="text-muted-foreground"> · prices hidden</span>
+            <Trans
+              t={t}
+              i18nKey="character.viewingSnapshot"
+              values={{ date: fmtDateTime(viewing.takenAt) }}
+              components={{ date: <span className="font-medium" />, muted: <span className="text-muted-foreground" /> }}
+            />
           </span>
           <Button variant="outline"
             size="sm"
             className="ml-auto h-6 px-2 text-[11px]"
             onClick={() => setSnapId(null)}>
-            Back to now
+            {t('character.backToNow')}
           </Button>
         </div>
       )}
@@ -269,7 +281,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         {/* Dolls + skills */}
         <div className="flex w-[290px] shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-r border-border/50">
           <Section
-            title="Equipment"
+            title={t('character.equipment')}
             icon={<Swords />}
             bodyClassName="py-3"
             action={
@@ -279,7 +291,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
                   size="sm"
                   className="h-6 gap-1 px-1.5 text-[11px] text-muted-foreground"
                   aria-pressed={weaponSet === 1}
-                  title="Weapon switch"
+                  title={t('character.weaponSwitch')}
                   onClick={() => setWeaponSet(weaponSet ? 0 : 1)}
                 >
                   <Repeat className="size-3" /> {weaponSet ? 'II' : 'I'}
@@ -296,7 +308,12 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             <Section
               title={
                 <span>
-                  Merc <span className="font-normal text-muted-foreground">· {shown.merc.type}</span>
+                  <Trans
+                    t={t}
+                    i18nKey="character.mercTitle"
+                    values={{ type: shown.merc.type }}
+                    components={{ muted: <span className="font-normal text-muted-foreground" /> }}
+                  />
                 </span>
               }
               icon={<Users />}
@@ -316,13 +333,13 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex h-10 shrink-0 items-center border-b border-border/50 px-3">
             <Segmented
-              label="Character view"
+              label={t('character.paneLabel')}
               layoutId="builds-character-pane"
               value={pane}
               onChange={setPane}
               options={[
-                { value: 'gear-up', label: 'Gear up' },
-                { value: 'timeline', label: 'Timeline' },
+                { value: 'gear-up', label: t('character.gearUp') },
+                { value: 'timeline', label: t('character.timeline') },
               ]}
             />
           </div>
@@ -343,19 +360,21 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
 }
 
 function BackBar({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation('builds');
   return (
     <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-3">
       <Button variant="ghost"
         size="sm"
         className="h-8 gap-1.5 text-xs"
         onClick={onBack}>
-        <ArrowLeft className="size-4" /> Back
+        <ArrowLeft className="size-4" /> {t('common:actions.back')}
       </Button>
     </div>
   );
 }
 
 function CharacterSkeleton({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation('builds');
   return (
     <div aria-busy
       className="flex h-full flex-col">
@@ -363,7 +382,7 @@ function CharacterSkeleton({ onBack }: { onBack: () => void }) {
         <Button variant="ghost"
           size="sm"
           className="size-8 p-0"
-          aria-label="Back"
+          aria-label={t('common:actions.back')}
           onClick={onBack}>
           <ArrowLeft className="size-4" />
         </Button>
@@ -413,6 +432,7 @@ function Doll({
 }
 
 function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | undefined; merc: boolean }) {
+  const { t } = useTranslation('builds');
   const height = AREA_HEIGHT[cell.area];
   if (!item) {
     return (
@@ -420,7 +440,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
         className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-background/20 text-[10px] text-muted-foreground/70"
         style={{ gridArea: cell.area, height }}
       >
-        {cell.label}
+        {t(cell.labelKey)}
       </div>
     );
   }
@@ -444,14 +464,18 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
               size={iconSize}
               className="border-0 bg-transparent" />
             {item.ethereal && (
-              <span className="absolute top-0.5 left-1 text-[9px] font-semibold text-muted-foreground"
-                title="Ethereal">
+              <span
+                className="absolute top-0.5 left-1 text-[9px] font-semibold text-muted-foreground"
+                title={t('character.ethereal')}
+              >
                 E
               </span>
             )}
             {item.corrupted && (
-              <span className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
-                title="Corrupted" />
+              <span
+                className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
+                title={t('character.corrupted')}
+              />
             )}
             {item.priceHr != null && (
               <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-[9px] leading-tight font-medium text-q-gold tabular-nums">
@@ -467,15 +491,16 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
 
 function SkillsList({ skills }: { skills: CharacterSkill[] }) {
   const shown = skills.filter((s) => s.total > 0 || s.base > 0);
+  const { t } = useTranslation('builds');
   const max = Math.max(1, ...shown.map((s) => s.total));
   return (
     <Section
-      title="Skills"
+      title={t('character.skills')}
       bodyClassName="px-0 py-1"
-      action={<span className="text-[10px] text-muted-foreground">hard / total</span>}
+      action={<span className="text-[10px] text-muted-foreground">{t('character.hardTotal')}</span>}
     >
       {shown.length === 0 ? (
-        <p className="p-2 text-center text-xs text-muted-foreground">No skills recorded.</p>
+        <p className="p-2 text-center text-xs text-muted-foreground">{t('character.noSkills')}</p>
       ) : (
         <ul>
           {shown.map((s) => (

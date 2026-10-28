@@ -15,18 +15,20 @@ import { AnimatedNumber } from '@/pages/currency/components/AnimatedNumber';
 import { deltaPillClass } from '@/pages/currency/lib/networth-format';
 import { formatHr, formatSignedHr } from './overlay';
 import { PublicProfileToggle } from './PublicProfileToggle';
+import { currentLocale, useTranslation } from '@/i18n';
 
 const HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SPARK_WIDTH = 320;
 const SPARK_HEIGHT = 56;
 
 const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
+  const { t } = useTranslation('netWorth');
   const gradientId = useId();
   const reduce = useReducedMotionSafe();
   if (values.length < 2) {
     return (
       <div className="flex h-14 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
-        Not enough snapshots yet
+        {t('panel.notEnoughSnapshots')}
       </div>
     );
   }
@@ -89,6 +91,7 @@ const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
 };
 
 const NetWorthPanel: React.FC = () => {
+  const { t } = useTranslation('netWorth');
   const { settings } = useOptions();
   const {
     owner: ctxOwner,
@@ -175,9 +178,9 @@ const NetWorthPanel: React.FC = () => {
     <WindowPanel animate
       className="h-full w-full">
       <WindowChrome
-        title="Net Worth"
+        title={t('panel.title')}
         icon={<TrendingUp />}
-        closeLabel="Hide"
+        closeLabel={t('panel.hide')}
         onClose={close}
         actions={
           signedIn ? (
@@ -188,7 +191,7 @@ const NetWorthPanel: React.FC = () => {
               onClick={() => openNetWorth('history')}
             >
               <ExternalLink className="size-3.5" />
-              Open full view
+              {t('panel.openFullView')}
             </Button>
           ) : undefined
         }
@@ -199,14 +202,12 @@ const NetWorthPanel: React.FC = () => {
           <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
             <LogIn className="size-5" />
           </span>
-          <p className="max-w-60 text-sm text-muted-foreground">
-            Sign in with your PD2 account to track your net worth.
-          </p>
+          <p className="max-w-60 text-sm text-muted-foreground">{t('panel.signInPrompt')}</p>
           {!token && (
             <Button size="sm"
               onClick={openSignIn}>
               <LogIn className="size-3.5" />
-              Sign in
+              {t('panel.signIn')}
             </Button>
           )}
         </div>
@@ -228,7 +229,7 @@ const NetWorthPanel: React.FC = () => {
                 )}
                 {latest && latest.valuation.uncertainHr > 0 && (
                   <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-                    +{formatHr(latest.valuation.uncertainHr)} HR uncertain
+                    {t('panel.uncertain', { value: formatHr(latest.valuation.uncertainHr) })}
                   </div>
                 )}
               </div>
@@ -240,10 +241,13 @@ const NetWorthPanel: React.FC = () => {
                       sessionDelta >= 0 ? 'bg-success/12 text-success' : 'bg-destructive/12 text-destructive',
                     )}
                   >
-                    {formatSignedHr(sessionDelta)} HR session
+                    {t('panel.sessionDelta', { change: formatSignedHr(sessionDelta) })}
                   </span>
                   <span className="text-muted-foreground tabular-nums">
-                    {formatHr(currentSession.hrPerHour)} HR/h · {Math.round(currentSession.durationMinutes)} min
+                    {t('panel.sessionRate', {
+                      rate: formatHr(currentSession.hrPerHour),
+                      minutes: Math.round(currentSession.durationMinutes),
+                    })}
                   </span>
                 </div>
               )}
@@ -256,7 +260,7 @@ const NetWorthPanel: React.FC = () => {
                   <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       {sessionOpen && <span className="size-1.5 rounded-full bg-success" />}
-                      {sessionOpen ? 'This session' : 'Last 24 hours'}
+                      {sessionOpen ? t('panel.thisSession') : t('panel.last24Hours')}
                     </span>
                     {sparkChange !== null && (
                       <span className={cn('tabular-nums', sparkChange >= 0 ? 'text-success' : 'text-destructive')}>
@@ -267,9 +271,9 @@ const NetWorthPanel: React.FC = () => {
                   <Sparkline values={sessionValues} />
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto">
-                  <div className="mb-1 text-xs text-muted-foreground">Recent snapshots</div>
+                  <div className="mb-1 text-xs text-muted-foreground">{t('panel.recentSnapshots')}</div>
                   {recentDeltas.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">No changes recorded yet.</div>
+                    <div className="text-xs text-muted-foreground">{t('panel.noChanges')}</div>
                   ) : (
                     <motion.ul variants={listStagger}
                       initial="hidden"
@@ -281,7 +285,9 @@ const NetWorthPanel: React.FC = () => {
                           variants={listItem}
                           className="-mx-1.5 grid grid-cols-[1fr_auto_4rem] items-center gap-3 rounded px-1.5 py-0.5 tabular-nums transition-colors duration-(--dur-fast) hover:bg-muted/50"
                         >
-                          <span className="text-muted-foreground">{new Date(point.takenAt).toLocaleTimeString()}</span>
+                          <span className="text-muted-foreground">
+                            {new Date(point.takenAt).toLocaleTimeString(currentLocale())}
+                          </span>
                           <span className="font-medium">{formatHr(point.totalHr)} HR</span>
                           <span className="flex justify-end">
                             {delta !== null && (
@@ -299,8 +305,7 @@ const NetWorthPanel: React.FC = () => {
               </>
             ) : (
               <p className="flex-1 rounded-md border border-dashed border-border p-3 text-xs leading-relaxed text-muted-foreground">
-                History is off. Turn on &quot;Save net worth history&quot; in Settings → Net Worth to see sessions and
-                changes.
+                {t('panel.historyOff')}
               </p>
             )}
 
@@ -323,7 +328,7 @@ const NetWorthPanel: React.FC = () => {
               onClick={() => run('snapshot', () => takeSnapshot('manual'))}
             >
               {busy === 'snapshot' ? <Loader2 className="size-3.5 animate-spin" /> : <Camera className="size-3.5" />}
-              Snapshot now
+              {t('panel.snapshotNow')}
             </Button>
             {trackingEnabled && (
               <Button
@@ -340,7 +345,7 @@ const NetWorthPanel: React.FC = () => {
                 ) : (
                   <Play className="size-3.5" />
                 )}
-                {sessionOpen ? 'Stop session' : 'Start session'}
+                {sessionOpen ? t('panel.stopSession') : t('panel.startSession')}
               </Button>
             )}
           </div>

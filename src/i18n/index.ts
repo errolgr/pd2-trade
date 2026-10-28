@@ -11,6 +11,14 @@
  * - Game data stays English (item names, bases, stats, runes, market data): PD2 itself is English-only.
  */
 import i18n from 'i18next';
+import moment from 'moment';
+import 'moment/locale/de';
+import 'moment/locale/es';
+import 'moment/locale/fr';
+import 'moment/locale/pl';
+import 'moment/locale/pt-br';
+import 'moment/locale/ru';
+import 'moment/locale/zh-cn';
 import { initReactI18next } from 'react-i18next';
 import { DEFAULT_LANGUAGE, type LanguageSetting, resolveLanguage, SUPPORTED_LANGUAGES } from './languages';
 import { NAMESPACES, resources } from './resources';
@@ -44,14 +52,21 @@ i18n.use(initReactI18next).init({
   react: { useSuspense: false },
 });
 
-if (typeof document !== 'undefined') document.documentElement.lang = i18n.language;
+/** Keeps <html lang> and moment's locale (fromNow / format('LLL') in the overlay) on the UI language. */
+function syncLocale(language: string): void {
+  if (typeof document !== 'undefined') document.documentElement.lang = language;
+  moment.locale(language.toLowerCase());
+}
+
+// Each moment/locale import above also switched moment's global locale: set it from the UI language.
+syncLocale(i18n.language);
+i18n.on('languageChanged', syncLocale);
 
 // The sign-in window shares localStorage with the overlay: follow a language picked while it is open.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
     if (event.key !== LANGUAGE_STORAGE_KEY) return;
     const language = resolveLanguage(event.newValue);
-    document.documentElement.lang = language;
     if (i18n.language !== language) void i18n.changeLanguage(language);
   });
 }
@@ -65,7 +80,6 @@ export function applyLanguage(setting: LanguageSetting | undefined): void {
     // localStorage unavailable: the next start detects the language again.
   }
   const language = resolveLanguage(value);
-  if (typeof document !== 'undefined') document.documentElement.lang = language;
   if (i18n.language !== language) void i18n.changeLanguage(language);
 }
 

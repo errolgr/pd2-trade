@@ -7,6 +7,7 @@ import { useChatTemplates } from '@/hooks/useChatTemplates';
 import { listItem, springSnappy } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { MacroTemplate } from '@/pages/quick-list/components/MacroManagerSheet';
+import { Trans, useTranslation } from '@/i18n';
 
 const rowAction =
   'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5';
@@ -16,6 +17,7 @@ const rowAction =
  * deleted, and new ones added. Every change is saved right away.
  */
 export function ChatTemplatesEditor() {
+  const { t } = useTranslation('settings');
   const { templates, add, update, remove, move } = useChatTemplates();
   // The template being edited ('new': the add form)
   const [editing, setEditing] = useState<string | null>(null);
@@ -23,13 +25,18 @@ export function ChatTemplatesEditor() {
   return (
     <div className="flex flex-col gap-3 px-4 py-3.5">
       <p className="text-[13px] leading-relaxed text-muted-foreground">
-        Type <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-[11px]">/</kbd> in a
-        chat message to use these. Tokens fill in from the conversation; any other {'{name}'} is asked for when you use
-        the template. Star one to pin it as a chip above the chat message box.
+        <Trans
+          t={t}
+          i18nKey="chatTemplates.intro"
+          values={{ placeholder: '{name}' }}
+          components={{
+            kbd: <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-[11px]" />,
+          }}
+        />
       </p>
 
       {templates.length > 0 ? (
-        <ul aria-label="Your templates"
+        <ul aria-label={t('chatTemplates.listLabel')}
           className="flex flex-col gap-1.5">
           <AnimatePresence initial={false}>
             {templates.map((template, index) => (
@@ -45,9 +52,9 @@ export function ChatTemplatesEditor() {
               >
                 {editing === template.id ? (
                   <ChatTemplateForm
-                    label={`Edit ${template.name}`}
+                    label={t('chatTemplates.editNamed', { name: template.name })}
                     initial={template}
-                    submitLabel="Save"
+                    submitLabel={t('common:actions.save')}
                     onSubmit={(draft) => {
                       update(template.id, draft);
                       setEditing(null);
@@ -67,13 +74,13 @@ export function ChatTemplatesEditor() {
                       <button
                         type="button"
                         onClick={() => update(template.id, { favorite: !template.favorite })}
-                        aria-label={`${template.favorite ? 'Unstar' : 'Star'} ${template.name}`}
-                        aria-pressed={!!template.favorite}
-                        title={
+                        aria-label={
                           template.favorite
-                            ? 'Starred: shown above the chat message box'
-                            : 'Star: show it above the chat message box'
+                            ? t('chatTemplates.unstarNamed', { name: template.name })
+                            : t('chatTemplates.starNamed', { name: template.name })
                         }
+                        aria-pressed={!!template.favorite}
+                        title={template.favorite ? t('chatTemplates.starredTitle') : t('chatTemplates.starTitle')}
                         className={cn(rowAction, template.favorite && 'text-warning hover:text-warning')}
                       >
                         <Star className={cn(template.favorite && 'fill-current')} />
@@ -82,8 +89,8 @@ export function ChatTemplatesEditor() {
                         type="button"
                         onClick={() => move(index, -1)}
                         disabled={index === 0}
-                        aria-label={`Move ${template.name} up`}
-                        title="Move up"
+                        aria-label={t('chatTemplates.moveUpNamed', { name: template.name })}
+                        title={t('chatTemplates.moveUp')}
                         className={rowAction}
                       >
                         <ChevronUp />
@@ -92,8 +99,8 @@ export function ChatTemplatesEditor() {
                         type="button"
                         onClick={() => move(index, 1)}
                         disabled={index === templates.length - 1}
-                        aria-label={`Move ${template.name} down`}
-                        title="Move down"
+                        aria-label={t('chatTemplates.moveDownNamed', { name: template.name })}
+                        title={t('chatTemplates.moveDown')}
                         className={rowAction}
                       >
                         <ChevronDown />
@@ -101,8 +108,8 @@ export function ChatTemplatesEditor() {
                       <button
                         type="button"
                         onClick={() => setEditing(template.id)}
-                        aria-label={`Edit ${template.name}`}
-                        title="Edit"
+                        aria-label={t('chatTemplates.editNamed', { name: template.name })}
+                        title={t('common:actions.edit')}
                         className={rowAction}
                       >
                         <Pencil />
@@ -113,8 +120,8 @@ export function ChatTemplatesEditor() {
                           remove(template.id);
                           if (editing === template.id) setEditing(null);
                         }}
-                        aria-label={`Delete ${template.name}`}
-                        title="Delete"
+                        aria-label={t('chatTemplates.deleteNamed', { name: template.name })}
+                        title={t('common:actions.delete')}
                         className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
                       >
                         <X />
@@ -130,16 +137,16 @@ export function ChatTemplatesEditor() {
         <p className="flex items-center justify-center gap-2 rounded-md border border-dashed border-border/70 px-3 py-2.5 text-xs text-muted-foreground">
           <FileText aria-hidden
             className="size-3.5" />
-          No templates of your own yet.
+          {t('chatTemplates.empty')}
         </p>
       )}
 
       {editing === 'new' ? (
         <div className="rounded-lg border border-border/70 bg-background/40">
           <ChatTemplateForm
-            label="New template"
+            label={t('chatTemplates.newTemplate')}
             initial={{ name: '', text: '' }}
-            submitLabel="Add template"
+            submitLabel={t('chatTemplates.addTemplate')}
             onSubmit={(draft) => {
               add(draft);
               setEditing(null);
@@ -154,7 +161,7 @@ export function ChatTemplatesEditor() {
           className="self-start"
           onClick={() => setEditing('new')}>
           <Plus />
-          Add template
+          {t('chatTemplates.addTemplate')}
         </Button>
       )}
     </div>

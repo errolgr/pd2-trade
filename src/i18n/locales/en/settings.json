@@ -50,5 +50,463 @@
       "all": "Every zone",
       "followed": "Only zones I follow"
     }
+  },
+  "networth": {
+    "autoSnapshotOptions": {
+      "off": "Off",
+      "every5": "Every 5 minutes",
+      "every10": "Every 10 minutes",
+      "every15": "Every 15 minutes",
+      "every30": "Every 30 minutes"
+    },
+    "ticker": {
+      "opacity": "Ticker opacity: <num>{{value}}%</num>",
+      "group": "Ticker overlay",
+      "enabled": {
+        "label": "Net worth ticker",
+        "description": "Show your net worth, session change and HR per hour over the game. Click it for details."
+      },
+      "position": {
+        "label": "Ticker position",
+        "description": "Pin the ticker to a corner of the game, or drag it anywhere on screen (switches to Custom).",
+        "placeholder": "Position"
+      },
+      "preview": "Preview"
+    },
+    "toastThreshold": {
+      "description": "While the ticker is on, show a toast when a snapshot changes your net worth by at least this much. Toggle the Net Worth toast type under <section>Chat settings</section>.",
+      "group": "Notifications",
+      "label": "Snapshot toast threshold (HR)"
+    },
+    "hotkeyHint": "The snapshot hotkey is configured under <section>Hotkeys</section>.",
+    "history": {
+      "group": "History",
+      "tracking": {
+        "label": "Save net worth history",
+        "description": "Store snapshots of your net worth on pd2trader.com so you can see history and sessions. When off, values are still calculated but nothing is saved."
+      },
+      "autoSnapshot": {
+        "label": "Automatic snapshots",
+        "description": "Take a snapshot on this interval while Diablo II is focused.",
+        "placeholder": "Interval"
+      }
+    }
+  },
+  "tickerAnchor": {
+    "topLeft": "Top left",
+    "topCenter": "Top center",
+    "topRight": "Top right",
+    "bottomLeft": "Bottom left",
+    "bottomRight": "Bottom right",
+    "aboveChat": "Above chat button",
+    "custom": "Custom (drag to move)"
+  },
+  "publicProfile": {
+    "loadFailed": "Failed to load profile settings",
+    "saveFailed": "Failed to save",
+    "saving": "Saving",
+    "description": {
+      "signedOut": "Sign in to your PD2 account to choose whether you appear on the leaderboards.",
+      "notLive": "Leaderboards launch with Season 14. You can choose to make your profile public once they go live.",
+      "default": "Show your net worth on the pd2trader.com leaderboards and a public profile page. Off by default: only you can see your history."
+    },
+    "viewProfile": "View profile",
+    "group": "Leaderboards",
+    "optedIn": "Public profile",
+    "displayName": {
+      "label": "Shown as",
+      "description": "Which of your game accounts names your profile.",
+      "placeholder": "Account"
+    },
+    "showHoldings": {
+      "label": "Show holdings",
+      "description": "Also list your top items and category split on your profile."
+    }
+  },
+  "nav": {
+    "general": "General",
+    "account": "Account",
+    "chat": "Chat",
+    "interface": "Interface",
+    "priceCheck": "Price Check",
+    "netWorth": "Net Worth",
+    "hotkeys": "Hotkeys",
+    "about": "About"
+  },
+  "layout": {
+    "title": "Settings",
+    "subtitle": "Manage your settings and set preferences",
+    "saved": "Saved",
+    "autoSave": "Changes save automatically",
+    "closeLabel": "Close settings",
+    "navLabel": "Settings sections"
+  },
+  "zonePicker": {
+    "pick": "Pick zones",
+    "count_one": "{{count}} zones",
+    "count_other": "{{count}} zones",
+    "noMatch": "No zones match",
+    "followedCount_one": "{{count}} followed",
+    "followedCount_other": "{{count}} followed",
+    "triggerLabel": "Followed zones",
+    "search": "Search zones",
+    "listLabel": "Zones"
+  },
+  "theme": {
+    "preview": {
+      "list": "List",
+      "offers": "Offers"
+    },
+    "filter": {
+      "all": "All",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "current": "Current: <name>{{name}}</name>",
+    "optionLabel": "{{name}} ({{mode}})",
+    "mode": {
+      "dark": "dark",
+      "light": "light"
+    },
+    "filterLabel": "Filter themes by mode",
+    "groupLabel": "Color theme"
+  },
+  "hotkeys": {
+    "validation": {
+      "enterKey": "Enter a key",
+      "oneChar": "Only one character allowed",
+      "letterOrNumber": "Must be a letter or number",
+      "ctrlC": "Ctrl + C is not allowed (reserved system shortcut)."
+    },
+    "warning": {
+      "ctrlC": "Ctrl + C is reserved for copying items. Pick another key.",
+      "clash": "Also used by {{action}}."
+    },
+    "group": "Shortcuts",
+    "modifierLabel": "{{action}} modifier",
+    "off": "Off",
+    "hint": "Leave the snapshot, market or builds key empty to turn that hotkey off.",
+    "rows": {
+      "priceCheck": {
+        "label": "Price check",
+        "description": "Price check the item under your cursor."
+      },
+      "listItem": {
+        "label": "List item",
+        "description": "List the hovered item on the market."
+      },
+      "settings": {
+        "label": "Open Settings",
+        "description": "Open this settings window."
+      },
+      "netWorth": {
+        "label": "Net Worth",
+        "description": "Open the Net Worth window."
+      },
+      "chat": {
+        "label": "Chat Window",
+        "description": "Show or hide the chat window."
+      },
+      "offers": {
+        "label": "Offers",
+        "description": "Open chat on the people you are selling to."
+      },
+      "delist": {
+        "label": "Delist Item",
+        "description": "Delist the hovered item from the market."
+      },
+      "snapshot": {
+        "label": "Net Worth Snapshot",
+        "description": "Take a net worth snapshot right away."
+      },
+      "market": {
+        "label": "Market",
+        "description": "Show or hide the market browser."
+      },
+      "builds": {
+        "label": "Builds",
+        "description": "Show or hide the ladder builds."
+      }
+    }
+  },
+  "general": {
+    "validation": {
+      "mode": "Please select a mode.",
+      "ladder": "Please select a ladder."
+    },
+    "directory": {
+      "detected": "Detected: {{path}}",
+      "description": "Path to your Diablo II installation directory. Leave empty to auto-detect.",
+      "detectFailed": {
+        "title": "Detection Failed",
+        "description": "Could not auto-detect Diablo II directory. Please enter it manually."
+      },
+      "autoDetect": "Auto-Detect",
+      "label": "Diablo II Directory"
+    },
+    "game": {
+      "group": "Game",
+      "mode": "Mode",
+      "season": {
+        "label": "Season",
+        "description": "Filter price data by season. Past seasons require historical data to be available."
+      }
+    },
+    "troubleshooting": {
+      "group": "Troubleshooting",
+      "debugLogging": {
+        "label": "Debug Logging",
+        "description": "Write console output to a log file for troubleshooting."
+      }
+    }
+  },
+  "about": {
+    "downloadFailed": "Failed to download update. Please try again later.",
+    "version": "Version: {{version}}",
+    "updateAvailable": "Update Available (v{{version}})",
+    "updateNow": "Update Now (v{{version}})",
+    "latest": "You have the latest version",
+    "lastChecked": "Last checked: {{ago}}",
+    "checking": "Checking...",
+    "checkForUpdates": "Check for Updates",
+    "viewChangelog": "View Changelog",
+    "credits": {
+      "developer": "Developer",
+      "contributors": "Contributors"
+    },
+    "logoAlt": "PD2 Trader logo",
+    "updates": {
+      "group": "Updates",
+      "auto": {
+        "label": "Automatic Updates",
+        "description": "Download and install new versions on startup, then restart. When off, you still get a notification when an update is available."
+      }
+    }
+  },
+  "account": {
+    "noAccounts": {
+      "title": "No accounts available",
+      "description": "If you don't have the right account selected, you may receive 404 errors when listing items. Please authenticate to load your accounts."
+    },
+    "status": {
+      "signedInAs": "Signed in as {{username}}",
+      "signedIn": "Signed in",
+      "signedOut": "Signed out"
+    },
+    "token": {
+      "description": "Get your token from <site>projectdiablo2.com<icon></icon></site> after logging in. Check your browser's localStorage for 'pd2-token'.",
+      "label": "PD2 Token",
+      "placeholder": "Enter your PD2 token"
+    },
+    "account": {
+      "linked_one": "{{count}} linked game account. Used for listings and offers.",
+      "linked_other": "{{count}} linked game accounts. Used for listings and offers.",
+      "signInToLoad": "Sign in to load the game accounts linked to your PD2 profile.",
+      "authenticateFirst": "Authenticate first",
+      "select": "Select an account",
+      "label": "Account"
+    },
+    "loggingOut": "Logging out...",
+    "logOut": "Log out",
+    "loggingIn": "Logging in...",
+    "logIn": "Log in",
+    "group": "PD2 account"
+  },
+  "stats": {
+    "fillStatValue": {
+      "labelPercent": "Fill Stat Value (%)",
+      "labelFlat": "Fill Stat Value (flat)",
+      "descriptionPercent": "Percentage of the rolled value used as ± margin when filling stat ranges.",
+      "descriptionFlat": "Flat amount applied as ± margin when filling stat ranges (e.g. 2 → ±2)."
+    },
+    "marginUnit": {
+      "percent": "Percent (%)",
+      "flat": "Flat",
+      "label": "Margin Unit",
+      "description": "How the fill value above is interpreted. Flat is useful for low-roll stats like resists or +skills.",
+      "placeholder": "Margin unit"
+    },
+    "corruptedFilter": {
+      "both": "Both",
+      "corrupted": "Corrupted only",
+      "nonCorrupted": "Non-corrupted only",
+      "label": "Default Corrupted Filter",
+      "description": "Initial corruption filter applied when opening price-check on a corruptable item.",
+      "placeholder": "Corrupted filter"
+    },
+    "rankDisplay": {
+      "bar": "Bar (percentile + vendor/keep lines)",
+      "blocks": "Blocks (6 rank segments)",
+      "label": "Rare rank display",
+      "description": "How a rare's price rank among its slot is drawn in the price-check appraisal popover.",
+      "placeholder": "Rank display"
+    },
+    "prices": {
+      "group": "Prices"
+    },
+    "priceWindow": {
+      "label": "Price window",
+      "description": "Recent sales the price-check average is based on. Thinly traded items fall back to a longer window, marked with a tag."
+    },
+    "statRanges": {
+      "group": "Stat ranges"
+    },
+    "leaveMinEmpty": {
+      "label": "Leave Min Empty",
+      "description": "When filling a stat range, leave the minimum blank so searches match anything up to the maximum."
+    },
+    "leaveMaxEmpty": {
+      "label": "Leave Max Empty",
+      "description": "When filling a stat range, leave the maximum blank so searches match the rolled value or better."
+    },
+    "filters": {
+      "group": "Filters"
+    },
+    "rareAppraisal": {
+      "group": "Rare appraisal"
+    }
+  },
+  "chatTemplates": {
+    "intro": "Type <kbd>/</kbd> in a chat message to use these. Tokens fill in from the conversation; any other {{placeholder}} is asked for when you use the template. Star one to pin it as a chip above the chat message box.",
+    "listLabel": "Your templates",
+    "editNamed": "Edit {{name}}",
+    "unstarNamed": "Unstar {{name}}",
+    "starNamed": "Star {{name}}",
+    "starredTitle": "Starred: shown above the chat message box",
+    "starTitle": "Star: show it above the chat message box",
+    "moveUpNamed": "Move {{name}} up",
+    "moveUp": "Move up",
+    "moveDownNamed": "Move {{name}} down",
+    "moveDown": "Move down",
+    "deleteNamed": "Delete {{name}}",
+    "empty": "No templates of your own yet.",
+    "newTemplate": "New template",
+    "addTemplate": "Add template"
+  },
+  "chat": {
+    "toastTypes": {
+      "whispers": "Whispers",
+      "trade": "Trade",
+      "joins": "Joins",
+      "offers": "Offers",
+      "networth": "Net Worth"
+    },
+    "timing": {
+      "off": "Notifications are off. Pick another option to edit the settings below.",
+      "label": "Notify when:",
+      "description": "Control when whisper notifications are played based on Diablo focus state.",
+      "placeholder": "Select when to notify",
+      "options": {
+        "inGame": "Only when in game",
+        "outOfGame": "Only when out of game",
+        "always": "Always",
+        "never": "Never"
+      }
+    },
+    "ignore": {
+      "count_one": "{{count}} player",
+      "count_other": "{{count}} players",
+      "removeNamed": "Remove {{name}}",
+      "empty": "No ignored players yet.",
+      "group": "Ignore list",
+      "label": "Ignore List",
+      "description": "Players in this list will not trigger whisper notifications.",
+      "placeholder": "Enter player name to ignore"
+    },
+    "sound": {
+      "notificationVolume": {
+        "label": "Notification Volume: <num>{{value}}%</num>",
+        "description": "Adjust the volume for whisper notification sounds (0-100%)."
+      },
+      "marketVolume": {
+        "label": "Market Alert Volume: <num>{{value}}%</num>",
+        "description": "Volume of the market alert sound (0-100%).",
+        "ariaLabel": "Market alert volume"
+      },
+      "group": "Sound",
+      "marketSound": {
+        "label": "Market Alert Sound",
+        "description": "Play a sound with the popup for a new listing matching a market search you watch."
+      }
+    },
+    "templates": {
+      "accept": {
+        "intro": "Customize the message copied when accepting an offer. Available placeholders:",
+        "label": "Accept Offer Message Template"
+      },
+      "reject": {
+        "intro": "Customize the message copied when rejecting an offer. Available placeholders:",
+        "label": "Reject Offer Message Template"
+      },
+      "sold": {
+        "intro": "Customize the message copied when marking an item as sold. Available placeholders:",
+        "label": "Sold Item Message Template"
+      },
+      "insertToken": "Insert {{token}}",
+      "asks": "Asks when used in chat: {{placeholders}}",
+      "group": "Message templates"
+    },
+    "notifications": {
+      "group": "Notifications"
+    },
+    "general": {
+      "label": "General Notifications",
+      "description": "Play a notification sound when you receive non-trade whispers from players or new messages in the website chat."
+    },
+    "toasts": {
+      "label": "Toast Popups",
+      "description": "Show toast popup notifications when you are tabbed out of Diablo.",
+      "typesLabel": "Toast popup types"
+    },
+    "trade": {
+      "label": "Trade Notifications",
+      "description": "Play a notification sound when you receive trade whispers or trade offers from the website."
+    },
+    "announcements": {
+      "label": "Announcement Notifications",
+      "description": "Enable notifications for messages from *announcements. By default, announcements are ignored."
+    },
+    "joins": {
+      "label": "Join Notifications",
+      "description": "Show a notification popup when a player joins the game (only when Diablo is not focused). By default, join notifications are disabled."
+    }
+  },
+  "sections": {
+    "interface": {
+      "title": "Interface",
+      "description": "Configure interface and overlay settings."
+    },
+    "theme": {
+      "title": "Theme",
+      "description": "Color theme for every overlay window. Applies instantly."
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Configure chat and whisper notifications, and your message templates."
+    },
+    "general": {
+      "title": "General",
+      "description": "General settings for the application."
+    },
+    "hotkeys": {
+      "title": "Hotkeys",
+      "description": "Configure your hotkey preferences here."
+    },
+    "about": {
+      "title": "About",
+      "description": "Information about the application, its version, and the developer."
+    },
+    "account": {
+      "title": "Account",
+      "description": "Manage your account settings here."
+    },
+    "networth": {
+      "title": "Net Worth",
+      "description": "Track your net worth over time and show it in an overlay while you play."
+    },
+    "stats": {
+      "title": "Price Check",
+      "description": "Configure the price window and how stat ranges and filters are populated for price-check searches."
+    }
   }
 }

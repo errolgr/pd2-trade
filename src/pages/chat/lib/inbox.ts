@@ -4,6 +4,7 @@
  */
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { t } from '@/i18n';
 import { EMPTY_PREFS, isArchived, prefsFor, type ChatPrefs } from '@/lib/chat-prefs';
 import { isOpenTrade, nameAliases, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
@@ -186,7 +187,13 @@ export function buildInbox({
     }
     for (const offer of thread.offers) {
       items.push({
-        text: `${offer.isIncoming ? 'Offer' : 'Your offer'}: ${offer.price ?? '?'}${offer.itemName ? ` for ${offer.itemName}` : ''}`,
+        text: offer.isIncoming
+          ? offer.itemName
+            ? t('chat:inbox.offerFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.offer', { price: offer.price ?? '?' })
+          : offer.itemName
+            ? t('chat:inbox.yourOfferFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.yourOffer', { price: offer.price ?? '?' }),
         at: offer.timestamp.getTime(),
         own: !offer.isIncoming,
         source: 'website',

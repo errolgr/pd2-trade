@@ -4,6 +4,7 @@ import { GripVertical, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { scaleIn, useReducedMotionSafe } from '@/lib/motion';
+import { useTranslation } from '@/i18n';
 
 interface WindowChromeProps {
   title: React.ReactNode;
@@ -38,8 +39,9 @@ function WindowChrome({
   dragRegion = true,
   showGrip,
   gripId,
-  closeLabel = 'Close',
+  closeLabel,
 }: WindowChromeProps) {
+  const { t } = useTranslation();
   const drag = dragRegion ? { 'data-panel-drag': true } : {};
   const grip = showGrip ?? dragRegion;
 
@@ -72,7 +74,7 @@ function WindowChrome({
       {onClose && (
         <button
           type="button"
-          aria-label={closeLabel}
+          aria-label={closeLabel ?? t('common:actions.close')}
           onClick={onClose}
           className="inline-flex size-7 shrink-0 cursor-default items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90"
         >

@@ -5,7 +5,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatHr } from '@/lib/utils';
 import { EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import { NET_WORTH_CATEGORIES, type Valuation } from '@/lib/networth-api';
-import { CATEGORY_COLORS, CATEGORY_LABELS, formatUnitPrice } from '../lib/networth-format';
+import { CATEGORY_COLORS, categoryLabel, formatUnitPrice } from '../lib/networth-format';
+import { currentLocale, useTranslation } from '@/i18n';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
 
 const TOP_GRID = 'grid grid-cols-[1fr_3rem_4rem_5rem_3.5rem_5.5rem] items-center gap-2 px-3';
@@ -20,6 +21,7 @@ function SectionTitle({ children, aside }: { children: React.ReactNode; aside?: 
 }
 
 export function OverviewTab({ valuation }: { valuation: Valuation }) {
+  const { t } = useTranslation('currency');
   const total = valuation.totalHr;
   const shares = NET_WORTH_CATEGORIES.map((category) => ({
     category,
@@ -48,7 +50,7 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
                   />
                 </TooltipTrigger>
                 <TooltipContent>
-                  {CATEGORY_LABELS[category]} · {((value / total) * 100).toFixed(1)}% · {formatHr(value)}
+                  {categoryLabel(category)} · {((value / total) * 100).toFixed(1)}% · {formatHr(value)}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -59,28 +61,30 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
               className="flex items-center gap-1.5">
               <span className="size-2 rounded-full"
                 style={{ background: CATEGORY_COLORS[category] }} />
-              <span className="text-foreground/90">{CATEGORY_LABELS[category]}</span>
+              <span className="text-foreground/90">{categoryLabel(category)}</span>
               <span className="tabular-nums">
                 {((value / total) * 100).toFixed(0)}% · {value.toFixed(2)}
               </span>
             </span>
           ))}
-          {shares.length === 0 && <span>No priced holdings yet.</span>}
+          {shares.length === 0 && <span>{t('overview.noPricedHoldings')}</span>}
         </div>
       </section>
 
       <section>
-        <SectionTitle aside={top.length > 0 ? `by value · top ${top.length}` : undefined}>Top holdings</SectionTitle>
+        <SectionTitle aside={top.length > 0 ? t('overview.topAside', { count: top.length }) : undefined}>
+          {t('overview.topHoldings')}
+        </SectionTitle>
         <div className="overflow-hidden rounded-lg border border-border bg-card/40">
           <div
             className={`${TOP_GRID} border-b border-border bg-muted/30 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground`}
           >
-            <span>Item</span>
-            <span className="text-right">Qty</span>
-            <span className="text-right">Unit</span>
-            <span className="text-right">Value</span>
-            <span className="text-right">7d</span>
-            <span className="text-right">Price</span>
+            <span>{t('columns.item')}</span>
+            <span className="text-right">{t('columns.qty')}</span>
+            <span className="text-right">{t('columns.unit')}</span>
+            <span className="text-right">{t('columns.value')}</span>
+            <span className="text-right">{t('columns.change7d')}</span>
+            <span className="text-right">{t('columns.price')}</span>
           </div>
           {top.length > 0 ? (
             <motion.div variants={listStagger}
@@ -96,7 +100,9 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
                   <HoldingName line={line}
                     showTab={line.tab !== null} />
                   <span className="text-right tabular-nums">{line.qty}</span>
-                  <span className="text-right tabular-nums text-muted-foreground">{formatUnitPrice(line.unitPrice)}</span>
+                  <span className="text-right tabular-nums text-muted-foreground">
+                    {formatUnitPrice(line.unitPrice)}
+                  </span>
                   <span className="text-right font-medium tabular-nums">{line.value.toFixed(2)}</span>
                   <span className="text-right">
                     <PriceChange percent={line.priceChange7dPercent} />
@@ -112,24 +118,24 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
               <span className="flex size-9 items-center justify-center rounded-full bg-muted/60">
                 <PackageOpen className="size-4" />
               </span>
-              Nothing priced yet.
+              {t('overview.nothingPriced')}
             </div>
           )}
         </div>
         <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
           <Info className="mt-0.5 size-3.5 shrink-0 opacity-70" />
           <span>
-            {valuation.unpricedCount} {valuation.unpricedCount === 1 ? 'item' : 'items'} unpriced ·{' '}
-            {formatHr(valuation.uncertainHr)} uncertain (low confidence, not in total) ·{' '}
-            <Coins className="mb-0.5 inline size-3 text-q-gold" /> {valuation.gold.toLocaleString()} gold (not
-            converted)
+            {t('overview.unpriced', { count: valuation.unpricedCount })} ·{' '}
+            {t('overview.uncertain', { value: formatHr(valuation.uncertainHr) })} ·{' '}
+            <Coins className="mb-0.5 inline size-3 text-q-gold" />{' '}
+            {t('overview.gold', { amount: valuation.gold.toLocaleString(currentLocale()) })}
           </span>
         </p>
       </section>
 
       {tabs.length > 0 && (
         <section>
-          <SectionTitle>By stash tab</SectionTitle>
+          <SectionTitle>{t('overview.byStashTab')}</SectionTitle>
           <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
             {tabs.map(([tab, value], i) => (
               <div key={tab}

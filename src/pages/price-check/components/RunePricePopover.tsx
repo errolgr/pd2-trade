@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { ItemValue, RuneCombination } from '../lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Trans, useTranslation } from '@/i18n';
 
 interface RunePricePopoverProps {
   loading: boolean;
@@ -33,6 +34,7 @@ export function RunePricePopover({
   selectedRuneCombinations,
   onRuneBreakdownSelect,
 }: RunePricePopoverProps) {
+  const { t } = useTranslation('priceCheck');
   const [showMore, setShowMore] = useState(false);
 
   // Separate high and low runes
@@ -52,14 +54,14 @@ export function RunePricePopover({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Rune prices"
+                aria-label={t('runePrices.label')}
                 className="size-7 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
               >
                 <ArrowRightLeft className="size-4" />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Rune prices</TooltipContent>
+          <TooltipContent side="bottom">{t('runePrices.label')}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <PopoverContent
@@ -68,17 +70,14 @@ export function RunePricePopover({
         className="w-[min(480px,calc(100vw-16px))] max-h-[min(1000px,calc(100vh-56px))] overflow-y-auto p-0"
       >
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover/95 px-4 py-3 backdrop-blur-sm">
-          <h4 className="text-sm font-semibold tracking-tight">Current Rune Prices</h4>
+          <h4 className="text-sm font-semibold tracking-tight">{t('runePrices.title')}</h4>
           <TooltipProvider>
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <Info className="size-4 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p className="max-w-xs">
-                  Rune prices are calculated from market listings using the median price over the last 7 days. Prices
-                  are updated daily.
-                </p>
+                <p className="max-w-xs">{t('runePrices.info')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -88,7 +87,7 @@ export function RunePricePopover({
             rel="noopener noreferrer"
             className="ml-auto inline-flex items-center gap-1 rounded-sm text-xs font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
           >
-            View on pd2trader.com
+            {t('runePrices.viewOnPd2Trader')}
             <ExternalLink className="size-3" />
           </a>
         </div>
@@ -104,7 +103,7 @@ export function RunePricePopover({
                   <Skeleton className="h-4 w-32 bg-muted-foreground/15" />
                 </div>
               ))}
-              <p className="pt-1 text-center text-xs text-muted-foreground">Loading rune data...</p>
+              <p className="pt-1 text-center text-xs text-muted-foreground">{t('runePrices.loading')}</p>
             </div>
           ) : (
             <motion.div variants={listStagger}
@@ -146,7 +145,7 @@ export function RunePricePopover({
                         {rune.isFixed && <span className="ml-1 text-xs">*</span>}
                       </span>
                       <span className="w-[86px] text-right text-xs tabular-nums text-muted-foreground">
-                        ({rune.isFixed ? 'fixed' : `${rune.numListings} listings`})
+                        ({rune.isFixed ? t('runePrices.fixed') : t('runePrices.listings', { count: rune.numListings })})
                       </span>
                     </span>
                   </motion.button>
@@ -167,12 +166,12 @@ export function RunePricePopover({
                   {showMore ? (
                     <>
                       <ChevronUp className="size-3" />
-                      Show Less
+                      {t('runePrices.showLess')}
                     </>
                   ) : (
                     <>
                       <ChevronDown className="size-3" />
-                      Show More ({lowRunes.length} lower runes)
+                      {t('runePrices.showMoreLower', { count: lowRunes.length })}
                     </>
                   )}
                 </button>
@@ -192,10 +191,15 @@ export function RunePricePopover({
                   >
                     <h5 className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
                       <span>
-                        <span className="text-q-rune">{selectedRuneBreakdown}</span> Breakdown:
+                        <Trans
+                          t={t}
+                          i18nKey="runePrices.breakdown"
+                          values={{ rune: selectedRuneBreakdown }}
+                          components={{ rune: <span className="text-q-rune" /> }}
+                        />
                       </span>
                       <span className="text-xs font-normal tabular-nums text-muted-foreground">
-                        target {targetValue} HR
+                        {t('runePrices.target', { value: targetValue })}
                       </span>
                     </h5>
                     <div className="space-y-1.5">
@@ -236,7 +240,7 @@ export function RunePricePopover({
                                   tone === 'near' ? 'text-warning/80' : 'text-muted-foreground',
                                 )}
                               >
-                                Diff: {combo.difference} HR
+                                {t('runePrices.diff', { value: combo.difference })}
                               </div>
                             )}
                           </motion.div>
@@ -248,8 +252,7 @@ export function RunePricePopover({
               </AnimatePresence>
 
               <div className="mx-2 mt-3 border-t border-border pt-2 pb-1 text-xs leading-relaxed text-muted-foreground">
-                * Fixed pricing used with Vex and below, as it generally does not change or when &lt;10 listings
-                available
+                {t('runePrices.fixedNote')}
               </div>
             </>
           )}

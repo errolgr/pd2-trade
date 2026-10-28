@@ -10,6 +10,7 @@ import {
   requestRareEstimate,
   subscribeRareEstimates,
 } from './rare-estimates';
+import { t } from '@/i18n';
 
 export type { Deal, DealVerdict, DealSource } from './deal';
 export { DEAL_THRESHOLDS } from './deal';
@@ -61,7 +62,7 @@ export function useDealIndicators(listings: readonly MarketListingEntry[]): Read
         hr: price.hr,
         source: 'economy',
         confidence: 'normal',
-        detail: `${price.window} market average`,
+        detail: t('market:deal.marketAverage', { window: price.window }),
       });
       if (deal) deals.set(listingId, deal);
     }

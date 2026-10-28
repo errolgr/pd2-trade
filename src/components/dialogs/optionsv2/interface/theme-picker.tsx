@@ -4,6 +4,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { getTheme, Theme, THEMES, themeStyle } from '@/lib/themes';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import { Trans, useTranslation } from '@/i18n';
 
 type ModeFilter = 'all' | 'dark' | 'light';
 
@@ -11,6 +12,7 @@ const ARROW_STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowL
 
 /** Miniature overlay window rendered with the given theme's own tokens. */
 function ThemePreview({ theme }: { theme: Theme }) {
+  const { t } = useTranslation('settings');
   return (
     <div
       aria-hidden
@@ -33,9 +35,11 @@ function ThemePreview({ theme }: { theme: Theme }) {
         </div>
         <div className="flex items-center gap-1">
           <span className="rounded-sm bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">
-            List
+            {t('theme.preview.list')}
           </span>
-          <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] text-secondary-foreground">Offers</span>
+          <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] text-secondary-foreground">
+            {t('theme.preview.offers')}
+          </span>
           <span className="ml-auto text-[9px] text-muted-foreground">
             <span className="text-q-gold">1.5</span> HR
           </span>
@@ -46,6 +50,7 @@ function ThemePreview({ theme }: { theme: Theme }) {
 }
 
 export function ThemePicker() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
   const [filter, setFilter] = React.useState<ModeFilter>('all');
   const optionRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
@@ -55,9 +60,9 @@ export function ThemePicker() {
   }
 
   const current = getTheme(settings.themeId);
-  const visible = filter === 'all' ? THEMES : THEMES.filter((t) => t.mode === filter);
+  const visible = filter === 'all' ? THEMES : THEMES.filter((theme) => theme.mode === filter);
   // Roving tabindex: the checked option is the tab stop; fall back to the first visible one.
-  const tabStopId = visible.some((t) => t.id === current.id) ? current.id : visible[0]?.id;
+  const tabStopId = visible.some((theme) => theme.id === current.id) ? current.id : visible[0]?.id;
 
   const select = (id: string) => {
     if (id !== current.id) updateSettings({ themeId: id });
@@ -83,29 +88,34 @@ export function ThemePicker() {
           size="sm"
           value={filter}
           onValueChange={(value) => value && setFilter(value as ModeFilter)}
-          aria-label="Filter themes by mode"
+          aria-label={t('theme.filterLabel')}
         >
           <ToggleGroupItem value="all"
             className="px-3">
-            All
+            {t('theme.filter.all')}
           </ToggleGroupItem>
           <ToggleGroupItem value="dark"
             className="px-3">
-            Dark
+            {t('theme.filter.dark')}
           </ToggleGroupItem>
           <ToggleGroupItem value="light"
             className="px-3">
-            Light
+            {t('theme.filter.light')}
           </ToggleGroupItem>
         </ToggleGroup>
         <span className="truncate text-sm text-muted-foreground">
-          Current: <span className="font-medium text-foreground">{current.name}</span>
+          <Trans
+            t={t}
+            i18nKey="theme.current"
+            values={{ name: current.name }}
+            components={{ name: <span className="font-medium text-foreground" /> }}
+          />
         </span>
       </div>
 
       <div
         role="radiogroup"
-        aria-label="Color theme"
+        aria-label={t('theme.groupLabel')}
         className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3"
       >
         {visible.map((theme, index) => {
@@ -119,7 +129,10 @@ export function ThemePicker() {
               type="button"
               role="radio"
               aria-checked={checked}
-              aria-label={`${theme.name} (${theme.mode})`}
+              aria-label={t('theme.optionLabel', {
+                name: theme.name,
+                mode: theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light'),
+              })}
               title={theme.description}
               tabIndex={theme.id === tabStopId ? 0 : -1}
               onClick={() => select(theme.id)}
@@ -136,7 +149,9 @@ export function ThemePicker() {
               <div className="flex items-center justify-between gap-2 px-0.5">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-card-foreground">{theme.name}</div>
-                  <div className="text-xs capitalize text-muted-foreground">{theme.mode}</div>
+                  <div className="text-xs capitalize text-muted-foreground">
+                    {theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light')}
+                  </div>
                 </div>
                 <span
                   aria-hidden

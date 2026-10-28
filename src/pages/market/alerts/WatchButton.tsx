@@ -7,6 +7,7 @@ import { showToast, usePanel } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import { isPendingSearch, retrySavedSearchSync, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { findWatch } from './alert-logic';
+import { useTranslation } from '@/i18n';
 
 /**
  * "Watch" the current market filters: a popup and a sound for every new listing that matches them (an alerting
@@ -14,6 +15,7 @@ import { findWatch } from './alert-logic';
  * stops watching (the saved search stays, without alerts).
  */
 export function WatchButton({ filters, className }: { filters: MarketFilters | null; className?: string }) {
+  const { t } = useTranslation('market');
   const store = useMarketStore();
   const { visible } = usePanel<'market'>();
   // Saved searches failed to load: try again whenever the market panel shows (the store also retries on a timer)
@@ -41,15 +43,15 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
     if (!filters) return;
     if (watching) {
       store.setSearchAlert(watching.id, false);
-      showToast({ title: 'Stopped watching', description: watching.name, variant: 'info' });
+      showToast({ title: t('watch.stoppedToast'), description: watching.name, variant: 'info' });
       return;
     }
     if (!store.alertsEnabled) store.setAlertsEnabled(true);
     if (saved && !isPendingSearch(saved)) {
       if (!store.setSearchAlert(saved.id, true)) {
         showToast({
-          title: 'Too many watches',
-          description: `Up to ${store.limits.maxAlerting} searches can be watched at once. Stop one first (Saved tab).`,
+          title: t('watch.tooManyTitle'),
+          description: t('watch.tooManyDescription', { count: store.limits.maxAlerting }),
           variant: 'warning',
         });
       }
@@ -57,24 +59,24 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
     }
     if (store.saveSearch(undefined, filters, true)) {
       showToast({
-        title: 'Watching',
-        description: "You'll get a popup for every new listing matching this search.",
+        title: t('watch.watching'),
+        description: t('watch.startedDescription'),
         variant: 'success',
       });
     }
   };
 
   const label = signedOut
-    ? 'Sign in to watch this search'
+    ? t('watch.labels.signedOut')
     : refused
-      ? 'Your PD2 session expired: sign in again to watch this search'
+      ? t('watch.labels.refused')
       : unsynced
-        ? "Your saved searches couldn't be loaded from pd2trader.com; retrying…"
+        ? t('watch.labels.unsynced')
         : archive && !watching
-          ? 'Sold listings cannot be watched'
+          ? t('watch.labels.archive')
           : watching
-            ? 'Watching: click to stop the popups for new listings matching this search'
-            : 'Watch: get a popup and a sound for every new listing matching this search';
+            ? t('watch.labels.watching')
+            : t('watch.labels.watch');
 
   return (
     <button
@@ -124,7 +126,7 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
           </motion.span>
         </AnimatePresence>
       </span>
-      {watching ? 'Watching' : 'Watch'}
+      {watching ? t('watch.watching') : t('watch.watch')}
     </button>
   );
 }

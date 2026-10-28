@@ -3,6 +3,7 @@ import { Shield } from 'lucide-react';
 import { BUILDS_MIN_LEVEL, type BuildsMode, type ItemUsage } from '@/lib/builds-api';
 import { useOverlay } from '@/overlay';
 import { findItemUsage, loadBuildUsage, usageQuality } from '../lib/build-usage';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /**
  * "Worn by 21.9% of level 80+ ladder characters" for a Unique, Set or runeword among the ladder's most worn items;
@@ -20,6 +21,7 @@ export function WornByLine({
   isRuneword?: boolean;
   mode: BuildsMode;
 }) {
+  const { t } = useTranslation('priceCheck');
   const { openPanel } = useOverlay();
   // Tagged with the item it was found for, so a different item never shows the previous one's line
   const itemKey = `${mode}|${quality}|${isRuneword ?? false}|${name ?? ''}`;
@@ -41,15 +43,19 @@ export function WornByLine({
   return (
     <button
       type="button"
-      title="Show the builds that wear it"
+      title={t('wornBy.title')}
       className="flex w-fit items-center gap-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
       onClick={() => openPanel('builds', { tab: 'meta', filters: { items: [usage.key], mode } })}
     >
       <Shield className="size-3.5 shrink-0" />
       <span>
-        Worn by <span className="font-semibold tabular-nums text-foreground">{usage.pct.toFixed(1)}%</span> of level{' '}
-        {BUILDS_MIN_LEVEL}+ ladder characters
-        <span className="tabular-nums"> ({usage.count.toLocaleString()})</span>
+        <Trans
+          t={t}
+          i18nKey="wornBy.line"
+          values={{ pct: usage.pct.toFixed(1), level: BUILDS_MIN_LEVEL }}
+          components={{ pct: <span className="font-semibold tabular-nums text-foreground" /> }}
+        />
+        <span className="tabular-nums"> ({usage.count.toLocaleString(currentLocale())})</span>
       </span>
     </button>
   );

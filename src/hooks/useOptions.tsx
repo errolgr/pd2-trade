@@ -12,7 +12,7 @@ import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templat
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
-import { applyLanguage, type LanguageSetting } from '@/i18n';
+import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -331,7 +331,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         showToast({
           title: 'PD2 Trader',
-          description: 'Token loaded from URL successfully!',
+          description: t('system:options.tokenLoaded'),
         });
       }
     }

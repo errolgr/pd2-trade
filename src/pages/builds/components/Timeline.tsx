@@ -17,14 +17,10 @@ import { peekBuildsCache, primeBuildsCache, snapshotQueryKey, useBuildsQuery } f
 import { type BuildDiff, diffBuilds, type DiffItem, isEmptyDiff } from '../lib/build-diff';
 import { fmtDateTime, fmtHr, qualityText } from '../lib/format';
 import { QueryError, Section } from './parts';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /** Snapshots whose changes the feed shows at first; "Show older" adds as many. */
 const FEED_PAGE = 12;
-
-const chartConfig: ChartConfig = {
-  level: { label: 'Level', color: 'var(--chart-2)' },
-  gear: { label: 'Gear value', color: 'var(--chart-1)' },
-};
 
 /** Level and gear value over time, and what changed between snapshots; picking one shows that build. */
 export function Timeline({
@@ -39,6 +35,7 @@ export function Timeline({
   /** null: back to now. */
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useTranslation('builds');
   const list = useBuildsQuery(`snapshots|${name.toLowerCase()}|${mode}`, (signal) =>
     getCharacterSnapshots(name, { mode }, signal),
   );
@@ -64,7 +61,7 @@ export function Timeline({
 
   if (list.error) return <QueryError query={list}
     className="m-3"
-    title="Couldn't load the history" />;
+    title={t('timeline.loadHistoryError')} />;
   if (!snapshots) {
     return (
       <div aria-busy
@@ -83,15 +80,18 @@ export function Timeline({
       {/* One snapshot is a lone dot: the chart starts at the first change */}
       {snapshots.length > 1 && (
         <Section
-          title={`${snapshots.length} snapshots`}
+          title={t('timeline.snapshots', {
+            count: snapshots.length,
+            formatted: snapshots.length.toLocaleString(currentLocale()),
+          })}
           icon={<History />}
           action={
             <span className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <span className="h-0.5 w-3 rounded-full bg-chart-2" /> Level
+                <span className="h-0.5 w-3 rounded-full bg-chart-2" /> {t('timeline.level')}
               </span>
               <span className="flex items-center gap-1">
-                <span className="h-0.5 w-3 rounded-full bg-chart-1" /> Gear value (HR)
+                <span className="h-0.5 w-3 rounded-full bg-chart-1" /> {t('timeline.gearValueHr')}
               </span>
             </span>
           }
@@ -102,17 +102,15 @@ export function Timeline({
             onSelect={onSelect} />
         </Section>
       )}
-      <Section title="Changes"
+      <Section title={t('timeline.changes')}
         bodyClassName="px-0 py-0">
         {snapshots.length < 2 ? (
-          <p className="p-3 text-center text-xs text-muted-foreground">
-            No changes recorded yet. A snapshot is saved when the build changes (at most hourly).
-          </p>
+          <p className="p-3 text-center text-xs text-muted-foreground">{t('timeline.noChanges')}</p>
         ) : docs.error ? (
           <QueryError query={docs}
             className="m-2"
             compact
-            title="Couldn't load the changes" />
+            title={t('timeline.loadChangesError')} />
         ) : !feed || docs.stale ? (
           <div aria-busy
             className="space-y-1.5 p-1">
@@ -142,7 +140,7 @@ export function Timeline({
                 className="mt-1 h-7 w-full text-xs text-muted-foreground"
                 onClick={() => setShown(shown + FEED_PAGE)}
               >
-                Show older
+                {t('timeline.showOlder')}
               </Button>
             )}
           </>
@@ -195,13 +193,14 @@ function FeedEntry({
   hardcore: boolean;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useTranslation('builds');
   const d = entry.diff;
   return (
     <li>
       <button
         type="button"
         aria-pressed={selected}
-        title={latest ? 'The current build' : 'Show the build at this time'}
+        title={latest ? t('timeline.currentBuild') : t('timeline.showBuildAtTime')}
         onClick={() => onSelect(latest || selected ? null : entry.id)}
         className={cn(
           'relative w-full px-3 py-2 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50',
@@ -210,34 +209,33 @@ function FeedEntry({
       >
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground">{fmtDateTime(entry.takenAt)}</span>
-          {latest && <span className="text-[10px] text-muted-foreground uppercase">now</span>}
+          {latest && <span className="text-[10px] text-muted-foreground uppercase">{t('timeline.now')}</span>}
           {d?.gearValueDelta != null && (
             <span className={cn('ml-auto tabular-nums', d.gearValueDelta > 0 ? 'text-success' : 'text-destructive')}>
               {d.gearValueDelta > 0 ? '+' : '−'}
-              {fmtHr(Math.abs(d.gearValueDelta))} HR
+              {t('character.hr', { value: fmtHr(Math.abs(d.gearValueDelta)) })}
             </span>
           )}
         </div>
         {!d ? (
-          <p className="text-muted-foreground">First seen at level {entry.level}</p>
+          <p className="text-muted-foreground">{t('timeline.firstSeenAtLevel', { level: entry.level })}</p>
         ) : (
           <ul className="mt-0.5 space-y-px text-muted-foreground">
             {d.level && (
               <li>
-                Level {d.level.from} <ArrowRight className="inline size-3" />{' '}
+                {t('timeline.levelFrom', { level: d.level.from })} <ArrowRight className="inline size-3" />{' '}
                 <span className="text-foreground">{d.level.to}</span>
               </li>
             )}
             {d.died && hardcore && (
               <li className="flex items-center gap-1 text-destructive">
-                <Skull className="size-3" /> Died
+                <Skull className="size-3" /> {t('timeline.died')}
               </li>
             )}
             {d.items.map((c) => (
               <li key={`${c.merc ? 'm' : 'c'}:${c.slot}`}>
                 <span className="text-muted-foreground/80">
-                  {c.merc ? 'Merc ' : ''}
-                  {c.slot}:
+                  {c.merc ? t('timeline.mercSlot', { slot: c.slot }) : t('timeline.slot', { slot: c.slot })}
                 </span>{' '}
                 {c.removed && (
                   <span className="line-through decoration-muted-foreground/60 opacity-70">
@@ -245,13 +243,14 @@ function FeedEntry({
                   </span>
                 )}
                 {c.removed && c.added && <ArrowRight className="mx-1 inline size-3" />}
-                {c.added ? <ItemName item={c.added} /> : <span className="italic"> removed</span>}
+                {c.added ? <ItemName item={c.added} /> : <span className="italic"> {t('timeline.removed')}</span>}
               </li>
             ))}
             {d.merc && (
               <li>
-                Merc: {d.merc.from ?? 'none'} <ArrowRight className="inline size-3" />{' '}
-                <span className="text-foreground">{d.merc.to ?? 'none'}</span>
+                {t('timeline.mercFrom', { merc: d.merc.from ?? t('timeline.none') })}{' '}
+                <ArrowRight className="inline size-3" />{' '}
+                <span className="text-foreground">{d.merc.to ?? t('timeline.none')}</span>
               </li>
             )}
             {d.skills.slice(0, 6).map((s) => (
@@ -263,7 +262,7 @@ function FeedEntry({
                 </span>
               </li>
             ))}
-            {d.skills.length > 6 && <li>+{d.skills.length - 6} more skill changes</li>}
+            {d.skills.length > 6 && <li>{t('timeline.moreSkillChanges', { count: d.skills.length - 6 })}</li>}
           </ul>
         )}
       </button>
@@ -282,7 +281,15 @@ function SnapshotChart({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useTranslation('builds');
   const reduce = useReducedMotionSafe();
+  const chartConfig = useMemo<ChartConfig>(
+    () => ({
+      level: { label: t('timeline.level'), color: 'var(--chart-2)' },
+      gear: { label: t('character.gearValue'), color: 'var(--chart-1)' },
+    }),
+    [t],
+  );
   const data = useMemo<ChartRow[]>(
     () =>
       [...snapshots]
@@ -290,7 +297,8 @@ function SnapshotChart({
         .map((s) => ({ id: s.id, t: Date.parse(s.takenAt), level: s.level, gear: s.gearValueHr })),
     [snapshots],
   );
-  if (data.length === 0) return <p className="p-3 text-center text-xs text-muted-foreground">No snapshots yet.</p>;
+  if (data.length === 0)
+    return <p className="p-3 text-center text-xs text-muted-foreground">{t('timeline.noSnapshots')}</p>;
   const selected = data.find((d) => d.id === selectedId);
   const latestId = data[data.length - 1].id;
   const animation = { isAnimationActive: !reduce, animationDuration: 500 };
@@ -316,7 +324,9 @@ function SnapshotChart({
           type="number"
           scale="time"
           domain={['dataMin', 'dataMax']}
-          tickFormatter={(t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+          tickFormatter={(ts: number) =>
+            new Date(ts).toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric' })
+          }
           minTickGap={40}
           tickLine={false}
           axisLine={false}
@@ -349,12 +359,22 @@ function SnapshotChart({
               <div className="rounded-lg border border-border bg-surface-elevated px-2.5 py-1.5 text-xs text-popover-foreground shadow-panel">
                 <p className="text-muted-foreground">{fmtDateTime(new Date(row.t).toISOString())}</p>
                 <p>
-                  Level <span className="font-semibold tabular-nums">{row.level}</span>
+                  <Trans
+                    t={t}
+                    i18nKey="timeline.tooltipLevel"
+                    values={{ level: row.level }}
+                    components={{ num: <span className="font-semibold tabular-nums" /> }}
+                  />
                 </p>
                 <p>
-                  Gear <span className="font-semibold text-q-gold tabular-nums">{fmtHr(row.gear)} HR</span>
+                  <Trans
+                    t={t}
+                    i18nKey="timeline.tooltipGear"
+                    values={{ value: fmtHr(row.gear) }}
+                    components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
+                  />
                 </p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Click to view this build</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">{t('timeline.clickToView')}</p>
               </div>
             );
           }}

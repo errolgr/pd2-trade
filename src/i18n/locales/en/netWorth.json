@@ -1,1 +1,42 @@
-{}
+{
+  "toast": {
+    "title": "Net Worth",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Net worth — click for details, drag to move",
+    "snapshotFailed": "Snapshot failed",
+    "lastSnapshot": "Last snapshot {{time}}",
+    "noSnapshot": "No snapshot yet",
+    "session": "session"
+  },
+  "panel": {
+    "title": "Net Worth",
+    "hide": "Hide",
+    "openFullView": "Open full view",
+    "signInPrompt": "Sign in with your PD2 account to track your net worth.",
+    "signIn": "Sign in",
+    "uncertain": "+{{value}} HR uncertain",
+    "sessionDelta": "{{change}} HR session",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} min",
+    "thisSession": "This session",
+    "last24Hours": "Last 24 hours",
+    "notEnoughSnapshots": "Not enough snapshots yet",
+    "recentSnapshots": "Recent snapshots",
+    "noChanges": "No changes recorded yet.",
+    "historyOff": "History is off. Turn on \"Save net worth history\" in Settings → Net Worth to see sessions and changes.",
+    "snapshotNow": "Snapshot now",
+    "startSession": "Start session",
+    "stopSession": "Stop session"
+  },
+  "profile": {
+    "publicProfile": "Public profile",
+    "private": "Private",
+    "publicTooltip": "Your account name, ranks, worth, chart, badges and notable finds are public on pd2trader.com.",
+    "privateTooltip": "Only you can see your net worth. Turn on to appear on the pd2trader.com leaderboards with a public profile.",
+    "saveFailed": "Failed to save",
+    "couldNotSave": "Couldn't save",
+    "viewProfile": "View profile"
+  }
+}

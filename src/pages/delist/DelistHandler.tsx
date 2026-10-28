@@ -3,6 +3,7 @@ import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { showToast, useOverlay } from '@/overlay';
+import { t } from '@/i18n';
 
 const AUTH_WAIT_TIMEOUT = 5000;
 const AUTH_POLL_INTERVAL = 200;
@@ -67,8 +68,8 @@ const DelistHandler: React.FC = () => {
     const hasAuth = await waitForAuth();
     if (!hasAuth) {
       showToast({
-        title: 'Delist',
-        description: 'You must be logged in to delist items.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.mustLogIn'),
         variant: 'error',
       });
       return;
@@ -81,8 +82,8 @@ const DelistHandler: React.FC = () => {
 
       if (matchingStashItems.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'Item not found in stash.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.notInStash'),
           variant: 'error',
         });
         return;
@@ -91,8 +92,8 @@ const DelistHandler: React.FC = () => {
       const query = buildGetMarketListingByStashItemQuery(matchingStashItems, authDataRef.current.user._id);
       if (!query) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings match this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noMatchingListings'),
           variant: 'info',
         });
         return;
@@ -103,15 +104,15 @@ const DelistHandler: React.FC = () => {
 
       if (listings.length === 0) {
         showToast({
-          title: 'Delist',
-          description: 'No active listings found for this item.',
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.noListingsFound'),
           variant: 'info',
         });
       } else if (listings.length === 1) {
         await deleteMarketListing(listings[0]._id);
         showToast({
-          title: 'Delist',
-          description: `Removed ${listings[0].item.name} listing.`,
+          title: t('quickList:delist.title'),
+          description: t('quickList:delist.removed', { name: listings[0].item.name }),
         });
       } else {
         // Multiple matches: let the user pick (replaces the list if the picker is already open)
@@ -119,13 +120,13 @@ const DelistHandler: React.FC = () => {
       }
     } catch (err) {
       if (err instanceof NoAccountSelectedError) {
-        showToast({ title: 'Delist', description: err.message, variant: 'error' });
+        showToast({ title: t('quickList:delist.title'), description: err.message, variant: 'error' });
         return;
       }
       console.error('[DelistHandler] Error:', err);
       showToast({
-        title: 'Delist',
-        description: 'Failed to delist item.',
+        title: t('quickList:delist.title'),
+        description: t('quickList:delist.failed'),
         variant: 'error',
       });
     } finally {

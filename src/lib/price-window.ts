@@ -4,6 +4,7 @@
  * window when the requested one has too few sales: 7d → 30d → season → last season). Mirrors the website's
  * PriceWindowTag.
  */
+import { t } from '@/i18n';
 import { getCurrentSeason, SEASONS } from './seasons';
 
 export type PriceWindowHours = 24 | 72 | 168 | 720;
@@ -11,10 +12,30 @@ export type PriceWindowHours = 24 | 72 | 168 | 720;
 export const DEFAULT_PRICE_WINDOW_HOURS: PriceWindowHours = 168;
 
 export const PRICE_WINDOW_OPTIONS: { hours: PriceWindowHours; label: string }[] = [
-  { hours: 24, label: '24 hours' },
-  { hours: 72, label: '3 days' },
-  { hours: 168, label: '7 days' },
-  { hours: 720, label: '30 days' },
+  {
+    hours: 24,
+    get label() {
+      return t('system:priceWindow.options.hours24');
+    },
+  },
+  {
+    hours: 72,
+    get label() {
+      return t('system:priceWindow.options.days3');
+    },
+  },
+  {
+    hours: 168,
+    get label() {
+      return t('system:priceWindow.options.days7');
+    },
+  },
+  {
+    hours: 720,
+    get label() {
+      return t('system:priceWindow.options.days30');
+    },
+  },
 ];
 
 /** Server label for a rolling window of `hours` ('7d' for 168, '24h' for 24), as in `priceWindow`. */
@@ -25,15 +46,18 @@ export function windowLabel(hours: number): string {
 /** "7-day avg" / "24-hour avg" / "season avg" for a requested window label. */
 export function basisLabel(window: string): string {
   const match = /^(\d+)([dh])$/.exec(window);
-  if (!match) return 'season avg';
-  return `${match[1]}-${match[2] === 'd' ? 'day' : 'hour'} avg`;
+  if (!match) return t('system:priceWindow.seasonAvg');
+  const count = Number(match[1]);
+  return match[2] === 'd' ? t('system:priceWindow.dayAvg', { count }) : t('system:priceWindow.hourAvg', { count });
 }
 
 /** Tag of the season before the current one (what the server's 'lastSeason' fallback prices), e.g. 'S12'. */
 function lastSeasonTag(now: Date = new Date()): string {
   const current = getCurrentSeason(SEASONS, now);
   const previous = current ? SEASONS[SEASONS.indexOf(current) + 1] : undefined;
-  return previous ? (/\((S\d+)\)/.exec(previous.label)?.[1] ?? previous.id.toUpperCase()) : 'last season';
+  return previous
+    ? (/\((S\d+)\)/.exec(previous.label)?.[1] ?? previous.id.toUpperCase())
+    : t('system:priceWindow.lastSeason');
 }
 
 /**
@@ -48,11 +72,17 @@ export function priceWindowNote(
   if (!priceWindow || priceWindow === requestedWindow) return null;
   const last = lastSeasonTag(now);
   const basis: Record<string, [string, string]> = {
-    '30d': ['30d', 'the last 30 days'],
-    season: ['season', 'the whole season'],
-    lastSeason: [last, `the last 30 days of ${last}`],
+    '30d': ['30d', t('system:priceWindow.basis.last30Days')],
+    season: [t('system:priceWindow.seasonTag'), t('system:priceWindow.basis.wholeSeason')],
+    lastSeason: [last, t('system:priceWindow.basis.last30DaysOf', { season: last })],
   };
-  const [label, text] = basis[priceWindow] ?? [priceWindow, `the last ${priceWindow}`];
-  const period = requestedWindow === '7d' ? 'this week' : `in the last ${requestedWindow}`;
-  return { label, title: `Not enough sales ${period} — based on ${text}` };
+  const [label, basisText] = basis[priceWindow] ?? [
+    priceWindow,
+    t('system:priceWindow.basis.lastWindow', { window: priceWindow }),
+  ];
+  const title =
+    requestedWindow === '7d'
+      ? t('system:priceWindow.notEnoughSalesThisWeek', { basis: basisText })
+      : t('system:priceWindow.notEnoughSalesInWindow', { window: requestedWindow, basis: basisText });
+  return { label, title };
 }

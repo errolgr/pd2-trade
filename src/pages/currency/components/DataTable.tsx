@@ -13,6 +13,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EASE_OUT } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -34,9 +35,10 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   initialSorting = [],
-  emptyMessage = 'No results.',
+  emptyMessage,
   emptyIcon,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation('currency');
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const table = useReactTable({
     data,
@@ -60,7 +62,10 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-                    className={cn('h-9 first:pl-3 last:pr-3', header.column.columnDef.meta?.align === 'right' && 'text-right')}
+                    className={cn(
+                      'h-9 first:pl-3 last:pr-3',
+                      header.column.columnDef.meta?.align === 'right' && 'text-right',
+                    )}
                   >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
@@ -102,7 +107,7 @@ export function DataTable<TData, TValue>({
                       {emptyIcon}
                     </span>
                   )}
-                  <span className="text-sm">{emptyMessage}</span>
+                  <span className="text-sm">{emptyMessage ?? t('table.noResults')}</span>
                 </div>
               </TableCell>
             </TableRow>

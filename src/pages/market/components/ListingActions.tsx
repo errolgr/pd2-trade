@@ -16,6 +16,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import type { ListingActions } from '../hooks/useListingActions';
 import type { MarketApi } from '../lib/types';
 import { NumberInput, fieldInputClass } from './controls';
+import { useTranslation } from '@/i18n';
 
 /** Icon-only action button (tooltip via title). */
 export const iconActionClass = 'size-7 p-0 text-muted-foreground hover:text-foreground';
@@ -40,12 +41,13 @@ export function OfferButton({
   dense?: boolean;
   openNonce?: number;
 }) {
+  const { t } = useTranslation('market');
   const [open, setOpen] = useState(false);
   const [price, setPrice] = useState('');
   const [hr, setHr] = useState<number | undefined>(undefined);
   const [sending, setSending] = useState(false);
   const createOffer = api?.createOffer;
-  const label = createOffer ? 'Make offer' : 'Offer on site';
+  const label = createOffer ? t('offer.make') : t('offer.onSite');
   // Adjusted during render: a new hotkey press opens the form (or the website without createOffer)
   const [seenNonce, setSeenNonce] = useState(openNonce);
   if (openNonce !== seenNonce) {
@@ -72,7 +74,11 @@ export function OfferButton({
       if (!(await ensureFresh())) return;
       const created = await createOffer(listing._id, { price: price.trim(), hrPrice: hr && hr > 0 ? hr : undefined });
       if (created === null) return; // 401: the sign-in flow takes over
-      showToast({ title: 'Offer sent', description: `${price.trim()} for ${listing.item.name}`, variant: 'success' });
+      showToast({
+        title: t('offer.sent'),
+        description: t('offer.sentDescription', { price: price.trim(), item: listing.item.name }),
+        variant: 'success',
+      });
       setOpen(false);
       setPrice('');
       setHr(undefined);
@@ -80,12 +86,12 @@ export function OfferButton({
       // 403: a sign-in from before 0.10.2 lacks the offer:create scope; only a fresh sign-in grants it
       const forbidden = e instanceof Error && 'statusCode' in e && e.statusCode === 403;
       showToast({
-        title: 'Offer not sent',
+        title: t('offer.notSent'),
         description: forbidden
-          ? 'Sign out and back in (Settings → Account) to allow PD2 Trader to make offers.'
+          ? t('offer.forbidden')
           : e instanceof Error
             ? e.message.split('\n')[0]
-            : 'projectdiablo2.com refused the offer.',
+            : t('offer.refused'),
         variant: 'error',
       });
     } finally {
@@ -107,35 +113,37 @@ export function OfferButton({
             void submit();
           }}
         >
-          <div className="text-xs font-semibold">{`Offer for ${listing.item.name}`}</div>
+          <div className="text-xs font-semibold">{t('offer.formTitle', { item: listing.item.name })}</div>
           {listing.price && (
-            <div className="truncate text-[11px] text-muted-foreground">{`Asking: ${listing.price}`}</div>
+            <div className="truncate text-[11px] text-muted-foreground">
+              {t('offer.asking', { price: listing.price })}
+            </div>
           )}
           <Input
             autoFocus
-            aria-label="Offer"
-            placeholder="Your offer, e.g. 2 Ist + Um"
+            aria-label={t('offer.offerLabel')}
+            placeholder={t('offer.placeholder')}
             maxLength={120}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             className={fieldInputClass}
           />
           <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="shrink-0">Worth (HR, optional)</span>
+            <span className="shrink-0">{t('offer.worth')}</span>
             <NumberInput
-              ariaLabel="Offer value in HR"
+              ariaLabel={t('offer.valueLabel')}
               value={hr}
               step={0.1}
               min={0}
               onChange={setHr}
-              placeholder="e.g. 1.5"
+              placeholder={t('offer.valuePlaceholder')}
             />
           </label>
           <Button type="submit"
             size="sm"
             className="h-7 w-full text-xs"
             disabled={!price.trim() || sending}>
-            {sending ? 'Sending…' : 'Send offer'}
+            {sending ? t('offer.sending') : t('offer.send')}
           </Button>
         </form>
       </PopoverContent>
@@ -145,6 +153,7 @@ export function OfferButton({
 
 /** Whisper (copy) with a menu of the user's chat templates; `dense`: the card footer's outline style. */
 export function WhisperButton({ actions, dense = false }: { actions: ListingActions; dense?: boolean }) {
+  const { t } = useTranslation('market');
   const { copyWhisper, whisperTemplates } = actions;
   const variant = dense ? 'outline' : 'secondary';
   return (
@@ -153,11 +162,11 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
         variant={variant}
         size="sm"
         className={cn('flex-1 rounded-r-none text-xs', dense ? 'h-7 px-2.5' : 'h-8')}
-        title="Copy /w whisper (W)"
+        title={t('whisper.copyTitle')}
         onClick={() => void copyWhisper()}
       >
         <Copy className="size-3.5" />
-        Whisper
+        {t('whisper.button')}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -165,8 +174,8 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
             variant={variant}
             size="sm"
             className={cn('rounded-l-none border-l-0 p-0', dense ? 'h-7 w-5' : 'h-8 w-6 border-l border-border/60')}
-            aria-label="Whisper with a template"
-            title="Whisper with a template"
+            aria-label={t('whisper.withTemplate')}
+            title={t('whisper.withTemplate')}
           >
             <ChevronDown className="size-3" />
           </Button>
@@ -174,19 +183,19 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
         <DropdownMenuContent align="end"
           className="w-60">
           <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Whisper with a chat template
+            {t('whisper.withChatTemplate')}
           </DropdownMenuLabel>
           {whisperTemplates.length === 0 && (
             <DropdownMenuItem disabled
               className="text-xs">
-              No templates (Settings → Chat)
+              {t('whisper.noTemplates')}
             </DropdownMenuItem>
           )}
-          {whisperTemplates.map((t) => (
-            <DropdownMenuItem key={t.id}
+          {whisperTemplates.map((tpl) => (
+            <DropdownMenuItem key={tpl.id}
               className="text-xs"
-              onSelect={() => void copyWhisper(t.text)}>
-              <span className="min-w-0 flex-1 truncate">{t.name}</span>
+              onSelect={() => void copyWhisper(tpl.text)}>
+              <span className="min-w-0 flex-1 truncate">{tpl.name}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

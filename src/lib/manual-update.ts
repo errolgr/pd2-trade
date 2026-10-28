@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
 /** Where users download a build to install themselves (deb/rpm via their package manager, or a new AppImage). */
@@ -29,15 +30,16 @@ export function resetManualUpdateRequired(): void {
   manualUpdateRequired = false;
 }
 
-export const MANUAL_UPDATE_DESCRIPTION =
-  "PD2 Trader can't update itself in this install location. Download the new version from the release page, or update it with your package manager.";
+export function manualUpdateDescription(): string {
+  return t('system:updates.manualDescription');
+}
 
 export function manualUpdateToast(version: string): CustomToastPayload {
   return {
-    title: `PD2 Trader - Update ${version} Available`,
-    description: MANUAL_UPDATE_DESCRIPTION,
+    title: t('system:updates.manualTitle', { version }),
+    description: manualUpdateDescription(),
     // Stays up until dismissed: the user has to act on it outside the app
     duration: Infinity,
-    action: { label: 'Open Release Page', type: ToastActionType.OPEN_RELEASE_PAGE },
+    action: { label: t('system:updates.openReleasePage'), type: ToastActionType.OPEN_RELEASE_PAGE },
   };
 }

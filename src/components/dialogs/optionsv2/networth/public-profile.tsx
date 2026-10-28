@@ -10,6 +10,7 @@ import { getProfileSettings, NetWorthApiError, ProfileSettings, updateProfileSet
 import { BACKEND_URL } from '@/lib/pkce';
 import { openUrl } from '@/lib/browser-opener';
 import { SettingsGroup, SettingsRow } from '../settings-ui';
+import { useTranslation } from '@/i18n';
 
 type LoadState =
   | { kind: 'loading' }
@@ -31,6 +32,7 @@ const toValues = (p: ProfileSettings): ProfileFormValues => ({
  * Every change is saved immediately; on failure the controls snap back to the server state.
  */
 export function PublicProfileGroup() {
+  const { t } = useTranslation('settings');
   const { settings } = useOptions();
   const token = settings?.pd2Token ?? null;
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
@@ -53,9 +55,9 @@ export function PublicProfileGroup() {
     } catch (err) {
       if (err instanceof NetWorthApiError && err.status === 404) setState({ kind: 'not-live' });
       else if (err instanceof NetWorthApiError && err.status === 401) setState({ kind: 'signed-out' });
-      else setState({ kind: 'error', message: err instanceof Error ? err.message : 'Failed to load profile settings' });
+      else setState({ kind: 'error', message: err instanceof Error ? err.message : t('publicProfile.loadFailed') });
     }
-  }, [token, form]);
+  }, [token, form, t]);
 
   React.useEffect(() => {
     load();
@@ -76,7 +78,7 @@ export function PublicProfileGroup() {
       setProfile(p);
       form.reset(toValues(p));
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save');
+      setSaveError(err instanceof Error ? err.message : t('publicProfile.saveFailed'));
       if (profile) form.reset(toValues(profile));
     } finally {
       setSaving(false);
@@ -91,33 +93,33 @@ export function PublicProfileGroup() {
     ) : saving ? (
       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="size-3 animate-spin" />
-        Saving
+        {t('publicProfile.saving')}
       </span>
     ) : null;
 
   const description = (() => {
     switch (state.kind) {
       case 'signed-out':
-        return 'Sign in to your PD2 account to choose whether you appear on the leaderboards.';
+        return t('publicProfile.description.signedOut');
       case 'not-live':
-        return 'Leaderboards launch with Season 14. You can choose to make your profile public once they go live.';
+        return t('publicProfile.description.notLive');
       case 'error':
         return state.message;
       default:
-        return 'Show your net worth on the pd2trader.com leaderboards and a public profile page. Off by default: only you can see your history.';
+        return t('publicProfile.description.default');
     }
   })();
 
   return (
     <Form {...form}>
-      <SettingsGroup title="Leaderboards"
+      <SettingsGroup title={t('publicProfile.group')}
         aside={status}>
         <FormField
           control={form.control}
           name="optedIn"
           render={({ field }) => (
             <SettingsRow
-              label="Public profile"
+              label={t('publicProfile.optedIn')}
               description={description}
               disabled={!ready}
               control={
@@ -128,7 +130,7 @@ export function PublicProfileGroup() {
                     className="gap-1.5"
                     onClick={load}>
                     <RotateCw className="size-3.5" />
-                    Retry
+                    {t('common:actions.retry')}
                   </Button>
                 ) : (
                   <FormControl>
@@ -153,8 +155,8 @@ export function PublicProfileGroup() {
                 name="displayName"
                 render={({ field }) => (
                   <SettingsRow
-                    label="Shown as"
-                    description="Which of your game accounts names your profile."
+                    label={t('publicProfile.displayName.label')}
+                    description={t('publicProfile.displayName.description')}
                     control={
                       <Select
                         value={field.value}
@@ -163,7 +165,7 @@ export function PublicProfileGroup() {
                       >
                         <FormControl>
                           <SelectTrigger className="w-[220px]">
-                            <SelectValue placeholder="Account" />
+                            <SelectValue placeholder={t('publicProfile.displayName.placeholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -185,8 +187,8 @@ export function PublicProfileGroup() {
               name="showHoldings"
               render={({ field }) => (
                 <SettingsRow
-                  label="Show holdings"
-                  description="Also list your top items and category split on your profile."
+                  label={t('publicProfile.showHoldings.label')}
+                  description={t('publicProfile.showHoldings.description')}
                   control={
                     <FormControl>
                       <Switch
@@ -212,7 +214,7 @@ export function PublicProfileGroup() {
                   onClick={() => openUrl(`${BACKEND_URL}/u/${encodeURIComponent(profile.slug!)}`)}
                 >
                   <ExternalLink className="size-3.5" />
-                  View profile
+                  {t('publicProfile.viewProfile')}
                 </Button>
               </div>
             )}

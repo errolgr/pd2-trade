@@ -16,6 +16,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { SettingsGroup, SettingsRow } from '../settings-ui';
+import { Trans, useTranslation } from '@/i18n';
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -25,6 +26,7 @@ const accountFormSchema = z.object({
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 export function AccountForm() {
+  const { t } = useTranslation('settings');
   const { settings, updateSettings } = useOptions();
   const { authData, logout, startOAuthFlow } = usePd2Website();
   const [accounts, setAccounts] = useState<string[]>([]);
@@ -109,18 +111,15 @@ export function AccountForm() {
               exit="exit">
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No accounts available</AlertTitle>
-                <AlertDescription>
-                  If you don&apos;t have the right account selected, you may receive 404 errors when listing items.
-                  Please authenticate to load your accounts.
-                </AlertDescription>
+                <AlertTitle>{t('account.noAccounts.title')}</AlertTitle>
+                <AlertDescription>{t('account.noAccounts.description')}</AlertDescription>
               </Alert>
             </motion.div>
           )}
         </AnimatePresence>
 
         <SettingsGroup
-          title="PD2 account"
+          title={t('account.group')}
           aside={
             <span
               className={cn(
@@ -132,7 +131,11 @@ export function AccountForm() {
                 aria-hidden
                 className={cn('size-1.5 rounded-full', authData ? 'bg-success shadow-glow' : 'bg-muted-foreground/50')}
               />
-              {authData ? (username ? `Signed in as ${username}` : 'Signed in') : 'Signed out'}
+              {authData
+                ? username
+                  ? t('account.status.signedInAs', { username })
+                  : t('account.status.signedIn')
+                : t('account.status.signedOut')}
             </span>
           }
         >
@@ -143,27 +146,29 @@ export function AccountForm() {
               render={({ field }) => (
                 <SettingsRow
                   layout="stacked"
-                  label="PD2 Token"
+                  label={t('account.token.label')}
                   description={
-                    <>
-                      Get your token from{' '}
-                      <a
-                        href="https://projectdiablo2.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
-                      >
-                        projectdiablo2.com
-                        <ExternalLink className="w-3 h-3" />
-                      </a>{' '}
-                      after logging in. Check your browser&apos;s localStorage for &apos;pd2-token&apos;.
-                    </>
+                    <Trans
+                      t={t}
+                      i18nKey="account.token.description"
+                      components={{
+                        site: (
+                          <a
+                            href="https://projectdiablo2.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                          />
+                        ),
+                        icon: <ExternalLink className="w-3 h-3" />,
+                      }}
+                    />
                   }
                   control={
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Enter your PD2 token"
+                        placeholder={t('account.token.placeholder')}
                         className="w-full"
                         autoComplete="off"
                         {...field}
@@ -181,11 +186,11 @@ export function AccountForm() {
             name="account"
             render={({ field }) => (
               <SettingsRow
-                label="Account"
+                label={t('account.account.label')}
                 description={
                   accounts.length > 0
-                    ? `${accounts.length} linked game account${accounts.length === 1 ? '' : 's'}. Used for listings and offers.`
-                    : 'Sign in to load the game accounts linked to your PD2 profile.'
+                    ? t('account.account.linked', { count: accounts.length })
+                    : t('account.account.signInToLoad')
                 }
                 control={
                   <>
@@ -198,7 +203,11 @@ export function AccountForm() {
                       <FormControl>
                         <SelectTrigger className="w-[220px]">
                           <SelectValue
-                            placeholder={accounts.length === 0 ? 'Authenticate first' : 'Select an account'}
+                            placeholder={
+                              accounts.length === 0
+                                ? t('account.account.authenticateFirst')
+                                : t('account.account.select')
+                            }
                           />
                         </SelectTrigger>
                       </FormControl>
@@ -220,7 +229,7 @@ export function AccountForm() {
                         className="min-w-28"
                       >
                         {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
-                        {loggingOut ? 'Logging out...' : 'Log out'}
+                        {loggingOut ? t('account.loggingOut') : t('account.logOut')}
                       </Button>
                     ) : (
                       <>
@@ -229,14 +238,14 @@ export function AccountForm() {
                           disabled={loggingIn}
                           className="min-w-28">
                           {loggingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
-                          {loggingIn ? 'Logging in...' : 'Log in'}
+                          {loggingIn ? t('account.loggingIn') : t('account.logIn')}
                         </Button>
                         {/* Closing the browser tab leaves the flow polling for up to 10 minutes: cancel to retry */}
                         {loggingIn && (
                           <Button type="button"
                             variant="outline"
                             onClick={cancelOAuthFlow}>
-                            Cancel
+                            {t('common:actions.cancel')}
                           </Button>
                         )}
                       </>

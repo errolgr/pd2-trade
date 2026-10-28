@@ -12,8 +12,10 @@ import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { listItem, listStagger } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
+import { useTranslation } from '@/i18n';
 
 export const DelistPage: React.FC = () => {
+  const { t } = useTranslation(['quickList', 'common']);
   const { deleteMarketListing } = usePd2Website();
   const { payload, payloadVersion, close } = usePanel<'delist'>();
   const listings = payload?.listings ?? [];
@@ -35,20 +37,20 @@ export const DelistPage: React.FC = () => {
       try {
         await deleteMarketListing(listing._id);
         showToast({
-          title: 'Delist',
-          description: `Removed ${listing.item.name} listing.`,
+          title: t('delist.title'),
+          description: t('delist.removed', { name: listing.item.name }),
         });
       } catch (err) {
         console.error('[DelistPage] Delete failed:', err);
         showToast({
-          title: 'Delist',
-          description: 'Failed to remove listing.',
+          title: t('delist.title'),
+          description: t('delist.removeFailed'),
           variant: 'error',
         });
       }
       close();
     },
-    [deleteMarketListing, deletingId, close],
+    [deleteMarketListing, deletingId, close, t],
   );
 
   return (
@@ -56,14 +58,14 @@ export const DelistPage: React.FC = () => {
       <WindowPanel animate
         className="h-full w-full">
         <WindowChrome
-          title="Select listing to remove"
+          title={t('delist.pageTitle')}
           icon={<Trash2 />}
           onClose={close}
           showGrip={false}
           actions={
             listings.length > 0 ? (
               <span className={countChip}
-                aria-label={`${listings.length} listings`}>
+                aria-label={t('delist.listingsCount', { count: listings.length })}>
                 {listings.length}
               </span>
             ) : undefined
@@ -76,7 +78,7 @@ export const DelistPage: React.FC = () => {
             initial="hidden"
             animate="visible"
             role="list"
-            aria-label="Listings for this item"
+            aria-label={t('delist.listingsLabel')}
           >
             {listings.map((listing) => {
               const isDeleting = deletingId === listing._id;
@@ -86,7 +88,7 @@ export const DelistPage: React.FC = () => {
                   key={listing._id}
                   role="button"
                   tabIndex={deletingId ? -1 : 0}
-                  aria-label={`Remove ${listing.item.name} listing`}
+                  aria-label={t('delist.removeItem', { name: listing.item.name })}
                   className={itemCard({
                     tone: 'danger',
                     className: cn(
@@ -119,7 +121,7 @@ export const DelistPage: React.FC = () => {
                         <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                           {listing.hr_price ? (
                             <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
-                              {`${listing.hr_price} HR`}
+                              {t('delist.hrPrice', { price: listing.hr_price })}
                             </span>
                           ) : null}
                           {listing.price && <span className="truncate">{listing.price}</span>}
@@ -131,7 +133,7 @@ export const DelistPage: React.FC = () => {
                           role="status"
                         >
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Removing...
+                          {t('delist.removing')}
                         </span>
                       ) : (
                         <span
@@ -139,7 +141,7 @@ export const DelistPage: React.FC = () => {
                           className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-destructive opacity-0 transition-opacity duration-(--dur-fast) group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
                         >
                           <Trash2 className="size-3.5" />
-                          Remove
+                          {t('common:actions.remove')}
                         </span>
                       )}
                     </div>

@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
@@ -209,7 +210,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     // Show toast notification
     const toastPayload: GenericToastPayload = {
       title: 'PD2 Trader',
-      description: 'Logged out successfully.',
+      description: t('system:auth.loggedOut'),
       variant: 'default',
       duration: 3000,
     };

@@ -9,73 +9,47 @@ import { useOptions } from '@/hooks/useOptions';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SettingsGroup, SettingsHint, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import type { TFunction } from 'i18next';
+import { useTranslation } from '@/i18n';
 
-const hotkeyFormSchema = z
-  .object({
-    hotkeyModifier: z.enum(['ctrl', 'alt']),
-    hotkeyKey: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
-    hotkeyKeyListItem: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
-    hotkeyKeySettings: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
-    hotkeyKeyCurrencyValuation: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierChat: z.enum(['ctrl', 'alt']),
-    hotkeyKeyChat: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
-    hotkeyKeyOffers: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierDelist: z.enum(['ctrl', 'alt']),
-    hotkeyKeyDelist: z
-      .string()
-      .min(1, 'Enter a key')
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-    hotkeyModifierSnapshot: z.enum(['ctrl', 'alt']),
-    hotkeyKeySnapshot: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
-    hotkeyModifierMarket: z.enum(['ctrl', 'alt']),
-    hotkeyKeyMarket: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
-    hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
-    hotkeyKeyBuilds: z
-      .string()
-      .max(1, 'Only one character allowed')
-      .regex(/^[a-z0-9]?$/i, 'Must be a letter or number'),
-  })
-  .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
-    message: 'Ctrl + C is not allowed (reserved system shortcut).',
-    path: ['hotkeyKey'],
-  });
+/** Built per render language so validation messages follow the UI language. */
+const makeHotkeyFormSchema = (t: TFunction) => {
+  const key = (optional = false) => {
+    const base = z.string();
+    return (optional ? base : base.min(1, t('hotkeys.validation.enterKey')))
+      .max(1, t('hotkeys.validation.oneChar'))
+      .regex(optional ? /^[a-z0-9]?$/i : /^[a-z0-9]$/i, t('hotkeys.validation.letterOrNumber'));
+  };
+  return z
+    .object({
+      hotkeyModifier: z.enum(['ctrl', 'alt']),
+      hotkeyKey: key(),
+      hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
+      hotkeyKeyListItem: key(),
+      hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
+      hotkeyKeySettings: key(),
+      hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
+      hotkeyKeyCurrencyValuation: key(),
+      hotkeyModifierChat: z.enum(['ctrl', 'alt']),
+      hotkeyKeyChat: key(),
+      hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
+      hotkeyKeyOffers: key(),
+      hotkeyModifierDelist: z.enum(['ctrl', 'alt']),
+      hotkeyKeyDelist: key(),
+      hotkeyModifierSnapshot: z.enum(['ctrl', 'alt']),
+      hotkeyKeySnapshot: key(true),
+      hotkeyModifierMarket: z.enum(['ctrl', 'alt']),
+      hotkeyKeyMarket: key(true),
+      hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
+      hotkeyKeyBuilds: key(true),
+    })
+    .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
+      message: t('hotkeys.validation.ctrlC'),
+      path: ['hotkeyKey'],
+    });
+};
 
-type HotkeyFormValues = z.infer<typeof hotkeyFormSchema>;
+type HotkeyFormValues = z.infer<ReturnType<typeof makeHotkeyFormSchema>>;
 
 type ModifierField = {
   [K in keyof HotkeyFormValues]: K extends `hotkeyModifier${string}` ? K : never;
@@ -85,8 +59,8 @@ type KeyField = {
 }[keyof HotkeyFormValues];
 
 interface HotkeyRowConfig {
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   modifier: ModifierField;
   key: KeyField;
   /** Key may be left empty (unbound). */
@@ -95,64 +69,64 @@ interface HotkeyRowConfig {
 
 const HOTKEY_ROWS: HotkeyRowConfig[] = [
   {
-    label: 'Price check',
-    description: 'Price check the item under your cursor.',
+    labelKey: 'hotkeys.rows.priceCheck.label',
+    descriptionKey: 'hotkeys.rows.priceCheck.description',
     modifier: 'hotkeyModifier',
     key: 'hotkeyKey',
   },
   {
-    label: 'List item',
-    description: 'List the hovered item on the market.',
+    labelKey: 'hotkeys.rows.listItem.label',
+    descriptionKey: 'hotkeys.rows.listItem.description',
     modifier: 'hotkeyModifierListItem',
     key: 'hotkeyKeyListItem',
   },
   {
-    label: 'Open Settings',
-    description: 'Open this settings window.',
+    labelKey: 'hotkeys.rows.settings.label',
+    descriptionKey: 'hotkeys.rows.settings.description',
     modifier: 'hotkeyModifierSettings',
     key: 'hotkeyKeySettings',
   },
   {
-    label: 'Net Worth',
-    description: 'Open the Net Worth window.',
+    labelKey: 'hotkeys.rows.netWorth.label',
+    descriptionKey: 'hotkeys.rows.netWorth.description',
     modifier: 'hotkeyModifierCurrencyValuation',
     key: 'hotkeyKeyCurrencyValuation',
   },
   {
-    label: 'Chat Window',
-    description: 'Show or hide the chat window.',
+    labelKey: 'hotkeys.rows.chat.label',
+    descriptionKey: 'hotkeys.rows.chat.description',
     modifier: 'hotkeyModifierChat',
     key: 'hotkeyKeyChat',
   },
   {
-    label: 'Offers',
-    description: 'Open chat on the people you are selling to.',
+    labelKey: 'hotkeys.rows.offers.label',
+    descriptionKey: 'hotkeys.rows.offers.description',
     modifier: 'hotkeyModifierOffers',
     key: 'hotkeyKeyOffers',
   },
   {
-    label: 'Delist Item',
-    description: 'Delist the hovered item from the market.',
+    labelKey: 'hotkeys.rows.delist.label',
+    descriptionKey: 'hotkeys.rows.delist.description',
     modifier: 'hotkeyModifierDelist',
     key: 'hotkeyKeyDelist',
   },
   {
-    label: 'Net Worth Snapshot',
-    description: 'Take a net worth snapshot right away.',
+    labelKey: 'hotkeys.rows.snapshot.label',
+    descriptionKey: 'hotkeys.rows.snapshot.description',
     modifier: 'hotkeyModifierSnapshot',
     key: 'hotkeyKeySnapshot',
     optional: true,
   },
   {
-    label: 'Market',
-    description: 'Show or hide the market browser.',
+    labelKey: 'hotkeys.rows.market.label',
+    descriptionKey: 'hotkeys.rows.market.description',
     modifier: 'hotkeyModifierMarket',
     key: 'hotkeyKeyMarket',
     optional: true,
   },
   {
-    label: 'Builds',
-    description: 'Show or hide the ladder builds.',
+    labelKey: 'hotkeys.rows.builds.label',
+    descriptionKey: 'hotkeys.rows.builds.description',
     modifier: 'hotkeyModifierBuilds',
     key: 'hotkeyKeyBuilds',
     optional: true,
@@ -160,7 +134,9 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
 ];
 
 export function HotkeyForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
+  const hotkeyFormSchema = React.useMemo(() => makeHotkeyFormSchema(t), [t]);
 
   const form = useForm<HotkeyFormValues>({
     resolver: zodResolver(hotkeyFormSchema),
@@ -218,15 +194,15 @@ export function HotkeyForm() {
   const warningFor = (row: HotkeyRowConfig): string | null => {
     const combo = comboOf(row);
     if (!combo) return null;
-    if (combo === 'ctrl+c') return 'Ctrl + C is reserved for copying items. Pick another key.';
+    if (combo === 'ctrl+c') return t('hotkeys.warning.ctrlC');
     const clash = HOTKEY_ROWS.find((other) => other !== row && comboOf(other) === combo);
-    return clash ? `Also used by ${clash.label}.` : null;
+    return clash ? t('hotkeys.warning.clash', { action: t(clash.labelKey) }) : null;
   };
 
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-4">
-        <SettingsGroup title="Shortcuts">
+        <SettingsGroup title={t('hotkeys.group')}>
           {HOTKEY_ROWS.map((row) => {
             const warning = warningFor(row);
             return (
@@ -236,8 +212,8 @@ export function HotkeyForm() {
                 name={row.key}
                 render={({ field: keyField }) => (
                   <SettingsRow
-                    label={row.label}
-                    description={row.description}
+                    label={t(row.labelKey)}
+                    description={t(row.descriptionKey)}
                     control={
                       <>
                         <FormField
@@ -246,8 +222,10 @@ export function HotkeyForm() {
                           render={({ field: modField }) => (
                             <Tabs defaultValue={'ctrl'}
                               value={modField.value as string}>
-                              <TabsList className="h-8"
-                                aria-label={`${row.label} modifier`}>
+                              <TabsList
+                                className="h-8"
+                                aria-label={t('hotkeys.modifierLabel', { action: t(row.labelKey) })}
+                              >
                                 <TabsTrigger
                                   value={'ctrl'}
                                   className="px-2.5"
@@ -270,7 +248,7 @@ export function HotkeyForm() {
                           <Input
                             type="text"
                             maxLength={1}
-                            placeholder={row.optional ? 'Off' : undefined}
+                            placeholder={row.optional ? t('hotkeys.off') : undefined}
                             value={(keyField.value as string | undefined)?.toUpperCase() ?? ''}
                             aria-invalid={warning ? true : undefined}
                             className={cn(
@@ -299,7 +277,7 @@ export function HotkeyForm() {
             );
           })}
         </SettingsGroup>
-        <SettingsHint>Leave the snapshot, market or builds key empty to turn that hotkey off.</SettingsHint>
+        <SettingsHint>{t('hotkeys.hint')}</SettingsHint>
       </div>
     </Form>
   );

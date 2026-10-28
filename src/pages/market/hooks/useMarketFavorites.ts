@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/overlay';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketApi, MarketFavorite } from '../lib/types';
+import { t } from '@/i18n';
 
 /** The site pages favorites; the overlay reads up to this many (plenty for a personal watch list). */
 const FAVORITES_PAGE = 50;
@@ -53,7 +54,7 @@ export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): Ma
       setStatus('ready');
     } catch (e) {
       if (id !== loadId.current) return;
-      setError(e instanceof Error ? e.message.split('\n')[0] : 'Could not load favorites');
+      setError(e instanceof Error ? e.message.split('\n')[0] : t('market:favorites.loadFailed'));
       setStatus('error');
     }
   }, [api, signedIn]);
@@ -99,8 +100,8 @@ export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): Ma
         }
       } catch {
         showToast({
-          title: existing ? 'Favorite not removed' : 'Favorite not saved',
-          description: 'projectdiablo2.com refused the change. Try again in a moment.',
+          title: existing ? t('market:favorites.notRemoved') : t('market:favorites.notSaved'),
+          description: t('market:favorites.refused'),
           variant: 'error',
         });
       } finally {

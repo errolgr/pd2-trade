@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { Package, User as UserIcon } from 'lucide-react';
+import { t, Trans, useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
 import { useItems } from '@/hooks/useItems';
@@ -31,7 +32,8 @@ export const listingIconBoxClass =
 
 /** Same footprint as a loaded pill, so the sentence doesn't reflow much when the listing arrives. */
 export function ListingCardSkeleton() {
-  return <Skeleton aria-label="Loading listing"
+  const { t } = useTranslation('chat');
+  return <Skeleton aria-label={t('listing.loading')}
     className="mx-0.5 inline-block h-[30px] w-36 align-middle" />;
 }
 
@@ -89,19 +91,21 @@ function stashLabel(listing: MarketListingEntry): string | null {
   const location = listing.item.location;
   if (!location?.storage) return null;
   if (/shared/i.test(location.storage)) {
-    return typeof location.stash_page === 'number' ? `Shared ${location.stash_page}` : 'Shared';
+    return typeof location.stash_page === 'number'
+      ? t('chat:listing.stashShared', { page: location.stash_page })
+      : t('chat:listing.stashSharedOnly');
   }
-  if (/^(personal )?stash$/i.test(location.storage)) return 'Personal';
+  if (/^(personal )?stash$/i.test(location.storage)) return t('chat:listing.stashPersonal');
   return location.storage;
 }
 
 /** "12% under market" / "5% over market" / "at market" for an asking price against the market price. */
 export function marketDelta(askingHr: number, marketHr: number): { text: string; className: string } {
   const percent = Math.round(((askingHr - marketHr) / marketHr) * 100);
-  if (percent === 0) return { text: 'at market', className: 'text-muted-foreground' };
+  if (percent === 0) return { text: t('chat:listing.atMarket'), className: 'text-muted-foreground' };
   return percent < 0
-    ? { text: `${-percent}% under market`, className: 'text-success' }
-    : { text: `${percent}% over market`, className: 'text-warning' };
+    ? { text: t('chat:listing.underMarket', { percent: -percent }), className: 'text-success' }
+    : { text: t('chat:listing.overMarket', { percent }), className: 'text-warning' };
 }
 
 /**
@@ -112,7 +116,7 @@ export function ListingDetails({
   listing,
   listed,
   market,
-  hint = 'Click to open on projectdiablo2.com',
+  hint,
   children,
 }: {
   listing: MarketListingEntry;
@@ -121,6 +125,8 @@ export function ListingDetails({
   hint?: string | null;
   children?: React.ReactNode;
 }) {
+  const { t } = useTranslation('chat');
+  const shownHint = hint === undefined ? t('listing.clickToOpen') : hint;
   const { item, user } = listing;
   const online = listed && isUserOnlineIngame(listing.user_last_ingame);
   const delta = market && listing.hr_price > 0 ? marketDelta(listing.hr_price, market.hr) : null;
@@ -138,9 +144,11 @@ export function ListingDetails({
         hideToggle={true}
       />
       <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
-        {listing.hr_price > 0 && <PopoverKeyValue label="Price">{`${listing.hr_price} HR`}</PopoverKeyValue>}
+        {listing.hr_price > 0 && (
+          <PopoverKeyValue label={t('listing.price')}>{`${listing.hr_price} HR`}</PopoverKeyValue>
+        )}
         {market && (
-          <PopoverKeyValue label="Market">
+          <PopoverKeyValue label={t('listing.market')}>
             {`${Number(market.hr.toFixed(2))} HR `}
             <span className="text-muted-foreground">{`· ${market.window}`}</span>
             {delta && <span className={cn('ml-1.5', delta.className)}>{delta.text}</span>}
@@ -148,38 +156,55 @@ export function ListingDetails({
         )}
         {listing.price && (
           <div className="flex justify-between gap-3">
-            <span className="shrink-0 text-muted-foreground">Note:</span>
+            <span className="shrink-0 text-muted-foreground">{t('listing.note')}</span>
             <span className="min-w-0 break-words text-right">{listing.price}</span>
           </div>
         )}
-        <PopoverKeyValue label="Status">
-          {listed ? `Listed, bumped ${moment(listing.bumped_at).fromNow()}` : 'Sold or delisted'}
+        <PopoverKeyValue label={t('listing.status')}>
+          {listed
+            ? t('listing.listedBumped', { ago: moment(listing.bumped_at).fromNow() })
+            : t('listing.soldOrDelisted')}
         </PopoverKeyValue>
-        <PopoverKeyValue label="Mode">
+        <PopoverKeyValue label={t('listing.mode')}>
           {`${listing.is_ladder ? 'Ladder' : 'Non-ladder'} · ${listing.is_hardcore ? 'Hardcore' : 'Softcore'}`}
         </PopoverKeyValue>
         {stashLabel(listing) && (
-          <PopoverKeyValue label="Stash">
-            {`${stashLabel(listing)}${item.position ? ` · column ${item.position.column + 1}, row ${item.position.row + 1}` : ''}`}
+          <PopoverKeyValue label={t('listing.stash')}>
+            {item.position
+              ? t('listing.stashPosition', {
+                  stash: stashLabel(listing),
+                  column: item.position.column + 1,
+                  row: item.position.row + 1,
+                })
+              : stashLabel(listing)}
           </PopoverKeyValue>
         )}
-        {item.item_level > 0 && <PopoverKeyValue label="Item level">{item.item_level}</PopoverKeyValue>}
+        {item.item_level > 0 && <PopoverKeyValue label={t('listing.itemLevel')}>{item.item_level}</PopoverKeyValue>}
         {item.requirements?.level > 0 && (
-          <PopoverKeyValue label="Required level">{item.requirements.level}</PopoverKeyValue>
+          <PopoverKeyValue label={t('listing.requiredLevel')}>{item.requirements.level}</PopoverKeyValue>
         )}
         {user?.username && (
           <div className="flex items-center gap-1.5 pt-1 text-muted-foreground">
             <UserIcon className="size-3" />
-            Seller: <span className="text-foreground">{user.username}</span>
+            <Trans
+              t={t}
+              i18nKey="listing.seller"
+              values={{ name: user.username }}
+              components={{ name: <span className="text-foreground" /> }}
+            />
             {online && (
-              <span className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                title="Online in-game" />
+              <span
+                className="size-2 rounded-full bg-success ring-2 ring-success/25"
+                title={t('listing.onlineInGame')}
+              />
             )}
           </div>
         )}
       </div>
       {children}
-      {hint && <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{hint}</div>}
+      {shownHint && (
+        <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{shownHint}</div>
+      )}
     </div>
   );
 }
@@ -189,6 +214,7 @@ export function ListingDetails({
  * price, stash location, base, stats, seller, mode and age live in the hover popover.
  */
 export function ListingCard({ listing, listed, url }: { listing: MarketListingEntry; listed: boolean; url: string }) {
+  const { t } = useTranslation('chat');
   const [open, setOpen] = useState(false);
   // Fetched with the pill rather than on hover, so the popover opens priced; a thread's pills share one batch.
   const market = useListingMarketPrices([listing]).get(listing._id);
@@ -213,7 +239,7 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
           <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
           {!listed && (
             <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              Unlisted
+              {t('listing.unlisted')}
             </span>
           )}
         </a>

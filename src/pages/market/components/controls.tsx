@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tri } from '../lib/types';
+import { useTranslation } from '@/i18n';
 
 /*
  * Dense form controls for the market filter sidebar. Everything is h-7 / text-xs so the full site filter set
@@ -139,18 +140,18 @@ export function Segmented<T extends string>({
   );
 }
 
-const TRI_OPTIONS: { value: Tri; label: string }[] = [
-  { value: 'any', label: 'Any' },
-  { value: 'yes', label: 'Yes' },
-  { value: 'no', label: 'No' },
-];
-
 export function TriField({ label, value, onChange }: { label: string; value: Tri; onChange: (v: Tri) => void }) {
+  const { t } = useTranslation(['market', 'common']);
+  const options: { value: Tri; label: string }[] = [
+    { value: 'any', label: t('filters.any') },
+    { value: 'yes', label: t('common:actions.yes') },
+    { value: 'no', label: t('common:actions.no') },
+  ];
   return (
     <Field label={label}>
       <Segmented label={label}
         value={value}
-        options={TRI_OPTIONS}
+        options={options}
         onChange={onChange} />
     </Field>
   );
@@ -211,20 +212,21 @@ export function RangeField({
   onChange: (min: number | undefined, max: number | undefined) => void;
   step?: number;
 }) {
+  const { t } = useTranslation('market');
   return (
     <Field label={label}>
       <div className="flex items-center gap-1">
         <NumberInput
-          ariaLabel={`${label} min`}
-          placeholder="min"
+          ariaLabel={t('controls.minLabel', { label })}
+          placeholder={t('controls.min')}
           value={min}
           step={step}
           onChange={(v) => onChange(v, max)}
         />
         <span className="text-xs text-muted-foreground">–</span>
         <NumberInput
-          ariaLabel={`${label} max`}
-          placeholder="max"
+          ariaLabel={t('controls.maxLabel', { label })}
+          placeholder={t('controls.max')}
           value={max}
           step={step}
           onChange={(v) => onChange(min, v)}
@@ -240,7 +242,7 @@ export function SelectField({
   value,
   options,
   onChange,
-  anyLabel = 'Any',
+  anyLabel: anyLabelProp,
   disabled,
 }: {
   label: string;
@@ -250,6 +252,8 @@ export function SelectField({
   anyLabel?: string | null;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation('market');
+  const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
   return (
     <Field label={label}>
       <Select value={value ?? ANY}

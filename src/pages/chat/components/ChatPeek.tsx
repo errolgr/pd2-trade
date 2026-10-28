@@ -1,35 +1,38 @@
 import React from 'react';
 import { ArrowDownLeft, CheckCheck, CircleCheck, Gamepad2, type LucideIcon, MessageSquare } from 'lucide-react';
+import { t, useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { FeedItem, FeedKind } from '../chat-feed';
 
 /** Items the peek lists, newest first. */
 export const PEEK_ITEMS = 5;
 
-const KINDS: Record<FeedKind, { icon: LucideIcon; label: string; className: string }> = {
-  message: { icon: MessageSquare, label: 'Message', className: 'text-destructive' },
-  offerReceived: { icon: ArrowDownLeft, label: 'Offer received', className: 'text-warning' },
-  offerAccepted: { icon: CircleCheck, label: 'Offer accepted', className: 'text-success' },
-  trade: { icon: Gamepad2, label: 'Trade whisper', className: 'text-warning' },
+const KINDS: Record<FeedKind, { icon: LucideIcon; labelKey: string; className: string }> = {
+  message: { icon: MessageSquare, labelKey: 'chat:peek.kinds.message', className: 'text-destructive' },
+  offerReceived: { icon: ArrowDownLeft, labelKey: 'chat:peek.kinds.offerReceived', className: 'text-warning' },
+  offerAccepted: { icon: CircleCheck, labelKey: 'chat:peek.kinds.offerAccepted', className: 'text-success' },
+  trade: { icon: Gamepad2, labelKey: 'chat:peek.kinds.trade', className: 'text-warning' },
 };
 
 /** "now", "12m", "3h", "2d". */
 function timeAgo(at: number, now: number) {
   const minutes = Math.floor(Math.max(0, now - at) / 60_000);
-  if (minutes < 1) return 'now';
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 1) return t('chat:peek.time.now');
+  if (minutes < 60) return t('chat:peek.time.minutes', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  return hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d`;
+  return hours < 24
+    ? t('chat:peek.time.hours', { count: hours })
+    : t('chat:peek.time.days', { count: Math.floor(hours / 24) });
 }
 
 /** The second line: the item and price, a message's text (with how many are unread). */
 function detail(item: FeedItem) {
   if (item.kind === 'message') {
-    const count = item.count && item.count > 1 ? `${item.count} new · ` : '';
-    return `${count}${item.text ?? ''}`;
+    const text = item.text ?? '';
+    return item.count && item.count > 1 ? t('chat:peek.newMessages', { count: item.count, text }) : text;
   }
   const deal = [item.itemName, item.price].filter(Boolean).join(' · ');
-  return deal || item.text || KINDS[item.kind].label;
+  return deal || item.text || t(KINDS[item.kind].labelKey);
 }
 
 const footerButton =
@@ -57,22 +60,24 @@ export function ChatPeek({
   onMarkAllRead: () => void;
   onOpenChat: () => void;
 }) {
+  const { t } = useTranslation('chat');
   const shown = items.slice(0, PEEK_ITEMS);
   return (
     <div
       role="group"
-      aria-label="What's new"
+      aria-label={t('peek.whatsNew')}
       className="w-72 rounded-lg border border-border bg-surface p-1 text-sm text-surface-foreground shadow-panel backdrop-blur-md"
     >
       {shown.length === 0 ? (
         <div className="flex items-center gap-2 px-2.5 py-3 text-muted-foreground">
           <CheckCheck className="size-4 shrink-0" />
-          {"You're all caught up"}
+          {t('peek.allCaughtUp')}
         </div>
       ) : (
-        <ul aria-label="New">
+        <ul aria-label={t('peek.new')}>
           {shown.map((item) => {
-            const { icon: Icon, label, className } = KINDS[item.kind];
+            const { icon: Icon, labelKey, className } = KINDS[item.kind];
+            const label = t(labelKey);
             return (
               <li key={item.key}>
                 <button
@@ -104,12 +109,12 @@ export function ChatPeek({
           disabled={!canMarkAllRead}
           onClick={onMarkAllRead}
           className={footerButton}>
-          Mark all read
+          {t('peek.markAllRead')}
         </button>
         <button type="button"
           onClick={onOpenChat}
           className={footerButton}>
-          Open chat
+          {t('peek.openChat')}
         </button>
       </div>
     </div>

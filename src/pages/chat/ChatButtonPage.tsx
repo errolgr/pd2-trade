@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ChatButton } from '@/components/custom/ChatButton';
 import { useOptions } from '@/hooks/useOptions';
+import { useTranslation } from '@/i18n';
 import { confirmToast, showToast, useBadgeCount, useOverlay } from '@/overlay';
 import { NET_WORTH_PANEL_SIZE, panelBesideTicker } from '@/pages/net-worth/overlay';
 import { chatDockRect, clampDockOffset, setChatDockOffset, useChatDockOffset } from './chat-dock';
@@ -13,6 +14,7 @@ const PANEL_GAP = 8;
 const MENU_ROOM = 300;
 
 const ChatButtonPage: React.FC = () => {
+  const { t } = useTranslation('chat');
   const { updateSettings } = useOptions();
   const { openPanel, togglePanel, gameRect } = useOverlay();
   const unreadCount = useBadgeCount('chatUnread');
@@ -25,12 +27,12 @@ const ChatButtonPage: React.FC = () => {
 
   const handleDisableClick = () =>
     confirmToast({
-      title: 'Disable Chat Button Overlay?',
-      description: 'You can re-enable it later in Settings → Interface.',
-      confirmLabel: 'Disable',
+      title: t('button.disableTitle'),
+      description: t('button.disableDescription'),
+      confirmLabel: t('button.disable'),
       onConfirm: async () => {
         await updateSettings({ chatButtonOverlayEnabled: false });
-        showToast('Chat button overlay disabled. Re-enable in Settings → Interface.');
+        showToast(t('button.disabledToast'));
       },
     });
 

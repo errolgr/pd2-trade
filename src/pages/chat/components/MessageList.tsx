@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { ThreadState } from '../hooks/useChatStore';
@@ -59,6 +60,7 @@ export function MessageList({
   onLoadOlder: (conversationId: string) => void;
   onReload: (conversationId: string) => void;
 }) {
+  const { t } = useTranslation(['chat', 'common']);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Variable-height virtual message list. anchorTo 'end' keeps the reading position when older pages are
@@ -135,7 +137,7 @@ export function MessageList({
         className="space-y-2 p-4">
         <div className="flex items-center justify-center gap-2 pb-2 text-xs text-muted-foreground">
           <Loader2 className="size-3.5 animate-spin" />
-          <span>Loading messages...</span>
+          <span>{t('messages.loading')}</span>
         </div>
         {SKELETON_BUBBLES.map(([align, size], i) => (
           <div key={i}
@@ -150,14 +152,14 @@ export function MessageList({
       <EmptyState
         className="mx-auto mt-16 max-w-sm border-destructive/30 bg-destructive/5"
         icon={<AlertTriangle />}
-        title="Couldn't load messages"
-        description="Check your connection and try again."
+        title={t('messages.loadFailedTitle')}
+        description={t('messages.loadFailedDescription')}
         action={
           <Button variant="outline"
             size="sm"
             onClick={() => onReload(threadId)}>
             <RotateCw className="size-3.5" />
-            Try again
+            {t('common:actions.tryAgain')}
           </Button>
         }
       />
@@ -167,8 +169,8 @@ export function MessageList({
       <EmptyState
         className="mx-auto mt-16 max-w-sm"
         icon={<MessageSquareDashed />}
-        title="No messages yet"
-        description={`Say hi to ${otherName}.`}
+        title={t('messages.emptyTitle')}
+        description={t('messages.emptyDescription', { name: otherName })}
       />
     );
   }
@@ -218,7 +220,7 @@ export function MessageList({
           className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
           <span className="flex items-center gap-2 rounded-full border border-border bg-popover/95 px-3 py-1 text-xs text-muted-foreground shadow-panel">
             <Loader2 className="size-3.5 animate-spin" />
-            Loading older messages...
+            {t('messages.loadingOlder')}
           </span>
         </div>
       )}
@@ -230,7 +232,7 @@ export function MessageList({
             className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-primary/40 bg-popover/95 px-3 py-1 text-xs font-medium text-foreground shadow-panel outline-none transition-[background-color,scale] duration-(--dur-fast) hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95"
           >
             <ArrowDown className="size-3.5 text-primary" />
-            {newCount} new · Jump to latest
+            {t('messages.jumpToLatest', { count: newCount })}
           </button>
         </div>
       )}

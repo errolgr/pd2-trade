@@ -17,6 +17,7 @@ import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
 import { AddAllModsButton } from './ModMenu';
+import { useTranslation } from '@/i18n';
 
 export interface ListingDetailProps {
   row: ScoredListing;
@@ -48,16 +49,17 @@ export function ListingDetail({
   onSelectListing,
   pseudoKeys,
 }: ListingDetailProps) {
+  const { t } = useTranslation('market');
   const { listing } = row;
   const actions = useListingActions(listing);
   const price = formatHrPrice(listing.hr_price);
 
   return (
-    <aside aria-label="Listing detail"
+    <aside aria-label={t('detail.label')}
       className="flex h-full min-h-0 flex-col border-l border-border bg-card/40">
       <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5">
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {archived ? 'Sold / delisted' : 'Listed'}
+          {archived ? t('detail.sold') : t('detail.listed')}
           {` · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'} ${listing.is_hardcore ? 'HC' : 'SC'} · ${listingAge(listing)}`}
         </span>
         <AddAllModsButton
@@ -69,8 +71,8 @@ export function ListingDetail({
           size="sm"
           className={cn('size-7 p-0', favorite && 'text-destructive')}
           aria-pressed={favorite}
-          aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
-          title={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={favorite ? t('detail.unfavorite') : t('detail.favorite')}
+          title={favorite ? t('detail.unfavorite') : t('detail.favorite')}
           onClick={() => onToggleFavorite(listing)}
         >
           <Heart className={cn('size-4', favorite && 'fill-current')} />
@@ -78,7 +80,7 @@ export function ListingDetail({
         <Button variant="ghost"
           size="sm"
           className="size-7 p-0"
-          aria-label="Close detail (Esc)"
+          aria-label={t('detail.close')}
           onClick={onClose}>
           <X className="size-4" />
         </Button>
@@ -105,7 +107,7 @@ export function ListingDetail({
           <div className="rounded-md border border-border/60 bg-muted/30 p-2">
             <div className="flex items-center justify-between gap-2">
               <span className={cn('text-base font-bold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}>
-                {price ?? 'No HR price'}
+                {price ?? t('detail.noHrPrice')}
               </span>
               <DealBadge deal={deal} />
             </div>
@@ -114,7 +116,10 @@ export function ListingDetail({
             )}
             <div className="mt-1 text-[11px] text-muted-foreground"
               title={moment(listing.bumped_at).format('LLL')}>
-              {`Bumped ${moment(listing.bumped_at).fromNow()} · listed ${moment(listing.created_at).fromNow()}`}
+              {t('detail.bumpedListed', {
+                bumped: moment(listing.bumped_at).fromNow(),
+                listed: moment(listing.created_at).fromNow(),
+              })}
             </div>
             <PriceHistoryMini listing={listing} />
           </div>
@@ -140,14 +145,14 @@ export function ListingDetail({
           className="h-8 text-xs"
           onClick={actions.openDm}>
           <MessageSquare className="size-3.5" />
-          Message
+          {t('detail.message')}
         </Button>
         <Button variant="outline"
           size="sm"
           className="h-8 text-xs"
           onClick={actions.openWebsite}>
           <ExternalLink className="size-3.5" />
-          Website
+          {t('detail.website')}
         </Button>
       </div>
     </aside>

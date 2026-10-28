@@ -28,6 +28,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { t as tGlobal, useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
 import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
@@ -38,7 +39,25 @@ import { shortAgo } from '../hooks/useTraderProfile';
 import { ListingDetails, ListingThumb } from './ListingCard';
 import { Tip } from './chat-parts';
 
-type DealStatus = 'open' | 'accepted' | 'declined' | 'closed' | 'hidden' | 'in-game';
+export type DealStatus = 'open' | 'accepted' | 'declined' | 'closed' | 'hidden' | 'in-game';
+
+/** A status chip's text (shown uppercased). */
+export function dealStatusLabel(status: DealStatus): string {
+  switch (status) {
+    case 'open':
+      return tGlobal('chat:dealStatus.open');
+    case 'accepted':
+      return tGlobal('chat:dealStatus.accepted');
+    case 'declined':
+      return tGlobal('chat:dealStatus.declined');
+    case 'closed':
+      return tGlobal('chat:dealStatus.closed');
+    case 'hidden':
+      return tGlobal('chat:dealStatus.hidden');
+    default:
+      return tGlobal('chat:dealStatus.inGame');
+  }
+}
 
 /** A pinned row: a website offer (hidden: an outgoing offer the user hid) or a trade whisper. */
 type Deal =
@@ -115,27 +134,31 @@ export function OfferHoverCard({
   align?: 'start' | 'center';
   children: React.ReactElement;
 }) {
+  const { t } = useTranslation('chat');
   // When the card opened (null: closed)
   const [openedAt, setOpenedAt] = useState<number | null>(null);
   const setOpen = (open: boolean) => setOpenedAt((at) => (open ? (at ?? Date.now()) : null));
   const status = hidden ? 'hidden' : offerStatus(offer);
   const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? `${offer.hrOffer} HR` : null;
   const offerSection = (
-    <section aria-label="Offer"
+    <section aria-label={t('deals.offer')}
       className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
       <div className="flex items-center justify-between gap-3">
         <span className="truncate font-semibold">
-          {offer.isIncoming ? `Offer from ${offer.playerName}` : 'Your offer'}
+          {offer.isIncoming ? t('deals.offerFrom', { name: offer.playerName }) : t('deals.yourOffer')}
         </span>
         <span
-          className={cn('shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide', STATUS_CLASS[status])}
+          className={cn(
+            'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
+            STATUS_CLASS[status],
+          )}
         >
-          {status}
+          {dealStatusLabel(status)}
         </span>
       </div>
       {offer.price && (
         <div className="flex justify-between gap-3">
-          <span className="shrink-0 text-muted-foreground">Offered:</span>
+          <span className="shrink-0 text-muted-foreground">{t('deals.offered')}</span>
           <span className="min-w-0 break-words text-right font-semibold">
             {offer.price}
             {hr && <span className="ml-1.5 font-normal text-muted-foreground">{`(${hr})`}</span>}
@@ -143,7 +166,7 @@ export function OfferHoverCard({
         </div>
       )}
       <div className="flex justify-between gap-3">
-        <span className="shrink-0 text-muted-foreground">Sent:</span>
+        <span className="shrink-0 text-muted-foreground">{t('deals.sent')}</span>
         <span>{shortAgo(offer.timestamp.getTime(), now ?? openedAt ?? offer.timestamp.getTime())}</span>
       </div>
     </section>
@@ -178,9 +201,9 @@ export function OfferHoverCard({
         ) : (
           // Same frame as ListingDetails
           <div className="w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
-            <div className="truncate text-sm font-semibold">{offer.itemName ?? 'Unknown item'}</div>
+            <div className="truncate text-sm font-semibold">{offer.itemName ?? t('deals.unknownItem')}</div>
             <div className="text-xs text-muted-foreground">
-              {loading ? 'Looking up the listing…' : 'Listing no longer available'}
+              {loading ? t('deals.lookingUp') : t('deals.listingGone')}
             </div>
             {offerSection}
           </div>
@@ -263,6 +286,7 @@ function AcceptButton({
   game: { name: string; password: string; set: (name: string, password: string) => void };
   onAccept: (gameInfo: string) => Promise<void> | void;
 }) {
+  const { t } = useTranslation('chat');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -278,11 +302,11 @@ function AcceptButton({
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <Tip label={requireGame ? 'Accept: copies a whisper with your game' : 'Accept offer'}>
+      <Tip label={requireGame ? t('deals.acceptTipWhisper') : t('deals.acceptOffer')}>
         <PopoverTrigger disabled={disabled}
           className={cn(actionClass, ACTION_TONE.filled)}>
           <Check className="size-3.5" />
-          <span className={actionLabelClass}>Accept</span>
+          <span className={actionLabelClass}>{t('deals.accept')}</span>
         </PopoverTrigger>
       </Tip>
       <PopoverContent align="end"
@@ -295,22 +319,22 @@ function AcceptButton({
           }}
         >
           <p className="px-0.5 text-xs font-medium text-muted-foreground">
-            {requireGame ? 'Copy an accept whisper with your game' : 'Accept (and message your game, if given)'}
+            {requireGame ? t('deals.acceptPromptWhisper') : t('deals.acceptPromptOffer')}
           </p>
           {/* Fields on one row, the button below: fits a narrow (360px) chat panel */}
           <div className="flex gap-2">
             <Input
               value={game.name}
               onChange={(e) => game.set(e.target.value, game.password)}
-              placeholder="Game"
-              aria-label="Game name"
+              placeholder={t('deals.gamePlaceholder')}
+              aria-label={t('deals.gameName')}
               className="h-8 w-28 text-sm md:text-sm"
             />
             <Input
               value={game.password}
               onChange={(e) => game.set(game.name, e.target.value)}
-              placeholder="Password"
-              aria-label="Game password"
+              placeholder={t('deals.passwordPlaceholder')}
+              aria-label={t('deals.gamePassword')}
               className="h-8 w-28 text-sm md:text-sm"
             />
           </div>
@@ -319,7 +343,7 @@ function AcceptButton({
             disabled={(requireGame && !game.name) || busy}
             className="h-8">
             {busy ? <Loader2 className="animate-spin" /> : <Check />}
-            Accept offer
+            {t('deals.acceptOffer')}
           </Button>
         </form>
       </PopoverContent>
@@ -358,6 +382,7 @@ export function ThreadDeals({
   onWhisper: (person: WhisperPerson, text: string) => void;
   onDismissTrade: (person: WhisperPerson, tradeId: string) => void;
 }): React.JSX.Element | null {
+  const { t } = useTranslation(['chat', 'common']);
   const {
     acceptOffer,
     rejectOffer,
@@ -436,9 +461,9 @@ export function ThreadDeals({
   /** Rare and destructive actions live in the row's ⋯ menu. */
   const moreMenu = (itemName: string | undefined, items: React.ReactNode) => (
     <DropdownMenu>
-      <Tip label="More actions">
+      <Tip label={t('deals.moreActions')}>
         <DropdownMenuTrigger
-          aria-label={`More actions for ${itemName ?? 'this offer'}`}
+          aria-label={itemName != null ? t('deals.moreActionsFor', { item: itemName }) : t('deals.moreActionsForOffer')}
           disabled={busyId !== null}
           className={cn(actionClass, ACTION_TONE.muted, 'px-1.5 data-[state=open]:bg-accent')}
         >
@@ -459,11 +484,11 @@ export function ThreadDeals({
       className="cursor-pointer"
       onSelect={() =>
         confirmToast({
-          title: 'Delete Listing?',
+          title: t('deals.deleteListingTitle'),
           description: offer.itemName
-            ? `Are you sure you want to delete the listing for ${offer.itemName}?`
-            : 'Are you sure you want to delete this listing?',
-          confirmLabel: 'Delete',
+            ? t('deals.deleteListingConfirm', { item: offer.itemName })
+            : t('deals.deleteListingConfirmThis'),
+          confirmLabel: t('common:actions.delete'),
           variant: 'warning',
           duration: 10000,
           onConfirm: () =>
@@ -475,7 +500,7 @@ export function ThreadDeals({
       }
     >
       <Trash2 className="size-4" />
-      Delete listing
+      {t('deals.deleteListing')}
     </DropdownMenuItem>
   );
 
@@ -484,8 +509,8 @@ export function ThreadDeals({
     if (status === 'hidden') {
       return (
         <ActionButton
-          title="Show this offer again"
-          label="Unhide"
+          title={t('deals.unhideTitle')}
+          label={t('deals.unhide')}
           tone="muted"
           disabled={disabled}
           onClick={() => restoreOutgoingOffer(offer.id)}
@@ -499,8 +524,8 @@ export function ThreadDeals({
         <>
           {status === 'open' && (
             <ActionButton
-              title="Revoke offer"
-              label="Revoke"
+              title={t('deals.revokeTitle')}
+              label={t('deals.revoke')}
               tone="destructive"
               disabled={disabled}
               onClick={() => void run(offer.id, () => revokeOffer(offer.id))}
@@ -509,8 +534,8 @@ export function ThreadDeals({
             </ActionButton>
           )}
           <ActionButton
-            title="Hide this offer"
-            label="Hide"
+            title={t('deals.hideTitle')}
+            label={t('deals.hide')}
             tone="muted"
             disabled={disabled}
             onClick={() => deleteOutgoingOffer(offer.id)}
@@ -541,8 +566,8 @@ export function ThreadDeals({
                   // The buyer needs the game info: never accept without it reaching them.
                   if (!sent) {
                     showToast({
-                      title: 'Offer not accepted',
-                      description: "The game info wasn't sent. Retry the message, then accept.",
+                      title: t('deals.notAcceptedTitle'),
+                      description: t('deals.notAcceptedDescription'),
                       variant: 'error',
                     });
                     return;
@@ -556,8 +581,8 @@ export function ThreadDeals({
         {status === 'open' && (
           <>
             <ActionButton
-              title="Counter in the composer"
-              label="Counter"
+              title={t('deals.counterTitle')}
+              label={t('deals.counter')}
               tone="outline"
               disabled={disabled}
               onClick={() => onCounter(offer.itemName ? `Counter for ${offer.itemName}: ` : 'Counter: ')}
@@ -565,8 +590,8 @@ export function ThreadDeals({
               <Reply className="size-3.5" />
             </ActionButton>
             <ActionButton
-              title="Decline offer"
-              label="Decline"
+              title={t('deals.declineTitle')}
+              label={t('deals.decline')}
               tone="destructive"
               disabled={disabled}
               onClick={() => void run(offer.id, () => rejectOffer(offer.id))}
@@ -577,8 +602,8 @@ export function ThreadDeals({
         )}
         {status === 'accepted' && listingId && (
           <ActionButton
-            title="Unaccept offer"
-            label="Unaccept"
+            title={t('deals.unacceptTitle')}
+            label={t('deals.unaccept')}
             tone="outline"
             disabled={disabled}
             onClick={() => void run(offer.id, () => unacceptOffer(listingId))}
@@ -609,8 +634,8 @@ export function ThreadDeals({
               onAccept={(gameInfo) => onWhisper(person, template('acceptOfferMessageTemplate', { ...vars, gameInfo }))}
             />
             <ActionButton
-              title="Copy an item-sold whisper"
-              label="Sold"
+              title={t('deals.soldTitle')}
+              label={t('deals.sold')}
               tone="outline"
               disabled={disabled}
               onClick={() => onWhisper(person, template('soldOfferMessageTemplate', vars))}
@@ -618,8 +643,8 @@ export function ThreadDeals({
               <CheckSquare className="size-3.5" />
             </ActionButton>
             <ActionButton
-              title="Copy a reject whisper"
-              label="Reject"
+              title={t('deals.rejectTitle')}
+              label={t('deals.reject')}
               tone="destructive"
               disabled={disabled}
               onClick={() => onWhisper(person, template('rejectOfferMessageTemplate', vars))}
@@ -629,8 +654,8 @@ export function ThreadDeals({
           </>
         )}
         <ActionButton
-          title="Dismiss this trade"
-          label="Dismiss"
+          title={t('deals.dismissTitle')}
+          label={t('deals.dismiss')}
           tone="muted"
           disabled={disabled}
           onClick={() => onDismissTrade(person, trade.id)}
@@ -643,7 +668,7 @@ export function ThreadDeals({
 
   return (
     <div className="@container px-3 pt-2">
-      <ul aria-label="Offers with this user"
+      <ul aria-label={t('deals.listLabel')}
         className="space-y-1.5">
         {shown.map((deal) => {
           const status = dealStatus(deal);
@@ -661,9 +686,9 @@ export function ThreadDeals({
               ? 'accepted'
               : 'settled';
           const colors = TONE[tone];
-          let label: string = status;
-          if (status === 'open') label = isIncoming ? 'New offer' : 'Your offer';
-          else if (status === 'in-game') label = isIncoming ? 'in-game offer' : 'your in-game offer';
+          let label = dealStatusLabel(status);
+          if (status === 'open') label = isIncoming ? t('deals.newOffer') : t('deals.yourOffer');
+          else if (status === 'in-game') label = isIncoming ? t('deals.inGameOffer') : t('deals.yourInGameOffer');
           const listing = listingOf(deal);
           const listingState =
             deal.kind === 'offer' && deal.offer.listingId ? listingStates.get(deal.offer.listingId) : undefined;
@@ -671,8 +696,8 @@ export function ThreadDeals({
           const marketPrice = listing ? market.get(listing._id) : undefined;
           const asking = listing && (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
           const context = [
-            asking && `asking ${asking}`,
-            marketPrice && `market ${Number(marketPrice.hr.toFixed(2))} HR`,
+            asking && t('deals.asking', { price: asking }),
+            marketPrice && t('deals.marketPrice', { hr: Number(marketPrice.hr.toFixed(2)) }),
           ].filter(Boolean);
           const Fallback = deal.kind === 'whisper' ? Gamepad2 : isIncoming ? ArrowUpRight : ArrowDownLeft;
           return (
@@ -708,7 +733,7 @@ export function ThreadDeals({
                         {live && <span className="font-semibold opacity-80">{` · ${shortAgo(at, now)}`}</span>}
                       </div>
                       <div className="truncate text-sm font-semibold leading-snug text-foreground">
-                        {itemName ?? 'Unknown item'}
+                        {itemName ?? t('deals.unknownItem')}
                       </div>
                     </div>
                   </div>
@@ -760,7 +785,7 @@ export function ThreadDeals({
               onClick={() => setExpanded((open) => !open)}
             >
               <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
-              {expanded ? 'Show less' : `${deals.length - 1} more`}
+              {expanded ? t('deals.showLess') : t('deals.more', { count: deals.length - 1 })}
             </button>
           </li>
         )}

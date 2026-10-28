@@ -1,3 +1,4 @@
+import i18n, { t } from '@/i18n';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
@@ -34,6 +35,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const { settings } = useOptions();
   const { openPanel } = useOverlay();
   const trayRef = useRef<any | null>(null);
+  const menuRef = useRef<Menu | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
   // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
@@ -119,14 +121,14 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
           items: [
             {
               id: 'settings',
-              text: 'Settings',
+              text: t('system:tray.settings'),
               action: () => {
                 openPanel('settings');
               },
             },
             {
               id: 'open-config',
-              text: 'Open config location',
+              text: t('system:tray.openConfig'),
               action: async () => {
                 let configPath: string | undefined;
                 try {
@@ -142,7 +144,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
             },
             {
               id: 'quit',
-              text: 'Quit',
+              text: t('system:tray.quit'),
               action: () => {
                 exit();
               },
@@ -171,6 +173,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         });
 
         if (isMounted) {
+          menuRef.current = menu;
           trayRef.current = instance;
           setTray(instance);
         }
@@ -183,11 +186,33 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     return () => {
       isMounted = false;
+      menuRef.current = null;
       trayRef.current = null;
       queueTray(() => TrayIcon.removeById(TRAY_ID));
     };
     // openPanel is stable: the tray is created once.
   }, [openPanel]);
+
+  // The native menu is built once: retitle its items when the UI language changes
+  useEffect(() => {
+    const retitle = () => {
+      const menu = menuRef.current;
+      if (!menu) return;
+      queueTray(async () => {
+        const texts: [string, string][] = [
+          ['settings', t('system:tray.settings')],
+          ['open-config', t('system:tray.openConfig')],
+          ['quit', t('system:tray.quit')],
+        ];
+        for (const [id, text] of texts) {
+          const item = await menu.get(id);
+          if (item && 'setText' in item) await item.setText(text);
+        }
+      });
+    };
+    i18n.on('languageChanged', retitle);
+    return () => i18n.off('languageChanged', retitle);
+  }, []);
 
   return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
 };

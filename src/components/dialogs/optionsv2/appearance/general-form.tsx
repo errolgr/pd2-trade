@@ -13,21 +13,26 @@ import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { showToast } from '@/overlay';
+import type { TFunction } from 'i18next';
+import { useTranslation } from '@/i18n';
 
-const appearanceFormSchema = z.object({
-  mode: z.enum(['softcore', 'hardcore'], {
-    required_error: 'Please select a mode.',
-  }),
-  ladder: z.enum(['non-ladder', 'ladder'], {
-    required_error: 'Please select a ladder.',
-  }),
-  diablo2Directory: z.string().optional(),
-});
+const makeAppearanceFormSchema = (t: TFunction) =>
+  z.object({
+    mode: z.enum(['softcore', 'hardcore'], {
+      required_error: t('general.validation.mode'),
+    }),
+    ladder: z.enum(['non-ladder', 'ladder'], {
+      required_error: t('general.validation.ladder'),
+    }),
+    diablo2Directory: z.string().optional(),
+  });
 
-type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
+type AppearanceFormValues = z.infer<ReturnType<typeof makeAppearanceFormSchema>>;
 
 export function GeneralForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
+  const appearanceFormSchema = React.useMemo(() => makeAppearanceFormSchema(t), [t]);
   const [detectedDirectory, setDetectedDirectory] = React.useState<string | null>(null);
   const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -95,7 +100,7 @@ export function GeneralForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title="Game">
+        <SettingsGroup title={t('general.game.group')}>
           <FormField
             control={form.control}
             name="ladder"
@@ -127,14 +132,14 @@ export function GeneralForm() {
             name="mode"
             render={({ field }) => (
               <SettingsRow
-                label="Mode"
+                label={t('general.game.mode')}
                 control={
                   <Select value={field.value}
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Mode" />
+                        <SelectValue placeholder={t('general.game.mode')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -149,8 +154,8 @@ export function GeneralForm() {
             )}
           />
           <SettingsRow
-            label="Season"
-            description="Filter price data by season. Past seasons require historical data to be available."
+            label={t('general.game.season.label')}
+            description={t('general.game.season.description')}
             control={
               <Select
                 value={settings.selectedSeasonId ?? 'current'}
@@ -158,7 +163,7 @@ export function GeneralForm() {
               >
                 <FormControl>
                   <SelectTrigger className="w-[220px]">
-                    <SelectValue placeholder="Season" />
+                    <SelectValue placeholder={t('general.game.season.label')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -181,15 +186,15 @@ export function GeneralForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
-                label="Diablo II Directory"
+                label={t('general.directory.label')}
                 description={
                   detectedDirectory && !field.value ? (
                     <span className="inline-flex items-center gap-1.5">
                       <FolderSearch className="size-3.5 text-success" />
-                      {`Detected: ${detectedDirectory}`}
+                      {t('general.directory.detected', { path: detectedDirectory })}
                     </span>
                   ) : (
-                    'Path to your Diablo II installation directory. Leave empty to auto-detect.'
+                    t('general.directory.description')
                   )
                 }
                 control={
@@ -218,8 +223,8 @@ export function GeneralForm() {
                               setDetectedDirectory(detected);
                             } else {
                               showToast({
-                                title: 'Detection Failed',
-                                description: 'Could not auto-detect Diablo II directory. Please enter it manually.',
+                                title: t('general.directory.detectFailed.title'),
+                                description: t('general.directory.detectFailed.description'),
                                 variant: 'warning',
                               });
                             }
@@ -230,7 +235,7 @@ export function GeneralForm() {
                       }}
                     >
                       <Wand2 />
-                      Auto-Detect
+                      {t('general.directory.autoDetect')}
                     </Button>
                   </>
                 }
@@ -241,10 +246,10 @@ export function GeneralForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Troubleshooting">
+        <SettingsGroup title={t('general.troubleshooting.group')}>
           <SettingsRow
-            label="Debug Logging"
-            description="Write console output to a log file for troubleshooting."
+            label={t('general.troubleshooting.debugLogging.label')}
+            description={t('general.troubleshooting.debugLogging.description')}
             control={
               <FormControl>
                 <Switch
