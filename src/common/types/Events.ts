@@ -4,6 +4,8 @@ export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
   OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
+  /** data: { notificationId, accepted }: the chat at the thread of the offer a PD2 offer notification is about. */
+  OPEN_CHAT_OFFER = 'OPEN_CHAT_OFFER',
   /** data: MarketPanelPayload (e.g. a saved search's alert: { savedSearchId, focusListingId }). */
   OPEN_MARKET_PANEL = 'OPEN_MARKET_PANEL',
   /** Opens the GitHub release page: installs that can't update themselves (Linux deb/rpm). */

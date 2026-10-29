@@ -193,6 +193,18 @@ export function openOffers(openChat: (payload: ChatPayload) => void): void {
   openChat(payload);
 }
 
+/**
+ * Where an offer notification's toast lands: the thread of the offer it is about (its feed item), else the list
+ * it belongs to (Buying for an accepted offer, Selling otherwise).
+ */
+export function offerNotificationLanding(notificationId: string, accepted: boolean): ChatPayload {
+  return (
+    feed.items.find((item) => item.key === `notification:${notificationId}`)?.open ?? {
+      filter: accepted ? 'buying' : 'selling',
+    }
+  );
+}
+
 /** Tests: back to an empty feed and no actions. */
 export function resetChatFeed(): void {
   feed = EMPTY_FEED;
