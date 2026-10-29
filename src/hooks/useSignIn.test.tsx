@@ -6,7 +6,8 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { emitTo } from '@tauri-apps/api/event';
 import { usePanelOpen, useOverlay } from '@/overlay';
 import { fetch as tauriFetch } from '@/lib/browser-http';
-import { cancelOAuthFlow, useOAuth, useOAuthFlowActive } from './useOAuth';
+import { writeText } from '@/lib/browser-clipboard';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive, useOAuthFlowLink } from './useOAuth';
 import { useOptions } from './useOptions';
 import {
   SIGN_IN_ACTION_EVENT,
@@ -21,7 +22,13 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(), isTauri: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ emitTo: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn(), usePanelOpen: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
-vi.mock('./useOAuth', () => ({ useOAuth: vi.fn(), useOAuthFlowActive: vi.fn(), cancelOAuthFlow: vi.fn() }));
+vi.mock('./useOAuth', () => ({
+  useOAuth: vi.fn(),
+  useOAuthFlowActive: vi.fn(),
+  useOAuthFlowLink: vi.fn(),
+  cancelOAuthFlow: vi.fn(),
+}));
+vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 vi.mock('./useOptions', () => ({ useOptions: vi.fn() }));
 const events = vi.hoisted(() => ({ handlers: new Map<string, (e: { payload: unknown }) => void>() }));
 vi.mock('@/lib/browser-events', () => ({
@@ -59,6 +66,8 @@ beforeEach(() => {
   updateSettings.mockResolvedValue(undefined);
   vi.mocked(useOAuth).mockReturnValue({ startOAuthFlow } as never);
   vi.mocked(useOAuthFlowActive).mockReturnValue(false);
+  vi.mocked(useOAuthFlowLink).mockReturnValue(null);
+  vi.mocked(writeText).mockResolvedValue(undefined);
   vi.mocked(useOptions).mockReturnValue({ updateSettings } as never);
   vi.mocked(useOverlay).mockReturnValue({ openPanel, closePanel } as never);
   vi.mocked(usePanelOpen).mockReturnValue(false);
@@ -86,6 +95,8 @@ describe('SignInProvider (Tauri: native window)', () => {
       busy: false,
       accounts: null,
       selectedAccount: null,
+      link: null,
+      linkCopied: false,
     });
 
     fire(SIGN_IN_ACTION_EVENT, { type: 'cancel' });
@@ -131,6 +142,37 @@ describe('SignInProvider (Tauri: native window)', () => {
     expect(tauriFetch).not.toHaveBeenCalled();
     expect(commands()).toEqual(['open_sign_in_window']);
     expect(result.current.state.busy).toBe(false);
+  });
+
+  it("copies the running sign-in's link for the window, which can't reach the clipboard", async () => {
+    vi.mocked(useOAuthFlowActive).mockReturnValue(true);
+    vi.mocked(useOAuthFlowLink).mockReturnValue({ url: 'https://auth/x', openFailed: true });
+    const { result, rerender } = await renderSignIn();
+    expect(result.current.state).toMatchObject({
+      link: { url: 'https://auth/x', openFailed: true },
+      linkCopied: false,
+    });
+
+    fire(SIGN_IN_ACTION_EVENT, { type: 'copyLink' });
+    await act(async () => {}); // the clipboard write settles
+    expect(writeText).toHaveBeenCalledWith('https://auth/x');
+    expect(result.current.state.linkCopied).toBe(true);
+
+    // A new sign-in has a new link, not copied yet
+    vi.mocked(useOAuthFlowLink).mockReturnValue({ url: 'https://auth/y', openFailed: false });
+    rerender();
+    expect(result.current.state.linkCopied).toBe(false);
+  });
+
+  it('leaves the link uncopied when the clipboard refuses it', async () => {
+    vi.mocked(useOAuthFlowLink).mockReturnValue({ url: 'https://auth/x', openFailed: true });
+    vi.mocked(writeText).mockRejectedValue(new Error('clipboard unavailable'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { result } = await renderSignIn();
+
+    await act(async () => result.current.dispatch({ type: 'copyLink' }));
+    expect(result.current.state.linkCopied).toBe(false);
+    expect(warn).toHaveBeenCalledWith('[SignIn] Could not copy the sign-in link:', expect.any(Error));
   });
 });
 

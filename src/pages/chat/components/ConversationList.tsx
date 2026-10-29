@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { t as tGlobal, useTranslation } from '@/i18n';
 import { listItem, listStagger, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
@@ -32,25 +33,25 @@ import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass, 
 import { ListingThumb } from './ListingCard';
 import { offerStatus } from './ThreadDeals';
 
-const FILTERS: { value: Exclude<InboxFilter, 'archived'>; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'selling', label: 'Selling' },
-  { value: 'buying', label: 'Buying' },
+const FILTERS: { value: Exclude<InboxFilter, 'archived'>; labelKey: string }[] = [
+  { value: 'all', labelKey: 'list.filters.all' },
+  { value: 'selling', labelKey: 'list.filters.selling' },
+  { value: 'buying', labelKey: 'list.filters.buying' },
 ];
 
-const EMPTY_TEXT: Record<InboxFilter, { title: string; description?: string }> = {
-  all: { title: 'No conversations' },
+const EMPTY_TEXT: Record<InboxFilter, { titleKey: string; descriptionKey?: string }> = {
+  all: { titleKey: 'list.empty.allTitle' },
   selling: {
-    title: 'Nothing you are selling right now',
-    description: 'Offers on your listings and trade whispers from buyers show up here.',
+    titleKey: 'list.empty.sellingTitle',
+    descriptionKey: 'list.empty.sellingDescription',
   },
   buying: {
-    title: 'Nothing you are buying right now',
-    description: 'Your offers and the trade whispers you send show up here.',
+    titleKey: 'list.empty.buyingTitle',
+    descriptionKey: 'list.empty.buyingDescription',
   },
   archived: {
-    title: 'No archived chats',
-    description: 'Archive a chat from its ⋯ menu; a new message brings it back.',
+    titleKey: 'list.empty.archivedTitle',
+    descriptionKey: 'list.empty.archivedDescription',
   },
 };
 
@@ -59,10 +60,10 @@ function formatConversationTime(timestamp: number) {
   const now = moment();
   const time = moment(timestamp);
   const minutes = now.diff(time, 'minutes');
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 1) return tGlobal('chat:list.justNow');
+  if (minutes < 60) return tGlobal('chat:peek.time.minutes', { count: minutes });
   if (time.isSame(now, 'day')) return time.format('h:mm A');
-  if (time.isSame(now.clone().subtract(1, 'day'), 'day')) return 'Yesterday';
+  if (time.isSame(now.clone().subtract(1, 'day'), 'day')) return tGlobal('chat:bubble.yesterday');
   if (now.diff(time, 'days') < 7) return time.format('ddd');
   return time.format(time.isSame(now, 'year') ? 'MMM D' : 'MMM D, YY');
 }
@@ -120,6 +121,7 @@ export function ConversationList({
   now: number;
   className?: string;
 }) {
+  const { t } = useTranslation(['chat', 'common']);
   const query = search.trim();
   const empty = EMPTY_TEXT[filter];
   const presenceOf = useKnownPresence(now);
@@ -131,7 +133,7 @@ export function ConversationList({
     body = (
       <div aria-busy
         className="space-y-1 p-2">
-        <span className="sr-only">Loading conversations...</span>
+        <span className="sr-only">{t('list.loading')}</span>
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i}
             className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
@@ -153,14 +155,14 @@ export function ConversationList({
         compact
         className="px-4 pt-10"
         icon={<AlertTriangle />}
-        title="Couldn't load conversations"
-        description="Check your connection and try again."
+        title={t('list.loadFailedTitle')}
+        description={t('messages.loadFailedDescription')}
         action={
           <Button variant="outline"
             size="sm"
             onClick={onReload}>
             <RotateCw className="size-3.5" />
-            Try again
+            {t('common:actions.tryAgain')}
           </Button>
         }
       />
@@ -171,21 +173,22 @@ export function ConversationList({
         compact
         className="px-4 pt-10"
         icon={query ? <SearchX /> : filter === 'archived' ? <Archive /> : <MessagesSquare />}
-        title={query ? 'No conversations match your search' : empty.title}
+        title={query ? t('list.noMatches') : t(empty.titleKey)}
         description={
           query
             ? undefined
-            : (empty.description ??
-              (signedIn
-                ? 'Website chats and in-game whispers show up here.'
-                : 'Sign in to Project Diablo 2 in Settings → Account to chat.'))
+            : empty.descriptionKey
+              ? t(empty.descriptionKey)
+              : signedIn
+                ? t('list.emptySignedIn')
+                : t('list.emptySignedOut')
         }
         action={
           query ? (
             <Button variant="ghost"
               size="sm"
               onClick={() => onSearchChange('')}>
-              Clear search
+              {t('list.clearSearch')}
             </Button>
           ) : undefined
         }
@@ -194,7 +197,7 @@ export function ConversationList({
   } else {
     body = (
       <motion.ul
-        aria-label="Conversations"
+        aria-label={t('list.conversations')}
         className="space-y-1 p-2"
         variants={listStagger}
         initial="hidden"
@@ -237,7 +240,7 @@ export function ConversationList({
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={`Trader details for ${name}`}
+                aria-label={t('bubble.traderDetails', { name })}
                 onClick={() => onOpenTrader(thread.id)}
                 className="relative z-10 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
               >
@@ -264,14 +267,16 @@ export function ConversationList({
                     {thread.muted && (
                       <BellOff
                         role="img"
-                        aria-label="Muted"
+                        aria-label={t('thread.muted')}
                         className="size-3 shrink-0 self-center text-muted-foreground/80"
                       />
                     )}
                     {thread.pinned && (
-                      <Pin role="img"
-                        aria-label="Pinned"
-                        className="size-3 shrink-0 self-center text-primary/80" />
+                      <Pin
+                        role="img"
+                        aria-label={t('thread.pinned')}
+                        className="size-3 shrink-0 self-center text-primary/80"
+                      />
                     )}
                     {latest && (
                       <span
@@ -289,7 +294,7 @@ export function ConversationList({
                       {latest.source === 'whisper' && (
                         <Gamepad2
                           role="img"
-                          aria-label="In-game whisper"
+                          aria-label={t('bubble.inGameWhisper')}
                           className="size-3 shrink-0 text-muted-foreground/70"
                         />
                       )}
@@ -311,12 +316,12 @@ export function ConversationList({
                           unread ? 'text-foreground/85' : 'text-muted-foreground',
                         )}
                       >
-                        {own && <span className="text-muted-foreground">You: </span>}
+                        {own && <span className="text-muted-foreground">{t('list.you')}</span>}
                         {linked ? latest.text.replace(/^📦 /, '') : latest.text}
                       </span>
                       {offer && (
                         <span
-                          title={offer.isIncoming ? 'Their open offer on your listing' : 'Your open offer'}
+                          title={offer.isIncoming ? t('list.theirOpenOffer') : t('list.yourOpenOffer')}
                           className={cn(
                             'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums',
                             offer.isIncoming ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
@@ -329,7 +334,7 @@ export function ConversationList({
                             <ArrowDownLeft aria-hidden
                               className="size-2.5 shrink-0" />
                           )}
-                          <span className="truncate">{offer.price ?? 'Offer'}</span>
+                          <span className="truncate">{offer.price ?? t('deals.offer')}</span>
                         </span>
                       )}
                       {unread && (
@@ -358,7 +363,7 @@ export function ConversationList({
     >
       <div className="shrink-0 space-y-2.5 px-3 pb-3 pt-3">
         <div className="flex items-center gap-2 px-1">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">Messages</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">{t('list.title')}</h2>
           <AnimatePresence>
             {unreadTotal > 0 && (
               <motion.span key="unread"
@@ -367,20 +372,20 @@ export function ConversationList({
                 animate="visible"
                 exit="exit">
                 <CountBadge count={unreadTotal}
-                  title={`${unreadTotal} unread`} />
+                  title={t('list.unread', { count: unreadTotal })} />
               </motion.span>
             )}
           </AnimatePresence>
           {total > 0 && (
             <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-              {total} {total === 1 ? 'chat' : 'chats'}
+              {t('list.chats', { count: total })}
             </span>
           )}
-          <Tip label="Mark all read"
+          <Tip label={t('peek.markAllRead')}
             side="bottom">
             <button
               type="button"
-              aria-label="Mark all read"
+              aria-label={t('peek.markAllRead')}
               disabled={!onMarkAllRead}
               onClick={onMarkAllRead}
               className={cn(
@@ -396,7 +401,7 @@ export function ConversationList({
         <div className="group relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors duration-(--dur-fast) group-focus-within:text-foreground" />
           <Input
-            placeholder="Search chats..."
+            placeholder={t('list.searchPlaceholder')}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={(e) => {
@@ -410,7 +415,7 @@ export function ConversationList({
           {search && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={t('list.clearSearch')}
               onClick={() => onSearchChange('')}
               className="absolute right-1 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
@@ -421,23 +426,23 @@ export function ConversationList({
         <ToggleGroup
           type="single"
           size="sm"
-          aria-label="Show"
+          aria-label={t('list.show')}
           value={filter}
           // Radix reports '' when the pressed item is clicked again: keep the current filter
           onValueChange={(value) => value && onFilterChange(value as InboxFilter)}
           className={cn('w-full', segmentedClass)}
         >
-          {FILTERS.map(({ value, label }) => (
+          {FILTERS.map(({ value, labelKey }) => (
             <ToggleGroupItem key={value}
               value={value}
               className={cn('h-6 text-xs', segmentItemClass)}>
-              {label}
+              {t(labelKey)}
             </ToggleGroupItem>
           ))}
           <ToggleGroupItem
             value="archived"
-            aria-label="Archived"
-            title="Archived chats"
+            aria-label={t('list.archived')}
+            title={t('list.archivedChats')}
             className={cn('h-6 max-w-9 text-xs', segmentItemClass)}
           >
             <Archive className="size-3.5" />

@@ -1,0 +1,191 @@
+{
+  "itemPage": {
+    "noItem": "Нет данных о предмете или не удалось их разобрать.",
+    "noItemHint": "Наведите курсор на предмет в игре и снова нажмите горячую клавишу проверки цены."
+  },
+  "overlay": {
+    "title": "Проверка цены",
+    "toolbar": {
+      "netWorth": "Состояние",
+      "copyImage": "Копировать изображение",
+      "settings": "Настройки"
+    },
+    "update": {
+      "updating": "Обновление…",
+      "retry": "Повторить обновление",
+      "get": "Обновить",
+      "restart": "Перезапустить для обновления",
+      "failedHint": "Не удалось обновиться до v{{version}}. Нажмите, чтобы повторить.",
+      "manualHint": "Доступна версия {{version}}. Эта установка не может обновиться сама: нажмите, чтобы открыть страницу релиза, или используйте менеджер пакетов.",
+      "availableHint": "Доступна версия {{version}}. PD2 Trader скачает её, установит и перезапустится."
+    },
+    "copyImage": {
+      "copiedTitle": "Изображение скопировано",
+      "copiedDescription": "Вставьте его в Discord или торговый пост.",
+      "failedTitle": "Не удалось скопировать изображение"
+    },
+    "header": {
+      "base": "Основа: {{type}}",
+      "type": "Тип: {{type}}",
+      "toggleSearchMode": "Нажмите, чтобы сменить режим поиска",
+      "cycleQuality": "Нажмите, чтобы сменить качество",
+      "defense": "Защита: <value>{{defense}}</value>",
+      "appraisalNote": "Примечание к оценке: {{note}}"
+    },
+    "price": {
+      "loading": "Загрузка данных о ценах...",
+      "noData": "Нет данных о ценах",
+      "fetchFailed": "Не удалось получить данные о ценах",
+      "median": "Медиана",
+      "min": "Мин.",
+      "max": "Макс.",
+      "samples": "Выборка",
+      "change7d": "За 7 дн.",
+      "last30Days": "Последние 30 дней",
+      "openOnPd2Trader": "Открыть на pd2trader.com",
+      "viewOnWeb": "Открыть на сайте"
+    },
+    "corruptions": {
+      "thisItem": "Corruption этого предмета",
+      "top": "Лучшие corruption",
+      "showLess": "Свернуть",
+      "showMore_one": "Показать ещё ({{count}})",
+      "showMore_few": "Показать ещё ({{count}})",
+      "showMore_many": "Показать ещё ({{count}})",
+      "showMore_other": "Показать ещё ({{count}})",
+      "loading": "Загрузка цен на corruption...",
+      "searchTitle": "Нажмите, чтобы найти предметы с этой corruption",
+      "noPriceData": "Нет данных о цене",
+      "link": "Ссылка",
+      "socketPrices": "{{name}} — цены по сокетам",
+      "filterBySocket": "Нажмите, чтобы фильтровать по этому числу сокетов"
+    },
+    "sockets_one": "{{count}} сокет",
+    "sockets_few": "{{count}} сокета",
+    "sockets_many": "{{count}} сокетов",
+    "sockets_other": "{{count}} сокета",
+    "stats": {
+      "title": "Статы",
+      "selected_one": "выбран {{count}}",
+      "selected_few": "выбрано {{count}}",
+      "selected_many": "выбрано {{count}}",
+      "selected_other": "выбрано {{count}}",
+      "clearRanges": "Очистить диапазоны",
+      "clearRangesTitle": "Очистить все мин. и макс.; статы останутся выбранными",
+      "clearTitle": "Снять выбор со всех статов"
+    },
+    "actions": {
+      "openTradeAria": "Открыть поиск на projectdiablo2.com",
+      "openTradeTooltip": "Открыть этот поиск на projectdiablo2.com",
+      "openInMarket": "Открыть на рынке",
+      "list": "Выставить",
+      "listDisabled": "Чтобы выставить предмет, он должен быть в общем сундуке.",
+      "showExpired": "Показать истёкшие"
+    },
+    "results": {
+      "matches": "Найдено: <value>{{total}}</value>",
+      "showing": "· показано {{shown}}",
+      "loading": "Загрузка объявлений...",
+      "errorTitle": "Не удалось загрузить объявления",
+      "fetchFailed": "Не удалось получить объявления",
+      "noListings": "Объявления не найдены",
+      "loosenFilters": "Попробуйте ослабить фильтры статов.",
+      "loosenFiltersOrExpired": "Попробуйте ослабить фильтры статов или включите «Показать истёкшие».",
+      "readyTitle": "Готово к поиску",
+      "readyHint": "Выберите нужные статы и нажмите «Поиск» или Enter в поле мин./макс.",
+      "price": "Цена",
+      "listed": "Выставлено",
+      "loadingMore": "Загрузка...",
+      "loadMore": "Загрузить ещё"
+    },
+    "listing": {
+      "copyWhisper": "Копировать личное сообщение",
+      "whisperCopied": "Личное сообщение скопировано, вставьте правым кликом",
+      "onlineCopyWhisper": "В игре · нажмите, чтобы скопировать личное сообщение",
+      "seller": "Продавец: <name>{{seller}}</name>",
+      "online": "В игре"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "Диапазон стата из подсказки PD2",
+    "corruptedFilter": "Фильтр Corrupted",
+    "unknown": "Неизвестно",
+    "keyFromTitle": "В этом слоте стат начинает повышать ценность с {{value}}",
+    "valuableFrom": "ценно от {{value}}",
+    "corruptedOnly": "только",
+    "corruptedExcluded": "исключено",
+    "injectedCorruptedHint": "Этот предмет можно corrupt. С этим фильтром ищите версии с corruption или без неё.",
+    "corruptedStat": "Стат corruption",
+    "minDamage": "Мин. урон",
+    "maxDamage": "Макс. урон",
+    "minDamageAria": "{{name}}: мин. урон",
+    "maxDamageAria": "{{name}}: макс. урон",
+    "minPlaceholder": "мин",
+    "maxPlaceholder": "макс",
+    "minimumAria": "{{label}}: минимум",
+    "maximumAria": "{{label}}: максимум",
+    "clearRangeAria": "Очистить диапазон {{label}}",
+    "clearRangeTitle": "Очистить мин. и макс.",
+    "unfold": "Развернуть"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "Изменить или развернуть эту сумму",
+    "searchTotalAria": "Искать по сумме",
+    "searchTotalTitle": "Искать по сумме (Σ) вместо этой строки",
+    "menuLabel": "Искать по сумме — сворачивает охватываемые строки"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "Оценка крафтового предмета...",
+    "appraisingRare": "Оценка редкого предмета...",
+    "estimatedFrom": "{{slot}} · оценка по объявлениям {{season}}",
+    "ofSlots": "из: {{slots}}",
+    "usuallyListed": "обычно выставляют"
+  },
+  "runePrices": {
+    "label": "Цены рун",
+    "title": "Текущие цены рун",
+    "info": "Цены рун рассчитываются по объявлениям как медиана за последние 7 дней. Цены обновляются ежедневно.",
+    "viewOnPd2Trader": "Открыть на pd2trader.com",
+    "loading": "Загрузка данных о рунах...",
+    "fixed": "фикс.",
+    "listings_one": "{{count}} объявление",
+    "listings_few": "{{count}} объявления",
+    "listings_many": "{{count}} объявлений",
+    "listings_other": "{{count}} объявления",
+    "showLess": "Свернуть",
+    "showMoreLower_one": "Показать ещё ({{count}} младшая руна)",
+    "showMoreLower_few": "Показать ещё ({{count}} младшие руны)",
+    "showMoreLower_many": "Показать ещё ({{count}} младших рун)",
+    "showMoreLower_other": "Показать ещё ({{count}} младшей руны)",
+    "breakdown": "Разбивка <rune>{{rune}}</rune>:",
+    "target": "цель {{value}} HR",
+    "diff": "Разница: {{value}} HR",
+    "fixedNote": "* Для Vex и ниже используется фиксированная цена, так как она обычно не меняется, а также при <10 объявлениях"
+  },
+  "sparkline": {
+    "loading": "Загрузка истории цен...",
+    "notEnough": "За последние 30 дней слишком мало продаж для тренда.",
+    "aria_one": "Цена за последний {{count}} день с продажами: от {{first}} до {{last}} HR",
+    "aria_few": "Цена за последние {{count}} дня с продажами: от {{first}} до {{last}} HR",
+    "aria_many": "Цена за последние {{count}} дней с продажами: от {{first}} до {{last}} HR",
+    "aria_other": "Цена за последние {{count}} дня с продажами: от {{first}} до {{last}} HR"
+  },
+  "itemCard": {
+    "median": "медиана {{price}}",
+    "sales_one": "{{count}} продажа",
+    "sales_few": "{{count}} продажи",
+    "sales_many": "{{count}} продаж",
+    "sales_other": "{{count}} продажи",
+    "recentlySold": "Недавно продано",
+    "listedNow": "Выставлено сейчас",
+    "from": "от {{price}}",
+    "soldDetail_one": "{{count}} продажа · медиана {{price}}",
+    "soldDetail_few": "{{count}} продажи · медиана {{price}}",
+    "soldDetail_many": "{{count}} продаж · медиана {{price}}",
+    "soldDetail_other": "{{count}} продажи · медиана {{price}}",
+    "listingsDetail_one": "{{count}} объявление · медиана {{price}}",
+    "listingsDetail_few": "{{count}} объявления · медиана {{price}}",
+    "listingsDetail_many": "{{count}} объявлений · медиана {{price}}",
+    "listingsDetail_other": "{{count}} объявления · медиана {{price}}"
+  }
+}

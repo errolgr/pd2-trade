@@ -1,6 +1,7 @@
 import { DEFAULT_MAX_AGE_DAYS } from './defaults';
 import { orBlockNumbers } from './stat-groups';
 import type { MarketFilters, StatFilter, Tri } from './types';
+import { t } from '@/i18n';
 
 /**
  * The current market search as a projectdiablo2.com Trade (or Archive) link. The site rebuilds its filters from
@@ -33,7 +34,7 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   set('type', f.typeCode);
   set('base', f.baseCode);
   if (f.rarity.length === 1) set('quality', f.rarity[0]);
-  else if (f.rarity.length > 1) dropped.push(`rarity (the site takes one: ${f.rarity.join(', ')})`);
+  else if (f.rarity.length > 1) dropped.push(t('market:siteUrl.rarity', { rarities: f.rarity.join(', ') }));
   set('corrupted', triParam(f.corrupted));
   set('ethereal', triParam(f.ethereal));
   set('is_identified', triParam(f.identified));
@@ -52,28 +53,40 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
     if (rows.length === 1) property(first.key, first);
     else if (rows.every((s) => s.min === first.min && s.max === first.max && !s.key.includes('{')))
       property(rows.map((s) => s.key).join('|'), first);
-    else dropped.push('any-of stat group');
+    else dropped.push(t('market:siteUrl.anyOfGroup'));
   }
-  if (excluded.length) dropped.push(excluded.length === 1 ? 'excluded stat' : `${excluded.length} excluded stats`);
+  if (excluded.length)
+    dropped.push(
+      excluded.length === 1
+        ? t('market:siteUrl.excludedStat')
+        : t('market:siteUrl.excludedStats', { count: excluded.length }),
+    );
   const pseudo = stats.filter((s) => s.kind === 'pseudo' && !s.not).length;
-  if (pseudo) dropped.push(pseudo === 1 ? 'pseudo stat' : `${pseudo} pseudo stats`);
+  if (pseudo)
+    dropped.push(pseudo === 1 ? t('market:siteUrl.pseudoStat') : t('market:siteUrl.pseudoStats', { count: pseudo }));
   const corruptions = stats.filter((s) => s.kind === 'corruption' && !s.not).length;
-  if (corruptions) dropped.push(corruptions === 1 ? 'corruption stat' : `${corruptions} corruption stats`);
+  if (corruptions)
+    dropped.push(
+      corruptions === 1
+        ? t('market:siteUrl.corruptionStat')
+        : t('market:siteUrl.corruptionStats', { count: corruptions }),
+    );
 
   params.set('is_hardcore', String(f.hardcore));
   params.set('is_ladder', String(f.ladder));
 
-  if (f.desecrated !== 'any') dropped.push('desecrated');
-  if (f.priceText) dropped.push('price note');
-  if (f.hrMin !== undefined || f.hrMax !== undefined) dropped.push('HR price');
+  if (f.desecrated !== 'any') dropped.push(t('market:siteUrl.desecrated'));
+  if (f.priceText) dropped.push(t('market:siteUrl.priceNote'));
+  if (f.hrMin !== undefined || f.hrMax !== undefined) dropped.push(t('market:siteUrl.hrPrice'));
   const r = f.requirements;
-  if (r.class) dropped.push('class');
-  if (Object.entries(r).some(([k, v]) => k !== 'class' && v !== undefined)) dropped.push('requirements');
-  if (f.sellerUserId || f.sellerName) dropped.push('seller');
-  if (f.userOnlineSite !== 'all' || f.userOnlineGame !== 'all') dropped.push('online');
-  if (f.hasBuyout !== 'any') dropped.push('buyout');
-  if (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source]) dropped.push('listing age');
-  if (f.sort.by !== 'bumped' || f.sort.dir !== 'desc') dropped.push('sort');
+  if (r.class) dropped.push(t('market:siteUrl.class'));
+  if (Object.entries(r).some(([k, v]) => k !== 'class' && v !== undefined))
+    dropped.push(t('market:siteUrl.requirements'));
+  if (f.sellerUserId || f.sellerName) dropped.push(t('market:siteUrl.seller'));
+  if (f.userOnlineSite !== 'all' || f.userOnlineGame !== 'all') dropped.push(t('market:siteUrl.online'));
+  if (f.hasBuyout !== 'any') dropped.push(t('market:siteUrl.buyout'));
+  if (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source]) dropped.push(t('market:siteUrl.listingAge'));
+  if (f.sort.by !== 'bumped' || f.sort.dir !== 'desc') dropped.push(t('market:siteUrl.sort'));
 
   const path = f.source === 'archive' ? 'market/archive' : 'market';
   return { url: `https://www.projectdiablo2.com/${path}?${params.toString()}`, dropped };

@@ -1,0 +1,105 @@
+{
+  "panel": {
+    "crashed": "This panel crashed."
+  },
+  "toast": {
+    "details": "Details",
+    "undo": "Undo"
+  },
+  "ui": {
+    "more": "More"
+  },
+  "errorHandler": {
+    "title": "Error"
+  },
+  "controller": {
+    "runningInBackground": "is now running in the background...",
+    "itemNotSupported": "Item is not supported or invalid.",
+    "nothingCopied": "No item was copied. Hover over an item in game and try again, or press Ctrl+C on it first.",
+    "cannotListItem": "Cannot List Item",
+    "notInSharedStash": "This item is not in your shared stash and cannot be listed.",
+    "delist": "Delist",
+    "noItemUnderCursor": "No valid item found under cursor."
+  },
+  "chatButton": {
+    "dragToMove": "Drag to move",
+    "openChat": "Open PD2 Chat",
+    "chat": "Chat",
+    "offers": "Offers",
+    "more": "More",
+    "unreadMessages_one": "{{count}} unread messages",
+    "unreadMessages_other": "{{count}} unread messages",
+    "tradeOffers_one": "{{count}} trade offers",
+    "tradeOffers_other": "{{count}} trade offers",
+    "disableOverlay": "Disable overlay",
+    "menu": {
+      "chat": "Chat",
+      "market": "Market browser",
+      "builds": "Builds",
+      "netWorth": "Net worth",
+      "stashValue": "Stash value",
+      "offers": "Offers",
+      "manageListings": "Manage listings",
+      "settings": "Settings"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Name",
+    "namePlaceholder": "e.g. Still available?",
+    "message": "Message",
+    "messagePlaceholder": "e.g. Hi, is your {itemName} still available?",
+    "asksWhenUsed": "Asks when used:",
+    "asksNone": "Any other {name} is asked for when the template is used."
+  },
+  "signIn": {
+    "eyebrow": "Sign in to",
+    "lead": "Link your Project Diablo 2 account to price check, list items and chat in-game.",
+    "howItWorks": "How sign-in works",
+    "trust": {
+      "officialLogin": "Official PD2 login",
+      "noPassword": "No password shared",
+      "readOnlyStash": "Read-only stash"
+    },
+    "openingBrowser": "Opening browser…",
+    "waitingForSignIn": "Waiting for sign-in…",
+    "signInWithPd2": "Sign in with PD2",
+    "finishInBrowser": "Finish signing in in your browser, then come back here.",
+    "openFailed": "Couldn't open your browser: copy the link into it.",
+    "opensSite": "Opens projectdiablo2.com in your browser.",
+    "later": "Later",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "accounts": {
+      "eyebrow": "Almost there",
+      "lead": "Several game accounts are linked to this login. Pick the one to trade with.",
+      "label": "Game accounts"
+    }
+  },
+  "changeLog": {
+    "title": "What's New",
+    "close": "Close changelog",
+    "current": "Current",
+    "changes_one": "{{count}} change",
+    "changes_other": "{{count}} changes"
+  },
+  "corruptedZones": {
+    "liveTitle": "Corrupted in Hell games made until {{until}}.",
+    "liveTitleNext": "Corrupted in Hell games made until {{until}}. Next: {{zone}}.",
+    "liveTitleNextAt": "Corrupted in Hell games made until {{until}}. Next: {{zone}} at {{time}}.",
+    "followedTitle": "Next followed zone: corrupted in Hell games made from {{from}} to {{until}}.",
+    "pillTitle": "{{title}} Click for the schedule, drag to move.",
+    "pillTitleLocked": "{{title}} Click for the schedule.",
+    "timeUntilNext": "Time until the next zone",
+    "timeUntilThis": "Time until this zone",
+    "inTime": "in {{time}}",
+    "upcoming": "Upcoming corrupted zones",
+    "slotWhen": "{{time}} · in {{wait}}",
+    "lock": {
+      "label": "Lock position",
+      "lockedTitle": "Locked: dragging does not move the timer. Click to unlock.",
+      "unlockedTitle": "Stop the timer from moving when dragged."
+    },
+    "toastTitle": "Corrupted zone",
+    "toastDescription": "{{zone}}: make a new Hell game (until {{until}})"
+  }
+}

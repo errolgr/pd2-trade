@@ -3,7 +3,7 @@
  *
  * One entry per person, keyed by their normalized account name (or the player/character name the chat log
  * gave when it showed no account). Every whisper to or from them is a message; "Hi, I'm interested in your…"
- * trade whispers are also kept as trades, which chat pins in the person's thread until dismissed. All
+ * trade whispers are also kept as trades, which chat pins in the person's thread until dismissed or settled. All
  * updates are pure functions on `WhisperHistory`; `useWhisperHistory` owns the state and the chat watcher
  * listeners.
  */
@@ -55,6 +55,9 @@ export interface WhisperMessage {
   copied?: boolean;
 }
 
+/** How a trade whisper ended from the overlay: sold, rejected, or its listing deleted. */
+export type TradeOutcome = 'sold' | 'rejected' | 'delisted';
+
 export interface WhisperTrade {
   id: string;
   /** Incoming: they want to buy from you (selling). Outgoing: you asked them (buying). */
@@ -64,6 +67,9 @@ export interface WhisperTrade {
   price?: string;
   timestamp: number;
   dismissed?: boolean;
+  /** Settled: it leaves the pinned deals and shows in the conversation at `settledAt` (epoch ms). */
+  outcome?: TradeOutcome;
+  settledAt?: number;
 }
 
 export interface WhisperPerson {
@@ -143,7 +149,7 @@ export const whisperTarget = (person: Pick<WhisperPerson, 'accountName' | 'playe
 export const whisperCommand = (account: string, text: string) => `/w *${accountOf(account)} ${text}`.trim();
 
 export const isOpenTrade = (trade: WhisperTrade, now: number) =>
-  !trade.dismissed && now - trade.timestamp < OPEN_TRADE_MS;
+  !trade.dismissed && !trade.outcome && now - trade.timestamp < OPEN_TRADE_MS;
 
 export const unreadWhispers = (person: WhisperPerson) =>
   person.messages.filter((m) => m.isIncoming && m.timestamp > person.readAt).length;
@@ -259,6 +265,23 @@ export function dismissTrade(history: WhisperHistory, key: string, tradeId: stri
   });
 }
 
+/** Settles an open trade (a settled one keeps its first outcome). */
+export function settleTrade(
+  history: WhisperHistory,
+  key: string,
+  tradeId: string,
+  outcome: TradeOutcome,
+  now: number,
+): WhisperHistory {
+  const person = history.people[key];
+  const trade = person?.trades.find((t) => t.id === tradeId);
+  if (!person || !trade || trade.outcome) return history;
+  return withPerson(history, {
+    ...person,
+    trades: person.trades.map((t) => (t.id === tradeId ? { ...t, outcome, settledAt: now } : t)),
+  });
+}
+
 /** Marks everyone in `keys` read up to their newest message. */
 export function markRead(history: WhisperHistory, keys: readonly string[]): WhisperHistory {
   let next = history;
@@ -312,6 +335,8 @@ const TradeSchema = z.object({
     .transform((v) => v ?? undefined),
   timestamp: z.number(),
   dismissed: z.literal(true).optional(),
+  outcome: z.enum(['sold', 'rejected', 'delisted']).optional(),
+  settledAt: z.number().optional(),
 });
 const PersonSchema = z.object({
   key: z.string(),

@@ -1,15 +1,27 @@
 import type { NetWorthCategory } from '@/lib/networth-api';
+import { currentLocale, t } from '@/i18n';
 
-export const CATEGORY_LABELS: Record<NetWorthCategory, string> = {
-  runes: 'Runes',
-  currency: 'Currency',
-  ubers: 'Uber Mats',
-  gems: 'Gems',
-  mats: 'Mats',
-  uniques: 'Uniques',
-  sets: 'Sets',
-  other: 'Other',
-};
+/** Display name of a net worth category in the active UI language. */
+export function categoryLabel(category: NetWorthCategory): string {
+  switch (category) {
+    case 'runes':
+      return t('currency:categories.runes');
+    case 'currency':
+      return t('currency:categories.currency');
+    case 'ubers':
+      return t('currency:categories.ubers');
+    case 'gems':
+      return t('currency:categories.gems');
+    case 'mats':
+      return t('currency:categories.mats');
+    case 'uniques':
+      return t('currency:categories.uniques');
+    case 'sets':
+      return t('currency:categories.sets');
+    default:
+      return t('currency:categories.other');
+  }
+}
 
 /** Theme tokens (usable in CSS and SVG fill/stroke), so every theme gets matching category colours. */
 export const CATEGORY_COLORS: Record<NetWorthCategory, string> = {
@@ -29,6 +41,26 @@ export const CATEGORY_NAME_CLASS: Partial<Record<NetWorthCategory, string>> = {
   sets: 'text-q-set',
   runes: 'text-q-rune',
 };
+
+/** 24-hour clock time in the UI locale, e.g. "14:05". */
+export function formatClock(time: number | string): string {
+  return new Date(time).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+}
+
+/** Short weekday in the UI locale, e.g. "Mon". */
+export function formatWeekday(time: number | string): string {
+  return new Date(time).toLocaleDateString(currentLocale(), { weekday: 'short' });
+}
+
+/** Short month and day in the UI locale, e.g. "Oct 18". */
+export function formatMonthDay(time: number | string): string {
+  return new Date(time).toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric' });
+}
+
+/** Snapshot timestamp, e.g. "Oct 18 14:05". */
+export function formatStamp(time: number | string): string {
+  return `${formatMonthDay(time)} ${formatClock(time)}`;
+}
 
 /** HR with sign, e.g. "+1.20 HR" / "−0.40 HR". */
 export function formatSignedHr(value: number): string {

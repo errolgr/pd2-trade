@@ -1,0 +1,111 @@
+{
+  "panel": {
+    "crashed": "Ten panel uległ awarii."
+  },
+  "toast": {
+    "details": "Szczegóły",
+    "undo": "Cofnij"
+  },
+  "ui": {
+    "more": "Więcej"
+  },
+  "errorHandler": {
+    "title": "Błąd"
+  },
+  "controller": {
+    "runningInBackground": "działa teraz w tle...",
+    "itemNotSupported": "Przedmiot nie jest obsługiwany lub jest nieprawidłowy.",
+    "nothingCopied": "Nie skopiowano żadnego przedmiotu. Najedź kursorem na przedmiot w grze i spróbuj ponownie albo najpierw naciśnij na nim Ctrl+C.",
+    "cannotListItem": "Nie można wystawić przedmiotu",
+    "notInSharedStash": "Tego przedmiotu nie ma w twojej wspólnej skrzyni, więc nie można go wystawić.",
+    "delist": "Wycofaj",
+    "noItemUnderCursor": "Nie znaleziono prawidłowego przedmiotu pod kursorem."
+  },
+  "chatButton": {
+    "dragToMove": "Przeciągnij, aby przesunąć",
+    "openChat": "Otwórz czat PD2",
+    "chat": "Czat",
+    "offers": "Oferty",
+    "more": "Więcej",
+    "unreadMessages_one": "{{count}} nieprzeczytana wiadomość",
+    "unreadMessages_few": "{{count}} nieprzeczytane wiadomości",
+    "unreadMessages_many": "{{count}} nieprzeczytanych wiadomości",
+    "unreadMessages_other": "{{count}} nieprzeczytanej wiadomości",
+    "tradeOffers_one": "{{count}} oferta handlu",
+    "tradeOffers_few": "{{count}} oferty handlu",
+    "tradeOffers_many": "{{count}} ofert handlu",
+    "tradeOffers_other": "{{count}} oferty handlu",
+    "disableOverlay": "Wyłącz nakładkę",
+    "menu": {
+      "chat": "Czat",
+      "market": "Przeglądarka rynku",
+      "builds": "Buildy",
+      "netWorth": "Majątek",
+      "stashValue": "Wartość skrzyni",
+      "offers": "Oferty",
+      "manageListings": "Zarządzaj ogłoszeniami",
+      "settings": "Ustawienia"
+    }
+  },
+  "chatTemplateForm": {
+    "name": "Nazwa",
+    "namePlaceholder": "np. Nadal dostępne?",
+    "message": "Wiadomość",
+    "messagePlaceholder": "np. Cześć, czy twój {itemName} jest nadal dostępny?",
+    "asksWhenUsed": "Pyta przy użyciu:",
+    "asksNone": "O każdą inną wartość {name} zostaniesz zapytany przy użyciu szablonu."
+  },
+  "signIn": {
+    "eyebrow": "Zaloguj się do",
+    "lead": "Połącz swoje konto Project Diablo 2, aby wyceniać, wystawiać przedmioty i czatować w grze.",
+    "howItWorks": "Jak działa logowanie",
+    "trust": {
+      "officialLogin": "Oficjalne logowanie PD2",
+      "noPassword": "Bez udostępniania hasła",
+      "readOnlyStash": "Skrzynia tylko do odczytu"
+    },
+    "openingBrowser": "Otwieranie przeglądarki…",
+    "waitingForSignIn": "Oczekiwanie na logowanie…",
+    "signInWithPd2": "Zaloguj się przez PD2",
+    "finishInBrowser": "Dokończ logowanie w przeglądarce, a potem wróć tutaj.",
+    "openFailed": "Nie udało się otworzyć przeglądarki: skopiuj do niej link.",
+    "opensSite": "Otwiera projectdiablo2.com w przeglądarce.",
+    "later": "Później",
+    "copyLink": "Kopiuj link",
+    "linkCopied": "Link skopiowany",
+    "accounts": {
+      "eyebrow": "Prawie gotowe",
+      "lead": "Z tym logowaniem powiązano kilka kont gry. Wybierz to, którym chcesz handlować.",
+      "label": "Konta gry"
+    }
+  },
+  "changeLog": {
+    "title": "Co nowego",
+    "close": "Zamknij listę zmian",
+    "current": "Bieżąca",
+    "changes_one": "{{count}} zmiana",
+    "changes_few": "{{count}} zmiany",
+    "changes_many": "{{count}} zmian",
+    "changes_other": "{{count}} zmiany"
+  },
+  "corruptedZones": {
+    "liveTitle": "Skażona w grach Hell utworzonych do {{until}}.",
+    "liveTitleNext": "Skażona w grach Hell utworzonych do {{until}}. Następna: {{zone}}.",
+    "liveTitleNextAt": "Skażona w grach Hell utworzonych do {{until}}. Następna: {{zone}} o {{time}}.",
+    "followedTitle": "Następna obserwowana strefa: skażona w grach Hell utworzonych od {{from}} do {{until}}.",
+    "pillTitle": "{{title}} Kliknij, aby zobaczyć harmonogram, przeciągnij, aby przesunąć.",
+    "pillTitleLocked": "{{title}} Kliknij, aby zobaczyć harmonogram.",
+    "timeUntilNext": "Czas do następnej strefy",
+    "timeUntilThis": "Czas do tej strefy",
+    "inTime": "za {{time}}",
+    "upcoming": "Nadchodzące skażone strefy",
+    "slotWhen": "{{time}} · za {{wait}}",
+    "lock": {
+      "label": "Zablokuj pozycję",
+      "lockedTitle": "Zablokowany: przeciąganie nie przesuwa licznika. Kliknij, aby odblokować.",
+      "unlockedTitle": "Nie pozwól, by licznik przesuwał się przy przeciąganiu."
+    },
+    "toastTitle": "Skażona strefa",
+    "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})"
+  }
+}

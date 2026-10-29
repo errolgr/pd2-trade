@@ -22,6 +22,7 @@ import {
   wornKeys,
 } from '../lib/gear-up';
 import { classMeta, fmtHr, fmtPct, qualityText } from '../lib/format';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { ItemIcon, PriceChip, QueryError, SearchMarketButton, Section, ShareBar, SkillIcon } from './parts';
 
 /**
@@ -29,6 +30,7 @@ import { ItemIcon, PriceChip, QueryError, SearchMarketButton, Section, ShareBar,
  * wear, worn or missing here, what the missing core costs, the skills they max and their merc.
  */
 export function GearUp({ detail }: { detail: CharacterDetail }) {
+  const { t } = useTranslation('builds');
   const candidates = useMemo(() => signatureSkills(detail.skills), [detail.skills]);
   const [picked, setPicked] = useState<string | null>(null);
   const skill = picked && candidates.some((s) => s.name === picked) ? picked : (candidates[0]?.name ?? null);
@@ -57,11 +59,11 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-border/50 px-3 py-2">
-        <span className="text-xs text-muted-foreground">Compare with</span>
+        <span className="text-xs text-muted-foreground">{t('gearUp.compareWith')}</span>
         {candidates.length > 0 ? (
           <Select value={skill ?? undefined}
             onValueChange={setPicked}>
-            <SelectTrigger aria-label="Build skill"
+            <SelectTrigger aria-label={t('gearUp.buildSkill')}
               className="h-7 w-56 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -73,7 +75,7 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
                   <SkillIcon name={c.name}
                     size={16} />
                   {c.name}
-                  <span className="text-muted-foreground tabular-nums">{c.base} pts</span>
+                  <span className="text-muted-foreground tabular-nums">{t('gearUp.points', { count: c.base })}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -88,12 +90,16 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
             <Users className="size-3.5" />
             {fallback ? (
               <span>
-                {u.data.total.toLocaleString()} {plural} at level 80+
+                {t('gearUp.classAtLevel', { total: u.data.total.toLocaleString(currentLocale()), classes: plural })}
               </span>
             ) : (
               <span>
-                <span className="font-medium text-foreground tabular-nums">{u.data.total.toLocaleString()}</span>{' '}
-                {skill} {plural} at level 80+
+                <Trans
+                  t={t}
+                  i18nKey="gearUp.skillClassAtLevel"
+                  values={{ total: u.data.total.toLocaleString(currentLocale()), skill, classes: plural }}
+                  components={{ num: <span className="font-medium text-foreground tabular-nums" /> }}
+                />
               </span>
             )}
           </span>
@@ -103,7 +109,7 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
       {fallback && usage.data && (
         <p className="flex items-start gap-2 border-b border-warning/30 bg-warning/10 px-3 py-1.5 text-xs text-foreground">
           <Info className="mt-px size-3.5 shrink-0 text-warning" />
-          Only {usage.data.total} {plural} max {skill}; comparing with every {detail.className} instead.
+          {t('gearUp.fallback', { count: usage.data.total, classes: plural, skill, className: detail.className })}
         </p>
       )}
 
@@ -124,9 +130,10 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
 function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; worn: Set<string> }) {
   const data = query.data;
   const missing = data ? missingCoreTotal(data.items, worn) : 0;
+  const { t } = useTranslation('builds');
   const missingCount = data ? data.items.filter((i) => i.pct >= CORE_SHARE && !worn.has(i.key)).length : 0;
   return (
-    <Section title="What they wear"
+    <Section title={t('gearUp.whatTheyWear')}
       bodyClassName="px-0 py-1">
       {query.error ? (
         <QueryError query={query}
@@ -135,7 +142,7 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
       ) : !data || query.stale ? (
         <RowsSkeleton rows={8} />
       ) : data.items.length === 0 ? (
-        <p className="p-3 text-center text-xs text-muted-foreground">Not enough data yet.</p>
+        <p className="p-3 text-center text-xs text-muted-foreground">{t('gearUp.notEnoughData')}</p>
       ) : (
         <>
           <ul>
@@ -161,11 +168,11 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
                     className="w-14 text-right" />
                   {has ? (
                     <span className="flex w-[72px] items-center gap-1 text-[11px] font-medium text-success">
-                      <Check className="size-3.5" /> Worn
+                      <Check className="size-3.5" /> {t('gearUp.worn')}
                     </span>
                   ) : (
                     <span className="flex w-[72px] items-center gap-1 text-[11px] text-muted-foreground">
-                      <CircleDashed className="size-3.5" /> Missing
+                      <CircleDashed className="size-3.5" /> {t('gearUp.missing')}
                     </span>
                   )}
                   <SearchMarketButton item={item} />
@@ -176,19 +183,17 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/50 px-3 pt-2 pb-1 text-xs">
             {missingCount > 0 ? (
               <>
-                <span
-                  className="text-muted-foreground"
-                  title={`Items worn by ${CORE_SHARE}% or more that this character doesn't wear`}
-                >
-                  Missing core items ({missingCount})
+                <span className="text-muted-foreground"
+                  title={t('gearUp.missingCoreTitle', { share: CORE_SHARE })}>
+                  {t('gearUp.missingCore', { count: missingCount })}
                 </span>
                 <span className="font-semibold text-q-gold tabular-nums">
-                  {missing > 0 ? `≈ ${fmtHr(missing)} HR` : 'Unpriced'}
+                  {missing > 0 ? t('gearUp.approxHr', { value: fmtHr(missing) }) : t('gearUp.unpriced')}
                 </span>
               </>
             ) : (
               <span className="flex items-center gap-1.5 text-success">
-                <Check className="size-3.5" /> Wears every core item ({CORE_SHARE}%+)
+                <Check className="size-3.5" /> {t('gearUp.wearsEveryCore', { share: CORE_SHARE })}
               </span>
             )}
           </div>
@@ -199,9 +204,10 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
 }
 
 function PeerSkills({ query, detail }: { query: BuildsQuery<UsageResponse>; detail: CharacterDetail }) {
+  const { t } = useTranslation('builds');
   const data = query.data;
   return (
-    <Section title="Skills they max"
+    <Section title={t('gearUp.skillsTheyMax')}
       bodyClassName="px-0 py-1">
       {query.error ? (
         <QueryError query={query}
@@ -228,11 +234,11 @@ function PeerSkills({ query, detail }: { query: BuildsQuery<UsageResponse>; deta
                 </div>
                 {maxed ? (
                   <Check className="size-3.5 shrink-0 text-success"
-                    aria-label="Maxed here" />
+                    aria-label={t('gearUp.maxedHere')} />
                 ) : (
                   <AlertCircle className="size-3.5 shrink-0 text-warning"
-                    aria-label="Not maxed here">
-                    <title>Not maxed on this character</title>
+                    aria-label={t('gearUp.notMaxedHere')}>
+                    <title>{t('gearUp.notMaxedOnCharacter')}</title>
                   </AlertCircle>
                 )}
               </li>
@@ -245,21 +251,29 @@ function PeerSkills({ query, detail }: { query: BuildsQuery<UsageResponse>; deta
 }
 
 function PeerMerc({ query, detail }: { query: BuildsQuery<UsageResponse>; detail: CharacterDetail }) {
+  const { t } = useTranslation('builds');
   const data = query.data;
   if (query.error || !data || query.stale) return null;
   const top = data.mercTypes[0];
   if (!top) return null;
   const same = detail.merc?.type === top.name;
   return (
-    <Section title="Merc"
+    <Section title={t('gearUp.merc')}
       bodyClassName="space-y-1 px-3 py-2 text-xs">
       <p>
-        Most use <span className="font-medium text-foreground">{top.name}</span>{' '}
-        <span className="text-muted-foreground">({fmtPct(top.pct)})</span>
+        <Trans
+          t={t}
+          i18nKey="gearUp.mostUse"
+          values={{ name: top.name, pct: fmtPct(top.pct) }}
+          components={{
+            name: <span className="font-medium text-foreground" />,
+            pct: <span className="text-muted-foreground" />,
+          }}
+        />
       </p>
       <p className={cn('flex items-center gap-1.5', same ? 'text-success' : 'text-muted-foreground')}>
         {same ? <Check className="size-3.5" /> : <CircleDashed className="size-3.5" />}
-        This character: {detail.merc ? detail.merc.type : 'no merc'}
+        {t('gearUp.thisCharacter', { merc: detail.merc ? detail.merc.type : t('gearUp.noMerc') })}
       </p>
     </Section>
   );

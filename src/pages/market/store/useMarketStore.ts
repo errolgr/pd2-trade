@@ -26,6 +26,7 @@ import {
   type SavedSearchLimits,
   updateSavedSearch,
 } from '@/pages/market/alerts/saved-search-api';
+import { t } from '@/i18n';
 
 export const MARKET_PREFS_FILENAME = 'market-prefs.json';
 const PREFS_DIR = BaseDirectory.AppConfig;
@@ -240,16 +241,16 @@ const replaceSearch = (id: string, next: SavedSearch | null) =>
     next ? searches.map((s) => (s.id === id ? upgradeSearch(next) : s)) : searches.filter((s) => s.id !== id),
   );
 
-const REFUSED_MESSAGE = 'Your PD2 session expired. Sign in again to sync your saved searches.';
+const refusedMessage = () => t('market:store.refused');
 
 const statusOf = (error: unknown) =>
   error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
 
 const errorMessage = (error: unknown) => {
   const status = statusOf(error);
-  if (status === 401) return REFUSED_MESSAGE;
+  if (status === 401) return refusedMessage();
   if (error instanceof Error && status) return error.message;
-  return "Couldn't reach pd2trader.com. Try again in a moment.";
+  return t('market:store.unreachable');
 };
 
 function toastError(title: string, error: unknown) {
@@ -273,15 +274,15 @@ function withSession<T>(
   const owner = session;
   if (!owner) {
     showToast({
-      title: 'Saved searches',
-      description: 'Sign in to save searches and watch the market.',
+      title: t('market:store.title'),
+      description: t('market:store.signIn'),
       variant: 'warning',
     });
     return false;
   }
   // The token was refused: another request with it would only be refused again
   if (remote.syncStatus === 'unauthorized') {
-    showToast({ title: 'Saved searches', description: REFUSED_MESSAGE, variant: 'warning' });
+    showToast({ title: t('market:store.title'), description: refusedMessage(), variant: 'warning' });
     return false;
   }
   request(owner.token).then(
@@ -367,11 +368,11 @@ async function migrateLegacySearches(owner: { token: string }): Promise<void> {
   });
   if (session === owner && (uploaded > 0 || dropped > 0)) {
     showToast({
-      title: 'Saved searches moved to your account',
+      title: t('market:store.migratedTitle'),
       description:
         dropped > 0
-          ? `${uploaded} moved; ${dropped} could not be (invalid or over the ${remote.limits.maxSearches} search limit).`
-          : `${uploaded} saved search${uploaded === 1 ? '' : 'es'} now follow you on every device.`,
+          ? t('market:store.migratedPartial', { uploaded, dropped, max: remote.limits.maxSearches })
+          : t('market:store.migrated', { count: uploaded }),
       variant: dropped > 0 ? 'warning' : 'success',
     });
   }
@@ -470,8 +471,8 @@ const alertingCount = () => remote.savedSearches.filter((s) => s.alert).length;
 
 const capMessage = (what: 'searches' | 'alerting', limits: SavedSearchLimits) =>
   what === 'searches'
-    ? `You can keep up to ${limits.maxSearches} saved searches. Delete one first.`
-    : `Up to ${limits.maxAlerting} saved searches can alert at once. Turn one off first.`;
+    ? t('market:store.capSearches', { count: limits.maxSearches })
+    : t('market:saved.tooManyDescription', { count: limits.maxAlerting });
 
 /** Store actions; usable outside React (they read the current state). */
 export const marketStoreActions = {
@@ -485,29 +486,37 @@ export const marketStoreActions = {
     // Until the list is in, a save could duplicate a search the user already has
     if (session && remote.syncStatus !== 'ready') {
       showToast({
-        title: 'Saved searches',
+        title: t('market:store.title'),
         description:
           remote.syncStatus === 'unauthorized'
-            ? REFUSED_MESSAGE
+            ? refusedMessage()
             : remote.syncStatus === 'error'
-              ? "Your saved searches couldn't be loaded from pd2trader.com yet. Try again in a moment."
-              : 'Your saved searches are still loading.',
+              ? t('market:store.notLoaded')
+              : t('market:store.stillLoading'),
         variant: 'warning',
       });
       return null;
     }
     if (session && remote.savedSearches.length >= limits.maxSearches) {
-      showToast({ title: 'Too many saved searches', description: capMessage('searches', limits), variant: 'warning' });
+      showToast({
+        title: t('market:store.tooManySearches'),
+        description: capMessage('searches', limits),
+        variant: 'warning',
+      });
       return null;
     }
     if (session && alert && alertingCount() >= limits.maxAlerting) {
-      showToast({ title: 'Too many watches', description: capMessage('alerting', limits), variant: 'warning' });
+      showToast({
+        title: t('market:watch.tooManyTitle'),
+        description: capMessage('alerting', limits),
+        variant: 'warning',
+      });
       return null;
     }
     const trimmed = name?.trim().slice(0, 80) || undefined;
     const pending: SavedSearch = {
       id: `${PENDING_ID_PREFIX}${crypto.randomUUID()}`,
-      name: trimmed ?? 'Saving…',
+      name: trimmed ?? t('market:store.saving'),
       filters,
       alert,
       createdAt: new Date().toISOString(),
@@ -517,7 +526,7 @@ export const marketStoreActions = {
       (saved) => replaceSearch(pending.id, saved),
       (error) => {
         replaceSearch(pending.id, null);
-        toastError(statusOf(error) === 409 ? 'Limit reached' : "Couldn't save the search", error);
+        toastError(statusOf(error) === 409 ? t('market:store.limitReached') : t('market:store.saveFailed'), error);
       },
     );
     if (!started) return null;
@@ -525,11 +534,11 @@ export const marketStoreActions = {
     return pending;
   },
   updateSearch(id: string, changes: Partial<Pick<SavedSearch, 'name' | 'filters'>>): void {
-    marketStoreActions.patchSearch(id, changes, "Couldn't update the search");
+    marketStoreActions.patchSearch(id, changes, t('market:store.updateFailed'));
   },
   renameSearch(id: string, name: string): void {
     const trimmed = name.trim().slice(0, 80);
-    if (trimmed) marketStoreActions.patchSearch(id, { name: trimmed }, "Couldn't rename the search");
+    if (trimmed) marketStoreActions.patchSearch(id, { name: trimmed }, t('market:store.renameFailed'));
   },
   /** Turns a search's alert (Watch) on/off; false when refused locally (alert cap: the caller says so). */
   setSearchAlert(id: string, alert: boolean): boolean {
@@ -537,7 +546,11 @@ export const marketStoreActions = {
     if (!search || isPendingSearch(search)) return false;
     if (search.alert === alert) return true;
     if (alert && alertingCount() >= remote.limits.maxAlerting) return false;
-    marketStoreActions.patchSearch(id, { alert }, alert ? "Couldn't turn the alert on" : "Couldn't turn the alert off");
+    marketStoreActions.patchSearch(
+      id,
+      { alert },
+      alert ? t('market:store.alertOnFailed') : t('market:store.alertOffFailed'),
+    );
     return true;
   },
   /** Optimistic PATCH: shows `changes` now, the server's answer when it comes, the old search on failure. */
@@ -570,7 +583,7 @@ export const marketStoreActions = {
           next.splice(Math.min(index, next.length), 0, search);
           return next;
         });
-        toastError("Couldn't delete the search", error);
+        toastError(t('market:store.deleteFailed'), error);
       },
     );
     if (!started) return null;

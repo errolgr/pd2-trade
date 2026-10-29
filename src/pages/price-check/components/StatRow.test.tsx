@@ -128,6 +128,26 @@ describe('StatRow', () => {
     await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
   });
 
+  it('a drag selecting an input value released elsewhere on the row keeps the stat and its range', async () => {
+    render(<Harness stat={FCR} />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    const min = await screen.findByLabelText('% Faster Cast Rate minimum');
+    fireEvent.change(min, { target: { value: '15' } });
+    const rowText = screen.getByText('[10 - 20]');
+
+    // The release lands off the input: the browser clicks the row (the common ancestor), not the input
+    fireEvent.mouseDown(min);
+    fireEvent.mouseUp(rowText);
+    fireEvent.click(rowText);
+    expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('true');
+    expect((screen.getByLabelText('% Faster Cast Rate minimum') as HTMLInputElement).value).toBe('15');
+
+    // A plain click on the row still toggles it
+    fireEvent.mouseDown(rowText);
+    fireEvent.click(rowText);
+    expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+  });
+
   it('pre-fills the inputs from existing filters', () => {
     renderRow({
       stat: FCR,

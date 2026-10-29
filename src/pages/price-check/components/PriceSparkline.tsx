@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { fetchPriceHistory, type PriceHistoryPoint } from '@/pages/currency/lib/price-api';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WIDTH = 220;
@@ -42,6 +43,7 @@ function loadHistory(key: string, { baseCode, isLadder, isHardcore, seasonStart,
  * it fetches on mount (cached per item and mode).
  */
 export function PriceSparkline({ query }: { query: SparklineQuery }) {
+  const { t } = useTranslation('priceCheck');
   const { baseCode, isLadder, isHardcore, seasonStart, seasonEnd } = query;
   const key = [baseCode, isLadder, isHardcore, seasonStart, seasonEnd].join('|');
   const [loaded, setLoaded] = useState<{ key: string; points: PriceHistoryPoint[] | null } | null>(null);
@@ -63,12 +65,12 @@ export function PriceSparkline({ query }: { query: SparklineQuery }) {
     return (
       <div className="flex h-8 items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="size-3 animate-spin" />
-        Loading price history...
+        {t('sparkline.loading')}
       </div>
     );
   }
   if (!points || points.length < 2) {
-    return <div className="text-xs text-muted-foreground">Not enough sales in the last 30 days for a trend.</div>;
+    return <div className="text-xs text-muted-foreground">{t('sparkline.notEnough')}</div>;
   }
 
   const prices = points.map((p) => p.avgPrice);
@@ -93,7 +95,7 @@ export function PriceSparkline({ query }: { query: SparklineQuery }) {
         preserveAspectRatio="none"
         className={cn('h-8 min-w-0 flex-1', up ? 'text-success' : 'text-destructive')}
         role="img"
-        aria-label={`Price over the last ${points.length} days with sales: ${first.toFixed(2)} to ${last.toFixed(2)} HR`}
+        aria-label={t('sparkline.aria', { count: points.length, first: first.toFixed(2), last: last.toFixed(2) })}
       >
         <polyline
           points={path}

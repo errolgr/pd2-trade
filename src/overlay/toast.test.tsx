@@ -8,12 +8,22 @@ import { ToastActionType } from '@/common/types/Events';
 import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
 import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { ItemsProvider } from '@/hooks/useItems';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
 vi.mock('@/pages/market/alerts/saved-search-api', () => ({ fetchMarketListing: vi.fn() }));
+vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/pd2website/usePD2Website')>()),
+  usePd2Website: vi.fn(),
+}));
+vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: {} }) }));
+// Market prices of linked listings: none known
+vi.mock('@/pages/currency/lib/price-api', () => ({ fetchMultipleItemPrices: vi.fn(async () => new Map()) }));
 const overlay = vi.hoisted(() => ({ gameFocused: true, dockOpen: false }));
 vi.mock('./OverlayProvider', () => ({
   useOverlay: () => ({ gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: overlay.gameFocused }),
@@ -299,6 +309,61 @@ describe('showToast action toasts', () => {
       await show(() => showToast(alertToast('drawer-1')));
       await click(screen.getByText('View'));
       expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'drawer-1', tab: 'search' });
+    });
+  });
+
+  describe('a toast whose text links a listing (a PD2 offer notification)', () => {
+    const ID = '6a0bf54e6c42aba37528ae01';
+    const URL = `https://www.projectdiablo2.com/market/listing/${ID}?display="Silkweave"`;
+    const silkweave = {
+      _id: ID,
+      hr_price: 0,
+      price: '10 wss',
+      bumped_at: '2026-05-19T05:29:49.989Z',
+      is_ladder: true,
+      is_hardcore: false,
+      user: { username: 'me' },
+      item: { name: 'Silkweave', quality: { name: 'Unique' }, base: { name: 'Mesh Boots' }, modifiers: [] },
+    } as unknown as MarketListingEntry;
+
+    beforeEach(() => {
+      const found = async (query: { _id?: { $in: string[] } }) => {
+        const data = query._id?.$in.includes(ID) ? [silkweave] : [];
+        return { total: data.length, limit: 25, skip: 0, data };
+      };
+      vi.mocked(usePd2Website).mockReturnValue({
+        authData: { user: { _id: 'me' } },
+        getMarketListings: found,
+        getMarketListingsArchive: found,
+      } as unknown as ReturnType<typeof usePd2Website>);
+    });
+
+    it("shows the link as the chat's item pill, with the item popover on hover", async () => {
+      render(
+        <ItemsProvider items={[]}>
+          <ToastLayer />
+        </ItemsProvider>,
+      );
+      await advance(0);
+      await show(() =>
+        showToast({
+          title: 'New offer',
+          description: `New offer of 10 wss on ${URL}`,
+          action: { label: 'View offer', type: ToastActionType.OPEN_CHAT_OFFER, data: { notificationId: 'n1' } },
+        }),
+      );
+      await advance(0);
+      const el = toastEl('Silkweave')!;
+      expect(el.textContent).toContain('New offer of 10 wss on Silkweave');
+      expect(el.textContent).not.toContain('projectdiablo2.com');
+
+      const pill = within(el).getByRole('link');
+      expect(pill.getAttribute('href')).toBe(URL);
+      act(() => {
+        fireEvent.mouseEnter(pill);
+      });
+      await advance(0);
+      expect(document.querySelector('[data-radix-popper-content-wrapper]')?.textContent).toContain('Mesh Boots');
     });
   });
 

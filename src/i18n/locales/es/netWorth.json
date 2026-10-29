@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Patrimonio",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Patrimonio: haz clic para ver detalles, arrastra para mover",
+    "snapshotFailed": "Error en la instantánea",
+    "lastSnapshot": "Última instantánea {{time}}",
+    "noSnapshot": "Aún no hay instantáneas",
+    "session": "sesión"
+  },
+  "panel": {
+    "title": "Patrimonio",
+    "hide": "Ocultar",
+    "openFullView": "Abrir vista completa",
+    "signInPrompt": "Inicia sesión con tu cuenta de PD2 para seguir tu patrimonio.",
+    "signIn": "Iniciar sesión",
+    "uncertain": "+{{value}} HR incierto",
+    "sessionDelta": "{{change}} HR en la sesión",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} min",
+    "thisSession": "Esta sesión",
+    "last24Hours": "Últimas 24 horas",
+    "notEnoughSnapshots": "Aún no hay suficientes instantáneas",
+    "recentSnapshots": "Instantáneas recientes",
+    "noChanges": "Aún no hay cambios registrados.",
+    "historyOff": "El historial está desactivado. Activa \"Guardar historial de patrimonio\" en Ajustes → Patrimonio para ver sesiones y cambios.",
+    "snapshotNow": "Instantánea ahora",
+    "startSession": "Empezar sesión",
+    "stopSession": "Detener sesión"
+  },
+  "profile": {
+    "publicProfile": "Perfil público",
+    "private": "Privado",
+    "publicTooltip": "Tu nombre de cuenta, rangos, patrimonio, gráfico, insignias y hallazgos destacados son públicos en pd2trader.com.",
+    "privateTooltip": "Solo tú puedes ver tu patrimonio. Actívalo para aparecer en las clasificaciones de pd2trader.com con un perfil público.",
+    "saveFailed": "Error al guardar",
+    "couldNotSave": "No se pudo guardar",
+    "viewProfile": "Ver perfil"
+  }
+}

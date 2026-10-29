@@ -28,7 +28,6 @@ import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketLis
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { useRareAppraisal, type RareAppraisalState } from '../hooks/useRareAppraisal';
 import type { Item } from '../lib/interfaces';
-import { loadBuildUsage } from '../lib/build-usage';
 import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -55,11 +54,6 @@ vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
-// Ladder item usage (builds service): none unless a test sets it
-vi.mock('../lib/build-usage', async (importOriginal) => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  loadBuildUsage: vi.fn(async () => null),
-}));
 // Listing hover detail belongs to quick-list; a stub keeps these tests about the price check itself.
 vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
   default: ({ stashItem }: { stashItem: { name?: string } }) => (
@@ -148,11 +142,13 @@ function listing({ item, user, ...overrides }: ListingOverrides = {}): MarketLis
   };
 }
 
-const page = (data: MarketListingEntry[], total = data.length): MarketListingResult => ({
+/** A PD2 page; `fetched` (the rows PD2 sent) exceeds `data` when it held item-less listings that were dropped. */
+const page = (data: MarketListingEntry[], total = data.length, fetched = data.length): MarketListingResult => ({
   data,
   total,
   limit: 20,
   skip: 0,
+  fetched,
 });
 
 // ---------------------------------------------------------------- mock state
@@ -190,7 +186,6 @@ beforeEach(() => {
   vi.mocked(fetchItemPriceByName).mockResolvedValue(null);
   vi.mocked(fetchCorruptionPrices).mockResolvedValue(null);
   vi.mocked(fetchPriceHistory).mockResolvedValue(null);
-  vi.mocked(loadBuildUsage).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -275,30 +270,6 @@ describe('ItemOverlayWidget header', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
-  });
-
-  it('shows how many ladder characters wear a unique; clicking opens the builds that wear it', async () => {
-    vi.mocked(loadBuildUsage).mockResolvedValue({
-      total: 3000,
-      items: [
-        {
-          key: 'unique:harlequin_crest',
-          name: 'Harlequin Crest',
-          quality: 'Unique',
-          iconUrl: null,
-          count: 657,
-          pct: 21.9,
-          priceHr: 1,
-        },
-      ],
-    });
-    renderWidget(shako());
-    const line = await screen.findByRole('button', { name: /Worn by 21\.9% of level 80\+ ladder characters \(657\)/ });
-    fireEvent.click(line);
-    expect(overlay.openPanel).toHaveBeenCalledWith('builds', {
-      tab: 'meta',
-      filters: { items: ['unique:harlequin_crest'], mode: 'softcore' },
-    });
   });
 });
 
@@ -634,6 +605,23 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.queryByText('Load more')).toBeNull();
   });
 
+  it('keeps Load more when a full page of rows held an item-less listing', async () => {
+    // PD2 sent 20 rows; the one without an item was dropped before reaching the widget
+    const first = Array.from({ length: 19 }, (_, i) => listing({ _id: `p1-${i}`, hr_price: i + 1 }));
+    getMarketListings.mockResolvedValueOnce(page(first, 30, 20));
+    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'p2-0', hr_price: 99 })], 30));
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(searchButton());
+    expect(await screen.findByText('Load more')).not.toBeNull();
+    expect(screen.getAllByRole('row')).toHaveLength(1 + 19);
+
+    inView = true;
+    rerenderItem(item);
+    expect(await screen.findByText('99 HR')).not.toBeNull();
+    expect(lastQuery().$skip).toBe(20);
+  });
+
   it('after scrolling, a new search starts from the first page with the edited filters', async () => {
     const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `a${i}`, hr_price: i + 1 }));
     getMarketListings.mockResolvedValueOnce(page(first, 23));
@@ -912,6 +900,24 @@ describe('ItemOverlayWidget extra header behaviour', () => {
   });
 });
 
+describe('ItemOverlayWidget item switch', () => {
+  it('leaves no rows of the previous item behind when it listed a stat twice', async () => {
+    const { rerenderItem } = renderWidget(
+      rareRing({
+        stats: [
+          { stat_id: 105, name: 'Faster Cast Rate', value: 10 },
+          { stat_id: 105, name: 'Faster Cast Rate', value: 10, corrupted: true },
+        ],
+      }),
+    );
+    expect(screen.getAllByText(/Faster Cast Rate/)).toHaveLength(1);
+    rerenderItem(shako());
+    // Rows leave through an exit animation
+    await waitFor(() => expect(screen.queryByText(/Faster Cast Rate/)).toBeNull(), { timeout: 3000 });
+    expect(screen.getByText('+2 to All Skills')).not.toBeNull();
+  });
+});
+
 describe('ItemOverlayWidget sockets and ethereal rows', () => {
   it('turns item sockets and ethereal flags into filterable rows', async () => {
     renderWidget(rareRing({ type: 'Shako', sockets: 2, isEthereal: true }));
@@ -925,9 +931,7 @@ describe('ItemOverlayWidget sockets and ethereal rows', () => {
     expect(q['item.is_ethereal']).toBe(true);
   });
 
-  // BUG: useStatSelection.ts isItemCorruptable compares the Jewelry typeValue ('{"$in": ["amul", "ring", "amus"]}')
-  // against the 'rin'/'amu' whitelist entries, so rings and amulets never get the Corrupted filter row.
-  it.fails('offers the Corrupted filter on rare rings', () => {
+  it('offers the Corrupted filter on rare rings', () => {
     renderWidget(rareRing());
     expect(screen.getByRole('checkbox', { name: 'Corrupted filter' })).not.toBeNull();
   });

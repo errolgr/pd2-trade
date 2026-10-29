@@ -11,7 +11,13 @@ import React, {
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
-import { claimKeyboard, isKeyboardClaimed, releaseKeyboard, trackKeyboardFocus } from './keyboard';
+import {
+  claimKeyboard,
+  isKeyboardClaimed,
+  releaseKeyboard,
+  showOverFullscreenGame,
+  trackKeyboardFocus,
+} from './keyboard';
 import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
 import { setToastBridge } from './toast';
@@ -275,8 +281,10 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
       }
 
       // Opening never takes focus from the game (it would mute it): panels claim the keyboard only when the user
-      // clicks into a text field (Panel).
+      // clicks into a text field (Panel). Except over a fullscreen game, which hides every other window while it
+      // holds the foreground: there a panel the user can interact with takes it, or it never shows.
       if (opts.focus) void claimKeyboard();
+      else if (def.keyboard === 'onPointerDown') void showOverFullscreenGame();
     },
     [apply, defs],
   );

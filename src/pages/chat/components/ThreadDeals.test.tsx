@@ -11,6 +11,8 @@ import { offerStatus, ThreadDeals } from './ThreadDeals';
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), showToast: vi.fn() }));
+const delist = vi.hoisted(() => ({ delistTrade: vi.fn(async (_trade: unknown, _onDeleted?: () => void) => {}) }));
+vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => delist }));
 
 const offer = (over: Partial<TradeOffer>): TradeOffer => ({
   id: 'o1',
@@ -57,8 +59,9 @@ const actions = {
 
 const onCounter = vi.fn();
 const onSendWebsite = vi.fn(async (_text: string) => true);
-const onWhisper = vi.fn();
+const onReply = vi.fn(async (_person: WhisperPerson, _text: string) => true);
 const onDismissTrade = vi.fn();
+const onSettleTrade = vi.fn();
 
 function renderDeals({
   offers = [],
@@ -80,8 +83,10 @@ function renderDeals({
       now={Date.parse('2026-10-05T00:03:00Z')}
       onCounter={onCounter}
       onSendWebsite={onSendWebsite}
-      onWhisper={onWhisper}
+      replyChannel="whisper"
+      onReply={onReply}
       onDismissTrade={onDismissTrade}
+      onSettleTrade={onSettleTrade}
     />,
   );
 }
@@ -261,7 +266,7 @@ describe('ThreadDeals website offers', () => {
 });
 
 describe('ThreadDeals trade whispers', () => {
-  it('copies accept (game required), reject and sold whispers from the templates and dismisses', async () => {
+  it('replies with the accept (game required), reject and sold templates; reject and sold close the trade', async () => {
     renderDeals({ whisperTrades: [{ person, trade: trade() }], listingIds: [] });
     expect(rows()[0].textContent).toContain('Shako');
     expect(rows()[0].textContent).toContain('in-game');
@@ -272,21 +277,77 @@ describe('ThreadDeals trade whispers', () => {
     await act(async () => {
       fireEvent.click(button(/Accept offer/));
     });
-    expect(onWhisper).toHaveBeenLastCalledWith(person, 'Accepted Shako (2 ist). Game: g1');
+    expect(onReply).toHaveBeenLastCalledWith(person, 'Accepted Shako (2 ist). Game: g1');
+    // Accepting keeps the trade open: it still has to be sold
+    expect(onSettleTrade).not.toHaveBeenCalled();
 
-    fireEvent.click(button(/Reject/));
-    expect(onWhisper).toHaveBeenLastCalledWith(person, 'Sorry BobAcc, no.');
-    fireEvent.click(button(/Sold/));
-    expect(onWhisper).toHaveBeenLastCalledWith(person, 'Shako is sold.');
+    await act(async () => fireEvent.click(button(/Reject/)));
+    expect(onReply).toHaveBeenLastCalledWith(person, 'Sorry BobAcc, no.');
+    expect(onSettleTrade).toHaveBeenLastCalledWith(person, 't1', 'rejected');
+    await act(async () => fireEvent.click(button(/Sold/)));
+    expect(onReply).toHaveBeenLastCalledWith(person, 'Shako is sold.');
+    expect(onSettleTrade).toHaveBeenLastCalledWith(person, 't1', 'sold');
     fireEvent.click(button(/Dismiss/));
     expect(onDismissTrade).toHaveBeenCalledWith(person, 't1');
     expect(actions.acceptOffer).not.toHaveBeenCalled();
   });
 
+  it('keeps the trade open when the reply did not go out', async () => {
+    onReply.mockResolvedValueOnce(false);
+    renderDeals({ whisperTrades: [{ person, trade: trade() }], listingIds: [] });
+    await act(async () => fireEvent.click(button(/Reject/)));
+    expect(onReply).toHaveBeenCalledTimes(1);
+    expect(onSettleTrade).not.toHaveBeenCalled();
+  });
+
   it('only offers Dismiss on a trade whisper you sent', () => {
     renderDeals({ whisperTrades: [{ person, trade: trade({ isIncoming: false }) }], listingIds: [] });
     expect(rows()[0].textContent).toMatch(/^your in-game offer · /);
-    expect(screen.queryByRole('button', { name: /Accept|Reject|Sold/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Accept|Reject|Sold|More actions/ })).toBeNull();
     expect(button(/Dismiss/)).not.toBeNull();
+  });
+
+  /** Opens the row's ⋯ menu and picks `item`. */
+  async function pickMore(item: RegExp) {
+    await act(async () => {
+      fireEvent.pointerDown(button('More actions for Shako'), { button: 0, ctrlKey: false, pointerType: 'mouse' });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: item }));
+    });
+  }
+
+  it("deletes the whispered item's listing from the ⋯ menu and closes the trade once it is deleted", async () => {
+    const t = trade();
+    renderDeals({ whisperTrades: [{ person, trade: t }], listingIds: [] });
+    expect(screen.queryByRole('button', { name: /Delete listing/ })).toBeNull();
+    await pickMore(/^Delete listing/);
+    expect(delist.delistTrade).toHaveBeenCalledWith(t, expect.any(Function));
+    expect(onReply).not.toHaveBeenCalled();
+    // Not before the listing actually goes (the confirm may be cancelled)
+    expect(onSettleTrade).not.toHaveBeenCalled();
+    const onDeleted = delist.delistTrade.mock.calls[0][1]!;
+    onDeleted();
+    expect(onSettleTrade).toHaveBeenCalledWith(person, 't1', 'delisted');
+  });
+
+  it('"Sold & delete listing" replies sold, closes the trade as sold and delists the item', async () => {
+    const t = trade();
+    renderDeals({ whisperTrades: [{ person, trade: t }], listingIds: [] });
+    await pickMore(/Sold & delete listing/);
+    expect(onReply).toHaveBeenCalledWith(person, 'Shako is sold.');
+    expect(onSettleTrade).toHaveBeenCalledWith(person, 't1', 'sold');
+    expect(delist.delistTrade).toHaveBeenCalledWith(t);
+    expect(onDismissTrade).not.toHaveBeenCalled();
+  });
+
+  it('keeps the row busy while the listing is looked up', async () => {
+    const lookup = Promise.withResolvers<void>();
+    delist.delistTrade.mockImplementationOnce(() => lookup.promise);
+    renderDeals({ whisperTrades: [{ person, trade: trade() }], listingIds: [] });
+    await pickMore(/^Delete listing/);
+    expect(button(/Dismiss/)).toHaveProperty('disabled', true);
+    await act(async () => lookup.resolve());
+    expect(button(/Dismiss/)).toHaveProperty('disabled', false);
   });
 });

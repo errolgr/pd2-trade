@@ -10,6 +10,7 @@ import { useSellerContext } from './useSellerContext';
 import { useDealIndicators } from './useDealIndicators';
 import { SellerName } from '../components/SellerName';
 import { useOpenTrader } from '../hooks/useListingActions';
+import { currentLocale, useTranslation } from '@/i18n';
 
 /** Same tones as the chat Trader sidebar's presence dot. */
 const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
@@ -37,6 +38,7 @@ export function SellerCard({
   onBrowseSeller?: () => void;
   className?: string;
 }) {
+  const { t } = useTranslation('market');
   const seller = useSellerContext(listing);
   const deals = useDealIndicators(seller.others);
   const openTrader = useOpenTrader(listing);
@@ -46,7 +48,7 @@ export function SellerCard({
     others = (
       <div aria-busy
         className="space-y-1">
-        <span className="sr-only">Loading their listings...</span>
+        <span className="sr-only">{t('seller.loadingListings')}</span>
         {Array.from({ length: 3 }, (_, i) => (
           <Skeleton key={i}
             className="h-8 rounded-md" />
@@ -54,9 +56,9 @@ export function SellerCard({
       </div>
     );
   } else if (seller.status === 'error') {
-    others = <div className="text-xs text-muted-foreground">Couldn&apos;t load their other listings.</div>;
+    others = <div className="text-xs text-muted-foreground">{t('seller.loadFailed')}</div>;
   } else if (seller.status === 'ready' && seller.others.length === 0) {
-    others = <div className="text-xs text-muted-foreground">No other live listings.</div>;
+    others = <div className="text-xs text-muted-foreground">{t('seller.noOthers')}</div>;
   } else if (seller.others.length > 0) {
     others = (
       <ul className="space-y-0.5">
@@ -87,7 +89,7 @@ export function SellerCard({
   }
 
   return (
-    <section aria-label="Seller"
+    <section aria-label={t('filters.seller')}
       className={cn('space-y-2', className)}>
       <div className="flex items-start gap-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
@@ -98,10 +100,10 @@ export function SellerCard({
             {listing.user_id ? (
               <SellerName onOpen={openTrader}
                 className="text-sm font-semibold">
-                {seller.username ?? 'Unknown seller'}
+                {seller.username ?? t('seller.unknown')}
               </SellerName>
             ) : (
-              <span className="truncate text-sm font-semibold">{seller.username ?? 'Unknown seller'}</span>
+              <span className="truncate text-sm font-semibold">{seller.username ?? t('seller.unknown')}</span>
             )}
             {seller.inGameAccount && (
               <span className="truncate text-xs text-muted-foreground">*{seller.inGameAccount}</span>
@@ -114,7 +116,9 @@ export function SellerCard({
               {seller.presenceText}
             </span>
             {seller.accountCreatedAt !== null && (
-              <span title={new Date(seller.accountCreatedAt).toLocaleDateString()}>Joined {seller.accountAgeText}</span>
+              <span title={new Date(seller.accountCreatedAt).toLocaleDateString(currentLocale())}>
+                {t('seller.joined', { ago: seller.accountAgeText })}
+              </span>
             )}
           </div>
         </div>
@@ -124,7 +128,11 @@ export function SellerCard({
         <div className="space-y-1">
           <h4 className="flex items-center gap-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             <Store className="size-3" />
-            <span className="flex-1">Other listings{seller.othersTotal > 0 ? ` (${seller.othersTotal})` : ''}</span>
+            <span className="flex-1">
+              {seller.othersTotal > 0
+                ? t('seller.otherListingsCount', { count: seller.othersTotal })
+                : t('seller.otherListings')}
+            </span>
           </h4>
           {others}
           {onBrowseSeller && (
@@ -133,7 +141,7 @@ export function SellerCard({
               onClick={onBrowseSeller}
               className="flex w-full items-center justify-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
             >
-              Browse all from {seller.username ?? 'this seller'}
+              {seller.username ? t('seller.browseAllFrom', { name: seller.username }) : t('seller.browseAllThis')}
               <ChevronRight className="size-3" />
             </button>
           )}

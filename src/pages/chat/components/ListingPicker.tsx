@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
+import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { ListingThumb, nameColor } from './ListingCard';
@@ -14,10 +15,6 @@ import { Tip } from './chat-parts';
 
 /** Newest-bumped active listings offered by the picker. */
 const PICKER_LIMIT = 50;
-
-/** Chat link to a listing; `?display=` makes it read as the item name (see lib/market-links). */
-export const listingMessageUrl = (listing: Pick<MarketListingEntry, '_id' | 'item'>) =>
-  `https://www.projectdiablo2.com/market/listing/${listing._id}?display="${listing.item.name}"`;
 
 type PickerState = { status: 'loading' } | { status: 'error' } | { status: 'done'; listings: MarketListingEntry[] };
 
@@ -30,6 +27,7 @@ export function ListingPicker({
   /** The popover closed (picked or dismissed); focus goes back to the composer. */
   onClosed: () => void;
 }) {
+  const { t } = useTranslation(['chat', 'common']);
   const { authData, getMarketListings } = usePd2Website();
   const { settings } = useOptions();
   const userId = authData?.user?._id;
@@ -77,7 +75,7 @@ export function ListingPicker({
     body = (
       <div aria-busy
         className="space-y-1 p-1.5">
-        <span className="sr-only">Loading your listings...</span>
+        <span className="sr-only">{t('picker.loading')}</span>
         {Array.from({ length: 4 }, (_, i) => (
           <div key={i}
             className="flex items-center gap-2.5 px-1.5 py-1">
@@ -92,19 +90,19 @@ export function ListingPicker({
     body = (
       <div className="flex flex-col items-center gap-2 px-3 py-6 text-center text-xs text-muted-foreground">
         <AlertTriangle className="size-4 text-destructive" />
-        Couldn&apos;t load your listings.
+        {t('picker.loadFailed')}
         <Button variant="outline"
           size="sm"
           onClick={() => void load()}>
           <RotateCw className="size-3.5" />
-          Try again
+          {t('common:actions.tryAgain')}
         </Button>
       </div>
     );
   } else if (matches.length === 0) {
     body = (
       <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-        {state.listings.length === 0 ? 'You have no active listings in this realm.' : 'No listings match.'}
+        {state.listings.length === 0 ? t('picker.noListings') : t('picker.noMatches')}
       </p>
     );
   } else {
@@ -147,9 +145,9 @@ export function ListingPicker({
         }
       }}
     >
-      <Tip label="Link one of my listings">
+      <Tip label={t('picker.linkListing')}>
         <PopoverTrigger
-          aria-label="Link one of my listings"
+          aria-label={t('picker.linkListing')}
           disabled={!userId}
           className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
         >
@@ -167,7 +165,9 @@ export function ListingPicker({
         }}
       >
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">My listings</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('picker.title')}
+          </span>
           {state.status === 'loading' && (
             <Loader2 aria-hidden
               className="size-3.5 animate-spin text-muted-foreground" />
@@ -177,7 +177,7 @@ export function ListingPicker({
           <Search className="pointer-events-none absolute left-4.5 top-1/2 mt-1 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             autoFocus
-            placeholder="Search my listings..."
+            placeholder={t('picker.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {

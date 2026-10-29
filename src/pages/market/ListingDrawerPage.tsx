@@ -17,12 +17,14 @@ import { useMarketFavorites } from './hooks/useMarketFavorites';
 import { defaultFilters, upgradeFilters } from './lib/defaults';
 import { listingUrl } from './lib/listing';
 import { scoreListings } from './lib/search';
+import { useTranslation } from '@/i18n';
 
 /**
  * `listingDetail` panel: one market listing as a drawer on the game's right edge (a watch toast's Details), with
  * the market browser's detail pane: tooltip, the watch's pseudo totals, price, history, seller and trade actions.
  */
 export const ListingDrawerPage: React.FC = () => {
+  const { t } = useTranslation('market');
   const { payload, payloadVersion, close } = usePanel<'listingDetail'>();
   const { openPanel } = useOverlay();
   const { settings } = useOptions();
@@ -82,22 +84,18 @@ export const ListingDrawerPage: React.FC = () => {
             />
           ) : (
             <>
-              <WindowChrome title="Listing"
+              <WindowChrome title={t('drawer.title')}
                 showGrip={false}
                 dragRegion={false}
                 onClose={close} />
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
                 {lookup.state === 'loading' ? (
                   <Loader2 className="size-5 animate-spin"
-                    aria-label="Loading listing" />
+                    aria-label={t('drawer.loading')} />
                 ) : (
                   <>
                     <SearchX className="size-6" />
-                    <p>
-                      {lookup.state === 'missing'
-                        ? 'This listing is no longer on the market.'
-                        : 'Could not load this listing. Try again in a moment.'}
-                    </p>
+                    <p>{lookup.state === 'missing' ? t('drawer.missing') : t('drawer.loadFailed')}</p>
                     {payload?.listingId && (
                       <Button
                         variant="outline"
@@ -106,7 +104,7 @@ export const ListingDrawerPage: React.FC = () => {
                         onClick={() => void openUrl(listingUrl({ _id: payload.listingId }))}
                       >
                         <ExternalLink className="size-3.5" />
-                        Open on projectdiablo2.com
+                        {t('drawer.openOnSite')}
                       </Button>
                     )}
                   </>

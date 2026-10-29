@@ -35,7 +35,7 @@ function appraisal(overrides: Partial<RareAppraisal> = {}): RareAppraisal {
     stats: [],
     market: { lowHr: 1.5, highHr: 3.24, source: 'last-season', sampleSize: 40, mode: 'softcore' },
     modelMode: 'softcore',
-    modelVersion: 'v1',
+    modelVersion: 's14-q50-2026-10-28',
     ...overrides,
   };
 }
@@ -99,7 +99,7 @@ describe('RareAppraisalPill', () => {
     expect(screen.queryByText('Doom Coil')).toBeNull();
     fireEvent.mouseEnter(screen.getByText('top 8%').closest('.group')!.parentElement!);
     expect(screen.getByText('Doom Coil')).not.toBeNull();
-    expect(screen.getByText(/Ring · est\. from S13 listings/)).not.toBeNull();
+    expect(screen.getByText(/Ring · est\. from S14 listings/)).not.toBeNull();
   });
 });
 

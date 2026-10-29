@@ -1,6 +1,6 @@
+use crate::modules::opener;
 use crate::{chat_watcher, debug_logger, keyboard, window};
 use tauri::Manager;
-use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
@@ -22,6 +22,13 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_game_context()
+}
+
+/// Diablo II fills its monitor (D2GL fullscreen): while it holds the foreground the graphics driver draws nothing
+/// else on that monitor, so a panel only shows once the overlay takes the foreground (see `window::diablo_fullscreen`).
+#[tauri::command]
+pub fn is_diablo_fullscreen() -> bool {
+    window::diablo_fullscreen()
 }
 
 #[tauri::command]
@@ -131,16 +138,21 @@ pub fn write_debug_logs(entries: String) -> Result<(), String> {
     debug_logger::write_logs(&entries)
 }
 
+/// Opens an http(s) URL in the default browser (sign-in, listings, profiles); fails when nothing could open it.
+/// Off the async runtime's threads: on Linux it waits for the launcher's verdict.
 #[tauri::command]
-pub async fn open_oauth_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
-    if !url.starts_with("https://") && !url.starts_with("http://") {
-        return Err("Invalid URL scheme: only HTTP(S) is allowed".to_string());
-    }
+pub async fn open_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || opener::open_url(&app_handle, &url))
+        .await
+        .map_err(|e| e.to_string())?
+}
 
-    app_handle
-        .opener()
-        .open_url(&url, None::<&str>)
-        .map_err(|e| format!("Failed to open URL: {}", e))
+/// Opens the app's config folder in the file manager (tray menu).
+#[tauri::command]
+pub async fn open_config_dir(app_handle: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || opener::open_config_dir(&app_handle))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 /// The sign-in window: an ordinary app window (taskbar entry, minimizable, not always on top) so it can sit

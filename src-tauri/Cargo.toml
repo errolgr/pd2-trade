@@ -1,6 +1,6 @@
 [package]
 name = "pd2-trader"
-version = "0.10.7"
+version = "0.10.10"
 description = "PD2 Trader"
 authors = ["you"]
 edition = "2021"
@@ -25,7 +25,10 @@ tauri-plugin-process = "2.2"
 tauri-plugin-clipboard-manager = "2.3.2"
 tauri-plugin-app-exit = "0.1"
 tauri-plugin-fs = "2.3"
-tauri-plugin-http = "2.5.0"
+# rustls-tls-native-roots: also trust the OS certificate store (on top of the bundled Mozilla roots), so HTTPS works
+# behind antivirus web shields and corporate proxies that re-sign TLS with a locally installed root. Feature
+# unification applies it to every reqwest 0.12 user (tauri-plugin-updater too).
+tauri-plugin-http = { version = "2.5.0", features = ["rustls-tls-native-roots"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rdev = "0.5.1"

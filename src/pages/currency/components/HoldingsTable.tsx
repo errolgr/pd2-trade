@@ -10,6 +10,8 @@ import { DataTable } from './DataTable';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
 import { formatUnitPrice } from '../lib/networth-format';
+import type { TFunction } from 'i18next';
+import { useTranslation } from '@/i18n';
 
 interface HoldingsTableProps {
   lines: ValuationLine[];
@@ -18,12 +20,12 @@ interface HoldingsTableProps {
   toolbar?: React.ReactNode;
 }
 
-function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLine>[] {
+function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnDef<ValuationLine>[] {
   return [
     {
       accessorKey: 'name',
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="Item" />,
+        title={t('columns.item')} />,
       cell: ({ row }) => <HoldingName line={row.original}
         showTab={showTab} />,
     },
@@ -31,7 +33,7 @@ function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLi
       accessorKey: 'qty',
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="Qty" />,
+        title={t('columns.qty')} />,
       cell: ({ row }) => <span className="tabular-nums">{row.original.qty}</span>,
     },
     {
@@ -39,7 +41,7 @@ function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLi
       accessorFn: (line) => line.unitPrice ?? undefined,
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="Unit" />,
+        title={t('columns.unit')} />,
       sortUndefined: 'last',
       cell: ({ row }) => (
         <span className="tabular-nums text-muted-foreground">{formatUnitPrice(row.original.unitPrice)}</span>
@@ -49,7 +51,7 @@ function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLi
       accessorKey: 'value',
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="Value" />,
+        title={t('columns.value')} />,
       cell: ({ row }) => <span className="font-medium tabular-nums">{formatHr(row.original.value)}</span>,
     },
     {
@@ -57,7 +59,7 @@ function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLi
       accessorFn: (line) => (totalHr > 0 ? line.value / totalHr : 0),
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="%" />,
+        title={t('columns.share')} />,
       cell: ({ getValue }) => <ShareCell share={getValue() as number} />,
     },
     {
@@ -66,12 +68,12 @@ function createColumns(totalHr: number, showTab: boolean): ColumnDef<ValuationLi
       sortUndefined: 'last',
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
-        title="7d" />,
+        title={t('columns.change7d')} />,
       cell: ({ row }) => <PriceChange percent={row.original.priceChange7dPercent} />,
     },
     {
       accessorKey: 'confidence',
-      header: 'Price',
+      header: t('columns.price'),
       enableSorting: false,
       cell: ({ row }) => <ConfidenceBadge line={row.original} />,
     },
@@ -92,9 +94,10 @@ function ShareCell({ share }: { share: number }) {
 }
 
 export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: HoldingsTableProps) {
+  const { t } = useTranslation('currency');
   const [query, setQuery] = useState('');
   const [hideZero, setHideZero] = useState(true);
-  const columns = useMemo(() => createColumns(totalHr, showTab), [totalHr, showTab]);
+  const columns = useMemo(() => createColumns(totalHr, showTab, t), [totalHr, showTab, t]);
 
   const needle = query.trim().toLowerCase();
   const visible = lines.filter(
@@ -119,14 +122,14 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
                 setQuery('');
               }
             }}
-            placeholder="Search…"
-            aria-label="Search holdings"
+            placeholder={t('holdings.searchPlaceholder')}
+            aria-label={t('holdings.searchLabel')}
             className="h-9 pl-8 pr-8"
           />
           {query && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={t('holdings.clearSearch')}
               onClick={() => setQuery('')}
               className="absolute right-1.5 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
             >
@@ -140,7 +143,7 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
             onCheckedChange={setHideZero} />
           <Label htmlFor="hide-zero"
             className="cursor-pointer text-xs text-muted-foreground">
-            Hide zero value
+            {t('holdings.hideZero')}
           </Label>
         </div>
         {toolbar}
@@ -149,17 +152,14 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
         columns={columns}
         data={visible}
         initialSorting={[{ id: 'value', desc: true }]}
-        emptyMessage={lines.length ? 'Nothing matches.' : 'None in your stash.'}
+        emptyMessage={lines.length ? t('holdings.nothingMatches') : t('holdings.noneInStash')}
         emptyIcon={lines.length ? <SearchX /> : <PackageOpen />}
       />
       <div className="flex items-start justify-between gap-4 text-xs text-muted-foreground">
-        <p>
-          {hiddenZero > 0 &&
-            `${hiddenZero} zero-value ${hiddenZero === 1 ? 'row' : 'rows'} hidden (unpriced items are listed but valued at 0).`}
-        </p>
+        <p>{hiddenZero > 0 && t('holdings.zeroHidden', { count: hiddenZero })}</p>
         {visible.length > 0 && (
           <p className="shrink-0 tabular-nums">
-            {visible.length} {visible.length === 1 ? 'holding' : 'holdings'} ·{' '}
+            {t('holdings.count', { count: visible.length })} ·{' '}
             <span className="font-medium text-foreground">{formatHr(visibleHr)}</span>
           </p>
         )}

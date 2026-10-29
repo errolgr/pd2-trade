@@ -1,0 +1,182 @@
+{
+  "itemPage": {
+    "noItem": "Aucune donnée d'objet fournie ou échec de l'analyse.",
+    "noItemHint": "Survolez un objet en jeu et appuyez sur votre raccourci d'estimation pour réessayer."
+  },
+  "overlay": {
+    "title": "Estimation",
+    "toolbar": {
+      "netWorth": "Valeur nette",
+      "copyImage": "Copier l'image",
+      "settings": "Paramètres"
+    },
+    "update": {
+      "updating": "Mise à jour…",
+      "retry": "Réessayer la mise à jour",
+      "get": "Mettre à jour",
+      "restart": "Redémarrer pour mettre à jour",
+      "failedHint": "Échec de la mise à jour vers v{{version}}. Cliquez pour réessayer.",
+      "manualHint": "La version {{version}} est disponible. Cette installation ne peut pas se mettre à jour seule : cliquez pour ouvrir la page de publication, ou utilisez votre gestionnaire de paquets.",
+      "availableHint": "La version {{version}} est disponible. Télécharge, installe et redémarre PD2 Trader."
+    },
+    "copyImage": {
+      "copiedTitle": "Image copiée",
+      "copiedDescription": "Collez-la dans Discord ou une annonce d'échange.",
+      "failedTitle": "Impossible de copier l'image"
+    },
+    "header": {
+      "base": "Base : {{type}}",
+      "type": "Type : {{type}}",
+      "toggleSearchMode": "Cliquez pour changer de mode de recherche",
+      "cycleQuality": "Cliquez pour changer de qualité",
+      "defense": "Défense : <value>{{defense}}</value>",
+      "appraisalNote": "Note d'évaluation : {{note}}"
+    },
+    "price": {
+      "loading": "Chargement des prix...",
+      "noData": "Aucune donnée de prix",
+      "fetchFailed": "Échec du chargement des prix",
+      "median": "Médiane",
+      "min": "Min",
+      "max": "Max",
+      "samples": "Échantillons",
+      "change7d": "Variation 7 j",
+      "last30Days": "30 derniers jours",
+      "openOnPd2Trader": "Ouvrir sur pd2trader.com",
+      "viewOnWeb": "Voir sur le web"
+    },
+    "corruptions": {
+      "thisItem": "Corruption de cet objet",
+      "top": "Meilleures corruptions",
+      "showLess": "Afficher moins",
+      "showMore_one": "Afficher plus ({{count}} de plus)",
+      "showMore_many": "Afficher plus ({{count}} de plus)",
+      "showMore_other": "Afficher plus ({{count}} de plus)",
+      "loading": "Chargement des prix des corruptions...",
+      "searchTitle": "Cliquez pour rechercher des objets avec cette corruption",
+      "noPriceData": "Aucun prix",
+      "link": "Lier",
+      "socketPrices": "{{name}} - Prix par sockets",
+      "filterBySocket": "Cliquez pour filtrer par ce nombre de sockets"
+    },
+    "sockets_one": "{{count}} socket",
+    "sockets_many": "{{count}} de sockets",
+    "sockets_other": "{{count}} sockets",
+    "stats": {
+      "title": "Stats",
+      "selected_one": "{{count}} sélectionnée",
+      "selected_many": "{{count}} de sélectionnées",
+      "selected_other": "{{count}} sélectionnées",
+      "clearRanges": "Effacer les plages",
+      "clearRangesTitle": "Vide tous les min et max ; les stats restent sélectionnées",
+      "clearTitle": "Décocher toutes les stats"
+    },
+    "actions": {
+      "openTradeAria": "Ouvrir la recherche sur projectdiablo2.com",
+      "openTradeTooltip": "Ouvrir cette recherche sur projectdiablo2.com",
+      "openInMarket": "Ouvrir dans le marché",
+      "list": "Vendre",
+      "listDisabled": "L'objet doit être dans votre coffre partagé pour être mis en vente.",
+      "showExpired": "Afficher expirées"
+    },
+    "results": {
+      "matches": "Résultats : <value>{{total}}</value>",
+      "showing": "· {{shown}} affichés",
+      "loading": "Chargement des annonces...",
+      "errorTitle": "Impossible de charger les annonces",
+      "fetchFailed": "Échec du chargement des annonces",
+      "noListings": "Aucune annonce trouvée",
+      "loosenFilters": "Essayez d'assouplir vos filtres de stats.",
+      "loosenFiltersOrExpired": "Essayez d'assouplir vos filtres de stats ou activez Afficher expirées.",
+      "readyTitle": "Prêt à rechercher",
+      "readyHint": "Choisissez les stats importantes, puis cliquez sur Rechercher ou appuyez sur Enter dans un champ min/max.",
+      "price": "Prix",
+      "listed": "Publiée",
+      "loadingMore": "Chargement...",
+      "loadMore": "Charger plus"
+    },
+    "listing": {
+      "copyWhisper": "Copier le message privé",
+      "whisperCopied": "Message privé copié, clic droit pour coller",
+      "onlineCopyWhisper": "En ligne en jeu · cliquez pour copier le message privé",
+      "seller": "Vendeur : <name>{{seller}}</name>",
+      "online": "En ligne en jeu"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "Plage de la stat affichée dans l'infobulle PD2",
+    "corruptedFilter": "Filtre Corrupted",
+    "unknown": "Inconnu",
+    "keyFromTitle": "Cette stat commence à prendre de la valeur sur cet emplacement à partir de {{value}}",
+    "valuableFrom": "intéressant dès {{value}}",
+    "corruptedOnly": "uniquement",
+    "corruptedExcluded": "exclu",
+    "injectedCorruptedHint": "Cet objet peut être corrompu. Utilisez ce filtre pour rechercher les versions corrompues ou non.",
+    "corruptedStat": "Stat de corruption",
+    "minDamage": "Dégâts min",
+    "maxDamage": "Dégâts max",
+    "minDamageAria": "{{name}} dégâts min",
+    "maxDamageAria": "{{name}} dégâts max",
+    "minPlaceholder": "min",
+    "maxPlaceholder": "max",
+    "minimumAria": "{{label}} minimum",
+    "maximumAria": "{{label}} maximum",
+    "clearRangeAria": "Effacer la plage {{label}}",
+    "clearRangeTitle": "Effacer min et max",
+    "unfold": "Déplier"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "Modifier ou déplier ce total",
+    "searchTotalAria": "Rechercher un total à la place",
+    "searchTotalTitle": "Rechercher un total (Σ) au lieu de cette ligne",
+    "menuLabel": "Rechercher un total — regroupe les lignes couvertes"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "Évaluation de l'objet crafté...",
+    "appraisingRare": "Évaluation du rare...",
+    "estimatedFrom": "{{slot}} · estimé d'après les annonces de {{season}}",
+    "ofSlots": "des {{slots}}",
+    "usuallyListed": "prix habituel"
+  },
+  "runePrices": {
+    "label": "Prix des runes",
+    "title": "Prix actuels des runes",
+    "info": "Les prix des runes sont calculés à partir des annonces du marché, avec le prix médian des 7 derniers jours. Mis à jour quotidiennement.",
+    "viewOnPd2Trader": "Voir sur pd2trader.com",
+    "loading": "Chargement des runes...",
+    "fixed": "fixe",
+    "listings_one": "{{count}} annonce",
+    "listings_many": "{{count}} d'annonces",
+    "listings_other": "{{count}} annonces",
+    "showLess": "Afficher moins",
+    "showMoreLower_one": "Afficher plus ({{count}} rune inférieure)",
+    "showMoreLower_many": "Afficher plus ({{count}} de runes inférieures)",
+    "showMoreLower_other": "Afficher plus ({{count}} runes inférieures)",
+    "breakdown": "Détail <rune>{{rune}}</rune> :",
+    "target": "cible {{value}} HR",
+    "diff": "Écart : {{value}} HR",
+    "fixedNote": "* Prix fixe utilisé pour Vex et en dessous, car il varie peu, ou quand moins de 10 annonces sont disponibles"
+  },
+  "sparkline": {
+    "loading": "Chargement de l'historique des prix...",
+    "notEnough": "Pas assez de ventes sur les 30 derniers jours pour une tendance.",
+    "aria_one": "Prix sur le dernier {{count}} jour avec ventes : de {{first}} à {{last}} HR",
+    "aria_many": "Prix sur les {{count}} de derniers jours avec ventes : de {{first}} à {{last}} HR",
+    "aria_other": "Prix sur les {{count}} derniers jours avec ventes : de {{first}} à {{last}} HR"
+  },
+  "itemCard": {
+    "median": "médiane {{price}}",
+    "sales_one": "{{count}} vente",
+    "sales_many": "{{count}} de ventes",
+    "sales_other": "{{count}} ventes",
+    "recentlySold": "Vendus récemment",
+    "listedNow": "En vente",
+    "from": "dès {{price}}",
+    "soldDetail_one": "{{count}} vendu · médiane {{price}}",
+    "soldDetail_many": "{{count}} de vendus · médiane {{price}}",
+    "soldDetail_other": "{{count}} vendus · médiane {{price}}",
+    "listingsDetail_one": "{{count}} annonce · médiane {{price}}",
+    "listingsDetail_many": "{{count}} d'annonces · médiane {{price}}",
+    "listingsDetail_other": "{{count}} annonces · médiane {{price}}"
+  }
+}

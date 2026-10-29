@@ -8,6 +8,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { verifyListing } from '../lib/freshness';
 import { itemDisplayName, listingUrl, sellerAccount } from '../lib/listing';
 import { buildWhisper } from '../lib/whisper';
+import { t } from '@/i18n';
 
 export interface ListingActions {
   /** Copies `/w *account …` (default wording, or `template` in buildWhisper's tokens) and toasts. */
@@ -56,8 +57,8 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
     if (check.status === 'unknown') return listing;
     if (check.status === 'gone') {
       showToast({
-        title: 'Listing no longer available',
-        description: `${displayName} was sold or delisted on projectdiablo2.com.`,
+        title: t('market:actions.goneTitle'),
+        description: t('market:actions.goneDescription', { item: displayName }),
         variant: 'warning',
       });
       return null;
@@ -68,11 +69,11 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
 
   return {
     whisperTemplates: templates
-      .filter((t) => templatePlaceholders(t.text).length === 0)
-      .map((t) => ({
-        ...t,
+      .filter((tpl) => templatePlaceholders(tpl.text).length === 0)
+      .map((tpl) => ({
+        ...tpl,
         // buildWhisper fills (and sanitizes) the listing values
-        text: fillTemplate(t.text, {
+        text: fillTemplate(tpl.text, {
           itemName: '{item}',
           price: '{price}',
           accountName: '{account}',
@@ -82,8 +83,8 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
     copyWhisper: async (template?: string) => {
       if (!account) {
         showToast({
-          title: 'No in-game account',
-          description: 'This listing names no account to whisper. Message the seller on the site instead.',
+          title: t('market:actions.noAccountTitle'),
+          description: t('market:actions.noAccountDescription'),
           variant: 'warning',
         });
         return;
@@ -92,9 +93,16 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
       if (!current) return;
       try {
         await writeText(buildWhisper(current, template));
-        showToast({ title: 'Whisper copied', description: `Paste it into the game chat to message *${account}.` });
+        showToast({
+          title: t('market:actions.whisperCopied'),
+          description: t('market:actions.whisperCopiedDescription', { account }),
+        });
       } catch {
-        showToast({ title: 'Whisper not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
+        showToast({
+          title: t('market:actions.whisperNotCopied'),
+          description: t('market:actions.clipboardFailed'),
+          variant: 'error',
+        });
       }
     },
     ensureFresh,

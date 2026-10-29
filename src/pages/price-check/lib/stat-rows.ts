@@ -15,7 +15,7 @@ import {
   STRIP_STATS,
 } from './stat-mappings';
 import { bhStatRange, statRowRange } from './stat-ranges';
-import { getTypeFromBaseType } from './utils';
+import { getStatKey, getTypeFromBaseType } from './utils';
 
 /**
  * List of base type labels that cannot be corrupted (special cases)
@@ -23,7 +23,8 @@ import { getTypeFromBaseType } from './utils';
 const NON_CORRUPTABLE_TYPE_LABELS = new Set(['Rune', 'Gem', 'Charm', 'Map Orb']);
 
 /**
- * Whitelist of type codes that CAN be corrupted
+ * Whitelist of type codes that CAN be corrupted. Matched against every code of a grouped type
+ * (Jewelry `{"$in": ["amul", "ring", "amus"]}`, belts, claws).
  */
 const CORRUPTABLE_TYPE_CODES = new Set([
   '2hcs',
@@ -69,8 +70,9 @@ const CORRUPTABLE_TYPE_CODES = new Set([
   'taxe',
   'tkni',
   'wand',
-  'rin',
-  'amu',
+  'ring',
+  'amul',
+  'amus',
 ]);
 
 /**
@@ -95,17 +97,13 @@ export function isItemCorruptable(item: Pick<Item, 'type'>): boolean {
     }
   }
 
-  // Get the type code from the base type
-  const typeInfo = getTypeFromBaseType(item.type, false);
+  // Type code(s) of the base; grouped types (`{"$in": [...]}`) list several
+  const typeInfo = getTypeFromBaseType(item.type, true);
   if (!typeInfo) return false; // If we can't determine the type, assume it's NOT corruptable (safer default)
 
-  // Check if the type code IS in the corruptable list
-  const typeCode = typeof typeInfo.type === 'string' ? typeInfo.type : null;
-  if (typeCode && CORRUPTABLE_TYPE_CODES.has(typeCode)) {
-    return true;
-  }
-
-  return false;
+  const { type } = typeInfo;
+  const codes: unknown[] = typeof type === 'string' ? [type] : '$in' in type && Array.isArray(type.$in) ? type.$in : [];
+  return codes.some((code) => typeof code === 'string' && CORRUPTABLE_TYPE_CODES.has(code));
 }
 
 /** Replace `sources` with `row` where the first of them was, so merged rows keep the tooltip's line order. */
@@ -114,6 +112,31 @@ function mergeAt(stats: Stat[], sources: Stat[], row: Stat): Stat[] {
   const rest = stats.filter((s) => !sources.includes(s));
   const index = Number.isFinite(at) ? stats.slice(0, at).filter((s) => !sources.includes(s)).length : rest.length;
   return [...rest.slice(0, index), row, ...rest.slice(index)];
+}
+
+/**
+ * One row per stat line: the clipboard can list a stat twice (e.g. a natural roll and the corruption that added
+ * to it), which the game draws as one summed line, starred when a corruption added to it. Rows are keyed by
+ * stat (getStatKey), so two rows with one key would also break selection and leave stale rows on screen.
+ */
+function mergeDuplicateStats(stats: Stat[]): Stat[] {
+  let out = stats;
+  const seen = new Map<string, Stat[]>();
+  for (const stat of stats) {
+    const key = getStatKey(stat);
+    seen.set(key, [...(seen.get(key) ?? []), stat]);
+  }
+  for (const parts of seen.values()) {
+    if (parts.length < 2) continue;
+    const values = parts.map((s) => s.value).filter((v): v is number => typeof v === 'number');
+    const row: Stat = {
+      ...parts[0],
+      ...(values.length > 0 && { value: values.reduce((a, b) => a + b, 0) }),
+      ...(parts.some((s) => s.corrupted) && { corrupted: true }),
+    };
+    out = mergeAt(out, parts, row);
+  }
+  return out;
 }
 
 /**
@@ -212,6 +235,7 @@ export function buildStatRows(item: Item): Stat[] {
     baseStats.push({ stat_id: StatId.Corrupted, name: 'Corrupted', _injected: true } as Stat);
   }
 
+  combinedStats = mergeDuplicateStats(combinedStats);
   combinedStats = combineEnhancedDamageStats(combinedStats);
   combinedStats = combineQuadStats(combinedStats, [0, 1, 2, 3], StatId.AllAttributes, 'All Attributes');
   combinedStats = combineQuadStats(combinedStats, [39, 41, 43, 45], StatId.AllResistances, 'All Resistances');

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { popIn, scaleIn } from '@/lib/motion';
+import { useTranslation } from '@/i18n';
 
 interface ChatButtonProps {
   /** Tab size (CSS px); everything inside scales with its width. */
@@ -77,7 +78,7 @@ const segment =
   'duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent [&_svg]:pointer-events-none';
 
 interface MenuEntry {
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   onClick?: () => void;
   badge?: { count: number; className: string };
@@ -111,6 +112,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   menuBelow = false,
   peek,
 }) => {
+  const { t } = useTranslation('app');
   const [menuOpen, setMenuOpen] = useState(false);
   const [peekOpen, setPeekOpen] = useState(false);
   const leaveTimer = useRef<number | undefined>(undefined);
@@ -213,23 +215,23 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
   const entries: MenuEntry[] = [
     {
-      label: 'Chat',
+      labelKey: 'chatButton.menu.chat',
       icon: MessageSquare,
       onClick: onChatClick,
       badge: { count: unreadCount, className: 'bg-destructive text-destructive-foreground' },
     },
-    { label: 'Market browser', icon: Store, onClick: onMarketClick },
-    { label: 'Builds', icon: Shield, onClick: onBuildsClick },
-    { label: 'Net worth', icon: TrendingUp, onClick: onNetWorthClick },
-    { label: 'Stash value', icon: Coins, onClick: onStashValueClick },
+    { labelKey: 'chatButton.menu.market', icon: Store, onClick: onMarketClick },
+    { labelKey: 'chatButton.menu.builds', icon: Shield, onClick: onBuildsClick },
+    { labelKey: 'chatButton.menu.netWorth', icon: TrendingUp, onClick: onNetWorthClick },
+    { labelKey: 'chatButton.menu.stashValue', icon: Coins, onClick: onStashValueClick },
     {
-      label: 'Offers',
+      labelKey: 'chatButton.menu.offers',
       icon: ShoppingBag,
       onClick: onOffersClick,
       badge: { count: tradeOffersCount, className: 'bg-warning text-warning-foreground' },
     },
-    { label: 'Manage listings', icon: List, onClick: onManageListingsClick },
-    { label: 'Settings', icon: Settings, onClick: onSettingsClick },
+    { labelKey: 'chatButton.menu.manageListings', icon: List, onClick: onManageListingsClick },
+    { labelKey: 'chatButton.menu.settings', icon: Settings, onClick: onSettingsClick },
   ];
 
   return (
@@ -256,41 +258,45 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         </AnimatePresence>
 
         <div
-          title={onDrag ? 'Drag to move' : undefined}
+          title={onDrag ? t('chatButton.dragToMove') : undefined}
           className="flex h-full w-full touch-none flex-col overflow-hidden rounded-l-xl border border-r-0 border-border bg-surface shadow-panel backdrop-blur-md"
           onPointerDown={onTabPointerDown}
           onClickCapture={onTabClickCapture}
         >
-          <button type="button"
+          <button
+            type="button"
             onClick={onChatClick}
             className={segment}
-            aria-label="Open PD2 Chat"
-            title="Chat">
+            aria-label={t('chatButton.openChat')}
+            title={t('chatButton.chat')}
+          >
             <MessageSquare style={icon} />
             <AnimatePresence>
               {unreadCount > 0 && (
                 <CountBadge
                   key="unread"
                   count={unreadCount}
-                  label={`${unreadCount} unread messages`}
+                  label={t('chatButton.unreadMessages', { count: unreadCount })}
                   className="bg-destructive text-destructive-foreground"
                   style={badge}
                 />
               )}
             </AnimatePresence>
           </button>
-          <button type="button"
+          <button
+            type="button"
             onClick={onOffersClick}
             className={segment}
-            aria-label="Offers"
-            title="Offers">
+            aria-label={t('chatButton.offers')}
+            title={t('chatButton.offers')}
+          >
             <ShoppingBag style={icon} />
             <AnimatePresence>
               {tradeOffersCount > 0 && (
                 <CountBadge
                   key="trade"
                   count={tradeOffersCount}
-                  label={`${tradeOffersCount} trade offers`}
+                  label={t('chatButton.tradeOffers', { count: tradeOffersCount })}
                   className="bg-warning text-warning-foreground"
                   style={badge}
                 />
@@ -303,10 +309,10 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
             className={cn(segment, 'max-h-[30%] text-muted-foreground', menuOpen && 'bg-accent text-accent-foreground')}
-            aria-label="More"
+            aria-label={t('chatButton.more')}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            title="More"
+            title={t('chatButton.more')}
           >
             <ChevronUp
               style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
@@ -333,17 +339,17 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               )}
             >
               {entries.map(
-                ({ label, icon: Icon, onClick, badge: count }) =>
+                ({ labelKey, icon: Icon, onClick, badge: count }) =>
                   onClick && (
                     <button
-                      key={label}
+                      key={labelKey}
                       type="button"
                       role="menuitem"
                       onClick={pick(onClick)}
                       className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent"
                     >
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1">{label}</span>
+                      <span className="flex-1">{t(labelKey)}</span>
                       {count && count.count > 0 && (
                         <span
                           className={cn(
@@ -368,7 +374,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                     className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-destructive outline-none hover:bg-destructive/15 focus-visible:bg-destructive/15"
                   >
                     <X className="size-4 shrink-0" />
-                    <span className="flex-1">Disable overlay</span>
+                    <span className="flex-1">{t('chatButton.disableOverlay')}</span>
                   </button>
                 </>
               )}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { TraderPresence } from '../hooks/useTraderProfile';
 
@@ -10,7 +11,7 @@ export const otherParticipant = (conversation: Conversation, currentUserId: stri
   currentUserId ? conversation.participants.find((p) => p._id !== currentUserId) : undefined;
 
 export const participantName = (participant: Participant | null | undefined) =>
-  participant?.display_name || participant?.username || 'Unknown';
+  participant?.display_name || participant?.username || t('chat:parts.unknownUser');
 
 /** PD2 website pages of a user (opened with openUrl). */
 export const profileUrl = (username: string) => `https://www.projectdiablo2.com/@${encodeURIComponent(username)}`;
@@ -127,10 +128,10 @@ export function ReadReceipt({
   className?: string;
 }) {
   return readerId && message.reader_ids?.includes(readerId) ? (
-    <CheckCheck aria-label="Read"
+    <CheckCheck aria-label={t('chat:parts.read')}
       className={cn('size-3.5 text-info', className)} />
   ) : (
-    <Check aria-label="Sent"
+    <Check aria-label={t('chat:parts.sent')}
       className={cn('size-3.5 text-muted-foreground/80', className)} />
   );
 }

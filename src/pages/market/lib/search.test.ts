@@ -16,6 +16,8 @@ function fakeApi(
       items,
       total,
       totalExact: false,
+      // One more row than items: the service page held a row without an item
+      fetched: items.length + 1,
     }),
   );
   return { api: { searchListings } as unknown as MarketApi, searchListings };
@@ -32,7 +34,7 @@ describe('runSearch', () => {
       items: [{ listing: expect.objectContaining({ _id: 'a' }), pseudo: { pseudo_life: 5 }, score: 3, value: 1.5 }],
       total: 40,
       totalExact: false,
-      fetched: 1,
+      fetched: 2,
       mode: 'server',
     });
   });

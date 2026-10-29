@@ -88,12 +88,8 @@ describe('useStatSelection: sortedStats', () => {
     expect('_injected' in corrupted[0]).toBe(false);
   });
 
-  // BUG: isItemCorruptable compares the *type* value of the base against CORRUPTABLE_TYPE_CODES, but
-  // rings/amulets/belts share a '{"$in": [...]}' type value (useStatSelection.ts:85-89), so the
-  // whitelisted 'rin'/'amu'/'bels'/'belt' codes never match: no Corrupted row and no default
-  // corrupted filter for rings, amulets and belts.
-  it.fails('treats rings, amulets and belts as corruptable', () => {
-    for (const type of ['Ring', 'Amulet', 'Sash']) {
+  it('treats rings, amulets, belts and claws (grouped type codes) as corruptable', () => {
+    for (const type of ['Ring', 'Amulet', 'Sash', 'Blade Talons']) {
       const { result } = setup({ type, stats: [] });
       expect(ids(result.current.sortedStats)).toContain(StatId.Corrupted);
     }
@@ -110,6 +106,32 @@ describe('useStatSelection: sortedStats', () => {
   it('shows skill stats under the skill name', () => {
     const { result } = setup({ type: 'Grand Charm', stats: [{ stat_id: 107, name: '+3 to x', skill: 'Frozen Orb' }] });
     expect(result.current.sortedStats[0].name).toBe('Frozen Orb');
+  });
+
+  it('folds a stat listed twice (natural roll + corruption) into one summed, corrupted row in its place', () => {
+    const { result } = setup({
+      type: 'Ring',
+      stats: [
+        life(30),
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10 },
+        { stat_id: 2, name: 'to Dexterity', value: 5 },
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10, corrupted: true },
+      ],
+    });
+    const rows = result.current.sortedStats.filter((s) => s.stat_id !== StatId.Corrupted);
+    expect(ids(rows)).toEqual([7, 105, 2]);
+    expect(byId(rows, 105)).toMatchObject({ value: 20, corrupted: true });
+  });
+
+  it('keeps one row per skill for skill stats sharing a stat id', () => {
+    const { result } = setup({
+      type: 'Grand Charm',
+      stats: [
+        { stat_id: 107, name: '+1 to x', skill: 'Frozen Orb', value: 1 },
+        { stat_id: 107, name: '+1 to y', skill: 'Blizzard', value: 1 },
+      ],
+    });
+    expect(result.current.sortedStats.map((s) => s.name)).toEqual(['Frozen Orb', 'Blizzard']);
   });
 
   describe('enhanced damage', () => {

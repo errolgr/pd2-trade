@@ -4,12 +4,21 @@
  */
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { t } from '@/i18n';
 import { EMPTY_PREFS, isArchived, prefsFor, type ChatPrefs } from '@/lib/chat-prefs';
-import { isOpenTrade, nameAliases, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
+import {
+  isOpenTrade,
+  nameAliases,
+  unreadWhispers,
+  whisperTarget,
+  type WhisperPerson,
+  type WhisperTrade,
+} from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
-import { messagePreview } from './market-links';
+import { linkMention, messagePreview } from './market-links';
+import { whisperedItemName } from '@/pages/delist/trade-match';
 
 /** 'archived' shows only archived threads; the others leave them out. */
 export type InboxFilter = 'all' | 'selling' | 'buying' | 'archived';
@@ -186,7 +195,13 @@ export function buildInbox({
     }
     for (const offer of thread.offers) {
       items.push({
-        text: `${offer.isIncoming ? 'Offer' : 'Your offer'}: ${offer.price ?? '?'}${offer.itemName ? ` for ${offer.itemName}` : ''}`,
+        text: offer.isIncoming
+          ? offer.itemName
+            ? t('chat:inbox.offerFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.offer', { price: offer.price ?? '?' })
+          : offer.itemName
+            ? t('chat:inbox.yourOfferFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.yourOffer', { price: offer.price ?? '?' }),
         at: offer.timestamp.getTime(),
         own: !offer.isIncoming,
         source: 'website',
@@ -254,13 +269,18 @@ export function visibleThreads(threads: readonly InboxThread[], filter: InboxFil
 export const threadWhisperAccount = (thread: Pick<InboxThread, 'people' | 'accounts'>) =>
   thread.people[0] ? whisperTarget(thread.people[0]) : thread.accounts[0];
 
-/** One message of a thread's timeline, from either source, or one of your settled offers. */
+/** One message of a thread's timeline, from either source, or one of your settled offers or trade whispers. */
 export interface TimelineEntry {
   /** Stable list key (a website send keeps its client id across the server ack). */
   key: string;
   source: MessageSource;
   own: boolean;
   content: string;
+  /**
+   * What the bubble shows, when not `content`: an in-game trade whisper about one of your listings, its item
+   * linked to that listing (see linkMention), so it reads as the listing's pill like a website message's link.
+   */
+  displayContent?: string;
   /** ISO timestamp. */
   createdAt: string;
   /** Website messages: send status, read receipts, retry. */
@@ -271,13 +291,16 @@ export interface TimelineEntry {
   unread: boolean;
   /** An offer you made that is no longer open: an event row at the time you made it, not a message. */
   offer?: TradeOffer;
+  /** A trade whisper you settled (sold, rejected, delisted): an event row at the time you settled it. */
+  trade?: WhisperTrade & Required<Pick<WhisperTrade, 'outcome' | 'settledAt'>>;
 }
 
 /**
- * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers of
- * `people` and the `offers` (your settled ones) by time. While older website pages are still unloaded,
- * whispers and offers before the oldest loaded website message are left out, so paging back never slips
- * website messages in above entries already shown.
+ * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers and
+ * settled trades of `people` and the `offers` (your settled ones) by time. While older website pages are still
+ * unloaded, whispers and offers before the oldest loaded website message are left out, so paging back never
+ * slips website messages in above entries already shown. `tradeListings` (trade id → listing id, see
+ * useTradeListings) links the whisper of each trade to you to the listing it is about.
  */
 export function buildTimeline(
   website: readonly ChatMessage[],
@@ -285,20 +308,45 @@ export function buildTimeline(
   currentUserId: string | undefined,
   hasOlder: boolean,
   offers: readonly TradeOffer[] = [],
+  tradeListings: ReadonlyMap<string, string> = new Map(),
 ): TimelineEntry[] {
   const oldestWebsite = website.length > 0 && hasOlder ? Date.parse(website[0].created_at) : -Infinity;
   const others = [
     ...people.flatMap((person) =>
-      person.messages.map(
-        (m): TimelineEntry => ({
+      person.messages.map((m): TimelineEntry => {
+        // The trade this whisper started (recorded with it: same text and time)
+        const trade = m.isIncoming
+          ? person.trades.find((t) => t.isIncoming && t.timestamp === m.timestamp && t.message === m.message)
+          : undefined;
+        const listingId = trade && tradeListings.get(trade.id);
+        const name = trade && whisperedItemName(trade);
+        return {
           key: `w:${person.key}:${m.id}`,
           source: 'whisper',
           own: !m.isIncoming,
           content: m.message,
+          displayContent: listingId && name ? linkMention(m.message, listingId, name) : undefined,
           createdAt: new Date(m.timestamp).toISOString(),
           copied: m.copied,
           unread: m.isIncoming && m.timestamp > person.readAt,
-        }),
+        };
+      }),
+    ),
+    ...people.flatMap((person) =>
+      person.trades.flatMap((trade): TimelineEntry[] =>
+        trade.outcome && trade.settledAt !== undefined
+          ? [
+              {
+                key: `trade:${person.key}:${trade.id}`,
+                source: 'whisper',
+                own: true,
+                content: '',
+                createdAt: new Date(trade.settledAt).toISOString(),
+                unread: false,
+                trade: { ...trade, outcome: trade.outcome, settledAt: trade.settledAt },
+              },
+            ]
+          : [],
       ),
     ),
     ...offers.map(

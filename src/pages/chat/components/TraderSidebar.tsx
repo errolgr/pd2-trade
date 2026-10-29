@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { t as tGlobal, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
@@ -32,7 +33,7 @@ import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useLis
 import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderProfile';
 import type { InboxThread } from '../lib/inbox';
 import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
-import { OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
+import { dealStatusLabel, OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
 import { characterUrl, ChatAvatar, marketUrl, profileUrl, Tip } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
@@ -44,9 +45,16 @@ const priceText = (listing: MarketListingEntry) => (listing.hr_price > 0 ? `${li
 async function copyAccount(account: string) {
   try {
     await writeText(`*${account}`);
-    showToast({ title: `Copied *${account}`, description: 'Type /w and paste it in the game chat to whisper them.' });
+    showToast({
+      title: tGlobal('chat:trader.copiedAccount', { account }),
+      description: tGlobal('chat:trader.copiedAccountDescription'),
+    });
   } catch {
-    showToast({ title: 'Not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
+    showToast({
+      title: tGlobal('chat:trader.notCopied'),
+      description: tGlobal('chat:bubble.copyFailedDescription'),
+      variant: 'error',
+    });
   }
 }
 
@@ -96,6 +104,7 @@ function MarketTile({
   market: ListingMarketPrice | undefined;
   onInsert: (listing: MarketListingEntry) => void;
 }) {
+  const { t } = useTranslation('chat');
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open}
@@ -103,7 +112,7 @@ function MarketTile({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Link ${listing.item.name} in your message`}
+          aria-label={t('trader.linkInMessage', { item: listing.item.name })}
           onClick={(e) => {
             // A click links it; the popover is for hovering (keep Radix from toggling it open)
             e.preventDefault();
@@ -135,7 +144,7 @@ function MarketTile({
         <ListingDetails listing={listing}
           listed
           market={market}
-          hint="Click to link it in your message" />
+          hint={t('trader.clickToLink')} />
       </PopoverContent>
     </Popover>
   );
@@ -173,6 +182,7 @@ export function TraderSidebar({
   closeLabel: string;
   className?: string;
 }) {
+  const { t } = useTranslation('chat');
   const { participant } = thread;
   const { openPanel } = useOverlay();
   const username = participant?.username;
@@ -221,7 +231,7 @@ export function TraderSidebar({
     market = (
       <div aria-busy
         className="grid grid-cols-4 gap-1.5">
-        <span className="sr-only">Loading their listings...</span>
+        <span className="sr-only">{t('trader.loadingListings')}</span>
         {Array.from({ length: MARKET_GRID_LIMIT }, (_, i) => (
           <Skeleton key={i}
             className="h-[66px] rounded-lg" />
@@ -231,7 +241,7 @@ export function TraderSidebar({
   } else if (grid.length === 0) {
     market = (
       <p className="rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-xs text-muted-foreground">
-        {profile.status === 'error' ? "Couldn't load their listings." : 'No active listings.'}
+        {profile.status === 'error' ? t('trader.listingsFailed') : t('trader.noListings')}
       </p>
     );
   } else {
@@ -247,7 +257,7 @@ export function TraderSidebar({
             />
           ))}
         </div>
-        <p className="px-0.5 text-[11px] text-muted-foreground">Click an item to link it in your message.</p>
+        <p className="px-0.5 text-[11px] text-muted-foreground">{t('trader.clickItemHint')}</p>
         {thread.userId && (
           <button
             type="button"
@@ -260,7 +270,7 @@ export function TraderSidebar({
             className="inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/60 text-[11px] font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <Store className="size-3.5" />
-            Browse all listings
+            {t('trader.browseAll')}
           </button>
         )}
       </>
@@ -269,7 +279,7 @@ export function TraderSidebar({
 
   return (
     <aside
-      aria-label="Trader"
+      aria-label={t('trader.title')}
       className={cn(
         'flex min-h-0 w-[300px] shrink-0 flex-col overflow-hidden border-l border-border bg-card/40',
         className,
@@ -277,7 +287,7 @@ export function TraderSidebar({
     >
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border/70 px-3">
         <UserRound className="size-4 text-muted-foreground" />
-        <span className="flex-1 text-sm font-semibold tracking-tight">Trader</span>
+        <span className="flex-1 text-sm font-semibold tracking-tight">{t('trader.title')}</span>
         <Tip label={closeLabel}>
           <button
             type="button"
@@ -319,9 +329,7 @@ export function TraderSidebar({
                 ) : (
                   // A website user without a known username (a market seller messaged from the market) is still linked
                   !thread.userId && (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      Not linked to a website account
-                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">{t('trader.notLinked')}</span>
                   )
                 )}
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
@@ -330,7 +338,7 @@ export function TraderSidebar({
                     <span className="flex items-center gap-1">
                       <CalendarDays aria-hidden
                         className="size-3" />
-                      Joined {joined.format('MMM YYYY')}
+                      {t('trader.joined', { date: joined.format('MMM YYYY') })}
                     </span>
                   )}
                 </div>
@@ -340,10 +348,10 @@ export function TraderSidebar({
               <div className="mt-2 flex flex-wrap gap-1">
                 {accounts.map((account) => (
                   <Tip key={account}
-                    label={`In-game account. Click to copy *${account} for /w in the game chat.`}>
+                    label={t('trader.accountTip', { account })}>
                     <button
                       type="button"
-                      aria-label={`Copy *${account}`}
+                      aria-label={t('trader.copyAccount', { account })}
                       onClick={() => void copyAccount(account)}
                       className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-[11px] font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
                     >
@@ -360,20 +368,20 @@ export function TraderSidebar({
             <div className="-mx-3 -mb-3 mt-3 flex items-center justify-center gap-1 border-t border-border/60 bg-background/30 p-1">
               {username && (
                 <>
-                  <Tip label="View their profile on projectdiablo2.com">
+                  <Tip label={t('trader.viewProfileTip')}>
                     <button
                       type="button"
-                      aria-label="View profile"
+                      aria-label={t('trader.viewProfile')}
                       className={actionButtonClass}
                       onClick={() => openUrl(profileUrl(username))}
                     >
                       <UserRound className="size-3.5" />
                     </button>
                   </Tip>
-                  <Tip label="Their market listings on projectdiablo2.com">
+                  <Tip label={t('trader.theirMarketTip')}>
                     <button
                       type="button"
-                      aria-label="Their market"
+                      aria-label={t('trader.theirMarket')}
                       className={actionButtonClass}
                       onClick={() => openUrl(marketUrl(username))}
                     >
@@ -383,10 +391,10 @@ export function TraderSidebar({
                 </>
               )}
               {characterName && (
-                <Tip label="View character">
+                <Tip label={t('trader.viewCharacter')}>
                   <button
                     type="button"
-                    aria-label="View character"
+                    aria-label={t('trader.viewCharacter')}
                     className={actionButtonClass}
                     onClick={() => openUrl(characterUrl(characterName))}
                   >
@@ -395,10 +403,10 @@ export function TraderSidebar({
                 </Tip>
               )}
               {characterName && (
-                <Tip label="Their ladder build in the Builds panel">
+                <Tip label={t('trader.viewBuildTip')}>
                   <button
                     type="button"
-                    aria-label="View build"
+                    aria-label={t('trader.viewBuild')}
                     className={actionButtonClass}
                     onClick={() => openPanel('builds', { character: { name: characterName } })}
                   >
@@ -407,10 +415,10 @@ export function TraderSidebar({
                 </Tip>
               )}
               {whisperAccount && (
-                <Tip label={`Copies *${whisperAccount}: type /w and paste it in the game chat`}>
+                <Tip label={t('trader.copyWhisperTip', { account: whisperAccount })}>
                   <button
                     type="button"
-                    aria-label="Copy whisper target"
+                    aria-label={t('trader.copyWhisperTarget')}
                     className={actionButtonClass}
                     onClick={() => void copyAccount(whisperAccount)}
                   >
@@ -423,23 +431,23 @@ export function TraderSidebar({
 
           {/* Trade with you */}
           <Section icon={Handshake}
-            title="Trade with you">
+            title={t('trader.tradeWithYou')}>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                { label: 'Open offers', value: openOffers },
-                { label: 'Linked items', value: linked.length },
-              ].map(({ label, value }) => (
+                { labelKey: 'trader.openOffers', value: openOffers },
+                { labelKey: 'trader.linkedItems', value: linked.length },
+              ].map(({ labelKey, value }) => (
                 <div
-                  key={label}
+                  key={labelKey}
                   className="rounded-lg border border-border/60 bg-linear-to-b from-background/60 to-background/20 px-2.5 py-1.5"
                 >
                   <div className="text-lg font-semibold leading-tight tabular-nums text-foreground">{value}</div>
-                  <div className="text-[11px] text-muted-foreground">{label}</div>
+                  <div className="text-[11px] text-muted-foreground">{t(labelKey)}</div>
                 </div>
               ))}
             </div>
             {offers.length > 0 && (
-              <ul aria-label="Offers between you"
+              <ul aria-label={t('trader.offersBetween')}
                 className="space-y-1">
                 {offers.map((offer) => {
                   const status = offerStatus(offer);
@@ -459,10 +467,12 @@ export function TraderSidebar({
                     >
                       <li className="flex min-w-0 items-center gap-2 rounded-lg bg-background/40 px-2 py-1.5 text-xs">
                         <Direction
-                          aria-label={offer.isIncoming ? 'Their offer to you' : 'Your offer'}
+                          aria-label={offer.isIncoming ? t('trader.theirOffer') : t('deals.yourOffer')}
                           className="size-3.5 shrink-0 text-muted-foreground"
                         />
-                        <span className="min-w-0 flex-1 truncate font-medium">{offer.itemName ?? 'Unknown item'}</span>
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {offer.itemName ?? t('deals.unknownItem')}
+                        </span>
                         {offer.price && (
                           <span className="max-w-20 shrink-0 truncate font-semibold tabular-nums">{offer.price}</span>
                         )}
@@ -472,7 +482,7 @@ export function TraderSidebar({
                             STATUS_CLASS[status],
                           )}
                         >
-                          {status}
+                          {dealStatusLabel(status)}
                         </span>
                       </li>
                     </OfferHoverCard>
@@ -481,7 +491,7 @@ export function TraderSidebar({
               </ul>
             )}
             {linked.length > 0 && (
-              <ul aria-label="Linked in this chat"
+              <ul aria-label={t('trader.linkedInChat')}
                 className="space-y-1">
                 {linked.map(({ listing, listed }) => {
                   const market = prices.get(listing._id);
@@ -504,7 +514,9 @@ export function TraderSidebar({
                               {priceText(listing) || '—'}
                             </span>
                             {market && (
-                              <span className="shrink-0 tabular-nums">{`· mkt ${Number(market.hr.toFixed(2))} HR`}</span>
+                              <span className="shrink-0 tabular-nums">
+                                {t('trader.marketShort', { hr: Number(market.hr.toFixed(2)) })}
+                              </span>
                             )}
                           </span>
                           {delta && <span className={cn('block text-[10px]', delta.className)}>{delta.text}</span>}
@@ -515,7 +527,7 @@ export function TraderSidebar({
                             listed ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground',
                           )}
                         >
-                          {listed ? 'Listed' : 'Unlisted'}
+                          {listed ? t('trader.listed') : t('listing.unlisted')}
                         </span>
                       </button>
                     </li>
@@ -526,7 +538,7 @@ export function TraderSidebar({
             {offers.length === 0 && linked.length === 0 && (
               <p className="flex items-center gap-1.5 px-0.5 text-xs text-muted-foreground">
                 <Link2 className="size-3.5" />
-                No offers or linked items yet.
+                {t('trader.nothingYet')}
               </p>
             )}
           </Section>
@@ -535,7 +547,7 @@ export function TraderSidebar({
           {thread.userId && (
             <Section
               icon={PackageSearch}
-              title="Their market"
+              title={t('trader.theirMarket')}
               aside={
                 profile.status === 'ready' &&
                 profile.total > grid.length &&
@@ -545,7 +557,7 @@ export function TraderSidebar({
                     onClick={() => openUrl(marketUrl(username))}
                     className="inline-flex items-center gap-0.5 rounded-sm normal-case tracking-normal text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
-                    {profile.total - grid.length} more
+                    {t('deals.more', { count: profile.total - grid.length })}
                     <ExternalLink aria-hidden
                       className="size-3" />
                   </button>
@@ -559,18 +571,18 @@ export function TraderSidebar({
           {/* In-game */}
           {thread.people.length > 0 && (
             <Section icon={Gamepad2}
-              title="In-game">
+              title={t('trader.inGame')}>
               <div className="space-y-1.5 rounded-lg border border-border/60 bg-background/30 px-2.5 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <MessageCircle className="size-3.5" />
-                    Whispers
+                    {t('trader.whispers')}
                   </span>
                   <span className="font-semibold tabular-nums">{whisperCount}</span>
                 </div>
                 {lastWhisper > 0 && (
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">Last whisper</span>
+                    <span className="text-muted-foreground">{t('trader.lastWhisper')}</span>
                     <span title={moment(lastWhisper).format('ddd, MMM D YYYY · h:mm A')}>
                       {shortAgo(lastWhisper, now)}
                     </span>

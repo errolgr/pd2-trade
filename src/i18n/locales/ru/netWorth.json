@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Состояние",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Состояние — нажмите для подробностей, перетащите для перемещения",
+    "snapshotFailed": "Снимок не удался",
+    "lastSnapshot": "Последний снимок {{time}}",
+    "noSnapshot": "Снимков пока нет",
+    "session": "сессия"
+  },
+  "panel": {
+    "title": "Состояние",
+    "hide": "Скрыть",
+    "openFullView": "Открыть полностью",
+    "signInPrompt": "Войдите с аккаунтом PD2, чтобы отслеживать своё состояние.",
+    "signIn": "Войти",
+    "uncertain": "+{{value}} HR под вопросом",
+    "sessionDelta": "{{change}} HR за сессию",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} мин",
+    "thisSession": "Эта сессия",
+    "last24Hours": "Последние 24 часа",
+    "notEnoughSnapshots": "Пока недостаточно снимков",
+    "recentSnapshots": "Последние снимки",
+    "noChanges": "Изменений пока нет.",
+    "historyOff": "История выключена. Включите «Сохранять историю состояния» в Настройки → Состояние, чтобы видеть сессии и изменения.",
+    "snapshotNow": "Снимок сейчас",
+    "startSession": "Начать сессию",
+    "stopSession": "Завершить сессию"
+  },
+  "profile": {
+    "publicProfile": "Публичный профиль",
+    "private": "Скрытый",
+    "publicTooltip": "Имя аккаунта, места в рейтинге, состояние, график, значки и заметные находки видны всем на pd2trader.com.",
+    "privateTooltip": "Ваше состояние видите только вы. Включите, чтобы попасть в рейтинги pd2trader.com с публичным профилем.",
+    "saveFailed": "Не удалось сохранить",
+    "couldNotSave": "Не удалось сохранить",
+    "viewProfile": "Открыть профиль"
+  }
+}

@@ -1,11 +1,19 @@
 /**
  * Formatting + text helpers for appraised rares (price-check rare card, Net Worth "Rares" tab).
  * Same wording as the pd2trader.com Net Worth view (client/src/components/wealth/rares/raresFormat.js).
+ * UI words are translated (namespace `rares`); stat labels, bases and recipe names stay English (game data).
  */
 import type { AppraisedStat, CraftRecipe, RareAppraisal, RareSlot, Stars, Verdict } from '@/lib/rare-appraisal-api';
+import { t } from '@/i18n';
 
-/** Season the model's asking prices come from (shown on the "est." hint). */
-export const MODEL_SEASON = 'S13';
+/**
+ * Season the model's asking prices come from (the "est." hints), read off the appraisal's model version
+ * (`s14-q50-2026-10-28` → "S14"); the version as is when it names no season.
+ */
+export function modelSeason(rare: Pick<RareAppraisal, 'modelVersion'>): string {
+  const season = /^s(\d+)\b/i.exec(rare.modelVersion)?.[1];
+  return season ? `S${season}` : rare.modelVersion;
+}
 
 export const RECIPE_LABELS: Record<CraftRecipe, string> = {
   blood: 'Blood craft',
@@ -23,9 +31,6 @@ export const isCrafted = (rare: Pick<RareAppraisal, 'quality'>): boolean => rare
 export const appraisalNameClass = (rare: Pick<RareAppraisal, 'quality'>): string =>
   isCrafted(rare) ? 'text-q-crafted' : 'text-q-rare';
 
-export const LOW_CONFIDENCE_TITLE =
-  "Low confidence: this slot's crafted model is based on limited crafted listing data, so treat the verdict and band as a rough guide.";
-
 /**
  * Text for a null appraisal's `reason`. Crafted gate-off reasons ("crafted slot unreliable: <backtest detail>")
  * become a plain sentence (detail stays in the hover title); every other reason is shown verbatim, as before.
@@ -33,13 +38,14 @@ export const LOW_CONFIDENCE_TITLE =
 export function appraisalNote(reason: string): { text: string; title?: string } {
   if (reason.startsWith('crafted slot unreliable')) {
     return {
-      text: "crafted items in this slot can't be appraised reliably yet (too little crafted data)",
+      text: t('rares:notes.craftedUnreliable'),
       title: reason,
     };
   }
   return { text: reason };
 }
 
+/** English slot names (compared with base names); display text goes through `slotLabel` / `slotPlural`. */
 export const SLOT_LABELS: Record<RareSlot, string> = {
   ring: 'Ring',
   amul: 'Amulet',
@@ -55,22 +61,94 @@ export const SLOT_LABELS: Record<RareSlot, string> = {
   weapon: 'Weapon',
 };
 
-export const SLOT_PLURALS: Record<RareSlot, string> = {
-  ring: 'Rings',
-  amul: 'Amulets',
-  circ: 'Circlets',
-  jewl: 'Jewels',
-  glov: 'Gloves',
-  boot: 'Boots',
-  belt: 'Belts',
-  tors: 'Body armors',
-  helm: 'Helms',
-  shield: 'Shields',
-  quiver: 'Quivers',
-  weapon: 'Weapons',
+/** Translation keys per slot: `labelKey` singular ("Ring"), `nameKey` plural ("Rings"), `textKey` plural inside a sentence ("rings"). */
+const SLOT_KEYS: Record<RareSlot, { labelKey: string; nameKey: string; textKey: string }> = {
+  ring: {
+    labelKey: 'rares:slots.ring.label',
+    nameKey: 'rares:slots.ring.plural',
+    textKey: 'rares:slots.ring.inSentence',
+  },
+  amul: {
+    labelKey: 'rares:slots.amul.label',
+    nameKey: 'rares:slots.amul.plural',
+    textKey: 'rares:slots.amul.inSentence',
+  },
+  circ: {
+    labelKey: 'rares:slots.circ.label',
+    nameKey: 'rares:slots.circ.plural',
+    textKey: 'rares:slots.circ.inSentence',
+  },
+  jewl: {
+    labelKey: 'rares:slots.jewl.label',
+    nameKey: 'rares:slots.jewl.plural',
+    textKey: 'rares:slots.jewl.inSentence',
+  },
+  glov: {
+    labelKey: 'rares:slots.glov.label',
+    nameKey: 'rares:slots.glov.plural',
+    textKey: 'rares:slots.glov.inSentence',
+  },
+  boot: {
+    labelKey: 'rares:slots.boot.label',
+    nameKey: 'rares:slots.boot.plural',
+    textKey: 'rares:slots.boot.inSentence',
+  },
+  belt: {
+    labelKey: 'rares:slots.belt.label',
+    nameKey: 'rares:slots.belt.plural',
+    textKey: 'rares:slots.belt.inSentence',
+  },
+  tors: {
+    labelKey: 'rares:slots.tors.label',
+    nameKey: 'rares:slots.tors.plural',
+    textKey: 'rares:slots.tors.inSentence',
+  },
+  helm: {
+    labelKey: 'rares:slots.helm.label',
+    nameKey: 'rares:slots.helm.plural',
+    textKey: 'rares:slots.helm.inSentence',
+  },
+  shield: {
+    labelKey: 'rares:slots.shield.label',
+    nameKey: 'rares:slots.shield.plural',
+    textKey: 'rares:slots.shield.inSentence',
+  },
+  quiver: {
+    labelKey: 'rares:slots.quiver.label',
+    nameKey: 'rares:slots.quiver.plural',
+    textKey: 'rares:slots.quiver.inSentence',
+  },
+  weapon: {
+    labelKey: 'rares:slots.weapon.label',
+    nameKey: 'rares:slots.weapon.plural',
+    textKey: 'rares:slots.weapon.inSentence',
+  },
 };
 
-export const VERDICT_LABELS: Record<Verdict, string> = { keep: 'Keep', check: 'Check', vendor: 'Vendor' };
+/** Translated slot name, e.g. "Ring" (the raw slot id for unknown slots). */
+export function slotLabel(slot: RareSlot): string {
+  const keys = SLOT_KEYS[slot];
+  return keys ? t(keys.labelKey) : slot;
+}
+
+/** Translated plural slot name: "Rings" as a heading, "rings" inside a sentence; "Items" / "items" for unknown slots. */
+export function slotPlural(slot: RareSlot, inSentence = false): string {
+  const keys = SLOT_KEYS[slot];
+  if (!keys) return inSentence ? t('rares:slots.unknown.inSentence') : t('rares:slots.unknown.plural');
+  return t(inSentence ? keys.textKey : keys.nameKey);
+}
+
+/** Translated verdict ("Keep" / "Check" / "Vendor"). */
+export function verdictLabel(verdict: Verdict): string {
+  switch (verdict) {
+    case 'keep':
+      return t('rares:verdicts.keep');
+    case 'check':
+      return t('rares:verdicts.check');
+    default:
+      return t('rares:verdicts.vendor');
+  }
+}
 
 /** Theme tokens (CSS/SVG), so every theme gets matching verdict colours. */
 export const VERDICT_COLORS: Record<Verdict, string> = {
@@ -93,23 +171,31 @@ export const starsText = (n: Stars | null): string => '★'.repeat(n ?? 0);
 /** "top 8%" for rank 0.92, "bottom 12%" for rank 0.12 (a low rank never reads as "top 88%"). Never 0%. */
 export function rankText(rank: number): string {
   return rank >= 0.5
-    ? `top ${Math.max(1, Math.round((1 - rank) * 100))}%`
-    : `bottom ${Math.max(1, Math.round(rank * 100))}%`;
+    ? t('rares:rank.top', { percent: Math.max(1, Math.round((1 - rank) * 100)) })
+    : t('rares:rank.bottom', { percent: Math.max(1, Math.round(rank * 100)) });
 }
 
 /** Ordinal percentile, e.g. 0.72 → "72nd". */
 export function ordinalPercentile(rank: number): string {
   const n = Math.round(rank * 100);
   const mod100 = n % 100;
-  const suffixes: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
-  const suffix = mod100 >= 11 && mod100 <= 13 ? 'th' : suffixes[n % 10] || 'th';
-  return `${n}${suffix}`;
+  if (mod100 >= 11 && mod100 <= 13) return t('rares:ordinal.th', { n });
+  switch (n % 10) {
+    case 1:
+      return t('rares:ordinal.st', { n });
+    case 2:
+      return t('rares:ordinal.nd', { n });
+    case 3:
+      return t('rares:ordinal.rd', { n });
+    default:
+      return t('rares:ordinal.th', { n });
+  }
 }
 
 /** Hover text for a starred stat: the multiplier stays out of the visible row. */
 export function starTitle(stat: AppraisedStat): string {
   const m = stat.multiplier !== null ? `×${stat.multiplier.toFixed(1)}` : stat.stars ? STAR_RANGES[stat.stars] : '';
-  return `Key stat: ${m} late-season price for this tier`;
+  return t('rares:keyStatTitle', { multiplier: m });
 }
 
 /** HR with precision that suits the magnitude (0.04, 0.8, 3.5, 12). */
@@ -135,18 +221,23 @@ export function marketBandText(rare: RareAppraisal): string | null {
 export function marketSource(rare: RareAppraisal): string | null {
   const m = rare.market;
   if (!m) return null;
-  const where = m.source === 'last-season' ? 'last season' : m.mode === 'hardcore' ? 'hardcore listings' : MODEL_SEASON;
-  return `${(SLOT_PLURALS[rare.slot] ?? 'Items').toLowerCase()} at this rank · ${where}`;
+  const where =
+    m.source === 'last-season'
+      ? t('rares:marketSource.lastSeason')
+      : m.mode === 'hardcore'
+        ? t('rares:marketSource.hardcoreListings')
+        : modelSeason(rare);
+  return t('rares:marketSource.atThisRank', { slots: slotPlural(rare.slot, true), where });
 }
 
 /** Rank blocks (Blocks rank display): bottom 25% … top 5%, each [from, to) on the 0..1 percentile. */
-export const RANK_BLOCKS: { label: string; from: number; to: number }[] = [
-  { label: 'bottom 25%', from: 0, to: 0.25 },
-  { label: 'bottom 50%', from: 0.25, to: 0.5 },
-  { label: 'top 50%', from: 0.5, to: 0.75 },
-  { label: 'top 25%', from: 0.75, to: 0.85 },
-  { label: 'top 15%', from: 0.85, to: 0.95 },
-  { label: 'top 5%', from: 0.95, to: 1 },
+export const RANK_BLOCKS: { label: string; labelKey: string; from: number; to: number }[] = [
+  { label: 'bottom 25%', labelKey: 'rares:rankBlocks.bottom25', from: 0, to: 0.25 },
+  { label: 'bottom 50%', labelKey: 'rares:rankBlocks.bottom50', from: 0.25, to: 0.5 },
+  { label: 'top 50%', labelKey: 'rares:rankBlocks.top50', from: 0.5, to: 0.75 },
+  { label: 'top 25%', labelKey: 'rares:rankBlocks.top25', from: 0.75, to: 0.85 },
+  { label: 'top 15%', labelKey: 'rares:rankBlocks.top15', from: 0.85, to: 0.95 },
+  { label: 'top 5%', labelKey: 'rares:rankBlocks.top5', from: 0.95, to: 1 },
 ];
 
 /**
@@ -177,20 +268,30 @@ const SHORT_STAT: Record<string, string> = {
  * whose full sentence is `note` (tooltip); both null when the stat needs no note.
  */
 export function statNotes(stat: AppraisedStat, slot: RareSlot): { tag: string | null; note: string | null } {
-  const slots = (SLOT_PLURALS[slot] ?? 'items').toLowerCase();
+  const slots = slotPlural(slot, true);
   const mult = (m: number) => `×${m.toFixed(1)}`;
   let tag: string | null = null;
   let note: string | null = null;
   if (stat.stars && stat.corruptionOnly) {
     const short = stat.key ? SHORT_STAT[stat.key.split('__')[0]] : undefined;
     tag = 'C';
-    note = `${short && stat.value !== null ? `${stat.value} ${short}` : stat.label} on ${slots} only via corruption`;
+    note = t('rares:statNotes.corruptionOnly', {
+      stat: short && stat.value !== null ? `${stat.value} ${short}` : stat.label,
+      slots,
+    });
   } else if (!stat.stars && stat.keyFrom !== null) {
     tag = `↑${stat.keyFrom}`;
-    note =
-      (stat.keyFromMultiplier
-        ? `near miss: ${stat.keyFrom}+ is ${mult(stat.keyFromMultiplier)} on ${slots}`
-        : `valuable from ${stat.keyFrom} on ${slots}`) + (stat.corruptionOnly ? ' (only via corruption)' : '');
+    if (stat.keyFromMultiplier) {
+      const values = { from: stat.keyFrom, multiplier: mult(stat.keyFromMultiplier), slots };
+      note = stat.corruptionOnly
+        ? t('rares:statNotes.nearMissCorruption', values)
+        : t('rares:statNotes.nearMiss', values);
+    } else {
+      const values = { from: stat.keyFrom, slots };
+      note = stat.corruptionOnly
+        ? t('rares:statNotes.valuableFromCorruption', values)
+        : t('rares:statNotes.valuableFrom', values);
+    }
   }
   return { tag, note };
 }
@@ -212,12 +313,12 @@ export function rankedStats(rare: RareAppraisal): AppraisedStat[] {
 
 /** Which listings a hardcore rank was taken against (server `rankReference`). */
 function rankNote(rare: RareAppraisal): string {
-  if (rare.rankReference === 'hardcore') return 'ranked against hardcore listings';
+  if (rare.rankReference === 'hardcore') return t('rares:hardcore.rankedHardcore');
   if (rare.rankReference === 'blended') {
-    const pct = Math.round(100 * (rare.rankReferenceWeight ?? 0));
-    return `ranked against hardcore listings blended with softcore (${pct}% hardcore)`;
+    const percent = Math.round(100 * (rare.rankReferenceWeight ?? 0));
+    return t('rares:hardcore.rankedBlended', { percent });
   }
-  return 'ranked against softcore listings';
+  return t('rares:hardcore.rankedSoftcore');
 }
 
 /**
@@ -227,8 +328,12 @@ function rankNote(rare: RareAppraisal): string {
  */
 export function hardcoreNote(rare: RareAppraisal, hardcore: boolean): string | null {
   if (!hardcore) return null;
-  const parts = ['Hardcore: price model and stars from softcore data', rankNote(rare)];
-  if (rare.market) parts.push(`prices from ${rare.market.mode === 'hardcore' ? 'hardcore' : 'softcore'} listings`);
+  const parts = [t('rares:hardcore.model'), rankNote(rare)];
+  if (rare.market) {
+    parts.push(
+      rare.market.mode === 'hardcore' ? t('rares:hardcore.pricesHardcore') : t('rares:hardcore.pricesSoftcore'),
+    );
+  }
   return parts.join('; ');
 }
 
@@ -248,24 +353,24 @@ export const isLowValue = (r: RareAppraisal): boolean => r.verdict === 'check' &
 
 /** "War Belt · Belt · Shared 1" (row line; position is in the detail); the slot is skipped when it equals the base name (Ring, Jewel). */
 export function locationText(rare: RareAppraisal): string {
-  const slot = SLOT_LABELS[rare.slot] ?? rare.slot;
-  return [rare.baseName, slot === rare.baseName ? null : slot, rare.tab].filter(Boolean).join(' · ');
+  const sameAsBase = (SLOT_LABELS[rare.slot] ?? rare.slot) === rare.baseName;
+  return [rare.baseName, sameAsBase ? null : slotLabel(rare.slot), rare.tab].filter(Boolean).join(' · ');
 }
 
 /** "Shared 1 · col 5, row 1" (raw 0-based PD2 grid coordinates shown 1-based); null without a tab or position. */
 export function stashPositionText(rare: RareAppraisal): string | null {
-  const position = rare.position ? `col ${rare.position.column + 1}, row ${rare.position.row + 1}` : null;
+  const position = rare.position
+    ? t('rares:stashPosition', { column: rare.position.column + 1, row: rare.position.row + 1 })
+    : null;
   return [rare.tab, position].filter(Boolean).join(' · ') || null;
 }
 
 /** Stash order: tab, then row, then column; items without a position last within their tab. */
 export function compareStash(a: RareAppraisal, b: RareAppraisal): number {
-  const t = (a.tab ?? '').localeCompare(b.tab ?? '', undefined, { numeric: true });
-  if (t) return t;
+  const byTab = (a.tab ?? '').localeCompare(b.tab ?? '', undefined, { numeric: true });
+  if (byTab) return byTab;
   const pa = a.position;
   const pb = b.position;
   if (!pa || !pb) return pa ? -1 : pb ? 1 : 0;
   return pa.row - pb.row || pa.column - pb.column;
 }
-
-export const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;

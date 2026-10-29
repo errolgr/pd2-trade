@@ -6,7 +6,8 @@ import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
 import { HardcoreNote, ItemStatsSection, RankDisplay, RareHistorySection } from './RareParts';
-import { bandRange, hardcoreNote, marketSource, rankText, VERDICT_COLORS, VERDICT_LABELS } from './rares-format';
+import { bandRange, hardcoreNote, marketSource, rankText, VERDICT_COLORS, verdictLabel } from './rares-format';
+import { useTranslation } from '@/i18n';
 
 /**
  * Body of a rare's appraisal, shared by the price-check popover and the Net Worth "Rares" rows: verdict and
@@ -27,6 +28,7 @@ export function RareAppraisalDetail({
   /** Net Worth window: "Shared 1 · col 5, row 1", shown as a "Stash" row. */
   stashPosition?: string | null;
 }) {
+  const { t } = useTranslation('rares');
   const { settings, updateSettings } = useOptions();
   const market = appraisal.market;
   return (
@@ -35,13 +37,13 @@ export function RareAppraisalDetail({
         <PopoverTile
           label={
             <span className="flex items-center gap-1">
-              Verdict
+              {t('detail.verdict')}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     tabIndex={-1}
-                    aria-label="How verdicts work"
+                    aria-label={t('detail.howVerdictsWork')}
                     className="inline-flex cursor-pointer rounded-full text-info/80 outline-none transition-colors hover:text-info focus-visible:text-info"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -51,17 +53,17 @@ export function RareAppraisalDetail({
                     <CircleHelp className="size-[13px]" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>How verdicts work</TooltipContent>
+                <TooltipContent>{t('detail.howVerdictsWork')}</TooltipContent>
               </Tooltip>
             </span>
           }
           emphasis={appraisal.verdict === 'keep'}
         >
-          <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{VERDICT_LABELS[appraisal.verdict]}</span>
+          <span style={{ color: VERDICT_COLORS[appraisal.verdict] }}>{verdictLabel(appraisal.verdict)}</span>
           <span className="font-medium text-muted-foreground"> · </span>
           {rankText(appraisal.rank)}
         </PopoverTile>
-        <PopoverTile label="Usually listed">
+        <PopoverTile label={t('detail.usuallyListed')}>
           {market ? `${bandRange(market.lowHr, market.highHr)} HR` : '—'}
         </PopoverTile>
       </div>
@@ -72,11 +74,11 @@ export function RareAppraisalDetail({
         <div className="space-y-1 border-t border-border pt-2 text-xs">
           {market && (
             <>
-              <PopoverKeyValue label="Samples">{market.sampleSize}</PopoverKeyValue>
-              <PopoverKeyValue label="Compared with">{marketSource(appraisal)}</PopoverKeyValue>
+              <PopoverKeyValue label={t('detail.samples')}>{market.sampleSize}</PopoverKeyValue>
+              <PopoverKeyValue label={t('detail.comparedWith')}>{marketSource(appraisal)}</PopoverKeyValue>
             </>
           )}
-          {stashPosition && <PopoverKeyValue label="Stash">{stashPosition}</PopoverKeyValue>}
+          {stashPosition && <PopoverKeyValue label={t('detail.stash')}>{stashPosition}</PopoverKeyValue>}
           <HardcoreNote rare={appraisal}
             hardcore={hardcore} />
         </div>

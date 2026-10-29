@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import { useOptions } from '@/hooks/useOptions';
+import { useTranslation } from '@/i18n';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import type { Conversation, Participant } from '@/common/types/pd2-website/ChatTypes';
@@ -23,7 +24,7 @@ import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/li
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import poeWhisperSound from '@/assets/poe_whisper.mp3';
+import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { findMarketLinks } from '../lib/market-links';
 import {
   buildInbox,
@@ -35,8 +36,9 @@ import {
   type InboxThread,
 } from '../lib/inbox';
 import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed';
-import { markOffersSeen, newTrades, offerThreadId, type NewTrade } from '../lib/offers-seen';
+import { markOffersSeen, newTrades, offersSeenUpTo, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
+import { useTradeListings } from '../hooks/useTradeListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { useResolvedSellers } from '../hooks/useResolvedSellers';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
@@ -121,6 +123,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // One column (list or thread) when the panel itself is narrow, whatever the window size
   const compact = rect.width < COMPACT_BELOW_PX;
   const wide = rect.width >= WIDE_FROM_PX;
+  const { t } = useTranslation('chat');
   const { settings } = useOptions();
   const prefs = useChatPrefs();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
@@ -152,19 +155,6 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Get current user ID
   const currentUserId = authData?.user?._id;
-
-  // Play notification sound
-  const playNotificationSound = useCallback((volume: number = 70) => {
-    try {
-      const audio = new Audio(poeWhisperSound);
-      audio.volume = volume / 100; // Convert 0-100 to 0-1
-      audio.play().catch((error) => {
-        console.error('Failed to play notification sound:', error);
-      });
-    } catch (error) {
-      console.error('Failed to create audio element:', error);
-    }
-  }, []);
 
   const api = useMemo(
     () => ({ getConversations, getMessages, sendMessage, markMessagesAsRead, deleteConversation }),
@@ -263,9 +253,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     () => (threadOffers ?? []).filter((offer) => !offer.isIncoming && offerStatus(offer) !== 'open'),
     [threadOffers],
   );
+  // Trade whispers to you, linked to the listing of yours they are about
+  const threadTrades = useMemo(() => (people ?? []).flatMap((p) => p.trades), [people]);
+  const tradeListings = useTradeListings(threadTrades);
   const entries = useMemo(
-    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers),
-    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers],
+    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers, tradeListings),
+    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers, tradeListings],
   );
 
   // The "New" divider: fixed when the thread is opened (once its newest website page is in), until it closes
@@ -284,7 +277,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Listings linked in the open thread render as item cards.
   const linkedListingIds = useMemo(
-    () => entries.flatMap((entry) => findMarketLinks(entry.content).map((link) => link.listingId)),
+    () =>
+      entries.flatMap((entry) => findMarketLinks(entry.displayContent ?? entry.content).map((link) => link.listingId)),
     [entries],
   );
   const listings = useChatListings(linkedListingIds);
@@ -359,20 +353,24 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   );
   /**
    * Acknowledges the notifications on PD2 (the website's bell clears too) and marks everything up to now (or the
-   * newest item, if later) looked at: in the thread known by `threadIds`, else everywhere.
+   * newest item, if later) looked at: in the thread known by `threadIds`, else everywhere. Items looked at already
+   * leave the mark where it is: the mark re-renders the panel, which looks again at what it shows, and the
+   * acknowledged notifications are still listed then (the provider drops them in a lower-priority update than
+   * this chat prefs change). A new "now" on every look would re-render it again and again, until React gives up
+   * (Maximum update depth exceeded).
    */
   const seeOffers = useCallback(
     ({ notifications, accepted, trades }: OffersSeen, threadIds?: readonly string[]) => {
       if (notifications.length === 0 && accepted.length === 0 && trades.length === 0) return;
       if (notifications.length > 0) acknowledgeOfferNotifications(notifications.map((n) => n.id));
       changeChatPrefs((current) => {
-        const at = Math.max(
-          Date.now(),
+        const newest = Math.max(
           ...notifications.map((n) => n.at),
           ...accepted.map((offer) => current.acceptedOffers?.[offer.id] ?? 0),
           ...trades.map(({ trade }) => trade.timestamp),
         );
-        return markOffersSeen(current, at, threadIds);
+        if (newest <= offersSeenUpTo(current, threadIds)) return current;
+        return markOffersSeen(current, Math.max(Date.now(), newest), threadIds);
       });
     },
     [acknowledgeOfferNotifications],
@@ -407,8 +405,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     markWhispersRead(peopleList.filter((p) => unreadWhispers(p) > 0).map((p) => p.key));
     if (!(await chat.markAllRead())) {
       showToast({
-        title: "Couldn't mark every chat read",
-        description: 'Check your connection and try again.',
+        title: t('widget.markAllFailed'),
+        description: t('messages.loadFailedDescription'),
         variant: 'error',
       });
     }
@@ -616,8 +614,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       clearDraft(conversationId);
     } else {
       showToast({
-        title: "Couldn't delete the conversation",
-        description: 'It is back in your list.',
+        title: t('widget.deleteFailedTitle'),
+        description: t('widget.deleteFailedDescription'),
         variant: 'error',
       });
     }
@@ -629,8 +627,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     setDeleting((current) => new Set(current).add(conversationId));
     setSelectedThreadId((current) => (current === conversationId ? null : current));
     const dismiss = undoToast({
-      title: 'Conversation deleted',
-      description: `Your chat with ${name}.`,
+      title: t('widget.conversationDeleted'),
+      description: t('widget.conversationDeletedDescription', { name }),
       duration: DELETE_UNDO_MS,
       onUndo: () => {
         if (!takePendingDelete(conversationId)) return;
@@ -671,22 +669,27 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       return await chat.send(created._id, text);
     } catch (error) {
       console.error('Failed to start chat:', error);
-      showToast({ title: 'Message not sent', description: "Couldn't start the conversation.", variant: 'error' });
+      showToast({ title: t('widget.notSentTitle'), description: t('widget.notSentDescription'), variant: 'error' });
       return false;
     }
   };
 
-  /** Copies `/w *<account> <text>` for the game chat and records it as an outgoing whisper. */
+  /** Copies `/w *<account> <text>` for the game chat and records it as an outgoing whisper; resolves whether it was copied. */
   const sendWhisper = async (target: { accountName?: string; playerName: string }, text: string) => {
     const account = whisperTarget(target);
     try {
       await writeText(whisperCommand(account, text));
     } catch {
-      showToast({ title: 'Whisper not copied', description: "Couldn't write to the clipboard.", variant: 'error' });
-      return;
+      showToast({
+        title: t('widget.whisperNotCopied'),
+        description: t('bubble.copyFailedDescription'),
+        variant: 'error',
+      });
+      return false;
     }
     recordCopied(target, text);
-    showToast({ title: 'Whisper copied', description: `Paste it into the game chat to send it to *${account}.` });
+    showToast({ title: t('widget.whisperCopied'), description: t('widget.whisperCopiedDescription', { account }) });
+    return true;
   };
 
   // In-panel keys: Alt+↑/↓ switch to the previous/next thread of the list as filtered; Esc closes the open
@@ -723,15 +726,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         {/* Top Bar (WindowChrome is the panel drag handle) */}
         <div id="titlebar-drag-handle">
           <WindowChrome
-            title="PD2 Chat"
+            title={t('widget.title')}
             icon={<MessageSquare className="text-primary" />}
             onClose={onClose}
-            closeLabel="Close chat"
+            closeLabel={t('widget.close')}
             actions={
               !signedIn && (
                 <Badge variant="destructive"
                   className="mr-1 text-xs">
-                  Not authenticated
+                  {t('widget.notAuthenticated')}
                 </Badge>
               )
             }
@@ -822,8 +825,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         composerRef.current?.focus();
                       }}
                       onSendWebsite={(text) => sendWebsite(selectedThread, text)}
-                      onWhisper={(target, text) => void sendWhisper(target, text)}
+                      replyChannel={channel}
+                      onReply={(target, text) =>
+                        channel === 'website' ? sendWebsite(selectedThread, text) : sendWhisper(target, text)
+                      }
                       onDismissTrade={(target, tradeId) => whispers.dismissTrade(target.key, tradeId)}
+                      onSettleTrade={(target, tradeId, outcome) => whispers.settleTrade(target.key, tradeId, outcome)}
                     />
                   </div>
                   <MessageList
@@ -855,8 +862,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     }}
                     placeholder={
                       channel === 'whisper'
-                        ? `Whisper *${whisperAccount} — copied for in-game chat`
-                        : `Message ${selectedThread.name}…  (/ for templates)`
+                        ? t('widget.whisperPlaceholder', { account: whisperAccount })
+                        : t('widget.messagePlaceholder', { name: selectedThread.name })
                     }
                     templateVars={templateVars}
                     channel={channel}
@@ -899,7 +906,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                             now={now}
                             onInsertListing={insertListing}
                             onClose={() => setTraderOverlay(false)}
-                            closeLabel="Close trader details"
+                            closeLabel={t('widget.closeTrader')}
                             className="max-w-full bg-card shadow-panel"
                           />
                         </motion.div>
@@ -911,8 +918,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 <EmptyState
                   className="m-auto max-w-sm"
                   icon={<MessagesSquare />}
-                  title="Select a conversation to view messages"
-                  description={threads.length > 0 ? 'Pick a chat on the left.' : undefined}
+                  title={t('widget.selectTitle')}
+                  description={threads.length > 0 ? t('widget.selectDescription') : undefined}
                 />
               )}
             </section>
@@ -939,7 +946,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                   now={now}
                   onInsertListing={insertListing}
                   onClose={() => setTraderShown(false)}
-                  closeLabel="Collapse trader details"
+                  closeLabel={t('widget.collapseTrader')}
                 />
               </motion.div>
             )}

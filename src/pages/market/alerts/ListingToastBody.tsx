@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
 import { useListingLookup } from './listing-lookup';
+import { useTranslation } from '@/i18n';
 
 /**
  * A watch toast's text. Looks the listing up as the toast appears, so pointing at the toast shows the item's
@@ -9,6 +10,7 @@ import { useListingLookup } from './listing-lookup';
  * pointer: it closes as soon as the pointer leaves the toast.
  */
 export function ListingToastBody({ listingId, children }: { listingId: string; children: React.ReactNode }) {
+  const { t } = useTranslation('market');
   const lookup = useListingLookup(listingId);
   const ref = useRef<HTMLSpanElement>(null);
   /** The sonner toast around the text: hover target and tooltip anchor. */
@@ -41,7 +43,7 @@ export function ListingToastBody({ listingId, children }: { listingId: string; c
           sideOffset={10}
           collisionPadding={8}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-label="Item tooltip"
+          aria-label={t('toast.itemTooltip')}
           className="pointer-events-none w-72 border-0 bg-transparent p-0 shadow-none"
         >
           <ItemTooltip item={listing.item}

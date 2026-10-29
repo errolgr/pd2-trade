@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { itemCorruptions } from '@/lib/item-utils';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { ModMenu } from './ModMenu';
 
@@ -14,7 +15,7 @@ export function displayMods(item: Pick<ItemDetail, 'modifiers'>): Modifier[] {
 }
 
 const isCorruptedMod = (item: ItemDetail, mod: Modifier) =>
-  mod.corrupted === true || !!item.corruptions?.includes(mod.name);
+  mod.corrupted === true || itemCorruptions(item).includes(mod.name);
 
 /** A mod line; on the market page it opens the filter/sort menu (ModMenu). */
 function ModLine({ item, mod }: { item: ItemDetail; mod: Modifier }) {

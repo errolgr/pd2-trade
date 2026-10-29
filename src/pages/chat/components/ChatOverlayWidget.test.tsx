@@ -81,6 +81,13 @@ vi.mock('@/overlay', () => ({
   useOverlay: () => ({ openPanel: overlayOpenPanel }),
 }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+// useSocketNotifications fetches the sound at import to make its blob: URL; keep that off the network
+vi.hoisted(() =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  ),
+);
 /** Website owners of in-game accounts (the seller lookup that links whisper senders), by lowercase account. */
 const sellerOwners = vi.hoisted(() => new Map<string, { userId: string; username: string; accounts: string[] }>());
 vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
@@ -1376,7 +1383,7 @@ describe('ChatOverlayWidget unified inbox', () => {
     expect(overlayOpenPanel).toHaveBeenCalledWith('builds', { character: { name: 'DanChar' } });
   });
 
-  it("pins a trade whisper in the sender's thread; Sold copies the template whisper and records it", async () => {
+  it("pins a trade whisper in the sender's thread; Sold copies the template whisper and moves the trade into the conversation", async () => {
     settings.soldOfferMessageTemplate = 'Sorry, {itemName} is sold.';
     await renderWidget([]);
     await gameEvent('trade-message', {
@@ -1397,11 +1404,35 @@ describe('ChatOverlayWidget unified inbox', () => {
     await flush();
     expect(writeText).toHaveBeenCalledWith('/w *Dan Sorry, Arach is sold.');
     expect(bubbles().at(-1)).toBe('Sorry, Arach is sold.');
-
-    await act(async () => {
-      fireEvent.click(within(deals).getByRole('button', { name: /Dismiss/ }));
-    });
+    // Closed: off the pinned deals, an event row in the conversation instead
     expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+    expect(screen.getByText(/In-game offer/).closest('div')!.textContent).toMatch(
+      /In-game offer 1 ist for Arach\s*sold/,
+    );
+  });
+
+  it('replies to a trade whisper on the website when the thread replies via Website', async () => {
+    settings.rejectOfferMessageTemplate = 'No thanks.';
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg('sent1', c, sender, content, 0));
+    await renderWidget([withAccount(conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) }), ['AliceAcc'])]);
+    await gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'AliceAcc',
+      accountName: 'AliceAcc',
+      message: "Hi, I'm interested in your Shako listed for 2 ist",
+      itemName: 'Shako',
+      price: '2 ist',
+    });
+    await select('Alice');
+    const deals = screen.getByRole('list', { name: 'Offers with this user' });
+    await act(async () => {
+      fireEvent.click(within(deals).getByRole('button', { name: /Reject/ }));
+    });
+    await flush();
+    expect(api.sendMessage).toHaveBeenCalledWith('c1', 'No thanks.', ME);
+    expect(writeText).not.toHaveBeenCalled();
+    expect(screen.queryByRole('list', { name: 'Offers with this user' })).toBeNull();
+    expect(screen.getByText(/In-game offer/).closest('div')!.textContent).toMatch(/rejected/);
   });
 
   // #148: a sender saved as "character*account" got `/w *frostwind*tharok …` ("user is not online")
@@ -2230,6 +2261,25 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
     expect(getChatFeed().items.map((item) => item.kind)).not.toContain('trade');
   });
 
+  it('looking at the offers settles while the acknowledged notifications are still listed', async () => {
+    // The provider drops acknowledged notifications with a lower-priority update than the chat-prefs re-render
+    // the look causes: that render (this stub, always) still lists them, and a running clock gives every look
+    // a new "now" (fake timers freeze it)
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    let clock = NOW.getTime();
+    vi.spyOn(Date, 'now').mockImplementation(() => (clock += 1));
+    vi.mocked(writeTextFile).mockClear();
+
+    await act(async () => fireEvent.click(filterButton('Selling')));
+    await flush();
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    // Marked once, not once per re-render until React gives up ("Maximum update depth exceeded")
+    expect(vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)).toHaveLength(1);
+    expect(filterButton('Selling').getAttribute('aria-checked')).toBe('true');
+  });
+
   it('nothing counts as looked at while the panel is hidden', async () => {
     panel.visible = false;
     offerNotifications = [notification('n1', 'L1', 5)];
@@ -2268,6 +2318,32 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
     expect(new Set(acknowledgeOfferNotifications.mock.calls.flat(2))).toEqual(new Set(['n1']));
   });
 
+  it('an open thread settles on its offers while their notifications are still listed', async () => {
+    incomingOffers = [
+      {
+        id: 'o1',
+        isIncoming: true,
+        playerName: 'carol',
+        itemName: 'Shako',
+        timestamp: new Date(NOW),
+        userId: 'carol',
+        listingId: 'L1',
+      },
+    ];
+    offerNotifications = [notification('n1', 'L1', 5)];
+    await renderWidget([]);
+    // As in the Selling list test: the stub keeps n1 listed, and the clock runs
+    let clock = NOW.getTime();
+    vi.spyOn(Date, 'now').mockImplementation(() => (clock += 1));
+    vi.mocked(writeTextFile).mockClear();
+
+    await select('carol');
+
+    expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
+    expect(vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === CHAT_PREFS_FILENAME)).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Trader details' })).not.toBeNull();
+  });
+
   it('publishes the peek feed newest first, matched to the offers, and provides its actions', async () => {
     incomingOffers = [
       {
@@ -2298,5 +2374,112 @@ describe('ChatOverlayWidget mark all read and the offers badge', () => {
     await flush();
     expect(acknowledgeOfferNotifications).toHaveBeenCalledWith(['n1']);
     expect(getChatFeed().items.map((item) => item.kind)).not.toContain('trade');
+  });
+});
+
+describe('ChatOverlayWidget trade whispers about your listings', () => {
+  const SILKWEAVE = '6a0bf54e6c42aba37528ae01';
+  const own = (id: string, name: string, base: string, price: string) =>
+    ({
+      _id: id,
+      user_id: ME,
+      type: 'item',
+      is_hardcore: false,
+      is_ladder: true,
+      price,
+      hr_price: 0,
+      bumped_at: minutesAgo(30),
+      created_at: minutesAgo(60),
+      updated_at: minutesAgo(30),
+      user: { username: 'me' },
+      item: { name, quality: { name: 'Unique' }, base: { name: base }, modifiers: [] },
+    }) as unknown as MarketListingEntry;
+  const silkweave = own(SILKWEAVE, 'Silkweave', 'Mesh Boots', '10 wss');
+  /** Your active listings, and the ones gone to the archive (sold). */
+  let active: MarketListingEntry[];
+  let archived: MarketListingEntry[];
+
+  beforeEach(() => {
+    active = [silkweave, own('6a0bf54e6c42aba37528ae02', 'Harlequin Crest', 'Shako', '2 ist')];
+    archived = [];
+    const base = vi.mocked(usePd2Website).getMockImplementation()!;
+    const find =
+      (listings: () => MarketListingEntry[]) => async (query: { user_id?: string; _id?: { $in: string[] } }) => {
+        const data = listings().filter((l) =>
+          query._id ? query._id.$in.includes(l._id) : l.user_id === query.user_id,
+        );
+        return { total: data.length, limit: 24, skip: 0, data };
+      };
+    vi.mocked(usePd2Website).mockImplementation(
+      () =>
+        ({
+          ...base(),
+          getMarketListings: find(() => active),
+          getMarketListingsArchive: find(() => archived),
+        }) as unknown as ReturnType<typeof usePd2Website>,
+    );
+  });
+
+  const tradeWhisper = (item: string, price: string) =>
+    gameEvent('trade-message', {
+      isIncoming: true,
+      playerName: 'Dan',
+      accountName: 'Dan',
+      characterName: 'DanChar',
+      message: `Hi, I'm interested in your ${item} listed for ${price}`,
+      itemName: item,
+      price,
+    });
+  const pill = () => screen.queryAllByRole('link').find((link) => link.getAttribute('href')?.includes(SILKWEAVE));
+  /** Whether pointing at the pill opens the item popover. */
+  async function hoverShowsItem() {
+    const link = pill();
+    if (!link) return false;
+    await act(async () => {
+      fireEvent.mouseEnter(link);
+    });
+    await flush();
+    const shown = document.querySelector('[data-radix-popper-content-wrapper]')?.textContent?.includes('Mesh Boots');
+    await act(async () => {
+      fireEvent.mouseLeave(link);
+    });
+    await flush();
+    return !!shown;
+  }
+
+  it("shows the item of a whisper about your listing as the listing's pill, with the item popover on hover", async () => {
+    await renderWidget([]);
+    await tradeWhisper('Silkweave', '10wss');
+    await select('Dan');
+
+    expect(bubbles()).toEqual(["Hi, I'm interested in your Silkweave listed for 10wss "]);
+    expect(pill()?.textContent).toBe('Silkweave');
+    expect(await hoverShowsItem()).toBe(true);
+  });
+
+  it('keeps the pill once the listing is sold and your listings are looked up again', async () => {
+    await renderWidget([]);
+    await tradeWhisper('Silkweave', '10wss');
+    await select('Dan');
+    expect(await hoverShowsItem()).toBe(true);
+
+    active = active.filter((l) => l !== silkweave);
+    archived = [silkweave];
+    await tradeWhisper('Harlequin Crest', '2 ist');
+    await flush(6 * 60_000);
+    expect(await hoverShowsItem()).toBe(true);
+  });
+
+  it('leaves a whisper plain when none or several of your listings match it', async () => {
+    active.push(own('6a0bf54e6c42aba37528ae03', 'Silkweave', 'Mesh Boots', '10 wss'));
+    await renderWidget([]);
+    await tradeWhisper('Silkweave', '10 wss');
+    await tradeWhisper("Griffon's Eye", '3 HR');
+    await select('Dan');
+    expect(screen.queryAllByRole('link')).toEqual([]);
+    expect(bubbles()).toEqual([
+      "Hi, I'm interested in your Silkweave listed for 10 wss",
+      "Hi, I'm interested in your Griffon's Eye listed for 3 HR",
+    ]);
   });
 });

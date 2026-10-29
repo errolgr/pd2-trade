@@ -1,0 +1,173 @@
+{
+  "itemPage": {
+    "noItem": "Keine Item-Daten vorhanden oder Auslesen fehlgeschlagen.",
+    "noItemHint": "Fahre im Spiel mit der Maus über ein Item und drücke deinen Preischeck-Hotkey, um es erneut zu versuchen."
+  },
+  "overlay": {
+    "title": "Preischeck",
+    "toolbar": {
+      "netWorth": "Vermögen",
+      "copyImage": "Bild kopieren",
+      "settings": "Einstellungen"
+    },
+    "update": {
+      "updating": "Wird aktualisiert…",
+      "retry": "Update wiederholen",
+      "get": "Update holen",
+      "restart": "Neu starten zum Aktualisieren",
+      "failedHint": "Update auf v{{version}} fehlgeschlagen. Klicke, um es erneut zu versuchen.",
+      "manualHint": "Version {{version}} ist verfügbar. Diese Installation kann sich nicht selbst aktualisieren: Klicke, um die Release-Seite zu öffnen, oder nutze deinen Paketmanager.",
+      "availableHint": "Version {{version}} ist verfügbar. Lädt herunter, installiert und startet PD2 Trader neu."
+    },
+    "copyImage": {
+      "copiedTitle": "Bild kopiert",
+      "copiedDescription": "Füge es in Discord oder einen Handelsbeitrag ein.",
+      "failedTitle": "Bild konnte nicht kopiert werden"
+    },
+    "header": {
+      "base": "Basis: {{type}}",
+      "type": "Typ: {{type}}",
+      "toggleSearchMode": "Klicken, um den Suchmodus zu wechseln",
+      "cycleQuality": "Klicken, um die Qualität zu wechseln",
+      "defense": "Verteidigung: <value>{{defense}}</value>",
+      "appraisalNote": "Bewertungshinweis: {{note}}"
+    },
+    "price": {
+      "loading": "Preisdaten werden geladen...",
+      "noData": "Keine Preisdaten verfügbar",
+      "fetchFailed": "Preisdaten konnten nicht abgerufen werden",
+      "median": "Median",
+      "min": "Min.",
+      "max": "Max.",
+      "samples": "Stichproben",
+      "change7d": "7-T-Änderung",
+      "last30Days": "Letzte 30 Tage",
+      "openOnPd2Trader": "Auf pd2trader.com öffnen",
+      "viewOnWeb": "Im Web ansehen"
+    },
+    "corruptions": {
+      "thisItem": "Corruption dieses Items",
+      "top": "Top-Corruptions",
+      "showLess": "Weniger anzeigen",
+      "showMore_one": "Mehr anzeigen ({{count}} weitere)",
+      "showMore_other": "Mehr anzeigen ({{count}} weitere)",
+      "loading": "Corruption-Preise werden geladen...",
+      "searchTitle": "Klicken, um nach Items mit dieser Corruption zu suchen",
+      "noPriceData": "Keine Preisdaten",
+      "link": "Link",
+      "socketPrices": "{{name}} – Sockelpreise",
+      "filterBySocket": "Klicken, um nach dieser Sockelanzahl zu filtern"
+    },
+    "sockets_one": "{{count}} Sockel",
+    "sockets_other": "{{count}} Sockel",
+    "stats": {
+      "title": "Werte",
+      "selected_one": "{{count}} ausgewählt",
+      "selected_other": "{{count}} ausgewählt",
+      "clearRanges": "Bereiche leeren",
+      "clearRangesTitle": "Alle Min- und Max-Werte leeren; die Werte bleiben ausgewählt",
+      "clearTitle": "Alle Werte abwählen"
+    },
+    "actions": {
+      "openTradeAria": "Suche auf projectdiablo2.com öffnen",
+      "openTradeTooltip": "Diese Suche auf projectdiablo2.com öffnen",
+      "openInMarket": "Im Markt öffnen",
+      "list": "Inserieren",
+      "listDisabled": "Das Item muss zum Inserieren in deiner geteilten Truhe liegen.",
+      "showExpired": "Abgelaufene zeigen"
+    },
+    "results": {
+      "matches": "Treffer: <value>{{total}}</value>",
+      "showing": "· {{shown}} angezeigt",
+      "loading": "Marktinserate werden geladen...",
+      "errorTitle": "Inserate konnten nicht geladen werden",
+      "fetchFailed": "Marktinserate konnten nicht abgerufen werden",
+      "noListings": "Keine Inserate gefunden",
+      "loosenFilters": "Lockere deine Wertefilter.",
+      "loosenFiltersOrExpired": "Lockere deine Wertefilter oder aktiviere „Abgelaufene zeigen“.",
+      "readyTitle": "Bereit zur Suche",
+      "readyHint": "Wähle die wichtigen Werte und klicke auf Suchen oder drücke Enter in einem Min/Max-Feld.",
+      "price": "Preis",
+      "listed": "Inseriert",
+      "loadingMore": "Weitere werden geladen...",
+      "loadMore": "Mehr laden"
+    },
+    "listing": {
+      "copyWhisper": "Flüstern kopieren",
+      "whisperCopied": "Flüstern kopiert, Rechtsklick zum Einfügen",
+      "onlineCopyWhisper": "Online im Spiel · klicken, um Flüstern zu kopieren",
+      "seller": "Verkäufer: <name>{{seller}}</name>",
+      "online": "Online im Spiel"
+    }
+  },
+  "statRow": {
+    "rangeTitle": "Wertebereich laut PD2-Tooltip",
+    "corruptedFilter": "Corrupted-Filter",
+    "unknown": "Unbekannt",
+    "keyFromTitle": "Dieser Wert steigert den Wert in diesem Slot ab {{value}}",
+    "valuableFrom": "wertvoll ab {{value}}",
+    "corruptedOnly": "nur",
+    "corruptedExcluded": "ausgeschlossen",
+    "injectedCorruptedHint": "Dieses Item kann corrupted werden. Nutze diesen Filter, um nach corrupted oder nicht corrupted Versionen zu suchen.",
+    "corruptedStat": "Corrupted-Wert",
+    "minDamage": "Min. Schaden",
+    "maxDamage": "Max. Schaden",
+    "minDamageAria": "{{name}} Mindestschaden",
+    "maxDamageAria": "{{name}} Höchstschaden",
+    "minPlaceholder": "min",
+    "maxPlaceholder": "max",
+    "minimumAria": "{{label}} Minimum",
+    "maximumAria": "{{label}} Maximum",
+    "clearRangeAria": "Bereich {{label}} leeren",
+    "clearRangeTitle": "Min und Max leeren",
+    "unfold": "Aufklappen"
+  },
+  "pseudoChip": {
+    "changeOrUnfold": "Diese Summe ändern oder aufklappen",
+    "searchTotalAria": "Stattdessen nach einer Summe suchen",
+    "searchTotalTitle": "Nach einer Summe (Σ) statt dieser Zeile suchen",
+    "menuLabel": "Nach einer Summe suchen – fasst die betroffenen Zeilen zusammen"
+  },
+  "rareAppraisal": {
+    "appraisingCrafted": "Crafted-Item wird bewertet...",
+    "appraisingRare": "Rare wird bewertet...",
+    "estimatedFrom": "{{slot}} · gesch. aus Inseraten von {{season}}",
+    "ofSlots": "von {{slots}}",
+    "usuallyListed": "üblicher Preis"
+  },
+  "runePrices": {
+    "label": "Runenpreise",
+    "title": "Aktuelle Runenpreise",
+    "info": "Runenpreise werden aus Marktinseraten anhand des Medianpreises der letzten 7 Tage berechnet. Die Preise werden täglich aktualisiert.",
+    "viewOnPd2Trader": "Auf pd2trader.com ansehen",
+    "loading": "Runendaten werden geladen...",
+    "fixed": "fest",
+    "listings_one": "{{count}} Inserat",
+    "listings_other": "{{count}} Inserate",
+    "showLess": "Weniger anzeigen",
+    "showMoreLower_one": "Mehr anzeigen ({{count}} niedrigere Rune)",
+    "showMoreLower_other": "Mehr anzeigen ({{count}} niedrigere Runen)",
+    "breakdown": "Aufschlüsselung <rune>{{rune}}</rune>:",
+    "target": "Ziel {{value}} HR",
+    "diff": "Diff.: {{value}} HR",
+    "fixedNote": "* Festpreise für Vex und darunter, da sie sich meist nicht ändern, oder bei <10 verfügbaren Inseraten"
+  },
+  "sparkline": {
+    "loading": "Preisverlauf wird geladen...",
+    "notEnough": "Nicht genug Verkäufe in den letzten 30 Tagen für einen Trend.",
+    "aria_one": "Preis am letzten {{count}} Tag mit Verkäufen: {{first}} bis {{last}} HR",
+    "aria_other": "Preis an den letzten {{count}} Tagen mit Verkäufen: {{first}} bis {{last}} HR"
+  },
+  "itemCard": {
+    "median": "Median {{price}}",
+    "sales_one": "{{count}} Verkauf",
+    "sales_other": "{{count}} Verkäufe",
+    "recentlySold": "Kürzlich verkauft",
+    "listedNow": "Aktuell inseriert",
+    "from": "ab {{price}}",
+    "soldDetail_one": "{{count}} verkauft · Median {{price}}",
+    "soldDetail_other": "{{count}} verkauft · Median {{price}}",
+    "listingsDetail_one": "{{count}} Inserat · Median {{price}}",
+    "listingsDetail_other": "{{count}} Inserate · Median {{price}}"
+  }
+}
