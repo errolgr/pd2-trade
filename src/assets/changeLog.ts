@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.10.11': ['✨ Offer toasts (new and accepted offers) stay up for 20 seconds instead of 4, so there is time to read them and open the offer'],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
     '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',
