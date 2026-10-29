@@ -9,7 +9,14 @@ import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
-import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
+import {
+  clipboardContainsValidItem,
+  isStashItem,
+  encodeItem,
+  encodeItemForQuickList,
+  repairClipboardText,
+  sleep,
+} from '@/lib/item-utils';
 import {
   getBadgeCount,
   isKeyboardClaimed,
@@ -77,10 +84,11 @@ const AppController: React.FC = () => {
       const savedClipboard = await read();
       if (sendCopy || handedBack) await keyPress('ctrl+c');
       await sleep(250);
-      const raw = await read();
+      const copiedText = await read();
       // Best-effort and not awaited: a restore that waits for a busy Windows clipboard must not delay the panel
       if (savedClipboard != null) void copy(savedClipboard);
-      return { raw, copied: !!raw && raw !== savedClipboard };
+      const copied = !!copiedText && copiedText !== savedClipboard;
+      return { raw: copiedText == null ? copiedText : repairClipboardText(copiedText), copied };
     },
     [read, copy, keyPress],
   );
