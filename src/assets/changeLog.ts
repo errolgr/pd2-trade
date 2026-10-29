@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.10': [
+    '🔧 Price check, List Item and Delist: map and item lines no longer show garbled colour codes like "Ã¿c0Monster Density:Ã¿c3"',
+  ],
   '0.10.9': [
     '🔧 Price check: rings, amulets, belts and claws get the Corrupted filter row (and your default corrupted filter) like other corruptable items',
     '🔧 Price check no longer shows the "Worn by …% of level 80+ ladder characters" line',
