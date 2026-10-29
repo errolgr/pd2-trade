@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.10.10': [
+    "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
+    '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',
+  ],
   '0.10.9': [
     '🔧 Price check: rings, amulets, belts and claws get the Corrupted filter row (and your default corrupted filter) like other corruptable items',
     '🔧 Price check no longer shows the "Worn by …% of level 80+ ladder characters" line',

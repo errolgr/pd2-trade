@@ -203,7 +203,7 @@ describe('playNotificationSound', () => {
 });
 
 describe('useSocketNotifications offer notifications', () => {
-  it('plays the sound at the configured volume, shows a listing toast and asks offers to refresh', async () => {
+  it('plays the sound at the configured volume, shows a toast opening the offer in chat and asks offers to refresh', async () => {
     await renderNotifications({ isConnected: true, settings: { whisperNotificationVolume: 40 } });
 
     await fire(OFFER_EVENT, offer('n1'));
@@ -213,7 +213,11 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'Bob offered 2 ist',
-        action: { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'listing-1' } },
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: 'n1', accepted: false },
+        },
       },
     ]);
     expect(pd2.refresh).toHaveBeenCalledTimes(1);
@@ -252,13 +256,23 @@ describe('useSocketNotifications offer notifications', () => {
     debug.mockRestore();
   });
 
-  it('reads offers leniently: without a listing or an id there is still a sound and a toast (no link)', async () => {
+  it('reads offers leniently: without a listing or an id there is still a sound and a toast opening the chat', async () => {
     await renderNotifications({ isConnected: true });
 
     await fire(OFFER_EVENT, { type: 'offer_received' });
 
     expect(sounds).toHaveLength(1);
-    expect(toasts()).toEqual([{ title: 'New Offer', description: 'New offer received', action: undefined }]);
+    expect(toasts()).toEqual([
+      {
+        title: 'New Offer',
+        description: 'New offer received',
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: expect.any(String), accepted: false },
+        },
+      },
+    ]);
     expect(pd2.refresh).toHaveBeenCalledTimes(1);
   });
 
@@ -272,7 +286,11 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'Offer Accepted',
         description: 'alice accepted your offer',
-        action: { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'listing-1' } },
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: 'acc1', accepted: true },
+        },
       },
     ]);
     expect(pd2.refresh).toHaveBeenCalledTimes(1);
