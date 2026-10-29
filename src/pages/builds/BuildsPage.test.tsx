@@ -191,8 +191,8 @@ describe('BuildsPage class bar', () => {
     ]);
     const grow = buttons.map((b) => Number.parseFloat(b.style.flexGrow));
     expect(grow.slice(0, 3)).toEqual([50, 30, 10]);
-    // Small shares get a floor width
-    expect(grow.slice(-2)).toEqual([4, 4]);
+    // Classes without characters take no share (the tile's min width keeps them readable)
+    expect(grow.slice(-2)).toEqual([0, 0]);
   });
 });
 

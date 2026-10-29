@@ -152,22 +152,20 @@ function ClassBar({
 }) {
   const { t } = useTranslation('builds');
   const total = breakdown ? Object.values(breakdown).reduce((a, b) => a + b, 0) : 0;
-  // Most played first (ties and the loading state keep the game's class order); each class is as wide as its share
+  // Most played first (ties and the loading state keep the game's class order)
   const classes = BUILD_CLASSES.map((name) => ({ name, count: breakdown?.[name] ?? 0 })).sort(
     (a, b) => b.count - a.count,
   );
-  const top = classes[0]?.count ?? 0;
   return (
-    <div
-      className="flex shrink-0 divide-x divide-border/50 border-b border-border/50"
+    <div className="flex shrink-0 gap-0.5 border-b border-border/50 p-0.5"
       role="group"
-      aria-label={t('meta.classes')}
-    >
+      aria-label={t('meta.classes')}>
       {classes.map(({ name, count }) => {
         const meta = classMeta(name);
         const active = selected.includes(name);
         const dim = selected.length > 0 && !active;
         const pct = total ? (count / total) * 100 : 0;
+        const tint = (percent: number) => `color-mix(in srgb, ${meta.color} ${percent}%, transparent)`;
         return (
           <button
             key={name}
@@ -179,41 +177,35 @@ function ClassBar({
                 : t('meta.classTitle', { name, count, formatted: count.toLocaleString(currentLocale()) })
             }
             onClick={() => onToggle(name)}
-            // Width follows the class's share of the characters (a floor keeps rare classes readable)
-            style={{ flex: `${breakdown ? Math.max(pct, 4) : 1} 1 0%` }}
+            // A tile as wide as the class's share of the characters; the floor width keeps its text whole
+            style={{
+              flex: `${breakdown ? pct : 1} 1 0%`,
+              background: tint(active ? 30 : 14),
+              boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
+            }}
             className={cn(
-              'group relative flex min-w-[108px] items-center gap-2 overflow-hidden px-3 py-2 text-left outline-none transition-[opacity,background-color,flex-grow] duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/40',
-              active && 'bg-accent/50',
+              'flex min-w-[128px] items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
               dim && 'opacity-45 hover:opacity-90',
             )}
           >
             <ClassEmblem className={name}
-              size={26} />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium"
+              size={28} />
+            <span className="min-w-0 flex-1 whitespace-nowrap">
+              <span className="block text-xs font-semibold"
                 style={{ color: meta.color }}>
                 {meta.name}
               </span>
-              <span className="block text-[11px] text-muted-foreground tabular-nums">
+              <span className="block text-xs tabular-nums">
                 {breakdown ? (
                   <>
-                    {count.toLocaleString(currentLocale())} <span className="opacity-70">· {fmtPct(pct)}</span>
+                    <span className="font-bold text-foreground">{fmtPct(pct)}</span>{' '}
+                    <span className="text-muted-foreground">{count.toLocaleString(currentLocale())}</span>
                   </>
                 ) : (
                   <Skeleton className="mt-0.5 h-2.5 w-12" />
                 )}
               </span>
             </span>
-            <span
-              aria-hidden
-              className="absolute inset-x-0 bottom-0 origin-left transition-[transform,height] duration-(--dur-med)"
-              style={{
-                background: meta.color,
-                height: active ? 2 : 1,
-                transform: `scaleX(${active ? 1 : top ? count / top : 0})`,
-                opacity: active ? 1 : 0.7,
-              }}
-            />
           </button>
         );
       })}
