@@ -134,10 +134,6 @@
     "searchTotalTitle": "Szukaj sumy (Σ) zamiast tej linii",
     "menuLabel": "Szukaj sumy — zwija objęte wiersze"
   },
-  "wornBy": {
-    "title": "Pokaż buildy, które go noszą",
-    "line": "Noszone przez <pct>{{pct}}%</pct> postaci ladder na poziomie {{level}}+"
-  },
   "rareAppraisal": {
     "appraisingCrafted": "Wycenianie przedmiotu craftowanego...",
     "appraisingRare": "Wycenianie rare...",

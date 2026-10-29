@@ -23,7 +23,8 @@ import { getTypeFromBaseType } from './utils';
 const NON_CORRUPTABLE_TYPE_LABELS = new Set(['Rune', 'Gem', 'Charm', 'Map Orb']);
 
 /**
- * Whitelist of type codes that CAN be corrupted
+ * Whitelist of type codes that CAN be corrupted. Matched against every code of a grouped type
+ * (Jewelry `{"$in": ["amul", "ring", "amus"]}`, belts, claws).
  */
 const CORRUPTABLE_TYPE_CODES = new Set([
   '2hcs',
@@ -69,8 +70,9 @@ const CORRUPTABLE_TYPE_CODES = new Set([
   'taxe',
   'tkni',
   'wand',
-  'rin',
-  'amu',
+  'ring',
+  'amul',
+  'amus',
 ]);
 
 /**
@@ -95,17 +97,13 @@ export function isItemCorruptable(item: Pick<Item, 'type'>): boolean {
     }
   }
 
-  // Get the type code from the base type
-  const typeInfo = getTypeFromBaseType(item.type, false);
+  // Type code(s) of the base; grouped types (`{"$in": [...]}`) list several
+  const typeInfo = getTypeFromBaseType(item.type, true);
   if (!typeInfo) return false; // If we can't determine the type, assume it's NOT corruptable (safer default)
 
-  // Check if the type code IS in the corruptable list
-  const typeCode = typeof typeInfo.type === 'string' ? typeInfo.type : null;
-  if (typeCode && CORRUPTABLE_TYPE_CODES.has(typeCode)) {
-    return true;
-  }
-
-  return false;
+  const { type } = typeInfo;
+  const codes: unknown[] = typeof type === 'string' ? [type] : '$in' in type && Array.isArray(type.$in) ? type.$in : [];
+  return codes.some((code) => typeof code === 'string' && CORRUPTABLE_TYPE_CODES.has(code));
 }
 
 /** Replace `sources` with `row` where the first of them was, so merged rows keep the tooltip's line order. */

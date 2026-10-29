@@ -125,10 +125,6 @@
     "searchTotalTitle": "搜索合计（Σ）而非此行",
     "menuLabel": "搜索合计 — 折叠其涵盖的行"
   },
-  "wornBy": {
-    "title": "显示使用它的配装",
-    "line": "<pct>{{pct}}%</pct> 的 {{level}}+ 级 Ladder 角色在用"
-  },
   "rareAppraisal": {
     "appraisingCrafted": "正在估价 Crafted 物品…",
     "appraisingRare": "正在估价 Rare…",

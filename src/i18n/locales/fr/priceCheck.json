@@ -131,10 +131,6 @@
     "searchTotalTitle": "Rechercher un total (Σ) au lieu de cette ligne",
     "menuLabel": "Rechercher un total — regroupe les lignes couvertes"
   },
-  "wornBy": {
-    "title": "Afficher les builds qui le portent",
-    "line": "Porté par <pct>{{pct}} %</pct> des personnages ladder de niveau {{level}}+"
-  },
   "rareAppraisal": {
     "appraisingCrafted": "Évaluation de l'objet crafté...",
     "appraisingRare": "Évaluation du rare...",
