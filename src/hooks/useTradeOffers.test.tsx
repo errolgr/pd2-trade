@@ -233,6 +233,25 @@ describe('useTradeOffers fetching', () => {
     expect(result.current.outgoingOffers.map((o) => o.id)).toEqual(['x']);
   });
 
+  it('keeps the newest list when an older, slower refetch answers last', async () => {
+    const { result } = await renderOffers();
+    const slow = Promise.withResolvers<Response>();
+    api.incoming = () => slow.promise;
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.refresh();
+    });
+    api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('new')])] });
+    await act(async () => result.current.refresh());
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
+
+    await act(async () => {
+      slow.resolve(apiResponse({ data: [] }));
+      await first;
+    });
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
+  });
+
   // BUG: useTradeOffers.tsx:330-342/344-375 — incoming and outgoing fetches share one `loading` flag, so
   // whichever finishes first clears it while the other request is still in flight.
   it.fails('stays loading until both incoming and outgoing requests finish', async () => {

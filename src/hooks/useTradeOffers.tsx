@@ -1,5 +1,5 @@
 import { t } from '@/i18n';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
 import { ISettings } from './useOptions';
@@ -320,6 +320,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
   const [outgoingOffers, setOutgoingOffers] = useState<TradeOffer[]>([]);
   const [hiddenOutgoingOffers, setHiddenOutgoingOffers] = useState<TradeOffer[]>([]);
   const [loading, setLoading] = useState(false);
+  // Fetches overlap (socket push, chat open, actions): only the newest started one may set its list, so a slow
+  // older response never replaces a newer list (dropping an offer that just came in)
+  const incomingSeq = useRef(0);
+  const outgoingSeq = useRef(0);
 
   // Purge old deleted offers on mount
   useEffect(() => {
@@ -331,13 +335,14 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
       return;
     }
 
+    const seq = ++incomingSeq.current;
     setLoading(true);
     try {
       const offers = await getIncomingOffers(settings, authData, onAuthError);
-      setIncomingOffers(offers);
+      if (seq === incomingSeq.current) setIncomingOffers(offers);
     } catch (error) {
       console.error('Failed to fetch incoming offers:', error);
-      setIncomingOffers([]);
+      if (seq === incomingSeq.current) setIncomingOffers([]);
     } finally {
       setLoading(false);
     }
@@ -348,9 +353,11 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
       return;
     }
 
+    const seq = ++outgoingSeq.current;
     setLoading(true);
     try {
       const offers = await getOutgoingOffers(settings, authData, onAuthError);
+      if (seq !== outgoingSeq.current) return;
       // Get deleted offer IDs from localStorage
       const deletedOfferIds = getDeletedOffers();
 
@@ -369,6 +376,7 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
       deletedIdsToRemove.forEach((id) => unmarkOfferAsDeleted(id));
     } catch (error) {
       console.error('Failed to fetch outgoing offers:', error);
+      if (seq !== outgoingSeq.current) return;
       setOutgoingOffers([]);
       setHiddenOutgoingOffers([]);
     } finally {
