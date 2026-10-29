@@ -91,6 +91,7 @@ export interface RareAppraisal {
   phase?: 'early' | 'late';
   /** Price model and stars always come from the softcore-trained model, also for hardcore. */
   modelMode: 'softcore';
+  /** Artifact version, season first: `s14-q50-2026-10-28`, `s14-crafted-q50-2026-10-28`. */
   modelVersion: string;
   /** Set only for crafted items (absent = rare). Crafted items use a separate per-slot model. */
   quality?: 'Rare' | 'Crafted';

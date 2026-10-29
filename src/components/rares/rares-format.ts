@@ -6,8 +6,14 @@
 import type { AppraisedStat, CraftRecipe, RareAppraisal, RareSlot, Stars, Verdict } from '@/lib/rare-appraisal-api';
 import { t } from '@/i18n';
 
-/** Season the model's asking prices come from (shown on the "est." hint). */
-export const MODEL_SEASON = 'S13';
+/**
+ * Season the model's asking prices come from (the "est." hints), read off the appraisal's model version
+ * (`s14-q50-2026-10-28` → "S14"); the version as is when it names no season.
+ */
+export function modelSeason(rare: Pick<RareAppraisal, 'modelVersion'>): string {
+  const season = /^s(\d+)\b/i.exec(rare.modelVersion)?.[1];
+  return season ? `S${season}` : rare.modelVersion;
+}
 
 export const RECIPE_LABELS: Record<CraftRecipe, string> = {
   blood: 'Blood craft',
@@ -220,7 +226,7 @@ export function marketSource(rare: RareAppraisal): string | null {
       ? t('rares:marketSource.lastSeason')
       : m.mode === 'hardcore'
         ? t('rares:marketSource.hardcoreListings')
-        : MODEL_SEASON;
+        : modelSeason(rare);
   return t('rares:marketSource.atThisRank', { slots: slotPlural(rare.slot, true), where });
 }
 

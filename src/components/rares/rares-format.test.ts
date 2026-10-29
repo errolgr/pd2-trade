@@ -11,6 +11,7 @@ import {
   locationText,
   marketBandText,
   marketSource,
+  modelSeason,
   ordinalPercentile,
   RANK_BLOCKS,
   rankBlockIndex,
@@ -160,11 +161,22 @@ describe('price bands', () => {
     expect(marketBandText(rare())).toBeNull();
     expect(marketSource(rare())).toBeNull();
     expect(marketBandText(rare({ market: market() }))).toBe('~1.5–3.2 HR');
-    expect(marketSource(rare({ slot: 'circ', market: market() }))).toBe('circlets at this rank · S13');
+    expect(marketSource(rare({ slot: 'circ', market: market(), modelVersion: 's14-q50-2026-10-28' }))).toBe(
+      'circlets at this rank · S14',
+    );
     expect(marketSource(rare({ market: market({ source: 'last-season', mode: 'hardcore' }) }))).toBe(
       'rings at this rank · last season',
     );
     expect(marketSource(rare({ market: market({ mode: 'hardcore' }) }))).toBe('rings at this rank · hardcore listings');
+  });
+
+  it.each([
+    ['s14-q50-2026-10-28', 'S14'],
+    ['s14-crafted-q50-2026-10-28', 'S14'],
+    ['S9-q50-2026-01-01', 'S9'],
+    ['v1', 'v1'],
+  ])('names the season of model version %s as %s', (modelVersion, season) => {
+    expect(modelSeason({ modelVersion })).toBe(season);
   });
 });
 
