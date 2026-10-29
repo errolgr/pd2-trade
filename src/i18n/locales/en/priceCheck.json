@@ -128,10 +128,6 @@
     "searchTotalTitle": "Search a total (Σ) instead of this line",
     "menuLabel": "Search a total — folds the rows it covers"
   },
-  "wornBy": {
-    "title": "Show the builds that wear it",
-    "line": "Worn by <pct>{{pct}}%</pct> of level {{level}}+ ladder characters"
-  },
   "rareAppraisal": {
     "appraisingCrafted": "Appraising crafted item...",
     "appraisingRare": "Appraising rare...",

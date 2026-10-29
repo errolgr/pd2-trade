@@ -128,10 +128,6 @@
     "searchTotalTitle": "Nach einer Summe (Σ) statt dieser Zeile suchen",
     "menuLabel": "Nach einer Summe suchen – fasst die betroffenen Zeilen zusammen"
   },
-  "wornBy": {
-    "title": "Builds anzeigen, die es tragen",
-    "line": "Getragen von <pct>{{pct}} %</pct> der Ladder-Charaktere ab Level {{level}}"
-  },
   "rareAppraisal": {
     "appraisingCrafted": "Crafted-Item wird bewertet...",
     "appraisingRare": "Rare wird bewertet...",

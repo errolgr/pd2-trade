@@ -28,7 +28,6 @@ import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketLis
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { useRareAppraisal, type RareAppraisalState } from '../hooks/useRareAppraisal';
 import type { Item } from '../lib/interfaces';
-import { loadBuildUsage } from '../lib/build-usage';
 import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -55,11 +54,6 @@ vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/browser-clipboard', () => ({ writeText: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
 vi.mock('react-intersection-observer', () => ({ useInView: vi.fn() }));
-// Ladder item usage (builds service): none unless a test sets it
-vi.mock('../lib/build-usage', async (importOriginal) => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  loadBuildUsage: vi.fn(async () => null),
-}));
 // Listing hover detail belongs to quick-list; a stub keeps these tests about the price check itself.
 vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
   default: ({ stashItem }: { stashItem: { name?: string } }) => (
@@ -192,7 +186,6 @@ beforeEach(() => {
   vi.mocked(fetchItemPriceByName).mockResolvedValue(null);
   vi.mocked(fetchCorruptionPrices).mockResolvedValue(null);
   vi.mocked(fetchPriceHistory).mockResolvedValue(null);
-  vi.mocked(loadBuildUsage).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -277,30 +270,6 @@ describe('ItemOverlayWidget header', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
-  });
-
-  it('shows how many ladder characters wear a unique; clicking opens the builds that wear it', async () => {
-    vi.mocked(loadBuildUsage).mockResolvedValue({
-      total: 3000,
-      items: [
-        {
-          key: 'unique:harlequin_crest',
-          name: 'Harlequin Crest',
-          quality: 'Unique',
-          iconUrl: null,
-          count: 657,
-          pct: 21.9,
-          priceHr: 1,
-        },
-      ],
-    });
-    renderWidget(shako());
-    const line = await screen.findByRole('button', { name: /Worn by 21\.9% of level 80\+ ladder characters \(657\)/ });
-    fireEvent.click(line);
-    expect(overlay.openPanel).toHaveBeenCalledWith('builds', {
-      tab: 'meta',
-      filters: { items: ['unique:harlequin_crest'], mode: 'softcore' },
-    });
   });
 });
 
