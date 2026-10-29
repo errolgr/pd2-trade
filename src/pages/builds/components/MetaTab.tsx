@@ -152,7 +152,11 @@ function ClassBar({
 }) {
   const { t } = useTranslation('builds');
   const total = breakdown ? Object.values(breakdown).reduce((a, b) => a + b, 0) : 0;
-  const classes = BUILD_CLASSES.map((name) => ({ name, count: breakdown?.[name] ?? 0 }));
+  // Most played first (ties and the loading state keep the game's class order); each class is as wide as its share
+  const classes = BUILD_CLASSES.map((name) => ({ name, count: breakdown?.[name] ?? 0 })).sort(
+    (a, b) => b.count - a.count,
+  );
+  const top = classes[0]?.count ?? 0;
   return (
     <div
       className="flex shrink-0 divide-x divide-border/50 border-b border-border/50"
@@ -175,8 +179,10 @@ function ClassBar({
                 : t('meta.classTitle', { name, count, formatted: count.toLocaleString(currentLocale()) })
             }
             onClick={() => onToggle(name)}
+            // Width follows the class's share of the characters (a floor keeps rare classes readable)
+            style={{ flex: `${breakdown ? Math.max(pct, 4) : 1} 1 0%` }}
             className={cn(
-              'group relative flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-3 py-2 text-left outline-none transition-[opacity,background-color] duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/40',
+              'group relative flex min-w-[108px] items-center gap-2 overflow-hidden px-3 py-2 text-left outline-none transition-[opacity,background-color,flex-grow] duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/40',
               active && 'bg-accent/50',
               dim && 'opacity-45 hover:opacity-90',
             )}
@@ -204,7 +210,7 @@ function ClassBar({
               style={{
                 background: meta.color,
                 height: active ? 2 : 1,
-                transform: `scaleX(${active ? 1 : Math.min(1, pct / 30)})`,
+                transform: `scaleX(${active ? 1 : top ? count / top : 0})`,
                 opacity: active ? 1 : 0.7,
               }}
             />

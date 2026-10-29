@@ -7,6 +7,7 @@ export const changeLog = {
     '🔧 Chat: an in-game trade whisper about one of your listings ("Hi, I\'m interested in your Silkweave listed for 10 wss") shows the item as its listing pill, with the item tooltip on hover, like the website\'s message with the listing link',
     '🔧 Offer and message toasts show a market listing link as the item pill (hover for the item tooltip) instead of the raw projectdiablo2.com/market/listing/… URL',
     '🔧 Rare appraisals (price check and Net Worth Rares) name the season their prices come from (S14) instead of always saying S13',
+    '✨ Builds: the class bar lists classes most played first, each as wide as its share of the characters',
   ],
   '0.10.9': [
     '🔧 Price check: rings, amulets, belts and claws get the Corrupted filter row (and your default corrupted filter) like other corruptable items',

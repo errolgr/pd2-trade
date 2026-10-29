@@ -64,6 +64,8 @@ let accounts: string[] | undefined;
 let accountCharacters: Record<string, unknown[]>;
 /** Builds characters the server tracks, by lowercase name. */
 let tracked: Record<string, CharacterDetail>;
+/** Characters per class the characters endpoint answers with. */
+let breakdown: Record<string, number>;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -83,6 +85,7 @@ beforeEach(() => {
   accounts = undefined;
   accountCharacters = {};
   tracked = { hammerdin: DETAIL };
+  breakdown = {};
   vi.mocked(usePanel).mockImplementation(
     () => ({ ...panel, close: vi.fn(), visible: true }) as unknown as PanelContextValue<'builds'>,
   );
@@ -101,7 +104,7 @@ beforeEach(() => {
       const found = tracked[decodeURIComponent(character[1]).toLowerCase()];
       return found ? json(found) : json({ message: 'Character not found' }, 404);
     }
-    if (url.pathname === '/api/builds/characters') return json(LIST);
+    if (url.pathname === '/api/builds/characters') return json({ ...LIST, breakdown });
     if (url.pathname === '/api/builds/usage') return json(USAGE);
     if (url.pathname === '/api/builds/shopping-list')
       return json({ season: 's14', mode: 'softcore', total: 0, items: [] });
@@ -165,6 +168,31 @@ describe('BuildsPage payloads', () => {
     fireEvent.change(box, { target: { value: 'Nobody' } });
     fireEvent.submit(box.closest('form')!);
     expect(await screen.findByText('No tracked character named Nobody')).toBeTruthy();
+  });
+});
+
+describe('BuildsPage class bar', () => {
+  it('orders classes by popularity and sizes each by its share', async () => {
+    breakdown = { Amazon: 100, Paladin: 500, Necromancer: 300, Druid: 0, Assassin: 50, Sorceress: 50 };
+    panel.payload = { tab: 'meta' };
+    render(<BuildsPage />);
+    const bar = screen.getByRole('group', { name: 'Classes' });
+    await within(bar).findByText('500');
+    const buttons = within(bar).getAllByRole('button');
+    // Ties (Assassin / Sorceress) and classes without characters keep the game's order
+    expect(buttons.map((b) => b.textContent?.match(/^[A-Za-z]+/)?.[0])).toEqual([
+      'Paladin',
+      'Necromancer',
+      'Amazon',
+      'Assassin',
+      'Sorceress',
+      'Barbarian',
+      'Druid',
+    ]);
+    const grow = buttons.map((b) => Number.parseFloat(b.style.flexGrow));
+    expect(grow.slice(0, 3)).toEqual([50, 30, 10]);
+    // Small shares get a floor width
+    expect(grow.slice(-2)).toEqual([4, 4]);
   });
 });
 
