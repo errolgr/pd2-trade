@@ -16,10 +16,6 @@ import { Tip } from './chat-parts';
 /** Newest-bumped active listings offered by the picker. */
 const PICKER_LIMIT = 50;
 
-/** Chat link to a listing; `?display=` makes it read as the item name (see lib/market-links). */
-export const listingMessageUrl = (listing: Pick<MarketListingEntry, '_id' | 'item'>) =>
-  `https://www.projectdiablo2.com/market/listing/${listing._id}?display="${listing.item.name}"`;
-
 type PickerState = { status: 'loading' } | { status: 'error' } | { status: 'done'; listings: MarketListingEntry[] };
 
 /** "Link one of my listings": a searchable list of the signed-in user's active listings. */

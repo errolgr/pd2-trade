@@ -8,6 +8,8 @@ import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockSize } from '@/pages/chat/chat-dock';
 import { offerNotificationLanding } from '@/pages/chat/chat-feed';
+import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
+import { findMarketLinks } from '@/pages/chat/lib/market-links';
 import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
@@ -112,13 +114,16 @@ export function showToast(payload: ToastPayload): void {
     toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
     return;
   }
-  const { listing } = custom;
-  toast(custom.title || DEFAULT_TITLE, {
-    description: listing ? (
-      <ListingToastBody listingId={listing.listingId}>{custom.description}</ListingToastBody>
+  const { listing, description } = custom;
+  // Listing links (an offer's or a message's text) read as the chat's item pills, hover for the item
+  const text =
+    description && findMarketLinks(description).length > 0 ? (
+      <LinkedMessageContent content={description} />
     ) : (
-      custom.description
-    ),
+      description
+    );
+  toast(custom.title || DEFAULT_TITLE, {
+    description: listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text,
     duration: custom.duration,
     closeButton: true,
     action: {

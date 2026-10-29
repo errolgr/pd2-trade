@@ -560,6 +560,14 @@ describe('useSocketNotifications chat messages', () => {
     expect(toasts()).toEqual([expect.objectContaining({ description: `${'z'.repeat(80)}...` })]);
   });
 
+  it('never cuts a preview inside a listing link (the toast shows the link as the item pill)', async () => {
+    await renderNotifications({ isConnected: true });
+    const link = 'https://www.projectdiablo2.com/market/listing/6a0bf54e6c42aba37528ae01?display="Silkweave"';
+    const content = `Hi, I'm interested in your ${link} listed for 10 wss, still available?`;
+    await fire(CHAT_EVENT, { ...chat, _id: 'm3', content });
+    expect(toasts()).toEqual([expect.objectContaining({ description: `Hi, I'm interested in your ${link}...` })]);
+  });
+
   it('respects the whispers toast type', async () => {
     await renderNotifications({ isConnected: true, settings: { toastPopupTypes: ['offers'] } });
     await fire(CHAT_EVENT, chat);

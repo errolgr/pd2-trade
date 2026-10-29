@@ -4,6 +4,8 @@ export const changeLog = {
     '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',
     "🔧 Price check: a stat an item lists twice (e.g. its own roll plus a corruption's) shows as one summed line, and no longer sticks around as a phantom row (like +60% Faster Cast Rate) on every item checked after it",
     '🔧 Price check, List Item and Delist: map and item lines no longer show garbled colour codes like "Ã¿c0Monster Density:Ã¿c3"',
+    '🔧 Chat: an in-game trade whisper about one of your listings ("Hi, I\'m interested in your Silkweave listed for 10 wss") shows the item as its listing pill, with the item tooltip on hover, like the website\'s message with the listing link',
+    '🔧 Offer and message toasts show a market listing link as the item pill (hover for the item tooltip) instead of the raw projectdiablo2.com/market/listing/… URL',
     '🔧 Rare appraisals (price check and Net Worth Rares) name the season their prices come from (S14) instead of always saying S13',
   ],
   '0.10.9': [
