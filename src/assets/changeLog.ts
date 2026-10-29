@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.10': [
+    "🔧 Price check: a stat an item lists twice (e.g. its own roll plus a corruption's) shows as one summed line, and no longer sticks around as a phantom row (like +60% Faster Cast Rate) on every item checked after it",
+  ],
   '0.10.9': [
     '🔧 Price check: rings, amulets, belts and claws get the Corrupted filter row (and your default corrupted filter) like other corruptable items',
     '🔧 Price check no longer shows the "Worn by …% of level 80+ ladder characters" line',
