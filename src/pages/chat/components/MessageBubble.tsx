@@ -244,7 +244,7 @@ export function MessageBubble({
               failed && 'bg-none bg-destructive/10 ring-destructive/40',
             )}
           >
-            <MessageContent content={entry.content}
+            <MessageContent content={entry.displayContent ?? entry.content}
               listings={listings} />
             <div className="flex items-center justify-end gap-1 text-[10px] leading-4 tabular-nums text-muted-foreground">
               {failed && message.clientId ? (

@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { openUrl } from '@/lib/browser-opener';
 import { ExternalLink } from 'lucide-react';
-import { parseMessage } from '../lib/market-links';
-import type { ChatListingState } from '../hooks/useChatListings';
+import { findMarketLinks, parseMessage } from '../lib/market-links';
+import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { cn } from '@/lib/utils';
 import { ListingCard, ListingCardSkeleton, listingIconBoxClass, listingPillClass } from './ListingCard';
+
+/** A message shown outside a thread (a toast): it looks its listing links up itself, for their item pills. */
+export function LinkedMessageContent({ content }: { content: string }) {
+  const listingIds = useMemo(() => findMarketLinks(content).map((link) => link.listingId), [content]);
+  const listings = useChatListings(listingIds);
+  return <MessageContent content={content}
+    listings={listings} />;
+}
 
 interface MessageContentProps {
   content: string;

@@ -10,12 +10,10 @@ import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { itemDisplayName } from '@/pages/market/lib/listing';
 import { confirmToast, showToast, useOverlay } from '@/overlay';
 import { t } from '@/i18n';
-import { matchTradeListings, whisperedItemName, type WhisperedItem } from './trade-match';
+import { matchTradeListings, TRADE_LISTINGS_LIMIT, whisperedItemName, type WhisperedItem } from './trade-match';
 
 const AUTH_WAIT_TIMEOUT = 5000;
 const AUTH_POLL_INTERVAL = 200;
-/** The user's listings searched for a whispered item (the Manage tab's search fetches as many). */
-const TRADE_LISTINGS_LIMIT = 1000;
 
 type DelistFn = (raw: string) => Promise<void>;
 type DelistTradeFn = (trade: WhisperedItem, onDeleted?: () => void) => Promise<void>;
