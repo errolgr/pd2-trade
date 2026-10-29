@@ -944,9 +944,7 @@ describe('ItemOverlayWidget sockets and ethereal rows', () => {
     expect(q['item.is_ethereal']).toBe(true);
   });
 
-  // BUG: useStatSelection.ts isItemCorruptable compares the Jewelry typeValue ('{"$in": ["amul", "ring", "amus"]}')
-  // against the 'rin'/'amu' whitelist entries, so rings and amulets never get the Corrupted filter row.
-  it.fails('offers the Corrupted filter on rare rings', () => {
+  it('offers the Corrupted filter on rare rings', () => {
     renderWidget(rareRing());
     expect(screen.getByRole('checkbox', { name: 'Corrupted filter' })).not.toBeNull();
   });

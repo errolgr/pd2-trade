@@ -88,12 +88,8 @@ describe('useStatSelection: sortedStats', () => {
     expect('_injected' in corrupted[0]).toBe(false);
   });
 
-  // BUG: isItemCorruptable compares the *type* value of the base against CORRUPTABLE_TYPE_CODES, but
-  // rings/amulets/belts share a '{"$in": [...]}' type value (useStatSelection.ts:85-89), so the
-  // whitelisted 'rin'/'amu'/'bels'/'belt' codes never match: no Corrupted row and no default
-  // corrupted filter for rings, amulets and belts.
-  it.fails('treats rings, amulets and belts as corruptable', () => {
-    for (const type of ['Ring', 'Amulet', 'Sash']) {
+  it('treats rings, amulets, belts and claws (grouped type codes) as corruptable', () => {
+    for (const type of ['Ring', 'Amulet', 'Sash', 'Blade Talons']) {
       const { result } = setup({ type, stats: [] });
       expect(ids(result.current.sortedStats)).toContain(StatId.Corrupted);
     }

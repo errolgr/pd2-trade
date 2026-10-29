@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.9': [
+    '🔧 Price check: rings, amulets, belts and claws get the Corrupted filter row (and your default corrupted filter) like other corruptable items',
+  ],
   '0.10.8': [
     '🆕 Market stat filters: up to 5 "Any of" (OR) blocks, each needing at least one of its stats, and a "None of" (NOT) group that hides listings with any of its stats',
     '✨ Market stat filters: drag a stat by its grip into another block, or pick its block from the AND / OR / NOT button',
