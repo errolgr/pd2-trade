@@ -15,7 +15,7 @@ import {
   STRIP_STATS,
 } from './stat-mappings';
 import { bhStatRange, statRowRange } from './stat-ranges';
-import { getTypeFromBaseType } from './utils';
+import { getStatKey, getTypeFromBaseType } from './utils';
 
 /**
  * List of base type labels that cannot be corrupted (special cases)
@@ -115,6 +115,31 @@ function mergeAt(stats: Stat[], sources: Stat[], row: Stat): Stat[] {
 }
 
 /**
+ * One row per stat line: the clipboard can list a stat twice (e.g. a natural roll and the corruption that added
+ * to it), which the game draws as one summed line, starred when a corruption added to it. Rows are keyed by
+ * stat (getStatKey), so two rows with one key would also break selection and leave stale rows on screen.
+ */
+function mergeDuplicateStats(stats: Stat[]): Stat[] {
+  let out = stats;
+  const seen = new Map<string, Stat[]>();
+  for (const stat of stats) {
+    const key = getStatKey(stat);
+    seen.set(key, [...(seen.get(key) ?? []), stat]);
+  }
+  for (const parts of seen.values()) {
+    if (parts.length < 2) continue;
+    const values = parts.map((s) => s.value).filter((v): v is number => typeof v === 'number');
+    const row: Stat = {
+      ...parts[0],
+      ...(values.length > 0 && { value: values.reduce((a, b) => a + b, 0) }),
+      ...(parts.some((s) => s.corrupted) && { corrupted: true }),
+    };
+    out = mergeAt(out, parts, row);
+  }
+  return out;
+}
+
+/**
  * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
  * into a single "Enhanced Damage" stat (stat_id 998)
  */
@@ -210,6 +235,7 @@ export function buildStatRows(item: Item): Stat[] {
     baseStats.push({ stat_id: StatId.Corrupted, name: 'Corrupted', _injected: true } as Stat);
   }
 
+  combinedStats = mergeDuplicateStats(combinedStats);
   combinedStats = combineEnhancedDamageStats(combinedStats);
   combinedStats = combineQuadStats(combinedStats, [0, 1, 2, 3], StatId.AllAttributes, 'All Attributes');
   combinedStats = combineQuadStats(combinedStats, [39, 41, 43, 45], StatId.AllResistances, 'All Resistances');

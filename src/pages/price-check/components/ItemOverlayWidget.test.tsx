@@ -900,6 +900,24 @@ describe('ItemOverlayWidget extra header behaviour', () => {
   });
 });
 
+describe('ItemOverlayWidget item switch', () => {
+  it('leaves no rows of the previous item behind when it listed a stat twice', async () => {
+    const { rerenderItem } = renderWidget(
+      rareRing({
+        stats: [
+          { stat_id: 105, name: 'Faster Cast Rate', value: 10 },
+          { stat_id: 105, name: 'Faster Cast Rate', value: 10, corrupted: true },
+        ],
+      }),
+    );
+    expect(screen.getAllByText(/Faster Cast Rate/)).toHaveLength(1);
+    rerenderItem(shako());
+    // Rows leave through an exit animation
+    await waitFor(() => expect(screen.queryByText(/Faster Cast Rate/)).toBeNull(), { timeout: 3000 });
+    expect(screen.getByText('+2 to All Skills')).not.toBeNull();
+  });
+});
+
 describe('ItemOverlayWidget sockets and ethereal rows', () => {
   it('turns item sockets and ethereal flags into filterable rows', async () => {
     renderWidget(rareRing({ type: 'Shako', sockets: 2, isEthereal: true }));
