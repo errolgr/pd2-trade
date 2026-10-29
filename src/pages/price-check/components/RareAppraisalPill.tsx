@@ -11,7 +11,7 @@ import {
   bandRange,
   hardcoreNote,
   isCrafted,
-  MODEL_SEASON,
+  modelSeason,
   rankText,
   slotLabel,
   slotPlural,
@@ -74,7 +74,7 @@ export function RareAppraisalPill({
                 {title}
               </span>
               <span className="shrink-0 text-[11px] text-muted-foreground">
-                {t('rareAppraisal.estimatedFrom', { slot: slotLabel(appraisal.slot), season: MODEL_SEASON })}
+                {t('rareAppraisal.estimatedFrom', { slot: slotLabel(appraisal.slot), season: modelSeason(appraisal) })}
               </span>
             </div>
             <CraftedBadges rare={appraisal} />

@@ -21,7 +21,7 @@ import {
   keyStats,
   locationText,
   marketBandText,
-  MODEL_SEASON,
+  modelSeason,
   stashPositionText,
   starsText,
   starTitle,
@@ -93,9 +93,13 @@ export function RaresTab({
 
   return (
     <div className="space-y-3">
-      <RaresSummaryCard summary={summary} />
-      {craftedSummary && rares.some(isCrafted) && <RaresSummaryCard summary={craftedSummary}
-        crafted />}
+      <RaresSummaryCard summary={summary}
+        season={modelSeason(rares.find((r) => !isCrafted(r)) ?? rares[0])} />
+      {craftedSummary && rares.some(isCrafted) && (
+        <RaresSummaryCard summary={craftedSummary}
+          season={modelSeason(rares.find(isCrafted)!)}
+          crafted />
+      )}
 
       {keep.length > 0 && (
         <RareGroup title={t('rares.groups.keep')}
@@ -149,8 +153,19 @@ export function RaresTab({
   );
 }
 
-/** "Rares: N Keep · N worth a look · N likely vendor (frees N slots)" + the Keep band (never in the total). */
-export function RaresSummaryCard({ summary, crafted = false }: { summary: RaresSummary; crafted?: boolean }) {
+/**
+ * "Rares: N Keep · N worth a look · N likely vendor (frees N slots)" + the Keep band (never in the total);
+ * `season` is the season its asking prices come from (modelSeason).
+ */
+export function RaresSummaryCard({
+  summary,
+  season,
+  crafted = false,
+}: {
+  summary: RaresSummary;
+  season: string;
+  crafted?: boolean;
+}) {
   const { t } = useTranslation('currency');
   const { keep, checkHigh, vendor, keepLowHr, keepHighHr, keepUnpriced } = summary;
   const priced = keep - keepUnpriced;
@@ -191,7 +206,7 @@ export function RaresSummaryCard({ summary, crafted = false }: { summary: RaresS
       {priced > 0 && (
         <p
           className="text-xs text-muted-foreground"
-          title={`${t('rares.estTitle', { season: MODEL_SEASON })}${keepUnpriced ? `; ${unpriced}` : ''}`}
+          title={`${t('rares.estTitle', { season })}${keepUnpriced ? `; ${unpriced}` : ''}`}
         >
           {crafted ? (
             <Trans t={t}
@@ -368,7 +383,7 @@ function RareRow({
         </span>
         <span
           className="shrink-0 text-sm font-semibold tabular-nums"
-          title={t('rares.estTitle', { season: MODEL_SEASON })}
+          title={t('rares.estTitle', { season: modelSeason(rare) })}
         >
           {band ?? <span className="text-muted-foreground/70">—</span>}
         </span>
