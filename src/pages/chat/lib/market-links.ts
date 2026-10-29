@@ -19,6 +19,18 @@ export type MessageSegment =
   | { type: 'text'; content: string }
   | { type: 'link'; content: string; url: string; listingId: string };
 
+/** Chat link to a listing; `?display=` makes it read as `name`, the item name (see parseMessage). */
+export const listingMessageUrl = (listingId: string, name: string) =>
+  `https://www.projectdiablo2.com/market/listing/${listingId}?display="${name}"`;
+
+/**
+ * `text` with its mention of `name` linked to the listing, for display: the link goes at the end, and
+ * parseMessage turns the mention before it into the listing's pill (or shows the pill at the end when `text`
+ * doesn't mention `name`).
+ */
+export const linkMention = (text: string, listingId: string, name: string) =>
+  `${text} ${listingMessageUrl(listingId, name)}`;
+
 /** Every listing link in `text`, in order. A malformed percent escape in the display name is kept as typed. */
 export function findMarketLinks(text: string): MarketLink[] {
   return Array.from(text.matchAll(MARKET_LISTING_URL), (match) => {
@@ -56,6 +68,13 @@ export function spaceOutLinks(text: string): string {
     last = end;
   }
   return out + text.slice(last);
+}
+
+/** `text` cut after `max` characters with "...", never inside a listing link (it would show as a raw URL). */
+export function shortenMessage(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = findMarketLinks(text).find((link) => link.start < max && link.end > max)?.end ?? max;
+  return cut >= text.length ? text : `${text.slice(0, cut)}...`;
 }
 
 /**

@@ -47,9 +47,9 @@ import {
   serializeEditor,
   setCaret,
 } from '../lib/draft-editor';
-import { findMarketLinks, spaceOutLinks } from '../lib/market-links';
+import { findMarketLinks, listingMessageUrl, spaceOutLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
-import { ListingPicker, listingMessageUrl } from './ListingPicker';
+import { ListingPicker } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 import { TemplateFill } from './TemplateFill';
 
@@ -260,7 +260,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     edit(head + after, head.length);
   };
 
-  const insertListing = (listing: MarketListingEntry) => insertAtCaret(listingMessageUrl(listing));
+  const insertListing = (listing: MarketListingEntry) =>
+    insertAtCaret(listingMessageUrl(listing._id, listing.item.name));
   useImperativeHandle(ref, () => ({
     focus: () => {
       const editor = editorRef.current;

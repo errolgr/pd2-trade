@@ -12,6 +12,7 @@ import { showToast } from '@/overlay';
 import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
 import { normalizeName as personKey } from '@/lib/whisper-history';
 import { whisperThreadId } from '@/pages/chat/lib/identity';
+import { shortenMessage } from '@/pages/chat/lib/market-links';
 
 interface WhisperEvent {
   isTrade: boolean;
@@ -254,7 +255,7 @@ export const useSocketNotifications = ({
           if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
             showToast({
               title: t('system:notifications.whisperFrom', { player: whisper.from }),
-              description: whisper.message.length > 80 ? whisper.message.slice(0, 80) + '...' : whisper.message,
+              description: shortenMessage(whisper.message, 80),
               duration: 5000,
               action: reply,
             });
@@ -295,7 +296,7 @@ export const useSocketNotifications = ({
         return;
       }
 
-      const messagePreview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content;
+      const messagePreview = msg.content && shortenMessage(msg.content, 80);
 
       // Toasts can't take typing: Reply opens the conversation with the composer focused
       showToast({

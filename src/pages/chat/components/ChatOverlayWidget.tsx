@@ -38,6 +38,7 @@ import {
 import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed';
 import { markOffersSeen, newTrades, offersSeenUpTo, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
+import { useTradeListings } from '../hooks/useTradeListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { useResolvedSellers } from '../hooks/useResolvedSellers';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
@@ -252,9 +253,12 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     () => (threadOffers ?? []).filter((offer) => !offer.isIncoming && offerStatus(offer) !== 'open'),
     [threadOffers],
   );
+  // Trade whispers to you, linked to the listing of yours they are about
+  const threadTrades = useMemo(() => (people ?? []).flatMap((p) => p.trades), [people]);
+  const tradeListings = useTradeListings(threadTrades);
   const entries = useMemo(
-    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers),
-    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers],
+    () => buildTimeline(websiteMessages, people ?? [], currentUserId, websiteHasOlder, settledOffers, tradeListings),
+    [websiteMessages, websiteHasOlder, people, currentUserId, settledOffers, tradeListings],
   );
 
   // The "New" divider: fixed when the thread is opened (once its newest website page is in), until it closes
@@ -273,7 +277,8 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   // Listings linked in the open thread render as item cards.
   const linkedListingIds = useMemo(
-    () => entries.flatMap((entry) => findMarketLinks(entry.content).map((link) => link.listingId)),
+    () =>
+      entries.flatMap((entry) => findMarketLinks(entry.displayContent ?? entry.content).map((link) => link.listingId)),
     [entries],
   );
   const listings = useChatListings(linkedListingIds);

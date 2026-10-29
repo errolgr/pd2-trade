@@ -17,7 +17,8 @@ import {
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
-import { messagePreview } from './market-links';
+import { linkMention, messagePreview } from './market-links';
+import { whisperedItemName } from '@/pages/delist/trade-match';
 
 /** 'archived' shows only archived threads; the others leave them out. */
 export type InboxFilter = 'all' | 'selling' | 'buying' | 'archived';
@@ -275,6 +276,11 @@ export interface TimelineEntry {
   source: MessageSource;
   own: boolean;
   content: string;
+  /**
+   * What the bubble shows, when not `content`: an in-game trade whisper about one of your listings, its item
+   * linked to that listing (see linkMention), so it reads as the listing's pill like a website message's link.
+   */
+  displayContent?: string;
   /** ISO timestamp. */
   createdAt: string;
   /** Website messages: send status, read receipts, retry. */
@@ -293,7 +299,8 @@ export interface TimelineEntry {
  * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers and
  * settled trades of `people` and the `offers` (your settled ones) by time. While older website pages are still
  * unloaded, whispers and offers before the oldest loaded website message are left out, so paging back never
- * slips website messages in above entries already shown.
+ * slips website messages in above entries already shown. `tradeListings` (trade id → listing id, see
+ * useTradeListings) links the whisper of each trade to you to the listing it is about.
  */
 export function buildTimeline(
   website: readonly ChatMessage[],
@@ -301,21 +308,29 @@ export function buildTimeline(
   currentUserId: string | undefined,
   hasOlder: boolean,
   offers: readonly TradeOffer[] = [],
+  tradeListings: ReadonlyMap<string, string> = new Map(),
 ): TimelineEntry[] {
   const oldestWebsite = website.length > 0 && hasOlder ? Date.parse(website[0].created_at) : -Infinity;
   const others = [
     ...people.flatMap((person) =>
-      person.messages.map(
-        (m): TimelineEntry => ({
+      person.messages.map((m): TimelineEntry => {
+        // The trade this whisper started (recorded with it: same text and time)
+        const trade = m.isIncoming
+          ? person.trades.find((t) => t.isIncoming && t.timestamp === m.timestamp && t.message === m.message)
+          : undefined;
+        const listingId = trade && tradeListings.get(trade.id);
+        const name = trade && whisperedItemName(trade);
+        return {
           key: `w:${person.key}:${m.id}`,
           source: 'whisper',
           own: !m.isIncoming,
           content: m.message,
+          displayContent: listingId && name ? linkMention(m.message, listingId, name) : undefined,
           createdAt: new Date(m.timestamp).toISOString(),
           copied: m.copied,
           unread: m.isIncoming && m.timestamp > person.readAt,
-        }),
-      ),
+        };
+      }),
     ),
     ...people.flatMap((person) =>
       person.trades.flatMap((trade): TimelineEntry[] =>

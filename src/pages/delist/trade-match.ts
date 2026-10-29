@@ -6,6 +6,9 @@ import { itemDisplayName } from '@/pages/market/lib/listing';
 /** What a trade whisper says about the item: the chat watcher's parse and the raw message. */
 export type WhisperedItem = Pick<WhisperTrade, 'itemName' | 'price' | 'message'>;
 
+/** The user's listings searched for a whispered item (the Manage tab's search fetches as many). */
+export const TRADE_LISTINGS_LIMIT = 1000;
+
 /**
  * The whispered item's name: the chat watcher's, else a linked listing's display name, else the text after
  * "interested in your" (the watcher finds no name when the whisper has no "listed for" clause).
