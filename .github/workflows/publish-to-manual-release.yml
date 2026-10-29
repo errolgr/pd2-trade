@@ -280,8 +280,20 @@ jobs:
               entries.push(entry);
             }
             
-            // Format with bullet points
-            changelogText = entries.map(entry => `• ${entry}`).join('\n');
+            // Format with bullet points; Discord rejects a description over 4096 characters (400 {"embeds": ["0"]})
+            const DESCRIPTION_LIMIT = 4096;
+            const bullets = entries.map(entry => `• ${entry}`);
+            const more = n => `…and ${n} more in What's New in the app`;
+            changelogText = bullets.join('\n');
+            if (changelogText.length > DESCRIPTION_LIMIT) {
+              const budget = DESCRIPTION_LIMIT - more(bullets.length).length - 1;
+              const kept = [];
+              for (const bullet of bullets) {
+                if ([...kept, bullet].join('\n').length > budget) break;
+                kept.push(bullet);
+              }
+              changelogText = [...kept, more(bullets.length - kept.length)].join('\n');
+            }
           }
 
           // Create Discord embed payload
