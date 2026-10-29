@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.10.11': ['🔧 Rune prices: prices, the breakdown target, totals and differences show 2 decimals (3 for low runes) instead of float noise like 0.30000000000000004'],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
     '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',
