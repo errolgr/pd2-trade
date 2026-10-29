@@ -7,6 +7,7 @@ import type { WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import {
   buildFeed,
   getChatFeed,
+  offerNotificationLanding,
   offersLanding,
   openOffers,
   provideChatFeedActions,
@@ -103,7 +104,12 @@ describe('buildFeed', () => {
   });
 
   it("shows a thread's trade whisper instead of its message, unless a message came after it", () => {
-    const latest = (minutesAgo: number) => ({ text: 'wtb', at: ago(minutesAgo), own: false, source: 'whisper' as const });
+    const latest = (minutesAgo: number) => ({
+      text: 'wtb',
+      at: ago(minutesAgo),
+      own: false,
+      source: 'whisper' as const,
+    });
     const amy = thread('c-amy', { unread: 1, latest: latest(3) });
     const bob = thread('c-bob', { unread: 2, latest: latest(0) });
     const items = feed({
@@ -186,6 +192,27 @@ describe('offersLanding', () => {
   ] as const)('%s', (_, items, landing) => {
     expect(offersLanding(items as readonly FeedItem[])).toEqual(landing);
   });
+});
+
+describe('offerNotificationLanding', () => {
+  it('opens the thread of the offer a notification is about, once the feed matched it', () => {
+    publishChatFeed({
+      items: [{ key: 'notification:n1', kind: 'offerReceived', at: ago(1), open: { threadId: 'user:bob' } }],
+      canMarkAllRead: false,
+    });
+    expect(offerNotificationLanding('n1', false)).toEqual({ threadId: 'user:bob' });
+  });
+
+  it.each([
+    [false, { filter: 'selling' }],
+    [true, { filter: 'buying' }],
+  ] as const)(
+    'falls back to the list of its side (accepted %s) when the feed has no item for it',
+    (accepted, landing) => {
+      publishChatFeed({ items: [item('offerReceived', 1)], canMarkAllRead: false });
+      expect(offerNotificationLanding('gone', accepted)).toEqual(landing);
+    },
+  );
 });
 
 describe('published feed', () => {

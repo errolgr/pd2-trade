@@ -108,6 +108,32 @@ describe('useStatSelection: sortedStats', () => {
     expect(result.current.sortedStats[0].name).toBe('Frozen Orb');
   });
 
+  it('folds a stat listed twice (natural roll + corruption) into one summed, corrupted row in its place', () => {
+    const { result } = setup({
+      type: 'Ring',
+      stats: [
+        life(30),
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10 },
+        { stat_id: 2, name: 'to Dexterity', value: 5 },
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10, corrupted: true },
+      ],
+    });
+    const rows = result.current.sortedStats.filter((s) => s.stat_id !== StatId.Corrupted);
+    expect(ids(rows)).toEqual([7, 105, 2]);
+    expect(byId(rows, 105)).toMatchObject({ value: 20, corrupted: true });
+  });
+
+  it('keeps one row per skill for skill stats sharing a stat id', () => {
+    const { result } = setup({
+      type: 'Grand Charm',
+      stats: [
+        { stat_id: 107, name: '+1 to x', skill: 'Frozen Orb', value: 1 },
+        { stat_id: 107, name: '+1 to y', skill: 'Blizzard', value: 1 },
+      ],
+    });
+    expect(result.current.sortedStats.map((s) => s.name)).toEqual(['Frozen Orb', 'Blizzard']);
+  });
+
   describe('enhanced damage', () => {
     it('combines min/max ED into one row', () => {
       const { result } = setup({

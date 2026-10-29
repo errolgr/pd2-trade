@@ -1,5 +1,8 @@
 export const changeLog = {
   '0.10.10': [
+    "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
+    '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',
+    "🔧 Price check: a stat an item lists twice (e.g. its own roll plus a corruption's) shows as one summed line, and no longer sticks around as a phantom row (like +60% Faster Cast Rate) on every item checked after it",
     '🔧 Price check, List Item and Delist: map and item lines no longer show garbled colour codes like "Ã¿c0Monster Density:Ã¿c3"',
   ],
   '0.10.9': [

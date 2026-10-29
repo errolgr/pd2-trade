@@ -7,6 +7,7 @@ import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockSize } from '@/pages/chat/chat-dock';
+import { offerNotificationLanding } from '@/pages/chat/chat-feed';
 import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
@@ -42,6 +43,11 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         // Reply: the conversation (or a whisper sender's thread) with the composer focused
         const { conversationId, threadId } = action.data ?? {};
         if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
+        break;
+      }
+      case ToastActionType.OPEN_CHAT_OFFER: {
+        const { notificationId, accepted } = action.data ?? {};
+        if (typeof notificationId === 'string') bridge?.openChat(offerNotificationLanding(notificationId, !!accepted));
         break;
       }
       case ToastActionType.OPEN_MARKET_PANEL:

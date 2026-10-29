@@ -103,7 +103,6 @@ export const useSocketNotifications = ({
       // A withdrawn offer just leaves the lists
       if (notification.type === 'offer_revoked') return;
 
-      const { listingId } = notification;
       const accepted = notification.type === 'offer_accepted';
       const offerMessage =
         notification.text ||
@@ -116,18 +115,16 @@ export const useSocketNotifications = ({
         playNotificationSound(volume);
       }
 
-      // Show toast notification with link to listing
+      // Show toast notification opening the offer in the chat
       if (isToastEnabled(settings, 'offers')) {
         showToast({
           title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
-          action: listingId
-            ? {
-                label: t('system:notifications.viewListing'),
-                type: ToastActionType.OPEN_MARKET_LISTING,
-                data: { listingId },
-              }
-            : undefined,
+          action: {
+            label: t('system:notifications.viewOffer'),
+            type: ToastActionType.OPEN_CHAT_OFFER,
+            data: { notificationId: notification.id, accepted },
+          },
         });
       }
     });
