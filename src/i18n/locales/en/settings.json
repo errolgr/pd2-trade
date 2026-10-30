@@ -47,7 +47,6 @@
         "label": "Followed zones",
         "description": "The zones the timer and notifications follow when set to Only zones I follow."
       },
-      "group": "Corrupted zone timer",
       "opacity": "Timer opacity: <num>{{value}}%</num>",
       "lead": {
         "atStart": "Notify when the zone starts",
@@ -531,6 +530,10 @@
     "stats": {
       "title": "Price Check",
       "description": "Configure the price window and how stat ranges and filters are populated for price-check searches."
+    },
+    "zoneTimer": {
+      "title": "Corrupted zone timer",
+      "description": "Which zones new Hell games corrupt, the countdown to the next rotation, and zone notifications."
     }
   }
 }

@@ -15,7 +15,12 @@ let store: OptionsStore;
 function renderForm(settings: Partial<ISettings>, isLoading = false) {
   store = createOptionsStore(settings, isLoading);
   vi.mocked(useOptions).mockImplementation(store.useOptions);
-  return render(<InterfaceForm />);
+  return render(
+    <>
+      <InterfaceForm part="general" />
+      <InterfaceForm part="zoneTimer" />
+    </>,
+  );
 }
 
 const overlaySwitch = () => screen.getByRole('switch', { name: 'Chat Button Overlay' });

@@ -47,7 +47,6 @@
         "label": "Obserwowane strefy",
         "description": "Strefy, za którymi podążają licznik i powiadomienia przy ustawieniu Tylko obserwowane strefy."
       },
-      "group": "Licznik skażonych stref",
       "opacity": "Krycie licznika: <num>{{value}}%</num>",
       "lead": {
         "atStart": "Powiadom, gdy strefa się zacznie",
@@ -541,6 +540,10 @@
     "stats": {
       "title": "Wycena",
       "description": "Konfiguruj okres cen oraz sposób wypełniania zakresów statystyk i filtrów w wyszukiwaniach wyceny."
+    },
+    "zoneTimer": {
+      "title": "Licznik skażonych stref",
+      "description": "Które strefy są spaczone w nowych grach Hell, odliczanie do następnej rotacji i powiadomienia o strefach."
     }
   }
 }

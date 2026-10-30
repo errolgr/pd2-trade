@@ -47,7 +47,6 @@
         "label": "Gefolgte Zonen",
         "description": "Die Zonen, denen Timer und Benachrichtigungen folgen, wenn „Nur Zonen, denen ich folge“ eingestellt ist."
       },
-      "group": "Corrupted-Zone-Timer",
       "opacity": "Timer-Deckkraft: <num>{{value}}%</num>",
       "lead": {
         "atStart": "Benachrichtigen, wenn die Zone beginnt",
@@ -531,6 +530,10 @@
     "stats": {
       "title": "Preischeck",
       "description": "Lege den Preiszeitraum fest und wie Wertebereiche und Filter für Preischeck-Suchen befüllt werden."
+    },
+    "zoneTimer": {
+      "title": "Corrupted-Zone-Timer",
+      "description": "Welche Zonen neue Hell-Spiele verderben, der Countdown bis zur nächsten Rotation und Zonen-Benachrichtigungen."
     }
   }
 }

@@ -47,7 +47,6 @@
         "label": "Zonas seguidas",
         "description": "Las zonas que siguen el temporizador y las notificaciones cuando está seleccionado Solo las zonas que sigo."
       },
-      "group": "Temporizador de zonas corruptas",
       "opacity": "Opacidad del temporizador: <num>{{value}}%</num>",
       "lead": {
         "atStart": "Avisar cuando empiece la zona",
@@ -536,6 +535,10 @@
     "stats": {
       "title": "Consulta de precio",
       "description": "Configura la ventana de precios y cómo se rellenan los rangos de estadísticas y los filtros en las búsquedas de consulta de precio."
+    },
+    "zoneTimer": {
+      "title": "Temporizador de zonas corruptas",
+      "description": "Qué zonas corrompen las nuevas partidas de Hell, la cuenta atrás hasta la próxima rotación y los avisos de zona."
     }
   }
 }

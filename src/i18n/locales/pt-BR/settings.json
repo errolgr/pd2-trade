@@ -47,7 +47,6 @@
         "label": "Zonas seguidas",
         "description": "As zonas que o timer e as notificações seguem quando definidos como Só zonas que sigo."
       },
-      "group": "Timer de zonas Corrupted",
       "opacity": "Opacidade do timer: <num>{{value}}%</num>",
       "lead": {
         "atStart": "Avisar quando a zona começar",
@@ -536,6 +535,10 @@
     "stats": {
       "title": "Consulta de preço",
       "description": "Configure a janela de preço e como as faixas de atributos e os filtros são preenchidos nas consultas de preço."
+    },
+    "zoneTimer": {
+      "title": "Timer de zonas Corrupted",
+      "description": "Quais zonas os novos jogos Hell corrompem, a contagem até a próxima rotação e os avisos de zona."
     }
   }
 }
