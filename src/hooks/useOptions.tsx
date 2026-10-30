@@ -29,6 +29,12 @@ export type NetWorthTickerAnchor =
   | 'above-chat'
   | 'custom';
 
+/** Settings → Market: what happens when a listed item leaves the stash. */
+export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
+/** Settings → Market: a fresh market search's order (newest bump, cheapest first, priciest first). */
+export type MarketDefaultSort = 'newest' | 'cheapest' | 'priciest';
+
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
   mode: 'hardcore' | 'softcore';
@@ -98,7 +104,21 @@ export interface ISettings {
   corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
+  corruptedZoneAlertLeadMinutes?: number; // 0-15: toast that long before the zone starts (0 = when it starts)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
+  // Settings → Market (src/components/dialogs/optionsv2/market)
+  stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
+  marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
+  marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
+  marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
+  marketDefaultMaxAgeDays?: number; // a fresh live search's listing age window (archive keeps 14 days)
+  marketPageSize?: 25 | 50 | 100; // market results per page
+  marketWhisperTemplate?: string; // "Copy whisper" body; placeholders {item} {price} {seller} {account}; '' = default
+  marketShowDealBadges?: boolean; // deal badge (price vs market) on listings
+  marketShowPriceHistory?: boolean; // price history chart in the listing detail
+  marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
+  marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
+  manageListingsPageSize?: 5 | 10 | 20; // Manage tab listings per page
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
@@ -171,7 +191,20 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
+  corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
+  stashAutoDelist: 'ask',
+  marketDefaultSort: 'newest',
+  marketDefaultSeller: 'all',
+  marketDefaultHasBuyout: 'any',
+  marketDefaultMaxAgeDays: 3,
+  marketPageSize: 25,
+  marketWhisperTemplate: '',
+  marketShowDealBadges: true,
+  marketShowPriceHistory: true,
+  marketShowSellerCard: true,
+  marketAlertToastSeconds: 8,
+  manageListingsPageSize: 5,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',

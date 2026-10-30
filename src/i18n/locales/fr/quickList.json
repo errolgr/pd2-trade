@@ -172,5 +172,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Publiée {{time}}",
     "removing": "Retrait..."
+  },
+  "autoDelist": {
+    "title": "Objet sorti du coffre",
+    "removed": "Annonce {{name}} retirée : l'objet n'est plus dans votre coffre.",
+    "removeFailed": "{{name}} a quitté votre coffre, mais son annonce n'a pas pu être retirée.",
+    "confirm": "{{name}} n'est plus dans votre coffre. Retirer l'annonce ?",
+    "confirmLookAlike": "Un objet comme {{name}} a quitté votre coffre. Retirer votre annonce {{name}} ?",
+    "pick": "Des objets comme {{name}} ont quitté votre coffre. Choisissez les annonces à retirer.",
+    "delist": "Retirer",
+    "keep": "Garder",
+    "choose": "Choisir"
   }
 }

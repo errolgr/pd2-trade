@@ -97,6 +97,7 @@
       "unlockedTitle": "拖动时不移动计时器。"
     },
     "toastTitle": "腐化区域",
-    "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）"
+    "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）",
+    "toastSoonDescription": "{{zone}} 将在 {{minutes}} 分钟后开始：请从 {{from}} 起创建新的 Hell 游戏（{{until}} 前）"
   }
 }

@@ -11,6 +11,7 @@ import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_M
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
+import { MAX_ALERT_LEAD_MINUTES } from '@/lib/corrupted-zones';
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Trans, useTranslation } from '@/i18n';
 
 const ZONE_ALERT_OPTIONS = [
@@ -40,6 +41,7 @@ const interfaceFormSchema = z.object({
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
   corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
+  corruptedZoneAlertLeadMinutes: z.number().int().min(0).max(MAX_ALERT_LEAD_MINUTES),
   corruptedZoneFollowed: z.array(z.string()),
 });
 
@@ -57,11 +59,13 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
     corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
+    corruptedZoneAlertLeadMinutes: settings?.corruptedZoneAlertLeadMinutes ?? 0,
     corruptedZoneFollowed: settings?.corruptedZoneFollowed ?? [],
   };
 }
 
-export function InterfaceForm() {
+/** `general`: language and overlays; `zoneTimer`: the corrupted zone timer (its own section, below the theme). */
+export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
   const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
 
@@ -106,300 +110,337 @@ export function InterfaceForm() {
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title={t('interface.language.group')}>
-          <FormField
-            control={form.control}
-            name="language"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.language.label')}
-                description={t('interface.language.description')}
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder={t('interface.language.label')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="system">{t('common:language.system')}</SelectItem>
-                      {SUPPORTED_LANGUAGES.map((language) => (
-                        <SelectItem key={language}
-                          value={language}
-                          lang={language}>
-                          {LANGUAGE_NAMES[language]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-        </SettingsGroup>
+        {part === 'general' && (
+          <>
+            <SettingsGroup title={t('interface.language.group')}>
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <SettingsRow
+                    label={t('interface.language.label')}
+                    description={t('interface.language.description')}
+                    control={
+                      <Select value={field.value}
+                        onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="w-[220px]">
+                            <SelectValue placeholder={t('interface.language.label')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="system">{t('common:language.system')}</SelectItem>
+                          {SUPPORTED_LANGUAGES.map((language) => (
+                            <SelectItem key={language}
+                              value={language}
+                              lang={language}>
+                              {LANGUAGE_NAMES[language]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
+            </SettingsGroup>
 
-        <SettingsGroup title={t('interface.overlays')}>
-          <FormField
-            control={form.control}
-            name="chatButtonOverlayEnabled"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.chatButton.label')}
-                description={t('interface.chatButton.description')}
-                control={
-                  <FormControl>
-                    <Switch checked={field.value ?? true}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="windowTransparency"
-            render={({ field }) => (
-              <SettingsRow
-                label={
-                  <Trans
-                    t={t}
-                    i18nKey="interface.windowTransparency.label"
-                    values={{ value: field.value }}
-                    components={{ num: <span className="tabular-nums" /> }}
-                  />
-                }
-                description={t('interface.windowTransparency.description')}
-                control={
-                  <FormControl>
-                    <Slider
-                      className="w-[220px]"
-                      min={0}
-                      max={WINDOW_TRANSPARENCY_MAX}
-                      step={5}
-                      value={[field.value]}
-                      onValueChange={(value) => {
-                        // Preview in this window right away; other windows follow once the setting is saved.
-                        applyWindowTransparency(value[0]);
-                        field.onChange(value[0]);
-                      }}
-                    />
-                  </FormControl>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-        </SettingsGroup>
+            <SettingsGroup title={t('interface.overlays')}>
+              <FormField
+                control={form.control}
+                name="chatButtonOverlayEnabled"
+                render={({ field }) => (
+                  <SettingsRow
+                    label={t('interface.chatButton.label')}
+                    description={t('interface.chatButton.description')}
+                    control={
+                      <FormControl>
+                        <Switch checked={field.value ?? true}
+                          onCheckedChange={field.onChange} />
+                      </FormControl>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="windowTransparency"
+                render={({ field }) => (
+                  <SettingsRow
+                    label={
+                      <Trans
+                        t={t}
+                        i18nKey="interface.windowTransparency.label"
+                        values={{ value: field.value }}
+                        components={{ num: <span className="tabular-nums" /> }}
+                      />
+                    }
+                    description={t('interface.windowTransparency.description')}
+                    control={
+                      <FormControl>
+                        <Slider
+                          className="w-[220px]"
+                          min={0}
+                          max={WINDOW_TRANSPARENCY_MAX}
+                          step={5}
+                          value={[field.value]}
+                          onValueChange={(value) => {
+                            // Preview in this window right away; other windows follow once the setting is saved.
+                            applyWindowTransparency(value[0]);
+                            field.onChange(value[0]);
+                          }}
+                        />
+                      </FormControl>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
+            </SettingsGroup>
+          </>
+        )}
 
-        <SettingsGroup title={t('interface.zoneTimer.group')}>
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerEnabled"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.enabled.label')}
-                description={t('interface.zoneTimer.enabled.description')}
-                control={
-                  <FormControl>
-                    <Switch checked={field.value}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerAnchor"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.position.label')}
-                description={t('interface.zoneTimer.position.description')}
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder={t('interface.zoneTimer.position.placeholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {TICKER_ANCHOR_OPTIONS.map((option) => (
-                        <SelectItem key={option.value}
-                          value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerLocked"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.locked.label')}
-                description={t('interface.zoneTimer.locked.description')}
-                control={
-                  <FormControl>
-                    <Switch checked={field.value}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerLayout"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.layout.label')}
-                description={t('interface.zoneTimer.layout.description')}
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder={t('interface.zoneTimer.layout.placeholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {TIMER_LAYOUT_OPTIONS.map((option) => (
-                        <SelectItem key={option.value}
-                          value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerOpacity"
-            render={({ field }) => (
-              <SettingsRow
-                label={
-                  <Trans
-                    t={t}
-                    i18nKey="interface.zoneTimer.opacity"
-                    values={{ value: field.value }}
-                    components={{ num: <span className="tabular-nums" /> }}
-                  />
-                }
-                control={
-                  <FormControl>
-                    <Slider
-                      className="w-[220px]"
-                      min={30}
-                      max={100}
-                      step={5}
-                      value={[field.value]}
-                      onValueChange={(value) => field.onChange(value[0])}
-                    />
-                  </FormControl>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneTimerZones"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.zones.label')}
-                description={t('interface.zoneTimer.zones.description')}
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder={t('interface.zoneTimer.zones.placeholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {TIMER_ZONES_OPTIONS.map((option) => (
-                        <SelectItem key={option.value}
-                          value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="corruptedZoneAlerts"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('interface.zoneTimer.alerts.label')}
-                description={t('interface.zoneTimer.alerts.description')}
-                control={
-                  <Select value={field.value}
-                    onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder={t('interface.zoneTimer.alerts.placeholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {ZONE_ALERT_OPTIONS.map((option) => (
-                        <SelectItem key={option.value}
-                          value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                }
-              >
-                <FormMessage />
-              </SettingsRow>
-            )}
-          />
-          {(form.watch('corruptedZoneAlerts') === 'followed' ||
-            form.watch('corruptedZoneTimerZones') === 'followed') && (
+        {part === 'zoneTimer' && (
+          <SettingsGroup>
             <FormField
               control={form.control}
-              name="corruptedZoneFollowed"
+              name="corruptedZoneTimerEnabled"
               render={({ field }) => (
                 <SettingsRow
-                  label={t('interface.zoneTimer.followed.label')}
-                  description={t('interface.zoneTimer.followed.description')}
-                  control={<ZonePicker value={field.value}
-                    onChange={field.onChange} />}
-                />
+                  label={t('interface.zoneTimer.enabled.label')}
+                  description={t('interface.zoneTimer.enabled.description')}
+                  control={
+                    <FormControl>
+                      <Switch checked={field.value}
+                        onCheckedChange={field.onChange} />
+                    </FormControl>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
               )}
             />
-          )}
-        </SettingsGroup>
+            <FormField
+              control={form.control}
+              name="corruptedZoneTimerAnchor"
+              render={({ field }) => (
+                <SettingsRow
+                  label={t('interface.zoneTimer.position.label')}
+                  description={t('interface.zoneTimer.position.description')}
+                  control={
+                    <Select value={field.value}
+                      onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder={t('interface.zoneTimer.position.placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TICKER_ANCHOR_OPTIONS.map((option) => (
+                          <SelectItem key={option.value}
+                            value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="corruptedZoneTimerLocked"
+              render={({ field }) => (
+                <SettingsRow
+                  label={t('interface.zoneTimer.locked.label')}
+                  description={t('interface.zoneTimer.locked.description')}
+                  control={
+                    <FormControl>
+                      <Switch checked={field.value}
+                        onCheckedChange={field.onChange} />
+                    </FormControl>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="corruptedZoneTimerLayout"
+              render={({ field }) => (
+                <SettingsRow
+                  label={t('interface.zoneTimer.layout.label')}
+                  description={t('interface.zoneTimer.layout.description')}
+                  control={
+                    <Select value={field.value}
+                      onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder={t('interface.zoneTimer.layout.placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TIMER_LAYOUT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value}
+                            value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="corruptedZoneTimerOpacity"
+              render={({ field }) => (
+                <SettingsRow
+                  label={
+                    <Trans
+                      t={t}
+                      i18nKey="interface.zoneTimer.opacity"
+                      values={{ value: field.value }}
+                      components={{ num: <span className="tabular-nums" /> }}
+                    />
+                  }
+                  control={
+                    <FormControl>
+                      <Slider
+                        className="w-[220px]"
+                        min={30}
+                        max={100}
+                        step={5}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="corruptedZoneTimerZones"
+              render={({ field }) => (
+                <SettingsRow
+                  label={t('interface.zoneTimer.zones.label')}
+                  description={t('interface.zoneTimer.zones.description')}
+                  control={
+                    <Select value={field.value}
+                      onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder={t('interface.zoneTimer.zones.placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TIMER_ZONES_OPTIONS.map((option) => (
+                          <SelectItem key={option.value}
+                            value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="corruptedZoneAlerts"
+              render={({ field }) => (
+                <SettingsRow
+                  label={t('interface.zoneTimer.alerts.label')}
+                  description={t('interface.zoneTimer.alerts.description')}
+                  control={
+                    <Select value={field.value}
+                      onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder={t('interface.zoneTimer.alerts.placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ZONE_ALERT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value}
+                            value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+            {form.watch('corruptedZoneAlerts') !== 'off' && (
+              <FormField
+                control={form.control}
+                name="corruptedZoneAlertLeadMinutes"
+                render={({ field }) => (
+                  <SettingsRow
+                    label={
+                      field.value === 0
+                        ? t('interface.zoneTimer.lead.atStart')
+                        : t('interface.zoneTimer.lead.before', { count: field.value })
+                    }
+                    description={t('interface.zoneTimer.lead.description')}
+                    control={
+                      <FormControl>
+                        <Slider
+                          className="w-[220px]"
+                          aria-label={t('interface.zoneTimer.lead.ariaLabel')}
+                          min={0}
+                          max={MAX_ALERT_LEAD_MINUTES}
+                          step={1}
+                          value={[field.value]}
+                          onValueChange={(value) => field.onChange(value[0])}
+                        />
+                      </FormControl>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
+            )}
+            {(form.watch('corruptedZoneAlerts') === 'followed' ||
+              form.watch('corruptedZoneTimerZones') === 'followed') && (
+              <FormField
+                control={form.control}
+                name="corruptedZoneFollowed"
+                render={({ field }) => (
+                  <SettingsRow
+                    label={t('interface.zoneTimer.followed.label')}
+                    description={t('interface.zoneTimer.followed.description')}
+                    control={<ZonePicker value={field.value}
+                      onChange={field.onChange} />}
+                  />
+                )}
+              />
+            )}
+          </SettingsGroup>
+        )}
       </div>
     </Form>
   );

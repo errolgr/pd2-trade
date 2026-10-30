@@ -106,6 +106,7 @@
       "unlockedTitle": "Nie pozwól, by licznik przesuwał się przy przeciąganiu."
     },
     "toastTitle": "Skażona strefa",
-    "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})"
+    "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})",
+    "toastSoonDescription": "{{zone}} za {{minutes}} min: utwórz nową grę Hell od {{from}} (do {{until}})"
   }
 }

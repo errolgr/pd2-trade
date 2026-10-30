@@ -47,8 +47,16 @@
         "label": "Obserwowane strefy",
         "description": "Strefy, za którymi podążają licznik i powiadomienia przy ustawieniu Tylko obserwowane strefy."
       },
-      "group": "Licznik skażonych stref",
-      "opacity": "Krycie licznika: <num>{{value}}%</num>"
+      "opacity": "Krycie licznika: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Powiadom, gdy strefa się zacznie",
+        "before_one": "Powiadom {{count}} minutę przed startem strefy",
+        "before_few": "Powiadom {{count}} minuty przed startem strefy",
+        "before_many": "Powiadom {{count}} minut przed startem strefy",
+        "before_other": "Powiadom {{count}} minuty przed startem strefy",
+        "description": "Do 15 minut wcześniej, by zdążyć do nowej gry Hell.",
+        "ariaLabel": "Powiadom przed startem strefy"
+      }
     },
     "zoneAlertOptions": {
       "off": "Wył.",
@@ -144,7 +152,8 @@
     "priceCheck": "Wycena",
     "netWorth": "Majątek",
     "hotkeys": "Skróty klawiszowe",
-    "about": "O aplikacji"
+    "about": "O aplikacji",
+    "market": "Rynek"
   },
   "layout": {
     "title": "Ustawienia",
@@ -443,16 +452,7 @@
         "label": "Głośność powiadomień: <num>{{value}}%</num>",
         "description": "Dostosuj głośność dźwięków powiadomień o szeptach (0-100%)."
       },
-      "marketVolume": {
-        "label": "Głośność alertów rynku: <num>{{value}}%</num>",
-        "description": "Głośność dźwięku alertu rynku (0-100%).",
-        "ariaLabel": "Głośność alertów rynku"
-      },
-      "group": "Dźwięk",
-      "marketSound": {
-        "label": "Dźwięk alertu rynku",
-        "description": "Odtwarzaj dźwięk z powiadomieniem o nowym ogłoszeniu pasującym do obserwowanego wyszukiwania."
-      }
+      "group": "Dźwięk"
     },
     "templates": {
       "accept": {
@@ -532,6 +532,102 @@
     "stats": {
       "title": "Wycena",
       "description": "Konfiguruj okres cen oraz sposób wypełniania zakresów statystyk i filtrów w wyszukiwaniach wyceny."
+    },
+    "market": {
+      "title": "Rynek",
+      "description": "Twoje ogłoszenia, przeglądarka rynku i alerty rynkowe."
+    },
+    "zoneTimer": {
+      "title": "Licznik skażonych stref",
+      "description": "Które strefy są spaczone w nowych grach Hell, odliczanie do następnej rotacji i powiadomienia o strefach."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Twoje ogłoszenia",
+      "autoDelist": {
+        "label": "Gdy wystawiony przedmiot opuści skrzynię",
+        "description": "Przeniesienie między zakładkami się nie liczy. Sprawdzane co minutę, gdy Diablo II jest na pierwszym planie. Jeśli przez identyczne przedmioty nie wiadomo, który zniknął, zawsze wybierasz sam.",
+        "options": {
+          "off": "Nic nie rób",
+          "ask": "Zapytaj mnie",
+          "auto": "Usuń ogłoszenie"
+        }
+      },
+      "pageSize": {
+        "label": "Ogłoszeń na stronę",
+        "description": "Ile Twoich ogłoszeń karta Zarządzaj wczytuje naraz."
+      }
+    },
+    "browser": {
+      "group": "Przeglądarka rynku",
+      "defaultsHint": "Używane przy nowym wyszukiwaniu i po zresetowaniu filtrów.",
+      "sort": {
+        "label": "Domyślne sortowanie",
+        "options": {
+          "newest": "Najnowsze najpierw",
+          "cheapest": "Najtańsze najpierw",
+          "priciest": "Najdroższe najpierw"
+        }
+      },
+      "seller": {
+        "label": "Domyślny filtr sprzedawcy",
+        "options": {
+          "all": "Każdy sprzedawca",
+          "online": "Online na stronie",
+          "in-game": "W grze"
+        }
+      },
+      "buyout": {
+        "label": "Domyślny filtr kupna od ręki",
+        "options": {
+          "any": "Dowolne",
+          "yes": "Z ceną kupna od ręki",
+          "no": "Bez ceny kupna od ręki"
+        }
+      },
+      "age": {
+        "label": "Domyślny wiek ogłoszeń"
+      },
+      "pageSize": {
+        "label": "Wyników na stronę"
+      },
+      "whisper": {
+        "label": "Wiadomość szeptu",
+        "description": "Co wysyła „Kopiuj szept”. Symbole: {item}, {price}, {seller}, {account}. Zostaw puste, aby użyć domyślnej."
+      },
+      "dealBadges": {
+        "label": "Odznaki okazji",
+        "description": "Pokazuje, jak cena ogłoszenia wypada na tle rynku."
+      },
+      "priceHistory": {
+        "label": "Historia cen",
+        "description": "Pokazuje wykres historii cen w szczegółach ogłoszenia."
+      },
+      "sellerCard": {
+        "label": "Karta sprzedawcy",
+        "description": "Pokazuje status sprzedawcy i jego inne ogłoszenia w szczegółach ogłoszenia."
+      }
+    },
+    "alerts": {
+      "group": "Alerty",
+      "duration": {
+        "label": "Czas wyświetlania alertu",
+        "description": "Jak długo widoczne jest okienko nowego ogłoszenia pasującego do obserwowanego wyszukiwania.",
+        "seconds_one": "{{count}} sekunda",
+        "seconds_few": "{{count}} sekundy",
+        "seconds_many": "{{count}} sekund",
+        "seconds_other": "{{count}} sekundy"
+      },
+      "sound": {
+        "label": "Dźwięk alertu rynku",
+        "description": "Odtwarzaj dźwięk z powiadomieniem o nowym ogłoszeniu pasującym do obserwowanego wyszukiwania."
+      },
+      "volume": {
+        "label": "Głośność alertów rynku: <num>{{value}}%</num>",
+        "description": "Głośność dźwięku alertu rynku (0-100%).",
+        "ariaLabel": "Głośność alertów rynku"
+      }
     }
   }
 }

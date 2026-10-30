@@ -4,8 +4,10 @@ import { runSearch } from '../lib/search';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
 import { t } from '@/i18n';
 
-/** Rows per page — the list loads the next page when scrolled to the end. */
+/** Rows per page unless Settings → Market picks another — the list loads the next page when scrolled to the end. */
 export const MARKET_PAGE_SIZE = 25;
+/** Page sizes Settings → Market offers (the service caps a page at 100); anything else uses MARKET_PAGE_SIZE. */
+const PAGE_SIZES: readonly number[] = [25, 50, 100];
 const DEFAULT_DEBOUNCE_MS = 350;
 const CACHE_TTL_MS = 60_000;
 const CACHE_MAX = 30;
@@ -76,8 +78,8 @@ export function clearMarketSearchCache() {
   cache.clear();
 }
 
-function queryKey(f: MarketFilters, page: number): string {
-  return `${JSON.stringify({ ...f, sellerName: undefined, stats: f.stats.map(({ id: _id, ...rest }) => rest) })}#${page}`;
+function queryKey(f: MarketFilters, page: number, pageSize: number): string {
+  return `${JSON.stringify({ ...f, sellerName: undefined, stats: f.stats.map(({ id: _id, ...rest }) => rest) })}#${page}x${pageSize}`;
 }
 
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
@@ -122,13 +124,20 @@ export interface MarketSearch extends MarketSearchState {
 /**
  * Debounced market search: every `filters` change aborts the in-flight search and runs `runSearch` after
  * `debounceMs`. The market service filters and ranks (weights and stat sorts included), so any change refetches;
- * results are cached per query (60 s). `filters: null` keeps the hook idle.
+ * results are cached per query (60 s). `filters: null` keeps the hook idle. `pageSize`: 25, 50 or 100 rows
+ * (Settings → Market), else MARKET_PAGE_SIZE.
  */
 export function useMarketSearch(
   api: MarketApi | null,
   filters: MarketFilters | null,
-  { signedIn, debounceMs = DEFAULT_DEBOUNCE_MS }: { signedIn: boolean; debounceMs?: number },
+  {
+    signedIn,
+    debounceMs = DEFAULT_DEBOUNCE_MS,
+    pageSize: requestedPageSize,
+  }: { signedIn: boolean; debounceMs?: number; pageSize?: number },
 ): MarketSearch {
+  const pageSize =
+    requestedPageSize !== undefined && PAGE_SIZES.includes(requestedPageSize) ? requestedPageSize : MARKET_PAGE_SIZE;
   const [state, setState] = useState<MarketSearchState>(IDLE);
   const abortRef = useRef<AbortController | null>(null);
   const pageRef = useRef(0);
@@ -163,7 +172,7 @@ export function useMarketSearch(
       });
     };
 
-    const cached = force ? null : cacheGet(queryKey(filters, 0));
+    const cached = force ? null : cacheGet(queryKey(filters, 0, pageSize));
     if (cached) {
       show(cached);
       return;
@@ -177,11 +186,11 @@ export function useMarketSearch(
         try {
           const result = await runSearch(api, filters, {
             page: 0,
-            pageSize: MARKET_PAGE_SIZE,
+            pageSize,
             signal: controller.signal,
           });
           if (controller.signal.aborted) return;
-          cacheSet(queryKey(filters, 0), result);
+          cacheSet(queryKey(filters, 0, pageSize), result);
           show(result);
         } catch (e) {
           if (controller.signal.aborted || isAbort(e)) return;
@@ -194,7 +203,7 @@ export function useMarketSearch(
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [api, filters, signedIn, debounceMs, reloadToken]);
+  }, [api, filters, signedIn, debounceMs, reloadToken, pageSize]);
 
   const fetchMore = useCallback(
     async (retry: boolean) => {
@@ -205,10 +214,8 @@ export function useMarketSearch(
       abortRef.current = controller;
       setState((s) => ({ ...s, loadingMore: true, loadMoreError: null, loadMoreRetryAt: null }));
       try {
-        const key = queryKey(filters, page);
-        const result =
-          cacheGet(key) ??
-          (await runSearch(api, filters, { page, pageSize: MARKET_PAGE_SIZE, signal: controller.signal }));
+        const key = queryKey(filters, page, pageSize);
+        const result = cacheGet(key) ?? (await runSearch(api, filters, { page, pageSize, signal: controller.signal }));
         if (controller.signal.aborted) return;
         cacheSet(key, result);
         pageRef.current = page;
@@ -223,7 +230,7 @@ export function useMarketSearch(
             totalExact: result.totalExact,
             loadingMore: false,
             // Rows, not `items` (a page can hold item-less rows that never show), decide whether more follow
-            hasMore: result.fetched > 0 && page * MARKET_PAGE_SIZE + result.fetched < result.total,
+            hasMore: result.fetched > 0 && page * pageSize + result.fetched < result.total,
           };
         });
       } catch (e) {
@@ -240,7 +247,7 @@ export function useMarketSearch(
         }));
       }
     },
-    [api, filters, state.hasMore, state.loadingMore, state.loadMoreError, state.loadMoreRetryAt],
+    [api, filters, pageSize, state.hasMore, state.loadingMore, state.loadMoreError, state.loadMoreRetryAt],
   );
   const loadMore = useCallback(() => fetchMore(false), [fetchMore]);
   const retryLoadMore = useCallback(() => fetchMore(true), [fetchMore]);

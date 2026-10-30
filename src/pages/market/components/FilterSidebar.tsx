@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, ITEM_TYPES, RARITIES, basesForType } from '../lib/catalog';
-import { DEFAULT_MAX_AGE_DAYS, MAX_FILTER_TEXT, MAX_SELLER_NAME, withSource } from '../lib/defaults';
+import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
@@ -88,6 +88,8 @@ export interface FilterSidebarProps {
   onChange: (next: MarketFilters) => void;
   /** Back to the defaults (keeps mode/source). */
   onReset: () => void;
+  /** The user's fresh-search defaults: section badges count filters that differ from them. */
+  searchDefaults: SearchDefaults;
   stats: Omit<StatFiltersProps, 'stats' | 'onChange'>;
   /** Sections the user opened or closed (by title); the rest use their default. */
   sectionsOpen: Record<string, boolean>;
@@ -102,6 +104,7 @@ export function FilterSidebar({
   filters: f,
   onChange,
   onReset,
+  searchDefaults: defaults,
   stats,
   sectionsOpen,
   onSectionOpen,
@@ -137,7 +140,7 @@ export function FilterSidebar({
         <Segmented
           label={t('filters.source.label')}
           value={f.source}
-          onChange={(source) => onChange(withSource(f, source))}
+          onChange={(source) => onChange(withSource(f, source, defaults))}
           options={[
             { value: 'live', label: t('filters.source.live') },
             { value: 'archive', label: t('filters.source.archive'), title: t('filters.source.archiveTitle') },
@@ -235,10 +238,11 @@ export function FilterSidebar({
 
         <Section
           {...section('Listing', t('filters.sections.listing'))}
-          // Collapsed by default: a non-default window or sort (e.g. "sort by this" from a mod menu) shows in the badge
+          // Collapsed by default: a window or sort other than the user's default (e.g. "sort by this" from a mod
+          // menu) shows in the badge
           active={
-            (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source] ? 1 : 0) +
-            (f.sort.by !== 'bumped' || f.sort.dir !== 'desc' ? 1 : 0)
+            (f.maxAgeDays !== defaultAgeDays(f.source, defaults) ? 1 : 0) +
+            (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
           }
         >
           <Field label={t('filters.mode')}>
@@ -290,7 +294,7 @@ export function FilterSidebar({
                   type="button"
                   aria-label={t('filters.sort.stopStat')}
                   title={t('filters.sort.stopStat')}
-                  onClick={() => set({ sort: { by: 'bumped', dir: 'desc' } })}
+                  onClick={() => set({ sort: { ...defaults.sort } })}
                   className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
                 >
                   <X className="size-3" />
@@ -331,7 +335,7 @@ export function FilterSidebar({
 
         <Section
           {...section('Price', t('filters.sections.price'))}
-          active={countDefined(f.priceText, f.hrMin, f.hrMax, f.hasBuyout)}
+          active={countDefined(f.priceText, f.hrMin, f.hrMax) + (f.hasBuyout !== defaults.hasBuyout ? 1 : 0)}
         >
           <Field label={t('filters.priceNote')}
             htmlFor="market-price-text">
@@ -358,7 +362,11 @@ export function FilterSidebar({
 
         <Section
           {...section('Seller', t('filters.sections.seller'))}
-          active={countDefined(f.sellerUserId ?? f.sellerName, f.userOnlineSite, f.userOnlineGame)}
+          active={
+            countDefined(f.sellerUserId ?? f.sellerName) +
+            (f.userOnlineSite !== defaults.userOnlineSite ? 1 : 0) +
+            (f.userOnlineGame !== defaults.userOnlineGame ? 1 : 0)
+          }
         >
           <Field label={t('filters.seller')}
             htmlFor="market-seller">

@@ -1,5 +1,16 @@
 export const changeLog = {
-  '0.10.11': ['🔧 Rune prices: prices, the breakdown target, totals and differences show 2 decimals (3 for low runes) instead of float noise like 0.30000000000000004'],
+  '0.10.11': [
+    '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
+    '🆕 Settings → Market: one place for your listings, the market browser and market alerts (the alert sound moved here from Chat)',
+    '🆕 Market browser defaults: pick the sort, seller filter (online / in game), buyout filter and listing age a new search starts with (Reset goes back to them), and how many results load per page',
+    '🆕 Market: set your own Copy whisper message, and hide deal badges, the price history chart or the seller card (their data is no longer loaded)',
+    '✨ Manage tab: show 5, 10 or 20 of your listings per page',
+    '✨ Market alerts: choose how long the popup stays up (5 to 30 seconds)',
+    '✨ Offers: the new / accepted offer toast stays up for 12 seconds instead of 4',
+    '✨ Corrupted zone notifications: choose how early to be told, from when the zone starts up to 15 minutes before (Settings → Interface)',
+    '✨ Settings → Interface: the corrupted zone timer settings now have their own section, after the theme',
+    '🔧 Rune prices: prices, the breakdown target, totals and differences show 2 decimals (3 for low runes) instead of float noise like 0.30000000000000004',
+  ],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
     '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',

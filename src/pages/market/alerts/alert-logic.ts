@@ -11,7 +11,7 @@ import { t } from '@/i18n';
 export const MAX_ALERT_TOASTS = 3;
 
 /** ms a market watch popup stays (sonner's default 4 s is too short to read it, hover it or act on it). */
-export const ALERT_TOAST_DURATION_MS = 8_000;
+export const DEFAULT_ALERT_TOAST_DURATION_MS = 8_000;
 
 /** "Harlequin Crest — 1.5 HR" (listing text is shown as plain text). */
 export function alertListingText(alert: MarketAlert): string {
@@ -31,14 +31,17 @@ const viewAction = (alert: MarketAlert): CustomToastPayload['action'] => ({
 });
 
 /** The popups for new alerts (oldest first): one each, or one summary when there are many. */
-export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[] {
+export function alertToasts(
+  alerts: readonly MarketAlert[],
+  durationMs: number = DEFAULT_ALERT_TOAST_DURATION_MS,
+): CustomToastPayload[] {
   if (alerts.length === 0) return [];
   if (alerts.length > MAX_ALERT_TOASTS) {
     const newest = alerts[alerts.length - 1];
     return [
       {
         title: t('market:alerts.title'),
-        duration: ALERT_TOAST_DURATION_MS,
+        duration: durationMs,
         description: t('market:alerts.summary', {
           count: alerts.length,
           search: newest.savedSearchName,
@@ -51,7 +54,7 @@ export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[
   }
   return alerts.map((alert) => ({
     title: t('market:alerts.title'),
-    duration: ALERT_TOAST_DURATION_MS,
+    duration: durationMs,
     description: t('market:alerts.single', { search: alert.savedSearchName, listing: alertListingText(alert) }),
     action: viewAction(alert),
     listing: { listingId: alert.listingId, savedSearchId: alert.savedSearchId },

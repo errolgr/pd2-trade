@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { useOptions } from '@/hooks/useOptions';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { makeDeal, type Deal } from './deal';
 import { rareRequest } from './listing-clipboard';
@@ -22,6 +23,8 @@ interface RareRequest {
   realm: string;
 }
 
+const NO_LISTINGS: readonly MarketListingEntry[] = [];
+
 /**
  * Deal indicators keyed by listing `_id`: asking price vs an estimate.
  * - Uniques, sets, runes and the crawler's base-code items (keys, ubers, essences…): the economy price service
@@ -30,8 +33,11 @@ interface RareRequest {
  *   cached by item content per realm.
  * A listing is absent while its estimate loads and when none exists (runewords and plain bases have no
  * crawler price). Note-only listings (hr_price 0) get a Deal with the estimate but no ratio/verdict.
+ * Settings → Market's deal badges off: empty, and nothing is requested.
  */
-export function useDealIndicators(listings: readonly MarketListingEntry[]): ReadonlyMap<string, Deal> {
+export function useDealIndicators(candidates: readonly MarketListingEntry[]): ReadonlyMap<string, Deal> {
+  const { settings } = useOptions();
+  const listings = (settings?.marketShowDealBadges ?? true) ? candidates : NO_LISTINGS;
   const economy = useListingMarketPrices(listings);
 
   const rareKey = useMemo(() => {
