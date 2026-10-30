@@ -40,7 +40,9 @@ export const PANEL_DEFS: PanelDefs = {
   quickList: {
     id: 'quickList',
     component: QuickListPage,
-    size: { width: 600, height: 512 },
+    // Fits ~6 listing cards / ~16 compact rows; clamped to the screen
+    size: { width: 720, height: 680 },
+    minSize: { width: 520, height: 420 },
     resizable: true,
     placement: 'cursor', // manage mode opens with { placement: 'gameCenter' }
     persist: false,
