@@ -21,6 +21,12 @@ interface RunePricePopoverProps {
 
 const RUNE_PRICES_URL = 'https://pd2trader.com/?category=runes';
 
+/**
+ * An HR amount for display: 2 decimals, 3 below 0.1 HR (low runes), trailing zeros dropped. Prices are 7-day
+ * averages and combination totals are float sums, so the raw numbers carry noise like 0.30000000000000004.
+ */
+export const hrAmount = (value: number) => Number(value.toFixed(value < 0.1 ? 3 : 2));
+
 const LOW_RUNES: Record<string, true> = {
   'Gul Rune': true,
   'Ist Rune': true,
@@ -148,7 +154,7 @@ export function RunePricePopover({
                           rune.isFixed ? 'text-muted-foreground' : 'text-success',
                         )}
                       >
-                        {rune.price} HR
+                        {hrAmount(rune.price)} HR
                         {rune.isFixed && <span className="ml-1 text-xs">*</span>}
                       </span>
                       <span className="w-[86px] text-right text-xs tabular-nums text-muted-foreground">
@@ -206,7 +212,7 @@ export function RunePricePopover({
                         />
                       </span>
                       <span className="text-xs font-normal tabular-nums text-muted-foreground">
-                        {t('runePrices.target', { value: targetValue })}
+                        {t('runePrices.target', { value: hrAmount(targetValue) })}
                       </span>
                     </h5>
                     <div className="space-y-1.5">
@@ -237,7 +243,7 @@ export function RunePricePopover({
                                   tone === 'far' && 'text-muted-foreground',
                                 )}
                               >
-                                = {combo.totalValue} HR
+                                = {hrAmount(combo.totalValue)} HR
                               </span>
                             </div>
                             {combo.difference > 0.1 && (
@@ -247,7 +253,7 @@ export function RunePricePopover({
                                   tone === 'near' ? 'text-warning/80' : 'text-muted-foreground',
                                 )}
                               >
-                                {t('runePrices.diff', { value: combo.difference })}
+                                {t('runePrices.diff', { value: hrAmount(combo.difference) })}
                               </div>
                             )}
                           </motion.div>

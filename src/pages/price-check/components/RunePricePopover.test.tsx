@@ -150,6 +150,30 @@ describe('RunePricePopover', () => {
     expect(within(dialog).getByText('= 0.09 HR').className).toContain('text-muted-foreground');
   });
 
+  it('rounds prices, the target, totals and differences instead of showing float noise', () => {
+    const values = [rune('Ber Rune', 1.4999999999999998), rune('Um Rune', 0.7333333333), rune('Mal Rune', 0.0333333)];
+    const combos: RuneCombination[] = [
+      {
+        runes: [{ name: 'Mal Rune', price: 0.1, count: 3 }],
+        totalValue: 0.1 + 0.2,
+        difference: 1.4999999999999998 - (0.1 + 0.2),
+      },
+    ];
+    const { dialog } = open({
+      calculatedRuneValues: values,
+      selectedRuneBreakdown: 'Ber Rune',
+      selectedRuneCombinations: combos,
+    });
+
+    expect(within(dialog).getByText('target 1.5 HR')).not.toBeNull();
+    expect(within(dialog).getByText('= 0.3 HR')).not.toBeNull();
+    expect(within(dialog).getByText('Diff: 1.2 HR')).not.toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: /show more|more/i }));
+    expect(dialog.textContent).toContain('0.73 HR');
+    expect(dialog.textContent).toContain('0.033 HR');
+    expect(dialog.textContent).not.toMatch(/\d\.\d{4,}/);
+  });
+
   it('shows no breakdown when the selected rune has no combinations', () => {
     const { dialog } = open({ selectedRuneBreakdown: 'Ber Rune', selectedRuneCombinations: [] });
     expect(within(dialog).queryByText(/Breakdown:/)).toBeNull();

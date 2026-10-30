@@ -9,6 +9,7 @@ export const changeLog = {
     '✨ Offers: the new / accepted offer toast stays up for 12 seconds instead of 4',
     '✨ Corrupted zone notifications: choose how early to be told, from when the zone starts up to 15 minutes before (Settings → Interface)',
     '✨ Settings → Interface: the corrupted zone timer settings now have their own section, after the theme',
+    '🔧 Rune prices: prices, the breakdown target, totals and differences show 2 decimals (3 for low runes) instead of float noise like 0.30000000000000004',
   ],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
