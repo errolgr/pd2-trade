@@ -152,7 +152,8 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex min-w-0 items-baseline gap-2">
             <ListingName listing={listing}
-              className="text-sm" />
+              className="text-base leading-tight"
+              diablo />
             {base && <span className="shrink-0 truncate text-xs text-muted-foreground">{base}</span>}
             <span className="ml-auto max-w-[35%] shrink-0 truncate pl-2 text-right">
               <PriceText listing={listing}

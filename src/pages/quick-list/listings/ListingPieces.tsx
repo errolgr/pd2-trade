@@ -41,11 +41,22 @@ export function ListingArt({ listing, size }: { listing: MarketListingEntry; siz
   );
 }
 
-/** Name in its quality colour, the in-game tooltip on hover. */
-export function ListingName({ listing, className }: { listing: MarketListingEntry; className?: string }) {
+/** Name in its quality colour, the in-game tooltip on hover; `diablo`: in the game's font (cards). */
+export function ListingName({
+  listing,
+  className,
+  diablo = false,
+}: {
+  listing: MarketListingEntry;
+  className?: string;
+  diablo?: boolean;
+}) {
   return (
     <ItemHover listing={listing}>
-      <span className={cn('min-w-0 cursor-help truncate font-medium', nameColor(listing), className)}>
+      <span
+        className={cn('min-w-0 cursor-help truncate font-medium', nameColor(listing), className)}
+        style={diablo ? { fontFamily: 'DiabloFont' } : undefined}
+      >
         {itemDisplayName(listing.item)}
       </span>
     </ItemHover>
