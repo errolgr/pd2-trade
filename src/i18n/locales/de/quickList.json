@@ -168,5 +168,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Eingestellt {{time}}",
     "removing": "Wird entfernt..."
+  },
+  "autoDelist": {
+    "title": "Gegenstand hat die Truhe verlassen",
+    "removed": "Inserat für {{name}} entfernt: Der Gegenstand ist nicht mehr in deiner Truhe.",
+    "removeFailed": "{{name}} hat deine Truhe verlassen, aber das Inserat konnte nicht entfernt werden.",
+    "confirm": "{{name}} ist nicht mehr in deiner Truhe. Inserat entfernen?",
+    "confirmLookAlike": "Ein Gegenstand wie {{name}} hat deine Truhe verlassen. Dein Inserat für {{name}} entfernen?",
+    "pick": "Gegenstände wie {{name}} haben deine Truhe verlassen. Wähle, welche Inserate entfernt werden.",
+    "delist": "Entfernen",
+    "keep": "Behalten",
+    "choose": "Auswählen"
   }
 }

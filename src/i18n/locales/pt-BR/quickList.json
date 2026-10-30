@@ -172,5 +172,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Anunciado {{time}}",
     "removing": "Removendo..."
+  },
+  "autoDelist": {
+    "title": "Item saiu do baú",
+    "removed": "Anúncio de {{name}} removido: o item não está mais no seu baú.",
+    "removeFailed": "{{name}} saiu do seu baú, mas não foi possível remover o anúncio.",
+    "confirm": "{{name}} não está mais no seu baú. Remover o anúncio?",
+    "confirmLookAlike": "Um item como {{name}} saiu do seu baú. Remover seu anúncio de {{name}}?",
+    "pick": "Itens como {{name}} saíram do seu baú. Escolha quais anúncios remover.",
+    "delist": "Remover",
+    "keep": "Manter",
+    "choose": "Escolher"
   }
 }

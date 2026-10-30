@@ -172,5 +172,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Publicado {{time}}",
     "removing": "Quitando..."
+  },
+  "autoDelist": {
+    "title": "Un objeto salió del alijo",
+    "removed": "Anuncio de {{name}} retirado: el objeto ya no está en tu alijo.",
+    "removeFailed": "{{name}} salió de tu alijo, pero no se pudo retirar su anuncio.",
+    "confirm": "{{name}} ya no está en tu alijo. ¿Retirar el anuncio?",
+    "confirmLookAlike": "Un objeto como {{name}} salió de tu alijo. ¿Retirar tu anuncio de {{name}}?",
+    "pick": "Objetos como {{name}} salieron de tu alijo. Elige qué anuncios retirar.",
+    "delist": "Retirar",
+    "keep": "Mantener",
+    "choose": "Elegir"
   }
 }

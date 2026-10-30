@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Search,
   SlidersHorizontal,
+  Store,
   TrendingUp,
   UserRound,
   type LucideIcon,
@@ -26,6 +27,7 @@ import SettingsChat from './chat/layout';
 import SettingsInterface from './interface/layout';
 import SettingsStats from './stats/layout';
 import SettingsNetWorth from './networth/layout';
+import SettingsMarket from './market/layout';
 import { SettingsNavContext, type SettingsSectionId } from './settings-ui';
 import { useTranslation } from '@/i18n';
 
@@ -41,6 +43,7 @@ const sidebarNavItems: INavItem[] = [
   { title: 'Chat', titleKey: 'nav.chat', icon: MessageSquare, content: <SettingsChat /> },
   { title: 'Interface', titleKey: 'nav.interface', icon: LayoutPanelTop, content: <SettingsInterface /> },
   { title: 'Price Check', titleKey: 'nav.priceCheck', icon: Search, content: <SettingsStats /> },
+  { title: 'Market', titleKey: 'nav.market', icon: Store, content: <SettingsMarket /> },
   { title: 'Net Worth', titleKey: 'nav.netWorth', icon: TrendingUp, content: <SettingsNetWorth /> },
   { title: 'Hotkeys', titleKey: 'nav.hotkeys', icon: Keyboard, content: <SettingsHotkeys /> },
   { title: 'About', titleKey: 'nav.about', icon: Info, content: <SettingsAbout /> },

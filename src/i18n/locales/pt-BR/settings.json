@@ -47,8 +47,15 @@
         "label": "Zonas seguidas",
         "description": "As zonas que o timer e as notificações seguem quando definidos como Só zonas que sigo."
       },
-      "group": "Timer de zonas Corrupted",
-      "opacity": "Opacidade do timer: <num>{{value}}%</num>"
+      "opacity": "Opacidade do timer: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Avisar quando a zona começar",
+        "before_one": "Avisar {{count}} minuto antes de a zona começar",
+        "before_many": "Avisar {{count}} minutos antes de a zona começar",
+        "before_other": "Avisar {{count}} minutos antes de a zona começar",
+        "description": "Até 15 minutos antes, para entrar a tempo em um novo jogo Hell.",
+        "ariaLabel": "Avisar antes de a zona começar"
+      }
     },
     "zoneAlertOptions": {
       "off": "Desligado",
@@ -144,7 +151,8 @@
     "priceCheck": "Consulta de preço",
     "netWorth": "Patrimônio",
     "hotkeys": "Atalhos",
-    "about": "Sobre"
+    "about": "Sobre",
+    "market": "Mercado"
   },
   "layout": {
     "title": "Configurações",
@@ -439,16 +447,7 @@
         "label": "Volume das notificações: <num>{{value}}%</num>",
         "description": "Ajusta o volume dos sons de notificação de sussurro (0-100%)."
       },
-      "marketVolume": {
-        "label": "Volume do alerta do mercado: <num>{{value}}%</num>",
-        "description": "Volume do som de alerta do mercado (0-100%).",
-        "ariaLabel": "Volume do alerta do mercado"
-      },
-      "group": "Som",
-      "marketSound": {
-        "label": "Som do alerta do mercado",
-        "description": "Toca um som com o pop-up de um novo anúncio que corresponde a um alerta do mercado."
-      }
+      "group": "Som"
     },
     "templates": {
       "accept": {
@@ -528,6 +527,101 @@
     "stats": {
       "title": "Consulta de preço",
       "description": "Configure a janela de preço e como as faixas de atributos e os filtros são preenchidos nas consultas de preço."
+    },
+    "market": {
+      "title": "Mercado",
+      "description": "Seus anúncios, o navegador do mercado e os alertas do mercado."
+    },
+    "zoneTimer": {
+      "title": "Timer de zonas Corrupted",
+      "description": "Quais zonas os novos jogos Hell corrompem, a contagem até a próxima rotação e os avisos de zona."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Seus anúncios",
+      "autoDelist": {
+        "label": "Quando um item anunciado sai do seu baú",
+        "description": "Mover entre abas não conta. Verificado a cada minuto enquanto o Diablo II está em primeiro plano. Se itens iguais deixam incerto qual saiu, você sempre escolhe.",
+        "options": {
+          "off": "Não fazer nada",
+          "ask": "Perguntar",
+          "auto": "Remover o anúncio"
+        }
+      },
+      "pageSize": {
+        "label": "Anúncios por página",
+        "description": "Quantos dos seus anúncios a aba Gerenciar carrega por vez."
+      }
+    },
+    "browser": {
+      "group": "Navegador do mercado",
+      "defaultsHint": "Usado em uma nova busca e ao redefinir os filtros.",
+      "sort": {
+        "label": "Ordenação padrão",
+        "options": {
+          "newest": "Mais recentes primeiro",
+          "cheapest": "Mais baratos primeiro",
+          "priciest": "Mais caros primeiro"
+        }
+      },
+      "seller": {
+        "label": "Filtro de vendedor padrão",
+        "options": {
+          "all": "Qualquer vendedor",
+          "online": "Online no site",
+          "in-game": "No jogo"
+        }
+      },
+      "buyout": {
+        "label": "Filtro de compra imediata padrão",
+        "options": {
+          "any": "Qualquer",
+          "yes": "Com preço de compra imediata",
+          "no": "Sem preço de compra imediata"
+        }
+      },
+      "age": {
+        "label": "Idade padrão dos anúncios"
+      },
+      "pageSize": {
+        "label": "Resultados por página"
+      },
+      "whisper": {
+        "label": "Mensagem de sussurro",
+        "description": "O que \"Copiar sussurro\" envia. Marcadores: {item}, {price}, {seller}, {account}. Deixe vazio para usar o padrão."
+      },
+      "dealBadges": {
+        "label": "Selos de oferta",
+        "description": "Mostra como o preço de um anúncio se compara ao mercado."
+      },
+      "priceHistory": {
+        "label": "Histórico de preços",
+        "description": "Mostra o gráfico de histórico de preços nos detalhes de um anúncio."
+      },
+      "sellerCard": {
+        "label": "Cartão do vendedor",
+        "description": "Mostra o status do vendedor e seus outros anúncios nos detalhes de um anúncio."
+      }
+    },
+    "alerts": {
+      "group": "Alertas",
+      "duration": {
+        "label": "Duração do pop-up de alerta",
+        "description": "Quanto tempo o pop-up de um novo anúncio que corresponde a uma busca observada fica na tela.",
+        "seconds_one": "{{count}} segundo",
+        "seconds_many": "{{count}} segundos",
+        "seconds_other": "{{count}} segundos"
+      },
+      "sound": {
+        "label": "Som do alerta do mercado",
+        "description": "Toca um som com o pop-up de um novo anúncio que corresponde a um alerta do mercado."
+      },
+      "volume": {
+        "label": "Volume do alerta do mercado: <num>{{value}}%</num>",
+        "description": "Volume do som de alerta do mercado (0-100%).",
+        "ariaLabel": "Volume do alerta do mercado"
+      }
     }
   }
 }

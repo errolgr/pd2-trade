@@ -103,6 +103,7 @@
       "unlockedTitle": "Evita que el temporizador se mueva al arrastrarlo."
     },
     "toastTitle": "Zona corrupta",
-    "toastDescription": "{{zone}}: crea una nueva partida de Hell (hasta las {{until}})"
+    "toastDescription": "{{zone}}: crea una nueva partida de Hell (hasta las {{until}})",
+    "toastSoonDescription": "{{zone}} en {{minutes}} min: crea una nueva partida de Hell desde las {{from}} (hasta las {{until}})"
   }
 }

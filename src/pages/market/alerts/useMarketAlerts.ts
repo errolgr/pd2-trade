@@ -76,8 +76,10 @@ export function useMarketAlerts(): void {
   const active = !!token && watching && token !== refusedToken;
 
   const sound = useRef({ enabled: true, volume: 70 });
+  const toastMs = useRef(8_000);
   useEffect(() => {
     sound.current = { enabled: settings.marketAlertSoundEnabled ?? true, volume: settings.marketAlertVolume ?? 70 };
+    toastMs.current = (settings.marketAlertToastSeconds ?? 8) * 1000;
   });
   /** Alert ids shown this session: a stream restart (e.g. alerts toggled) never shows one twice. */
   const seen = useRef(new Set<string>());
@@ -86,7 +88,7 @@ export function useMarketAlerts(): void {
     if (!active || !token) return;
     const controller = new AbortController();
     const onAlerts = (alerts: MarketAlert[]) => {
-      alertToasts(alerts).forEach((toast) => showToast(toast));
+      alertToasts(alerts, toastMs.current).forEach((toast) => showToast(toast));
       if (sound.current.enabled) playNotificationSound(sound.current.volume);
       // The open market panel lights up matching cards of the watched search on screen
       publishMarketAlerts(alerts);

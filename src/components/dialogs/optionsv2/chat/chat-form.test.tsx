@@ -157,15 +157,6 @@ describe('ChatForm', () => {
     expect(lastSaved()?.whisperNotificationVolume).toBe(1);
   });
 
-  it('turns the market alert sound off and dims its volume', async () => {
-    renderForm({ marketAlertSoundEnabled: true, marketAlertVolume: 70 });
-    expect(screen.getByText(/Market Alert Volume/).textContent).toContain('70%');
-    fireEvent.click(screen.getByRole('switch', { name: 'Market Alert Sound' }));
-    await advance(500);
-    expect(lastSaved()?.marketAlertSoundEnabled).toBe(false);
-    expect(screen.getAllByRole('slider')[1].getAttribute('data-disabled')).not.toBeNull();
-  });
-
   it('does not save when settings change externally', async () => {
     // Real settings are always merged with defaults, so every chat field is present.
     const full: Partial<ISettings> = {
@@ -178,8 +169,6 @@ describe('ChatForm', () => {
       whisperJoinNotificationsEnabled: false,
       whisperNotificationTiming: 'both',
       whisperNotificationVolume: 70,
-      marketAlertSoundEnabled: true,
-      marketAlertVolume: 70,
       acceptOfferMessageTemplate: 'a',
       rejectOfferMessageTemplate: 'r',
       soldOfferMessageTemplate: 's',
