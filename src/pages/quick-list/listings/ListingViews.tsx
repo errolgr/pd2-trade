@@ -131,7 +131,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
 });
 
 /** Compact rows' columns: art · item (offers inline) · price · market · actions + bump. Shared by the header. */
-export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_auto] items-center gap-x-2';
+export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_162px] items-center gap-x-2';
 
 export const ListingRow = React.memo(function ListingRow(props: ListingViewProps) {
   const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
@@ -199,7 +199,7 @@ const COLUMNS: { id: string; sortKey: ListingsSortKey | null; align: string }[] 
   { id: 'item', sortKey: 'name', align: 'justify-start' },
   { id: 'price', sortKey: 'price', align: 'justify-end' },
   { id: 'market', sortKey: 'deal', align: 'justify-center' },
-  { id: 'bump', sortKey: 'bumped', align: 'justify-end pr-5' },
+  { id: 'bump', sortKey: 'bumped', align: 'ml-auto w-[72px] justify-center' },
 ];
 
 /** Column headers for the compact rows; a sortable header sorts by it, again reverses. */
