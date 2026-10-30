@@ -8,7 +8,8 @@ import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
-import { bumpReadyAt } from './my-listings';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { bumpReadyAt, type ListingsSort, type ListingsSortKey } from './my-listings';
 import {
   baseName,
   ListingActions,
@@ -129,13 +130,19 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
   );
 });
 
+/** Compact rows' columns: art · item · price · market · offers · bump. Shared by the header. */
+export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_56px_72px] items-center gap-x-2';
+
 export const ListingRow = React.memo(function ListingRow(props: ListingViewProps) {
   const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
   const edge = statusEdge(listing, now, offers);
+  const received = offers?.received.length ?? 0;
+  const note = sideNote(listing);
   return (
     <div
       className={cn(
-        'group/row relative flex h-9 items-center gap-2 border-b border-border/50 pr-1 pl-2.5 transition-colors duration-(--dur-fast) hover:bg-accent/40',
+        'group/row relative h-9 border-b border-border/50 pr-1.5 pl-2.5 transition-colors duration-(--dur-fast) last:border-b-0 hover:bg-accent/40',
+        ROW_GRID,
         deleting && 'bg-destructive/5 opacity-70',
       )}
     >
@@ -146,30 +153,30 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
       <ListingArt listing={listing}
         size="sm" />
       {editing ? (
-        <>
+        <div className="col-span-5 flex min-w-0 items-center gap-2">
           <ListingName listing={listing}
-            className="max-w-40 text-xs" />
+            className="max-w-40 shrink-0 text-xs" />
           <ListingEditor
             listing={listing}
             onSave={(price, note) => props.onSaveEdit(listing, price, note)}
             onCancel={props.onCancelEdit}
           />
-        </>
+        </div>
       ) : (
         <>
-          <ListingName listing={listing}
-            className="w-0 flex-[1_1_40%] text-xs" />
-          <span className="flex w-0 flex-[1_1_30%] items-center gap-1 overflow-hidden">
-            <DealBadge deal={deal}
-              compact />
-            <OfferBadge offers={offers}
-              compact />
-            {sideNote(listing) && (
-              <span className="truncate text-[11px] text-muted-foreground italic">{sideNote(listing)}</span>
-            )}
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <ListingName listing={listing}
+              className="text-xs" />
+            {note && <span className="min-w-0 truncate text-[11px] text-muted-foreground italic">{note}</span>}
           </span>
           <PriceText listing={listing}
-            className="w-16 shrink-0 text-right text-xs" />
+            className="block text-right text-xs" />
+          <span className="flex justify-center">
+            <DealBadge deal={deal}
+              compact />
+          </span>
+          <span className="flex justify-center">{received > 0 && <OfferBadge offers={offers}
+            compact />}</span>
           <ListingActions
             listing={listing}
             now={now}
@@ -183,3 +190,54 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
     </div>
   );
 });
+
+const COLUMNS: { id: string; sortKey: ListingsSortKey | null; align: string }[] = [
+  { id: 'item', sortKey: 'name', align: 'justify-start' },
+  { id: 'price', sortKey: 'price', align: 'justify-end' },
+  { id: 'market', sortKey: 'deal', align: 'justify-center' },
+  { id: 'offers', sortKey: null, align: 'justify-center' },
+  { id: 'bump', sortKey: 'bumped', align: 'justify-center' },
+];
+
+/** Column headers for the compact rows; a sortable header sorts by it, again reverses. */
+export function ListingRowsHeader({ sort, onSort }: { sort: ListingsSort; onSort: (key: ListingsSortKey) => void }) {
+  const { t } = useTranslation('quickList');
+  return (
+    <div
+      className={cn(
+        'sticky top-0 z-10 h-7 border-b border-border bg-card pr-1.5 pl-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase',
+        ROW_GRID,
+      )}
+      role="row"
+    >
+      <span />
+      {COLUMNS.map((col) => {
+        const active = col.sortKey !== null && sort.key === col.sortKey;
+        const label = t(`myListings.columns.${col.id}`);
+        return col.sortKey ? (
+          <button
+            key={col.id}
+            type="button"
+            role="columnheader"
+            aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            onClick={() => onSort(col.sortKey!)}
+            className={cn(
+              'flex min-w-0 items-center gap-0.5 uppercase outline-none hover:text-foreground focus-visible:text-foreground',
+              col.align,
+              active && 'text-foreground',
+            )}
+          >
+            <span className="truncate">{label}</span>
+            {active && (sort.dir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
+          </button>
+        ) : (
+          <span key={col.id}
+            role="columnheader"
+            className={cn('flex', col.align)}>
+            {label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}

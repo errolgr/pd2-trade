@@ -207,6 +207,13 @@
     "bumpReady_one": "Bump {{count}} ready",
     "bumpReady_other": "Bump {{count}} ready",
     "nothingToBump": "Nothing to bump",
-    "noneForFilter": "No listing matches this filter."
+    "noneForFilter": "No listing matches this filter.",
+    "columns": {
+      "item": "Item",
+      "price": "Price",
+      "market": "Market",
+      "offers": "Offers",
+      "bump": "Bump"
+    }
   }
 }

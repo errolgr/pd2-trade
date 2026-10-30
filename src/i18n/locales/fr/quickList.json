@@ -212,6 +212,13 @@
     "bumpReady_many": "Remonter {{count}} d'annonces prêtes",
     "bumpReady_other": "Remonter {{count}} annonces prêtes",
     "nothingToBump": "Rien à remonter",
-    "noneForFilter": "Aucune annonce ne correspond à ce filtre."
+    "noneForFilter": "Aucune annonce ne correspond à ce filtre.",
+    "columns": {
+      "item": "Objet",
+      "price": "Prix",
+      "market": "Marché",
+      "offers": "Offres",
+      "bump": "Remonter"
+    }
   }
 }

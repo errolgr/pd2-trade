@@ -55,7 +55,7 @@ let updateSettings: Mock<(patch: Record<string, unknown>) => void>;
 
 /** The card holding `name`. */
 const card = (name: string) => screen.getByText(name).closest<HTMLElement>('[class*="rounded-lg"][class*="border"]')!;
-const isFresh = (name: string) => within(card(name)).queryByText('12 hours') !== null;
+const isFresh = (name: string) => within(card(name)).queryByText('12h') !== null;
 const hasBump = (name: string) => within(card(name)).queryByRole('button', { name: 'Bump listing to top' }) !== null;
 
 async function click(el: Element) {
@@ -130,7 +130,7 @@ describe('MyListingsTab', () => {
     await renderTab();
     const bumpAll = screen.getByRole('button', { name: 'Bump 2 ready' });
     expect(hasBump('Shako') && hasBump('Stone of Jordan')).toBe(true);
-    expect(within(card('Arachnid Mesh')).queryByText('9 hours')).not.toBeNull();
+    expect(within(card('Arachnid Mesh')).queryByText('9h')).not.toBeNull();
 
     await click(bumpAll);
 
@@ -138,7 +138,7 @@ describe('MyListingsTab', () => {
     expect(isFresh('Shako')).toBe(true);
     expect(isFresh('Stone of Jordan')).toBe(true);
     expect(isFresh('Arachnid Mesh')).toBe(false);
-    expect(within(card('Arachnid Mesh')).queryByText('9 hours')).not.toBeNull();
+    expect(within(card('Arachnid Mesh')).queryByText('9h')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Nothing to bump' })).not.toBeNull();
   });
 

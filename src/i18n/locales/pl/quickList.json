@@ -217,6 +217,13 @@
     "bumpReady_many": "Podbij {{count}} gotowych",
     "bumpReady_other": "Podbij {{count}} gotowego",
     "nothingToBump": "Nic do podbicia",
-    "noneForFilter": "Żadne ogłoszenie nie pasuje do tego filtra."
+    "noneForFilter": "Żadne ogłoszenie nie pasuje do tego filtra.",
+    "columns": {
+      "item": "Przedmiot",
+      "price": "Cena",
+      "market": "Rynek",
+      "offers": "Oferty",
+      "bump": "Podbij"
+    }
   }
 }

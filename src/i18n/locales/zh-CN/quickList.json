@@ -202,6 +202,13 @@
     "slots": "{{count}} / {{max}} 个栏位",
     "bumpReady_other": "{{count}} 个可顶帖",
     "nothingToBump": "没有可顶帖的物品",
-    "noneForFilter": "没有符合此筛选的挂单。"
+    "noneForFilter": "没有符合此筛选的挂单。",
+    "columns": {
+      "item": "物品",
+      "price": "价格",
+      "market": "市场",
+      "offers": "报价",
+      "bump": "顶帖"
+    }
   }
 }

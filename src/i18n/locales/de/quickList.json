@@ -207,6 +207,13 @@
     "bumpReady_one": "{{count}} Bump bereit",
     "bumpReady_other": "{{count}} Bumps bereit",
     "nothingToBump": "Nichts zu bumpen",
-    "noneForFilter": "Kein Inserat passt zu diesem Filter."
+    "noneForFilter": "Kein Inserat passt zu diesem Filter.",
+    "columns": {
+      "item": "Gegenstand",
+      "price": "Preis",
+      "market": "Markt",
+      "offers": "Angebote",
+      "bump": "Bumpen"
+    }
   }
 }

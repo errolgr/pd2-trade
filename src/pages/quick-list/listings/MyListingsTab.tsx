@@ -48,7 +48,7 @@ import {
   SORT_KEYS,
   sortListings,
 } from './my-listings';
-import { ListingCard, ListingRow, type ListingViewProps } from './ListingViews';
+import { ListingCard, ListingRow, ListingRowsHeader, type ListingViewProps } from './ListingViews';
 import type { ListingActionHandlers } from './ListingPieces';
 
 // "Bump All" success flash (mirrors the pd2trader.com/overlay demo): keep in sync with --animate-bump-flash.
@@ -271,6 +271,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
 
   const setSortKey = (key: ListingsSortKey) => updateSettings({ myListingsSort: { key, dir: DEFAULT_SORT_DIR[key] } });
   const flipSort = () => updateSettings({ myListingsSort: { ...sort, dir: sort.dir === 'asc' ? 'desc' : 'asc' } });
+  const sortByColumn = (key: ListingsSortKey) => (key === sort.key ? flipSort() : setSortKey(key));
 
   if (!authData) {
     return (
@@ -476,7 +477,10 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
             ))}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card/40">
+          <div className="rounded-lg border border-border bg-card/40"
+            role="table">
+            <ListingRowsHeader sort={sort}
+              onSort={sortByColumn} />
             {shown.map((l) => (
               <ListingRow key={l._id}
                 {...viewProps(l)} />

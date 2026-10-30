@@ -212,6 +212,13 @@
     "bumpReady_many": "Subir {{count}} de anuncios listos",
     "bumpReady_other": "Subir {{count}} listos",
     "nothingToBump": "Nada que subir",
-    "noneForFilter": "Ningún anuncio coincide con este filtro."
+    "noneForFilter": "Ningún anuncio coincide con este filtro.",
+    "columns": {
+      "item": "Objeto",
+      "price": "Precio",
+      "market": "Mercado",
+      "offers": "Ofertas",
+      "bump": "Subir"
+    }
   }
 }

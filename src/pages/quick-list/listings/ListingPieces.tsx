@@ -80,7 +80,10 @@ export interface ListingActionHandlers {
   onOpen: (listing: MarketListingEntry) => void;
 }
 
-/** Bump (a countdown while on cooldown), edit, delete, open on the website. */
+/**
+ * Edit, delete, open on the website, then Bump (a countdown while on cooldown) at the right edge. `compact`
+ * (rows): the three icons float over the row's left side on hover, so they take no column of their own.
+ */
 export function ListingActions({
   listing,
   now,
@@ -100,40 +103,12 @@ export function ListingActions({
   const readyAt = bumpReadyAt(listing);
   const ready = readyAt <= now;
   return (
-    <div className="flex shrink-0 items-center gap-0.5">
-      {ready ? (
-        <Button
-          size="sm"
-          className={cn('gap-1 text-xs', compact ? 'h-6 px-2' : 'h-7 px-2.5')}
-          onClick={() => handlers.onBump(listing)}
-          disabled={bumping}
-          aria-label={t('listing.bumpToTop')}
-        >
-          {bumping ? <Loader2 className="size-3 animate-spin" /> : <ArrowUp className="size-3.5" />}
-          {t('listing.bump')}
-        </Button>
-      ) : (
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <span
-              tabIndex={0}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md border border-border/70 text-xs tabular-nums text-muted-foreground',
-                compact ? 'h-6 px-2' : 'h-7 px-2.5',
-              )}
-            >
-              <Clock className="size-3" />
-              {moment.duration(readyAt - now).humanize()}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{t('listing.canBumpIn', { time: moment(readyAt).fromNow() })}</TooltipContent>
-        </Tooltip>
-      )}
+    <div className="relative flex shrink-0 items-center gap-0.5">
       <span
         className={cn(
           'flex items-center gap-0.5',
           compact &&
-            'opacity-0 transition-opacity duration-(--dur-fast) group-hover/row:opacity-100 focus-within:opacity-100',
+            'pointer-events-none absolute right-full mr-1 rounded-md bg-card px-0.5 opacity-0 shadow-sm transition-opacity duration-(--dur-fast) group-hover/row:pointer-events-auto group-hover/row:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
         )}
       >
         <Tooltip delayDuration={0}>
@@ -177,8 +152,42 @@ export function ListingActions({
           <TooltipContent>{t('listing.goToTrade')}</TooltipContent>
         </Tooltip>
       </span>
+      {ready ? (
+        <Button
+          size="sm"
+          className={cn('w-[72px] gap-1 text-xs', compact ? 'h-6 px-2' : 'h-7 px-2.5')}
+          onClick={() => handlers.onBump(listing)}
+          disabled={bumping}
+          aria-label={t('listing.bumpToTop')}
+        >
+          {bumping ? <Loader2 className="size-3 animate-spin" /> : <ArrowUp className="size-3.5" />}
+          {t('listing.bump')}
+        </Button>
+      ) : (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <span
+              tabIndex={0}
+              className={cn(
+                'inline-flex w-[72px] items-center justify-center gap-1 rounded-md border border-border/70 text-xs tabular-nums text-muted-foreground',
+                compact ? 'h-6 px-1.5' : 'h-7 px-2',
+              )}
+            >
+              <Clock className="size-3 shrink-0" />
+              <span className="truncate">{shortWait(readyAt - now)}</span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{t('listing.canBumpIn', { time: moment(readyAt).fromNow() })}</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
+}
+
+/** "3h", "45m": the cooldown left, short enough for the bump column. */
+export function shortWait(ms: number): string {
+  const minutes = Math.max(1, Math.ceil(ms / 60_000));
+  return minutes >= 60 ? `${Math.ceil(minutes / 60)}h` : `${minutes}m`;
 }
 
 /** Inline note + HR price editor; Enter saves, Escape cancels. */
