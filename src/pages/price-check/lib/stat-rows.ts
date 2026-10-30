@@ -14,7 +14,7 @@ import {
   statRemapByName,
   STRIP_STATS,
 } from './stat-mappings';
-import { bhStatRange, statRowRange } from './stat-ranges';
+import { bhStatRange, skillParamRow, statRowRange } from './stat-ranges';
 import { getStatKey, getTypeFromBaseType } from './utils';
 
 /**
@@ -223,9 +223,12 @@ export function buildStatRows(item: Item): Stat[] {
   }
 
   // Name remap for stats that come without a stat_id (e.g. "to Strength" -> 0), before combining attributes.
-  // A stat with an id keeps it (Enigma's per-level "to Strength" is stat 220, not Strength).
+  // A stat with an id keeps it (Enigma's per-level "to Strength" is stat 220, not Strength). Auras, chance to
+  // cast and charges become rows of their stat with the skill as param (skillParamRow).
   let combinedStats = (item.stats || []).map((stat: Stat) =>
-    stat.stat_id === undefined && stat.name in statRemapByName ? { ...stat, ...statRemapByName[stat.name] } : stat,
+    stat.stat_id === undefined && stat.name in statRemapByName
+      ? { ...stat, ...statRemapByName[stat.name] }
+      : (skillParamRow(stat) ?? stat),
   );
 
   // Inject corrupted stat for corruptable items if it doesn't already exist

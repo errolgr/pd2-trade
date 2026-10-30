@@ -114,7 +114,8 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isSocket = stat.stat_id === StatId.Socket;
   const isCorrupted = stat.stat_id === StatId.Corrupted;
   const isEthereal = stat.stat_id === StatId.Ethereal;
-  const isSkill = 'skill' in stat;
+  // Charges carry their skill too, but are a skill-parameterised stat (stat.skillParam)
+  const isSkill = 'skill' in stat && !stat.skillParam;
   const isUnknownSkill =
     isSkill &&
     !skillByName(stat.skill) &&

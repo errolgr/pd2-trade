@@ -75,6 +75,7 @@ const S = {
   skillOnHit: 198,
   skillOnLevelUp: 199,
   skillWhenStruck: 201,
+  skillOnCast: 200,
   charged: 204,
   defensePerLevel: 214,
   maxDamagePerLevel: 218,
@@ -91,6 +92,7 @@ const NO_RANGE_STATS = new Set<number>([
   S.skillOnDeath,
   S.skillOnLevelUp,
   S.skillWhenStruck,
+  S.skillOnCast,
   S.charged,
 ]);
 const ENHANCED_DAMAGE_STATS = new Set<number>([
@@ -359,6 +361,67 @@ function skillId(skill: string): number | undefined {
   return skillByName(skill)?.id;
 }
 
+/** Chance-to-cast stats by the trigger their line ends with ("… on striking" is item_skillonhit). */
+export const CHANCE_TO_CAST_TRIGGERS: ReadonlyArray<readonly [string, number]> = [
+  ['on attack', 195],
+  ['when you Kill an Enemy', 196],
+  ['when you Die', 197],
+  ['on striking', 198],
+  ['when you Level-Up', 199],
+  ['on casting', 200],
+  ['when struck', 201],
+];
+const AURA_LINE = /^Level (\d+) (.+) Aura When Equipped$/;
+const CHANCE_TO_CAST_LINE = new RegExp(
+  `^\\d+% Chance to cast level (\\d+) (.+) (${CHANCE_TO_CAST_TRIGGERS.map(([trigger]) => trigger).join('|')})$`,
+);
+
+/** Proc skill ids by the skill they cast: PD2 items cast curses as procs (Amplify Damage is skill 66, proc 442). */
+const PROC_IDS: Record<string, number[]> = {};
+for (const skill of Object.values(characterSkillMap)) {
+  const of = /^(.+) proc$/.exec(skill.description ?? '')?.[1];
+  if (of) (PROC_IDS[of] ??= []).push(skill.id);
+}
+
+const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * BH exports skill-parameterised stats without a stat_id or value: auras and chance to cast as the worded line
+ * ("Level 8 Might Aura When Equipped", "18% Chance to cast level 35 Lightning on attack"), charges as
+ * { skill, level, charges }. The row each stands for: its stat, the skill level as `value` (the roll PD2's
+ * market filters on) and the skill (`skillParam`); null for any other stat.
+ */
+export function skillParamRow(stat: Stat): Stat | null {
+  if (stat.stat_id !== undefined) return null;
+  const row = (statId: number, skill: string, level: number, line: string): Stat => {
+    const id = skillId(skill);
+    const ids = [...(id === undefined ? [] : [id]), ...(PROC_IDS[skill.toLowerCase()] ?? [])];
+    return { ...stat, stat_id: statId, value: level, skillParam: { name: skill, ids, line } };
+  };
+  const name = stat.name ?? '';
+  const aura = AURA_LINE.exec(name);
+  if (aura) return row(S.aura, aura[2], Number(aura[1]), `^Level \\d+ ${escapeRegex(aura[2])} Aura When Equipped$`);
+  const cast = CHANCE_TO_CAST_LINE.exec(name);
+  if (cast) {
+    const statId = CHANCE_TO_CAST_TRIGGERS.find(([trigger]) => trigger === cast[3])![1];
+    const line = `^\\d+% Chance to cast level \\d+ ${escapeRegex(cast[2])} ${cast[3]}$`;
+    return row(statId, cast[2], Number(cast[1]), line);
+  }
+  if (stat.charges && stat.skill && stat.level !== undefined) {
+    return row(S.charged, stat.skill, stat.level, `^Level \\d+ ${escapeRegex(stat.skill)} \\(`);
+  }
+  return null;
+}
+
+/**
+ * Where a skill-parameterised market modifier keeps its skill id and the roll filters read: item_aura is
+ * [skill, level]; chance to cast is [level, skill, chance] and charges [level, skill, charges, max charges].
+ * Verified against live api.projectdiablo2.com listings.
+ */
+export function skillParamSlots(statId: number): { param: 'values.0' | 'values.1'; roll: 'values.0' | 'values.1' } {
+  return statId === S.aura ? { param: 'values.0', roll: 'values.1' } : { param: 'values.1', roll: 'values.0' };
+}
+
 /** The class a skill belongs to ("Fire Mastery" → "Sorceress"), null for non-class skills. */
 export function skillClass(skill: string): string | null {
   return skillByName(skill)?.class ?? null;
@@ -400,6 +463,10 @@ function lineOf(stat: Stat): [number, number] | null {
     case StatId.AllAttributes:
       return [0, 0];
   }
+  // Skill-parameterised rows (skillParamRow), or the clipboard's bare line they come from.
+  if (stat.skillParam) return [stat.stat_id, stat.skillParam.ids[0] ?? 0];
+  const row = skillParamRow(stat);
+  if (row) return [row.stat_id, row.skillParam!.ids[0] ?? 0];
   // BH's Ctrl+C export leaves stat_id off skill stats; `skill` says which kind ("Amazon Skills" = class skills,
   // "Martial Arts (Assassin)" = a skill tab, otherwise one skill).
   if (
@@ -409,12 +476,6 @@ function lineOf(stat: Stat): [number, number] | null {
     if (CLASS_NAMES[stat.skill.toLowerCase().replace(/ skills$/, '')]) return [S.classSkills, 0];
     const id = skillId(stat.skill);
     return id === undefined ? [S.skillTab, 0] : [S.singleSkill, id];
-  }
-  // Auras come as the formatted line ("Level 10 Sanctuary Aura When Equipped") without a stat_id.
-  const aura = stat.stat_id === undefined ? /^Level \d+ (.+) Aura When Equipped$/.exec(stat.name ?? '') : null;
-  if (aura) {
-    const id = skillId(aura[1]);
-    return id === undefined ? null : [S.aura, id];
   }
   if (stat.stat_id === undefined && stat.name in statRemapByName) return [statRemapByName[stat.name].stat_id, 0];
   return stat.stat_id === undefined ? null : [stat.stat_id, 0];

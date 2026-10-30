@@ -1,7 +1,7 @@
 import type { Item, Stat, StatFilterInput } from './interfaces';
 import { DAMAGE_PAIRS, type DamagePair, StatId, statIdToProperty } from './stat-mappings';
 import { buildStatRows } from './stat-rows';
-import { isOSkill, skillByName } from './stat-ranges';
+import { isOSkill, skillByName, skillParamSlots } from './stat-ranges';
 import { classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex } from '@/assets/class-skills';
 import { ItemCharmMap, ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType, getStatKey, parseCodeValue } from './utils';
@@ -45,7 +45,7 @@ export function buildTradeUrl(
     const f = filters[key] ?? {};
     let propKey = 'stat_undefined';
 
-    if ('skill' in stat && stat.skill) {
+    if ('skill' in stat && stat.skill && !stat.skillParam) {
       const skillEntry = skillByName(stat.skill);
       if (skillEntry) {
         propKey = `${isOSkill(item, stat) ? 'item_nonclassskill' : 'item_singleskill'}{${skillEntry.id}}`;
@@ -238,8 +238,8 @@ export function buildGetMarketListingQuery(
       return;
     }
 
-    // Skill stats
-    if ('skill' in stat && stat.skill) {
+    // Skill stats (charges carry a skill too, but are a skill-parameterised modifier: below)
+    if ('skill' in stat && stat.skill && !stat.skillParam) {
       const skillEntry = skillByName(stat.skill);
       if (skillEntry) {
         // Single skill, or an o-skill (no "(Class Only)" on the line)
@@ -293,9 +293,17 @@ export function buildGetMarketListingQuery(
       const prop = statIdToProperty[stat.stat_id];
       if (prop) {
         const mod: any = { name: prop };
-        // Skill-event modifiers (values [level, skill, chance], e.g. "Melee Attacks Deal Splash Damage" [1, 358,
-        // 100]) roll the chance the clipboard reports as the value.
-        const slot = modifierByName[prop]?.encoding === 2 ? 'values.2' : 'values.0';
+        // Skill-parameterised modifiers (auras, chance to cast, charges) pin the skill (by id, or by the line when
+        // no id is known) and roll the level. Skill-event modifiers the clipboard exports with an id (values
+        // [level, skill, chance], e.g. "Melee Attacks Deal Splash Damage" [1, 358, 100]) roll the chance the
+        // clipboard reports as the value.
+        const skill = stat.skillParam;
+        const slots = skill ? skillParamSlots(stat.stat_id) : null;
+        if (skill && slots) {
+          if (skill.ids.length === 0) mod.label = { $regex: skill.line };
+          else mod[slots.param] = skill.ids.length === 1 ? skill.ids[0] : { $in: skill.ids };
+        }
+        const slot = slots ? slots.roll : modifierByName[prop]?.encoding === 2 ? 'values.2' : 'values.0';
         if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod[slot] = {};
           if (f.min !== undefined && f.min !== '') mod[slot].$gte = Number(f.min);
@@ -428,7 +436,10 @@ function getPropertyKey(
   stat: Stat,
   statMapper?: (statId: number, stat: Stat) => string | undefined,
 ): string {
-  return statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
+  const key = statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
+  // The site's keys pin leading params only: item_aura{98}; chance to cast and charges filter any skill.
+  const pinned = stat.skillParam?.ids.length === 1 && skillParamSlots(id).param === 'values.0';
+  return pinned ? `${key}{${stat.skillParam!.ids[0]}}` : key;
 }
 
 /** `{ $gte, $lte }` from two inputs, or undefined when both are empty. */

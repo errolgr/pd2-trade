@@ -16,6 +16,11 @@ export interface Stat {
   corrupted?: boolean; // whether this stat is corrupted
   chance?: number;
   skill?: string; // skill name for skill stats
+  /**
+   * Auras, chance to cast, charges (skillParamRow): the skill the market modifier pins, by id (the skill and any
+   * proc of it, which share a name) or, when no id is known, by the market line (`line`, a regex source).
+   */
+  skillParam?: { name: string; ids: number[]; line: string };
   /** Charged skills: "(25/31 Charges)" (BH exports them without a name). */
   charges?: string;
   /** Damage pair rows ("Adds 4-14 fire damage"): `value` is the min damage, this the max. */
