@@ -13,7 +13,7 @@ import * as Sentry from '@sentry/react';
 import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
 import { isNetworkError } from '@/lib/network-errors';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
@@ -83,6 +83,8 @@ export function isExpectedApiError(error: unknown): boolean {
 
 interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
+  /** A fresh copy of the selected account's stash (GET /game/stash; refreshes the stash cache). */
+  fetchStash: () => Promise<GameData>;
   listSpecificItem: (
     stashItem: GameStashItem,
     hrPrice: number,
@@ -363,6 +365,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     <Pd2WebsiteContext.Provider
       value={{
         findMatchingItems,
+        fetchStash: fetchAndCacheStash,
         listSpecificItem,
         deleteMarketListing,
         bumpAllMarketListings,

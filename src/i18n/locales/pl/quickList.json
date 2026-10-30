@@ -176,5 +176,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Wystawiono {{time}}",
     "removing": "Usuwanie..."
+  },
+  "autoDelist": {
+    "title": "Przedmiot opuścił skrzynię",
+    "removed": "Usunięto ogłoszenie {{name}}: przedmiotu nie ma już w skrzyni.",
+    "removeFailed": "{{name}} opuścił skrzynię, ale nie udało się usunąć ogłoszenia.",
+    "confirm": "{{name}} nie ma już w skrzyni. Usunąć ogłoszenie?",
+    "confirmLookAlike": "Przedmiot taki jak {{name}} opuścił skrzynię. Usunąć ogłoszenie {{name}}?",
+    "pick": "Przedmioty takie jak {{name}} opuściły skrzynię. Wybierz ogłoszenia do usunięcia.",
+    "delist": "Usuń",
+    "keep": "Zostaw",
+    "choose": "Wybierz"
   }
 }

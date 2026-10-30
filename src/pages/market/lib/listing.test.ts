@@ -72,6 +72,8 @@ describe('buildWhisper', () => {
       "/w *selleracc Hi, I'm interested in your Rare Amulet listed for 2 ist obo",
     );
     expect(buildWhisper(listing())).toBe("/w *selleracc Hi, I'm interested in your Rare Amulet");
+    // A blank template (Settings → Market left empty) is the default one, clause drop included
+    expect(buildWhisper(listing(), '  ')).toBe("/w *selleracc Hi, I'm interested in your Rare Amulet");
   });
 
   it('fills custom templates', () => {

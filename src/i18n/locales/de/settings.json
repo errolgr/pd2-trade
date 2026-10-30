@@ -144,7 +144,8 @@
     "priceCheck": "Preischeck",
     "netWorth": "Vermögen",
     "hotkeys": "Hotkeys",
-    "about": "Über"
+    "about": "Über",
+    "market": "Markt"
   },
   "layout": {
     "title": "Einstellungen",
@@ -435,16 +436,7 @@
         "label": "Benachrichtigungslautstärke: <num>{{value}}%</num>",
         "description": "Lautstärke der Töne für Flüster-Benachrichtigungen (0–100 %)."
       },
-      "marketVolume": {
-        "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
-        "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
-        "ariaLabel": "Lautstärke Marktalarm"
-      },
-      "group": "Ton",
-      "marketSound": {
-        "label": "Marktalarm-Ton",
-        "description": "Einen Ton mit der Benachrichtigung abspielen, wenn ein neues Inserat zu einer beobachteten Marktsuche passt."
-      }
+      "group": "Ton"
     },
     "templates": {
       "accept": {
@@ -524,6 +516,96 @@
     "stats": {
       "title": "Preischeck",
       "description": "Lege den Preiszeitraum fest und wie Wertebereiche und Filter für Preischeck-Suchen befüllt werden."
+    },
+    "market": {
+      "title": "Markt",
+      "description": "Deine Inserate, der Marktbrowser und Marktalarme."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Deine Inserate",
+      "autoDelist": {
+        "label": "Wenn ein inserierter Gegenstand die Truhe verlässt",
+        "description": "Verschieben zwischen Tabs zählt nicht. Geprüft jede Minute, solange Diablo II im Vordergrund ist. Ist bei gleich aussehenden Gegenständen unklar, welcher fehlt, wählst du immer selbst.",
+        "options": {
+          "off": "Nichts tun",
+          "ask": "Mich fragen",
+          "auto": "Inserat entfernen"
+        }
+      },
+      "pageSize": {
+        "label": "Inserate pro Seite",
+        "description": "Wie viele deiner Inserate der Verwalten-Tab auf einmal lädt."
+      }
+    },
+    "browser": {
+      "group": "Marktbrowser",
+      "defaultsHint": "Gilt für eine neue Suche und beim Zurücksetzen der Filter.",
+      "sort": {
+        "label": "Standardsortierung",
+        "options": {
+          "newest": "Neueste zuerst",
+          "cheapest": "Günstigste zuerst",
+          "priciest": "Teuerste zuerst"
+        }
+      },
+      "seller": {
+        "label": "Standard-Verkäuferfilter",
+        "options": {
+          "all": "Alle Verkäufer",
+          "online": "Online auf der Website",
+          "in-game": "Im Spiel"
+        }
+      },
+      "buyout": {
+        "label": "Standard-Sofortkauffilter",
+        "options": {
+          "any": "Alle",
+          "yes": "Mit Sofortkaufpreis",
+          "no": "Ohne Sofortkaufpreis"
+        }
+      },
+      "age": {
+        "label": "Standard-Inseratsalter"
+      },
+      "pageSize": {
+        "label": "Ergebnisse pro Seite"
+      },
+      "whisper": {
+        "label": "Flüsternachricht",
+        "description": "Was „Flüstern kopieren“ sendet. Platzhalter: {item}, {price}, {seller}, {account}. Leer lassen für den Standard."
+      },
+      "dealBadges": {
+        "label": "Deal-Abzeichen",
+        "description": "Zeigt, wie der Preis eines Inserats im Vergleich zum Markt liegt."
+      },
+      "priceHistory": {
+        "label": "Preisverlauf",
+        "description": "Zeigt das Preisverlaufsdiagramm in den Inseratsdetails."
+      },
+      "sellerCard": {
+        "label": "Verkäuferkarte",
+        "description": "Zeigt Status und weitere Inserate des Verkäufers in den Inseratsdetails."
+      }
+    },
+    "alerts": {
+      "group": "Alarme",
+      "duration": {
+        "label": "Dauer des Alarm-Popups",
+        "description": "Wie lange das Popup für ein neues Inserat zu einer beobachteten Suche sichtbar bleibt.",
+        "seconds_one": "{{count}} Sekunde",
+        "seconds_other": "{{count}} Sekunden"
+      },
+      "sound": {
+        "label": "Marktalarm-Ton",
+        "description": "Einen Ton mit der Benachrichtigung abspielen, wenn ein neues Inserat zu einer beobachteten Marktsuche passt."
+      },
+      "volume": {
+        "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
+        "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
+        "ariaLabel": "Lautstärke Marktalarm"
+      }
     }
   }
 }

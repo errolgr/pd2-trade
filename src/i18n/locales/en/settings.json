@@ -144,7 +144,8 @@
     "priceCheck": "Price Check",
     "netWorth": "Net Worth",
     "hotkeys": "Hotkeys",
-    "about": "About"
+    "about": "About",
+    "market": "Market"
   },
   "layout": {
     "title": "Settings",
@@ -435,16 +436,7 @@
         "label": "Notification Volume: <num>{{value}}%</num>",
         "description": "Adjust the volume for whisper notification sounds (0-100%)."
       },
-      "marketVolume": {
-        "label": "Market Alert Volume: <num>{{value}}%</num>",
-        "description": "Volume of the market alert sound (0-100%).",
-        "ariaLabel": "Market alert volume"
-      },
-      "group": "Sound",
-      "marketSound": {
-        "label": "Market Alert Sound",
-        "description": "Play a sound with the popup for a new listing matching a market search you watch."
-      }
+      "group": "Sound"
     },
     "templates": {
       "accept": {
@@ -524,6 +516,96 @@
     "stats": {
       "title": "Price Check",
       "description": "Configure the price window and how stat ranges and filters are populated for price-check searches."
+    },
+    "market": {
+      "title": "Market",
+      "description": "Your listings, the market browser and market alerts."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Your listings",
+      "autoDelist": {
+        "label": "When a listed item leaves your stash",
+        "description": "Moving it between stash tabs doesn't count. Checked every minute while Diablo II is in front. If look-alike items make it unclear which one left, you always pick.",
+        "options": {
+          "off": "Do nothing",
+          "ask": "Ask me",
+          "auto": "Delist it"
+        }
+      },
+      "pageSize": {
+        "label": "Listings per page",
+        "description": "How many of your listings the Manage tab loads at a time."
+      }
+    },
+    "browser": {
+      "group": "Market browser",
+      "defaultsHint": "Used for a new search and when you reset the filters.",
+      "sort": {
+        "label": "Default sort",
+        "options": {
+          "newest": "Newest first",
+          "cheapest": "Cheapest first",
+          "priciest": "Most expensive first"
+        }
+      },
+      "seller": {
+        "label": "Default seller filter",
+        "options": {
+          "all": "Any seller",
+          "online": "Online on the site",
+          "in-game": "In game"
+        }
+      },
+      "buyout": {
+        "label": "Default buyout filter",
+        "options": {
+          "any": "Any",
+          "yes": "Has a buyout price",
+          "no": "No buyout price"
+        }
+      },
+      "age": {
+        "label": "Default listing age"
+      },
+      "pageSize": {
+        "label": "Results per page"
+      },
+      "whisper": {
+        "label": "Whisper message",
+        "description": "What Copy whisper sends. Placeholders: {item}, {price}, {seller}, {account}. Leave empty for the default."
+      },
+      "dealBadges": {
+        "label": "Deal badges",
+        "description": "Show how a listing's price compares with the market."
+      },
+      "priceHistory": {
+        "label": "Price history",
+        "description": "Show the price history chart in a listing's details."
+      },
+      "sellerCard": {
+        "label": "Seller card",
+        "description": "Show the seller's status and other listings in a listing's details."
+      }
+    },
+    "alerts": {
+      "group": "Alerts",
+      "duration": {
+        "label": "Alert popup duration",
+        "description": "How long the popup for a new listing matching a watched search stays up.",
+        "seconds_one": "{{count}} second",
+        "seconds_other": "{{count}} seconds"
+      },
+      "sound": {
+        "label": "Market Alert Sound",
+        "description": "Play a sound with the popup for a new listing matching a market search you watch."
+      },
+      "volume": {
+        "label": "Market Alert Volume: <num>{{value}}%</num>",
+        "description": "Volume of the market alert sound (0-100%).",
+        "ariaLabel": "Market alert volume"
+      }
     }
   }
 }

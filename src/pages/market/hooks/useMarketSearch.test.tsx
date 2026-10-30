@@ -154,6 +154,24 @@ describe('useMarketSearch', () => {
     expect(hook.current.hasMore).toBe(false);
   });
 
+  it('pages by the chosen page size, and by MARKET_PAGE_SIZE for a size the settings do not offer', async () => {
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) =>
+      result([row(`p${opts!.page}`)], { total: 100, fetched: 50 }),
+    );
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0, pageSize: 50 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    await act(() => hook.current.loadMore());
+    expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: 50 });
+    // 1 × 50 + 50 rows: all 100 loaded
+    expect(hook.current.hasMore).toBe(false);
+
+    const g = filters({ itemName: 'x' });
+    renderHook(() => useMarketSearch(api, g, { signedIn: true, debounceMs: 0, pageSize: 30 }));
+    await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(runSearch).mock.calls[2][2]).toMatchObject({ page: 0, pageSize: MARKET_PAGE_SIZE });
+  });
+
   it('asks to sign in when signed out, and says the service is unavailable when it is', async () => {
     const f = filters();
     const { result: signedOut } = renderHook(() => useMarketSearch(api, f, { signedIn: false }));

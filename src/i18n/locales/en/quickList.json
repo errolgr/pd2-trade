@@ -168,5 +168,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Listed {{time}}",
     "removing": "Removing..."
+  },
+  "autoDelist": {
+    "title": "Item left your stash",
+    "removed": "Removed the {{name}} listing: the item is no longer in your stash.",
+    "removeFailed": "{{name}} left your stash, but its listing couldn't be removed.",
+    "confirm": "{{name}} is no longer in your stash. Delist it?",
+    "confirmLookAlike": "An item like {{name}} left your stash. Delist your {{name}} listing?",
+    "pick": "Items like {{name}} left your stash. Choose which listings to remove.",
+    "delist": "Delist",
+    "keep": "Keep",
+    "choose": "Choose"
   }
 }
