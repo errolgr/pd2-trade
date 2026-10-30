@@ -548,6 +548,14 @@
           "ask": "Perguntar",
           "auto": "Remover o anúncio"
         }
+      },
+      "view": {
+        "label": "Visualização dos anúncios",
+        "description": "Como a aba Gerenciar mostra seus anúncios. O seletor na aba também muda isso.",
+        "options": {
+          "cards": "Cartões",
+          "rows": "Linhas compactas"
+        }
       }
     },
     "browser": {

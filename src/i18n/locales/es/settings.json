@@ -548,6 +548,14 @@
           "ask": "Preguntarme",
           "auto": "Retirar el anuncio"
         }
+      },
+      "view": {
+        "label": "Vista de anuncios",
+        "description": "Cómo muestra tus anuncios la pestaña Gestionar. El selector de la pestaña también lo cambia.",
+        "options": {
+          "cards": "Tarjetas",
+          "rows": "Filas compactas"
+        }
       }
     },
     "browser": {

@@ -543,6 +543,14 @@
           "ask": "Ask me",
           "auto": "Delist it"
         }
+      },
+      "view": {
+        "label": "Listings view",
+        "description": "How the Manage tab shows your listings. The toggle in the tab changes it too.",
+        "options": {
+          "cards": "Cards",
+          "rows": "Compact rows"
+        }
       }
     },
     "browser": {

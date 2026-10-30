@@ -553,6 +553,14 @@
           "ask": "Zapytaj mnie",
           "auto": "Usuń ogłoszenie"
         }
+      },
+      "view": {
+        "label": "Widok ogłoszeń",
+        "description": "Jak karta Zarządzaj pokazuje Twoje ogłoszenia. Przełącznik w karcie też to zmienia.",
+        "options": {
+          "cards": "Karty",
+          "rows": "Kompaktowe wiersze"
+        }
       }
     },
     "browser": {

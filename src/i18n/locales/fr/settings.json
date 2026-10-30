@@ -548,6 +548,14 @@
           "ask": "Me demander",
           "auto": "Retirer l'annonce"
         }
+      },
+      "view": {
+        "label": "Affichage des annonces",
+        "description": "Comment l'onglet Gérer affiche vos annonces. Le bouton dans l'onglet le change aussi.",
+        "options": {
+          "cards": "Cartes",
+          "rows": "Lignes compactes"
+        }
       }
     },
     "browser": {

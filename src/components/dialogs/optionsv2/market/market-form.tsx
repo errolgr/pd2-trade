@@ -14,6 +14,7 @@ import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
 const AUTO_DELIST_OPTIONS = ['off', 'ask', 'auto'] as const;
+const LISTINGS_VIEW_OPTIONS = ['cards', 'rows'] as const;
 const SORT_OPTIONS = ['newest', 'cheapest', 'priciest'] as const;
 const SELLER_OPTIONS = ['all', 'online', 'in-game'] as const;
 const BUYOUT_OPTIONS = ['any', 'yes', 'no'] as const;
@@ -24,6 +25,7 @@ const ALERT_SECONDS = [5, 8, 15, 30] as const;
 
 const marketFormSchema = z.object({
   stashAutoDelist: z.enum(AUTO_DELIST_OPTIONS),
+  myListingsView: z.enum(LISTINGS_VIEW_OPTIONS),
   marketDefaultSort: z.enum(SORT_OPTIONS),
   marketDefaultSeller: z.enum(SELLER_OPTIONS),
   marketDefaultHasBuyout: z.enum(BUYOUT_OPTIONS),
@@ -43,6 +45,7 @@ type MarketFormValues = z.infer<typeof marketFormSchema>;
 function toFormValues(settings: ISettings | undefined): MarketFormValues {
   return {
     stashAutoDelist: settings?.stashAutoDelist ?? 'ask',
+    myListingsView: settings?.myListingsView ?? 'cards',
     marketDefaultSort: settings?.marketDefaultSort ?? 'newest',
     marketDefaultSeller: settings?.marketDefaultSeller ?? 'all',
     marketDefaultHasBuyout: settings?.marketDefaultHasBuyout ?? 'any',
@@ -184,6 +187,22 @@ export function MarketForm() {
                 options={AUTO_DELIST_OPTIONS.map((value) => ({
                   value,
                   label: t(`market.listings.autoDelist.options.${value}`),
+                }))}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="myListingsView"
+            render={({ field }) => (
+              <SelectRow
+                label={t('market.listings.view.label')}
+                description={t('market.listings.view.description')}
+                value={field.value}
+                options={LISTINGS_VIEW_OPTIONS.map((value) => ({
+                  value,
+                  label: t(`market.listings.view.options.${value}`),
                 }))}
                 onChange={field.onChange}
               />

@@ -543,6 +543,14 @@
           "ask": "Mich fragen",
           "auto": "Inserat entfernen"
         }
+      },
+      "view": {
+        "label": "Inseratsansicht",
+        "description": "Wie der Verwalten-Tab deine Inserate zeigt. Der Umschalter im Tab ändert das ebenfalls.",
+        "options": {
+          "cards": "Karten",
+          "rows": "Kompakte Zeilen"
+        }
       }
     },
     "browser": {
