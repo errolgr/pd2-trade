@@ -136,6 +136,32 @@ describe('buildTradeUrl', () => {
     expect(urlParams(item, [key], { [key]: { min: '2' } }).p.get(`properties[${prop}][min]`)).toBe('2');
   });
 
+  // Ctrl+C exports auras as the bare line ("Level 8 Might Aura When Equipped"): no stat_id, no value.
+  const templarsMight = makeItem({
+    quality: 'Unique',
+    name: "Templar's Might",
+    type: 'Sacred Armor',
+    stats: [{ name: 'Level 8 Might Aura When Equipped', range: { min: 6, max: 8 } } as Stat],
+  });
+
+  it('maps an aura line to item_aura{skill id}', () => {
+    const { p } = urlParams(templarsMight, ['id:151:might'], { 'id:151:might': { min: '7' } });
+    expect(p.get('properties[item_aura{98}][min]')).toBe('7');
+  });
+
+  it('maps chance-to-cast and charge lines to their unpinned site keys, filtering the skill level', () => {
+    const item = makeItem({
+      stats: [
+        { name: '12% Chance to cast level 40 Twister on striking', chance: 12, level: 40 } as Stat,
+        { charges: '(25/31 Charges)', level: 3, skill: 'Teleport' } as Stat,
+      ],
+    });
+    const filters = { 'id:198:twister': { min: '35' }, 'id:204:teleport': { min: '3' } };
+    const { p } = urlParams(item, ['id:198:twister', 'id:204:teleport'], filters);
+    expect(p.get('properties[item_skillonhit][min]')).toBe('35');
+    expect(p.get('properties[item_charged_skill][min]')).toBe('3');
+  });
+
   // Ctrl+C exports +skill lines by the name the game draws, without a stat id (Discord 1464520236102451220, 1458036873527164949).
   const hawkmail = makeItem({
     name: 'Hawkmail',
@@ -428,6 +454,57 @@ describe('buildGetMarketListingQuery', () => {
       $all: [
         { $elemMatch: { name: 'item_fastercastrate', 'values.0': { $gte: 10, $lte: 20 } } },
         { $elemMatch: { name: 'maxhp' } },
+      ],
+    });
+  });
+
+  it('matches an aura line as item_aura with the skill id in values.0 and the level range in values.1', () => {
+    const item = makeItem({
+      quality: 'Unique',
+      stats: [{ name: 'Level 12 Conviction Aura When Equipped' } as Stat],
+    });
+    const q = query(item, ['id:151:conviction'], { 'id:151:conviction': { min: '10', max: '12' } });
+    expect(q['item.modifiers']).toEqual({
+      $all: [{ $elemMatch: { name: 'item_aura', 'values.0': 123, 'values.1': { $gte: 10, $lte: 12 } } }],
+    });
+  });
+
+  it('matches chance-to-cast and charge lines with the skill id in values.1 and the level range in values.0', () => {
+    const item = makeItem({
+      stats: [
+        { name: '28% Chance to cast level 35 Blessed Hammer on casting', chance: 28, level: 35 } as Stat,
+        { charges: '(25/31 Charges)', level: 3, skill: 'Teleport' } as Stat,
+      ],
+    });
+    const keys = ['id:200:blessed hammer', 'id:204:teleport'];
+    const q = query(item, keys, { [keys[0]]: { min: '30' }, [keys[1]]: { max: '5' } });
+    expect(q['item.modifiers']).toEqual({
+      $all: [
+        { $elemMatch: { name: 'item_skilloncast', 'values.1': 112, 'values.0': { $gte: 30 } } },
+        { $elemMatch: { name: 'item_charged_skill', 'values.1': 54, 'values.0': { $lte: 5 } } },
+      ],
+    });
+  });
+
+  // Items cast curses as procs (Amplify Damage: skill 66, proc 442) and draw some procs by a name no skill
+  // table has ("Static Field Proc", skill 610): match either id, or the market line.
+  it('matches a curse proc by any id of its name, and an unknown skill by its line', () => {
+    const item = makeItem({
+      stats: [
+        { name: '33% Chance to cast level 27 Amplify Damage on striking', chance: 33, level: 27 } as Stat,
+        { name: '20% Chance to cast level 25 Static Field Proc when struck', chance: 20, level: 25 } as Stat,
+      ],
+    });
+    const q = query(item, ['id:198:amplify damage', 'id:201:static field proc']);
+    expect(q['item.modifiers']).toEqual({
+      $all: [
+        { $elemMatch: { name: 'item_skillonhit', 'values.1': { $in: [66, 442] } } },
+        {
+          $elemMatch: {
+            name: 'item_skillongethit',
+            label: { $regex: '^\\d+% Chance to cast level \\d+ Static Field Proc when struck$' },
+          },
+        },
       ],
     });
   });

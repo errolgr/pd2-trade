@@ -57,11 +57,12 @@ export const PSEUDO_KEY_PREFIX = 'pseudo:';
 
 /**
  * A stat row's key, unique among an item's rows: it names the row for React and the selection/filter state.
- * BH exports chance-to-cast and aura lines without a stat id, so those are keyed by their line, which tells
- * them apart ("15% Chance to cast level 20 Fire Ball on attack").
+ * Skill-parameterised rows (auras, chance to cast, charges) are keyed by stat and skill; BH lines left without a
+ * stat id are keyed by their line, which tells them apart ("15% Chance to cast level 20 Fire Ball on attack").
  */
 export function getStatKey(stat: Stat): string {
   if (stat.pseudo) return `${PSEUDO_KEY_PREFIX}${stat.pseudo}`;
+  if (stat.skillParam) return `id:${stat.stat_id}:${stat.skillParam.name.toLowerCase()}`;
   if ('skill' in stat && stat.skill) return `skill:${stat.skill.toLowerCase()}`;
   if (stat.stat_id === undefined) return `line:${stat.name}`;
   return `id:${stat.stat_id}`;

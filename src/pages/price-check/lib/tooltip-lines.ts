@@ -5,6 +5,7 @@ import type { Item, Socketed, Stat } from './interfaces';
 import { DAMAGE_PAIRS, damagePairText, damagePairValues, StatId, statRemapByName } from './stat-mappings';
 import {
   bhStatRange,
+  CHANCE_TO_CAST_TRIGGERS,
   fixedMods,
   formatStatRange,
   isOSkill,
@@ -204,14 +205,14 @@ export function statText(stat: Stat, item?: Item): string | null {
     const cls = skill ? splitClass(skill)[0].replace(/ Skills$/, '') : (/to (\w+) Skill Levels/.exec(name)?.[1] ?? '');
     return `${signed(amount ?? 0)} to ${cls} Skill Levels`;
   }
-  if (stat.stat_id === STAT.charged) {
-    const charges = value ?? 0;
-    const max = finite(stat.range?.max) ? stat.range.max : charges;
-    return `Level ${level ?? 0} ${skill} (${charges}/${max} Charges)`;
-  }
   // BH exports item charges as { level, skill, charges: "(25/31 Charges)" } without a name.
   const charges = clean(stat.charges);
   if (charges && skill) return `Level ${level ?? 0} ${skill} ${charges}`;
+  if (stat.stat_id === STAT.charged) {
+    const count = value ?? 0;
+    const max = finite(stat.range?.max) ? stat.range.max : count;
+    return `Level ${level ?? 0} ${skill} (${count}/${max} Charges)`;
+  }
   // descfunc 11: the stat is repairs per 100 seconds.
   if (stat.stat_id === STAT.repairs && value) return `Repairs 1 durability in ${Math.floor(100 / value)} seconds`;
   // BH exports chance-to-cast lines already worded ("18% Chance to cast level 35 Lightning on attack").
@@ -246,15 +247,7 @@ export function statText(stat: Stat, item?: Item): string | null {
   return desc?.value === 2 ? `${name} ${shown}${secondary}` : `${shown} ${name}${secondary}`;
 }
 
-const CHANCE_TO_CAST: Array<[RegExp, number]> = [
-  [/ on attack$/, 195],
-  [/ when you Kill an Enemy$/, 196],
-  [/ when you Die$/, 197],
-  [/ on striking$/, 198],
-  [/ when you Level-Up$/, 199],
-  [/ on casting$/, 200],
-  [/ when struck$/, 201],
-];
+const CHANCE_TO_CAST = CHANCE_TO_CAST_TRIGGERS.map(([trigger, id]) => [new RegExp(` ${trigger}$`), id] as const);
 const CLASS_SKILL_NAMES = new Set(['amazon', 'sorceress', 'necromancer', 'paladin', 'barbarian', 'druid', 'assassin']);
 const SKILL_STAT_IDS = new Set<number>([S.nonClassSkill, S.singleSkill, STAT.classSkills, STAT.skillTab]);
 
