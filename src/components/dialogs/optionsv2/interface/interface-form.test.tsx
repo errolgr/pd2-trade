@@ -32,6 +32,7 @@ const TIMER_DEFAULTS = {
   corruptedZoneTimerOpacity: 90,
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
+  corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
 };
 

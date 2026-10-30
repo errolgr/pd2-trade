@@ -11,6 +11,7 @@ import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_M
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
+import { MAX_ALERT_LEAD_MINUTES } from '@/lib/corrupted-zones';
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Trans, useTranslation } from '@/i18n';
 
 const ZONE_ALERT_OPTIONS = [
@@ -40,6 +41,7 @@ const interfaceFormSchema = z.object({
   corruptedZoneTimerOpacity: z.number().min(30).max(100),
   corruptedZoneTimerZones: z.enum(['all', 'followed']),
   corruptedZoneAlerts: z.enum(['off', 'all', 'followed']),
+  corruptedZoneAlertLeadMinutes: z.number().int().min(0).max(MAX_ALERT_LEAD_MINUTES),
   corruptedZoneFollowed: z.array(z.string()),
 });
 
@@ -57,6 +59,7 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     corruptedZoneTimerOpacity: settings?.corruptedZoneTimerOpacity ?? 90,
     corruptedZoneTimerZones: settings?.corruptedZoneTimerZones ?? 'all',
     corruptedZoneAlerts: settings?.corruptedZoneAlerts ?? 'off',
+    corruptedZoneAlertLeadMinutes: settings?.corruptedZoneAlertLeadMinutes ?? 0,
     corruptedZoneFollowed: settings?.corruptedZoneFollowed ?? [],
   };
 }
@@ -384,6 +387,37 @@ export function InterfaceForm() {
               </SettingsRow>
             )}
           />
+          {form.watch('corruptedZoneAlerts') !== 'off' && (
+            <FormField
+              control={form.control}
+              name="corruptedZoneAlertLeadMinutes"
+              render={({ field }) => (
+                <SettingsRow
+                  label={
+                    field.value === 0
+                      ? t('interface.zoneTimer.lead.atStart')
+                      : t('interface.zoneTimer.lead.before', { count: field.value })
+                  }
+                  description={t('interface.zoneTimer.lead.description')}
+                  control={
+                    <FormControl>
+                      <Slider
+                        className="w-[220px]"
+                        aria-label={t('interface.zoneTimer.lead.ariaLabel')}
+                        min={0}
+                        max={MAX_ALERT_LEAD_MINUTES}
+                        step={1}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                  }
+                >
+                  <FormMessage />
+                </SettingsRow>
+              )}
+            />
+          )}
           {(form.watch('corruptedZoneAlerts') === 'followed' ||
             form.watch('corruptedZoneTimerZones') === 'followed') && (
             <FormField

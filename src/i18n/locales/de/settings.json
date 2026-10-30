@@ -48,7 +48,14 @@
         "description": "Die Zonen, denen Timer und Benachrichtigungen folgen, wenn „Nur Zonen, denen ich folge“ eingestellt ist."
       },
       "group": "Corrupted-Zone-Timer",
-      "opacity": "Timer-Deckkraft: <num>{{value}}%</num>"
+      "opacity": "Timer-Deckkraft: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Benachrichtigen, wenn die Zone beginnt",
+        "before_one": "{{count}} Minute vor Beginn der Zone benachrichtigen",
+        "before_other": "{{count}} Minuten vor Beginn der Zone benachrichtigen",
+        "description": "Bis zu 15 Minuten vorher, um rechtzeitig in ein neues Hell-Spiel zu kommen.",
+        "ariaLabel": "Vor Beginn der Zone benachrichtigen"
+      }
     },
     "zoneAlertOptions": {
       "off": "Aus",

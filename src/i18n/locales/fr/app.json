@@ -103,6 +103,7 @@
       "unlockedTitle": "Empêche le minuteur de bouger quand on le glisse."
     },
     "toastTitle": "Zone corrompue",
-    "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})"
+    "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})",
+    "toastSoonDescription": "{{zone}} dans {{minutes}} min : créez une nouvelle partie Hell à partir de {{from}} (jusqu'à {{until}})"
   }
 }

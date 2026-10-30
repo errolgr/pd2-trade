@@ -100,6 +100,7 @@
       "unlockedTitle": "Stop the timer from moving when dragged."
     },
     "toastTitle": "Corrupted zone",
-    "toastDescription": "{{zone}}: make a new Hell game (until {{until}})"
+    "toastDescription": "{{zone}}: make a new Hell game (until {{until}})",
+    "toastSoonDescription": "{{zone}} in {{minutes}} min: make a new Hell game from {{from}} (until {{until}})"
   }
 }

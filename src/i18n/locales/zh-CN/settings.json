@@ -48,7 +48,13 @@
         "description": "设为“仅我关注的区域”时，计时器和通知所关注的区域。"
       },
       "group": "腐化区域计时器",
-      "opacity": "计时器不透明度：<num>{{value}}%</num>"
+      "opacity": "计时器不透明度：<num>{{value}}%</num>",
+      "lead": {
+        "atStart": "在区域开始时通知",
+        "before_other": "在区域开始前 {{count}} 分钟通知",
+        "description": "最多提前 15 分钟，以便及时进入新的 Hell 游戏。",
+        "ariaLabel": "在区域开始前通知"
+      }
     },
     "zoneAlertOptions": {
       "off": "关闭",

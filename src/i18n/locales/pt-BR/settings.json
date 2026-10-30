@@ -48,7 +48,15 @@
         "description": "As zonas que o timer e as notificações seguem quando definidos como Só zonas que sigo."
       },
       "group": "Timer de zonas Corrupted",
-      "opacity": "Opacidade do timer: <num>{{value}}%</num>"
+      "opacity": "Opacidade do timer: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Avisar quando a zona começar",
+        "before_one": "Avisar {{count}} minuto antes de a zona começar",
+        "before_many": "Avisar {{count}} minutos antes de a zona começar",
+        "before_other": "Avisar {{count}} minutos antes de a zona começar",
+        "description": "Até 15 minutos antes, para entrar a tempo em um novo jogo Hell.",
+        "ariaLabel": "Avisar antes de a zona começar"
+      }
     },
     "zoneAlertOptions": {
       "off": "Desligado",

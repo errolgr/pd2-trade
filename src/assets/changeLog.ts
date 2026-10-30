@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.11': [
+    '✨ Corrupted zone notifications: choose how early to be told, from when the zone starts up to 15 minutes before (Settings → Interface)',
+  ],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
     '🔧 Chat: a new offer no longer goes missing from Selling / Buying when the offers list refreshes twice in quick succession',

@@ -48,7 +48,15 @@
         "description": "Las zonas que siguen el temporizador y las notificaciones cuando está seleccionado Solo las zonas que sigo."
       },
       "group": "Temporizador de zonas corruptas",
-      "opacity": "Opacidad del temporizador: <num>{{value}}%</num>"
+      "opacity": "Opacidad del temporizador: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Avisar cuando empiece la zona",
+        "before_one": "Avisar {{count}} minuto antes de que empiece la zona",
+        "before_many": "Avisar {{count}} minutos antes de que empiece la zona",
+        "before_other": "Avisar {{count}} minutos antes de que empiece la zona",
+        "description": "Hasta 15 minutos antes, para entrar a tiempo en una nueva partida de Hell.",
+        "ariaLabel": "Avisar antes de que empiece la zona"
+      }
     },
     "zoneAlertOptions": {
       "off": "Desactivado",
