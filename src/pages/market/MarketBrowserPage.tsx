@@ -572,6 +572,7 @@ const MarketBrowserPage: React.FC = () => {
                                   deals={deals}
                                   offers={offers}
                                   pseudoKeys={pseudoKeys}
+                                  statKeys={statKeys}
                                   favoriteIds={favoriteIds}
                                   hasMore={tab === 'search' && search.hasMore}
                                   loadingMore={tab === 'search' && search.loadingMore}

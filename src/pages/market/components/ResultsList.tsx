@@ -12,7 +12,11 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { listingAge } from '../lib/listing';
 import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
-import { displayMods, itemNameColor } from './ItemTooltip';
+import { displayMods, ItemTooltip, itemNameColor } from './ItemTooltip';
+import { ModActionsProvider } from './ModMenu';
+import { modMatchesStatKey } from '../lib/card-model';
+import { coveringPseudos } from '../lib/mod-keys';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
 import { OfferBadge } from './OfferBadge';
@@ -23,7 +27,6 @@ import { useTranslation } from '@/i18n';
 const ROW_HEIGHT = 58;
 /** Rows from the end at which the next server page is requested. */
 const LOAD_MORE_AHEAD = 6;
-const SUMMARY_MODS = 4;
 
 /** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
 export function formatHrPrice(hr: number): string | null {
@@ -110,8 +113,10 @@ export interface ResultsListProps {
   deals: ReadonlyMap<string, Deal>;
   /** The signed-in user's offers by listing id (made, or received on their listings). */
   offers: ReadonlyMap<string, ListingOffers>;
-  /** Enabled pseudo stat keys: their totals show on each row. */
+  /** Enabled pseudo stat keys: their totals show on each row; mod lines feeding them lead, highlighted. */
   pseudoKeys: string[];
+  /** Enabled mod stat filter keys: matching mod lines lead, highlighted. */
+  statKeys: string[];
   favoriteIds: Set<string>;
   hasMore: boolean;
   loadingMore: boolean;
@@ -131,6 +136,7 @@ export function ResultsList({
   deals,
   offers,
   pseudoKeys,
+  statKeys,
   favoriteIds,
   hasMore,
   loadingMore,
@@ -193,6 +199,7 @@ export function ResultsList({
                   deal={deals.get(row.listing._id)}
                   offers={offers.get(row.listing._id)}
                   pseudoKeys={pseudoKeys}
+                  statKeys={statKeys}
                   favorite={favoriteIds.has(row.listing._id)}
                 />
               </EnterOnce>
@@ -214,6 +221,7 @@ const ResultRow = React.memo(function ResultRow({
   deal,
   offers,
   pseudoKeys,
+  statKeys,
   favorite,
 }: {
   row: ScoredListing;
@@ -222,6 +230,7 @@ const ResultRow = React.memo(function ResultRow({
   deal: Deal | undefined;
   offers: ListingOffers | undefined;
   pseudoKeys: string[];
+  statKeys: string[];
   favorite: boolean;
 }) {
   const { t } = useTranslation('market');
@@ -229,90 +238,132 @@ const ResultRow = React.memo(function ResultRow({
   const { item } = listing;
   const price = formatHrPrice(listing.hr_price);
   const openTrader = useOpenTrader(listing);
-  const summary = displayMods(item)
-    .slice(0, SUMMARY_MODS)
-    .map((m) => m.label)
-    .join(' · ');
+  // Mods the search filters on (directly or through a pseudo total) lead, highlighted; the rest in game order
+  const mods = displayMods(item)
+    .map((mod) => ({
+      mod,
+      matched:
+        statKeys.some((key) => modMatchesStatKey(mod, key)) ||
+        (pseudoKeys.length > 0 && coveringPseudos(mod).some((p) => pseudoKeys.includes(p.id))),
+    }))
+    .sort((a, b) => Number(b.matched) - Number(a.matched));
   const base = item.base?.name && item.base.name !== item.name ? item.base.name : null;
+  // Hover preview; not for the selected row (the detail pane shows it)
+  const [preview, setPreview] = useState(false);
   return (
-    <div
-      role="option"
-      aria-selected={selected}
-      data-listing-id={listing._id}
-      onClick={() => onSelect(listing._id)}
-      className={cn(
-        'flex h-full w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-med)',
-        selected ? 'bg-accent/70 shadow-[inset_2px_0_0_var(--primary)]' : 'hover:bg-accent/30',
-      )}
-    >
-      <ListingThumb listing={listing}
-        className="size-10"
-        artClassName="max-h-9 max-w-9" />
+    <Tooltip open={preview && !selected}
+      onOpenChange={setPreview}
+      disableHoverableContent>
+      <TooltipTrigger asChild>
+        <div
+          role="option"
+          aria-selected={selected}
+          data-listing-id={listing._id}
+          onClick={() => onSelect(listing._id)}
+          className={cn(
+            'flex h-full w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-med)',
+            selected ? 'bg-accent/70 shadow-[inset_2px_0_0_var(--primary)]' : 'hover:bg-accent/30',
+          )}
+        >
+          <ListingThumb listing={listing}
+            className="size-10"
+            artClassName="max-h-9 max-w-9" />
 
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-baseline gap-1.5">
-          <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
-          {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
-          {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
-          {item.socket_count > 0 && (
-            <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
-          )}
-          {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
-          {favorite && (
-            <Heart className="size-3 shrink-0 fill-destructive text-destructive"
-              aria-label={t('results.favorite')} />
-          )}
-          <OfferBadge offers={offers}
-            compact />
-        </div>
-        <div className="truncate text-[11px] leading-4 text-muted-foreground"
-          title={summary}>
-          {summary || '\u00a0'}
-        </div>
-        {pseudoKeys.length > 0 && (
-          <div className="flex min-w-0 gap-1 overflow-hidden">
-            {pseudoKeys.map((key) => (
-              <span
-                key={key}
-                title={statWithValue(key, row.pseudo[key] ?? 0)}
-                className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info"
-              >
-                <Sigma className="size-2.5 shrink-0" />
-                <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
-              </span>
-            ))}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-baseline gap-1.5">
+              <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
+              {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
+              {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
+              {item.socket_count > 0 && (
+                <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
+              )}
+              {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
+              {favorite && (
+                <Heart
+                  className="size-3 shrink-0 fill-destructive text-destructive"
+                  aria-label={t('results.favorite')}
+                />
+              )}
+              <OfferBadge offers={offers}
+                compact />
+            </div>
+            {mods.length > 0 && (
+              <div className="mt-1 flex gap-1 overflow-hidden [mask-image:linear-gradient(to_right,black_85%,transparent)]">
+                {mods.map(({ mod, matched }, i) => (
+                  <span
+                    key={`${mod.name}-${i}`}
+                    className={cn(
+                      'inline-flex h-[17px] max-w-64 shrink-0 items-center rounded-sm px-1.5 text-[11px] leading-none',
+                      mod.corrupted ? 'bg-q-corrupted/10 text-q-corrupted' : 'bg-q-magic/10 text-q-magic',
+                      matched && 'font-semibold ring-1 ring-primary/70',
+                    )}
+                  >
+                    <span className="truncate">{mod.label}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+            {pseudoKeys.length > 0 && (
+              <div className="flex min-w-0 gap-1 overflow-hidden">
+                {pseudoKeys.map((key) => (
+                  <span
+                    key={key}
+                    title={statWithValue(key, row.pseudo[key] ?? 0)}
+                    className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info"
+                  >
+                    <Sigma className="size-2.5 shrink-0" />
+                    <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-        <div className="flex min-w-0 max-w-full items-center gap-1.5">
-          <DealBadge deal={deal}
-            compact />
-          <span
-            className={cn('truncate text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-foreground/85')}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price || '—')}
-          </span>
+          <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
+            <div className="flex min-w-0 max-w-full items-center gap-1.5">
+              <DealBadge deal={deal}
+                compact />
+              <span
+                className={cn(
+                  'truncate text-xs font-semibold tabular-nums',
+                  price ? 'text-q-gold' : 'text-foreground/85',
+                )}
+                title={listing.price || undefined}
+              >
+                {price ?? (listing.price || '—')}
+              </span>
+            </div>
+            {price && listing.price && (
+              <span className="max-w-full truncate text-[10px] text-muted-foreground"
+                title={listing.price}>
+                {listing.price}
+              </span>
+            )}
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              {listing.user?.username && (
+                <SellerName onOpen={openTrader}
+                  className="max-w-16">
+                  {listing.user.username}
+                </SellerName>
+              )}
+              <OnlineDots listing={listing} />
+              <span className="tabular-nums">{listingAge(listing)}</span>
+            </div>
+          </div>
         </div>
-        {price && listing.price && (
-          <span className="max-w-full truncate text-[10px] text-muted-foreground"
-            title={listing.price}>
-            {listing.price}
-          </span>
-        )}
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          {listing.user?.username && (
-            <SellerName onOpen={openTrader}
-              className="max-w-16">
-              {listing.user.username}
-            </SellerName>
-          )}
-          <OnlineDots listing={listing} />
-          <span className="tabular-nums">{listingAge(listing)}</span>
-        </div>
-      </div>
-    </div>
+      </TooltipTrigger>
+      <TooltipContent
+        side="left"
+        align="start"
+        collisionPadding={8}
+        className="pointer-events-none w-80 border-0 bg-transparent p-0 shadow-none"
+      >
+        {/* A preview: mod lines aren't filter menus here (the detail pane's are) */}
+        <ModActionsProvider value={null}>
+          <ItemTooltip item={item}
+            className="bg-popover shadow-panel" />
+        </ModActionsProvider>
+      </TooltipContent>
+    </Tooltip>
   );
 });

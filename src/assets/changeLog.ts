@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.12': [
+    '✨ Market list view: hover a row for the full in-game item tooltip; the row shows its stats as colour-coded chips, with the stats you filter on (directly or through a Σ total) first and outlined',
+  ],
   '0.10.11': [
     '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
     '🆕 Settings → Market: one place for your listings, the market browser and market alerts (the alert sound moved here from Chat)',
