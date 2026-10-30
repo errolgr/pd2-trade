@@ -548,10 +548,6 @@
           "ask": "Perguntar",
           "auto": "Remover o anúncio"
         }
-      },
-      "pageSize": {
-        "label": "Anúncios por página",
-        "description": "Quantos dos seus anúncios a aba Gerenciar carrega por vez."
       }
     },
     "browser": {

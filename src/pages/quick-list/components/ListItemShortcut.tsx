@@ -34,7 +34,7 @@ import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import ListedItemsTab from './ListedItemsTab';
+import MyListingsTab from '../listings/MyListingsTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -84,7 +84,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [totalListingsCount, setTotalListingsCount] = useState<number>(0);
-  const [allListings, setAllListings] = useState<MarketListingEntry[]>([]);
   const [isQueued, setIsQueued] = useState(false);
   const [queuedListingIds, setQueuedListingIds] = useState<Set<string>>(new Set());
   const [isPolling, setIsPolling] = useState(false);
@@ -253,14 +252,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [pd2MarketQuery, getMarketListingsForStashItems]);
 
-  // Fetch all user listings for the badge and to pass to ListedItemsTab
+  // The listing count (tab chip, 50-listing check): one row is enough, PD2 sends the total
   const allListingsQuery = useMemo(() => {
     if (!authData || !settings) return null;
     return buildGetAllUserMarketListingsQuery(
       authData.user._id,
       settings.mode === 'hardcore',
       settings.ladder === 'ladder',
-      5, // Fetch first page (5 items to match ITEMS_PER_PAGE) to get both data and total count
+      1,
       0,
     );
   }, [authData, settings]);
@@ -269,11 +268,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (!allListingsQuery) return;
     try {
       const result = await getMarketListings(allListingsQuery);
-      setAllListings(result.data);
       setTotalListingsCount(result.total);
     } catch (err) {
       console.error('Failed to fetch all listings:', err);
-      setAllListings([]);
       setTotalListingsCount(0);
     }
   }, [allListingsQuery, getMarketListings]);
@@ -283,7 +280,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [fetchAllListings]);
 
   // A listing removed anywhere (Manage tab, Ctrl+U delist, chat): drop it from the item's listings and
-  // refetch the badge count and the Manage tab's first page
+  // refetch the listing count
   useEffect(
     () =>
       subscribeListingDeleted((listingId) => {
@@ -1238,14 +1235,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </TabsContent>
 
           <TabsContent value="listed-items"
-            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
-            <ListedItemsTab
-              onClose={handleClose}
-              initialListings={allListings}
-              initialTotalCount={totalListingsCount}
-              onTotalCountChange={setTotalListingsCount}
-              onListingsChange={setAllListings}
-            />
+            className="flex-1 flex flex-col min-h-0 px-3 pt-2.5 pb-3">
+            <MyListingsTab onTotalCountChange={setTotalListingsCount} />
           </TabsContent>
 
           <TabsContent value="queued"

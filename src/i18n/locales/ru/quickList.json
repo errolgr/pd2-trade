@@ -187,5 +187,36 @@
     "delist": "Снять",
     "keep": "Оставить",
     "choose": "Выбрать"
+  },
+  "myListings": {
+    "searchPlaceholder": "Поиск среди {{count}} объявлений…",
+    "readyListed": "поднятие готово · выставлено {{listed}}",
+    "bumpedListed": "поднято {{bumped}} · выставлено {{listed}}",
+    "sort": {
+      "label": "Сортировка объявлений",
+      "reverse": "Обратный порядок",
+      "attention": "Требует внимания",
+      "bumped": "Последнее поднятие",
+      "price": "Цена",
+      "listed": "Дата выставления",
+      "deal": "Цена и рынок",
+      "name": "Название"
+    },
+    "view": {
+      "label": "Вид",
+      "cards": "Карточки",
+      "rows": "Компактные строки"
+    },
+    "filter": {
+      "ready": "Готово к поднятию {{count}}",
+      "offers": "Предложения {{count}}"
+    },
+    "slots": "{{count}} / {{max}} слотов",
+    "bumpReady_one": "Поднять {{count}} готовое",
+    "bumpReady_few": "Поднять {{count}} готовых",
+    "bumpReady_many": "Поднять {{count}} готовых",
+    "bumpReady_other": "Поднять {{count}} готовых",
+    "nothingToBump": "Нечего поднимать",
+    "noneForFilter": "Ни одно объявление не подходит под этот фильтр."
   }
 }

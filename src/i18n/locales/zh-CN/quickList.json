@@ -175,5 +175,33 @@
     "delist": "下架",
     "keep": "保留",
     "choose": "选择"
+  },
+  "myListings": {
+    "searchPlaceholder": "在 {{count}} 个挂单中搜索…",
+    "readyListed": "可顶帖 · 已挂单 {{listed}}",
+    "bumpedListed": "已顶帖 {{bumped}} · 已挂单 {{listed}}",
+    "sort": {
+      "label": "挂单排序",
+      "reverse": "反转顺序",
+      "attention": "需要处理",
+      "bumped": "最近顶帖",
+      "price": "价格",
+      "listed": "挂单时间",
+      "deal": "价格 vs 市场",
+      "name": "名称"
+    },
+    "view": {
+      "label": "视图",
+      "cards": "卡片",
+      "rows": "紧凑行"
+    },
+    "filter": {
+      "ready": "可顶帖 {{count}}",
+      "offers": "报价 {{count}}"
+    },
+    "slots": "{{count}} / {{max}} 个栏位",
+    "bumpReady_other": "{{count}} 个可顶帖",
+    "nothingToBump": "没有可顶帖的物品",
+    "noneForFilter": "没有符合此筛选的挂单。"
   }
 }

@@ -543,10 +543,6 @@
           "ask": "Mich fragen",
           "auto": "Inserat entfernen"
         }
-      },
-      "pageSize": {
-        "label": "Inserate pro Seite",
-        "description": "Wie viele deiner Inserate der Verwalten-Tab auf einmal lädt."
       }
     },
     "browser": {

@@ -553,10 +553,6 @@
           "ask": "Zapytaj mnie",
           "auto": "Usuń ogłoszenie"
         }
-      },
-      "pageSize": {
-        "label": "Ogłoszeń na stronę",
-        "description": "Ile Twoich ogłoszeń karta Zarządzaj wczytuje naraz."
       }
     },
     "browser": {

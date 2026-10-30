@@ -179,5 +179,34 @@
     "delist": "Entfernen",
     "keep": "Behalten",
     "choose": "Auswählen"
+  },
+  "myListings": {
+    "searchPlaceholder": "{{count}} Inserate durchsuchen…",
+    "readyListed": "Bump bereit · inseriert {{listed}}",
+    "bumpedListed": "gebumpt {{bumped}} · inseriert {{listed}}",
+    "sort": {
+      "label": "Inserate sortieren",
+      "reverse": "Reihenfolge umkehren",
+      "attention": "Braucht Aufmerksamkeit",
+      "bumped": "Zuletzt gebumpt",
+      "price": "Preis",
+      "listed": "Inseriert am",
+      "deal": "Preis vs. Markt",
+      "name": "Name"
+    },
+    "view": {
+      "label": "Ansicht",
+      "cards": "Karten",
+      "rows": "Kompakte Zeilen"
+    },
+    "filter": {
+      "ready": "Bump bereit {{count}}",
+      "offers": "Angebote {{count}}"
+    },
+    "slots": "{{count}} / {{max}} Slots",
+    "bumpReady_one": "{{count}} Bump bereit",
+    "bumpReady_other": "{{count}} Bumps bereit",
+    "nothingToBump": "Nichts zu bumpen",
+    "noneForFilter": "Kein Inserat passt zu diesem Filter."
   }
 }

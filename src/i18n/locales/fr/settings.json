@@ -548,10 +548,6 @@
           "ask": "Me demander",
           "auto": "Retirer l'annonce"
         }
-      },
-      "pageSize": {
-        "label": "Annonces par page",
-        "description": "Combien de vos annonces l'onglet Gérer charge à la fois."
       }
     },
     "browser": {

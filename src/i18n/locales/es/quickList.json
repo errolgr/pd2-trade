@@ -183,5 +183,35 @@
     "delist": "Retirar",
     "keep": "Mantener",
     "choose": "Elegir"
+  },
+  "myListings": {
+    "searchPlaceholder": "Buscar entre {{count}} anuncios…",
+    "readyListed": "subida lista · publicado {{listed}}",
+    "bumpedListed": "subido {{bumped}} · publicado {{listed}}",
+    "sort": {
+      "label": "Ordenar anuncios",
+      "reverse": "Invertir orden",
+      "attention": "Requiere atención",
+      "bumped": "Última subida",
+      "price": "Precio",
+      "listed": "Fecha de publicación",
+      "deal": "Precio vs mercado",
+      "name": "Nombre"
+    },
+    "view": {
+      "label": "Vista",
+      "cards": "Tarjetas",
+      "rows": "Filas compactas"
+    },
+    "filter": {
+      "ready": "Subida lista {{count}}",
+      "offers": "Ofertas {{count}}"
+    },
+    "slots": "{{count}} / {{max}} espacios",
+    "bumpReady_one": "Subir {{count}} listo",
+    "bumpReady_many": "Subir {{count}} de anuncios listos",
+    "bumpReady_other": "Subir {{count}} listos",
+    "nothingToBump": "Nada que subir",
+    "noneForFilter": "Ningún anuncio coincide con este filtro."
   }
 }

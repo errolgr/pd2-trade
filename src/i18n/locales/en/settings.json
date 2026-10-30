@@ -543,10 +543,6 @@
           "ask": "Ask me",
           "auto": "Delist it"
         }
-      },
-      "pageSize": {
-        "label": "Listings per page",
-        "description": "How many of your listings the Manage tab loads at a time."
       }
     },
     "browser": {

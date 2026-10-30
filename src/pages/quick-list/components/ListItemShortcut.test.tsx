@@ -648,12 +648,3 @@ describe('queueing', () => {
     expect(tab(/Queued/).getAttribute('data-state')).toBe('active');
   });
 });
-
-it('Manage tab receives the prefetched first page', async () => {
-  userListings = [marketListing(5), marketListing(6)];
-  renderForm();
-  await flush();
-  await selectTab(/Manage/);
-  await waitFor(() => expect(screen.queryByText('Shako #5')).not.toBeNull());
-  expect(screen.queryByText('Shako #6')).not.toBeNull();
-});

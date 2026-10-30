@@ -538,10 +538,6 @@
           "ask": "询问我",
           "auto": "下架"
         }
-      },
-      "pageSize": {
-        "label": "每页挂单数",
-        "description": "“管理”标签页一次加载多少条你的挂单。"
       }
     },
     "browser": {

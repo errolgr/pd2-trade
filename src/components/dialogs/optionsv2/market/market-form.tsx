@@ -20,12 +20,10 @@ const BUYOUT_OPTIONS = ['any', 'yes', 'no'] as const;
 /** The market filter sidebar's listing age choices. */
 const AGE_DAYS = [1, 3, 7, 14, 30, 90] as const;
 const PAGE_SIZES = [25, 50, 100] as const;
-const MANAGE_PAGE_SIZES = [5, 10, 20] as const;
 const ALERT_SECONDS = [5, 8, 15, 30] as const;
 
 const marketFormSchema = z.object({
   stashAutoDelist: z.enum(AUTO_DELIST_OPTIONS),
-  manageListingsPageSize: z.union([z.literal(5), z.literal(10), z.literal(20)]),
   marketDefaultSort: z.enum(SORT_OPTIONS),
   marketDefaultSeller: z.enum(SELLER_OPTIONS),
   marketDefaultHasBuyout: z.enum(BUYOUT_OPTIONS),
@@ -45,7 +43,6 @@ type MarketFormValues = z.infer<typeof marketFormSchema>;
 function toFormValues(settings: ISettings | undefined): MarketFormValues {
   return {
     stashAutoDelist: settings?.stashAutoDelist ?? 'ask',
-    manageListingsPageSize: settings?.manageListingsPageSize ?? 5,
     marketDefaultSort: settings?.marketDefaultSort ?? 'newest',
     marketDefaultSeller: settings?.marketDefaultSeller ?? 'all',
     marketDefaultHasBuyout: settings?.marketDefaultHasBuyout ?? 'any',
@@ -189,19 +186,6 @@ export function MarketForm() {
                   label: t(`market.listings.autoDelist.options.${value}`),
                 }))}
                 onChange={field.onChange}
-              />
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="manageListingsPageSize"
-            render={({ field }) => (
-              <SelectRow
-                label={t('market.listings.pageSize.label')}
-                description={t('market.listings.pageSize.description')}
-                value={String(field.value)}
-                options={MANAGE_PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
-                onChange={(value) => field.onChange(Number(value))}
               />
             )}
           />
