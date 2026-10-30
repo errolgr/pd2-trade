@@ -333,7 +333,19 @@
       "openFailed": "Nie udało się otworzyć przeglądarki: skopiuj link logowania i otwórz go w niej.",
       "notOpened": "Przeglądarka się nie otworzyła? Skopiuj do niej link logowania."
     },
-    "group": "Konto PD2"
+    "group": "Konto PD2",
+    "marketplace": {
+      "group": "Rynek",
+      "autoDelist": {
+        "label": "Usuwaj ogłoszenia przedmiotów, które opuszczą skrzynię",
+        "description": "Gdy wystawiony przedmiot zostanie wyjęty ze skrzyni (przeniesienie między zakładkami się nie liczy). Sprawdzane co minutę, gdy Diablo II jest na pierwszym planie. Jeśli przez identyczne przedmioty nie wiadomo, który zniknął, zawsze wybierasz sam.",
+        "options": {
+          "off": "Wyłączone",
+          "ask": "Najpierw zapytaj",
+          "auto": "Usuwaj automatycznie"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

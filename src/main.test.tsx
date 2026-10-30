@@ -45,6 +45,7 @@ vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
 vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
 vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
+vi.mock('./pages/delist/StashAutoDelistController', () => ({ default: () => <p>stash-auto-delist</p> }));
 vi.mock('./pages/net-worth/NetWorthOverlayController', () => ({ default: () => <p>net-worth-controller</p> }));
 vi.mock('./pages/corrupted-zones/CorruptedZoneTimerController', () => ({
   default: () => <p>zone-timer-controller</p>,
@@ -92,7 +93,7 @@ describe('main routing', () => {
       expect(node, name).not.toBeNull();
     }
     expect(node!.textContent).toBe(
-      'error-handlerapp-controllerdelist-handlernet-worth-controllerzone-timer-controlleroverlay-root',
+      'error-handlerapp-controllerdelist-handlerstash-auto-delistnet-worth-controllerzone-timer-controlleroverlay-root',
     );
   });
 

@@ -330,7 +330,19 @@
       "openFailed": "Impossible d'ouvrir votre navigateur : copiez le lien de connexion et ouvrez-le dedans.",
       "notOpened": "Le navigateur ne s'est pas ouvert ? Copiez-y le lien de connexion."
     },
-    "group": "Compte PD2"
+    "group": "Compte PD2",
+    "marketplace": {
+      "group": "Marché",
+      "autoDelist": {
+        "label": "Retirer les annonces des objets qui quittent le coffre",
+        "description": "Quand un objet en vente est sorti de votre coffre (le déplacer d'un onglet à l'autre ne compte pas). Vérifié chaque minute tant que Diablo II est au premier plan. Si des objets identiques rendent l'objet parti incertain, c'est toujours vous qui choisissez.",
+        "options": {
+          "off": "Désactivé",
+          "ask": "Demander d'abord",
+          "auto": "Retirer automatiquement"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

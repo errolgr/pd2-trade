@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Form, FormField, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useOptions } from '@/hooks/useOptions';
+import { useOptions, type StashAutoDelistMode } from '@/hooks/useOptions';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { cancelOAuthFlow, useOAuthFlowActive, useOAuthFlowLink } from '@/hooks/useOAuth';
@@ -18,6 +18,12 @@ import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { SettingsGroup, SettingsRow } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
+
+const AUTO_DELIST_OPTIONS = [
+  { value: 'off', labelKey: 'account.marketplace.autoDelist.options.off' },
+  { value: 'ask', labelKey: 'account.marketplace.autoDelist.options.ask' },
+  { value: 'auto', labelKey: 'account.marketplace.autoDelist.options.auto' },
+] as const;
 
 const accountFormSchema = z.object({
   account: z.string().optional(),
@@ -290,6 +296,32 @@ export function AccountForm() {
                 )}
               </SettingsRow>
             )}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title={t('account.marketplace.group')}>
+          <SettingsRow
+            label={t('account.marketplace.autoDelist.label')}
+            description={t('account.marketplace.autoDelist.description')}
+            control={
+              <Select
+                value={settings?.stashAutoDelist ?? 'ask'}
+                onValueChange={(value) => updateSettings({ stashAutoDelist: value as StashAutoDelistMode })}
+              >
+                <SelectTrigger className="w-[220px]"
+                  aria-label={t('account.marketplace.autoDelist.label')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUTO_DELIST_OPTIONS.map((option) => (
+                    <SelectItem key={option.value}
+                      value={option.value}>
+                      {t(option.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            }
           />
         </SettingsGroup>
       </div>

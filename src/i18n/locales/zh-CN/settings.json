@@ -324,7 +324,19 @@
       "openFailed": "无法打开浏览器：请复制登录链接并在浏览器中打开。",
       "notOpened": "浏览器没有打开？请将登录链接复制到浏览器中。"
     },
-    "group": "PD2 账号"
+    "group": "PD2 账号",
+    "marketplace": {
+      "group": "市场",
+      "autoDelist": {
+        "label": "物品离开储物箱时下架",
+        "description": "挂单的物品被从储物箱取出时（在标签页之间移动不算）。Diablo II 在前台时每分钟检查一次。若有外观相同的物品、无法确定是哪一件离开，总是由你来选择。",
+        "options": {
+          "off": "关闭",
+          "ask": "先询问",
+          "auto": "自动下架"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

@@ -327,7 +327,19 @@
       "openFailed": "Couldn't open your browser: copy the sign-in link and open it there.",
       "notOpened": "Browser didn't open? Copy the sign-in link into it."
     },
-    "group": "PD2 account"
+    "group": "PD2 account",
+    "marketplace": {
+      "group": "Marketplace",
+      "autoDelist": {
+        "label": "Delist items that leave your stash",
+        "description": "When a listed item is taken out of your stash (moving it between tabs doesn't count). Checked every minute while Diablo II is in front. If look-alike items make it unclear which one left, you always pick.",
+        "options": {
+          "off": "Off",
+          "ask": "Ask first",
+          "auto": "Delist automatically"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

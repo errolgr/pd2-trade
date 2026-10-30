@@ -330,7 +330,19 @@
       "openFailed": "Não foi possível abrir o navegador: copie o link de login e abra-o nele.",
       "notOpened": "O navegador não abriu? Copie o link de login nele."
     },
-    "group": "Conta PD2"
+    "group": "Conta PD2",
+    "marketplace": {
+      "group": "Mercado",
+      "autoDelist": {
+        "label": "Remover anúncios de itens que saem do baú",
+        "description": "Quando um item anunciado é retirado do seu baú (mover entre abas não conta). Verificado a cada minuto enquanto o Diablo II está em primeiro plano. Se itens iguais deixam incerto qual saiu, você sempre escolhe.",
+        "options": {
+          "off": "Desligado",
+          "ask": "Perguntar antes",
+          "auto": "Remover automaticamente"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

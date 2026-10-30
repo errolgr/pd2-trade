@@ -327,7 +327,19 @@
       "openFailed": "Dein Browser konnte nicht geöffnet werden: Kopiere den Anmeldelink und öffne ihn dort.",
       "notOpened": "Browser nicht geöffnet? Kopiere den Anmeldelink hinein."
     },
-    "group": "PD2-Konto"
+    "group": "PD2-Konto",
+    "marketplace": {
+      "group": "Marktplatz",
+      "autoDelist": {
+        "label": "Inserate von Gegenständen entfernen, die die Truhe verlassen",
+        "description": "Wenn ein inserierter Gegenstand aus deiner Truhe genommen wird (Verschieben zwischen Tabs zählt nicht). Geprüft jede Minute, solange Diablo II im Vordergrund ist. Ist bei gleich aussehenden Gegenständen unklar, welcher fehlt, wählst du immer selbst.",
+        "options": {
+          "off": "Aus",
+          "ask": "Erst fragen",
+          "auto": "Automatisch entfernen"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

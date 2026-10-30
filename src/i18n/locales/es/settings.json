@@ -330,7 +330,19 @@
       "openFailed": "No se pudo abrir tu navegador: copia el enlace de inicio de sesión y ábrelo allí.",
       "notOpened": "¿No se abrió el navegador? Copia en él el enlace de inicio de sesión."
     },
-    "group": "Cuenta de PD2"
+    "group": "Cuenta de PD2",
+    "marketplace": {
+      "group": "Mercado",
+      "autoDelist": {
+        "label": "Retirar anuncios de objetos que salen del alijo",
+        "description": "Cuando sacas del alijo un objeto anunciado (moverlo entre pestañas no cuenta). Se comprueba cada minuto mientras Diablo II está en primer plano. Si hay objetos idénticos y no está claro cuál salió, siempre eliges tú.",
+        "options": {
+          "off": "Desactivado",
+          "ask": "Preguntar primero",
+          "auto": "Retirar automáticamente"
+        }
+      }
+    }
   },
   "stats": {
     "fillStatValue": {

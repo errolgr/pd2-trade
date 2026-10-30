@@ -29,6 +29,9 @@ export type NetWorthTickerAnchor =
   | 'above-chat'
   | 'custom';
 
+/** Settings → Account → Marketplace: what happens when a listed item leaves the stash. */
+export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
   mode: 'hardcore' | 'softcore';
@@ -99,6 +102,7 @@ export interface ISettings {
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
+  stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
@@ -172,6 +176,7 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
   corruptedZoneFollowed: [],
+  stashAutoDelist: 'ask',
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',
