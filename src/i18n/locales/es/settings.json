@@ -151,7 +151,8 @@
     "priceCheck": "Consulta de precio",
     "netWorth": "Patrimonio",
     "hotkeys": "Atajos",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "market": "Mercado"
   },
   "layout": {
     "title": "Ajustes",
@@ -446,16 +447,7 @@
         "label": "Volumen de notificaciones: <num>{{value}}%</num>",
         "description": "Ajusta el volumen de los sonidos de notificación de susurros (0-100%)."
       },
-      "marketVolume": {
-        "label": "Volumen de alertas del mercado: <num>{{value}}%</num>",
-        "description": "Volumen del sonido de alerta del mercado (0-100%).",
-        "ariaLabel": "Volumen de alertas del mercado"
-      },
-      "group": "Sonido",
-      "marketSound": {
-        "label": "Sonido de alerta del mercado",
-        "description": "Reproduce un sonido con la notificación de un nuevo anuncio que coincida con una búsqueda que vigilas."
-      }
+      "group": "Sonido"
     },
     "templates": {
       "accept": {
@@ -536,9 +528,100 @@
       "title": "Consulta de precio",
       "description": "Configura la ventana de precios y cómo se rellenan los rangos de estadísticas y los filtros en las búsquedas de consulta de precio."
     },
+    "market": {
+      "title": "Mercado",
+      "description": "Tus anuncios, el navegador del mercado y las alertas del mercado."
+    },
     "zoneTimer": {
       "title": "Temporizador de zonas corruptas",
       "description": "Qué zonas corrompen las nuevas partidas de Hell, la cuenta atrás hasta la próxima rotación y los avisos de zona."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Tus anuncios",
+      "autoDelist": {
+        "label": "Cuando un objeto anunciado sale de tu alijo",
+        "description": "Moverlo entre pestañas no cuenta. Se comprueba cada minuto mientras Diablo II está en primer plano. Si hay objetos idénticos y no está claro cuál salió, siempre eliges tú.",
+        "options": {
+          "off": "No hacer nada",
+          "ask": "Preguntarme",
+          "auto": "Retirar el anuncio"
+        }
+      },
+      "pageSize": {
+        "label": "Anuncios por página",
+        "description": "Cuántos de tus anuncios carga a la vez la pestaña Gestionar."
+      }
+    },
+    "browser": {
+      "group": "Navegador del mercado",
+      "defaultsHint": "Se usa en una búsqueda nueva y al restablecer los filtros.",
+      "sort": {
+        "label": "Orden predeterminado",
+        "options": {
+          "newest": "Más recientes primero",
+          "cheapest": "Más baratos primero",
+          "priciest": "Más caros primero"
+        }
+      },
+      "seller": {
+        "label": "Filtro de vendedor predeterminado",
+        "options": {
+          "all": "Cualquier vendedor",
+          "online": "En línea en la web",
+          "in-game": "En el juego"
+        }
+      },
+      "buyout": {
+        "label": "Filtro de compra inmediata predeterminado",
+        "options": {
+          "any": "Cualquiera",
+          "yes": "Con precio de compra inmediata",
+          "no": "Sin precio de compra inmediata"
+        }
+      },
+      "age": {
+        "label": "Antigüedad de anuncios predeterminada"
+      },
+      "pageSize": {
+        "label": "Resultados por página"
+      },
+      "whisper": {
+        "label": "Mensaje de susurro",
+        "description": "Lo que envía «Copiar susurro». Marcadores: {item}, {price}, {seller}, {account}. Déjalo vacío para usar el predeterminado."
+      },
+      "dealBadges": {
+        "label": "Insignias de oferta",
+        "description": "Muestra cómo se compara el precio de un anuncio con el mercado."
+      },
+      "priceHistory": {
+        "label": "Historial de precios",
+        "description": "Muestra el gráfico del historial de precios en los detalles de un anuncio."
+      },
+      "sellerCard": {
+        "label": "Ficha del vendedor",
+        "description": "Muestra el estado del vendedor y sus otros anuncios en los detalles de un anuncio."
+      }
+    },
+    "alerts": {
+      "group": "Alertas",
+      "duration": {
+        "label": "Duración de las ventanas de alerta",
+        "description": "Cuánto tiempo se mantiene la ventana de un anuncio nuevo que coincide con una búsqueda vigilada.",
+        "seconds_one": "{{count}} segundo",
+        "seconds_many": "{{count}} segundos",
+        "seconds_other": "{{count}} segundos"
+      },
+      "sound": {
+        "label": "Sonido de alerta del mercado",
+        "description": "Reproduce un sonido con la notificación de un nuevo anuncio que coincida con una búsqueda que vigilas."
+      },
+      "volume": {
+        "label": "Volumen de alertas del mercado: <num>{{value}}%</num>",
+        "description": "Volumen del sonido de alerta del mercado (0-100%).",
+        "ariaLabel": "Volumen de alertas del mercado"
+      }
     }
   }
 }

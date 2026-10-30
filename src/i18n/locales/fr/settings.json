@@ -151,7 +151,8 @@
     "priceCheck": "Estimation",
     "netWorth": "Valeur nette",
     "hotkeys": "Raccourcis",
-    "about": "À propos"
+    "about": "À propos",
+    "market": "Marché"
   },
   "layout": {
     "title": "Paramètres",
@@ -446,16 +447,7 @@
         "label": "Volume des notifications : <num>{{value}} %</num>",
         "description": "Régler le volume des sons de notification de messages privés (0-100 %)."
       },
-      "marketVolume": {
-        "label": "Volume des alertes du marché : <num>{{value}} %</num>",
-        "description": "Volume du son des alertes du marché (0-100 %).",
-        "ariaLabel": "Volume des alertes du marché"
-      },
-      "group": "Son",
-      "marketSound": {
-        "label": "Son des alertes du marché",
-        "description": "Jouer un son avec la pop-up d'une nouvelle annonce correspondant à une recherche du marché que vous surveillez."
-      }
+      "group": "Son"
     },
     "templates": {
       "accept": {
@@ -536,9 +528,100 @@
       "title": "Estimation",
       "description": "Configurer la période de prix et le remplissage des plages de stats et des filtres pour les recherches d'estimation."
     },
+    "market": {
+      "title": "Marché",
+      "description": "Vos annonces, le navigateur du marché et les alertes du marché."
+    },
     "zoneTimer": {
       "title": "Minuteur des zones corrompues",
       "description": "Les zones corrompues des nouvelles parties Hell, le compte à rebours jusqu'à la prochaine rotation et les notifications de zone."
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "Vos annonces",
+      "autoDelist": {
+        "label": "Quand un objet en vente quitte votre coffre",
+        "description": "Le déplacer d'un onglet à l'autre ne compte pas. Vérifié chaque minute tant que Diablo II est au premier plan. Si des objets identiques rendent l'objet parti incertain, c'est toujours vous qui choisissez.",
+        "options": {
+          "off": "Ne rien faire",
+          "ask": "Me demander",
+          "auto": "Retirer l'annonce"
+        }
+      },
+      "pageSize": {
+        "label": "Annonces par page",
+        "description": "Combien de vos annonces l'onglet Gérer charge à la fois."
+      }
+    },
+    "browser": {
+      "group": "Navigateur du marché",
+      "defaultsHint": "Utilisé pour une nouvelle recherche et quand vous réinitialisez les filtres.",
+      "sort": {
+        "label": "Tri par défaut",
+        "options": {
+          "newest": "Plus récentes d'abord",
+          "cheapest": "Moins chères d'abord",
+          "priciest": "Plus chères d'abord"
+        }
+      },
+      "seller": {
+        "label": "Filtre vendeur par défaut",
+        "options": {
+          "all": "Tous les vendeurs",
+          "online": "En ligne sur le site",
+          "in-game": "En jeu"
+        }
+      },
+      "buyout": {
+        "label": "Filtre d'achat immédiat par défaut",
+        "options": {
+          "any": "Tous",
+          "yes": "Avec prix d'achat immédiat",
+          "no": "Sans prix d'achat immédiat"
+        }
+      },
+      "age": {
+        "label": "Âge des annonces par défaut"
+      },
+      "pageSize": {
+        "label": "Résultats par page"
+      },
+      "whisper": {
+        "label": "Message de chuchotement",
+        "description": "Ce qu'envoie « Copier le chuchotement ». Variables : {item}, {price}, {seller}, {account}. Laissez vide pour le message par défaut."
+      },
+      "dealBadges": {
+        "label": "Badges de bonne affaire",
+        "description": "Montre comment le prix d'une annonce se compare au marché."
+      },
+      "priceHistory": {
+        "label": "Historique des prix",
+        "description": "Affiche le graphique d'historique des prix dans les détails d'une annonce."
+      },
+      "sellerCard": {
+        "label": "Fiche vendeur",
+        "description": "Affiche le statut du vendeur et ses autres annonces dans les détails d'une annonce."
+      }
+    },
+    "alerts": {
+      "group": "Alertes",
+      "duration": {
+        "label": "Durée des pop-ups d'alerte",
+        "description": "Combien de temps reste affiché le pop-up d'une nouvelle annonce correspondant à une recherche suivie.",
+        "seconds_one": "{{count}} seconde",
+        "seconds_many": "{{count}} secondes",
+        "seconds_other": "{{count}} secondes"
+      },
+      "sound": {
+        "label": "Son des alertes du marché",
+        "description": "Jouer un son avec la pop-up d'une nouvelle annonce correspondant à une recherche du marché que vous surveillez."
+      },
+      "volume": {
+        "label": "Volume des alertes du marché : <num>{{value}} %</num>",
+        "description": "Volume du son des alertes du marché (0-100 %).",
+        "ariaLabel": "Volume des alertes du marché"
+      }
     }
   }
 }

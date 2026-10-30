@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultFilters, newStatFilter, withSource } from './defaults';
+import { defaultFilters, newStatFilter, searchDefaults, withSource } from './defaults';
 import { siteSearchLink } from './site-url';
 import type { MarketFilters } from './types';
 
@@ -137,5 +137,18 @@ describe('siteSearchLink', () => {
       'sort',
     ]);
     expect(query(f).params.map(([k]) => k)).toEqual(['is_hardcore', 'is_ladder']);
+  });
+
+  it("measures the age, online, buyout and sort filters against the site's defaults, not the user's", () => {
+    const defaults = searchDefaults({
+      marketDefaultSort: 'cheapest',
+      marketDefaultSeller: 'in-game',
+      marketDefaultHasBuyout: 'yes',
+      marketDefaultMaxAgeDays: 7,
+    });
+    const fresh = defaultFilters({ hardcore: false, ladder: true }, defaults);
+    expect(siteSearchLink(fresh).dropped).toEqual(['online', 'buyout', 'listing age', 'sort']);
+    // The archive keeps the site's 14 days whatever the live default
+    expect(siteSearchLink(withSource(fresh, 'archive', defaults)).dropped).not.toContain('listing age');
   });
 });

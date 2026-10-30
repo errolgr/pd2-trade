@@ -164,5 +164,16 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "{{time}}上架",
     "removing": "正在移除…"
+  },
+  "autoDelist": {
+    "title": "物品已离开储物箱",
+    "removed": "已下架 {{name}}：该物品已不在你的储物箱中。",
+    "removeFailed": "{{name}} 已离开储物箱，但无法下架其挂单。",
+    "confirm": "{{name}} 已不在你的储物箱中。要下架吗？",
+    "confirmLookAlike": "一件与 {{name}} 相同的物品离开了储物箱。要下架你的 {{name}} 挂单吗？",
+    "pick": "与 {{name}} 相同的物品离开了储物箱。请选择要下架的挂单。",
+    "delist": "下架",
+    "keep": "保留",
+    "choose": "选择"
   }
 }

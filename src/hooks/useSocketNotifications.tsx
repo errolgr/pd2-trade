@@ -60,6 +60,9 @@ export function playNotificationSound(volume: number = 70) {
   }
 }
 
+/** New / accepted offer toasts stay long enough to read and act on mid-game. */
+const OFFER_TOAST_MS = 12_000;
+
 export function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
   if (!(settings?.toastPopupsEnabled ?? true)) return false;
   const types = settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
@@ -121,6 +124,7 @@ export const useSocketNotifications = ({
         showToast({
           title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
+          duration: OFFER_TOAST_MS,
           action: {
             label: t('system:notifications.viewOffer'),
             type: ToastActionType.OPEN_CHAT_OFFER,

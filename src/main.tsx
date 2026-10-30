@@ -19,6 +19,7 @@ import { WhisperHistoryProvider } from './hooks/useWhisperHistory';
 import { GlobalErrorHandler } from './components/GlobalErrorHandler';
 import AppController from './pages/landing/AppController';
 import DelistHandler from './pages/delist/DelistHandler';
+import StashAutoDelistController from './pages/delist/StashAutoDelistController';
 import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayController';
 import CorruptedZoneTimerController from './pages/corrupted-zones/CorruptedZoneTimerController';
 import { OverlayProvider, OverlayRoot } from './overlay';
@@ -111,6 +112,7 @@ const AppRoot: React.FC = () => (
                     <GlobalErrorHandler />
                     <AppController />
                     <DelistHandler />
+                    <StashAutoDelistController />
                     <NetWorthOverlayController />
                     <CorruptedZoneTimerController />
                     <OverlayRoot />

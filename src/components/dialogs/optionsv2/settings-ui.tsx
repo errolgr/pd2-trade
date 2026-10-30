@@ -15,6 +15,7 @@ export type SettingsSectionId =
   | 'Chat'
   | 'Interface'
   | 'Price Check'
+  | 'Market'
   | 'Net Worth'
   | 'Hotkeys'
   | 'About';

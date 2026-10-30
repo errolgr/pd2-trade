@@ -213,6 +213,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'Bob offered 2 ist',
+        duration: 12_000,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,
@@ -266,6 +267,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'New offer received',
+        duration: 12_000,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,
@@ -286,6 +288,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'Offer Accepted',
         description: 'alice accepted your offer',
+        duration: 12_000,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,

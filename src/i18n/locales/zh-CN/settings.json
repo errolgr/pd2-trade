@@ -149,7 +149,8 @@
     "priceCheck": "查价",
     "netWorth": "净资产",
     "hotkeys": "快捷键",
-    "about": "关于"
+    "about": "关于",
+    "market": "市场"
   },
   "layout": {
     "title": "设置",
@@ -436,16 +437,7 @@
         "label": "通知音量：<num>{{value}}%</num>",
         "description": "调整私聊通知音的音量（0-100%）。"
       },
-      "marketVolume": {
-        "label": "市场提醒音量：<num>{{value}}%</num>",
-        "description": "市场提醒音的音量（0-100%）。",
-        "ariaLabel": "市场提醒音量"
-      },
-      "group": "声音",
-      "marketSound": {
-        "label": "市场提醒音",
-        "description": "当你关注的市场搜索出现新挂单时，弹窗同时播放提示音。"
-      }
+      "group": "声音"
     },
     "templates": {
       "accept": {
@@ -526,9 +518,98 @@
       "title": "查价",
       "description": "配置价格窗口，以及查价搜索中属性范围和筛选的填充方式。"
     },
+    "market": {
+      "title": "市场",
+      "description": "你的挂单、市场浏览器和市场提醒。"
+    },
     "zoneTimer": {
       "title": "腐化区域计时器",
       "description": "新 Hell 游戏中被腐化的区域、距下次轮换的倒计时以及区域通知。"
+    }
+  },
+  "market": {
+    "listings": {
+      "group": "你的挂单",
+      "autoDelist": {
+        "label": "挂单物品离开储物箱时",
+        "description": "在标签页之间移动不算。Diablo II 在前台时每分钟检查一次。若有外观相同的物品、无法确定是哪一件离开，总是由你来选择。",
+        "options": {
+          "off": "不做处理",
+          "ask": "询问我",
+          "auto": "下架"
+        }
+      },
+      "pageSize": {
+        "label": "每页挂单数",
+        "description": "“管理”标签页一次加载多少条你的挂单。"
+      }
+    },
+    "browser": {
+      "group": "市场浏览器",
+      "defaultsHint": "用于新搜索以及重置筛选条件时。",
+      "sort": {
+        "label": "默认排序",
+        "options": {
+          "newest": "最新优先",
+          "cheapest": "最便宜优先",
+          "priciest": "最贵优先"
+        }
+      },
+      "seller": {
+        "label": "默认卖家筛选",
+        "options": {
+          "all": "任意卖家",
+          "online": "网站在线",
+          "in-game": "游戏中"
+        }
+      },
+      "buyout": {
+        "label": "默认一口价筛选",
+        "options": {
+          "any": "任意",
+          "yes": "有一口价",
+          "no": "无一口价"
+        }
+      },
+      "age": {
+        "label": "默认挂单时间范围"
+      },
+      "pageSize": {
+        "label": "每页结果数"
+      },
+      "whisper": {
+        "label": "密语内容",
+        "description": "“复制密语”发送的内容。占位符：{item}、{price}、{seller}、{account}。留空则使用默认内容。"
+      },
+      "dealBadges": {
+        "label": "划算徽章",
+        "description": "显示挂单价格与市场价格的对比。"
+      },
+      "priceHistory": {
+        "label": "价格历史",
+        "description": "在挂单详情中显示价格历史图表。"
+      },
+      "sellerCard": {
+        "label": "卖家卡片",
+        "description": "在挂单详情中显示卖家状态及其其他挂单。"
+      }
+    },
+    "alerts": {
+      "group": "提醒",
+      "duration": {
+        "label": "提醒弹窗时长",
+        "description": "匹配关注搜索的新挂单弹窗保持显示的时间。",
+        "seconds_other": "{{count}} 秒"
+      },
+      "sound": {
+        "label": "市场提醒音",
+        "description": "当你关注的市场搜索出现新挂单时，弹窗同时播放提示音。"
+      },
+      "volume": {
+        "label": "市场提醒音量：<num>{{value}}%</num>",
+        "description": "市场提醒音的音量（0-100%）。",
+        "ariaLabel": "市场提醒音量"
+      }
     }
   }
 }

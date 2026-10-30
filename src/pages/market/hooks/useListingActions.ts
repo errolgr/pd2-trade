@@ -3,6 +3,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { writeText } from '@/lib/browser-clipboard';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useOptions } from '@/hooks/useOptions';
 import { fillTemplate, templatePlaceholders, type ChatTemplate } from '@/lib/message-templates';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { verifyListing } from '../lib/freshness';
@@ -11,7 +12,7 @@ import { buildWhisper } from '../lib/whisper';
 import { t } from '@/i18n';
 
 export interface ListingActions {
-  /** Copies `/w *account …` (default wording, or `template` in buildWhisper's tokens) and toasts. */
+  /** Copies `/w *account …` (`template` in buildWhisper's tokens, else Settings → Market's, else the default wording). */
   copyWhisper: (template?: string) => Promise<void>;
   /**
    * Re-checks the listing on PD2 before acting on it. Resolves the listing to act on (PD2's current copy, so a
@@ -46,6 +47,7 @@ export function useOpenTrader(listing: MarketListingEntry): () => void {
 export function useListingActions(listing: MarketListingEntry): ListingActions {
   const { openPanel } = useOverlay();
   const { templates } = useChatTemplates();
+  const { settings } = useOptions();
   const { marketApi } = usePd2Website();
   const openTrader = useOpenTrader(listing);
   // buildWhisper falls back to the website username, as the price check does
@@ -92,7 +94,7 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
       const current = await ensureFresh();
       if (!current) return;
       try {
-        await writeText(buildWhisper(current, template));
+        await writeText(buildWhisper(current, template ?? settings?.marketWhisperTemplate));
         showToast({
           title: t('market:actions.whisperCopied'),
           description: t('market:actions.whisperCopiedDescription', { account }),
