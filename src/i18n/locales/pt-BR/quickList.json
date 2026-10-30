@@ -219,6 +219,10 @@
       "price": "Preço",
       "market": "Mercado",
       "actions": "Ações"
+    },
+    "stats": {
+      "all": "Ver todos os atributos",
+      "less": "Ver menos atributos"
     }
   }
 }

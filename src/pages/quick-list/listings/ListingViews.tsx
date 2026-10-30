@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import moment from 'moment';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -7,6 +9,8 @@ import { displayMods } from '@/pages/market/components/ItemTooltip';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
 import { cn } from '@/lib/utils';
+import { itemCorruptions } from '@/lib/item-utils';
+import { DUR, EASE_OUT } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { bumpReadyAt, type ListingsSort, type ListingsSortKey } from './my-listings';
@@ -59,15 +63,80 @@ function BumpFlash({ flashKey, delay }: { flashKey: number; delay: number }) {
   );
 }
 
+/**
+ * The card's stats: the first few inline on one line; clicking them (or the chevron) lays every mod out stacked,
+ * each line sliding from its inline spot to its row.
+ */
+function CardStats({ listing }: { listing: MarketListingEntry }) {
+  const { t } = useTranslation('quickList');
+  const [open, setOpen] = useState(false);
+  const all = displayMods(listing.item);
+  const corruptions = itemCorruptions(listing.item);
+  const shown = open ? all : all.slice(0, CARD_MODS);
+  const hidden = all.length - CARD_MODS;
+  const note = sideNote(listing);
+  const toggle = () => setOpen((o) => !o);
+  const transition = { duration: DUR.med, ease: EASE_OUT };
+  return (
+    <motion.div layout
+      transition={transition}
+      className="flex min-w-0 items-start gap-2 text-xs">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        aria-label={open ? t('myListings.stats.less') : t('myListings.stats.all')}
+        className={cn(
+          'flex min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+          open
+            ? 'flex-col gap-0.5'
+            : 'flex-row items-baseline overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,black_88%,transparent)]',
+        )}
+      >
+        {shown.map((mod, i) => (
+          <motion.span
+            key={`${mod.name}-${i}`}
+            layout="position"
+            transition={transition}
+            initial={i >= CARD_MODS ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            className={cn(
+              'shrink-0',
+              mod.corrupted === true || corruptions.includes(mod.name) ? 'text-q-corrupted' : 'text-q-magic',
+            )}
+          >
+            {!open && i > 0 && <span className="px-1 text-muted-foreground">·</span>}
+            {mod.label}
+          </motion.span>
+        ))}
+      </button>
+      {note && <span className="max-w-[40%] shrink-0 truncate text-muted-foreground italic">{note}</span>}
+      {(hidden > 0 || open) && (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-hidden
+          tabIndex={-1}
+          className="inline-flex shrink-0 items-center gap-0.5 rounded-sm text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          {!open && `+${hidden}`}
+          <ChevronDown className={cn('size-3.5 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
 export const ListingCard = React.memo(function ListingCard(props: ListingViewProps) {
   const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
   const { t } = useTranslation('quickList');
   const edge = statusEdge(listing, now, offers);
   const base = baseName(listing);
-  const mods = displayMods(listing.item).slice(0, CARD_MODS);
   const ready = bumpReadyAt(listing) <= now;
   return (
-    <div
+    <motion.div
+      layout="position"
+      transition={{ duration: DUR.med, ease: EASE_OUT }}
       className={cn(
         'relative overflow-hidden rounded-lg border border-border bg-card/60 py-2.5 pr-2.5 pl-3.5 shadow-xs transition-colors duration-(--dur-fast) hover:border-ring/40',
         deleting && 'border-destructive/40 bg-destructive/5 opacity-70',
@@ -90,12 +159,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
                 className="text-base" />
             </span>
           </div>
-          <div className="flex min-w-0 items-baseline gap-2 text-xs">
-            <span className="min-w-0 flex-1 truncate text-q-magic">{mods.map((m) => m.label).join(' · ')}</span>
-            {sideNote(listing) && (
-              <span className="max-w-[40%] shrink-0 truncate text-muted-foreground italic">{sideNote(listing)}</span>
-            )}
-          </div>
+          <CardStats listing={listing} />
           {editing ? (
             <ListingEditor
               listing={listing}
@@ -126,7 +190,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 });
 

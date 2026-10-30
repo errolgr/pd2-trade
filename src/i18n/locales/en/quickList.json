@@ -214,6 +214,10 @@
       "price": "Price",
       "market": "Market",
       "actions": "Actions"
+    },
+    "stats": {
+      "all": "Show all stats",
+      "less": "Show fewer stats"
     }
   }
 }
