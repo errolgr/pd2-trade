@@ -19,6 +19,7 @@ import { createHash, createPublicKey, verify } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readVersions } from './version-files.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -147,18 +148,7 @@ export function checkConfig(root = ROOT) {
   const pkg = JSON.parse(read('package.json'));
 
   // Version mismatches make the installed app think it is outdated forever (update loop) or never.
-  const cargoToml = read('src-tauri/Cargo.toml');
-  const crateName = /^\[package\][^[]*?^name\s*=\s*"([^"]+)"/m.exec(cargoToml)?.[1];
-  const crateVersion = /^\[package\][^[]*?^version\s*=\s*"([^"]+)"/m.exec(cargoToml)?.[1];
-  const lockVersion = crateName
-    ? new RegExp(`\\[\\[package\\]\\]\\r?\\nname = "${crateName}"\\r?\\nversion = "([^"]+)"`).exec(read('src-tauri/Cargo.lock'))?.[1]
-    : undefined;
-  const versions = {
-    'package.json': pkg.version,
-    'src-tauri/tauri.conf.json': conf.version,
-    'src-tauri/Cargo.toml': crateVersion,
-    'src-tauri/Cargo.lock': lockVersion,
-  };
+  const versions = readVersions(root);
   if (new Set(Object.values(versions)).size !== 1) {
     errors.push(`Version files disagree: ${Object.entries(versions).map(([f, v]) => `${f}=${v}`).join(', ')}`);
   }
@@ -206,7 +196,7 @@ async function fetchOk(url, init) {
   return response;
 }
 
-async function fetchLiveManifest() {
+export async function fetchLiveManifest() {
   return (await fetchOk(EXPECTED_ENDPOINT, { headers: { 'Cache-Control': 'no-cache' } })).json();
 }
 
