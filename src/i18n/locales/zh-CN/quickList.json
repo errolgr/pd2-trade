@@ -188,7 +188,8 @@
       "price": "价格",
       "listed": "挂单时间",
       "deal": "价格 vs 市场",
-      "name": "名称"
+      "name": "名称",
+      "updated": "最后更新"
     },
     "view": {
       "label": "视图",

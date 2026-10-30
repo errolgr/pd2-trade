@@ -192,7 +192,8 @@
       "price": "Preis",
       "listed": "Inseriert am",
       "deal": "Preis vs. Markt",
-      "name": "Name"
+      "name": "Name",
+      "updated": "Zuletzt aktualisiert"
     },
     "view": {
       "label": "Ansicht",

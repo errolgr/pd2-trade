@@ -200,7 +200,8 @@
       "price": "Cena",
       "listed": "Data wystawienia",
       "deal": "Cena vs rynek",
-      "name": "Nazwa"
+      "name": "Nazwa",
+      "updated": "Ostatnia aktualizacja"
     },
     "view": {
       "label": "Widok",

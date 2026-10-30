@@ -22,19 +22,28 @@ export function listingPriceFields(
   return { hr_price: Number.isFinite(numeric) && numeric > 0 ? numeric : 0, price: note?.trim() ?? '' };
 }
 
-export type ListingsSortKey = 'attention' | 'bumped' | 'price' | 'listed' | 'deal' | 'name';
+export type ListingsSortKey = 'attention' | 'bumped' | 'updated' | 'price' | 'listed' | 'deal' | 'name';
 export type SortDir = 'asc' | 'desc';
 export interface ListingsSort {
   key: ListingsSortKey;
   dir: SortDir;
 }
 
-export const SORT_KEYS: readonly ListingsSortKey[] = ['attention', 'bumped', 'price', 'listed', 'deal', 'name'];
+export const SORT_KEYS: readonly ListingsSortKey[] = [
+  'attention',
+  'bumped',
+  'updated',
+  'price',
+  'listed',
+  'deal',
+  'name',
+];
 
 /** The direction a sort starts in when picked: most useful first (newest, priciest, best deal, A–Z). */
 export const DEFAULT_SORT_DIR: Record<ListingsSortKey, SortDir> = {
   attention: 'asc',
   bumped: 'desc',
+  updated: 'desc',
   price: 'desc',
   listed: 'desc',
   deal: 'asc',
@@ -73,6 +82,8 @@ function sortValue(listing: MarketListingEntry, key: ListingsSortKey, ctx: Listi
       return attentionRank(listing, ctx);
     case 'bumped':
       return time(listing.bumped_at);
+    case 'updated':
+      return time(listing.updated_at);
     case 'price':
       return listing.hr_price > 0 ? listing.hr_price : null;
     case 'listed':

@@ -196,7 +196,8 @@
       "price": "Preço",
       "listed": "Data do anúncio",
       "deal": "Preço vs mercado",
-      "name": "Nome"
+      "name": "Nome",
+      "updated": "Última atualização"
     },
     "view": {
       "label": "Visualização",

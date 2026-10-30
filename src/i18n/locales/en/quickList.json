@@ -192,7 +192,8 @@
       "price": "Price",
       "listed": "Date listed",
       "deal": "Price vs market",
-      "name": "Name"
+      "name": "Name",
+      "updated": "Last updated"
     },
     "view": {
       "label": "View",
