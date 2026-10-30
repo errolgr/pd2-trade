@@ -6,7 +6,7 @@ export const changeLog = {
     '🆕 Market: set your own Copy whisper message, and hide deal badges, the price history chart or the seller card (their data is no longer loaded)',
     '✨ Manage tab: show 5, 10 or 20 of your listings per page',
     '✨ Market alerts: choose how long the popup stays up (5 to 30 seconds)',
-    '✨ Offers: the new / accepted offer toast stays up for 12 seconds instead of 4',
+    '✨ Offer toasts (new and accepted offers) stay up for 20 seconds instead of 4, so there is time to read them and open the offer',
     '✨ Corrupted zone notifications: choose how early to be told, from when the zone starts up to 15 minutes before (Settings → Interface)',
     '✨ Settings → Interface: the corrupted zone timer settings now have their own section, after the theme',
     '🔧 Rune prices: prices, the breakdown target, totals and differences show 2 decimals (3 for low runes) instead of float noise like 0.30000000000000004',

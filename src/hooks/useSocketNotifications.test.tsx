@@ -6,7 +6,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { ISettings } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
 import { changeChatPrefs, resetChatPrefs, setThreadPrefs } from '@/lib/chat-prefs';
-import { isToastEnabled, useSocketNotifications } from './useSocketNotifications';
+import { isToastEnabled, OFFER_TOAST_DURATION_MS, useSocketNotifications } from './useSocketNotifications';
 
 type Handler = (event: { payload: unknown }) => unknown;
 type SocketHandler = (data: unknown) => void;
@@ -213,7 +213,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'Bob offered 2 ist',
-        duration: 12_000,
+        duration: OFFER_TOAST_DURATION_MS,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,
@@ -267,7 +267,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'New offer received',
-        duration: 12_000,
+        duration: OFFER_TOAST_DURATION_MS,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,
@@ -288,7 +288,7 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'Offer Accepted',
         description: 'alice accepted your offer',
-        duration: 12_000,
+        duration: OFFER_TOAST_DURATION_MS,
         action: {
           label: 'View offer',
           type: ToastActionType.OPEN_CHAT_OFFER,

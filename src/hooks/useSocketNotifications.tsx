@@ -14,6 +14,9 @@ import { normalizeName as personKey } from '@/lib/whisper-history';
 import { whisperThreadId } from '@/pages/chat/lib/identity';
 import { shortenMessage } from '@/pages/chat/lib/market-links';
 
+/** Offer toasts stay up long enough to read the offer and click through (sonner's default is 4 s; hover pauses it). */
+export const OFFER_TOAST_DURATION_MS = 20_000;
+
 interface WhisperEvent {
   isTrade: boolean;
   from: string;
@@ -59,9 +62,6 @@ export function playNotificationSound(volume: number = 70) {
     console.error('Failed to play notification sound:', error);
   }
 }
-
-/** New / accepted offer toasts stay long enough to read and act on mid-game. */
-const OFFER_TOAST_MS = 12_000;
 
 export function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
   if (!(settings?.toastPopupsEnabled ?? true)) return false;
@@ -124,7 +124,7 @@ export const useSocketNotifications = ({
         showToast({
           title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
-          duration: OFFER_TOAST_MS,
+          duration: OFFER_TOAST_DURATION_MS,
           action: {
             label: t('system:notifications.viewOffer'),
             type: ToastActionType.OPEN_CHAT_OFFER,
