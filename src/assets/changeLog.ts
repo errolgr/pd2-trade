@@ -6,6 +6,7 @@ export const changeLog = {
     '🆕 Market: set your own Copy whisper message, and hide deal badges, the price history chart or the seller card (their data is no longer loaded)',
     '✨ Manage tab: show 5, 10 or 20 of your listings per page',
     '✨ Market alerts: choose how long the popup stays up (5 to 30 seconds)',
+    '✨ Offers: the new / accepted offer toast stays up for 12 seconds instead of 4',
   ],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",
