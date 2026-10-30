@@ -544,9 +544,13 @@
           "auto": "Delist it"
         }
       },
-      "pageSize": {
-        "label": "Listings per page",
-        "description": "How many of your listings the Manage tab loads at a time."
+      "view": {
+        "label": "Listings view",
+        "description": "How the Manage tab shows your listings. The toggle in the tab changes it too.",
+        "options": {
+          "cards": "Cards",
+          "rows": "Compact rows"
+        }
       }
     },
     "browser": {

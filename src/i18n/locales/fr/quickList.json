@@ -183,5 +183,51 @@
     "delist": "Retirer",
     "keep": "Garder",
     "choose": "Choisir"
+  },
+  "myListings": {
+    "searchPlaceholder": "Rechercher parmi {{count}} annonces…",
+    "readyListed": "remontée prête · en ligne {{listed}}",
+    "bumpedListed": "remonté {{bumped}} · en ligne {{listed}}",
+    "sort": {
+      "label": "Trier les annonces",
+      "reverse": "Inverser l'ordre",
+      "attention": "À traiter",
+      "bumped": "Dernière remontée",
+      "price": "Prix",
+      "listed": "Date de mise en ligne",
+      "deal": "Prix vs marché",
+      "name": "Nom",
+      "updated": "Dernière mise à jour"
+    },
+    "view": {
+      "label": "Affichage",
+      "cards": "Cartes",
+      "rows": "Lignes compactes"
+    },
+    "filter": {
+      "ready": "Remontée prête {{count}}",
+      "offers": "Offres {{count}}"
+    },
+    "slots": "{{count}} / {{max}} emplacements",
+    "bumpReady_one": "Remonter {{count}} annonce prête",
+    "bumpReady_many": "Remonter {{count}} d'annonces prêtes",
+    "bumpReady_other": "Remonter {{count}} annonces prêtes",
+    "nothingToBump": "Rien à remonter",
+    "noneForFilter": "Aucune annonce ne correspond à ce filtre.",
+    "columns": {
+      "item": "Objet",
+      "price": "Prix",
+      "market": "Marché",
+      "actions": "Actions"
+    },
+    "stats": {
+      "all": "Afficher toutes les stats",
+      "less": "Afficher moins de stats"
+    },
+    "flags": {
+      "corrupted": "Corrompu",
+      "ethereal": "Éth",
+      "sockets": "{{count}} ch."
+    }
   }
 }

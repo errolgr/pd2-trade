@@ -187,5 +187,52 @@
     "delist": "Usuń",
     "keep": "Zostaw",
     "choose": "Wybierz"
+  },
+  "myListings": {
+    "searchPlaceholder": "Szukaj wśród {{count}} ogłoszeń…",
+    "readyListed": "podbicie gotowe · wystawiono {{listed}}",
+    "bumpedListed": "podbito {{bumped}} · wystawiono {{listed}}",
+    "sort": {
+      "label": "Sortuj ogłoszenia",
+      "reverse": "Odwróć kolejność",
+      "attention": "Wymaga uwagi",
+      "bumped": "Ostatnio podbite",
+      "price": "Cena",
+      "listed": "Data wystawienia",
+      "deal": "Cena vs rynek",
+      "name": "Nazwa",
+      "updated": "Ostatnia aktualizacja"
+    },
+    "view": {
+      "label": "Widok",
+      "cards": "Karty",
+      "rows": "Kompaktowe wiersze"
+    },
+    "filter": {
+      "ready": "Gotowe do podbicia {{count}}",
+      "offers": "Oferty {{count}}"
+    },
+    "slots": "{{count}} / {{max}} slotów",
+    "bumpReady_one": "Podbij {{count}} gotowe",
+    "bumpReady_few": "Podbij {{count}} gotowe",
+    "bumpReady_many": "Podbij {{count}} gotowych",
+    "bumpReady_other": "Podbij {{count}} gotowego",
+    "nothingToBump": "Nic do podbicia",
+    "noneForFilter": "Żadne ogłoszenie nie pasuje do tego filtra.",
+    "columns": {
+      "item": "Przedmiot",
+      "price": "Cena",
+      "market": "Rynek",
+      "actions": "Akcje"
+    },
+    "stats": {
+      "all": "Pokaż wszystkie statystyki",
+      "less": "Pokaż mniej statystyk"
+    },
+    "flags": {
+      "corrupted": "Spaczony",
+      "ethereal": "Eter",
+      "sockets": "{{count}} gn."
+    }
   }
 }

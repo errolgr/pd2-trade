@@ -544,9 +544,13 @@
           "auto": "Inserat entfernen"
         }
       },
-      "pageSize": {
-        "label": "Inserate pro Seite",
-        "description": "Wie viele deiner Inserate der Verwalten-Tab auf einmal lädt."
+      "view": {
+        "label": "Inseratsansicht",
+        "description": "Wie der Verwalten-Tab deine Inserate zeigt. Der Umschalter im Tab ändert das ebenfalls.",
+        "options": {
+          "cards": "Karten",
+          "rows": "Kompakte Zeilen"
+        }
       }
     },
     "browser": {

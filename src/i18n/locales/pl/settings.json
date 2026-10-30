@@ -554,9 +554,13 @@
           "auto": "Usuń ogłoszenie"
         }
       },
-      "pageSize": {
-        "label": "Ogłoszeń na stronę",
-        "description": "Ile Twoich ogłoszeń karta Zarządzaj wczytuje naraz."
+      "view": {
+        "label": "Widok ogłoszeń",
+        "description": "Jak karta Zarządzaj pokazuje Twoje ogłoszenia. Przełącznik w karcie też to zmienia.",
+        "options": {
+          "cards": "Karty",
+          "rows": "Kompaktowe wiersze"
+        }
       }
     },
     "browser": {

@@ -13,6 +13,7 @@ import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
+import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -118,7 +119,8 @@ export interface ISettings {
   marketShowPriceHistory?: boolean; // price history chart in the listing detail
   marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
   marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
-  manageListingsPageSize?: 5 | 10 | 20; // Manage tab listings per page
+  myListingsView?: 'cards' | 'rows'; // My Listings: big cards or compact rows
+  myListingsSort?: ListingsSort; // My Listings order (both views)
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
@@ -204,7 +206,8 @@ const DEFAULT_SETTINGS: ISettings = {
   marketShowPriceHistory: true,
   marketShowSellerCard: true,
   marketAlertToastSeconds: 8,
-  manageListingsPageSize: 5,
+  myListingsView: 'cards',
+  myListingsSort: DEFAULT_LISTINGS_SORT,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',

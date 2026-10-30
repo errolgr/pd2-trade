@@ -179,5 +179,50 @@
     "delist": "Delist",
     "keep": "Keep",
     "choose": "Choose"
+  },
+  "myListings": {
+    "searchPlaceholder": "Search {{count}} listings…",
+    "readyListed": "bump ready · listed {{listed}}",
+    "bumpedListed": "bumped {{bumped}} · listed {{listed}}",
+    "sort": {
+      "label": "Sort listings",
+      "reverse": "Reverse order",
+      "attention": "Needs attention",
+      "bumped": "Last bumped",
+      "price": "Price",
+      "listed": "Date listed",
+      "deal": "Price vs market",
+      "name": "Name",
+      "updated": "Last updated"
+    },
+    "view": {
+      "label": "View",
+      "cards": "Cards",
+      "rows": "Compact rows"
+    },
+    "filter": {
+      "ready": "Bump ready {{count}}",
+      "offers": "Offers {{count}}"
+    },
+    "slots": "{{count}} / {{max}} slots",
+    "bumpReady_one": "Bump {{count}} ready",
+    "bumpReady_other": "Bump {{count}} ready",
+    "nothingToBump": "Nothing to bump",
+    "noneForFilter": "No listing matches this filter.",
+    "columns": {
+      "item": "Item",
+      "price": "Price",
+      "market": "Market",
+      "actions": "Actions"
+    },
+    "stats": {
+      "all": "Show all stats",
+      "less": "Show fewer stats"
+    },
+    "flags": {
+      "corrupted": "Corrupted",
+      "ethereal": "Eth",
+      "sockets": "{{count}} os"
+    }
   }
 }

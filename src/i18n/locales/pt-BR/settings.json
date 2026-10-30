@@ -549,9 +549,13 @@
           "auto": "Remover o anúncio"
         }
       },
-      "pageSize": {
-        "label": "Anúncios por página",
-        "description": "Quantos dos seus anúncios a aba Gerenciar carrega por vez."
+      "view": {
+        "label": "Visualização dos anúncios",
+        "description": "Como a aba Gerenciar mostra seus anúncios. O seletor na aba também muda isso.",
+        "options": {
+          "cards": "Cartões",
+          "rows": "Linhas compactas"
+        }
       }
     },
     "browser": {

@@ -183,5 +183,51 @@
     "delist": "Remover",
     "keep": "Manter",
     "choose": "Escolher"
+  },
+  "myListings": {
+    "searchPlaceholder": "Buscar entre {{count}} anúncios…",
+    "readyListed": "subida pronta · anunciado {{listed}}",
+    "bumpedListed": "subido {{bumped}} · anunciado {{listed}}",
+    "sort": {
+      "label": "Ordenar anúncios",
+      "reverse": "Inverter ordem",
+      "attention": "Precisa de atenção",
+      "bumped": "Última subida",
+      "price": "Preço",
+      "listed": "Data do anúncio",
+      "deal": "Preço vs mercado",
+      "name": "Nome",
+      "updated": "Última atualização"
+    },
+    "view": {
+      "label": "Visualização",
+      "cards": "Cartões",
+      "rows": "Linhas compactas"
+    },
+    "filter": {
+      "ready": "Subida pronta {{count}}",
+      "offers": "Ofertas {{count}}"
+    },
+    "slots": "{{count}} / {{max}} espaços",
+    "bumpReady_one": "Subir {{count}} pronto",
+    "bumpReady_many": "Subir {{count}} de anúncios prontos",
+    "bumpReady_other": "Subir {{count}} prontos",
+    "nothingToBump": "Nada para subir",
+    "noneForFilter": "Nenhum anúncio corresponde a este filtro.",
+    "columns": {
+      "item": "Item",
+      "price": "Preço",
+      "market": "Mercado",
+      "actions": "Ações"
+    },
+    "stats": {
+      "all": "Ver todos os atributos",
+      "less": "Ver menos atributos"
+    },
+    "flags": {
+      "corrupted": "Corrompido",
+      "ethereal": "Eté",
+      "sockets": "{{count}} soq."
+    }
   }
 }
