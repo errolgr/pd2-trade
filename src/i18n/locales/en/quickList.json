@@ -218,6 +218,11 @@
     "stats": {
       "all": "Show all stats",
       "less": "Show fewer stats"
+    },
+    "flags": {
+      "corrupted": "Corrupted",
+      "ethereal": "Eth",
+      "sockets": "{{count}} os"
     }
   }
 }

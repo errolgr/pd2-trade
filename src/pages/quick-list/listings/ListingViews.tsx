@@ -21,6 +21,7 @@ import {
   ListingArt,
   ListingEditor,
   ListingName,
+  ItemFlags,
   PriceText,
   sideNote,
 } from './ListingPieces';
@@ -155,6 +156,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
               className="text-base leading-tight"
               diablo />
             {base && <span className="shrink-0 truncate text-xs text-muted-foreground">{base}</span>}
+            <ItemFlags listing={listing} />
             <span className="ml-auto max-w-[35%] shrink-0 truncate pl-2 text-right">
               <PriceText listing={listing}
                 className="text-base" />
@@ -232,6 +234,7 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
           <span className="flex min-w-0 items-center gap-1.5">
             <ListingName listing={listing}
               className="text-xs" />
+            <ItemFlags listing={listing} />
             {received > 0 && (
               <span className="shrink-0">
                 <OfferBadge offers={offers}

@@ -213,6 +213,11 @@
     "stats": {
       "all": "显示全部属性",
       "less": "显示较少属性"
+    },
+    "flags": {
+      "corrupted": "腐化",
+      "ethereal": "无形",
+      "sockets": "{{count}} 孔"
     }
   }
 }

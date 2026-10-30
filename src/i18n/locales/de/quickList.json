@@ -218,6 +218,11 @@
     "stats": {
       "all": "Alle Werte anzeigen",
       "less": "Weniger Werte anzeigen"
+    },
+    "flags": {
+      "corrupted": "Korrumpiert",
+      "ethereal": "Äth",
+      "sockets": "{{count}} Fass."
     }
   }
 }

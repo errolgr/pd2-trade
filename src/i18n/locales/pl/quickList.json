@@ -228,6 +228,11 @@
     "stats": {
       "all": "Pokaż wszystkie statystyki",
       "less": "Pokaż mniej statystyk"
+    },
+    "flags": {
+      "corrupted": "Spaczony",
+      "ethereal": "Eter",
+      "sockets": "{{count}} gn."
     }
   }
 }

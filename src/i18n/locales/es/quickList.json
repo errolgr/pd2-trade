@@ -223,6 +223,11 @@
     "stats": {
       "all": "Ver todas las estadísticas",
       "less": "Ver menos estadísticas"
+    },
+    "flags": {
+      "corrupted": "Corrupto",
+      "ethereal": "Eté",
+      "sockets": "{{count}} ranuras"
     }
   }
 }

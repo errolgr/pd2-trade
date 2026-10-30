@@ -223,6 +223,11 @@
     "stats": {
       "all": "Ver todos os atributos",
       "less": "Ver menos atributos"
+    },
+    "flags": {
+      "corrupted": "Corrompido",
+      "ethereal": "Eté",
+      "sockets": "{{count}} soq."
     }
   }
 }

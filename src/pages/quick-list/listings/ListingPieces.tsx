@@ -63,6 +63,34 @@ export function ListingName({
   );
 }
 
+const flag = 'inline-flex h-4 shrink-0 items-center rounded-sm border px-1 text-[10px] leading-none font-semibold';
+
+/** At-a-glance item flags: corrupted, ethereal, sockets. Nothing for a plain item. */
+export function ItemFlags({ listing }: { listing: MarketListingEntry }) {
+  const { t } = useTranslation('quickList');
+  const { corrupted, is_ethereal: ethereal, socket_count: sockets } = listing.item;
+  if (!corrupted && !ethereal && !(sockets > 0)) return null;
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      {corrupted && (
+        <span className={cn(flag, 'border-q-corrupted/50 bg-q-corrupted/10 text-q-corrupted')}>
+          {t('myListings.flags.corrupted')}
+        </span>
+      )}
+      {ethereal && (
+        <span className={cn(flag, 'border-border bg-muted/60 text-muted-foreground')}>
+          {t('myListings.flags.ethereal')}
+        </span>
+      )}
+      {sockets > 0 && (
+        <span className={cn(flag, 'border-border bg-muted/60 text-foreground/80 tabular-nums')}>
+          {t('myListings.flags.sockets', { count: sockets })}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** "Shako" under "Harlequin Crest": the base when the name doesn't already say it. */
 export function baseName(listing: MarketListingEntry): string | null {
   const base = listing.item.base?.name;
