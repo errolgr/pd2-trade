@@ -47,8 +47,16 @@
         "label": "Obserwowane strefy",
         "description": "Strefy, za którymi podążają licznik i powiadomienia przy ustawieniu Tylko obserwowane strefy."
       },
-      "group": "Licznik skażonych stref",
-      "opacity": "Krycie licznika: <num>{{value}}%</num>"
+      "opacity": "Krycie licznika: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Powiadom, gdy strefa się zacznie",
+        "before_one": "Powiadom {{count}} minutę przed startem strefy",
+        "before_few": "Powiadom {{count}} minuty przed startem strefy",
+        "before_many": "Powiadom {{count}} minut przed startem strefy",
+        "before_other": "Powiadom {{count}} minuty przed startem strefy",
+        "description": "Do 15 minut wcześniej, by zdążyć do nowej gry Hell.",
+        "ariaLabel": "Powiadom przed startem strefy"
+      }
     },
     "zoneAlertOptions": {
       "off": "Wył.",
@@ -528,6 +536,10 @@
     "market": {
       "title": "Rynek",
       "description": "Twoje ogłoszenia, przeglądarka rynku i alerty rynkowe."
+    },
+    "zoneTimer": {
+      "title": "Licznik skażonych stref",
+      "description": "Które strefy są spaczone w nowych grach Hell, odliczanie do następnej rotacji i powiadomienia o strefach."
     }
   },
   "market": {

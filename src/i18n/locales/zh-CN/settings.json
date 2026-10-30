@@ -47,8 +47,13 @@
         "label": "关注的区域",
         "description": "设为“仅我关注的区域”时，计时器和通知所关注的区域。"
       },
-      "group": "腐化区域计时器",
-      "opacity": "计时器不透明度：<num>{{value}}%</num>"
+      "opacity": "计时器不透明度：<num>{{value}}%</num>",
+      "lead": {
+        "atStart": "在区域开始时通知",
+        "before_other": "在区域开始前 {{count}} 分钟通知",
+        "description": "最多提前 15 分钟，以便及时进入新的 Hell 游戏。",
+        "ariaLabel": "在区域开始前通知"
+      }
     },
     "zoneAlertOptions": {
       "off": "关闭",
@@ -516,6 +521,10 @@
     "market": {
       "title": "市场",
       "description": "你的挂单、市场浏览器和市场提醒。"
+    },
+    "zoneTimer": {
+      "title": "腐化区域计时器",
+      "description": "新 Hell 游戏中被腐化的区域、距下次轮换的倒计时以及区域通知。"
     }
   },
   "market": {

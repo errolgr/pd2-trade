@@ -47,8 +47,15 @@
         "label": "Zones suivies",
         "description": "Les zones suivies par le minuteur et les notifications avec l'option Seulement mes zones suivies."
       },
-      "group": "Minuteur des zones corrompues",
-      "opacity": "Opacité du minuteur : <num>{{value}} %</num>"
+      "opacity": "Opacité du minuteur : <num>{{value}} %</num>",
+      "lead": {
+        "atStart": "Prévenir quand la zone commence",
+        "before_one": "Prévenir {{count}} minute avant le début de la zone",
+        "before_many": "Prévenir {{count}} minutes avant le début de la zone",
+        "before_other": "Prévenir {{count}} minutes avant le début de la zone",
+        "description": "Jusqu'à 15 minutes à l'avance, pour rejoindre une nouvelle partie Hell à temps.",
+        "ariaLabel": "Prévenir avant le début de la zone"
+      }
     },
     "zoneAlertOptions": {
       "off": "Désactivé",
@@ -524,6 +531,10 @@
     "market": {
       "title": "Marché",
       "description": "Vos annonces, le navigateur du marché et les alertes du marché."
+    },
+    "zoneTimer": {
+      "title": "Minuteur des zones corrompues",
+      "description": "Les zones corrompues des nouvelles parties Hell, le compte à rebours jusqu'à la prochaine rotation et les notifications de zone."
     }
   },
   "market": {

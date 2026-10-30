@@ -100,6 +100,7 @@
       "unlockedTitle": "Verhindert, dass sich der Timer beim Ziehen bewegt."
     },
     "toastTitle": "Corrupted Zone",
-    "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})"
+    "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})",
+    "toastSoonDescription": "{{zone}} in {{minutes}} Min.: ab {{from}} ein neues Hell-Spiel erstellen (bis {{until}})"
   }
 }

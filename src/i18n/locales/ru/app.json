@@ -106,6 +106,7 @@
       "unlockedTitle": "Не давать таймеру сдвигаться при перетаскивании."
     },
     "toastTitle": "Corrupted-зона",
-    "toastDescription": "{{zone}}: создайте новую игру Hell (до {{until}})"
+    "toastDescription": "{{zone}}: создайте новую игру Hell (до {{until}})",
+    "toastSoonDescription": "{{zone}} через {{minutes}} мин: создайте новую игру Hell с {{from}} (до {{until}})"
   }
 }

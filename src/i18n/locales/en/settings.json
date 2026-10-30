@@ -47,8 +47,14 @@
         "label": "Followed zones",
         "description": "The zones the timer and notifications follow when set to Only zones I follow."
       },
-      "group": "Corrupted zone timer",
-      "opacity": "Timer opacity: <num>{{value}}%</num>"
+      "opacity": "Timer opacity: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Notify when the zone starts",
+        "before_one": "Notify {{count}} minute before the zone starts",
+        "before_other": "Notify {{count}} minutes before the zone starts",
+        "description": "Up to 15 minutes ahead, to get into a new Hell game in time.",
+        "ariaLabel": "Notify before the zone starts"
+      }
     },
     "zoneAlertOptions": {
       "off": "Off",
@@ -520,6 +526,10 @@
     "market": {
       "title": "Market",
       "description": "Your listings, the market browser and market alerts."
+    },
+    "zoneTimer": {
+      "title": "Corrupted zone timer",
+      "description": "Which zones new Hell games corrupt, the countdown to the next rotation, and zone notifications."
     }
   },
   "market": {

@@ -104,6 +104,7 @@ export interface ISettings {
   corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
+  corruptedZoneAlertLeadMinutes?: number; // 0-15: toast that long before the zone starts (0 = when it starts)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
   // Settings → Market (src/components/dialogs/optionsv2/market)
   stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
@@ -190,6 +191,7 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
+  corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
   stashAutoDelist: 'ask',
   marketDefaultSort: 'newest',

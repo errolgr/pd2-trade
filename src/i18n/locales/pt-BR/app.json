@@ -103,6 +103,7 @@
       "unlockedTitle": "Impede que o timer se mova ao ser arrastado."
     },
     "toastTitle": "Zona Corrupted",
-    "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})"
+    "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})",
+    "toastSoonDescription": "{{zone}} em {{minutes}} min: crie um novo jogo Hell a partir de {{from}} (até {{until}})"
   }
 }

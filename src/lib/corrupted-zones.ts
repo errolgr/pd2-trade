@@ -10,6 +10,8 @@
 import { t } from '@/i18n';
 
 export const CORRUPTED_ZONE_SLOT_MS = 15 * 60_000;
+/** Longest lead for a zone notification (Settings → Interface): one rotation. */
+export const MAX_ALERT_LEAD_MINUTES = CORRUPTED_ZONE_SLOT_MS / 60_000;
 const DAY_MS = 86_400_000;
 
 /** The corruptible zone groups, in the order the server indexes them. */
