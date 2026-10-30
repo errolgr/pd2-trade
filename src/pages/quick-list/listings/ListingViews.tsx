@@ -130,8 +130,8 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
   );
 });
 
-/** Compact rows' columns: art · item · price · market · offers · bump. Shared by the header. */
-export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_56px_72px] items-center gap-x-2';
+/** Compact rows' columns: art · item (offers inline) · price · market · actions + bump. Shared by the header. */
+export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_auto] items-center gap-x-2';
 
 export const ListingRow = React.memo(function ListingRow(props: ListingViewProps) {
   const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
@@ -153,7 +153,7 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
       <ListingArt listing={listing}
         size="sm" />
       {editing ? (
-        <div className="col-span-5 flex min-w-0 items-center gap-2">
+        <div className="col-span-4 flex min-w-0 items-center gap-2">
           <ListingName listing={listing}
             className="max-w-40 shrink-0 text-xs" />
           <ListingEditor
@@ -164,9 +164,15 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
         </div>
       ) : (
         <>
-          <span className="flex min-w-0 items-baseline gap-1.5">
+          <span className="flex min-w-0 items-center gap-1.5">
             <ListingName listing={listing}
               className="text-xs" />
+            {received > 0 && (
+              <span className="shrink-0">
+                <OfferBadge offers={offers}
+                  compact />
+              </span>
+            )}
             {note && <span className="min-w-0 truncate text-[11px] text-muted-foreground italic">{note}</span>}
           </span>
           <PriceText listing={listing}
@@ -175,8 +181,6 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
             <DealBadge deal={deal}
               compact />
           </span>
-          <span className="flex justify-center">{received > 0 && <OfferBadge offers={offers}
-            compact />}</span>
           <ListingActions
             listing={listing}
             now={now}
@@ -195,8 +199,7 @@ const COLUMNS: { id: string; sortKey: ListingsSortKey | null; align: string }[] 
   { id: 'item', sortKey: 'name', align: 'justify-start' },
   { id: 'price', sortKey: 'price', align: 'justify-end' },
   { id: 'market', sortKey: 'deal', align: 'justify-center' },
-  { id: 'offers', sortKey: null, align: 'justify-center' },
-  { id: 'bump', sortKey: 'bumped', align: 'justify-center' },
+  { id: 'bump', sortKey: 'bumped', align: 'justify-end pr-5' },
 ];
 
 /** Column headers for the compact rows; a sortable header sorts by it, again reverses. */

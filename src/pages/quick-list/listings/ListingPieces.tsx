@@ -80,10 +80,7 @@ export interface ListingActionHandlers {
   onOpen: (listing: MarketListingEntry) => void;
 }
 
-/**
- * Edit, delete, open on the website, then Bump (a countdown while on cooldown) at the right edge. `compact`
- * (rows): the three icons float over the row's left side on hover, so they take no column of their own.
- */
+/** Edit, delete, open on the website, then Bump (a countdown while on cooldown) at the right edge. */
 export function ListingActions({
   listing,
   now,
@@ -103,14 +100,8 @@ export function ListingActions({
   const readyAt = bumpReadyAt(listing);
   const ready = readyAt <= now;
   return (
-    <div className="relative flex shrink-0 items-center gap-0.5">
-      <span
-        className={cn(
-          'flex items-center gap-0.5',
-          compact &&
-            'pointer-events-none absolute right-full mr-1 rounded-md bg-card px-0.5 opacity-0 shadow-sm transition-opacity duration-(--dur-fast) group-hover/row:pointer-events-auto group-hover/row:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
-        )}
-      >
+    <div className="flex shrink-0 items-center gap-0.5">
+      <span className="flex items-center gap-0.5">
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <button
