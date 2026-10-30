@@ -39,8 +39,6 @@ const chatFormSchema = z.object({
   whisperJoinNotificationsEnabled: z.boolean().optional(),
   whisperNotificationTiming: z.enum(['in-game', 'out-of-game', 'both', 'never']).optional(),
   whisperNotificationVolume: z.number().int().min(0).max(100).optional(),
-  marketAlertSoundEnabled: z.boolean().optional(),
-  marketAlertVolume: z.number().int().min(0).max(100).optional(),
   acceptOfferMessageTemplate: z.string().optional(),
   rejectOfferMessageTemplate: z.string().optional(),
   soldOfferMessageTemplate: z.string().optional(),
@@ -66,8 +64,6 @@ export function ChatForm() {
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
       whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
       whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
-      marketAlertSoundEnabled: settings?.marketAlertSoundEnabled ?? true,
-      marketAlertVolume: settings?.marketAlertVolume ?? 70,
       acceptOfferMessageTemplate:
         settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
       rejectOfferMessageTemplate: settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.',
@@ -89,8 +85,6 @@ export function ChatForm() {
           whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
           whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
           whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
-          marketAlertSoundEnabled: settings.marketAlertSoundEnabled ?? true,
-          marketAlertVolume: settings.marketAlertVolume ?? 70,
           acceptOfferMessageTemplate:
             settings.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
           rejectOfferMessageTemplate: settings.rejectOfferMessageTemplate || 'Your offer has been rejected.',
@@ -455,65 +449,6 @@ export function ChatForm() {
                           value={[volume]}
                           onValueChange={(value) => field.onChange(value[0])}
                           disabled={isDisabled}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
-                  }
-                >
-                  <FormMessage />
-                </SettingsRow>
-              );
-            }}
-          />
-          <FormField
-            control={form.control}
-            name="marketAlertSoundEnabled"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('chat.sound.marketSound.label')}
-                description={t('chat.sound.marketSound.description')}
-                control={
-                  <FormControl>
-                    <Switch checked={field.value ?? true}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                }
-              />
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="marketAlertVolume"
-            render={({ field }) => {
-              const volume = field.value ?? 70;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
-              const soundOff = !(form.watch('marketAlertSoundEnabled') ?? true);
-              return (
-                <SettingsRow
-                  disabled={soundOff}
-                  label={
-                    <Trans
-                      t={t}
-                      i18nKey="chat.sound.marketVolume.label"
-                      values={{ value: volume }}
-                      components={{ num: <span className="tabular-nums" /> }}
-                    />
-                  }
-                  description={t('chat.sound.marketVolume.description')}
-                  control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          aria-label={t('chat.sound.marketVolume.ariaLabel')}
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={soundOff}
                           className="flex-1"
                         />
                       </FormControl>

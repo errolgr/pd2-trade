@@ -20,13 +20,14 @@ function oneLine(text: string | undefined, max = 80): string {
 
 /**
  * `/w *<account> <message>` for the game chat. The account is sellerAccount (falling back to the website
- * username, as the price check does); the message is `template` with placeholders filled. When the listing has
- * no price, the default template drops its "listed for" clause.
+ * username, as the price check does); the message is `template` with placeholders filled. A blank template is
+ * the default one; when the listing has no price, the default template drops its "listed for" clause.
  */
 export function buildWhisper(listing: MarketListingEntry, template: string = DEFAULT_WHISPER_TEMPLATE): string {
+  const custom = template.trim() && template !== DEFAULT_WHISPER_TEMPLATE ? template : null;
   const account = accountOf(oneLine(sellerAccount(listing) || listing.user?.username));
   const price = listing.hr_price > 0 ? `${listing.hr_price} HR` : oneLine(listing.price);
-  const body = (price || template !== DEFAULT_WHISPER_TEMPLATE ? template : "Hi, I'm interested in your {item}")
+  const body = (custom ?? (price ? DEFAULT_WHISPER_TEMPLATE : "Hi, I'm interested in your {item}"))
     .replace(/\{item\}/g, oneLine(listing.item ? itemDisplayName(listing.item) : 'item'))
     .replace(/\{price\}/g, price)
     .replace(/\{seller\}/g, oneLine(listing.user?.username))

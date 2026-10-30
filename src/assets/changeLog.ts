@@ -1,6 +1,11 @@
 export const changeLog = {
   '0.10.11': [
-    '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Account → Marketplace: Off, Ask first (default) or Delist automatically',
+    '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
+    '🆕 Settings → Market: one place for your listings, the market browser and market alerts (the alert sound moved here from Chat)',
+    '🆕 Market browser defaults: pick the sort, seller filter (online / in game), buyout filter and listing age a new search starts with (Reset goes back to them), and how many results load per page',
+    '🆕 Market: set your own Copy whisper message, and hide deal badges, the price history chart or the seller card (their data is no longer loaded)',
+    '✨ Manage tab: show 5, 10 or 20 of your listings per page',
+    '✨ Market alerts: choose how long the popup stays up (5 to 30 seconds)',
   ],
   '0.10.10': [
     "🔧 Offers: the new / accepted offer toast opens the offer in the chat (its trader's thread) instead of the website",

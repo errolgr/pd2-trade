@@ -56,7 +56,6 @@ interface ListedItemsTabProps {
   onListingsChange?: (listings: MarketListingEntry[]) => void;
 }
 
-const ITEMS_PER_PAGE = 5;
 // "Bump All" success flash (mirrors the pd2trader.com/overlay demo): keep in sync with --animate-bump-flash.
 const BUMP_FLASH_STAGGER_MS = 210;
 const BUMP_FLASH_SPREAD_MS = 2500;
@@ -82,6 +81,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   } = usePd2Website();
   const { t } = useTranslation(['quickList', 'common']);
   const { settings } = useOptions();
+  // Fixed while the tab is open: a new size mid-scroll would misalign the page offsets
+  const [pageSize] = useState(() => settings?.manageListingsPageSize ?? 5);
   const [listings, setListings] = useState<MarketListingEntry[]>(initialListings || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,10 +125,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       authData.user._id,
       settings.mode === 'hardcore',
       settings.ladder === 'ladder',
-      ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE,
+      pageSize,
+      currentPage * pageSize,
     );
-  }, [authData, settings, currentPage]);
+  }, [authData, settings, currentPage, pageSize]);
 
   // Query to fetch all listings for search (when search is active)
   const allListingsQuery = useMemo(() => {
@@ -254,7 +255,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       if (initialTotalCount !== undefined && initialListings) {
         // Use initial data if provided
         if (initialListings.length > 0) {
-          setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+          setListings(initialListings.slice(0, pageSize));
         } else {
           setListings([]);
         }
@@ -309,7 +310,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       // This prevents overwriting local state when parent refetches after tab switch
       if (listings.length === 0) {
         if (initialListings && initialListings.length > 0) {
-          setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+          setListings(initialListings.slice(0, pageSize));
         } else if (initialTotalCount === 0) {
           // Explicitly set empty if total is 0
           setListings([]);

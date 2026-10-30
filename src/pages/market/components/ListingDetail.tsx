@@ -9,6 +9,7 @@ import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
 import { SellerCard } from '@/pages/market/enrich/SellerCard';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
+import { useOptions } from '@/hooks/useOptions';
 import { useListingActions } from '../hooks/useListingActions';
 import { listingAge } from '../lib/listing';
 import type { MarketApi, ScoredListing } from '../lib/types';
@@ -52,6 +53,10 @@ export function ListingDetail({
   const { t } = useTranslation('market');
   const { listing } = row;
   const actions = useListingActions(listing);
+  const { settings } = useOptions();
+  // Settings → Market: hidden enrichments aren't mounted, so their data is never fetched
+  const showPriceHistory = settings?.marketShowPriceHistory ?? true;
+  const showSellerCard = settings?.marketShowSellerCard ?? true;
   const price = formatHrPrice(listing.hr_price);
 
   return (
@@ -121,14 +126,16 @@ export function ListingDetail({
                 listed: moment(listing.created_at).fromNow(),
               })}
             </div>
-            <PriceHistoryMini listing={listing} />
+            {showPriceHistory && <PriceHistoryMini listing={listing} />}
           </div>
 
-          <SellerCard
-            listing={listing}
-            onSelectListing={onSelectListing}
-            onBrowseSeller={() => onBrowseSeller(listing)}
-          />
+          {showSellerCard && (
+            <SellerCard
+              listing={listing}
+              onSelectListing={onSelectListing}
+              onBrowseSeller={() => onBrowseSeller(listing)}
+            />
+          )}
         </div>
       </ScrollArea>
 

@@ -37,6 +37,7 @@ import { OpenOnSiteButton } from './components/OpenOnSiteButton';
 import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
+import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { useTranslation } from '@/i18n';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
@@ -54,7 +55,7 @@ const MarketBrowserPage: React.FC = () => {
   const { t } = useTranslation('market');
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
   const { openSignIn } = useSignIn();
-  const { settings } = useOptions();
+  const { settings, isLoading: settingsLoading } = useOptions();
   const { marketApi, outgoingOffers, hiddenOutgoingOffers, incomingOffers } = usePd2Website();
   const store = useMarketStore();
   const { viewMode } = store;
@@ -64,6 +65,7 @@ const MarketBrowserPage: React.FC = () => {
     () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
     [settings?.mode, settings?.ladder],
   );
+  const searchDefaults = useSearchDefaults();
 
   const [tab, setTab] = useState<MarketTab>('search');
   const [filters, setFilters] = useState<MarketFilters | null>(null);
@@ -84,16 +86,17 @@ const MarketBrowserPage: React.FC = () => {
   const [activated, setActivated] = useState(false);
   if (visible && !activated) setActivated(true);
 
-  // Apply openPanel('market', payload) once the saved state is loaded (saved searches, last filters).
-  // Adjusted during render, like the chat panel's payload handling.
+  // Apply openPanel('market', payload) once the saved state (saved searches, last filters) and the settings (the
+  // user's search defaults) are loaded. Adjusted during render, like the chat panel's payload handling.
   const [handledVersion, setHandledVersion] = useState(-1);
-  if (store.loaded && handledVersion !== payloadVersion) {
+  if (store.loaded && !settingsLoading && handledVersion !== payloadVersion) {
     setHandledVersion(payloadVersion);
     const saved = payload?.savedSearchId ? store.savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
     let next: MarketFilters | null = null;
     if (saved) next = upgradeFilters(saved.filters);
-    else if (payload?.filters) next = upgradeFilters(mergeFilters(defaultFilters(mode), payload.filters));
-    else if (!filters) next = upgradeFilters(store.lastFilters ?? defaultFilters(mode));
+    else if (payload?.filters)
+      next = upgradeFilters(mergeFilters(defaultFilters(mode, searchDefaults), payload.filters));
+    else if (!filters) next = upgradeFilters(store.lastFilters ?? defaultFilters(mode, searchDefaults));
     if (next) {
       setFilters(next);
       setSelectedId(null);
@@ -108,7 +111,10 @@ const MarketBrowserPage: React.FC = () => {
     );
   }
 
-  const search = useMarketSearch(marketApi ?? null, activated ? filters : null, { signedIn });
+  const search = useMarketSearch(marketApi ?? null, activated ? filters : null, {
+    signedIn,
+    pageSize: settings?.marketPageSize,
+  });
   const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
 
   // Remember the last search that actually ran (not per keystroke / re-rank: each call writes market-prefs.json)
@@ -250,9 +256,9 @@ const MarketBrowserPage: React.FC = () => {
     setDetailOpen(mode === 'rows' && !!selectedId);
   };
 
-  /** Defaults for the current realm and source (Clear, "browse seller"). */
+  /** The user's defaults for the current realm and source (Reset, "browse seller"). */
   const freshFilters = (f: MarketFilters) =>
-    withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }), f.source);
+    withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }, searchDefaults), f.source, searchDefaults);
   const resetFilters = () => filters && setFilters(freshFilters(filters));
 
   const presets = {
@@ -303,7 +309,13 @@ const MarketBrowserPage: React.FC = () => {
   const browseSeller = (listing: MarketListingEntry) => {
     if (!filters) return;
     setFilters(
-      mergeFilters(freshFilters(filters), { sellerUserId: listing.user_id, sellerName: listing.user?.username }),
+      // All of the seller's listings: the default online filters would hide them while the seller is away
+      mergeFilters(freshFilters(filters), {
+        sellerUserId: listing.user_id,
+        sellerName: listing.user?.username,
+        userOnlineSite: 'all',
+        userOnlineGame: 'all',
+      }),
     );
     setTab('search');
     setDetailOpen(false);
@@ -452,6 +464,7 @@ const MarketBrowserPage: React.FC = () => {
                       filters={filters}
                       onChange={setFilters}
                       onReset={resetFilters}
+                      searchDefaults={searchDefaults}
                       stats={presets}
                       sectionsOpen={store.sectionsOpen}
                       onSectionOpen={store.setSectionOpen}
@@ -492,7 +505,7 @@ const MarketBrowserPage: React.FC = () => {
                           // No live listing for this search: offer the same search over sold listings
                           onSearchArchive={
                             tab === 'search' && filters?.source === 'live'
-                              ? () => setFilters(withSource(filters, 'archive'))
+                              ? () => setFilters(withSource(filters, 'archive', searchDefaults))
                               : undefined
                           }
                           itemName={filters?.itemName}
