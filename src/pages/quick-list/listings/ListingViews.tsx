@@ -199,7 +199,7 @@ const COLUMNS: { id: string; sortKey: ListingsSortKey | null; align: string }[] 
   { id: 'item', sortKey: 'name', align: 'justify-start' },
   { id: 'price', sortKey: 'price', align: 'justify-end' },
   { id: 'market', sortKey: 'deal', align: 'justify-center' },
-  { id: 'bump', sortKey: 'bumped', align: 'ml-auto w-[72px] justify-center' },
+  { id: 'actions', sortKey: null, align: 'justify-center' },
 ];
 
 /** Column headers for the compact rows; a sortable header sorts by it, again reverses. */

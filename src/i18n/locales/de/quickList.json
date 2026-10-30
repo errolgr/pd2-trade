@@ -213,7 +213,7 @@
       "item": "Gegenstand",
       "price": "Preis",
       "market": "Markt",
-      "bump": "Bumpen"
+      "actions": "Aktionen"
     }
   }
 }

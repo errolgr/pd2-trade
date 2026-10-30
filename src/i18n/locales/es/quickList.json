@@ -218,7 +218,7 @@
       "item": "Objeto",
       "price": "Precio",
       "market": "Mercado",
-      "bump": "Subir"
+      "actions": "Acciones"
     }
   }
 }

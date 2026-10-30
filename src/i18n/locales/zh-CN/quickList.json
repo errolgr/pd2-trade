@@ -208,7 +208,7 @@
       "item": "物品",
       "price": "价格",
       "market": "市场",
-      "bump": "顶帖"
+      "actions": "操作"
     }
   }
 }

@@ -223,7 +223,7 @@
       "item": "Przedmiot",
       "price": "Cena",
       "market": "Rynek",
-      "bump": "Podbij"
+      "actions": "Akcje"
     }
   }
 }

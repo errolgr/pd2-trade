@@ -213,7 +213,7 @@
       "item": "Item",
       "price": "Price",
       "market": "Market",
-      "bump": "Bump"
+      "actions": "Actions"
     }
   }
 }
