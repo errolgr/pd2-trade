@@ -1,4 +1,12 @@
 export const changeLog = {
+  '0.10.12': [
+    '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',
+    '🆕 My listings: sort by needs attention, last bumped, last updated, price, date listed, price vs market or name (compact rows sort from their column headers too), and filter to bump-ready listings or listings with offers',
+    '✨ My listings: corrupted, ethereal and socket tags next to each item; expand a card to see every stat',
+    '✨ My listings: all your listings load at once (no more paging), with a slots count (e.g. 46 / 50); the per-page setting is gone',
+    '🔧 My listings: "Bump N ready" counts and bumps only the listings off cooldown (Bump All marked every row as bumped)',
+    '✨ The listings panel opens larger (720×680)',
+  ],
   '0.10.11': [
     '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
     '🆕 Settings → Market: one place for your listings, the market browser and market alerts (the alert sound moved here from Chat)',
