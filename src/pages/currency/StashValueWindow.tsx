@@ -1,7 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { AnimatePresence, MotionConfig } from 'framer-motion';
-import { AlertTriangle, Clock, Coins, Gem, History, LogIn, PackageOpen, RefreshCw, Tag, UserRound } from 'lucide-react';
+import {
+  AlertTriangle,
+  Clock,
+  Coins,
+  FlaskConical,
+  Gem,
+  History,
+  LogIn,
+  PackageOpen,
+  RefreshCw,
+  Tag,
+  UserRound,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +39,7 @@ import { OverviewTab } from './components/OverviewTab';
 import { HistoryTab } from './components/HistoryTab';
 import { AnimatedNumber } from './components/AnimatedNumber';
 import { RaresTab } from './components/RaresTab';
+import { SimExportTab } from './components/SimExportTab';
 import { isCrafted } from '@/components/rares/rares-format';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
@@ -41,6 +54,7 @@ type WindowTab =
   | 'uniques-sets'
   | 'other'
   | 'rares'
+  | 'simulator'
   | 'history';
 
 const HOLDING_TABS: { value: WindowTab; label: string; categories: NetWorthCategory[]; showTab?: boolean }[] = [
@@ -182,6 +196,13 @@ export function StashValueWindow() {
                         {rares.some(isCrafted) ? 'Rares & Crafted' : 'Rares'}
                       </TabsTrigger>
                     )}
+                    {token && owner && (
+                      <TabsTrigger value="simulator"
+                        className={cn(TRIGGER_CLASS, 'gap-1')}>
+                        <FlaskConical className="size-3.5" />
+                        Simulator
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="history"
                       className={cn(TRIGGER_CLASS, 'gap-1')}>
                       <History className="size-3.5" />
@@ -221,6 +242,14 @@ export function StashValueWindow() {
                         craftedSummary={latest.craftedSummary}
                         hardcore={!!owner?.isHardcore}
                       />
+                    </TabsContent>
+                  )}
+
+                  {token && owner && (
+                    <TabsContent value="simulator"
+                      className="pt-1">
+                      <SimExportTab token={token}
+                        account={owner.account} />
                     </TabsContent>
                   )}
 

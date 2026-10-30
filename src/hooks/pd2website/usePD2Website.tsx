@@ -10,7 +10,7 @@ import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
@@ -66,6 +66,8 @@ interface Pd2WebsiteContextType extends SocialActions {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
+  /** The selected account's stash from PD2 (refreshes the stash cache); throws AccountMismatchError / AuthenticationError. */
+  fetchAndCacheStash: () => Promise<GameData>;
   incomingOffers: TradeOffer[];
   outgoingOffers: TradeOffer[];
   hiddenOutgoingOffers: TradeOffer[];
@@ -298,6 +300,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         authData,
         updateMarketListing,
         updateItemByHash,
+        fetchAndCacheStash,
         deleteConversation,
         getConversations,
         getMessages,
