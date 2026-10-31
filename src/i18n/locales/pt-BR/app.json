@@ -39,7 +39,6 @@
     "favorite": "Favoritar {{label}}",
     "addFavorite": "Adicionar aos favoritos (a aba)",
     "removeFavorite": "Remover dos favoritos (a aba)",
-    "layoutHint": "Estrela para a aba · arraste para reordenar",
     "menu": {
       "chat": "Chat",
       "market": "Navegador do mercado",
