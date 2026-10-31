@@ -135,6 +135,45 @@ describe('BuildsPage payloads', () => {
     expect(screen.getByRole('button', { name: 'Follow' })).toBeTruthy();
   });
 
+  it("lays out the character's charms in the inventory's charm area; no charms, no section", async () => {
+    const charm = (name: string, row: number, column: number, height: 1 | 2 | 3) => ({
+      slot: 'Inventory',
+      key: `base:cm${height}:magic`,
+      name,
+      quality: 'Magic',
+      base: 'Grand Charm',
+      baseCode: `cm${height}`,
+      runeword: false,
+      ethereal: false,
+      corrupted: false,
+      sockets: 0,
+      socketed: [],
+      mods: [],
+      iconUrl: null,
+      priceHr: null,
+      row,
+      column,
+      height,
+    });
+    tracked = {
+      hammerdin: { ...DETAIL, charms: [charm('Shimmering Grand Charm', 1, 9, 3), charm('Fine Small Charm', 0, 2, 1)] },
+    };
+    panel.payload = { character: { name: 'Hammerdin' } };
+    const { unmount } = render(<BuildsPage />);
+    expect(await screen.findByRole('heading', { name: 'Charms' })).toBeTruthy();
+    const grand = screen.getByRole('button', { name: 'Shimmering Grand Charm' }).closest('[style*="grid-row"]');
+    expect((grand as HTMLElement).style.gridColumn).toBe('10');
+    expect((grand as HTMLElement).style.gridRow).toBe('2 / span 3');
+    expect(screen.getByRole('button', { name: 'Fine Small Charm' })).toBeTruthy();
+    unmount();
+
+    clearBuildsCache();
+    tracked = { hammerdin: DETAIL };
+    render(<BuildsPage />);
+    await screen.findByRole('heading', { name: 'Hammerdin' });
+    expect(screen.queryByRole('heading', { name: 'Charms' })).toBeNull();
+  });
+
   it('applies payload filters over the defaults on the Meta tab', async () => {
     panel.payload = { filters: { classes: ['Paladin'], skills: ['Blessed Hammer:20'] } };
     render(<BuildsPage />);
