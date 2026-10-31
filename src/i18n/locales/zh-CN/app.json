@@ -30,6 +30,12 @@
     "unreadMessages_other": "{{count}} 条未读消息",
     "tradeOffers_other": "{{count}} 个交易报价",
     "disableOverlay": "关闭悬浮窗",
+    "move": "移动{{label}}",
+    "moveHint": "拖动排序（或 ↑/↓）",
+    "favorite": "收藏{{label}}",
+    "addFavorite": "添加到收藏（标签栏）",
+    "removeFavorite": "从收藏移除（标签栏）",
+    "layoutHint": "加星显示在标签栏 · 拖动排序",
     "menu": {
       "chat": "聊天",
       "market": "市场浏览",

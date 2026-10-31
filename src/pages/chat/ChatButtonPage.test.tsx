@@ -33,13 +33,15 @@ afterAll(() => {
 });
 
 const updateSettings = vi.fn();
+let settings: Record<string, unknown> = {};
 // A 1920x1080 game: the dock is 43x118, flush on the right edge, 9px above the bottom (x 1877, y 953)
 const overlay = { openPanel: vi.fn(), togglePanel: vi.fn(), gameRect: { x: 0, y: 0, width: 1920, height: 1080 } };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  settings = {};
   updateSettings.mockResolvedValue(undefined);
-  vi.mocked(useOptions).mockImplementation(() => ({ updateSettings }) as never);
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
   vi.mocked(useOverlay).mockImplementation(() => overlay as unknown as OverlayApi);
 });
 
@@ -151,6 +153,53 @@ describe('ChatButtonPage', () => {
     // Near the top the menu opens below the tab
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByRole('menu').className).toContain('top-full');
+  });
+
+  it('holds the favorites from settings, growing upward from its spot, and saves favorite changes', () => {
+    settings = { chatDockFavorites: ['chat', 'offers', 'settings'] };
+    render(<ChatButtonPage />);
+    const dock = () => screen.getByTitle('Drag to move').closest<HTMLElement>('.absolute.right-0')!;
+    // A third button adds a tab width (43px) above the default 118px tab: 43x161, same 9px above the bottom
+    expect(dock().style.height).toBe('161px');
+    expect(dock().style.top).toBe(`${953 - 43}px`);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(overlay.openPanel).toHaveBeenCalledWith('settings');
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Favorite Offers' }));
+    expect(updateSettings).toHaveBeenCalledWith({ chatDockFavorites: ['chat', 'settings'] });
+  });
+
+  it('lays the menu and tab out in the saved order, new windows appended, unknown ones ignored', () => {
+    settings = {
+      chatDockOrder: ['settings', 'bogus', 'offers', 'settings'],
+      chatDockFavorites: ['bogus', 'offers', 'settings'],
+    };
+    render(<ChatButtonPage />);
+    const tab = screen.getByTitle('Drag to move');
+    expect(Array.from(tab.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Settings',
+      'Offers',
+      'More',
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent?.replace(/\d+/, ''))).toEqual([
+      'Settings',
+      'Offers',
+      'Chat',
+      'Market browser',
+      'Builds',
+      'Net worth',
+      'Stash value',
+      'Manage listings',
+      'Disable overlay',
+    ]);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Chat' }), { key: 'ArrowUp' });
+    expect(updateSettings).toHaveBeenCalledWith({
+      chatDockOrder: ['settings', 'chat', 'offers', 'market', 'builds', 'netWorth', 'stashValue', 'manageListings'],
+    });
   });
 });
 

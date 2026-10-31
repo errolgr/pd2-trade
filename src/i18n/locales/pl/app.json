@@ -36,6 +36,12 @@
     "tradeOffers_many": "{{count}} ofert handlu",
     "tradeOffers_other": "{{count}} oferty handlu",
     "disableOverlay": "Wyłącz nakładkę",
+    "move": "Przenieś {{label}}",
+    "moveHint": "Przeciągnij, aby zmienić kolejność (lub ↑/↓)",
+    "favorite": "Ulubione: {{label}}",
+    "addFavorite": "Dodaj do ulubionych (karta)",
+    "removeFavorite": "Usuń z ulubionych (karta)",
+    "layoutHint": "Gwiazdka dodaje do karty · przeciągnij, aby zmienić kolejność",
     "menu": {
       "chat": "Czat",
       "market": "Przeglądarka rynku",

@@ -12,7 +12,7 @@ import {
   formatWait,
 } from '@/lib/corrupted-zones';
 import { clampToArea, tickerPosition } from '@/pages/net-worth/overlay';
-import { useChatDockOffset } from '@/pages/chat/chat-dock';
+import { chatDockLayout, chatDockRect, useChatDockOffset } from '@/pages/chat/chat-dock';
 import { currentLocale, useTranslation } from '@/i18n';
 
 /** Upcoming slots listed next to the pill when it is expanded. */
@@ -59,7 +59,9 @@ const CorruptedZoneTimer: React.FC = () => {
   const anchor = settings.corruptedZoneTimerAnchor ?? 'top-right';
   const locked = settings.corruptedZoneTimerLocked === true;
   const vertical = settings.corruptedZoneTimerLayout === 'vertical';
+  // 'above-chat' follows the chat dock as it is dragged along the edge or grows/shrinks with its favorites
   const dockOffset = useChatDockOffset();
+  const dockButtons = chatDockLayout(settings).favorites.length;
   // A finished drag switches the timer to Custom; the panel layout keeps the dragged position
   const drag = useDragToMove(rect, setRect, () => {
     if (anchor !== 'custom') updateSettings({ corruptedZoneTimerAnchor: 'custom' });
@@ -119,7 +121,12 @@ const CorruptedZoneTimer: React.FC = () => {
     if (anchor === 'custom') {
       origin = { x: current.x, y: pillAtBottom ? current.y + current.height - size.height : current.y };
     } else {
-      const pill = tickerPosition(anchor, { width: size.width, height: boxSize.pill }, gameRect, dockOffset);
+      const pill = tickerPosition(
+        anchor,
+        { width: size.width, height: boxSize.pill },
+        gameRect,
+        chatDockRect(gameRect, dockOffset, dockButtons),
+      );
       origin = { x: pill.x, y: listAbove ? pill.y + boxSize.pill - size.height : pill.y };
     }
     const next = { ...clampToArea({ ...origin, ...size }, overlayViewport()), ...size };
@@ -131,7 +138,7 @@ const CorruptedZoneTimer: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, listAbove, gameRect, dockOffset, boxSize, setRect, drag.dragging]);
+  }, [anchor, listAbove, gameRect, dockOffset, dockButtons, boxSize, setRect, drag.dragging]);
 
   const followedKey = (settings.corruptedZoneFollowed ?? []).join('\n');
   const onlyFollowed = settings.corruptedZoneTimerZones === 'followed' && followedKey !== '';

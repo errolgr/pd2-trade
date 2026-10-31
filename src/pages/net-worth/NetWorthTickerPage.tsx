@@ -18,7 +18,7 @@ import {
   panelBesideTicker,
   tickerPosition,
 } from './overlay';
-import { useChatDockOffset } from '@/pages/chat/chat-dock';
+import { chatDockLayout, chatDockRect, useChatDockOffset } from '@/pages/chat/chat-dock';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { currentLocale, useTranslation } from '@/i18n';
 
@@ -62,7 +62,9 @@ const NetWorthTicker: React.FC = () => {
     if (anchor !== 'custom') updateSettings({ netWorthTickerAnchor: 'custom' });
   });
   // 'above-chat' follows the chat dock as it is dragged along the edge
+  // 'above-chat' follows the chat dock as it is dragged along the edge or grows/shrinks with its favorites
   const dockOffset = useChatDockOffset();
+  const dockButtons = chatDockLayout(settings).favorites.length;
 
   // Re-evaluate freshness every 30s
   useEffect(() => {
@@ -116,7 +118,10 @@ const NetWorthTicker: React.FC = () => {
       }
     }
     if (anchor === 'custom' && migrationRef.current === 'running') return;
-    const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect, dockOffset);
+    const origin =
+      anchor === 'custom'
+        ? rectRef.current
+        : tickerPosition(anchor, pillSize, gameRect, chatDockRect(gameRect, dockOffset, dockButtons));
     const next = { ...clampToArea({ ...origin, ...pillSize }, overlayViewport()), ...pillSize };
     const current = rectRef.current;
     if (
@@ -127,7 +132,18 @@ const NetWorthTicker: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, gameRect, dockOffset, pillSize, setRect, legacyPosition, updateSettings, migrated, drag.dragging]);
+  }, [
+    anchor,
+    gameRect,
+    dockOffset,
+    dockButtons,
+    pillSize,
+    setRect,
+    legacyPosition,
+    updateSettings,
+    migrated,
+    drag.dragging,
+  ]);
 
   const onClick = () => {
     if (drag.consumeDragClick()) return;
