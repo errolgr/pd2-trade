@@ -122,6 +122,7 @@
     "viewingSnapshot": "Просмотр <date>{{date}}</date><muted> · цены скрыты</muted>",
     "backToNow": "К текущему",
     "equipment": "Экипировка",
+    "charms": "Чармы",
     "weaponSwitch": "Второй комплект оружия",
     "mercTitle": "Наёмник <muted>· {{type}}</muted>",
     "paneLabel": "Персонаж",

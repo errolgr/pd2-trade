@@ -118,6 +118,7 @@
     "viewingSnapshot": "Viendo <date>{{date}}</date><muted> · precios ocultos</muted>",
     "backToNow": "Volver al presente",
     "equipment": "Equipo",
+    "charms": "Charms",
     "weaponSwitch": "Cambio de arma",
     "mercTitle": "Mercenario <muted>· {{type}}</muted>",
     "paneLabel": "Vista del personaje",

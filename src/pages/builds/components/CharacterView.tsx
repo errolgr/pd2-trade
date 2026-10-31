@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   type BuildsMode,
   type CharacterDetail,
   type CharacterSkill,
+  type CharmItem,
   type EquippedItem,
   getCharacterSnapshot,
 } from '@/lib/builds-api';
@@ -133,6 +134,8 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
       ...viewing.doc,
       equipped: unpriced(viewing.doc.equipped),
       merc: viewing.doc.merc ? { ...viewing.doc.merc, equipped: unpriced(viewing.doc.merc.equipped) } : null,
+      // Snapshots don't record charms
+      charms: [],
     };
   }, [detail, viewing]);
 
@@ -304,6 +307,13 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
               items={shown.equipped}
               weaponSet={weaponSet} />
           </Section>
+          {shown.charms && shown.charms.length > 0 && (
+            <Section title={t('character.charms')}
+              icon={<Gem />}
+              bodyClassName="py-3">
+              <CharmGrid charms={shown.charms} />
+            </Section>
+          )}
           {shown.merc && (
             <Section
               title={
@@ -482,6 +492,66 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
                 {fmtHr(item.priceHr)}
               </span>
             )}
+          </button>
+        </ItemActionsMenu>
+      </HoverPopover>
+    </div>
+  );
+}
+
+/** The inventory's charm area (bottom 4 of its 8 rows), cells to scale. */
+const CHARM_COLS = 10;
+const CHARM_ROWS = 4;
+const CHARM_CELL = 25;
+const CHARM_GAP = 2;
+
+function CharmGrid({ charms }: { charms: CharmItem[] }) {
+  return (
+    <div
+      className="mx-auto grid w-fit"
+      style={{
+        gridTemplateColumns: `repeat(${CHARM_COLS}, ${CHARM_CELL}px)`,
+        gridTemplateRows: `repeat(${CHARM_ROWS}, ${CHARM_CELL}px)`,
+        gap: CHARM_GAP,
+      }}
+    >
+      {Array.from({ length: CHARM_COLS * CHARM_ROWS }, (_, i) => (
+        <div
+          key={i}
+          aria-hidden
+          className="rounded-[3px] border border-border/40 bg-background/20"
+          style={{ gridColumn: (i % CHARM_COLS) + 1, gridRow: Math.floor(i / CHARM_COLS) + 1 }}
+        />
+      ))}
+      {charms.map((charm) => (
+        <CharmCell key={`${charm.row}:${charm.column}`}
+          charm={charm} />
+      ))}
+    </div>
+  );
+}
+
+function CharmCell({ charm }: { charm: CharmItem }) {
+  const height = charm.height * CHARM_CELL + (charm.height - 1) * CHARM_GAP;
+  return (
+    <div style={{ gridColumn: charm.column + 1, gridRow: `${charm.row + 1} / span ${charm.height}` }}>
+      <HoverPopover side="right"
+        content={<ItemTooltipCard item={charm} />}>
+        <ItemActionsMenu item={charm}>
+          <button
+            type="button"
+            aria-label={charm.name}
+            className={cn(
+              'relative flex w-full items-center justify-center rounded-[3px] border bg-background/40 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring',
+              qualityBorder(charm.quality, charm.runeword),
+            )}
+            style={{ height }}
+          >
+            <ItemIcon item={charm}
+              size={CHARM_CELL - 4}
+              height={height - 4}
+              className="border-0 bg-transparent" />
+            {charm.corrupted && <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-q-corrupted" />}
           </button>
         </ItemActionsMenu>
       </HoverPopover>
