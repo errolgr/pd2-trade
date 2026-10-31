@@ -34,6 +34,12 @@
     "tradeOffers_many": "{{count}} d'offres d'échange",
     "tradeOffers_other": "{{count}} offres d'échange",
     "disableOverlay": "Désactiver l'overlay",
+    "move": "Déplacer {{label}}",
+    "moveHint": "Glisser pour réordonner (ou ↑/↓)",
+    "favorite": "Favori : {{label}}",
+    "addFavorite": "Ajouter aux favoris (l’onglet)",
+    "removeFavorite": "Retirer des favoris (l’onglet)",
+    "layoutHint": "Étoile pour l’onglet · glisser pour réordonner",
     "menu": {
       "chat": "Chat",
       "market": "Marché",

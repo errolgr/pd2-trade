@@ -6,7 +6,7 @@ import { installUpdateAndRelaunch } from '@/lib/updater';
 import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
-import { chatDockSize } from '@/pages/chat/chat-dock';
+import { chatDockWidth } from '@/pages/chat/chat-dock';
 import { offerNotificationLanding } from '@/pages/chat/chat-feed';
 import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
 import { findMarketLinks } from '@/pages/chat/lib/market-links';
@@ -228,12 +228,12 @@ export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
   const dockShown = usePanelOpen('chatButton') && gameFocused;
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-  const dock = chatDockSize(gameRect.height);
+  const dockWidth = chatDockWidth(gameRect.height);
 
   const offset = {
     right:
       Math.max(0, window.innerWidth - (anchor.x + anchor.width)) +
-      (dockShown ? dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
+      (dockShown ? dockWidth + TOAST_MARGIN / 2 : TOAST_MARGIN),
     bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 

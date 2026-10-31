@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.12': [
+    '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
     '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',
     '🆕 My listings: sort by needs attention, last bumped, last updated, price, date listed, price vs market or name (compact rows sort from their column headers too), and filter to bump-ready listings or listings with offers',
     '✨ My listings: corrupted, ethereal and socket tags next to each item; expand a card to see every stat',

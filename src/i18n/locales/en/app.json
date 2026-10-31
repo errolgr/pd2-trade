@@ -32,6 +32,12 @@
     "tradeOffers_one": "{{count}} trade offers",
     "tradeOffers_other": "{{count}} trade offers",
     "disableOverlay": "Disable overlay",
+    "move": "Move {{label}}",
+    "moveHint": "Drag to reorder (or ↑/↓)",
+    "favorite": "Favorite {{label}}",
+    "addFavorite": "Add to favorites (the tab)",
+    "removeFavorite": "Remove from favorites (the tab)",
+    "layoutHint": "Star to add to the tab · drag to reorder",
     "menu": {
       "chat": "Chat",
       "market": "Market browser",

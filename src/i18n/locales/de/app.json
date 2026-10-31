@@ -32,6 +32,12 @@
     "tradeOffers_one": "{{count}} Handelsangebot",
     "tradeOffers_other": "{{count}} Handelsangebote",
     "disableOverlay": "Overlay deaktivieren",
+    "move": "{{label}} verschieben",
+    "moveHint": "Ziehen zum Sortieren (oder ↑/↓)",
+    "favorite": "{{label}} als Favorit",
+    "addFavorite": "Zu Favoriten hinzufügen (Leiste)",
+    "removeFavorite": "Aus Favoriten entfernen (Leiste)",
+    "layoutHint": "Stern für die Leiste · ziehen zum Sortieren",
     "menu": {
       "chat": "Chat",
       "market": "Marktbrowser",
