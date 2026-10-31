@@ -7,6 +7,7 @@ export const changeLog = {
     '🔧 My listings: "Bump N ready" counts and bumps only the listings off cooldown (Bump All marked every row as bumped)',
     '✨ The listings panel opens larger (720×680)',
     '🔧 Price check: auras ("Level 8 Might Aura When Equipped"), chance to cast lines (on attack, striking, casting, when struck, kill, death, level-up) and charged skills are no longer Unknown: tick one to search by its skill and level, like the PD2 market\'s own filters',
+    '🔧 Auto-delist and Ctrl+U no longer remove the same listing twice (two "removed" popups) when PD2 still shows a listing that was just deleted',
   ],
   '0.10.11': [
     '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
