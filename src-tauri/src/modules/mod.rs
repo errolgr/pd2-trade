@@ -3,6 +3,8 @@ pub mod commands;
 pub mod config;
 pub mod debug_logger;
 pub mod keyboard;
+#[cfg(target_os = "linux")]
+pub mod layer_shell;
 pub mod opener;
 pub mod region;
 pub mod system;
