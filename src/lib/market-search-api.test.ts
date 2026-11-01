@@ -192,6 +192,13 @@ describe('marketSearchBody', () => {
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
 
+  it('sends an exclusive HR max (a price chart bucket) only with a max', () => {
+    const body = (f: Partial<MarketFilters>) => marketSearchBody(mergeFilters(base, f), 0, 25).filters;
+    expect(body({ hrMin: 0.5, hrMax: 1, hrMaxExclusive: true })).toMatchObject({ hrMax: 1, hrMaxExclusive: true });
+    expect(body({ hrMin: 2, hrMaxExclusive: true }).hrMaxExclusive).toBeUndefined();
+    expect(body({ hrMax: 1 }).hrMaxExclusive).toBeUndefined();
+  });
+
   it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),

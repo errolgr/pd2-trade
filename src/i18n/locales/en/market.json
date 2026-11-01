@@ -165,13 +165,19 @@
     "maxLabel": "{{label}} max"
   },
   "facets": {
-    "sockets": "Socket counts",
-    "socketsTitle_one": "{{sockets}} sockets: {{count, number}} listing",
-    "socketsTitle_other": "{{sockets}} sockets: {{count, number}} listings",
-    "priceHistogram": "Listings by HR price",
-    "priceTitle_one": "{{range}} HR: {{count, number}} listing",
-    "priceTitle_other": "{{range}} HR: {{count, number}} listings",
-    "priceAxis": "{{hr}}+ HR"
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} socket",
+    "socket_other": "{{count}} sockets",
+    "socketsAny": "Any sockets",
+    "socketsExact_one": "Exactly {{count}} socket",
+    "socketsExact_other": "Exactly {{count}} sockets",
+    "socketsRange": "{{min}} to {{max}} sockets",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Up to {{to}} HR",
+    "priceAny": "any price",
+    "priceBars": "Listings by HR price: {{selection}}",
+    "priceClear": "Clear HR price"
   },
   "stats": {
     "min": "Min",

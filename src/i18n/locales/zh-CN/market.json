@@ -157,11 +157,17 @@
     "maxLabel": "{{label}} 最大"
   },
   "facets": {
-    "sockets": "孔数",
-    "socketsTitle_other": "{{sockets}} 孔：{{count, number}} 个挂单",
-    "priceHistogram": "按 HR 价格的挂单",
-    "priceTitle_other": "{{range}} HR：{{count, number}} 个挂单",
-    "priceAxis": "{{hr}}+ HR"
+    "count": "{{label}} · {{n, number}}",
+    "socket_other": "{{count}} 孔",
+    "socketsAny": "任意孔数",
+    "socketsExact_other": "恰好 {{count}} 孔",
+    "socketsRange": "{{min}} 到 {{max}} 孔",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "最多 {{to}} HR",
+    "priceAny": "任意价格",
+    "priceBars": "按 HR 价格的挂单：{{selection}}",
+    "priceClear": "清除 HR 价格"
   },
   "stats": {
     "min": "最小",

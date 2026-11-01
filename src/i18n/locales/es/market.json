@@ -173,15 +173,21 @@
     "maxLabel": "{{label}} máx."
   },
   "facets": {
-    "sockets": "Número de engarces",
-    "socketsTitle_one": "{{sockets}} engarces: {{count, number}} anuncio",
-    "socketsTitle_many": "{{sockets}} engarces: {{count, number}} de anuncios",
-    "socketsTitle_other": "{{sockets}} engarces: {{count, number}} anuncios",
-    "priceHistogram": "Anuncios por precio en HR",
-    "priceTitle_one": "{{range}} HR: {{count, number}} anuncio",
-    "priceTitle_many": "{{range}} HR: {{count, number}} de anuncios",
-    "priceTitle_other": "{{range}} HR: {{count, number}} anuncios",
-    "priceAxis": "{{hr}}+ HR"
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} engarce",
+    "socket_many": "{{count}} de engarces",
+    "socket_other": "{{count}} engarces",
+    "socketsAny": "Cualquier número de engarces",
+    "socketsExact_one": "Exactamente {{count}} engarce",
+    "socketsExact_many": "Exactamente {{count}} de engarces",
+    "socketsExact_other": "Exactamente {{count}} engarces",
+    "socketsRange": "De {{min}} a {{max}} engarces",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Hasta {{to}} HR",
+    "priceAny": "cualquier precio",
+    "priceBars": "Anuncios por precio en HR: {{selection}}",
+    "priceClear": "Borrar precio en HR"
   },
   "stats": {
     "min": "Mín.",

@@ -68,6 +68,8 @@ export interface MarketFilters {
   /** hr_price range (extension over the site). */
   hrMin?: number;
   hrMax?: number;
+  /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
+  hrMaxExclusive?: boolean;
   /** item.base.type_code */
   typeCode?: string;
   /** item.base_code */

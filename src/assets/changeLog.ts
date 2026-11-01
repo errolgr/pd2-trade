@@ -1,6 +1,6 @@
 export const changeLog = {
   '0.10.13': [
-    '🆕 Market browser: once you search or filter, the filters show how many listings each choice finds (rarity, item type and base, sockets, corrupted, ethereal), and the Price section has a small price chart; click a count or a bar to apply it',
+    '🆕 Market browser: once you search or filter, the filters show how many listings each choice finds (a thin line under sockets, corrupted and ethereal, a shaded row in the rarity, item type and base lists, choices that find nothing dimmed; hover for the exact count), and the HR price box has a small price chart. Click two sockets for a socket range, or two price bars for a price range (or drag across them)',
     "✨ Price check searches the pd2trader market service, so its results match the market browser's (if the service is down, PD2 answers instead)",
     '✨ Price check and market browser: results show right away, then whether each seller is online right now pops in from PD2',
     '✨ Price check: Show Expired also lists removed and expired listings next to sold ones, and each says how long it was up ("sold after 2 days")',

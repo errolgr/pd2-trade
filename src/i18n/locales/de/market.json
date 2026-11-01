@@ -165,13 +165,19 @@
     "maxLabel": "{{label}} max"
   },
   "facets": {
-    "sockets": "Anzahl Sockel",
-    "socketsTitle_one": "{{sockets}} Sockel: {{count, number}} Inserat",
-    "socketsTitle_other": "{{sockets}} Sockel: {{count, number}} Inserate",
-    "priceHistogram": "Inserate nach HR-Preis",
-    "priceTitle_one": "{{range}} HR: {{count, number}} Inserat",
-    "priceTitle_other": "{{range}} HR: {{count, number}} Inserate",
-    "priceAxis": "{{hr}}+ HR"
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} Sockel",
+    "socket_other": "{{count}} Sockel",
+    "socketsAny": "Beliebige Sockelanzahl",
+    "socketsExact_one": "Genau {{count}} Sockel",
+    "socketsExact_other": "Genau {{count}} Sockel",
+    "socketsRange": "{{min}} bis {{max}} Sockel",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Bis {{to}} HR",
+    "priceAny": "beliebiger Preis",
+    "priceBars": "Inserate nach HR-Preis: {{selection}}",
+    "priceClear": "HR-Preis löschen"
   },
   "stats": {
     "min": "Min.",

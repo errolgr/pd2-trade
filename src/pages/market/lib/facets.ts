@@ -102,3 +102,109 @@ export function parseFacets(raw: unknown): MarketFacets | undefined {
 export function countsByValue<T>(facet: FacetCount<T>[] | undefined): Map<T, number> {
   return new Map((facet ?? []).map((b) => [b.value, b.count]));
 }
+
+/**
+ * The service's cap on the `typeCode` / `baseCode` lists (its TYPE_FACET_SIZE / BASE_FACET_SIZE): a shorter list is
+ * every code the search finds, so a code missing from it finds nothing.
+ */
+export const CODE_FACET_SIZE = { typeCode: 50, baseCode: 20 } as const;
+
+/** A code facet's counts, and whether they are all of them (codes missing from a complete list count 0). */
+export interface CodeCounts {
+  byCode: Map<string, number>;
+  complete: boolean;
+}
+
+export function codeCounts(facet: FacetCount<string>[] | undefined, size: number): CodeCounts | undefined {
+  return facet && { byCode: countsByValue(facet), complete: facet.length < size };
+}
+
+/** How far a facet hairline / fill reaches: `count / total` in [0, 1] (0 without a total). */
+export function facetShare(count: number | undefined, total: number): number {
+  return count && total > 0 ? Math.min(1, count / total) : 0;
+}
+
+/** A run of adjacent options picked together (socket chips, price buckets): indexes `lo..hi`. */
+export interface IndexRange {
+  lo: number;
+  hi: number;
+}
+
+export const inRange = (r: IndexRange | null, i: number) => !!r && r.lo <= i && i <= r.hi;
+
+/** The range between two picks, in either order. */
+export const spanOf = (a: number, b: number): IndexRange => ({ lo: Math.min(a, b), hi: Math.max(a, b) });
+
+/**
+ * Calendar-style picking: with nothing picked, a pick is that option alone; with one option picked, picking another
+ * spans the range between them (either order) and picking it again clears; with a range picked, a pick starts over
+ * with that option alone.
+ */
+export function pickIndex(current: IndexRange | null, i: number): IndexRange | null {
+  if (!current || current.lo !== current.hi) return { lo: i, hi: i };
+  return current.lo === i ? null : spanOf(current.lo, i);
+}
+
+/** Socket chips 0–6 (0 = unsocketed); a chip's index is its socket count. */
+export const SOCKET_COUNTS = [0, 1, 2, 3, 4, 5, 6] as const;
+const MAX_SOCKETS = SOCKET_COUNTS[SOCKET_COUNTS.length - 1];
+
+/** The chips a socket min / max covers (one bound: up to 6 / from 0); null without bounds or when they cross. */
+export function socketRange(min: number | undefined, max: number | undefined): IndexRange | null {
+  if (min === undefined && max === undefined) return null;
+  const r = { lo: min ?? 0, hi: max ?? MAX_SOCKETS };
+  return r.lo <= r.hi ? r : null;
+}
+
+/** The HR price filter fields; `hrMaxExclusive`: `hrMax` is `<` (a bucket's upper edge), not `<=` (typed). */
+export interface HrRange {
+  hrMin?: number;
+  hrMax?: number;
+  hrMaxExclusive?: boolean;
+}
+
+/** Part of a price bucket's width a range covers, as fractions `from..to` of [0, 1]. */
+export interface BarLight {
+  from: number;
+  to: number;
+}
+
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
+/**
+ * The part of a bucket an HR range covers, linear within `[from, to)`; null when the range misses it or is unset. The
+ * open last bucket has no width to interpolate in: it is covered whole or not at all.
+ */
+export function bucketLight(b: PriceBucket, r: HrRange): BarLight | null {
+  const { hrMin, hrMax } = r;
+  if (hrMin === undefined && hrMax === undefined) return null;
+  if (hrMin !== undefined && b.to !== null && hrMin >= b.to) return null;
+  if (hrMax !== undefined && (r.hrMaxExclusive ? hrMax <= b.from : hrMax < b.from)) return null;
+  if (b.to === null) return { from: 0, to: 1 };
+  const at = (v: number) => clamp01((v - b.from) / (b.to! - b.from));
+  return { from: hrMin === undefined ? 0 : at(hrMin), to: hrMax === undefined ? 1 : at(hrMax) };
+}
+
+/** Where typed bounds fall strictly inside a bucket, as fractions of its width (for a marker line). */
+export function bucketMarkers(b: PriceBucket, r: HrRange): number[] {
+  if (b.to === null) return [];
+  return [r.hrMin, r.hrMax].flatMap((v) =>
+    v !== undefined && v > b.from && v < b.to! ? [(v - b.from) / (b.to! - b.from)] : [],
+  );
+}
+
+/** The buckets an HR range touches (first..last); null when it touches none or is unset. */
+export function priceRange(buckets: PriceBucket[], r: HrRange): IndexRange | null {
+  const lit = buckets.flatMap((b, i) => (bucketLight(b, r) ? [i] : []));
+  return lit.length ? { lo: lit[0], hi: lit[lit.length - 1] } : null;
+}
+
+/**
+ * A bucket range as the HR filter (every field set, so it replaces the old range): from the first bucket's lower edge
+ * to the last one's upper edge, exclusive like the buckets (`[from, to)`); the open last bucket leaves no max.
+ */
+export function priceFilter(buckets: PriceBucket[], r: IndexRange | null): HrRange {
+  if (!r) return { hrMin: undefined, hrMax: undefined, hrMaxExclusive: undefined };
+  const to = buckets[r.hi].to;
+  return { hrMin: buckets[r.lo].from, hrMax: to ?? undefined, hrMaxExclusive: to === null ? undefined : true };
+}

@@ -66,6 +66,8 @@ export function marketSearchBody(
       priceText: f.priceText?.slice(0, MAX_FILTER_TEXT),
       hrMin: f.hrMin,
       hrMax: f.hrMax,
+      // Only with a max, and only when set: a typed max stays inclusive
+      hrMaxExclusive: f.hrMax !== undefined && f.hrMaxExclusive ? true : undefined,
       typeCode: f.typeCode,
       baseCode: f.baseCode,
       rarity: f.rarity,

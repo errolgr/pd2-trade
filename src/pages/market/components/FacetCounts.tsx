@@ -1,26 +1,88 @@
+import React from 'react';
 import { cn } from '@/lib/utils';
-import type { PriceBucket } from '../lib/facets';
-import { currentLocale, useTranslation } from '@/i18n';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { facetShare, inRange, SOCKET_COUNTS, socketRange, type IndexRange } from '../lib/facets';
+import { useRangePicker } from '../hooks/useRangePicker';
+import { useTranslation } from '@/i18n';
 
 /*
- * Facet counts beside the filter sidebar's options: how many listings each choice finds (see lib/facets.ts).
+ * Facet counts on the filter sidebar's options (see lib/facets.ts), without numbers at rest: a hairline (Yes / No,
+ * socket chips) or a faint row fill (list options) as long as the option's share, options that find nothing dimmed
+ * (still pickable), and the exact count in a tooltip on hover / focus and in the option's accessible name.
  */
 
-/** A muted listing count after an option label; nothing while counts are unknown. */
-export function FacetCount({ count, className }: { count: number | undefined; className?: string }) {
-  if (count === undefined) return null;
+/** Options that find nothing: dimmed, never hidden. */
+export const FACET_DIM = 'opacity-30';
+
+/** "<label> · <count>": an option's exact count (tooltip and accessible name). */
+export function useFacetText() {
+  const { t } = useTranslation('market');
+  return (label: string, count: number) => t('facets.count', { label, n: count });
+}
+
+/** A 2px accent hairline along the bottom of a (relative) option, `share` of its inner width long. */
+export function FacetHairline({ share, inset = 3 }: { share: number; inset?: number }) {
+  if (share <= 0) return null;
   return (
     <span
-      data-facet-count
-      className={cn('ml-1.5 text-[10px] font-normal tabular-nums text-muted-foreground', className)}
-    >
-      {count.toLocaleString(currentLocale())}
-    </span>
+      aria-hidden
+      data-facet-hairline
+      className="pointer-events-none absolute bottom-[2px] h-[2px] rounded-full bg-primary/60"
+      style={{ left: inset, width: `calc((100% - ${2 * inset}px) * ${share})` }}
+    />
+  );
+}
+
+/** A list row's faint background fill, `share` of the row wide. */
+export function facetFill(share: number): React.CSSProperties | undefined {
+  if (share <= 0) return undefined;
+  const at = `${(share * 100).toFixed(1)}%`;
+  return {
+    backgroundImage: `linear-gradient(to right, color-mix(in oklab, var(--primary) 9%, transparent) ${at}, transparent ${at})`,
+  };
+}
+
+/**
+ * The exact count of an option on hover / keyboard focus. Without `text` (no facets) it never opens, but stays
+ * mounted, so the option keeps its focus when counts come and go.
+ */
+export function FacetTip({ text, children }: { text: string | undefined; children: React.ReactElement }) {
+  return (
+    <Tooltip open={text ? undefined : false}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      {text && (
+        <TooltipContent side="top"
+          className="px-2 py-1 text-[11px] tabular-nums">
+          {text}
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }
 
 /**
- * Socket counts as chips (0 = unsocketed): picking one sets min = max = n, picking the active one clears the range.
+ * The tooltip of a list row (select / menu item): Radix focuses rows as the pointer or the arrow keys highlight them,
+ * so it shows while the row has focus (`open`), anchored on the whole (relative) row.
+ */
+export function FacetRowTip({ text, open }: { text: string; open: boolean }) {
+  return (
+    <Tooltip open={open}>
+      <TooltipTrigger asChild>
+        <span aria-hidden
+          className="pointer-events-none absolute inset-0" />
+      </TooltipTrigger>
+      <TooltipContent side="right"
+        className="px-2 py-1 text-[11px] tabular-nums">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
+ * Socket chips 0–6 (0 = unsocketed), picked like dates on a calendar (see useRangePicker): one chip is exactly that
+ * many sockets, a second one the range between them. They follow a typed min / max too (one bound: up to 6 / from 0).
+ * With facets (`counts` not empty) each chip's hairline is its share of the busiest chip.
  */
 export function SocketChips({
   counts,
@@ -34,94 +96,70 @@ export function SocketChips({
   onPick: (min: number | undefined, max: number | undefined) => void;
 }) {
   const { t } = useTranslation('market');
-  if (counts.size === 0) return null;
+  const facetText = useFacetText();
+  const selected = socketRange(min, max);
+  const { preview, groupProps, optionProps } = useRangePicker({
+    count: SOCKET_COUNTS.length,
+    selected,
+    onPick: (r) => onPick(r?.lo, r?.hi),
+  });
+  const faceted = counts.size > 0;
+  const peak = Math.max(0, ...counts.values());
+  const selection = !selected
+    ? t('facets.socketsAny')
+    : selected.lo === selected.hi
+      ? t('facets.socketsExact', { count: selected.lo })
+      : t('facets.socketsRange', { min: selected.lo, max: selected.hi });
   return (
     <div role="group"
-      aria-label={t('facets.sockets')}
-      className="flex flex-wrap gap-1">
-      {[...counts].map(([n, count]) => {
-        const active = n === 0 ? max === 0 && !min : min === n && max === n;
+      aria-label={selection}
+      {...groupProps}
+      className="grid grid-cols-7 gap-1 select-none">
+      <RangeBand range={preview}
+        className="bg-primary/8" />
+      <RangeBand range={selected}
+        className="bg-primary/12" />
+      {SOCKET_COUNTS.map((n) => {
+        const count = counts.get(n);
+        const lit = inRange(selected, n);
+        const end = lit && (n === selected!.lo || n === selected!.hi);
+        const label = t('facets.socket', { count: n });
+        const text = count === undefined ? undefined : facetText(label, count);
         return (
-          <button
-            key={n}
-            type="button"
-            aria-pressed={active}
-            disabled={count === 0 && !active}
-            title={t('facets.socketsTitle', { count, sockets: n })}
-            onClick={() => (active ? onPick(undefined, undefined) : onPick(n === 0 ? undefined : n, n))}
-            className={cn(
-              'inline-flex h-5 items-center rounded-full border border-input px-1.5 text-[11px] tabular-nums text-foreground outline-none transition-colors duration-(--dur-fast) hover:border-ring/40 focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40',
-              active && 'border-primary/50 bg-primary/10 text-primary',
-            )}
-          >
-            {n}
-            <FacetCount count={count}
-              className="ml-1" />
-          </button>
+          <FacetTip key={n}
+            text={text}>
+            <button
+              type="button"
+              aria-pressed={lit}
+              aria-label={text ?? label}
+              {...optionProps(n)}
+              style={{ gridRow: 1, gridColumn: n + 1 }}
+              className={cn(
+                'relative inline-flex h-6 min-w-0 items-center justify-center rounded-md border border-input text-[11px] tabular-nums text-foreground outline-none transition-[color,border-color,opacity] duration-(--dur-fast) hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring/60',
+                lit && 'border-transparent text-primary',
+                end && 'border-primary hover:border-primary',
+                // A picked chip stays readable even when it finds nothing
+                faceted && count === 0 && !lit && cn(FACET_DIM, 'border-dashed'),
+              )}
+            >
+              {n}
+              {faceted && <FacetHairline share={facetShare(count, peak)} />}
+            </button>
+          </FacetTip>
         );
       })}
     </div>
   );
 }
 
-const hrText = (n: number) => n.toLocaleString(currentLocale(), { maximumFractionDigits: 2 });
-
-/**
- * Listings per effective HR price bucket as a small bar chart; clicking a bar sets the HR range to it (again on the
- * selected bar clears it). Bars inside the current range are highlighted.
- */
-export function PriceHistogram({
-  buckets,
-  hrMin,
-  hrMax,
-  onPick,
-}: {
-  buckets: PriceBucket[];
-  hrMin: number | undefined;
-  hrMax: number | undefined;
-  onPick: (hrMin: number | undefined, hrMax: number | undefined) => void;
-}) {
-  const { t } = useTranslation('market');
-  if (buckets.length === 0) return null;
-  const peak = Math.max(1, ...buckets.map((b) => b.count));
-  const last = buckets[buckets.length - 1];
+/** A tinted band behind grid columns `lo..hi` (row 1), continuous across the gaps between them. */
+function RangeBand({ range, className }: { range: IndexRange | null; className?: string }) {
+  if (!range) return null;
   return (
-    <div>
-      <div role="group"
-        aria-label={t('facets.priceHistogram')}
-        className="flex h-9 items-end gap-px">
-        {buckets.map((b) => {
-          const range = b.to === null ? `${hrText(b.from)}+` : `${hrText(b.from)}–${hrText(b.to)}`;
-          const exact = hrMin === b.from && hrMax === (b.to ?? undefined);
-          const inRange =
-            (hrMin !== undefined || hrMax !== undefined) &&
-            b.from >= (hrMin ?? 0) &&
-            (hrMax === undefined || (b.to !== null && b.to <= hrMax));
-          return (
-            <button
-              key={b.from}
-              type="button"
-              aria-pressed={exact}
-              title={t('facets.priceTitle', { count: b.count, range })}
-              onClick={() => (exact ? onPick(undefined, undefined) : onPick(b.from, b.to ?? undefined))}
-              className="group flex h-full min-w-0 flex-1 items-end rounded-[2px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <span
-                // Square root: one cheap bucket shouldn't flatten the rest
-                style={{ height: `${b.count ? Math.max(8, Math.sqrt(b.count / peak) * 100) : 0}%` }}
-                className={cn(
-                  'block w-full rounded-[2px] bg-muted-foreground/35 transition-colors duration-(--dur-fast) group-hover:bg-primary/70',
-                  inRange && 'bg-primary/80',
-                )}
-              />
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-muted-foreground">
-        <span>{hrText(buckets[0].from)}</span>
-        <span>{t('facets.priceAxis', { hr: hrText(last.from) })}</span>
-      </div>
-    </div>
+    <span
+      aria-hidden
+      className={cn('pointer-events-none rounded-md', className)}
+      style={{ gridRow: 1, gridColumn: `${range.lo + 1} / ${range.hi + 2}` }}
+    />
   );
 }
