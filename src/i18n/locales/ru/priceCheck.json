@@ -103,7 +103,12 @@
       "whisperCopied": "Личное сообщение скопировано, вставьте правым кликом",
       "onlineCopyWhisper": "В игре · нажмите, чтобы скопировать личное сообщение",
       "seller": "Продавец: <name>{{seller}}</name>",
-      "online": "В игре"
+      "online": "В игре",
+      "endedSold": "продано через {{duration}}",
+      "endedRemoved": "снято через {{duration}}",
+      "endedExpired": "истекло через {{duration}}",
+      "endedAt": "Завершено {{when}}",
+      "listedFor": "В продаже: {{duration}}"
     }
   },
   "statRow": {

@@ -6,7 +6,7 @@ import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { MAX_FILTER_TEXT, MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
-import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
+import type { MarketFilters, MarketListingStatus, ScoredListing } from '@/pages/market/lib/types';
 
 /** A search that hasn't answered by then counts as the service being unavailable. */
 export const MARKET_SEARCH_TIMEOUT_MS = 8000;
@@ -95,6 +95,7 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
           or: s.or,
           not: s.not || undefined,
         })),
+      status: f.status?.length ? f.status : undefined,
       maxAgeDays: f.maxAgeDays,
       sort: { by: f.sort.by, dir: f.sort.dir, key: f.sort.by === 'stat' ? f.sort.key : undefined },
     },
@@ -104,6 +105,7 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
 }
 
 const finiteOrNull = (n: unknown): number | null => (typeof n === 'number' && Number.isFinite(n) ? n : null);
+const STATUSES: readonly string[] = ['active', 'sold', 'removed', 'expired'] satisfies MarketListingStatus[];
 
 function parsePage(body: unknown): MarketSearchPage {
   if (!body || typeof body !== 'object' || !('items' in body) || !Array.isArray(body.items)) {
@@ -124,6 +126,13 @@ function parsePage(body: unknown): MarketSearchPage {
       pseudo,
       score: 'score' in row ? finiteOrNull(row.score) : null,
       value: 'value' in row ? finiteOrNull(row.value) : null,
+      // Older services send none of these
+      ...('status' in row && STATUSES.includes(row.status as string)
+        ? { status: row.status as MarketListingStatus }
+        : {}),
+      ...('listedAt' in row ? { listedAt: typeof row.listedAt === 'string' ? row.listedAt : null } : {}),
+      ...('endedAt' in row ? { endedAt: typeof row.endedAt === 'string' ? row.endedAt : null } : {}),
+      ...('durationSeconds' in row ? { durationSeconds: finiteOrNull(row.durationSeconds) } : {}),
     });
   }
   return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length };

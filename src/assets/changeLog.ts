@@ -1,4 +1,10 @@
 export const changeLog = {
+  '0.10.13': [
+    "✨ Price check searches the pd2trader market service, so its results match the market browser's (if the service is down, PD2 answers instead)",
+    '✨ Price check and market browser: results show right away, then whether each seller is online right now pops in from PD2',
+    '✨ Price check: Show Expired also lists removed and expired listings next to sold ones, and each says how long it was up ("sold after 2 days")',
+    '🔧 Open in market (and price checks with a Σ total) keep runewords, chance to cast and charges skills, auras, splash and elemental damage ranges exactly as picked',
+  ],
   '0.10.12': [
     '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
     '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',

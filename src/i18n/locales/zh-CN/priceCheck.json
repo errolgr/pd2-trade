@@ -94,7 +94,12 @@
       "whisperCopied": "已复制私聊，右键粘贴",
       "onlineCopyWhisper": "游戏内在线 · 点击复制私聊",
       "seller": "卖家：<name>{{seller}}</name>",
-      "online": "游戏内在线"
+      "online": "游戏内在线",
+      "endedSold": "{{duration}}后售出",
+      "endedRemoved": "{{duration}}后下架",
+      "endedExpired": "{{duration}}后过期",
+      "endedAt": "结束于{{when}}",
+      "listedFor": "已挂单{{duration}}"
     }
   },
   "statRow": {

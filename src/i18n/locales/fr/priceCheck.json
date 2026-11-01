@@ -100,7 +100,12 @@
       "whisperCopied": "Message privé copié, clic droit pour coller",
       "onlineCopyWhisper": "En ligne en jeu · cliquez pour copier le message privé",
       "seller": "Vendeur : <name>{{seller}}</name>",
-      "online": "En ligne en jeu"
+      "online": "En ligne en jeu",
+      "endedSold": "vendu après {{duration}}",
+      "endedRemoved": "retiré après {{duration}}",
+      "endedExpired": "expiré après {{duration}}",
+      "endedAt": "Terminé {{when}}",
+      "listedFor": "En vente depuis {{duration}}"
     }
   },
   "statRow": {

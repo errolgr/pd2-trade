@@ -1,20 +1,21 @@
 /**
- * Price check → market browser: the price check's current search (item, selected stat rows with their
- * min/max, type/base/quality, sockets, ethereal, corruption) as `Partial<MarketFilters>` for
- * `openPanel('market', { filters })`.
+ * The price check's current search (item, selected stat rows with their min/max, type/base/quality, sockets,
+ * ethereal, corruption) as `Partial<MarketFilters>`: what the price check sends the market service, and what
+ * "Open in market" opens the market browser with (`openPanel('market', { filters })`).
  *
  * The price check's own PD2 query (`buildGetMarketListingQuery`) already resolves the item to type/base codes,
- * name and modifier names (skills included), so it is built first and read back into filters: both views
- * search the same thing.
+ * name and modifier names (skills included), so it is built first and read back into filters: both search the
+ * same thing. Modifier shapes the service's stat-key grammar can't express yet are reported as gaps
+ * (`MarketFilterGap`); the price check sends those searches to PD2 instead.
  */
 import { modifierByName } from '@/assets/modifiers';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
-import { DAMAGE_PAIRS, StatId, statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
+import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
-import { findTypeOption } from '@/pages/market/lib/catalog';
-import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
+import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
+import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
   item: Item;
@@ -35,6 +36,19 @@ export interface PriceCheckSearch {
   qualityOverride?: string;
 }
 
+/**
+ * A price-check row the market service can't filter like the PD2 query does:
+ * - `label`: a skill without a known id, matched by the modifier's label (the service doesn't index labels);
+ * - `slot-value`: a pinned value or slot range that isn't a non-negative integer (the key grammar's slots).
+ */
+export type MarketFilterGap = 'label' | 'slot-value';
+
+/**
+ * Show Expired: PD2's listingArchive holds every ended listing (sold through an offer, removed by the seller,
+ * expired), and players mostly trade in game and then remove the listing, so all three are the archive.
+ */
+export const ARCHIVE_STATUSES: MarketListingStatus[] = ['sold', 'removed', 'expired'];
+
 const RARITIES: readonly Rarity[] = ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted', 'Set', 'Unique', 'Runeword'];
 
 /** Charm base codes → item type codes (the price check queries charms by `$in` of all four charm types). */
@@ -47,24 +61,6 @@ const COMBINED_MODIFIERS: Record<string, string[]> = {
 };
 
 type ElemMatch = Record<string, unknown> & { name: string | { $in: string[] } };
-
-/**
- * Damage pair rows query one market modifier under several names (`{ $in: ['firedam', …] }`, min in values.0,
- * max in values.1) or, for physical damage, two; the market browser filters the site's min/max damage keys.
- */
-function damagePairRows(match: ElemMatch): Omit<StatFilter, 'id'>[] | null {
-  if (typeof match.name === 'string') return null;
-  const names = match.name.$in;
-  const pair = DAMAGE_PAIRS.find((p) => p.market?.some((n) => names.includes(n)));
-  if (pair) {
-    return [
-      { kind: 'mod', key: statIdToProperty[pair.min], ...readRange(match['values.0']), enabled: true },
-      { kind: 'mod', key: statIdToProperty[pair.max], ...readRange(match['values.1']), enabled: true },
-    ];
-  }
-  const key = PHYSICAL_DAMAGE_KEYS.find((k) => names.every((n) => k.split('|').includes(n)));
-  return key ? [{ kind: 'mod', key, ...readRange(match['values.0']), enabled: true }] : null;
-}
 
 /** Market browser keys of the physical min/max damage modifiers (stat-options `a|b` alternatives). */
 const PHYSICAL_DAMAGE_KEYS = [
@@ -92,25 +88,63 @@ function readRange(value: unknown): { min?: number; max?: number } {
   };
 }
 
+/** A value the key grammar can pin: a non-negative integer of at most 6 digits. */
+const isSlotNumber = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 1e6;
+
+/** How many leading `values` a price-check `$elemMatch` constrains (skill, level, chance / charges). */
+const QUERY_SLOTS = 3;
+
 /**
- * One `$elemMatch` → stat rows. A numeric `values.0` is a parameter (skill/class/tab id): the key takes the
- * site's `name{param}` form and the roll is `values.1`.
+ * One `$elemMatch` → stat rows, in the service's key grammar (`MarketFilters` stat keys, see market/lib/stats.ts):
+ * `values.N` pinned to an id (`N`, `{ $in }` → `N|M`) or bounded become `{…}` slots, the last bounded value is the
+ * roll (`[i]` when it isn't the grammar's default). E.g. a skill `item_singleskill{54}`, chance to cast
+ * `item_skillongethit{*,44}[0]`, an aura by any of its ids `item_aura{98|123}`, splash `item_splashonhit[2]`, an
+ * elemental damage line `firedam|firemindam{4..}` (min ≥ 4, max rolled). A skill matched by its label is a gap: its
+ * row keeps the rest, which is broader than the PD2 query.
  */
-function statRows(match: ElemMatch): Omit<StatFilter, 'id'>[] {
-  const damage = damagePairRows(match);
-  if (damage) return damage;
-  if (typeof match.name !== 'string') return [];
-  const param = match['values.0'];
-  if (typeof param === 'number') {
-    return [{ kind: 'mod', key: `${match.name}{${param}}`, ...readRange(match['values.1']), enabled: true }];
+function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'>[] {
+  if (typeof match.name !== 'string') {
+    const alternatives = match.name.$in;
+    const physical = PHYSICAL_DAMAGE_KEYS.find((k) => alternatives.every((n) => k.split('|').includes(n)));
+    if (physical) return [{ kind: 'mod', key: physical, ...readRange(match['values.0']), enabled: true }];
+  } else if (COMBINED_MODIFIERS[match.name]) {
+    const range = readRange(match['values.0']);
+    return COMBINED_MODIFIERS[match.name].map((key) => ({ kind: 'mod', key, ...range, enabled: true }));
   }
-  const range = readRange(param);
-  const names = COMBINED_MODIFIERS[match.name] ?? [modifierName(match.name)];
-  return names.map((key) => ({ kind: 'mod', key, ...range, enabled: true }));
+  if ('label' in match) gaps.add('label');
+  const names = typeof match.name === 'string' ? [modifierName(match.name)] : match.name.$in;
+
+  const values = Array.from({ length: QUERY_SLOTS }, (_, i) => match[`values.${i}`]);
+  const bounded = values.flatMap((v, i) => (Object.keys(readRange(v)).length > 0 ? [i] : []));
+  const rollIndex = bounded.length > 0 ? bounded[bounded.length - 1] : null;
+  const slots = values.map((v, i): string => {
+    if (v === undefined || i === rollIndex) return '*';
+    const anyOf = prop(v, '$in');
+    if (isSlotNumber(v)) return String(v);
+    if (Array.isArray(anyOf) && anyOf.length > 0 && anyOf.every(isSlotNumber)) return anyOf.join('|');
+    const { min, max } = readRange(v);
+    const ends = [min, max].filter((end) => end !== undefined);
+    if (ends.length > 0 && ends.every(isSlotNumber)) return min === max ? String(min) : `${min ?? ''}..${max ?? ''}`;
+    gaps.add('slot-value');
+    return '*';
+  });
+  while (slots.length > 0 && slots[slots.length - 1] === '*') slots.pop();
+  // The grammar rolls the value after the slots; without slots values.0, except item_elemskill_* (values.1, as on
+  // the site), which keeps that default for the PD2 query's values.0 bound
+  const index = rollIndex !== null && rollIndex !== slots.length ? `[${rollIndex}]` : '';
+  const key = `${names.join('|')}${slots.length > 0 ? `{${slots.join(',')}}` : ''}${index}`;
+  return [{ kind: 'mod', key, ...(rollIndex === null ? {} : readRange(values[rollIndex])), enabled: true }];
+}
+
+/** Market filters read from a price-check PD2 market query, and the parts of it they can't express. */
+export interface MarketQueryFilters {
+  filters: Partial<MarketFilters>;
+  gaps: MarketFilterGap[];
 }
 
 /** Reads a price-check PD2 market query back into market filters. */
-export function marketQueryToFilters(query: Record<string, unknown>, archive: boolean): Partial<MarketFilters> {
+export function marketQueryToFilters(query: Record<string, unknown>, archive: boolean): MarketQueryFilters {
+  const gaps = new Set<MarketFilterGap>();
   const out: Partial<MarketFilters> = {
     source: archive ? 'archive' : 'live',
     // The price check's windows: 14 days of sales, 3 days of live listings
@@ -129,7 +163,12 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   if (typeof nameText === 'string' && nameText) out.itemName = nameText;
 
   const baseCode = query['item.base_code'];
+  const baseGroup = prop(baseCode, '$in');
   if (typeof baseCode === 'string' && baseCode) out.baseCode = baseCode;
+  // Grouped bases (`{ $in: ['glw', 'glws'] }`) → their catalog option, else the group the service also accepts
+  else if (Array.isArray(baseGroup) && baseGroup.length > 0 && baseGroup.every((c) => typeof c === 'string')) {
+    out.baseCode = findBaseOption(baseGroup[0])?.baseCode ?? JSON.stringify({ $in: baseGroup });
+  }
   const typeCode = query['item.base.type_code'];
   const typeGroup = prop(typeCode, '$in');
   if (typeof typeCode === 'string' && typeCode) out.typeCode = typeCode;
@@ -161,12 +200,18 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const corruptionRows: Omit<StatFilter, 'id'>[] = Array.isArray(corruptions)
     ? corruptions.flatMap((key) => (typeof key === 'string' ? [{ kind: 'corruption', key, enabled: true }] : []))
     : [];
-  out.stats = [...matches.flatMap(statRows), ...corruptionRows].map((row) => ({ ...row, id: crypto.randomUUID() }));
-  return out;
+  out.stats = [...matches.flatMap((match) => statRows(match, gaps)), ...corruptionRows].map((row) => ({
+    ...row,
+    id: crypto.randomUUID(),
+  }));
+  return { filters: out, gaps: [...gaps] };
 }
 
-/** The price check's current search as market filters. */
-export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<MarketFilters> {
+/**
+ * The price check's current search as market filters (no `status`: Show Expired searches `ARCHIVE_STATUSES` in
+ * the price check, the market browser's sold archive when opened there), and the gaps PD2 would fill.
+ */
+export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFilters {
   const query = buildGetMarketListingQuery(
     search.item,
     search.pd2Item,
@@ -183,8 +228,11 @@ export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<Mar
     search.corruptionNames.length > 0 ? search.corruptionNames : undefined,
     search.qualityOverride,
   ) as unknown as Record<string, unknown>;
-  const filters = marketQueryToFilters(query, search.archive);
+  const { filters, gaps } = marketQueryToFilters(query, search.archive);
   filters.ethereal = search.item.isEthereal && search.selected.has(`id:${StatId.Ethereal}`) ? 'yes' : 'any';
+  // Runewords keep their base's quality on PD2; the service selects them by Runeword (`item.is_runeword`), and
+  // would leave them out of a Normal/Superior search
+  if (search.item.isRuneword) filters.rarity = ['Runeword'];
   // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection
   for (const key of search.selected) {
     if (!key.startsWith(PSEUDO_KEY_PREFIX)) continue;
@@ -198,5 +246,10 @@ export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<Mar
       enabled: true,
     });
   }
-  return filters;
+  return { filters, gaps };
+}
+
+/** The price check's current search as market filters ("Open in market"). */
+export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<MarketFilters> {
+  return priceCheckMarketSearch(search).filters;
 }

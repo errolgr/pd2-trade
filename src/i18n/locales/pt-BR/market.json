@@ -362,7 +362,8 @@
     "online": "online",
     "buyout": "compra imediata",
     "listingAge": "idade do anúncio",
-    "sort": "ordenação"
+    "sort": "ordenação",
+    "extendedStat": "atributo que o site não consegue expressar"
   },
   "nameSearch": {
     "noSales": "sem vendas",

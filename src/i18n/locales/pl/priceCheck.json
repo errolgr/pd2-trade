@@ -103,7 +103,12 @@
       "whisperCopied": "Skopiowano szept, kliknij prawym, aby wkleić",
       "onlineCopyWhisper": "Online w grze · kliknij, aby skopiować szept",
       "seller": "Sprzedawca: <name>{{seller}}</name>",
-      "online": "Online w grze"
+      "online": "Online w grze",
+      "endedSold": "sprzedane po {{duration}}",
+      "endedRemoved": "usunięte po {{duration}}",
+      "endedExpired": "wygasło po {{duration}}",
+      "endedAt": "Zakończone {{when}}",
+      "listedFor": "Wystawione od {{duration}}"
     }
   },
   "statRow": {

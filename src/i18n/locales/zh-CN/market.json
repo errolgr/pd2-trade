@@ -332,7 +332,8 @@
     "online": "在线",
     "buyout": "一口价",
     "listingAge": "挂单时间",
-    "sort": "排序"
+    "sort": "排序",
+    "extendedStat": "网站无法表达的属性"
   },
   "nameSearch": {
     "noSales": "无成交",

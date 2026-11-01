@@ -347,7 +347,8 @@
     "online": "online",
     "buyout": "Sofortkauf",
     "listingAge": "Inseratalter",
-    "sort": "Sortierung"
+    "sort": "Sortierung",
+    "extendedStat": "Wert, den die Seite nicht abbilden kann"
   },
   "nameSearch": {
     "noSales": "keine Verkäufe",

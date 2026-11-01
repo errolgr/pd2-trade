@@ -66,6 +66,40 @@ describe('searchMarketListings', () => {
     });
   });
 
+  it("reads each row's status and lifetime, and sends the statuses a search asks for", async () => {
+    const listing = { _id: 'L1', item: { name: 'Shako' } };
+    respond(200, {
+      items: [
+        {
+          listing,
+          pseudo: {},
+          score: null,
+          value: null,
+          status: 'removed',
+          listedAt: '2026-10-20T09:00:00.000Z',
+          endedAt: '2026-10-22T09:00:00.000Z',
+          durationSeconds: 172800,
+        },
+      ],
+      total: 1,
+    });
+    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed', 'expired'] });
+
+    const result = await search(f);
+
+    expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string).filters.status).toEqual([
+      'sold',
+      'removed',
+      'expired',
+    ]);
+    expect(result.items[0]).toMatchObject({
+      status: 'removed',
+      listedAt: '2026-10-20T09:00:00.000Z',
+      endedAt: '2026-10-22T09:00:00.000Z',
+      durationSeconds: 172800,
+    });
+  });
+
   it('reads totalExact, an exact count when the service omits it', async () => {
     respond(200, { items: [], total: 1000, totalExact: false });
     await expect(search()).resolves.toMatchObject({ total: 1000, totalExact: false });

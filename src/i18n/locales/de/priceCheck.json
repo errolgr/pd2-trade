@@ -97,7 +97,12 @@
       "whisperCopied": "Flüstern kopiert, Rechtsklick zum Einfügen",
       "onlineCopyWhisper": "Online im Spiel · klicken, um Flüstern zu kopieren",
       "seller": "Verkäufer: <name>{{seller}}</name>",
-      "online": "Online im Spiel"
+      "online": "Online im Spiel",
+      "endedSold": "verkauft nach {{duration}}",
+      "endedRemoved": "entfernt nach {{duration}}",
+      "endedExpired": "abgelaufen nach {{duration}}",
+      "endedAt": "Beendet {{when}}",
+      "listedFor": "Inseriert seit {{duration}}"
     }
   },
   "statRow": {

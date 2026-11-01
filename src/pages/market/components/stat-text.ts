@@ -47,8 +47,8 @@ const BARE_SKILL_TAB =
  * the site's template.
  */
 export function itemStatText(key: string): string {
-  const { names, params } = parseStatKey(key);
-  if (names.length === 1 && params.length === 0) {
+  const { names, pins } = parseStatKey(key);
+  if (names.length === 1 && pins.length === 0) {
     const line = statTemplate(names[0]);
     if (line) return line;
   }
