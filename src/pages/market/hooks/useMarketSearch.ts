@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
-import { BROWSER_FACETS, type MarketFacets } from '../lib/facets';
+import { BROWSER_FACETS, wantsFacets, type MarketFacets } from '../lib/facets';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
 import { t } from '@/i18n';
 
@@ -195,7 +195,7 @@ export function useMarketSearch(
           const result = await runSearch(api, filters, {
             page: 0,
             pageSize,
-            facets: BROWSER_FACETS,
+            facets: wantsFacets(filters) ? BROWSER_FACETS : undefined,
             signal: controller.signal,
           });
           if (controller.signal.aborted) return;
