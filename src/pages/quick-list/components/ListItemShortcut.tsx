@@ -27,6 +27,7 @@ import {
   AuthenticationError,
   NoAccountSelectedError,
 } from '@/hooks/pd2website/usePD2Website';
+import { isNetworkError } from '@/lib/network-errors';
 import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
@@ -160,13 +161,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
-      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs
-      if (
+      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs;
+      // PD2 unreachable (the HTTP plugin rejects with its error string) is nothing the app can fix
+      if (isNetworkError(err)) {
+        console.warn('[QuickList] Failed to find items:', err);
+      } else if (
         !(err instanceof AccountMismatchError) &&
         !(err instanceof AuthenticationError) &&
         !(err instanceof NoAccountSelectedError)
       ) {
-        console.error(err instanceof Error ? err.message : 'Failed to find items');
+        console.error('[QuickList] Failed to find items:', err);
       }
 
       // Handle account mismatch error with user-friendly message
@@ -316,6 +320,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
           const listingsResult = await getMarketListings(allListingsQuery);
+          // null: a 401, re-authentication started
+          if (!listingsResult) throw new AuthenticationError('Sign in to PD2 to list this item');
           const currentTotalCount = listingsResult.total;
 
           // Check if user has reached the maximum number of listings (50)
@@ -360,7 +366,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         showToast(toastPayload);
       } catch (err) {
-        console.error('[Queue] Failed to process queued listing:', err);
+        if (isNetworkError(err)) console.warn('[Queue] Failed to process queued listing:', err);
+        else if (!(err instanceof AuthenticationError)) console.error('[Queue] Failed to process queued listing:', err);
         trackMeasurement(
           'list_item_create',
           { duration_ms: performance.now() - startTime },
@@ -706,7 +713,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         { duration_ms: performance.now() - startTime },
         { outcome: 'error', source: isAlreadyListed ? undefined : 'direct' },
       );
-      console.error(err instanceof Error ? err.message : 'Failed to list/update item');
+      if (isNetworkError(err)) console.warn('[QuickList] Failed to list/update item:', err);
+      else if (!(err instanceof AuthenticationError)) console.error('[QuickList] Failed to list/update item:', err);
       setError(err instanceof Error ? err.message : t('shortcut.listUpdateFailed'));
     } finally {
       setSubmitLoading(false);
