@@ -305,13 +305,7 @@ export function FilterSidebar({
             counts={yesNo(counts.corrupted)}
             onChange={(corrupted) => set({ corrupted })}
           />
-          <RangeField
-            label={t('filters.sockets')}
-            min={f.socketsMin}
-            max={f.socketsMax}
-            onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
-          />
-          <Field label="">
+          <Field label={t('filters.sockets')}>
             <SocketChips
               counts={counts.sockets}
               min={f.socketsMin}
@@ -319,6 +313,13 @@ export function FilterSidebar({
               onPick={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
             />
           </Field>
+          <RangeField
+            label={t('filters.sockets')}
+            showLabel={false}
+            min={f.socketsMin}
+            max={f.socketsMax}
+            onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
+          />
           <TriField
             label={t('filters.ethereal')}
             value={f.ethereal}
