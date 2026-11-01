@@ -122,8 +122,8 @@ function axiosStyleSerializer(obj) {
 
 // Get incoming offers (listings with offers)
 const getIncomingOffers = async (
-  settings: ISettings,
-  authData: AuthData,
+  token: string,
+  userId: string,
   onAuthError?: () => void | Promise<void>,
 ): Promise<TradeOffer[]> => {
   const query = {
@@ -137,7 +137,7 @@ const getIncomingOffers = async (
         },
       },
     },
-    user_id: authData.user._id,
+    user_id: userId,
     $limit: 250,
     $sort: {
       bumped_at: -1,
@@ -148,7 +148,7 @@ const getIncomingOffers = async (
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -184,8 +184,8 @@ const getIncomingOffers = async (
 
 // Get outgoing offers (offers made by user)
 const getOutgoingOffers = async (
-  settings: ISettings,
-  authData: AuthData,
+  token: string,
+  userId: string,
   onAuthError?: () => void | Promise<void>,
 ): Promise<TradeOffer[]> => {
   const query = {
@@ -201,7 +201,7 @@ const getOutgoingOffers = async (
         },
       },
     },
-    user_id: authData.user._id,
+    user_id: userId,
     $limit: 10,
     $skip: 0,
     $sort: {
@@ -213,7 +213,7 @@ const getOutgoingOffers = async (
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -330,15 +330,19 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
     purgeOldDeletedOffers();
   }, []);
 
+  // The lists depend on the token and the user only: refetching on every settings change (a toggle, a dock
+  // reorder) sent PD2 two requests per change and drew 429s
+  const token = settings?.pd2Token;
+  const userId = authData?.user?._id;
   const fetchIncomingOffers = useCallback(async () => {
-    if (!authData?.user?._id || !settings?.pd2Token) {
+    if (!userId || !token) {
       return;
     }
 
     const seq = ++incomingSeq.current;
     setLoading(true);
     try {
-      const offers = await getIncomingOffers(settings, authData, onAuthError);
+      const offers = await getIncomingOffers(token, userId, onAuthError);
       if (seq === incomingSeq.current) setIncomingOffers(offers);
     } catch (error) {
       console.error('Failed to fetch incoming offers:', error);
@@ -346,17 +350,17 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
     } finally {
       setLoading(false);
     }
-  }, [authData, settings]);
+  }, [token, userId, onAuthError]);
 
   const fetchOutgoingOffers = useCallback(async () => {
-    if (!authData?.user?._id || !settings?.pd2Token) {
+    if (!userId || !token) {
       return;
     }
 
     const seq = ++outgoingSeq.current;
     setLoading(true);
     try {
-      const offers = await getOutgoingOffers(settings, authData, onAuthError);
+      const offers = await getOutgoingOffers(token, userId, onAuthError);
       if (seq !== outgoingSeq.current) return;
       // Get deleted offer IDs from localStorage
       const deletedOfferIds = getDeletedOffers();
@@ -382,14 +386,14 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
     } finally {
       setLoading(false);
     }
-  }, [authData, settings, onAuthError]);
+  }, [token, userId, onAuthError]);
 
   useEffect(() => {
-    if (authData?.user?._id && settings?.pd2Token) {
+    if (userId && token) {
       fetchIncomingOffers();
       fetchOutgoingOffers();
     }
-  }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
+  }, [userId, token, fetchIncomingOffers, fetchOutgoingOffers]);
 
   // Single owner of the offers lists (Pd2WebsiteProvider): socket notifications and offer actions call this.
   // Actions await it, so their callers stay busy until the lists show the change.
