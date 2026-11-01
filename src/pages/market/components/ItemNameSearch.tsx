@@ -132,7 +132,6 @@ export function ItemNameSearch({
                     o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
                   )}
                 >
-                  {o.alias && <span className="mr-1 text-[11px] text-muted-foreground">{`${o.alias} →`}</span>}
                   <SuggestionName option={o} />
                 </span>
                 <span className="shrink-0 font-semibold tabular-nums">

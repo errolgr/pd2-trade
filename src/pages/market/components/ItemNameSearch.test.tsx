@@ -127,7 +127,7 @@ describe('ItemNameSearch suggestions', () => {
     expect(pending[0].url.startsWith(`${BACKEND_URL}/api/search?`)).toBe(true);
   });
 
-  it('a typo finds the item once the server answers, with the nickname it matched and no highlight', async () => {
+  it('a typo finds the item once the server answers, marked as a close match with no highlight', async () => {
     const pending = deferredFetch();
     const { input } = mount();
     type(input, 'shko');
@@ -137,8 +137,8 @@ describe('ItemNameSearch suggestions', () => {
       pending[0].resolve(reply('shko', [hit(HARLEQUIN, 'fuzzy', 339.2), hit(BANE_ASH, 'fuzzy', 301.8)])),
     );
     const [first] = screen.getAllByRole('option');
-    expect(first.textContent).toContain('shako →');
-    expect(first.textContent).toContain('Harlequin Crest');
+    expect(first.textContent).toMatch(/^Harlequin Crest/);
+    expect(first.textContent).not.toContain('→');
     expect(first.textContent).toContain('close match');
     expect(first.querySelector('mark')).toBeNull();
     // A much weaker typo match is a look-alike: left out
@@ -155,7 +155,8 @@ describe('ItemNameSearch suggestions', () => {
     await act(async () => pending[0].resolve(reply('shako', [hit(HARLEQUIN, 'alias'), hit(BANE_ASH, 'fuzzy')])));
     const rows = names();
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatch(/^shako →Harlequin Crest/);
+    expect(rows[0]).toMatch(/^Harlequin Crest/);
+    expect(rows[0]).not.toContain('close match');
     expect(rows[1]).toMatch(/^Shako/);
   });
 
@@ -172,7 +173,7 @@ describe('ItemNameSearch suggestions', () => {
     await act(async () => pending[1].resolve(reply('griffons', [hit(GRIFFON, 'alias')])));
     await act(async () => pending[0].resolve(reply('gri', [hit(BANE_ASH, 'name')])));
     expect(names()).toHaveLength(1);
-    expect(names()[0]).toMatch(/^griffons →Griffon's Eye/);
+    expect(names()[0]).toMatch(/^Griffon's Eye/);
   });
 
   it('keeps the local list when the server fails, and reports only the first failure', async () => {

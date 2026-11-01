@@ -3,11 +3,10 @@ import type { CatalogItem, CatalogSearchHit } from '@/lib/catalog-search-api';
 import { itemNameOption, itemNameOptions } from './catalog';
 import { hitOption, itemNameSuggestions } from './name-suggestions';
 
-const item = (name: string, quality: string | null, aliases: string[] = []): CatalogItem => ({
+const item = (name: string, quality: string | null): CatalogItem => ({
   baseCode: name.toLowerCase().replace(/\W+/g, '_'),
   name,
   quality,
-  aliases,
 });
 const hit = (i: CatalogItem, matchedOn: CatalogSearchHit['matchedOn'], score = 300): CatalogSearchHit => ({
   item: i,
@@ -15,8 +14,8 @@ const hit = (i: CatalogItem, matchedOn: CatalogSearchHit['matchedOn'], score = 3
   matchedOn,
 });
 
-const HARLEQUIN = item('Harlequin Crest', 'Unique', ['harle', 'harley', 'shako', 'uap']);
-const ZOD = item('Zod Rune', null, ['zod', 'r33']);
+const HARLEQUIN = item('Harlequin Crest', 'Unique');
+const ZOD = item('Zod Rune', null);
 
 describe('hitOption', () => {
   it('is the local list entry itself, so a pick sets the same name filter', () => {
@@ -54,30 +53,27 @@ describe('itemNameSuggestions', () => {
       [hit(HARLEQUIN, 'alias'), hit(item('Shadow Dancer', 'Unique'), 'fuzzy')],
       30,
     );
-    expect(out.map((o) => [o.name, o.alias, o.closeMatch])).toEqual([
-      ['Harlequin Crest', 'shako', undefined],
-      ['Shako', undefined, undefined],
+    expect(out.map((o) => [o.name, o.highlight, o.closeMatch])).toEqual([
+      ['Harlequin Crest', undefined, undefined],
+      ['Shako', { start: 0, end: 5 }, undefined],
     ]);
   });
 
-  it('a nickname that is also part of the name is highlighted, not hinted', () => {
+  it('a nickname that is also part of the name is highlighted', () => {
     const out = itemNameSuggestions('zod', itemNameOptions('zod', 30), [hit(ZOD, 'alias')], 30);
-    expect(out[0]).toMatchObject({ name: 'Zod Rune', highlight: { start: 0, end: 3 } });
-    expect(out[0].alias).toBeUndefined();
+    expect(out[0]).toEqual({ ...itemNameOption('Zod Rune'), highlight: { start: 0, end: 3 } });
   });
 
-  it('typo matches show when nothing matches as typed, with the nickname the typo is closest to', () => {
-    const out = itemNameSuggestions('shko', [], [hit(HARLEQUIN, 'fuzzy')], 30);
-    expect(out).toEqual([{ ...itemNameOption('Harlequin Crest'), alias: 'shako', closeMatch: true }]);
-    // Closer to the name than to any nickname: no nickname shown
-    expect(itemNameSuggestions('harliquin', [], [hit(HARLEQUIN, 'fuzzy')], 30)[0]).toEqual({
-      ...itemNameOption('Harlequin Crest'),
-      closeMatch: true,
-    });
+  it('typo matches show when nothing matches as typed, marked as close matches without a highlight', () => {
+    for (const query of ['shko', 'harliquin']) {
+      expect(itemNameSuggestions(query, [], [hit(HARLEQUIN, 'fuzzy')], 30)).toEqual([
+        { ...itemNameOption('Harlequin Crest'), closeMatch: true },
+      ]);
+    }
   });
 
   it('of the typo matches, only those about as close as the best one', () => {
-    const griffon = item("Griffon's Eye", 'Unique', ['griffon', 'griffons', 'griff']);
+    const griffon = item("Griffon's Eye", 'Unique');
     const out = itemNameSuggestions(
       'griffs',
       [],
@@ -88,7 +84,7 @@ describe('itemNameSuggestions', () => {
       ],
       30,
     );
-    expect(out.map((o) => [o.name, o.alias])).toEqual([["Griffon's Eye", 'griff']]);
+    expect(out.map((o) => [o.name, o.closeMatch])).toEqual([["Griffon's Eye", true]]);
     const tied = [hit(HARLEQUIN, 'fuzzy', 315.3), hit(item('Shadow Dancer', 'Unique'), 'fuzzy', 315.3)];
     expect(itemNameSuggestions('shadw', [], tied, 30).map((o) => o.name)).toEqual(['Harlequin Crest', 'Shadow Dancer']);
   });

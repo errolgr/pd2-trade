@@ -11,11 +11,9 @@ export interface CatalogItem {
   name: string;
   /** 'Unique' | 'Set' | 'Normal' | null ... */
   quality: string | null;
-  /** Lowercase search aliases (short names, rune numbers, common nicknames such as `shako`). */
-  aliases: string[];
 }
 
-/** A ranked hit: what matched it — the base code, the name, one of the aliases, or a fuzzy (typo) match. */
+/** A ranked hit: what matched it — the base code, the name, one of its aliases (nicknames), or a fuzzy (typo) match. */
 export interface CatalogSearchHit {
   item: CatalogItem;
   /** Relevance, higher is better; fuzzy hits score 100 + 299 × similarity (0-1). */
@@ -47,7 +45,6 @@ function parseHit(raw: unknown): CatalogSearchHit | null {
       baseCode: item.baseCode,
       name: item.name,
       quality: typeof item.quality === 'string' ? item.quality : null,
-      aliases: Array.isArray(item.aliases) ? item.aliases.filter((a): a is string => typeof a === 'string') : [],
     },
     score: typeof score === 'number' && Number.isFinite(score) ? score : 0,
     matchedOn: isMatch(matchedOn) ? matchedOn : 'name',

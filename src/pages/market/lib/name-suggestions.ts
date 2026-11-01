@@ -9,91 +9,11 @@ import { itemNameOption, type ItemNameOption } from './catalog';
 export interface ItemNameSuggestion extends ItemNameOption {
   /** Where the typed text sits in the name (a plain substring match): the part to highlight. */
   highlight?: { start: number; end: number };
-  /** The nickname that explains a match the name doesn't ("shako" for Harlequin Crest). */
-  alias?: string;
   /** Found despite a typo (a fuzzy match). */
   closeMatch?: boolean;
 }
 
 export const suggestionKey = (o: ItemNameOption) => `${o.quality}:${o.name}`;
-
-/** The server catalog's text normalization: lowercase, no diacritics or apostrophes, other runs → one space. */
-function normalize(value: string): string {
-  return value
-    .normalize('NFKD')
-    .replace(/\p{M}+/gu, '')
-    .toLowerCase()
-    .replace(/['’‘`´]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-/** Edit distance with adjacent transpositions (optimal string alignment), as the server's fuzzy match. */
-function editDistance(a: string, b: string): number {
-  let prev2: number[] = [];
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    const curr = [i];
-    for (let j = 1; j <= b.length; j++) {
-      let v = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
-      curr.push(v);
-    }
-    prev2 = prev;
-    prev = curr;
-  }
-  return prev[b.length];
-}
-
-/** Closest a (normalized) term comes to the query: as a whole or by one of its words. */
-function termDistance(query: string, term: string): number {
-  const compact = query.replace(/ /g, '');
-  return Math.min(
-    editDistance(compact, term.replace(/ /g, '')),
-    ...term.split(' ').map((w) => editDistance(compact, w)),
-  );
-}
-
-/** The alias a lexical alias hit matched on: exact, then prefix, then word prefixes, then substring; shortest first. */
-function matchedAlias(query: string, aliases: string[]): string | undefined {
-  const q = normalize(query);
-  const qCompact = q.replace(/ /g, '');
-  const qWords = q.split(' ');
-  let best: { alias: string; tier: number } | undefined;
-  for (const alias of aliases) {
-    const text = normalize(alias);
-    const compact = text.replace(/ /g, '');
-    const words = text.split(' ');
-    const tier =
-      text === q || compact === qCompact
-        ? 0
-        : compact.startsWith(qCompact)
-          ? 1
-          : qWords.every((w) => words.some((t) => t.startsWith(w)))
-            ? 2
-            : qCompact.length >= 3 && compact.includes(qCompact)
-              ? 3
-              : -1;
-    if (tier < 0) continue;
-    if (!best || tier < best.tier || (tier === best.tier && alias.length < best.alias.length)) best = { alias, tier };
-  }
-  return best?.alias;
-}
-
-/** For a typo match: the alias the query is closest to, when one is closer than the name itself ("shko" → shako). */
-function closestAlias(query: string, item: CatalogItem): string | undefined {
-  const q = normalize(query);
-  let best = termDistance(q, normalize(item.name));
-  let alias: string | undefined;
-  for (const a of item.aliases) {
-    const d = termDistance(q, normalize(a));
-    if (d < best) {
-      best = d;
-      alias = a;
-    }
-  }
-  return alias;
-}
 
 /** Catalog variants the site lists under one name ("Hellfire Torch (Amazon)" → Hellfire Torch). */
 const VARIANT_SUFFIX = /\s*\([^)]*\)$/;
@@ -111,20 +31,12 @@ export function hitOption(item: CatalogItem): ItemNameOption | null {
   return null;
 }
 
-/** An option with what explains the match: the typed text's place in the name, else the alias / typo. */
+/** An option with what explains the match: the typed text's place in the name, else that it was a typo match. */
 function describe(query: string, option: ItemNameOption, hit?: CatalogSearchHit): ItemNameSuggestion {
   const q = query.trim().toLowerCase();
   const at = q ? option.name.toLowerCase().indexOf(q) : -1;
   if (at >= 0) return { ...option, highlight: { start: at, end: at + q.length } };
-  if (hit?.matchedOn === 'alias') {
-    const alias = matchedAlias(query, hit.item.aliases);
-    return alias ? { ...option, alias } : option;
-  }
-  if (hit?.matchedOn === 'fuzzy') {
-    const alias = closestAlias(query, hit.item);
-    return alias ? { ...option, alias, closeMatch: true } : { ...option, closeMatch: true };
-  }
-  return option;
+  return hit?.matchedOn === 'fuzzy' ? { ...option, closeMatch: true } : option;
 }
 
 /** Typo matches this far (a tenth of the fuzzy similarity range) below the closest one are look-alikes, not shown. */
