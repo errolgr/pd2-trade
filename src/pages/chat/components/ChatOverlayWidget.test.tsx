@@ -276,7 +276,7 @@ beforeEach(() => {
   panel.rect = { x: 0, y: 0, width: 1000, height: 700 };
   undoToasts.length = 0;
   resetChatPrefs();
-  settings = {};
+  settings = { pd2Token: 'tok' };
   auth = { accessToken: 'tok', user: { _id: ME } };
   messagesByConversation = {};
   incomingOffers = [];
@@ -498,6 +498,36 @@ describe('ChatOverlayWidget conversation switching', () => {
     expect(screen.queryByText('@alice99')).not.toBeNull();
     expect(bubbles()).toEqual(['first', 'second']);
     expect(screen.queryByText('Today')).not.toBeNull();
+  });
+
+  it('does not refetch the open thread when the PD2 token is cleared, and reloads it on sign-in', async () => {
+    messagesByConversation.c1 = [msg('a1', 'c1', 'alice', 'hi', 10, [ME])];
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await select('Alice');
+    expect(bubbles()).toEqual(['hi']);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Signed out (or the session ended): the provider's actions change with the token before authData clears,
+    // and getMessages now rejects like useSocialActions does without a token
+    settings = {};
+    const signedOut = vi.fn(async () => Promise.reject(new Error('No auth token available')));
+    api.getMessages = signedOut as unknown as typeof api.getMessages;
+    await act(async () => rerenderWidget());
+    await flush();
+    expect(signedOut).not.toHaveBeenCalled();
+    expect(errors).not.toHaveBeenCalled();
+    expect(bubbles()).toEqual(['hi']);
+
+    // Signed back in: the open thread reloads
+    settings = { pd2Token: 'tok2' };
+    messagesByConversation.c1.push(msg('a2', 'c1', 'alice', 'back', 1, [ME]));
+    const signedIn = vi.fn(async () => ({ data: [...messagesByConversation.c1].reverse() }));
+    api.getMessages = signedIn as unknown as typeof api.getMessages;
+    await act(async () => rerenderWidget());
+    await flush();
+    expect(signedIn).toHaveBeenCalledWith('c1', { limit: 50, skip: 0 });
+    expect(bubbles()).toEqual(['hi', 'back']);
+    errors.mockRestore();
   });
 
   it('replaces the message list when switching, and shows cached messages when switching back', async () => {
