@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.10.13': [
+    '🔧 Signing in works again on PCs with an older Microsoft Edge WebView2, and copying to the clipboard there no longer fails when another app is briefly using it',
+  ],
   '0.10.12': [
     '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
     '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',
