@@ -66,7 +66,8 @@ export function PriceControl({
           role="group"
           aria-label={t('facets.priceBars', { selection: set ? rangeText(hrMin, hrMax) : t('facets.priceAny') })}
           {...groupProps}
-          className="relative grid h-10 px-1 pt-1.5 select-none"
+          // No padding: hover, preview and selection tints run from the top border down to the divider
+          className="relative grid h-7.5 px-1 select-none"
           style={{ ...groupProps.style, gridTemplateColumns: `repeat(${bars.length}, minmax(0, 1fr))` }}
         >
           {bars.map((b, i) => {
@@ -80,7 +81,7 @@ export function PriceControl({
                   aria-label={text}
                   aria-pressed={!!light}
                   {...optionProps(i)}
-                  className="group relative flex h-full min-w-0 items-end px-px outline-none focus-visible:bg-primary/15"
+                  className="group relative flex h-full min-w-0 items-end px-px outline-none hover:bg-primary/6 focus-visible:bg-primary/15"
                 >
                   {inRange(preview, i) && <span aria-hidden
                     className="absolute inset-0 bg-primary/6" />}
@@ -94,8 +95,9 @@ export function PriceControl({
                   <span
                     aria-hidden
                     data-bar
-                    // Square root: one busy bucket shouldn't flatten the rest
-                    style={{ height: b.count ? `${Math.max(8, Math.sqrt(b.count / peak) * 100)}%` : 2 }}
+                    // Square root: one busy bucket shouldn't flatten the rest. Capped at 82% so the tallest bar
+                    // keeps headroom under the top border while the tints behind it still fill the full height.
+                    style={{ height: b.count ? `${Math.max(8, Math.sqrt(b.count / peak) * 82)}%` : 2 }}
                     className={cn(
                       'relative block w-full overflow-hidden rounded-t-[2px] bg-muted-foreground/35 transition-colors duration-(--dur-fast) group-hover:bg-muted-foreground/60',
                       b.count === 0 && FACET_DIM,
