@@ -49,7 +49,7 @@ export function Section({
   const id = useId();
   return (
     <section className="border-b border-border/60 last:border-b-0">
-      <div className="flex items-center gap-1 px-2.5 py-1.5">
+      <div className="flex items-center gap-1 px-2.5">
         <button
           type="button"
           aria-expanded={open}
@@ -58,7 +58,7 @@ export function Section({
             setOpenState(!open);
             onOpenChange?.(!open);
           }}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-[11px] font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="flex min-w-0 flex-1 items-center gap-1 self-stretch rounded-sm py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <ChevronRight
             className={cn('size-3.5 shrink-0 transition-transform duration-(--dur-fast)', open && 'rotate-90')}
@@ -105,7 +105,12 @@ export function Field({ label, htmlFor, children }: { label: string; htmlFor?: s
   );
 }
 
-/** Small segmented control (the shared look of tri-states, mode switches and sort direction). */
+const ARROW_STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+
+/**
+ * Small segmented control (the shared look of tri-states, mode switches and sort direction). A radio group for the
+ * keyboard too: one tab stop (the checked option), arrow keys / Home / End move the choice.
+ */
 export function Segmented<T extends string>({
   value,
   options,
@@ -119,20 +124,39 @@ export function Segmented<T extends string>({
   label: string;
   className?: string;
 }) {
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  const checked = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  );
+  const onKeyDown = (e: React.KeyboardEvent, index: number) => {
+    const n = options.length;
+    const next =
+      e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : e.key in ARROW_STEP ? (index + ARROW_STEP[e.key] + n) % n : null;
+    if (next === null) return;
+    e.preventDefault();
+    onChange(options[next].value);
+    buttons.current[next]?.focus();
+  };
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('flex h-7 w-full rounded-md border border-input bg-background/40 p-0.5', className)}
+      className={cn('flex h-7 w-full rounded-md border border-input bg-background/40 p-px', className)}
     >
-      {options.map((o) => (
+      {options.map((o, i) => (
         <button
           key={o.value}
+          ref={(el) => {
+            buttons.current[i] = el;
+          }}
           type="button"
           role="radio"
           aria-checked={value === o.value}
+          tabIndex={i === checked ? 0 : -1}
           title={o.title}
           onClick={() => onChange(o.value)}
+          onKeyDown={(e) => onKeyDown(e, i)}
           className={cn(
             'min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
             value === o.value && 'bg-accent text-accent-foreground shadow-xs',
