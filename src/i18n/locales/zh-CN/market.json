@@ -115,6 +115,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "已鉴定",
+    "mode": "模式",
     "listedWithin": "挂出时间范围",
     "sort": {
       "label": "排序",
@@ -150,18 +151,11 @@
     "sellerPlaceholder": "账号或用户名",
     "sellerPicked": "此卖家（从挂单中选取）",
     "clearSeller": "清除卖家",
+    "modeLabel": "Softcore 或 Hardcore",
     "applied": {
       "label": "已应用的筛选",
       "remove": "移除筛选：{{filter}}",
       "not": "排除 {{name}}"
-    },
-    "realm": {
-      "label": "模式",
-      "option": "{{mode}} · {{ladder}}",
-      "softcore": "Softcore",
-      "hardcore": "Hardcore",
-      "ladder": "Ladder",
-      "nonLadder": "非 Ladder"
     }
   },
   "controls": {

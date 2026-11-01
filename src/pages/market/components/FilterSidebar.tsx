@@ -9,8 +9,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -106,60 +104,6 @@ function RarityField({
         </DropdownMenuContent>
       </DropdownMenu>
     </Field>
-  );
-}
-
-type Realm = 'sc-l' | 'sc-nl' | 'hc-l' | 'hc-nl';
-const REALMS: Realm[] = ['sc-l', 'sc-nl', 'hc-l', 'hc-nl'];
-
-/**
- * Softcore/hardcore × ladder/non-ladder in one compact picker beside the source: it scopes every result (and the
- * prices), so it stays in sight instead of inside a collapsed section. The trigger uses the cards' SC/HC · L/NL.
- */
-function RealmField({
-  hardcore,
-  ladder,
-  onChange,
-}: {
-  hardcore: boolean;
-  ladder: boolean;
-  onChange: (realm: { hardcore: boolean; ladder: boolean }) => void;
-}) {
-  const { t } = useTranslation('market');
-  const value: Realm = `${hardcore ? 'hc' : 'sc'}-${ladder ? 'l' : 'nl'}`;
-  const name = (realm: Realm) =>
-    t('filters.realm.option', {
-      mode: t(realm.startsWith('hc') ? 'filters.realm.hardcore' : 'filters.realm.softcore'),
-      ladder: t(realm.endsWith('-l') ? 'filters.realm.ladder' : 'filters.realm.nonLadder'),
-    });
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`${t('filters.realm.label')}: ${name(value)}`}
-        title={name(value)}
-        className="flex h-7 shrink-0 items-center gap-1 rounded-md border border-input bg-transparent pl-2 pr-1 text-[11px] font-medium whitespace-nowrap outline-none transition-[border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:border-ring [&[data-state=open]>svg]:rotate-180"
-      >
-        {hardcore ? 'HC' : 'SC'}
-        <span className="text-muted-foreground">·</span>
-        {ladder ? 'L' : 'NL'}
-        <ChevronDown className="size-3.5 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end"
-        className="min-w-44">
-        <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(v) => onChange({ hardcore: v.startsWith('hc'), ladder: v.endsWith('-l') })}
-        >
-          {REALMS.map((realm) => (
-            <DropdownMenuRadioItem key={realm}
-              value={realm}
-              className="text-xs">
-              {name(realm)}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 
@@ -263,18 +207,15 @@ export function FilterSidebar({
             { value: 'archive', label: t('filters.source.archive'), title: t('filters.source.archiveTitle') },
           ]}
         />
-        <RealmField hardcore={f.hardcore}
-          ladder={f.ladder}
-          onChange={set} />
         <Button
           variant="ghost"
           size="sm"
-          className="size-7 shrink-0 p-0 text-muted-foreground"
+          className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
           onClick={onReset}
-          aria-label={t('filters.clearAll')}
           title={t('filters.clearAll')}
         >
           <RotateCcw className="size-3.5" />
+          {t('common:actions.clear')}
         </Button>
       </div>
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
@@ -386,6 +327,28 @@ export function FilterSidebar({
             (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
           }
         >
+          <Field label={t('filters.mode')}>
+            <div className="flex gap-1">
+              <Segmented
+                label={t('filters.modeLabel')}
+                value={f.hardcore ? 'hc' : 'sc'}
+                onChange={(v) => set({ hardcore: v === 'hc' })}
+                options={[
+                  { value: 'sc', label: 'SC' },
+                  { value: 'hc', label: 'HC' },
+                ]}
+              />
+              <Segmented
+                label="Ladder"
+                value={f.ladder ? 'l' : 'nl'}
+                onChange={(v) => set({ ladder: v === 'l' })}
+                options={[
+                  { value: 'l', label: 'L', title: 'Ladder' },
+                  { value: 'nl', label: 'NL', title: 'Non-ladder' },
+                ]}
+              />
+            </div>
+          </Field>
           <SelectField
             label={t('filters.listedWithin')}
             value={String(f.maxAgeDays)}
