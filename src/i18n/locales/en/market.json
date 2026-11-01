@@ -156,7 +156,12 @@
     "sellerPlaceholder": "Account or username",
     "sellerPicked": "This seller (picked from a listing)",
     "clearSeller": "Clear seller",
-    "modeLabel": "Softcore or hardcore"
+    "modeLabel": "Softcore or hardcore",
+    "applied": {
+      "label": "Applied filters",
+      "remove": "Remove filter: {{filter}}",
+      "not": "Not {{name}}"
+    }
   },
   "controls": {
     "min": "min",

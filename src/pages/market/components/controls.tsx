@@ -31,6 +31,7 @@ export function Section({
   open: openProp,
   onOpenChange,
   actions,
+  summary,
   children,
 }: {
   title: string;
@@ -39,6 +40,8 @@ export function Section({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   actions?: React.ReactNode;
+  /** Shown under the header while collapsed (the section's applied filters), in place of the count badge. */
+  summary?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [openState, setOpenState] = useState(defaultOpen);
@@ -61,7 +64,7 @@ export function Section({
             className={cn('size-3.5 shrink-0 transition-transform duration-(--dur-fast)', open && 'rotate-90')}
           />
           <span className="truncate">{title}</span>
-          {active > 0 && (
+          {active > 0 && (open || !summary) && (
             <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold tabular-nums text-primary">
               {active}
             </span>
@@ -69,6 +72,7 @@ export function Section({
         </button>
         {actions}
       </div>
+      {!open && summary && <div className="-mt-0.5 px-2.5 pb-2">{summary}</div>}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -500,5 +504,56 @@ export function ClearButton({ label, onClick }: { label: string; onClick: () => 
     >
       <X className="size-3" />
     </button>
+  );
+}
+
+/**
+ * Removable pill (applied filters, the stat sort). `onClick` makes the label a button (e.g. show the filter);
+ * ✕ calls `onRemove`.
+ */
+export function FilterChip({
+  children,
+  title,
+  removeLabel,
+  onRemove,
+  onClick,
+}: {
+  children: React.ReactNode;
+  title?: string;
+  removeLabel: string;
+  onRemove: () => void;
+  onClick?: () => void;
+}) {
+  const labelClass = 'min-w-0 truncate';
+  return (
+    <span className="inline-flex h-6 max-w-full items-center gap-0.5 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
+      {onClick ? (
+        <button
+          type="button"
+          title={title}
+          onClick={onClick}
+          className={cn(
+            labelClass,
+            'rounded-sm text-left outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60',
+          )}
+        >
+          {children}
+        </button>
+      ) : (
+        <span title={title}
+          className={labelClass}>
+          {children}
+        </span>
+      )}
+      <button
+        type="button"
+        aria-label={removeLabel}
+        title={removeLabel}
+        onClick={onRemove}
+        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full outline-none hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring/60"
+      >
+        <X className="size-3" />
+      </button>
+    </span>
   );
 }

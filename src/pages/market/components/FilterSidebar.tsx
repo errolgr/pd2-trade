@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
+import { activeFilters, type FilterSectionId } from '../lib/active-filters';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import { countsByValue, type MarketFacets } from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
-import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
+import { FilterSummary } from './ActiveFilters';
+import {
+  ClearButton,
+  Field,
+  FilterChip,
+  RangeField,
+  Section,
+  Segmented,
+  SelectField,
+  TriField,
+  fieldInputClass,
+} from './controls';
 import { FacetCount, PriceHistogram, SocketChips } from './FacetCounts';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
@@ -119,7 +131,7 @@ function optionCount(code: string, counts: Map<string, number>): number | undefi
   return known.length ? known.reduce((a, b) => a + b, 0) : undefined;
 }
 
-/** Stats and Item start open; the rest start collapsed (their badge counts active filters). */
+/** Stats and Item start open; the rest start collapsed (listing their applied filters under the header). */
 const OPEN_BY_DEFAULT = new Set(['Stats', 'Item']);
 
 /** Every site filter, dense and collapsible, plus the stats section. */
@@ -135,12 +147,25 @@ export function FilterSidebar({
 }: FilterSidebarProps) {
   const { t } = useTranslation('market');
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
-  /** `id`: the stored open/closed key (the English title); `title`: what the header shows. */
-  const section = (id: string, title: string) => ({
-    title,
-    open: sectionsOpen[id] ?? OPEN_BY_DEFAULT.has(id),
-    onOpenChange: (open: boolean) => onSectionOpen(id, open),
-  });
+  const active = useMemo(() => activeFilters(f, defaults), [f, defaults]);
+  /**
+   * `id`: the stored open/closed key (the English title); `title`: what the header shows. Collapsed, a section lists
+   * its applied filters under the header (the item name has its own ✕ in the top bar).
+   */
+  const section = (id: FilterSectionId, title: string) => {
+    const applied = active.filter((a) => a.section === id && a.spec.kind !== 'itemName');
+    return {
+      title,
+      open: sectionsOpen[id] ?? OPEN_BY_DEFAULT.has(id),
+      onOpenChange: (open: boolean) => onSectionOpen(id, open),
+      summary: applied.length > 0 && (
+        <FilterSummary filters={f}
+          active={applied}
+          onChange={onChange}
+          onOpen={() => onSectionOpen(id, true)} />
+      ),
+    };
+  };
   const ageLabel = (days: number) => t('filters.days', { count: days });
   const ageOptions = AGE_DAYS.map((d) => ({ value: String(d), label: ageLabel(d) }));
   const sortOptions: { value: SortBy; label: string; title: string }[] = [
@@ -345,18 +370,10 @@ export function FilterSidebar({
           </Field>
           {f.sort.by === 'stat' && f.sort.key && (
             <Field label="">
-              <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
-                <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
-                <button
-                  type="button"
-                  aria-label={t('filters.sort.stopStat')}
-                  title={t('filters.sort.stopStat')}
-                  onClick={() => set({ sort: { ...defaults.sort } })}
-                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
+              <FilterChip removeLabel={t('filters.sort.stopStat')}
+                onRemove={() => set({ sort: { ...defaults.sort } })}>
+                {t('filters.sort.stat', { stat: statName(f.sort.key) })}
+              </FilterChip>
             </Field>
           )}
           <Field label={t('filters.order.label')}>

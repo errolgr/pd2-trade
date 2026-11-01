@@ -164,7 +164,12 @@
     "sellerPlaceholder": "Conta ou nome de usuário",
     "sellerPicked": "Este vendedor (escolhido de um anúncio)",
     "clearSeller": "Limpar vendedor",
-    "modeLabel": "Softcore ou Hardcore"
+    "modeLabel": "Softcore ou Hardcore",
+    "applied": {
+      "label": "Filtros aplicados",
+      "remove": "Remover filtro: {{filter}}",
+      "not": "Sem {{name}}"
+    }
   },
   "controls": {
     "min": "mín",

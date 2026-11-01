@@ -172,7 +172,12 @@
     "sellerPlaceholder": "Аккаунт или имя пользователя",
     "sellerPicked": "Этот продавец (выбран из объявления)",
     "clearSeller": "Сбросить продавца",
-    "modeLabel": "Softcore или hardcore"
+    "modeLabel": "Softcore или hardcore",
+    "applied": {
+      "label": "Применённые фильтры",
+      "remove": "Убрать фильтр: {{filter}}",
+      "not": "Без {{name}}"
+    }
   },
   "controls": {
     "min": "мин",
