@@ -180,6 +180,19 @@
     "minLabel": "{{label}}: мин",
     "maxLabel": "{{label}}: макс"
   },
+  "facets": {
+    "sockets": "Число сокетов",
+    "socketsTitle_one": "Сокетов {{sockets}}: {{count, number}} объявление",
+    "socketsTitle_few": "Сокетов {{sockets}}: {{count, number}} объявления",
+    "socketsTitle_many": "Сокетов {{sockets}}: {{count, number}} объявлений",
+    "socketsTitle_other": "Сокетов {{sockets}}: {{count, number}} объявления",
+    "priceHistogram": "Объявления по цене в HR",
+    "priceTitle_one": "{{range}} HR: {{count, number}} объявление",
+    "priceTitle_few": "{{range}} HR: {{count, number}} объявления",
+    "priceTitle_many": "{{range}} HR: {{count, number}} объявлений",
+    "priceTitle_other": "{{range}} HR: {{count, number}} объявления",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "Мин.",
     "max": "Макс.",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
+import { BROWSER_FACETS, type MarketFacets } from '../lib/facets';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
 import { t } from '@/i18n';
 
@@ -36,6 +37,11 @@ export interface MarketSearchState {
   loadMoreError: string | null;
   /** Rate limited: `retryLoadMore` does nothing before this time (epoch ms). */
   loadMoreRetryAt: number | null;
+  /**
+   * Facet counts of the first page's search (filter sidebar counts and price histogram); kept from the previous
+   * search while the next one loads, null before the first or after an error.
+   */
+  facets: MarketFacets | null;
 }
 
 const IDLE: MarketSearchState = {
@@ -50,6 +56,7 @@ const IDLE: MarketSearchState = {
   loadMoreRetryAt: null,
   filters: null,
   ranFilters: null,
+  facets: null,
 };
 
 /** Recent results by query; module-level so reopening the panel or flipping tabs back is instant. */
@@ -168,6 +175,7 @@ export function useMarketSearch(
         items: result.items,
         total: result.total,
         totalExact: result.totalExact,
+        facets: result.facets ?? null,
         hasMore: result.fetched < result.total,
       });
     };
@@ -180,13 +188,14 @@ export function useMarketSearch(
 
     const controller = new AbortController();
     abortRef.current = controller;
-    setState((s) => ({ ...IDLE, status: 'loading', items: s.items }));
+    setState((s) => ({ ...IDLE, status: 'loading', items: s.items, facets: s.facets }));
     const timer = window.setTimeout(
       async () => {
         try {
           const result = await runSearch(api, filters, {
             page: 0,
             pageSize,
+            facets: BROWSER_FACETS,
             signal: controller.signal,
           });
           if (controller.signal.aborted) return;

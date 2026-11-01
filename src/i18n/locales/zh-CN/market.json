@@ -156,6 +156,13 @@
     "minLabel": "{{label}} 最小",
     "maxLabel": "{{label}} 最大"
   },
+  "facets": {
+    "sockets": "孔数",
+    "socketsTitle_other": "{{sockets}} 孔：{{count, number}} 个挂单",
+    "priceHistogram": "按 HR 价格的挂单",
+    "priceTitle_other": "{{range}} HR：{{count, number}} 个挂单",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "最小",
     "max": "最大",

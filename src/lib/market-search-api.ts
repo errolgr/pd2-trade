@@ -5,6 +5,7 @@
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { type MarketFacetName, type MarketFacets, parseFacets } from '@/pages/market/lib/facets';
 import { MAX_FILTER_TEXT, MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
 import type { MarketFilters, MarketListingStatus, ScoredListing } from '@/pages/market/lib/types';
 
@@ -41,13 +42,20 @@ export interface MarketSearchPage {
    * never on `items.length`.
    */
   fetched: number;
+  /** Facet counts, when the search asked for `facets`. */
+  facets?: MarketFacets;
 }
 
 /**
  * The request body: exactly the fields the service accepts (it rejects unknown ones), so filters restored from
  * older saved state can't break a search. `sort.key` only travels with a stat sort.
  */
-export function marketSearchBody(filters: MarketFilters, page: number, limit: number) {
+export function marketSearchBody(
+  filters: MarketFilters,
+  page: number,
+  limit: number,
+  facets?: readonly MarketFacetName[],
+) {
   const f = filters;
   return {
     filters: {
@@ -101,6 +109,7 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
     },
     page,
     limit,
+    ...(facets?.length ? { facets } : {}),
   };
 }
 
@@ -135,7 +144,8 @@ function parsePage(body: unknown): MarketSearchPage {
       ...('durationSeconds' in row ? { durationSeconds: finiteOrNull(row.durationSeconds) } : {}),
     });
   }
-  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length };
+  const facets = 'facets' in body ? parseFacets(body.facets) : undefined;
+  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length, facets };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {
@@ -154,7 +164,12 @@ async function errorMessage(response: Response): Promise<string | null> {
  */
 export async function searchMarketListings(
   filters: MarketFilters,
-  { page, limit, signal }: { page: number; limit: number; signal?: AbortSignal },
+  {
+    page,
+    limit,
+    signal,
+    facets,
+  }: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
 ): Promise<MarketSearchPage> {
   if (signal?.aborted) throw signal.reason;
   const controller = new AbortController();
@@ -172,7 +187,7 @@ export async function searchMarketListings(
       response = await fetch(`${BACKEND_URL}/api/market/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(marketSearchBody(filters, page, limit)),
+        body: JSON.stringify(marketSearchBody(filters, page, limit, facets)),
         signal: controller.signal,
       });
     } catch {

@@ -478,6 +478,7 @@ const MarketBrowserPage: React.FC = () => {
                       stats={presets}
                       sectionsOpen={store.sectionsOpen}
                       onSectionOpen={store.setSectionOpen}
+                      facets={search.facets}
                     />
                   </div>
                 )}

@@ -172,6 +172,17 @@
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} max"
   },
+  "facets": {
+    "sockets": "Nombre de sockets",
+    "socketsTitle_one": "{{sockets}} sockets : {{count, number}} annonce",
+    "socketsTitle_many": "{{sockets}} sockets : {{count, number}} d'annonces",
+    "socketsTitle_other": "{{sockets}} sockets : {{count, number}} annonces",
+    "priceHistogram": "Annonces par prix en HR",
+    "priceTitle_one": "{{range}} HR : {{count, number}} annonce",
+    "priceTitle_many": "{{range}} HR : {{count, number}} d'annonces",
+    "priceTitle_other": "{{range}} HR : {{count, number}} annonces",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "Min",
     "max": "Max",

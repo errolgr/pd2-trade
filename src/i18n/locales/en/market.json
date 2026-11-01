@@ -164,6 +164,15 @@
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} max"
   },
+  "facets": {
+    "sockets": "Socket counts",
+    "socketsTitle_one": "{{sockets}} sockets: {{count, number}} listing",
+    "socketsTitle_other": "{{sockets}} sockets: {{count, number}} listings",
+    "priceHistogram": "Listings by HR price",
+    "priceTitle_one": "{{range}} HR: {{count, number}} listing",
+    "priceTitle_other": "{{range}} HR: {{count, number}} listings",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "Min",
     "max": "Max",

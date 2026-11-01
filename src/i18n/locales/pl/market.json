@@ -180,6 +180,19 @@
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} maks"
   },
+  "facets": {
+    "sockets": "Liczba gniazd",
+    "socketsTitle_one": "Gniazda {{sockets}}: {{count, number}} ogłoszenie",
+    "socketsTitle_few": "Gniazda {{sockets}}: {{count, number}} ogłoszenia",
+    "socketsTitle_many": "Gniazda {{sockets}}: {{count, number}} ogłoszeń",
+    "socketsTitle_other": "Gniazda {{sockets}}: {{count, number}} ogłoszenia",
+    "priceHistogram": "Ogłoszenia według ceny w HR",
+    "priceTitle_one": "{{range}} HR: {{count, number}} ogłoszenie",
+    "priceTitle_few": "{{range}} HR: {{count, number}} ogłoszenia",
+    "priceTitle_many": "{{range}} HR: {{count, number}} ogłoszeń",
+    "priceTitle_other": "{{range}} HR: {{count, number}} ogłoszenia",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "Min",
     "max": "Maks",

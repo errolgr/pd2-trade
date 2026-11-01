@@ -215,3 +215,44 @@ describe('marketSearchBody', () => {
     expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
   });
 });
+
+describe('facets', () => {
+  it('sends facets only when asked, and reads them from the reply', async () => {
+    expect(marketSearchBody(base, 0, 25)).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, [])).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, ['quality', 'price'])).toMatchObject({ facets: ['quality', 'price'] });
+
+    respond(200, {
+      items: [],
+      total: 3,
+      facets: {
+        quality: [
+          { value: 'Unique', count: 3 },
+          { value: 'Set', count: 'many' },
+        ],
+        sockets: [{ value: 0, count: 2 }],
+        ethereal: [{ value: true, count: 1 }],
+        price: [
+          { from: 0, to: 0.05, count: 2 },
+          { from: 20, to: null, count: 1 },
+        ],
+      },
+    });
+    const page = await searchMarketListings(base, { page: 0, limit: 25, facets: ['quality', 'sockets'] });
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(JSON.parse(init?.body as string).facets).toEqual(['quality', 'sockets']);
+    expect(page.facets).toMatchObject({
+      // A malformed bucket is dropped, not the facet
+      quality: [{ value: 'Unique', count: 3 }],
+      sockets: [{ value: 0, count: 2 }],
+      ethereal: [{ value: true, count: 1 }],
+      price: [
+        { from: 0, to: 0.05, count: 2 },
+        { from: 20, to: null, count: 1 },
+      ],
+    });
+
+    respond(200, { items: [], total: 0 });
+    expect((await search()).facets).toBeUndefined();
+  });
+});

@@ -164,6 +164,15 @@
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} max"
   },
+  "facets": {
+    "sockets": "Anzahl Sockel",
+    "socketsTitle_one": "{{sockets}} Sockel: {{count, number}} Inserat",
+    "socketsTitle_other": "{{sockets}} Sockel: {{count, number}} Inserate",
+    "priceHistogram": "Inserate nach HR-Preis",
+    "priceTitle_one": "{{range}} HR: {{count, number}} Inserat",
+    "priceTitle_other": "{{range}} HR: {{count, number}} Inserate",
+    "priceAxis": "{{hr}}+ HR"
+  },
   "stats": {
     "min": "Min.",
     "max": "Max.",

@@ -8,6 +8,7 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
+import { FacetCount } from './FacetCounts';
 
 /*
  * Dense form controls for the market filter sidebar. Everything is h-7 / text-xs so the full site filter set
@@ -140,12 +141,41 @@ export function Segmented<T extends string>({
   );
 }
 
-export function TriField({ label, value, onChange }: { label: string; value: Tri; onChange: (v: Tri) => void }) {
+/** Any / Yes / No; `counts` (facets) shows how many listings Yes and No find. */
+export function TriField({
+  label,
+  value,
+  onChange,
+  counts,
+}: {
+  label: string;
+  value: Tri;
+  onChange: (v: Tri) => void;
+  counts?: { yes?: number; no?: number };
+}) {
   const { t } = useTranslation(['market', 'common']);
-  const options: { value: Tri; label: string }[] = [
+  const options: { value: Tri; label: React.ReactNode }[] = [
     { value: 'any', label: t('filters.any') },
-    { value: 'yes', label: t('common:actions.yes') },
-    { value: 'no', label: t('common:actions.no') },
+    {
+      value: 'yes',
+      label: (
+        <>
+          {t('common:actions.yes')}
+          <FacetCount count={counts?.yes}
+            className="ml-1" />
+        </>
+      ),
+    },
+    {
+      value: 'no',
+      label: (
+        <>
+          {t('common:actions.no')}
+          <FacetCount count={counts?.no}
+            className="ml-1" />
+        </>
+      ),
+    },
   ];
   return (
     <Field label={label}>
@@ -236,7 +266,10 @@ export function RangeField({
   );
 }
 
-/** Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. */
+/**
+ * Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. An
+ * option's `count` (facets) shows in the list, not in the trigger.
+ */
 export function SelectField({
   label,
   value,
@@ -247,7 +280,7 @@ export function SelectField({
 }: {
   label: string;
   value: string | undefined;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; count?: number }[];
   onChange: (v: string | undefined) => void;
   anyLabel?: string | null;
   disabled?: boolean;
@@ -259,8 +292,10 @@ export function SelectField({
       <Select value={value ?? ANY}
         disabled={disabled}
         onValueChange={(v) => onChange(v === ANY ? undefined : v)}>
-        <SelectTrigger aria-label={label}
-          className="!h-7 w-full px-2 text-xs shadow-none">
+        <SelectTrigger
+          aria-label={label}
+          className="!h-7 w-full px-2 text-xs shadow-none [&_[data-facet-count]]:hidden"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-72">
@@ -275,6 +310,7 @@ export function SelectField({
               value={o.value}
               className="text-xs">
               {o.label}
+              <FacetCount count={o.count} />
             </SelectItem>
           ))}
         </SelectContent>

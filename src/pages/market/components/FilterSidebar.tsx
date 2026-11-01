@@ -13,10 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, ITEM_TYPES, RARITIES, basesForType } from '../lib/catalog';
+import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
+import { countsByValue, type MarketFacets } from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
+import { FacetCount, PriceHistogram, SocketChips } from './FacetCounts';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
 import { useTranslation } from '@/i18n';
@@ -25,8 +27,19 @@ const AGE_DAYS = [1, 3, 7, 14, 30, 90];
 
 const rarityColor = (r: Rarity) => (r === 'Runeword' ? 'text-q-rune' : qualityColor(r));
 
-/** Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. */
-function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarity[]) => void }) {
+/**
+ * Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. `counts`
+ * (facets): listings each rarity alone finds.
+ */
+function RarityField({
+  value,
+  onChange,
+  counts,
+}: {
+  value: Rarity[];
+  onChange: (v: Rarity[]) => void;
+  counts: Map<Rarity, number>;
+}) {
   const { t } = useTranslation('market');
   const summary =
     value.length === 0 ? (
@@ -63,6 +76,8 @@ function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarit
               className={cn('text-xs', rarityColor(r))}
             >
               {r}
+              <FacetCount count={counts.get(r)}
+                className="ml-auto pl-2" />
             </DropdownMenuCheckboxItem>
           ))}
           {value.length > 0 && (
@@ -94,6 +109,14 @@ export interface FilterSidebarProps {
   /** Sections the user opened or closed (by title); the rest use their default. */
   sectionsOpen: Record<string, boolean>;
   onSectionOpen: (title: string, open: boolean) => void;
+  /** Facet counts of the current search (shown beside the options); null hides them. */
+  facets?: MarketFacets | null;
+}
+
+/** An option's count from a code facet: the sum over the codes it stands for; undefined when none is counted. */
+function optionCount(code: string, counts: Map<string, number>): number | undefined {
+  const known = optionCodes(code).flatMap((c) => (counts.has(c) ? [counts.get(c)!] : []));
+  return known.length ? known.reduce((a, b) => a + b, 0) : undefined;
 }
 
 /** Stats and Item start open; the rest start collapsed (their badge counts active filters). */
@@ -108,6 +131,7 @@ export function FilterSidebar({
   stats,
   sectionsOpen,
   onSectionOpen,
+  facets,
 }: FilterSidebarProps) {
   const { t } = useTranslation('market');
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
@@ -132,6 +156,18 @@ export function FilterSidebar({
     set({ requirements: { ...f.requirements, ...changes } });
   const bases = useMemo(() => (f.typeCode ? basesForType(f.typeCode) : []), [f.typeCode]);
   const req = f.requirements;
+  const counts = useMemo(
+    () => ({
+      quality: countsByValue(facets?.quality),
+      typeCode: countsByValue(facets?.typeCode),
+      baseCode: countsByValue(facets?.baseCode),
+      sockets: countsByValue(facets?.sockets),
+      ethereal: countsByValue(facets?.ethereal),
+      corrupted: countsByValue(facets?.corrupted),
+    }),
+    [facets],
+  );
+  const yesNo = (m: Map<boolean, number>) => ({ yes: m.get(true), no: m.get(false) });
 
   return (
     <aside aria-label={t('filters.label')}
@@ -187,7 +223,11 @@ export function FilterSidebar({
           <SelectField
             label={t('filters.type')}
             value={f.typeCode}
-            options={ITEM_TYPES.map((t) => ({ value: t.code, label: t.label }))}
+            options={ITEM_TYPES.map((o) => ({
+              value: o.code,
+              label: o.label,
+              count: optionCount(o.code, counts.typeCode),
+            }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
           />
           <SelectField
@@ -195,10 +235,11 @@ export function FilterSidebar({
             value={f.baseCode}
             disabled={!f.typeCode}
             anyLabel={f.typeCode ? t('filters.any') : t('filters.pickTypeFirst')}
-            options={bases.map((b) => ({ value: b.code, label: b.label }))}
+            options={bases.map((b) => ({ value: b.code, label: b.label, count: optionCount(b.code, counts.baseCode) }))}
             onChange={(baseCode) => set({ baseCode })}
           />
           <RarityField value={f.rarity}
+            counts={counts.quality}
             onChange={(rarity) => set({ rarity })} />
           <SelectField
             label={t('filters.class')}
@@ -212,18 +253,34 @@ export function FilterSidebar({
           {...section('Properties', t('filters.sections.properties'))}
           active={countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax)}
         >
-          <TriField label={t('filters.corrupted')}
+          <TriField
+            label={t('filters.corrupted')}
             value={f.corrupted}
-            onChange={(corrupted) => set({ corrupted })} />
+            counts={yesNo(counts.corrupted)}
+            onChange={(corrupted) => set({ corrupted })}
+          />
           <RangeField
             label={t('filters.sockets')}
             min={f.socketsMin}
             max={f.socketsMax}
             onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
           />
-          <TriField label={t('filters.ethereal')}
+          {counts.sockets.size > 0 && (
+            <Field label="">
+              <SocketChips
+                counts={counts.sockets}
+                min={f.socketsMin}
+                max={f.socketsMax}
+                onPick={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
+              />
+            </Field>
+          )}
+          <TriField
+            label={t('filters.ethereal')}
             value={f.ethereal}
-            onChange={(ethereal) => set({ ethereal })} />
+            counts={yesNo(counts.ethereal)}
+            onChange={(ethereal) => set({ ethereal })}
+          />
           <TriField
             label={t('filters.desecrated')}
             value={f.desecrated}
@@ -355,6 +412,16 @@ export function FilterSidebar({
             max={f.hrMax}
             onChange={(hrMin, hrMax) => set({ hrMin, hrMax })}
           />
+          {facets?.price && facets.price.some((b) => b.count > 0) && (
+            <Field label="">
+              <PriceHistogram
+                buckets={facets.price}
+                hrMin={f.hrMin}
+                hrMax={f.hrMax}
+                onPick={(hrMin, hrMax) => set({ hrMin, hrMax })}
+              />
+            </Field>
+          )}
           <TriField label={t('filters.hasBuyout')}
             value={f.hasBuyout}
             onChange={(hasBuyout) => set({ hasBuyout })} />
