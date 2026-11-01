@@ -25,6 +25,8 @@ import { scoreListings } from './lib/search';
 import { withRowPresence } from './lib/presence';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
+import { type Relaxation, useRelaxations } from './hooks/useRelaxations';
+import { useActiveFilterText } from './components/ActiveFilters';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
 import { type LoadMoreState, ResultsList } from './components/ResultsList';
@@ -118,6 +120,12 @@ const MarketBrowserPage: React.FC = () => {
     pageSize: settings?.marketPageSize,
   });
   const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
+  // A search that found nothing: count what dropping each of its filters would find
+  const relaxations = useRelaxations(
+    marketApi ?? null,
+    tab === 'search' && search.status === 'ready' && search.total === 0 ? search.filters : null,
+    searchDefaults,
+  );
 
   // Remember the last search that actually ran (not per keystroke / re-rank: each call writes market-prefs.json)
   const { setLastFilters } = store;
@@ -519,6 +527,8 @@ const MarketBrowserPage: React.FC = () => {
                               ? () => setFilters(withSource(filters, 'archive', searchDefaults))
                               : undefined
                           }
+                          relaxations={relaxations}
+                          onRelax={(r) => search.filters && setFilters(r.filter.clear(search.filters))}
                           itemName={filters?.itemName}
                           toolbar={
                             <>
@@ -691,6 +701,8 @@ function ResultsPane({
   onSignIn,
   onSearchArchive,
   itemName,
+  relaxations,
+  onRelax,
   toolbar,
   children,
 }: {
@@ -706,11 +718,15 @@ function ResultsPane({
   onSearchArchive?: () => void;
   /** The searched item name, for the empty-state wording. */
   itemName?: string;
+  /** The empty search's filters that find something when dropped, best first (null: none, or still counting). */
+  relaxations: Relaxation[] | null;
+  onRelax: (relaxation: Relaxation) => void;
   /** Right end of the status strip (view toggle). */
   toolbar: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation(['market', 'common']);
+  const filterText = useActiveFilterText();
   if (!signedIn || (tab === 'search' && search.status === 'auth')) {
     return (
       <EmptyState
@@ -804,6 +820,42 @@ function ResultsPane({
           icon={<Heart />}
           title={t('results.noFavoritesTitle')}
           description={t('results.noFavoritesDescription')}
+        />
+      ) : relaxations?.length ? (
+        <EmptyState
+          className="m-6"
+          icon={<SearchX />}
+          title={t('results.noMatchAll')}
+          description={t('results.relaxHint')}
+          action={
+            <div className="flex w-full max-w-sm flex-col gap-1">
+              {relaxations.map((r) => {
+                const filter = filterText(r.filter.spec);
+                return (
+                  <Button
+                    key={r.filter.id}
+                    size="sm"
+                    variant="outline"
+                    className="justify-between gap-3"
+                    title={t('filters.applied.remove', { filter })}
+                    onClick={() => onRelax(r)}
+                  >
+                    <span className="min-w-0 truncate">{t('results.relaxDrop', { filter })}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {searchCountText({ total: r.total, totalExact: r.totalExact, filters: search.filters })}
+                    </span>
+                  </Button>
+                );
+              })}
+              {onSearchArchive && (
+                <Button size="sm"
+                  variant="ghost"
+                  onClick={onSearchArchive}>
+                  {t('results.searchArchive')}
+                </Button>
+              )}
+            </div>
+          }
         />
       ) : onSearchArchive ? (
         <EmptyState

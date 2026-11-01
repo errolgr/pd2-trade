@@ -35,7 +35,10 @@
     "loadMoreFailed": "No se pudo cargar más",
     "rateLimitedUntil": "Límite de solicitudes hasta las {{time}}",
     "listings": "Anuncios",
-    "favorite": "Favorito"
+    "favorite": "Favorito",
+    "noMatchAll": "Ningún anuncio cumple todos estos filtros",
+    "relaxHint": "Sin uno de ellos:",
+    "relaxDrop": "Sin {{filter}}"
   },
   "search": {
     "rateLimited": "Demasiadas búsquedas en el mercado. Inténtalo de nuevo en un momento.",

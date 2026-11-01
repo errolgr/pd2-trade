@@ -34,7 +34,10 @@
     "loadMoreFailed": "Couldn't load more",
     "rateLimitedUntil": "Rate limited until {{time}}",
     "listings": "Listings",
-    "favorite": "Favorite"
+    "favorite": "Favorite",
+    "noMatchAll": "No listings match all these filters",
+    "relaxHint": "Without one of them:",
+    "relaxDrop": "Without {{filter}}"
   },
   "search": {
     "rateLimited": "Too many market searches. Try again in a moment.",

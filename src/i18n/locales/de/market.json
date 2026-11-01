@@ -34,7 +34,10 @@
     "loadMoreFailed": "Weitere konnten nicht geladen werden",
     "rateLimitedUntil": "Anfragelimit bis {{time}}",
     "listings": "Inserate",
-    "favorite": "Favorit"
+    "favorite": "Favorit",
+    "noMatchAll": "Keine Inserate passen zu allen Filtern",
+    "relaxHint": "Ohne einen davon:",
+    "relaxDrop": "Ohne {{filter}}"
   },
   "search": {
     "rateLimited": "Zu viele Marktsuchen. Versuche es gleich erneut.",

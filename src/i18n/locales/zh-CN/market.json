@@ -33,7 +33,10 @@
     "loadMoreFailed": "无法加载更多",
     "rateLimitedUntil": "请求受限，直到 {{time}}",
     "listings": "挂单",
-    "favorite": "收藏"
+    "favorite": "收藏",
+    "noMatchAll": "没有挂单符合全部筛选",
+    "relaxHint": "去掉其中一个：",
+    "relaxDrop": "去掉 {{filter}}"
   },
   "search": {
     "rateLimited": "市场搜索过于频繁，请稍后重试。",

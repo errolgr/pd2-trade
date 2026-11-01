@@ -36,7 +36,10 @@
     "loadMoreFailed": "Nie można wczytać więcej",
     "rateLimitedUntil": "Limit zapytań do {{time}}",
     "listings": "Ogłoszenia",
-    "favorite": "Ulubione"
+    "favorite": "Ulubione",
+    "noMatchAll": "Żadne ogłoszenie nie pasuje do wszystkich filtrów",
+    "relaxHint": "Bez jednego z nich:",
+    "relaxDrop": "Bez {{filter}}"
   },
   "search": {
     "rateLimited": "Zbyt wiele wyszukiwań na rynku. Spróbuj ponownie za chwilę.",
