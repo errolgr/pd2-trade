@@ -136,7 +136,6 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Опознан",
-    "mode": "Режим",
     "listedWithin": "Выставлено за",
     "sort": {
       "label": "Сортировка",
@@ -172,11 +171,18 @@
     "sellerPlaceholder": "Аккаунт или имя пользователя",
     "sellerPicked": "Этот продавец (выбран из объявления)",
     "clearSeller": "Сбросить продавца",
-    "modeLabel": "Softcore или hardcore",
     "applied": {
       "label": "Применённые фильтры",
       "remove": "Убрать фильтр: {{filter}}",
       "not": "Без {{name}}"
+    },
+    "realm": {
+      "label": "Режим",
+      "option": "{{mode}} · {{ladder}}",
+      "softcore": "Softcore",
+      "hardcore": "Hardcore",
+      "ladder": "Ladder",
+      "nonLadder": "Non-ladder"
     }
   },
   "controls": {

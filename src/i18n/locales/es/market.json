@@ -128,7 +128,6 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identificado",
-    "mode": "Modo",
     "listedWithin": "Anunciado en",
     "sort": {
       "label": "Ordenar por",
@@ -164,11 +163,18 @@
     "sellerPlaceholder": "Cuenta o nombre de usuario",
     "sellerPicked": "Este vendedor (elegido de un anuncio)",
     "clearSeller": "Limpiar vendedor",
-    "modeLabel": "Softcore o hardcore",
     "applied": {
       "label": "Filtros aplicados",
       "remove": "Quitar filtro: {{filter}}",
       "not": "Sin {{name}}"
+    },
+    "realm": {
+      "label": "Modo",
+      "option": "{{mode}} · {{ladder}}",
+      "softcore": "Softcore",
+      "hardcore": "Hardcore",
+      "ladder": "Ladder",
+      "nonLadder": "No ladder"
     }
   },
   "controls": {

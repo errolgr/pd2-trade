@@ -136,7 +136,6 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Zidentyfikowany",
-    "mode": "Tryb",
     "listedWithin": "Wystawione w ciągu",
     "sort": {
       "label": "Sortuj wg",
@@ -172,11 +171,18 @@
     "sellerPlaceholder": "Konto lub nazwa użytkownika",
     "sellerPicked": "Ten sprzedawca (wybrany z ogłoszenia)",
     "clearSeller": "Wyczyść sprzedawcę",
-    "modeLabel": "Softcore lub hardcore",
     "applied": {
       "label": "Zastosowane filtry",
       "remove": "Usuń filtr: {{filter}}",
       "not": "Bez {{name}}"
+    },
+    "realm": {
+      "label": "Tryb",
+      "option": "{{mode}} · {{ladder}}",
+      "softcore": "Softcore",
+      "hardcore": "Hardcore",
+      "ladder": "Ladder",
+      "nonLadder": "Non-ladder"
     }
   },
   "controls": {
