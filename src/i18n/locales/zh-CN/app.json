@@ -35,7 +35,6 @@
     "favorite": "收藏{{label}}",
     "addFavorite": "添加到收藏（标签栏）",
     "removeFavorite": "从收藏移除（标签栏）",
-    "layoutHint": "加星显示在标签栏 · 拖动排序",
     "menu": {
       "chat": "聊天",
       "market": "市场浏览",
