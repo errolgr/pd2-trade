@@ -1,4 +1,10 @@
 export const changeLog = {
+  '0.10.14': [
+    '🆕 Price check: click Price or Age to sort (again to flip the order)',
+    '🆕 Price check: each listing shows if the seller is in game (green) and on the trade site (blue); click the dot above the list to show only those sellers',
+    '✨ Price check: shorter listing ages (10m, 2h), and item tags (E, C, sockets) line up down the list',
+    '🔧 Market browser: sockets are back to plain min / max boxes',
+  ],
   '0.10.13': [
     '🆕 Market browser: filters show how many listings each choice finds (hover for the count), and the price box has a price chart. Click two sockets or two price bars to pick a range',
     '🆕 Price check: the quality toggle has an "Any" option, so you can search Rare and Crafted together',

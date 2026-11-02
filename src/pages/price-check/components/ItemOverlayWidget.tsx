@@ -91,6 +91,8 @@ import { StatId } from '../lib/stat-mappings';
 import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
 import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
+import { listingAge } from '@/pages/market/lib/listing';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writePng, writeText } from '@/lib/browser-clipboard';
 import { whisperCommand } from '@/lib/whisper-history';
 import { buildItemCard, renderItemCard } from '../lib/item-card';
@@ -119,6 +121,27 @@ interface ActiveSearch {
   searchMode: number;
   /** Listings fetched so far: the `$skip` of the next page. */
   skip: number;
+}
+
+/** The results' order, set from the column headers: price (HR) or listing bump time. */
+interface ResultsSort {
+  by: 'price' | 'bumped';
+  dir: 'asc' | 'desc';
+}
+
+/** The header dots' seller filter: neither on = anyone; both on = sellers who are either. */
+interface SellerFilter {
+  inGame: boolean;
+  onSite: boolean;
+}
+
+/** Whether a row's seller passes `filter` (by the presence the row shows, PD2's live times merged in). */
+function sellerMatches(listing: MarketListingEntry, filter: SellerFilter): boolean {
+  if (!filter.inGame && !filter.onSite) return true;
+  return (
+    (filter.inGame && isUserOnlineIngame(listing.user_last_ingame)) ||
+    (filter.onSite && isUserOnlineIngame(listing.user_last_online))
+  );
 }
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
@@ -167,6 +190,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchPending, setSearchPending] = useState(false);
   const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 20;
+  // Column-header sort and the header dots' seller filter; both outlive item changes (a habit, not a search)
+  const [sort, setSort] = useState<ResultsSort>({ by: 'bumped', dir: 'desc' });
+  const [sellerFilter, setSellerFilter] = useState<SellerFilter>({ inGame: false, onSite: false });
   // More pages continue this search's query, never the filters as edited since
   const activeSearch = useRef<ActiveSearch | null>(null);
   // Bumped by each new search and item change: a response for an older one is dropped
@@ -181,6 +207,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const presence = useListingPresence(settings.pd2Token ? marketApi : null, presenceIds);
   const marketRows = useMemo(() => withRowPresence(fetchedRows, presence), [fetchedRows, presence]);
   const marketListings = useMemo(() => marketRows.map((row) => row.listing), [marketRows]);
+  // The seller filter hides loaded rows only: the search (and its total) stay as they are, and scrolling, or a
+  // short list keeping the loader in view, fetches more pages
+  const sellerFiltered = sellerFilter.inGame || sellerFilter.onSite;
+  const visibleRows = useMemo(
+    () => (sellerFiltered ? marketRows.filter((row) => sellerMatches(row.listing, sellerFilter)) : marketRows),
+    [marketRows, sellerFilter, sellerFiltered],
+  );
 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
@@ -853,26 +886,35 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       };
       const { filters: marketFilters, gaps } = priceCheckMarketSearch(priceCheck);
       const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
+      const query = buildGetMarketListingQuery(
+        item,
+        pd2Item,
+        selected,
+        filters,
+        settings,
+        statMapper,
+        searchArchived,
+        effectiveSearchMode,
+        matchedItemType,
+        corruptedState,
+        ITEMS_PER_PAGE,
+        0,
+        corruptionNames.length > 0 ? corruptionNames : undefined,
+        searchedQuality,
+      );
+      const order = sort.dir === 'desc' ? -1 : 1;
       const search: ActiveSearch = {
-        query: buildGetMarketListingQuery(
-          item,
-          pd2Item,
-          selected,
-          filters,
-          settings,
-          statMapper,
-          searchArchived,
-          effectiveSearchMode,
-          matchedItemType,
-          corruptedState,
-          ITEMS_PER_PAGE,
-          0,
-          corruptionNames.length > 0 ? corruptionNames : undefined,
-          searchedQuality,
-        ),
+        // PD2 ranks unpriced listings (hr_price 0) first in ascending price order: those can't be ranked, so drop them
+        query:
+          sort.by === 'price'
+            ? { ...query, $sort: { hr_price: order }, ...(order === 1 && { hr_price: { $gt: 0 } }) }
+            : { ...query, $sort: { bumped_at: order } },
         marketFilters: mergeFilters(
           defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
-          searchArchived ? { ...marketFilters, status: ARCHIVE_STATUSES } : marketFilters,
+          {
+            ...(searchArchived ? { ...marketFilters, status: ARCHIVE_STATUSES } : marketFilters),
+            sort: { by: sort.by, dir: sort.dir },
+          },
         ),
         // PD2 can't filter pseudo stats either: with one selected the service answers, without the gapped row
         pd2Only: gaps.length > 0 && !hasPseudo,
@@ -900,6 +942,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       corruptedState,
       searchedQuality,
+      sort,
       fetchPage,
     ],
   );
@@ -908,6 +951,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const handleSearch = () => {
     setSelectedCorruptionNames([]);
     runSearch([]);
+  };
+
+  // Column headers: another column sorts descending (priciest / newest first), the same one again flips it
+  const sortBy = (by: ResultsSort['by']) => {
+    setSort((prev) => (prev.by === by ? { by, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { by, dir: 'desc' }));
+    if (searched) setSearchPending(true);
   };
 
   // Handle corruption click - search for items with that specific corruption
@@ -1624,6 +1673,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       {t('overlay.results.showing', { shown: marketListings.length })}
                     </span>
                   )}
+                  {sellerFiltered && (
+                    <span className="tabular-nums">
+                      {t(
+                        sellerFilter.inGame && sellerFilter.onSite
+                          ? 'overlay.results.filteredOnline'
+                          : sellerFilter.inGame
+                            ? 'overlay.results.filteredInGame'
+                            : 'overlay.results.filteredOnSite',
+                        { count: visibleRows.length },
+                      )}
+                    </span>
+                  )}
                   {marketLoading && <Loader2 className="size-3 animate-spin" />}
                 </motion.div>
               )}
@@ -1694,20 +1755,50 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                     <thead>
                       <tr>
-                        <th className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          {t('overlay.results.price')}
+                        <th
+                          aria-sort={sort.by === 'price' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                          className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <SortHeader
+                              label={t('overlay.results.price')}
+                              title={t('overlay.results.sortPrice')}
+                              active={sort.by === 'price'}
+                              dir={sort.dir}
+                              onClick={() => sortBy('price')}
+                            />
+                            <SellerFilterMenu filter={sellerFilter}
+                              onChange={setSellerFilter} />
+                          </div>
                         </th>
-                        <th className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1.5 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          {t('overlay.results.listed')}
+                        <th
+                          aria-sort={sort.by === 'bumped' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                          className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1 text-right text-[11px] font-medium text-muted-foreground"
+                        >
+                          <SortHeader
+                            label={t('overlay.results.age')}
+                            title={t('overlay.results.sortListed')}
+                            active={sort.by === 'bumped'}
+                            dir={sort.dir}
+                            onClick={() => sortBy('bumped')}
+                          />
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {marketRows.map((row, idx) => (
+                      {visibleRows.map((row, idx) => (
                         <ListingRow key={row.listing._id || idx}
                           row={row}
                           idx={idx} />
                       ))}
+                      {visibleRows.length === 0 && (
+                        <tr>
+                          <td colSpan={2}
+                            className="px-2 py-3 text-center text-xs text-muted-foreground">
+                            {hasMore ? t('overlay.results.loadingMore') : t('overlay.results.noSellerMatch')}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                   {/* Load more trigger */}
@@ -2077,7 +2168,7 @@ function CorruptionRow({
   );
 }
 
-/** Small round indicator in a listing row (ethereal / corrupted / sockets). */
+/** Small rounded-square tag in a listing row (ethereal / corrupted / sockets): square = the item, round = the seller. */
 function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; tooltip: string; className: string }) {
   return (
     <Tooltip disableHoverableContent={true}
@@ -2085,7 +2176,7 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
       <TooltipTrigger asChild>
         <div
           className={cn(
-            'flex size-4 items-center justify-center rounded-full border text-[10px] font-bold leading-none tabular-nums shadow-xs',
+            'flex size-4 items-center justify-center rounded-[4px] border text-[10px] font-bold leading-none tabular-nums shadow-xs',
             className,
           )}
         >
@@ -2096,6 +2187,135 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
         <p>{tooltip}</p>
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+/** An empty tag slot: keeps the other tags in their columns. */
+function BadgeSlot() {
+  return <span aria-hidden
+    className="size-4" />;
+}
+
+/** A sortable column header: the active one reads in full with its direction's arrow. */
+function SortHeader({
+  label,
+  title,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  title: string;
+  active: boolean;
+  dir: ResultsSort['dir'];
+  onClick: () => void;
+}) {
+  const Arrow = dir === 'desc' ? ChevronDown : ChevronUp;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+        active && 'font-semibold text-foreground',
+      )}
+    >
+      {label}
+      {active && <Arrow aria-hidden
+        className="size-3" />}
+    </button>
+  );
+}
+
+/**
+ * A seller's presence as one mark: in game (green, left) overlapping on the trade site (blue, right); a faded half
+ * is a no. The same mark heads the column as the seller filter.
+ */
+function PresenceMark({ inGame, onSite }: { inGame: boolean; onSite: boolean }) {
+  const half = 'size-2 rounded-full ring-[1.5px] ring-surface-elevated transition-colors duration-(--dur-fast)';
+  return (
+    <span aria-hidden
+      className="flex items-center">
+      <span className={cn(half, 'relative z-10', inGame ? 'bg-success' : 'bg-muted-foreground/35')} />
+      <span className={cn(half, '-ml-0.5', onSite ? 'bg-info' : 'bg-muted-foreground/35')} />
+    </span>
+  );
+}
+
+const SELLER_OPTIONS: { key: 'anyone' | 'inGame' | 'onSite' | 'either'; filter: SellerFilter }[] = [
+  { key: 'anyone', filter: { inGame: false, onSite: false } },
+  { key: 'inGame', filter: { inGame: true, onSite: false } },
+  { key: 'onSite', filter: { inGame: false, onSite: true } },
+  { key: 'either', filter: { inGame: true, onSite: true } },
+];
+
+const SELLER_LABEL_KEYS = {
+  anyone: 'overlay.results.sellerAnyone',
+  inGame: 'overlay.results.sellerInGame',
+  onSite: 'overlay.results.sellerOnSite',
+  either: 'overlay.results.sellerEither',
+} as const;
+
+/** The seller filter: the column's presence mark (lit halves = the current choice) opening the four choices. */
+function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange: (filter: SellerFilter) => void }) {
+  const { t } = useTranslation('priceCheck');
+  const [open, setOpen] = useState(false);
+  const filtered = filter.inGame || filter.onSite;
+  return (
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('overlay.results.sellerFilter')}
+          title={t('overlay.results.sellerFilter')}
+          className={cn(
+            'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
+            filtered && 'ring-1 ring-foreground/30',
+          )}
+        >
+          <PresenceMark inGame={filter.inGame}
+            onSite={filter.onSite} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end"
+        className="w-52 p-1">
+        <div role="menu"
+          aria-label={t('overlay.results.sellerFilter')}>
+          <div className="px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            {t('overlay.results.seller')}
+          </div>
+          {SELLER_OPTIONS.map((option) => {
+            const checked = option.filter.inGame === filter.inGame && option.filter.onSite === filter.onSite;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                role="menuitemradio"
+                aria-checked={checked}
+                onClick={() => {
+                  onChange(option.filter);
+                  setOpen(false);
+                }}
+                className={cn(
+                  'cursor-pointer flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent focus-visible:bg-accent',
+                  checked ? 'text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <span className="flex w-5 justify-center">
+                  <PresenceMark inGame={option.filter.inGame}
+                    onSite={option.filter.onSite} />
+                </span>
+                <span className="flex-1">{t(SELLER_LABEL_KEYS[option.key])}</span>
+                {checked && <Check aria-hidden
+                  className="size-3.5 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -2111,9 +2331,13 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
   const { listing } = row;
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
-  const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
+  const [presenceTooltipHover, setPresenceTooltipHover] = useState(false);
   const isCorrupted = itemCorruptions(listing.item).length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
+  const onSite = isUserOnlineIngame(listing.user_last_online);
+  const presenceText = `${online ? t('overlay.listing.inGame') : t('overlay.listing.notInGame')} · ${
+    onSite ? t('overlay.listing.onSite') : t('overlay.listing.notOnSite')
+  }`;
   // Market service rows: how long the listing was up and, once it ended, how
   const ended = row.status && row.status !== 'active' ? row.status : null;
   const upFor =
@@ -2163,8 +2387,8 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
           onMouseLeave={() => setOpen(false)}
         >
           {/* Price Column */}
-          <td className="flex flex-row items-center justify-between whitespace-nowrap rounded-l-md px-2 py-1">
-            <div className="mr-2 flex-1 truncate">
+          <td className="flex flex-row items-center gap-2 whitespace-nowrap rounded-l-md px-2 py-1">
+            <div className="flex-1 truncate">
               {listing.hr_price ? (
                 <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
               ) : listing.price && listing.price.length > 40 ? (
@@ -2191,60 +2415,67 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
               )}
             </div>
 
+            {/* Item tags in fixed slots (ethereal · corrupted · sockets), so they line up down the list */}
             <div className="flex flex-row items-center gap-1">
-              {/* Online Indicator */}
-              {online && (
-                <Tooltip
-                  disableHoverableContent={true}
-                  delayDuration={0}
-                  open={whisperCopied || onlineTooltipHover}
-                  onOpenChange={setOnlineTooltipHover}
-                >
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={copyWhisper}
-                      className={cn(
-                        'mx-0.5 size-2.5 cursor-pointer rounded-full bg-success ring-2 ring-success/25 outline-none transition-[transform,box-shadow] duration-(--dur-fast) hover:scale-125 hover:ring-success/45 focus-visible:ring-ring/60',
-                        whisperCopied && 'scale-125 ring-4 ring-success/40',
-                      )}
-                      aria-label={t('overlay.listing.copyWhisper')}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent className="pointer-events-none">
-                    <p className="flex items-center gap-1.5">
-                      {whisperCopied && <Check className="size-3 text-success" />}
-                      {whisperCopied ? t('overlay.listing.whisperCopied') : t('overlay.listing.onlineCopyWhisper')}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Ethereal Indicator */}
-              {listing.item.is_ethereal && (
+              {listing.item.is_ethereal ? (
                 <ListingBadge label="E"
                   tooltip="Ethereal"
                   className="border-border bg-foreground text-background" />
+              ) : (
+                <BadgeSlot />
               )}
-
-              {/* Corruption Indicator */}
-              {isCorrupted && (
+              {isCorrupted ? (
                 <ListingBadge
                   label="C"
                   tooltip="Corrupted"
                   className="border-destructive/60 bg-destructive text-destructive-foreground"
                 />
+              ) : (
+                <BadgeSlot />
               )}
-
-              {/* Sockets Indicator */}
-              {(listing.item.socket_count || 0) > 0 && (
+              {(listing.item.socket_count || 0) > 0 ? (
                 <ListingBadge
                   label={listing.item.socket_count}
                   tooltip={t('overlay.sockets', { count: listing.item.socket_count })}
                   className="border-border bg-secondary text-secondary-foreground"
                 />
+              ) : (
+                <BadgeSlot />
               )}
             </div>
+            {/* Seller presence, under the column's filter mark; clicking it when they're in game copies a whisper */}
+            <Tooltip
+              disableHoverableContent={true}
+              delayDuration={0}
+              open={whisperCopied || presenceTooltipHover}
+              onOpenChange={setPresenceTooltipHover}
+            >
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={online ? copyWhisper : (e) => e.stopPropagation()}
+                  aria-label={online ? t('overlay.listing.copyWhisper') : presenceText}
+                  className={cn(
+                    'flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-transform duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+                    online ? 'cursor-pointer hover:scale-125' : 'cursor-default',
+                    whisperCopied && 'scale-125',
+                  )}
+                >
+                  <PresenceMark inGame={online}
+                    onSite={onSite} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="pointer-events-none">
+                <p className="flex items-center gap-1.5">
+                  {whisperCopied && <Check className="size-3 text-success" />}
+                  {whisperCopied
+                    ? t('overlay.listing.whisperCopied')
+                    : online
+                      ? t('overlay.listing.presenceWhisper', { presence: presenceText })
+                      : presenceText}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </td>
 
           {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
@@ -2252,11 +2483,7 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
             className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground"
             title={listedTitle}
           >
-            {ended && upFor
-              ? t(ENDED_KEYS[ended], { duration: upFor })
-              : listing.bumped_at
-                ? moment(listing.bumped_at).fromNow(true)
-                : '-'}
+            {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
           </td>
         </tr>
       </PopoverTrigger>

@@ -92,21 +92,37 @@
       "readyTitle": "Pronto para buscar",
       "readyHint": "Escolha os atributos relevantes e clique em Buscar ou pressione Enter em um campo mín/máx.",
       "price": "Preço",
-      "listed": "Anunciado",
       "loadingMore": "Carregando mais...",
-      "loadMore": "Carregar mais"
+      "loadMore": "Carregar mais",
+      "sortPrice": "Ordenar por preço",
+      "sortListed": "Ordenar por data do anúncio",
+      "filteredInGame": "· {{count}} no jogo",
+      "filteredOnSite": "· {{count}} no site",
+      "filteredOnline": "· {{count}} online",
+      "noSellerMatch": "Nenhum vendedor aqui corresponde ao filtro de vendedor.",
+      "sellerFilter": "Filtro de vendedor",
+      "seller": "Vendedor",
+      "sellerAnyone": "Qualquer um",
+      "sellerInGame": "No jogo",
+      "sellerOnSite": "No site de trocas",
+      "sellerEither": "No jogo ou no site",
+      "age": "Idade"
     },
     "listing": {
       "copyWhisper": "Copiar sussurro",
       "whisperCopied": "Sussurro copiado, clique com o botão direito para colar",
-      "onlineCopyWhisper": "Online no jogo · clique para copiar o sussurro",
       "seller": "Vendedor: <name>{{seller}}</name>",
       "online": "Online no jogo",
       "endedSold": "vendido após {{duration}}",
       "endedRemoved": "removido após {{duration}}",
       "endedExpired": "expirado após {{duration}}",
       "endedAt": "Encerrado {{when}}",
-      "listedFor": "Anunciado há {{duration}}"
+      "listedFor": "Anunciado há {{duration}}",
+      "onSite": "No site de trocas",
+      "notOnSite": "Fora do site de trocas",
+      "notInGame": "Fora do jogo",
+      "inGame": "No jogo",
+      "presenceWhisper": "{{presence}} · clique para copiar o sussurro"
     }
   },
   "statRow": {

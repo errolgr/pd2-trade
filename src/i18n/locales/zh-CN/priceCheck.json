@@ -86,21 +86,37 @@
       "readyTitle": "准备搜索",
       "readyHint": "选择需要的属性，然后点击搜索或在最小/最大值框中按 Enter。",
       "price": "价格",
-      "listed": "挂出时间",
       "loadingMore": "正在加载更多…",
-      "loadMore": "加载更多"
+      "loadMore": "加载更多",
+      "sortPrice": "按价格排序",
+      "sortListed": "按上架时间排序",
+      "filteredInGame": "· {{count}} 在游戏中",
+      "filteredOnSite": "· {{count}} 在网站上",
+      "filteredOnline": "· {{count}} 在线",
+      "noSellerMatch": "这里没有符合卖家筛选的卖家。",
+      "sellerFilter": "卖家筛选",
+      "seller": "卖家",
+      "sellerAnyone": "任何人",
+      "sellerInGame": "在游戏中",
+      "sellerOnSite": "在交易网站上",
+      "sellerEither": "在游戏中或网站上",
+      "age": "时长"
     },
     "listing": {
       "copyWhisper": "复制私聊",
       "whisperCopied": "已复制私聊，右键粘贴",
-      "onlineCopyWhisper": "游戏内在线 · 点击复制私聊",
       "seller": "卖家：<name>{{seller}}</name>",
       "online": "游戏内在线",
       "endedSold": "{{duration}}后售出",
       "endedRemoved": "{{duration}}后下架",
       "endedExpired": "{{duration}}后过期",
       "endedAt": "结束于{{when}}",
-      "listedFor": "已挂单{{duration}}"
+      "listedFor": "已挂单{{duration}}",
+      "onSite": "在交易网站上",
+      "notOnSite": "不在交易网站上",
+      "notInGame": "不在游戏中",
+      "inGame": "在游戏中",
+      "presenceWhisper": "{{presence}} · 点击复制密语"
     }
   },
   "statRow": {

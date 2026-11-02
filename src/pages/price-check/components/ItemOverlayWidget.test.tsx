@@ -595,6 +595,75 @@ describe('ItemOverlayWidget market search', () => {
     expect(within(row).getByText('3')).not.toBeNull();
   });
 
+  it('sorts from the column headers: a new column is descending, the same one again flips it', async () => {
+    searchListings.mockResolvedValue(servicePage([listing()]));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('1.5 HR');
+    expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' });
+
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'desc' }));
+    expect(lastPage()).toBe(0);
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'asc' }));
+    fireEvent.click(screen.getByTitle('Sort by listing date'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' }));
+  });
+
+  it('a cheapest-first search that PD2 answers sorts by HR price and leaves out unpriced listings', async () => {
+    searchListings.mockResolvedValue(servicePage([listing()]));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('1.5 HR');
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort.by).toBe('price'));
+
+    searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
+    getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 2 })]));
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(lastQuery()).toMatchObject({ $sort: { hr_price: 1 }, hr_price: { $gt: 0 } });
+  });
+
+  it('the seller menu keeps sellers in game, on the site, or either; the count says how many', async () => {
+    const now = new Date().toISOString();
+    const old = '2026-10-01T00:00:00.000Z';
+    searchListings.mockResolvedValue(
+      servicePage([
+        listing({ _id: 'g', hr_price: 1, user_last_ingame: now, user_last_online: old }),
+        listing({ _id: 's', hr_price: 2, user_last_ingame: old, user_last_online: now }),
+        listing({ _id: 'o', hr_price: 3, user_last_ingame: old, user_last_online: old }),
+      ]),
+    );
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('3 HR');
+    const shown = () => ['1 HR', '2 HR', '3 HR'].filter((p) => screen.queryByText(p));
+
+    const pick = (name: string) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Seller filter' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name }));
+    };
+
+    pick('In game');
+    expect(shown()).toEqual(['1 HR']);
+    expect(screen.getByText('· 1 in game')).not.toBeNull();
+
+    pick('In game or on trade site');
+    expect(shown()).toEqual(['1 HR', '2 HR']);
+    expect(screen.getByText('· 2 online')).not.toBeNull();
+
+    pick('On the trade site');
+    expect(shown()).toEqual(['2 HR']);
+    expect(screen.getByText('· 1 on site')).not.toBeNull();
+
+    pick('Anyone');
+    expect(shown()).toEqual(['1 HR', '2 HR', '3 HR']);
+    // Filtering never searches again
+    expect(searchListings).toHaveBeenCalledTimes(1);
+  });
+
   it('shows a no-results state that suggests Show Expired only when it is off', async () => {
     renderWidget(rareRing());
     fireEvent.click(searchButton());

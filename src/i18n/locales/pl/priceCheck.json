@@ -95,21 +95,37 @@
       "readyTitle": "Gotowe do wyszukiwania",
       "readyHint": "Wybierz ważne statystyki, a potem kliknij Szukaj lub naciśnij Enter w polu min/maks.",
       "price": "Cena",
-      "listed": "Wystawiono",
       "loadingMore": "Wczytywanie kolejnych...",
-      "loadMore": "Wczytaj więcej"
+      "loadMore": "Wczytaj więcej",
+      "sortPrice": "Sortuj według ceny",
+      "sortListed": "Sortuj według daty wystawienia",
+      "filteredInGame": "· {{count}} w grze",
+      "filteredOnSite": "· {{count}} na stronie",
+      "filteredOnline": "· {{count}} online",
+      "noSellerMatch": "Żaden sprzedawca tutaj nie pasuje do filtra sprzedawcy.",
+      "sellerFilter": "Filtr sprzedawcy",
+      "seller": "Sprzedawca",
+      "sellerAnyone": "Każdy",
+      "sellerInGame": "W grze",
+      "sellerOnSite": "Na stronie handlu",
+      "sellerEither": "W grze lub na stronie",
+      "age": "Wiek"
     },
     "listing": {
       "copyWhisper": "Kopiuj szept",
       "whisperCopied": "Skopiowano szept, kliknij prawym, aby wkleić",
-      "onlineCopyWhisper": "Online w grze · kliknij, aby skopiować szept",
       "seller": "Sprzedawca: <name>{{seller}}</name>",
       "online": "Online w grze",
       "endedSold": "sprzedane po {{duration}}",
       "endedRemoved": "usunięte po {{duration}}",
       "endedExpired": "wygasło po {{duration}}",
       "endedAt": "Zakończone {{when}}",
-      "listedFor": "Wystawione od {{duration}}"
+      "listedFor": "Wystawione od {{duration}}",
+      "onSite": "Na stronie handlu",
+      "notOnSite": "Nie na stronie handlu",
+      "notInGame": "Nie w grze",
+      "inGame": "W grze",
+      "presenceWhisper": "{{presence}} · kliknij, aby skopiować szept"
     }
   },
   "statRow": {

@@ -92,21 +92,37 @@
       "readyTitle": "Listo para buscar",
       "readyHint": "Elige las estadísticas que importan y pulsa Buscar o Enter en un campo mín./máx.",
       "price": "Precio",
-      "listed": "Anunciado",
       "loadingMore": "Cargando más...",
-      "loadMore": "Cargar más"
+      "loadMore": "Cargar más",
+      "sortPrice": "Ordenar por precio",
+      "sortListed": "Ordenar por fecha de publicación",
+      "filteredInGame": "· {{count}} en el juego",
+      "filteredOnSite": "· {{count}} en la web",
+      "filteredOnline": "· {{count}} conectados",
+      "noSellerMatch": "Ningún vendedor aquí coincide con el filtro de vendedor.",
+      "sellerFilter": "Filtro de vendedor",
+      "seller": "Vendedor",
+      "sellerAnyone": "Cualquiera",
+      "sellerInGame": "En el juego",
+      "sellerOnSite": "En la web de comercio",
+      "sellerEither": "En el juego o en la web",
+      "age": "Edad"
     },
     "listing": {
       "copyWhisper": "Copiar susurro",
       "whisperCopied": "Susurro copiado, clic derecho para pegar",
-      "onlineCopyWhisper": "En línea en el juego · clic para copiar susurro",
       "seller": "Vendedor: <name>{{seller}}</name>",
       "online": "En línea en el juego",
       "endedSold": "vendido tras {{duration}}",
       "endedRemoved": "retirado tras {{duration}}",
       "endedExpired": "caducado tras {{duration}}",
       "endedAt": "Terminó {{when}}",
-      "listedFor": "Anunciado durante {{duration}}"
+      "listedFor": "Anunciado durante {{duration}}",
+      "onSite": "En la web de comercio",
+      "notOnSite": "No está en la web de comercio",
+      "notInGame": "No está en el juego",
+      "inGame": "En el juego",
+      "presenceWhisper": "{{presence}} · clic para copiar el susurro"
     }
   },
   "statRow": {
