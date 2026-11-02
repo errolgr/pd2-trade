@@ -111,6 +111,8 @@ export function useMarketActions({
       note: string,
       type: 'exact' | 'note',
     ): Promise<MarketListingEntry> => {
+      // Signed out meanwhile (a 401 elsewhere cleared the session): expected, like a 401 here
+      if (!authData?.user) throw new AuthenticationError('Sign in to PD2 to list this item');
       const is_hardcore = settings.mode === 'hardcore';
       const is_ladder = settings.ladder === 'ladder';
       const bumped_at = new Date().toISOString();
@@ -137,7 +139,10 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError, body);
+      const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, body);
+      // 401: re-authentication started and nothing was listed
+      if (!listing) throw new AuthenticationError('Sign in to PD2 to list this item');
+      return listing;
     },
     [settings, authData, onAuthError],
   );

@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.10.13': [
     '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
+    '🔧 List Item: when your PD2 sign-in has expired, posting (or a queued item being listed) now asks you to sign in again instead of failing with a "Cannot read properties of null" error',
   ],
   '0.10.12': [
     "🆕 Builds: a character's charms show under their gear, laid out like the bottom of their inventory, with the same art, tooltip and price as worn items",
