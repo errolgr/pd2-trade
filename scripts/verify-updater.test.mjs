@@ -109,8 +109,8 @@ describe('compareVersions', () => {
 describe('checkConfig', () => {
   const copyRepoConfig = () => {
     const root = mkdtempSync(path.join(dir, 'repo-'));
-    for (const file of ['package.json', 'src-tauri/tauri.conf.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock',
-      'src-tauri/capabilities/default.json', 'src-tauri/src/lib.rs']) {
+    for (const file of ['package.json', 'package-lock.json', 'src-tauri/tauri.conf.json', 'src-tauri/Cargo.toml',
+      'src-tauri/Cargo.lock', 'docs/.vitepress/config.js', 'src-tauri/capabilities/default.json', 'src-tauri/src/lib.rs']) {
       mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
       cpSync(path.join(ROOT, file), path.join(root, file));
     }
