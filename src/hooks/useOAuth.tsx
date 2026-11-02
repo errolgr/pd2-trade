@@ -67,19 +67,19 @@ export function useOAuthFlowLink(): OAuthFlowLink | null {
 
 /** Resolves after `ms`, or as soon as `signal` aborts. */
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  if (signal?.aborted) {
-    resolve();
-    return promise;
-  }
-  const done = () => {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', done);
-    resolve();
-  };
-  const timer = setTimeout(done, ms);
-  signal?.addEventListener('abort', done, { once: true });
-  return promise;
+  return new Promise((resolve) => {
+    if (signal?.aborted) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal?.addEventListener('abort', done, { once: true });
+  });
 }
 
 /** Shown when pd2trader.com refuses a banned account (403 from poll, refresh or /me). */
