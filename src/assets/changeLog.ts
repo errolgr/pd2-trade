@@ -1,6 +1,8 @@
 export const changeLog = {
   '0.10.13': [
     '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
+    '🔧 List Item: when your PD2 sign-in has expired, posting (or a queued item being listed) now asks you to sign in again instead of failing with a "Cannot read properties of null" error',
+    '🔧 Chat: signing out (or your session ending) with a conversation open no longer marks it as failed to load; it reloads when you sign back in',
     '🔧 Signing in works again on PCs with an older Microsoft Edge WebView2, and copying to the clipboard there no longer fails when another app is briefly using it',
   ],
   '0.10.12': [

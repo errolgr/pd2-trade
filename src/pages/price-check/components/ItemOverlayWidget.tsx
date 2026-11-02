@@ -1315,8 +1315,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <div className="border-t border-border pt-2">
                               <PopoverSectionTitle>{t('overlay.corruptions.top')}</PopoverSectionTitle>
                               {showAllCorruptions ? (
-                                <ScrollArea className="w-full overflow-x-hidden"
-                                  viewportClassName="max-h-[200px]">
+                                <ScrollArea
+                                  className="w-full overflow-x-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
+                                  viewportClassName="max-h-[200px]"
+                                >
                                   <div className="w-full space-y-0.5 overflow-x-hidden px-1.5 pr-3">
                                     {visibleCorruptions.map((corruption, idx) =>
                                       renderCorruptionRow(corruption, corruption, 'top', idx),
