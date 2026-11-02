@@ -27,6 +27,7 @@ import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 import { SignInWindowPage } from './pages/sign-in/SignInPage';
 import { SignInProvider } from './hooks/useSignIn';
+import { normalizeErrorText, pd2Fingerprint } from './lib/sentry-grouping';
 
 // Apply the cached theme before the first render (no flash of the default theme)
 initTheme();
@@ -85,6 +86,11 @@ setTimeout(() => {
       if (/\bAPI Error: 4\d\d\b/.test(text)) {
         return null;
       }
+      // Group PD2 failures by route + status instead of per user id / account / call site
+      const fingerprint = pd2Fingerprint(text, firstException?.type);
+      if (fingerprint) event.fingerprint = fingerprint;
+      if (event.message) event.message = normalizeErrorText(event.message);
+      if (firstException?.value) firstException.value = normalizeErrorText(firstException.value);
       return event;
     },
   });
