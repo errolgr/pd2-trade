@@ -36,5 +36,17 @@ export default [
       'no-case-declarations': 'off', // Allow declarations in case blocks
       'no-alert': 'error', // window.alert/confirm/prompt wedge the non-focusable overlay window; use confirmToast()
     },
+  },
+  {
+    // App code runs in the user's WebView2, which can be years old (Edge 112-115 seen in Sentry);
+    // Promise.withResolvers needs Chromium 119. Tests run in Node and may use it.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        { object: 'Promise', property: 'withResolvers', message: 'Needs Chromium 119; older WebView2 runtimes lack it. Use new Promise().' },
+      ],
+    },
   }
 ];

@@ -200,6 +200,7 @@ describe('main Sentry setup', () => {
     expect(send(server, new PD2ApiError('API Error: 502 Bad Gateway', 502, '/x'))).toBe(server);
     expect(send({ message: 'Failed: API Error: 500 Internal Server Error' })).toEqual({
       message: 'Failed: API Error: 500 Internal Server Error',
+      fingerprint: ['pd2-api-error', 'status-500'],
     });
   });
 });
