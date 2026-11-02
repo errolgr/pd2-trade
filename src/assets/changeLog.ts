@@ -5,7 +5,6 @@ export const changeLog = {
     '🆕 Builds: characters show their charms under their gear',
     '🆕 Chat dock: star any window to pin it to the dock, and drag the menu to reorder it',
     '✨ Market search understands typos and nicknames (shako, griffs...)',
-    '✨ Price check uses the same search as the market browser, so results match',
     '✨ Price check and market browser: results show instantly, and seller online status fills in after',
     '✨ Price check: Show Expired also includes removed and expired listings, with how long each was up',
     '🔧 Open in market keeps skills, auras and damage ranges exactly as you picked them',
