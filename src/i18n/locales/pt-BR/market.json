@@ -373,7 +373,8 @@
     "fallbackWindow": "média de {{window}} · {{listings}}",
     "label": "Nome do item",
     "placeholder": "Buscar itens…  ( / )",
-    "clear": "Limpar nome do item"
+    "clear": "Limpar nome do item",
+    "closeMatch": "nome parecido"
   },
   "detail": {
     "label": "Detalhes do anúncio",

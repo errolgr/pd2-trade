@@ -6,6 +6,7 @@ import {
   NoAccountSelectedError,
   usePd2Website,
 } from '@/hooks/pd2website/usePD2Website';
+import { isListingDeleted } from '@/hooks/pd2website/listing-events';
 import { useOptions } from '@/hooks/useOptions';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { confirmToast, showToast, useOverlay } from '@/overlay';
@@ -62,9 +63,11 @@ const StashAutoDelistController: React.FC = () => {
       const result = await latest.current.getMarketListings(
         buildGetAllUserMarketListingsQuery(userId, hardcore, ladder, TRADE_LISTINGS_LIMIT, 0),
       );
-      // Another game account's items never were in this stash
+      // Another game account's items never were in this stash; a listing deleted already is gone whatever PD2 says
       const data = result.data.filter(
-        (listing) => !listing.item.account_id || listing.item.account_id.toLowerCase() === account.toLowerCase(),
+        (listing) =>
+          !isListingDeleted(listing._id) &&
+          (!listing.item.account_id || listing.item.account_id.toLowerCase() === account.toLowerCase()),
       );
       listings = { at: Date.now(), data };
       return data;

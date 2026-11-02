@@ -373,7 +373,8 @@
     "fallbackWindow": "moy. {{window}} · {{listings}}",
     "label": "Nom de l'objet",
     "placeholder": "Rechercher des objets…  ( / )",
-    "clear": "Effacer le nom de l'objet"
+    "clear": "Effacer le nom de l'objet",
+    "closeMatch": "nom proche"
   },
   "detail": {
     "label": "Détail de l'annonce",

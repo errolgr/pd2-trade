@@ -229,6 +229,13 @@ const ITEM_NAMES: ItemNameOption[] = (() => {
   return out;
 })();
 
+const ITEM_NAMES_BY_NAME = new Map(ITEM_NAMES.map((o) => [o.name.toLowerCase(), o]));
+
+/** The autocomplete entry for an exact item name (case-insensitive); undefined when the site doesn't list it. */
+export function itemNameOption(name: string): ItemNameOption | undefined {
+  return ITEM_NAMES_BY_NAME.get(name.trim().toLowerCase());
+}
+
 /**
  * Item names matching `query` (case-insensitive): prefix matches, then word-start matches, then substring
  * matches; alphabetical within each.

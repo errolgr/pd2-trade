@@ -1,11 +1,15 @@
 export const changeLog = {
   '0.10.13': [
     '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
+    '🔧 List Item: when your PD2 sign-in has expired, posting (or a queued item being listed) now asks you to sign in again instead of failing with a "Cannot read properties of null" error',
+    '🔧 Chat: signing out (or your session ending) with a conversation open no longer marks it as failed to load; it reloads when you sign back in',
+    '🔧 Signing in works again on PCs with an older Microsoft Edge WebView2, and copying to the clipboard there no longer fails when another app is briefly using it',
     "✨ Price check searches the pd2trader market service, so its results match the market browser's (if the service is down, PD2 answers instead)",
     '✨ Price check and market browser: results show right away, then whether each seller is online right now pops in from PD2',
     '✨ Price check: Show Expired also lists removed and expired listings next to sold ones, and each says how long it was up ("sold after 2 days")',
     '🔧 Open in market (and price checks with a Σ total) keep runewords, chance to cast and charges skills, auras, splash and elemental damage ranges exactly as picked',
   ],
+  '0.10.13': ['✨ Market search finds items despite typos and common nicknames (shako, griffs...)'],
   '0.10.12': [
     "🆕 Builds: a character's charms show under their gear, laid out like the bottom of their inventory, with the same art, tooltip and price as worn items",
     '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
@@ -17,6 +21,7 @@ export const changeLog = {
     '✨ The listings panel opens larger (720×680)',
     '🔧 Price check: auras ("Level 8 Might Aura When Equipped"), chance to cast lines (on attack, striking, casting, when struck, kill, death, level-up) and charged skills are no longer Unknown: tick one to search by its skill and level, like the PD2 market\'s own filters',
     '🔧 Market browser: a new search (adding a filter or an item, changing the sort) jumps back to the top of the results instead of keeping the old scroll position',
+    '🔧 Auto-delist and Ctrl+U no longer remove the same listing twice (two "removed" popups) when PD2 still shows a listing that was just deleted',
   ],
   '0.10.11': [
     '🆕 Auto-delist: take a listed item out of your stash and PD2 Trader removes its listing. Moving it between stash tabs never counts, and when look-alike items (runes, charms, identical uniques) make it unclear which one left, it asks you to pick. Settings → Market: Do nothing, Ask me (default) or Delist it',
