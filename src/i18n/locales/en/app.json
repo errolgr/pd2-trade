@@ -37,7 +37,6 @@
     "favorite": "Favorite {{label}}",
     "addFavorite": "Add to favorites (the tab)",
     "removeFavorite": "Remove from favorites (the tab)",
-    "layoutHint": "Star to add to the tab · drag to reorder",
     "menu": {
       "chat": "Chat",
       "market": "Market browser",

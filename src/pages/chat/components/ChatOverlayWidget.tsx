@@ -149,7 +149,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // the buyer: refetch them each time the panel opens, so Buying shows the current ones
   useEffect(() => {
     if (visible) void refreshOffers();
-    // On open only: refreshOffers changes with every settings change
+    // On open only: refreshOffers also changes when the token does, and the provider already fetches then
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
