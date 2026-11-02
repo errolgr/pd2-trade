@@ -89,7 +89,6 @@
       "readyTitle": "Bereit zur Suche",
       "readyHint": "Wähle die wichtigen Werte und klicke auf Suchen oder drücke Enter in einem Min/Max-Feld.",
       "price": "Preis",
-      "listed": "Inseriert",
       "loadingMore": "Weitere werden geladen...",
       "loadMore": "Mehr laden",
       "sortPrice": "Nach Preis sortieren",
@@ -103,7 +102,8 @@
       "sellerAnyone": "Alle",
       "sellerInGame": "Im Spiel",
       "sellerOnSite": "Auf der Handelsseite",
-      "sellerEither": "Im Spiel oder auf der Seite"
+      "sellerEither": "Im Spiel oder auf der Seite",
+      "age": "Alter"
     },
     "listing": {
       "copyWhisper": "Flüstern kopieren",

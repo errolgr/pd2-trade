@@ -86,7 +86,6 @@
       "readyTitle": "准备搜索",
       "readyHint": "选择需要的属性，然后点击搜索或在最小/最大值框中按 Enter。",
       "price": "价格",
-      "listed": "挂出时间",
       "loadingMore": "正在加载更多…",
       "loadMore": "加载更多",
       "sortPrice": "按价格排序",
@@ -100,7 +99,8 @@
       "sellerAnyone": "任何人",
       "sellerInGame": "在游戏中",
       "sellerOnSite": "在交易网站上",
-      "sellerEither": "在游戏中或网站上"
+      "sellerEither": "在游戏中或网站上",
+      "age": "时长"
     },
     "listing": {
       "copyWhisper": "复制私聊",

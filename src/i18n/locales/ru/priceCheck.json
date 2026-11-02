@@ -95,7 +95,6 @@
       "readyTitle": "Готово к поиску",
       "readyHint": "Выберите нужные статы и нажмите «Поиск» или Enter в поле мин./макс.",
       "price": "Цена",
-      "listed": "Выставлено",
       "loadingMore": "Загрузка...",
       "loadMore": "Загрузить ещё",
       "sortPrice": "Сортировать по цене",
@@ -109,7 +108,8 @@
       "sellerAnyone": "Любой",
       "sellerInGame": "В игре",
       "sellerOnSite": "На торговом сайте",
-      "sellerEither": "В игре или на сайте"
+      "sellerEither": "В игре или на сайте",
+      "age": "Срок"
     },
     "listing": {
       "copyWhisper": "Копировать личное сообщение",

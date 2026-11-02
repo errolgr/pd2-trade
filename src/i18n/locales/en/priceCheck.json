@@ -89,7 +89,6 @@
       "readyTitle": "Ready to search",
       "readyHint": "Pick the stats that matter, then hit Search or press Enter in a min/max field.",
       "price": "Price",
-      "listed": "Listed",
       "loadingMore": "Loading more...",
       "loadMore": "Load more",
       "sortPrice": "Sort by price",
@@ -103,7 +102,8 @@
       "sellerAnyone": "Anyone",
       "sellerInGame": "In game",
       "sellerOnSite": "On the trade site",
-      "sellerEither": "In game or on trade site"
+      "sellerEither": "In game or on trade site",
+      "age": "Age"
     },
     "listing": {
       "copyWhisper": "Copy whisper",

@@ -95,7 +95,6 @@
       "readyTitle": "Gotowe do wyszukiwania",
       "readyHint": "Wybierz ważne statystyki, a potem kliknij Szukaj lub naciśnij Enter w polu min/maks.",
       "price": "Cena",
-      "listed": "Wystawiono",
       "loadingMore": "Wczytywanie kolejnych...",
       "loadMore": "Wczytaj więcej",
       "sortPrice": "Sortuj według ceny",
@@ -109,7 +108,8 @@
       "sellerAnyone": "Każdy",
       "sellerInGame": "W grze",
       "sellerOnSite": "Na stronie handlu",
-      "sellerEither": "W grze lub na stronie"
+      "sellerEither": "W grze lub na stronie",
+      "age": "Wiek"
     },
     "listing": {
       "copyWhisper": "Kopiuj szept",

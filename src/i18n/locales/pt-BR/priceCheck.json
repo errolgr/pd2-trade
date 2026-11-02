@@ -92,7 +92,6 @@
       "readyTitle": "Pronto para buscar",
       "readyHint": "Escolha os atributos relevantes e clique em Buscar ou pressione Enter em um campo mín/máx.",
       "price": "Preço",
-      "listed": "Anunciado",
       "loadingMore": "Carregando mais...",
       "loadMore": "Carregar mais",
       "sortPrice": "Ordenar por preço",
@@ -106,7 +105,8 @@
       "sellerAnyone": "Qualquer um",
       "sellerInGame": "No jogo",
       "sellerOnSite": "No site de trocas",
-      "sellerEither": "No jogo ou no site"
+      "sellerEither": "No jogo ou no site",
+      "age": "Idade"
     },
     "listing": {
       "copyWhisper": "Copiar sussurro",

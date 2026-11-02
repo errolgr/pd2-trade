@@ -92,7 +92,6 @@
       "readyTitle": "Prêt à rechercher",
       "readyHint": "Choisissez les stats importantes, puis cliquez sur Rechercher ou appuyez sur Enter dans un champ min/max.",
       "price": "Prix",
-      "listed": "Publiée",
       "loadingMore": "Chargement...",
       "loadMore": "Charger plus",
       "sortPrice": "Trier par prix",
@@ -106,7 +105,8 @@
       "sellerAnyone": "Tous",
       "sellerInGame": "En jeu",
       "sellerOnSite": "Sur le site d'échange",
-      "sellerEither": "En jeu ou sur le site"
+      "sellerEither": "En jeu ou sur le site",
+      "age": "Âge"
     },
     "listing": {
       "copyWhisper": "Copier le message privé",

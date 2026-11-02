@@ -1776,7 +1776,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1 text-right text-[11px] font-medium text-muted-foreground"
                         >
                           <SortHeader
-                            label={t('overlay.results.listed')}
+                            label={t('overlay.results.age')}
                             title={t('overlay.results.sortListed')}
                             active={sort.by === 'bumped'}
                             dir={sort.dir}

@@ -1,6 +1,6 @@
 export const changeLog = {
   '0.10.14': [
-    '🆕 Price check: click Price or Listed to sort (again to flip the order)',
+    '🆕 Price check: click Price or Age to sort (again to flip the order)',
     '🆕 Price check: each listing shows if the seller is in game (green) and on the trade site (blue); click the dot above the list to show only those sellers',
     '✨ Price check: shorter listing ages (10m, 2h), and item tags (E, C, sockets) line up down the list',
   ],

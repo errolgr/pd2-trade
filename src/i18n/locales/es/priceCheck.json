@@ -92,7 +92,6 @@
       "readyTitle": "Listo para buscar",
       "readyHint": "Elige las estadísticas que importan y pulsa Buscar o Enter en un campo mín./máx.",
       "price": "Precio",
-      "listed": "Anunciado",
       "loadingMore": "Cargando más...",
       "loadMore": "Cargar más",
       "sortPrice": "Ordenar por precio",
@@ -106,7 +105,8 @@
       "sellerAnyone": "Cualquiera",
       "sellerInGame": "En el juego",
       "sellerOnSite": "En la web de comercio",
-      "sellerEither": "En el juego o en la web"
+      "sellerEither": "En el juego o en la web",
+      "age": "Edad"
     },
     "listing": {
       "copyWhisper": "Copiar susurro",
