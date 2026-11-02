@@ -94,19 +94,35 @@
       "price": "Prix",
       "listed": "Publiée",
       "loadingMore": "Chargement...",
-      "loadMore": "Charger plus"
+      "loadMore": "Charger plus",
+      "sortPrice": "Trier par prix",
+      "sortListed": "Trier par date de mise en vente",
+      "filteredInGame": "· {{count}} en jeu",
+      "filteredOnSite": "· {{count}} sur le site",
+      "filteredOnline": "· {{count}} en ligne",
+      "noSellerMatch": "Aucun vendeur ici ne correspond au filtre vendeur.",
+      "sellerFilter": "Filtre vendeur",
+      "seller": "Vendeur",
+      "sellerAnyone": "Tous",
+      "sellerInGame": "En jeu",
+      "sellerOnSite": "Sur le site d'échange",
+      "sellerEither": "En jeu ou sur le site"
     },
     "listing": {
       "copyWhisper": "Copier le message privé",
       "whisperCopied": "Message privé copié, clic droit pour coller",
-      "onlineCopyWhisper": "En ligne en jeu · cliquez pour copier le message privé",
       "seller": "Vendeur : <name>{{seller}}</name>",
       "online": "En ligne en jeu",
       "endedSold": "vendu après {{duration}}",
       "endedRemoved": "retiré après {{duration}}",
       "endedExpired": "expiré après {{duration}}",
       "endedAt": "Terminé {{when}}",
-      "listedFor": "En vente depuis {{duration}}"
+      "listedFor": "En vente depuis {{duration}}",
+      "onSite": "Sur le site d'échange",
+      "notOnSite": "Pas sur le site d'échange",
+      "notInGame": "Pas en jeu",
+      "inGame": "En jeu",
+      "presenceWhisper": "{{presence}} · cliquer pour copier le chuchotement"
     }
   },
   "statRow": {

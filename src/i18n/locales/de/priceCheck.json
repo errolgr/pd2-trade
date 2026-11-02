@@ -91,19 +91,35 @@
       "price": "Preis",
       "listed": "Inseriert",
       "loadingMore": "Weitere werden geladen...",
-      "loadMore": "Mehr laden"
+      "loadMore": "Mehr laden",
+      "sortPrice": "Nach Preis sortieren",
+      "sortListed": "Nach Einstelldatum sortieren",
+      "filteredInGame": "· {{count}} im Spiel",
+      "filteredOnSite": "· {{count}} auf der Seite",
+      "filteredOnline": "· {{count}} online",
+      "noSellerMatch": "Kein Verkäufer hier passt zum Verkäuferfilter.",
+      "sellerFilter": "Verkäuferfilter",
+      "seller": "Verkäufer",
+      "sellerAnyone": "Alle",
+      "sellerInGame": "Im Spiel",
+      "sellerOnSite": "Auf der Handelsseite",
+      "sellerEither": "Im Spiel oder auf der Seite"
     },
     "listing": {
       "copyWhisper": "Flüstern kopieren",
       "whisperCopied": "Flüstern kopiert, Rechtsklick zum Einfügen",
-      "onlineCopyWhisper": "Online im Spiel · klicken, um Flüstern zu kopieren",
       "seller": "Verkäufer: <name>{{seller}}</name>",
       "online": "Online im Spiel",
       "endedSold": "verkauft nach {{duration}}",
       "endedRemoved": "entfernt nach {{duration}}",
       "endedExpired": "abgelaufen nach {{duration}}",
       "endedAt": "Beendet {{when}}",
-      "listedFor": "Inseriert seit {{duration}}"
+      "listedFor": "Inseriert seit {{duration}}",
+      "onSite": "Auf der Handelsseite",
+      "notOnSite": "Nicht auf der Handelsseite",
+      "notInGame": "Nicht im Spiel",
+      "inGame": "Im Spiel",
+      "presenceWhisper": "{{presence}} · klicken, um das Flüstern zu kopieren"
     }
   },
   "statRow": {

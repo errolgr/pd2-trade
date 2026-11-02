@@ -97,19 +97,35 @@
       "price": "Цена",
       "listed": "Выставлено",
       "loadingMore": "Загрузка...",
-      "loadMore": "Загрузить ещё"
+      "loadMore": "Загрузить ещё",
+      "sortPrice": "Сортировать по цене",
+      "sortListed": "Сортировать по дате размещения",
+      "filteredInGame": "· {{count}} в игре",
+      "filteredOnSite": "· {{count}} на сайте",
+      "filteredOnline": "· {{count}} в сети",
+      "noSellerMatch": "Здесь нет продавцов, подходящих под фильтр.",
+      "sellerFilter": "Фильтр продавца",
+      "seller": "Продавец",
+      "sellerAnyone": "Любой",
+      "sellerInGame": "В игре",
+      "sellerOnSite": "На торговом сайте",
+      "sellerEither": "В игре или на сайте"
     },
     "listing": {
       "copyWhisper": "Копировать личное сообщение",
       "whisperCopied": "Личное сообщение скопировано, вставьте правым кликом",
-      "onlineCopyWhisper": "В игре · нажмите, чтобы скопировать личное сообщение",
       "seller": "Продавец: <name>{{seller}}</name>",
       "online": "В игре",
       "endedSold": "продано через {{duration}}",
       "endedRemoved": "снято через {{duration}}",
       "endedExpired": "истекло через {{duration}}",
       "endedAt": "Завершено {{when}}",
-      "listedFor": "В продаже: {{duration}}"
+      "listedFor": "В продаже: {{duration}}",
+      "onSite": "На торговом сайте",
+      "notOnSite": "Не на торговом сайте",
+      "notInGame": "Не в игре",
+      "inGame": "В игре",
+      "presenceWhisper": "{{presence}} · нажмите, чтобы скопировать шёпот"
     }
   },
   "statRow": {
