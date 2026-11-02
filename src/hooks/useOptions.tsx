@@ -14,6 +14,7 @@ import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
+import type { ChatDockItem } from '@/pages/chat/chat-dock';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -69,6 +70,8 @@ export interface ISettings {
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
   chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
+  chatDockOrder?: ChatDockItem[]; // The chat dock menu's window order (pages/chat/chat-dock.ts); unset = default order
+  chatDockFavorites?: ChatDockItem[]; // Windows shown on the chat dock's tab as buttons; unset = chat + offers
   whisperIgnoreList?: string[];
   whisperAnnouncementsEnabled?: boolean;
   whisperJoinNotificationsEnabled?: boolean;

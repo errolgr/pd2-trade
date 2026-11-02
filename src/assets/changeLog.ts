@@ -1,5 +1,10 @@
 export const changeLog = {
+  '0.10.13': [
+    '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
+  ],
   '0.10.12': [
+    "🆕 Builds: a character's charms show under their gear, laid out like the bottom of their inventory, with the same art, tooltip and price as worn items",
+    '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
     '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',
     '🆕 My listings: sort by needs attention, last bumped, last updated, price, date listed, price vs market or name (compact rows sort from their column headers too), and filter to bump-ready listings or listings with offers',
     '✨ My listings: corrupted, ethereal and socket tags next to each item; expand a card to see every stat',
@@ -7,6 +12,7 @@ export const changeLog = {
     '🔧 My listings: "Bump N ready" counts and bumps only the listings off cooldown (Bump All marked every row as bumped)',
     '✨ The listings panel opens larger (720×680)',
     '🔧 Price check: auras ("Level 8 Might Aura When Equipped"), chance to cast lines (on attack, striking, casting, when struck, kill, death, level-up) and charged skills are no longer Unknown: tick one to search by its skill and level, like the PD2 market\'s own filters',
+    '🔧 Market browser: a new search (adding a filter or an item, changing the sort) jumps back to the top of the results instead of keeping the old scroll position',
     '🔧 Auto-delist and Ctrl+U no longer remove the same listing twice (two "removed" popups) when PD2 still shows a listing that was just deleted',
   ],
   '0.10.11': [

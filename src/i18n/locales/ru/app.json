@@ -36,6 +36,11 @@
     "tradeOffers_many": "{{count}} предложений обмена",
     "tradeOffers_other": "{{count}} предложения обмена",
     "disableOverlay": "Отключить оверлей",
+    "move": "Переместить {{label}}",
+    "moveHint": "Перетащите для сортировки (или ↑/↓)",
+    "favorite": "В избранное: {{label}}",
+    "addFavorite": "Добавить в избранное (вкладка)",
+    "removeFavorite": "Убрать из избранного (вкладка)",
     "menu": {
       "chat": "Чат",
       "market": "Рынок",

@@ -36,6 +36,14 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
+      # Fail in seconds, before a draft or any build: the version must be newer than the live release,
+      # have no release yet (a draft left by a failed run included), agree across version files and
+      # have a changelog entry. Bump with `npm run release -- <x.y.z|patch|minor>`.
+      - name: Release preflight
+        env:
+          GITHUB_TOKEN: ${{ secrets.PD2_GITHUB_TOKEN }}
+        run: node scripts/release.mjs check
+
       - name: Create release in pd2-trade
         id: create-release
         uses: actions/github-script@v7

@@ -114,6 +114,7 @@
     "viewingSnapshot": "Viewing <date>{{date}}</date><muted> · prices hidden</muted>",
     "backToNow": "Back to now",
     "equipment": "Equipment",
+    "charms": "Charms",
     "weaponSwitch": "Weapon switch",
     "mercTitle": "Merc <muted>· {{type}}</muted>",
     "paneLabel": "Character view",

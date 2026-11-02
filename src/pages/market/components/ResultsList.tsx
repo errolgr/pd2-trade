@@ -151,6 +151,12 @@ export function ResultsList({
     overscan: 10,
   });
 
+  // A fresh result set (new search, filter change) starts at the top; appended pages keep the position.
+  // Before the selection effect, so a kept selection still scrolls into view.
+  useEffect(() => {
+    virtualizer.scrollToOffset(0);
+  }, [enter.generation, virtualizer]);
+
   // Keep the keyboard selection in view
   const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
   useEffect(() => {
