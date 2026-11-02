@@ -20,7 +20,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          # Node 26 (lts/* since Nov 2026) ships a global localStorage that shadows jsdom's and breaks the suite.
+          node-version: 24
 
       - name: Install dependencies
         run: npm install
