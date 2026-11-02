@@ -116,8 +116,9 @@ export function buildTradeUrl(
 
   // Basic item meta
   const quality = qualityOverride ?? item.quality;
-  // Several qualities: the same `{"$in": […]}` form the site takes for `type`
-  searchParams.set('quality', typeof quality === 'string' ? quality : JSON.stringify({ $in: quality }));
+  // Several qualities ("Any"): no quality filter. The site sends `quality` to PD2 as a plain string (unlike `type` /
+  // `base`, it doesn't JSON.parse it), so an `$in` here would match nothing.
+  if (typeof quality === 'string') searchParams.set('quality', quality);
 
   // Handle search mode: 0 = category (base), 1 = typeLabel
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)

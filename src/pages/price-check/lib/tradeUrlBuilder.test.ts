@@ -82,10 +82,8 @@ describe('buildTradeUrl', () => {
     expect(urlParams(makeItem(), [], {}, { quality: 'Unique' }).p.get('quality')).toBe('Unique');
   });
 
-  it('"Any" quality sends every base quality in the site\'s $in form', () => {
-    expect(JSON.parse(urlParams(makeItem(), [], {}, { quality: BASE_QUALITIES }).p.get('quality')!)).toEqual({
-      $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'],
-    });
+  it('"Any" quality leaves the quality filter off (the site only takes one quality)', () => {
+    expect(urlParams(makeItem(), [], {}, { quality: BASE_QUALITIES }).p.has('quality')).toBe(false);
   });
 
   it.each([
