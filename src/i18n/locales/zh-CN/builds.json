@@ -110,6 +110,7 @@
     "viewingSnapshot": "正在查看 <date>{{date}}</date><muted> · 价格已隐藏</muted>",
     "backToNow": "回到当前",
     "equipment": "装备",
+    "charms": "护符",
     "weaponSwitch": "武器切换",
     "mercTitle": "佣兵 <muted>· {{type}}</muted>",
     "paneLabel": "角色视图",
