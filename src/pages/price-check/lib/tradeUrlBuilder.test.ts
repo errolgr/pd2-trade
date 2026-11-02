@@ -4,10 +4,12 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { Item, Stat } from './interfaces';
 import { StatId } from './stat-mappings';
 import {
+  BASE_QUALITIES,
   buildGetAllUserMarketListingsQuery,
   buildGetMarketListingByStashItemQuery,
   buildGetMarketListingQuery,
   buildTradeUrl,
+  type QualitySearch,
 } from './tradeUrlBuilder';
 
 type Filters = Record<string, { value?: string; min?: string; max?: string }>;
@@ -39,7 +41,7 @@ function urlParams(
     matched?: Parameters<typeof buildTradeUrl>[7];
     archive?: boolean;
     corrupted?: number;
-    quality?: string;
+    quality?: QualitySearch;
   } = {},
 ) {
   const url = new URL(
@@ -78,6 +80,12 @@ describe('buildTradeUrl', () => {
 
   it('applies the quality override', () => {
     expect(urlParams(makeItem(), [], {}, { quality: 'Unique' }).p.get('quality')).toBe('Unique');
+  });
+
+  it('"Any" quality sends every base quality in the site\'s $in form', () => {
+    expect(JSON.parse(urlParams(makeItem(), [], {}, { quality: BASE_QUALITIES }).p.get('quality')!)).toEqual({
+      $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'],
+    });
   });
 
   it.each([
@@ -371,7 +379,7 @@ describe('buildGetMarketListingQuery', () => {
       limit?: number;
       offset?: number;
       corruptions?: string[];
-      quality?: string;
+      quality?: QualitySearch;
     } = {},
   ) {
     return buildGetMarketListingQuery(
@@ -423,6 +431,12 @@ describe('buildGetMarketListingQuery', () => {
       is_hardcore: true,
       is_ladder: false,
       'item.quality.name': 'Crafted',
+    });
+  });
+
+  it('"Any" quality searches every base quality with $in', () => {
+    expect(query(makeItem(), [], {}, { quality: BASE_QUALITIES })['item.quality.name']).toEqual({
+      $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'],
     });
   });
 

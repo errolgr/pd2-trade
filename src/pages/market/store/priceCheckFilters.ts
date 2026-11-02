@@ -10,7 +10,7 @@
  */
 import { modifierByName } from '@/assets/modifiers';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
-import { buildGetMarketListingQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
@@ -33,7 +33,8 @@ export interface PriceCheckSearch {
   /** 0 = any, 1 = corrupted, 2 = not corrupted. */
   corruptedState: number;
   corruptionNames: string[];
-  qualityOverride?: string;
+  /** The header's quality: one, or several for "Any". */
+  qualityOverride?: QualitySearch;
 }
 
 /**
@@ -154,8 +155,12 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   if (typeof query.is_ladder === 'boolean') out.ladder = query.is_ladder;
 
   const quality = query['item.quality.name'];
-  if (typeof quality === 'string' && (RARITIES as readonly string[]).includes(quality)) {
-    out.rarity = [quality as Rarity];
+  const qualities = typeof quality === 'string' ? [quality] : prop(quality, '$in');
+  if (Array.isArray(qualities)) {
+    const rarity = qualities.filter(
+      (q: unknown): q is Rarity => typeof q === 'string' && (RARITIES as readonly string[]).includes(q),
+    );
+    if (rarity.length > 0) out.rarity = rarity;
   }
 
   const name = query['item.name'];

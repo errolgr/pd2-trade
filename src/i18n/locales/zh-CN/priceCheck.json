@@ -29,6 +29,7 @@
       "type": "类型：{{type}}",
       "toggleSearchMode": "点击切换搜索模式",
       "cycleQuality": "点击切换品质",
+      "anyQuality": "任意",
       "defense": "防御：<value>{{defense}}</value>",
       "appraisalNote": "估价说明：{{note}}"
     },

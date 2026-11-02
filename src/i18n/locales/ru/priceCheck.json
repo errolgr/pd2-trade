@@ -29,6 +29,7 @@
       "type": "Тип: {{type}}",
       "toggleSearchMode": "Нажмите, чтобы сменить режим поиска",
       "cycleQuality": "Нажмите, чтобы сменить качество",
+      "anyQuality": "Любое",
       "defense": "Защита: <value>{{defense}}</value>",
       "appraisalNote": "Примечание к оценке: {{note}}"
     },

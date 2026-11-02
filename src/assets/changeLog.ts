@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.13': [
+    '🆕 Price check: the quality toggle (Rare, Crafted…) has an "Any" step that searches every quality at once, so you no longer have to flip between Rare and Crafted',
     '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
     '🔧 List Item: when your PD2 sign-in has expired, posting (or a queued item being listed) now asks you to sign in again instead of failing with a "Cannot read properties of null" error',
     '🔧 Chat: signing out (or your session ending) with a conversation open no longer marks it as failed to load; it reloads when you sign back in',
