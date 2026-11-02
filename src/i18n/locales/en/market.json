@@ -356,7 +356,8 @@
     "fallbackWindow": "{{window}} avg · {{listings}}",
     "label": "Item name",
     "placeholder": "Search items…  ( / )",
-    "clear": "Clear item name"
+    "clear": "Clear item name",
+    "closeMatch": "close match"
   },
   "detail": {
     "label": "Listing detail",
