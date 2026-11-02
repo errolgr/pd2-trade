@@ -4,6 +4,7 @@ export const changeLog = {
     '🔧 List Item: when your PD2 sign-in has expired, posting (or a queued item being listed) now asks you to sign in again instead of failing with a "Cannot read properties of null" error',
     '🔧 Chat: signing out (or your session ending) with a conversation open no longer marks it as failed to load; it reloads when you sign back in',
     '🔧 Signing in works again on PCs with an older Microsoft Edge WebView2, and copying to the clipboard there no longer fails when another app is briefly using it',
+    '🆕 Market browser: once you search or filter, the filters show how many listings each choice finds (a thin line under sockets, corrupted and ethereal, a shaded row in the rarity, item type and base lists, choices that find nothing dimmed; hover for the exact count), and the HR price box has a small price chart. Click two sockets for a socket range, or two price bars for a price range (or drag across them)',
     "✨ Price check searches the pd2trader market service, so its results match the market browser's (if the service is down, PD2 answers instead)",
     '✨ Price check and market browser: results show right away, then whether each seller is online right now pops in from PD2',
     '✨ Price check: Show Expired also lists removed and expired listings next to sold ones, and each says how long it was up ("sold after 2 days")',

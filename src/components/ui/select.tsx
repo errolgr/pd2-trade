@@ -87,7 +87,13 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   );
 }
 
-function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+/** `aside`: rendered in the row but outside its text (which the trigger shows once the item is picked). */
+function SelectItem({
+  className,
+  children,
+  aside,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Item> & { aside?: React.ReactNode }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -103,6 +109,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {aside}
     </SelectPrimitive.Item>
   );
 }

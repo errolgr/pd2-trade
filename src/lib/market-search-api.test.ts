@@ -192,6 +192,13 @@ describe('marketSearchBody', () => {
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
 
+  it('sends an exclusive HR max (a price chart bucket) only with a max', () => {
+    const body = (f: Partial<MarketFilters>) => marketSearchBody(mergeFilters(base, f), 0, 25).filters;
+    expect(body({ hrMin: 0.5, hrMax: 1, hrMaxExclusive: true })).toMatchObject({ hrMax: 1, hrMaxExclusive: true });
+    expect(body({ hrMin: 2, hrMaxExclusive: true }).hrMaxExclusive).toBeUndefined();
+    expect(body({ hrMax: 1 }).hrMaxExclusive).toBeUndefined();
+  });
+
   it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
@@ -213,5 +220,46 @@ describe('marketSearchBody', () => {
     // A seller picked from a listing is queried by id
     const byId = marketSearchBody({ ...f, sellerUserId: 'u1' }, 0, 25).filters;
     expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
+  });
+});
+
+describe('facets', () => {
+  it('sends facets only when asked, and reads them from the reply', async () => {
+    expect(marketSearchBody(base, 0, 25)).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, [])).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, ['quality', 'price'])).toMatchObject({ facets: ['quality', 'price'] });
+
+    respond(200, {
+      items: [],
+      total: 3,
+      facets: {
+        quality: [
+          { value: 'Unique', count: 3 },
+          { value: 'Set', count: 'many' },
+        ],
+        sockets: [{ value: 0, count: 2 }],
+        ethereal: [{ value: true, count: 1 }],
+        price: [
+          { from: 0, to: 0.05, count: 2 },
+          { from: 20, to: null, count: 1 },
+        ],
+      },
+    });
+    const page = await searchMarketListings(base, { page: 0, limit: 25, facets: ['quality', 'sockets'] });
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(JSON.parse(init?.body as string).facets).toEqual(['quality', 'sockets']);
+    expect(page.facets).toMatchObject({
+      // A malformed bucket is dropped, not the facet
+      quality: [{ value: 'Unique', count: 3 }],
+      sockets: [{ value: 0, count: 2 }],
+      ethereal: [{ value: true, count: 1 }],
+      price: [
+        { from: 0, to: 0.05, count: 2 },
+        { from: 20, to: null, count: 1 },
+      ],
+    });
+
+    respond(200, { items: [], total: 0 });
+    expect((await search()).facets).toBeUndefined();
   });
 });

@@ -180,6 +180,25 @@
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} maks"
   },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} gniazdo",
+    "socket_few": "{{count}} gniazda",
+    "socket_many": "{{count}} gniazd",
+    "socket_other": "{{count}} gniazda",
+    "socketsAny": "Dowolna liczba gniazd",
+    "socketsExact_one": "Dokładnie {{count}} gniazdo",
+    "socketsExact_few": "Dokładnie {{count}} gniazda",
+    "socketsExact_many": "Dokładnie {{count}} gniazd",
+    "socketsExact_other": "Dokładnie {{count}} gniazda",
+    "socketsRange": "Od {{min}} do {{max}} gniazd",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Do {{to}} HR",
+    "priceAny": "dowolna cena",
+    "priceBars": "Ogłoszenia według ceny w HR: {{selection}}",
+    "priceClear": "Wyczyść cenę w HR"
+  },
   "stats": {
     "min": "Min",
     "max": "Maks",

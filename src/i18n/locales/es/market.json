@@ -172,6 +172,23 @@
     "minLabel": "{{label}} mín.",
     "maxLabel": "{{label}} máx."
   },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} engarce",
+    "socket_many": "{{count}} de engarces",
+    "socket_other": "{{count}} engarces",
+    "socketsAny": "Cualquier número de engarces",
+    "socketsExact_one": "Exactamente {{count}} engarce",
+    "socketsExact_many": "Exactamente {{count}} de engarces",
+    "socketsExact_other": "Exactamente {{count}} engarces",
+    "socketsRange": "De {{min}} a {{max}} engarces",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Hasta {{to}} HR",
+    "priceAny": "cualquier precio",
+    "priceBars": "Anuncios por precio en HR: {{selection}}",
+    "priceClear": "Borrar precio en HR"
+  },
   "stats": {
     "min": "Mín.",
     "max": "Máx.",

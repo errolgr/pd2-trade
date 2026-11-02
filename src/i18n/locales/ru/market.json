@@ -180,6 +180,25 @@
     "minLabel": "{{label}}: мин",
     "maxLabel": "{{label}}: макс"
   },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "socket_one": "{{count}} сокет",
+    "socket_few": "{{count}} сокета",
+    "socket_many": "{{count}} сокетов",
+    "socket_other": "{{count}} сокета",
+    "socketsAny": "Любое число сокетов",
+    "socketsExact_one": "Ровно {{count}} сокет",
+    "socketsExact_few": "Ровно {{count}} сокета",
+    "socketsExact_many": "Ровно {{count}} сокетов",
+    "socketsExact_other": "Ровно {{count}} сокета",
+    "socketsRange": "От {{min}} до {{max}} сокетов",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "До {{to}} HR",
+    "priceAny": "любая цена",
+    "priceBars": "Объявления по цене в HR: {{selection}}",
+    "priceClear": "Сбросить цену в HR"
+  },
   "stats": {
     "min": "Мин.",
     "max": "Макс.",

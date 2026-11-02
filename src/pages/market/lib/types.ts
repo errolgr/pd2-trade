@@ -4,6 +4,7 @@
  */
 import type { MarketListingEntry, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketFacetName, MarketFacets } from './facets';
 
 export type Tri = 'any' | 'yes' | 'no';
 export type OnlineFilter = 'all' | 'online' | 'offline';
@@ -67,6 +68,8 @@ export interface MarketFilters {
   /** hr_price range (extension over the site). */
   hrMin?: number;
   hrMax?: number;
+  /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
+  hrMaxExclusive?: boolean;
   /** item.base.type_code */
   typeCode?: string;
   /** item.base_code */
@@ -165,6 +168,8 @@ export interface SearchOptions {
   /** 0-based page. */
   page?: number;
   signal?: AbortSignal;
+  /** Facet counts to ask for with this page (the market browser's first page). */
+  facets?: readonly MarketFacetName[];
 }
 
 export interface SearchResult {
@@ -177,6 +182,8 @@ export interface SearchResult {
   /** Rows the service sent for this page, including any `items` leaves out; page on this. */
   fetched: number;
   mode: 'server';
+  /** Facet counts, when `facets` were asked for. */
+  facets?: MarketFacets;
 }
 
 /** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
@@ -208,8 +215,14 @@ export interface MarketApi {
    */
   searchListings: (
     filters: MarketFilters,
-    opts: { page: number; limit: number; signal?: AbortSignal },
-  ) => Promise<{ items: ScoredListing[]; total: number; totalExact: boolean; fetched: number }>;
+    opts: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
+  ) => Promise<{
+    items: ScoredListing[];
+    total: number;
+    totalExact: boolean;
+    fetched: number;
+    facets?: MarketFacets;
+  }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
   /**
