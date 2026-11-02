@@ -27,6 +27,7 @@
     "prepare": "husky",
     "test": "vitest run",
     "verify:updater": "node scripts/verify-updater.mjs",
+    "release": "node scripts/release.mjs",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
