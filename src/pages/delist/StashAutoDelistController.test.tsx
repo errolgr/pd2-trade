@@ -7,6 +7,7 @@ import { confirmToast, showToast, useOverlay, type OverlayApi } from '@/overlay'
 import { isDiabloFocused } from '@/lib/diablo-focus';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
 import StashAutoDelistController, { STASH_POLL_MS } from './StashAutoDelistController';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
@@ -40,7 +41,7 @@ let stash: GameStashItem[];
 let listings: MarketListingEntry[];
 const fetchStash = vi.fn(async () => ({ items: stash }));
 const getMarketListings = vi.fn(async () => ({ data: listings }));
-const deleteMarketListing = vi.fn(async () => {});
+const deleteMarketListing = vi.fn(async (_id: string) => {});
 const openPanel = vi.fn();
 
 const mount = async () => {
@@ -77,6 +78,20 @@ describe('StashAutoDelistController', () => {
     stash = [ring];
     await nextPoll();
     expect(deleteMarketListing).toHaveBeenCalledWith('L1');
+    expect(showToast).toHaveBeenCalledTimes(1);
+  });
+
+  it('delists once when a stale stash read brings the item back while PD2 still lists it', async () => {
+    listings = [{ _id: 'L-stale', item: { ...shako('h1'), account_id: 'myacc' } } as unknown as MarketListingEntry];
+    deleteMarketListing.mockImplementation(async (id: string) => publishListingDeleted(id));
+    await mount();
+    stash = [ring];
+    await nextPoll();
+    stash = [shako('h1'), ring];
+    await nextPoll();
+    stash = [ring];
+    await nextPoll();
+    expect(deleteMarketListing).toHaveBeenCalledTimes(1);
     expect(showToast).toHaveBeenCalledTimes(1);
   });
 

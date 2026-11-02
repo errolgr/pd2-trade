@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { NoAccountSelectedError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
+import { isListingDeleted, subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { useOptions } from '@/hooks/useOptions';
 import {
   buildGetAllUserMarketListingsQuery,
@@ -115,7 +115,7 @@ const DelistHandler: React.FC = () => {
       }
 
       const result = await getMarketListings(query);
-      const listings = result.data;
+      const listings = result.data.filter((listing) => !isListingDeleted(listing._id));
 
       if (listings.length === 0) {
         showToast({
@@ -181,7 +181,10 @@ const DelistHandler: React.FC = () => {
           0,
         ),
       );
-      const listings = matchTradeListings(result.data, trade);
+      const listings = matchTradeListings(
+        result.data.filter((listing) => !isListingDeleted(listing._id)),
+        trade,
+      );
 
       if (onDeleted && listings.length > 0) {
         // Deleted here after the confirm, or from the picker: either way deleteMarketListing announces it

@@ -75,6 +75,19 @@ describe('DelistHandler / useDelist', () => {
     expect(overlay.openPanel).not.toHaveBeenCalled();
   });
 
+  it('skips a listing deleted already that PD2 still returns', async () => {
+    listings = [{ ...listing(9), _id: 'L9-deleted' }];
+    deleteMarketListing.mockImplementation(async (id) => publishListingDeleted(id));
+    render(<DelistHandler />);
+    await delistItem(RAW);
+    await delistItem(RAW);
+    expect(deleteMarketListing).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(showToast).mock.calls).toEqual([
+      [{ title: 'Delist', description: 'Removed Item 9 listing.' }],
+      [{ title: 'Delist', description: 'No active listings found for this item.', variant: 'info' }],
+    ]);
+  });
+
   it('asks for an in-game account instead of reporting a failure when none is chosen', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(usePd2Website).mockReturnValue({
