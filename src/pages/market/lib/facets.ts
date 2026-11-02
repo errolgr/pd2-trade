@@ -4,11 +4,11 @@ import type { MarketFilters, Rarity } from './types';
  * Facet counts from the market service (`facets` of `POST /api/market/search`; server
  * src/market-listings/filters/facets.ts). A facet on a dimension the filters select on is counted without that
  * dimension's own filter, so it lists the alternatives; the others count within the results. Each value counts what
- * picking it would find: quality = that rarity alone, sockets n = min n / max n (0 = unsocketed), flags = yes / no.
+ * picking it would find: quality = that rarity alone, flags = yes / no.
  */
 
 /** The facets the market browser asks for (first page of a narrowed search only, see `wantsFacets`). */
-export const BROWSER_FACETS = ['quality', 'typeCode', 'baseCode', 'sockets', 'ethereal', 'corrupted', 'price'] as const;
+export const BROWSER_FACETS = ['quality', 'typeCode', 'baseCode', 'ethereal', 'corrupted', 'price'] as const;
 export type MarketFacetName = (typeof BROWSER_FACETS)[number];
 
 /** Set on every search (realm, archive/live, age window, presence, buyout, sort): they never make it a narrowed one. */
@@ -55,7 +55,6 @@ export interface MarketFacets {
   quality?: FacetCount<Rarity>[];
   typeCode?: FacetCount<string>[];
   baseCode?: FacetCount<string>[];
-  sockets?: FacetCount<number>[];
   ethereal?: FacetCount<boolean>[];
   corrupted?: FacetCount<boolean>[];
   price?: PriceBucket[];
@@ -91,7 +90,6 @@ export function parseFacets(raw: unknown): MarketFacets | undefined {
     quality: counts(f.quality, isString) as FacetCount<Rarity>[] | undefined,
     typeCode: counts(f.typeCode, isString),
     baseCode: counts(f.baseCode, isString),
-    sockets: counts(f.sockets, isNumber),
     ethereal: counts(f.ethereal, isBoolean),
     corrupted: counts(f.corrupted, isBoolean),
     price,
@@ -124,7 +122,7 @@ export function facetShare(count: number | undefined, total: number): number {
   return count && total > 0 ? Math.min(1, count / total) : 0;
 }
 
-/** A run of adjacent options picked together (socket chips, price buckets): indexes `lo..hi`. */
+/** A run of adjacent options picked together (price buckets): indexes `lo..hi`. */
 export interface IndexRange {
   lo: number;
   hi: number;
@@ -143,17 +141,6 @@ export const spanOf = (a: number, b: number): IndexRange => ({ lo: Math.min(a, b
 export function pickIndex(current: IndexRange | null, i: number): IndexRange | null {
   if (!current || current.lo !== current.hi) return { lo: i, hi: i };
   return current.lo === i ? null : spanOf(current.lo, i);
-}
-
-/** Socket chips 0–6 (0 = unsocketed); a chip's index is its socket count. */
-export const SOCKET_COUNTS = [0, 1, 2, 3, 4, 5, 6] as const;
-const MAX_SOCKETS = SOCKET_COUNTS[SOCKET_COUNTS.length - 1];
-
-/** The chips a socket min / max covers (one bound: up to 6 / from 0); null without bounds or when they cross. */
-export function socketRange(min: number | undefined, max: number | undefined): IndexRange | null {
-  if (min === undefined && max === undefined) return null;
-  const r = { lo: min ?? 0, hi: max ?? MAX_SOCKETS };
-  return r.lo <= r.hi ? r : null;
 }
 
 /** The HR price filter fields; `hrMaxExclusive`: `hrMax` is `<` (a bucket's upper edge), not `<=` (typed). */

@@ -158,10 +158,6 @@
   },
   "facets": {
     "count": "{{label}} · {{n, number}}",
-    "socket_other": "{{count}} 孔",
-    "socketsAny": "任意孔数",
-    "socketsExact_other": "恰好 {{count}} 孔",
-    "socketsRange": "{{min}} 到 {{max}} 孔",
     "price": "{{from}}–{{to}} HR",
     "priceOpen": "{{from}}+ HR",
     "priceUpTo": "最多 {{to}} HR",

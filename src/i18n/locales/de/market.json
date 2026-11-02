@@ -166,12 +166,6 @@
   },
   "facets": {
     "count": "{{label}} · {{n, number}}",
-    "socket_one": "{{count}} Sockel",
-    "socket_other": "{{count}} Sockel",
-    "socketsAny": "Beliebige Sockelanzahl",
-    "socketsExact_one": "Genau {{count}} Sockel",
-    "socketsExact_other": "Genau {{count}} Sockel",
-    "socketsRange": "{{min}} bis {{max}} Sockel",
     "price": "{{from}}–{{to}} HR",
     "priceOpen": "{{from}}+ HR",
     "priceUpTo": "Bis {{to}} HR",

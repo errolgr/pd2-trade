@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { pickIndex, spanOf, type IndexRange } from '../lib/facets';
 
 /**
- * Calendar-style range picking over a row of options (socket chips, price bars), the same by mouse, touch, pen and
+ * Calendar-style range picking over a row of options (price bars), the same by mouse, touch, pen and
  * keyboard:
  * - click / Enter / Space: `pickIndex` (nothing picked → that one; one picked → the range to it, or clear on itself;
  *   a range picked → that one);

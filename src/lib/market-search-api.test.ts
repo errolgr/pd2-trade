@@ -237,7 +237,6 @@ describe('facets', () => {
           { value: 'Unique', count: 3 },
           { value: 'Set', count: 'many' },
         ],
-        sockets: [{ value: 0, count: 2 }],
         ethereal: [{ value: true, count: 1 }],
         price: [
           { from: 0, to: 0.05, count: 2 },
@@ -245,13 +244,12 @@ describe('facets', () => {
         ],
       },
     });
-    const page = await searchMarketListings(base, { page: 0, limit: 25, facets: ['quality', 'sockets'] });
+    const page = await searchMarketListings(base, { page: 0, limit: 25, facets: ['quality', 'ethereal'] });
     const [, init] = vi.mocked(fetch).mock.calls[0];
-    expect(JSON.parse(init?.body as string).facets).toEqual(['quality', 'sockets']);
+    expect(JSON.parse(init?.body as string).facets).toEqual(['quality', 'ethereal']);
     expect(page.facets).toMatchObject({
       // A malformed bucket is dropped, not the facet
       quality: [{ value: 'Unique', count: 3 }],
-      sockets: [{ value: 0, count: 2 }],
       ethereal: [{ value: true, count: 1 }],
       price: [
         { from: 0, to: 0.05, count: 2 },

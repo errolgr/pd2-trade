@@ -23,7 +23,7 @@ const bareInput =
 /**
  * The HR price range: one frame with the listings per price bucket on top (with facets), a hairline, then min | max.
  *
- * Bars are one width per bucket (not to scale) and picked like sockets (see useRangePicker): a bucket is
+ * Bars are one width per bucket (not to scale) and picked like dates on a calendar (see useRangePicker): a bucket is
  * `[from, to)` (max exclusive), a second one the range between their outer edges, the open last one no max. Typed
  * bounds light the bars they cover, part of a bar (and a marker line) when a bound falls inside a bucket; a typed max
  * is inclusive.
