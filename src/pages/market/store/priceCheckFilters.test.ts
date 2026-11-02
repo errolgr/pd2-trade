@@ -146,6 +146,16 @@ describe('marketQueryToFilters', () => {
     expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
   });
 
+  it('reads several qualities ($in, the price check\'s "Any") as a multi-rarity filter', () => {
+    expect(read({ 'item.quality.name': { $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'] } }).rarity).toEqual([
+      'Normal',
+      'Superior',
+      'Magic',
+      'Rare',
+      'Crafted',
+    ]);
+  });
+
   it('leaves out an unknown quality and absent fields', () => {
     const filters = read({ 'item.quality.name': 'Weird' });
     expect(filters.rarity).toBeUndefined();

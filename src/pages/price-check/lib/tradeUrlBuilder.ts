@@ -10,6 +10,18 @@ import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListings
 import { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 
+/** Qualities whose price check searches a base (not a name) and can be switched in the header. */
+export const BASE_QUALITIES: readonly ItemQuality[] = [
+  ItemQuality.Normal,
+  ItemQuality.Superior,
+  ItemQuality.Magic,
+  ItemQuality.Rare,
+  ItemQuality.Crafted,
+];
+
+/** The searched quality: one, or several (the header's "Any" = every base quality). */
+export type QualitySearch = string | readonly string[];
+
 export function buildTradeUrl(
   item: Item,
   mappedItem: PD2Item,
@@ -21,7 +33,7 @@ export function buildTradeUrl(
   matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
   isArchive: boolean = false,
   corruptedState: number = 0,
-  qualityOverride?: string,
+  qualityOverride?: QualitySearch,
 ): string {
   const searchParams = new URLSearchParams();
 
@@ -103,7 +115,10 @@ export function buildTradeUrl(
   });
 
   // Basic item meta
-  searchParams.set('quality', qualityOverride ?? item.quality);
+  const quality = qualityOverride ?? item.quality;
+  // Several qualities ("Any"): no quality filter. The site sends `quality` to PD2 as a plain string (unlike `type` /
+  // `base`, it doesn't JSON.parse it), so an `$in` here would match nothing.
+  if (typeof quality === 'string') searchParams.set('quality', quality);
 
   // Handle search mode: 0 = category (base), 1 = typeLabel
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
@@ -177,11 +192,12 @@ export function buildGetMarketListingQuery(
   limit: number = 10,
   offset: number = 0,
   corruptionNames?: string[],
-  qualityOverride?: string,
+  qualityOverride?: QualitySearch,
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
   const dateThreshold = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+  const quality = qualityOverride ?? item.quality;
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
@@ -192,7 +208,7 @@ export function buildGetMarketListingQuery(
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',
-    'item.quality.name': qualityOverride ?? item.quality,
+    'item.quality.name': typeof quality === 'string' ? quality : { $in: [...quality] },
   };
 
   const sortedStats = buildStatRows(item);

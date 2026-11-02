@@ -29,6 +29,7 @@
       "type": "Typ: {{type}}",
       "toggleSearchMode": "Klicken, um den Suchmodus zu wechseln",
       "cycleQuality": "Klicken, um die Qualität zu wechseln",
+      "anyQuality": "Alle",
       "defense": "Verteidigung: <value>{{defense}}</value>",
       "appraisalNote": "Bewertungshinweis: {{note}}"
     },

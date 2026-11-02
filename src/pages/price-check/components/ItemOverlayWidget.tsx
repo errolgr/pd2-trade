@@ -50,7 +50,7 @@ import { Props } from '../lib/types';
 import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
-import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
+import { BASE_QUALITIES, buildGetMarketListingQuery, buildTradeUrl, type QualitySearch } from '../lib/tradeUrlBuilder';
 import {
   ARCHIVE_STATUSES,
   priceCheckMarketSearch,
@@ -102,6 +102,9 @@ import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
+
+/** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
+const ANY_QUALITY = 'any' as const;
 
 /** The search whose results are listed. */
 interface ActiveSearch {
@@ -198,8 +201,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Search mode: 0 = category (base), 1 = typeLabel
   const [searchMode, setSearchMode] = useState(0);
-  // Quality override: null = use item's original quality
-  const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
+  // Quality override: null = use item's original quality; ANY_QUALITY = every base quality
+  const [qualityOverride, setQualityOverride] = useState<ItemQuality | typeof ANY_QUALITY | null>(null);
 
   // Rare appraisal (pd2trader.com): verdict pill + key-stat stars on the stat rows; null mode until settings load.
   const rareMode = useMemo(
@@ -427,22 +430,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [item.type]);
 
   // Check if item should use toggle (only for base item qualities, not uniques/sets/runewords)
-  const shouldUseToggle = useMemo(() => {
-    return (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior
-    );
-  }, [item.quality]);
+  const shouldUseToggle = BASE_QUALITIES.includes(item.quality);
 
-  const availableQualities = useMemo(() => {
-    if (!shouldUseToggle) return [];
-    return [ItemQuality.Normal, ItemQuality.Superior, ItemQuality.Magic, ItemQuality.Rare, ItemQuality.Crafted].filter(
-      (q) => q !== item.quality,
-    );
-  }, [item.quality, shouldUseToggle]);
+  // The header cycles: the item's quality → Any → each other base quality → back
+  const availableQualities = useMemo<(ItemQuality | typeof ANY_QUALITY)[]>(
+    () => (shouldUseToggle ? [ANY_QUALITY, ...BASE_QUALITIES.filter((q) => q !== item.quality)] : []),
+    [item.quality, shouldUseToggle],
+  );
 
   const cycleQuality = useCallback(() => {
     if (availableQualities.length === 0) return;
@@ -455,6 +449,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [availableQualities]);
 
   const effectiveQuality = qualityOverride ?? item.quality;
+  /** What the searches filter on (undefined: the item's own quality, for uniques / sets / runewords). */
+  const searchedQuality: QualitySearch | undefined = !shouldUseToggle
+    ? undefined
+    : effectiveQuality === ANY_QUALITY
+      ? BASE_QUALITIES
+      : effectiveQuality;
 
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
@@ -471,7 +471,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       searchArchived,
       corruptedState,
-      shouldUseToggle ? effectiveQuality : undefined,
+      searchedQuality,
     );
   }, [
     selected,
@@ -485,7 +485,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     shouldUseToggle,
     searchArchived,
     corruptedState,
-    effectiveQuality,
+    searchedQuality,
   ]);
 
   useEffect(() => {
@@ -849,7 +849,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         matchedItemType,
         corruptedState,
         corruptionNames,
-        qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+        qualityOverride: searchedQuality,
       };
       const { filters: marketFilters, gaps } = priceCheckMarketSearch(priceCheck);
       const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
@@ -868,7 +868,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           ITEMS_PER_PAGE,
           0,
           corruptionNames.length > 0 ? corruptionNames : undefined,
-          shouldUseToggle ? effectiveQuality : undefined,
+          searchedQuality,
         ),
         marketFilters: mergeFilters(
           defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
@@ -899,7 +899,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       shouldUseToggle,
       matchedItemType,
       corruptedState,
-      effectiveQuality,
+      searchedQuality,
       fetchPage,
     ],
   );
@@ -1017,7 +1017,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       corruptedState,
       corruptionNames: selectedCorruptionNames,
-      qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+      qualityOverride: searchedQuality,
     });
     openPanel('market', { filters: marketFilters, tab: 'search' });
   };
@@ -1221,9 +1221,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       <HeaderToggle
                         onClick={cycleQuality}
                         title={t('overlay.header.cycleQuality')}
-                        className={qualityColor(effectiveQuality)}
+                        className={
+                          effectiveQuality === ANY_QUALITY ? 'text-foreground' : qualityColor(effectiveQuality)
+                        }
                       >
-                        {effectiveQuality}
+                        {effectiveQuality === ANY_QUALITY ? t('overlay.header.anyQuality') : effectiveQuality}
                       </HeaderToggle>
                     </>
                   )}

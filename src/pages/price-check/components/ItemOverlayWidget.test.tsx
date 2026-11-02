@@ -272,11 +272,11 @@ describe('ItemOverlayWidget header', () => {
     expect(within(h1).getByText('Runeword')).not.toBeNull();
   });
 
-  it('lets a rare cycle the searched quality through every other base quality and back', async () => {
+  it('lets a rare cycle the searched quality through Any, every other base quality and back', async () => {
     renderWidget(rareRing());
     const toggle = screen.getByTitle('Click to cycle quality');
     expect(toggle.textContent).toBe('Rare');
-    for (const next of ['Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
+    for (const next of ['Any', 'Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
       fireEvent.click(toggle);
       // the outgoing label animates out, so wait until only the new one remains
       await waitFor(() => expect(screen.getByTitle('Click to cycle quality').textContent).toBe(next));
@@ -285,10 +285,19 @@ describe('ItemOverlayWidget header', () => {
 
   it('the cycled quality is what the market search asks for', async () => {
     renderWidget(rareRing());
+    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
     fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Normal
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().rarity).toEqual(['Normal']);
+  });
+
+  it('"Any" searches every base quality, so rares and crafted come back together', async () => {
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().rarity).toEqual(['Normal', 'Superior', 'Magic', 'Rare', 'Crafted']);
   });
 
   it('uniques have no quality/search-mode toggles', () => {

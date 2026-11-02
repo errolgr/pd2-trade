@@ -40,7 +40,7 @@ export interface MarketListingQuery {
   };
   is_hardcore: boolean;
   is_ladder: boolean;
-  'item.quality.name': string;
+  'item.quality.name': string | { $in: string[] };
   'item.name': {
     $regex: string;
     $options: string;
