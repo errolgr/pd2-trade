@@ -650,7 +650,7 @@ describe('ItemOverlayWidget market search', () => {
     expect(shown()).toEqual(['1 HR']);
     expect(screen.getByText('· 1 in game')).not.toBeNull();
 
-    pick('In game or on the site');
+    pick('In game or on trade site');
     expect(shown()).toEqual(['1 HR', '2 HR']);
     expect(screen.getByText('· 2 online')).not.toBeNull();
 
