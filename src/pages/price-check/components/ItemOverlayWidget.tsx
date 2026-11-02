@@ -2217,7 +2217,7 @@ function SortHeader({
       onClick={onClick}
       title={title}
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
         active && 'font-semibold text-foreground',
       )}
     >
@@ -2271,7 +2271,7 @@ function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange
           aria-label={t('overlay.results.sellerFilter')}
           title={t('overlay.results.sellerFilter')}
           className={cn(
-            'flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
+            'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
             filtered && 'ring-1 ring-foreground/30',
           )}
         >
@@ -2299,7 +2299,7 @@ function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange
                   setOpen(false);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent focus-visible:bg-accent',
+                  'cursor-pointer flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent focus-visible:bg-accent',
                   checked ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
