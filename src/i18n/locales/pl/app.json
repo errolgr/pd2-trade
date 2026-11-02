@@ -41,7 +41,6 @@
     "favorite": "Ulubione: {{label}}",
     "addFavorite": "Dodaj do ulubionych (karta)",
     "removeFavorite": "Usuń z ulubionych (karta)",
-    "layoutHint": "Gwiazdka dodaje do karty · przeciągnij, aby zmienić kolejność",
     "menu": {
       "chat": "Czat",
       "market": "Przeglądarka rynku",

@@ -89,8 +89,18 @@ export interface IconItem {
 }
 
 /** Item art: the API's icon, else the base's inventory art (see itemArtCandidates); a URL that fails to load moves
- * on to the next; quality-coloured initials when none loads. */
-export function ItemIcon({ item, size = 28, className }: { item: IconItem; size?: number; className?: string }) {
+ * on to the next; quality-coloured initials when none loads. `height` defaults to `size` (square). */
+export function ItemIcon({
+  item,
+  size = 28,
+  height = size,
+  className,
+}: {
+  item: IconItem;
+  size?: number;
+  height?: number;
+  className?: string;
+}) {
   const candidates = useMemo(
     () => itemArtCandidates(item),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,7 +115,7 @@ export function ItemIcon({ item, size = 28, className }: { item: IconItem; size?
         qualityBorder(item.quality, item.runeword),
         className,
       )}
-      style={{ width: size, height: size }}
+      style={{ width: size, height }}
     >
       {src ? (
         <img
