@@ -526,11 +526,20 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     loadConversations().then(() => setRequest((r) => (r?.version === version ? { ...r, reloaded: true } : r)));
   }, [request, conversationsLoaded, loadingConversations, loadConversations]);
 
-  // Load messages when a conversation is selected (cached messages show meanwhile)
+  // Load messages when a conversation is selected (cached messages show meanwhile). Only with a PD2 token:
+  // getMessages rejects without one, and signing out (or a session ending) with a conversation open hands this
+  // effect a new loadMessages before authData clears. Signing back in reloads the thread.
   const selectedConversationId = conversation?._id;
+  const hasToken = !!settings?.pd2Token;
+  const loadThread = useCallback(
+    (conversationId: string) => {
+      if (hasToken) void loadMessages(conversationId);
+    },
+    [hasToken, loadMessages],
+  );
   useEffect(() => {
-    if (selectedConversationId) loadMessages(selectedConversationId);
-  }, [selectedConversationId, loadMessages]);
+    if (selectedConversationId) loadThread(selectedConversationId);
+  }, [selectedConversationId, loadThread]);
 
   // Focus the composer when a thread is opened, and on a toast's Reply; while the panel is hidden (opened
   // with the game in the background) the focus waits until it shows
@@ -845,7 +854,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     unreadKey={unreadKey}
                     onRetry={chat.retry}
                     onLoadOlder={loadOlder}
-                    onReload={loadMessages}
+                    onReload={loadThread}
                   />
                   <Composer
                     key={selectedThread.id}
