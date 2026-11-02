@@ -114,6 +114,7 @@
     "viewingSnapshot": "Ansicht vom <date>{{date}}</date><muted> · Preise ausgeblendet</muted>",
     "backToNow": "Zurück zu jetzt",
     "equipment": "Ausrüstung",
+    "charms": "Zauber",
     "weaponSwitch": "Waffenwechsel",
     "mercTitle": "Söldner <muted>· {{type}}</muted>",
     "paneLabel": "Charakteransicht",

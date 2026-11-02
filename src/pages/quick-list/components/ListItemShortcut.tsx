@@ -256,17 +256,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [pd2MarketQuery, getMarketListingsForStashItems]);
 
-  // The listing count (tab chip, 50-listing check): one row is enough, PD2 sends the total
-  const allListingsQuery = useMemo(() => {
-    if (!authData || !settings) return null;
-    return buildGetAllUserMarketListingsQuery(
-      authData.user._id,
-      settings.mode === 'hardcore',
-      settings.ladder === 'ladder',
-      1,
-      0,
-    );
-  }, [authData, settings]);
+  // The listing count (tab chip, 50-listing check): one row is enough, PD2 sends the total. Keyed by the user,
+  // mode and ladder only, so other settings changes don't refetch it.
+  const userId = authData?.user?._id;
+  const hardcore = settings?.mode === 'hardcore';
+  const ladder = settings?.ladder === 'ladder';
+  const allListingsQuery = useMemo(
+    () => (userId ? buildGetAllUserMarketListingsQuery(userId, hardcore, ladder, 1, 0) : null),
+    [userId, hardcore, ladder],
+  );
 
   const fetchAllListings = useCallback(async () => {
     if (!allListingsQuery) return;

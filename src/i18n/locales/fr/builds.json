@@ -118,6 +118,7 @@
     "viewingSnapshot": "Affichage du <date>{{date}}</date><muted> · prix masqués</muted>",
     "backToNow": "Revenir au présent",
     "equipment": "Équipement",
+    "charms": "Charmes",
     "weaponSwitch": "Arme secondaire",
     "mercTitle": "Merc <muted>· {{type}}</muted>",
     "paneLabel": "Vue du personnage",
