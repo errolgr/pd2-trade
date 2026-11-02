@@ -5,7 +5,10 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useChatListings } from './useChatListings';
 
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+vi.mock('@/hooks/pd2website/usePD2Website', () => {
+  class AuthenticationError extends Error {}
+  return { usePd2Website: vi.fn(), AuthenticationError };
+});
 
 // The listing cache lives for the app's lifetime, so every test uses ids no other test has seen.
 let seq = 0;
@@ -86,12 +89,27 @@ describe('useChatListings', () => {
   });
 
   it('treats a sign-in prompt (null result) as a failed lookup rather than missing listings', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const id = newId();
     const api = setup([], []);
     api.getMarketListings.mockResolvedValueOnce(null as never);
     const { result } = renderHook(() => useChatListings([id]));
     await waitFor(() => expect(result.current.has(id)).toBe(false));
     expect(api.getMarketListingsArchive).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-6CH: PD2 refusing the token on /market/listingArchive (401) is handled by the provider
+  it('a 401 from the archive is a failed lookup, warned rather than reported as an app error', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const id = newId();
+    const api = setup([], []);
+    api.getMarketListingsArchive.mockResolvedValueOnce(null as never);
+    const { result } = renderHook(() => useChatListings([id]));
+    await waitFor(() => expect(warn).toHaveBeenCalled());
+    expect(result.current.has(id)).toBe(false);
+    expect(error).not.toHaveBeenCalled();
   });
 });
