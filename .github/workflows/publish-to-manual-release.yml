@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Get version
         run: |
@@ -86,7 +86,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          # Node 26 (lts/* since Nov 2026) ships a global localStorage that shadows jsdom's and breaks the tests (see ci.yml).
+          node-version: 24
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -171,7 +172,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       # Draft assets only: latest.json version, platforms, signatures vs. the pubkey installed builds trust.
       - name: Verify draft release updater artifacts
@@ -207,7 +208,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Verify live latest.json and signed downloads
         run: |
@@ -236,7 +237,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Send Discord notification
         env:
