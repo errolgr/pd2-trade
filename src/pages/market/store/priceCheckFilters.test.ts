@@ -1,17 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import type { Item } from '@/pages/price-check/lib/interfaces';
-import { marketQueryToFilters, priceCheckToMarketFilters, type PriceCheckSearch } from './priceCheckFilters';
+import type { MarketFilters } from '@/pages/market/lib/types';
+import {
+  marketQueryToFilters,
+  priceCheckMarketSearch,
+  priceCheckToMarketFilters,
+  type PriceCheckSearch,
+} from './priceCheckFilters';
 
-const stripIds = (filters: ReturnType<typeof marketQueryToFilters>) =>
+const stripIds = (filters: Partial<MarketFilters>) =>
   filters.stats?.map(({ id, ...rest }) => {
     expect(id).toEqual(expect.any(String));
     return rest;
   });
 
+const read = (query: Record<string, unknown>, archive = false) => marketQueryToFilters(query, archive).filters;
+
 describe('marketQueryToFilters', () => {
   it('reads every price-check query field back into filters', () => {
-    const filters = marketQueryToFilters(
+    const filters = read(
       {
         is_hardcore: true,
         is_ladder: false,
@@ -54,7 +62,7 @@ describe('marketQueryToFilters', () => {
   });
 
   it('expands combined rows into real modifiers and fixes unprefixed names', () => {
-    const filters = marketQueryToFilters(
+    const filters = read(
       {
         'item.modifiers': {
           $all: [
@@ -75,24 +83,71 @@ describe('marketQueryToFilters', () => {
     ]);
   });
 
+  it('writes skill-parameterised, multi-value and damage rows in the service key grammar', () => {
+    const { filters, gaps } = marketQueryToFilters(
+      {
+        'item.modifiers': {
+          $all: [
+            // Chance to cast: skill in values.1, level rolled in values.0
+            { $elemMatch: { name: 'item_skillongethit', 'values.1': 44, 'values.0': { $gte: 15 } } },
+            // A skill known by several ids (an aura and its proc)
+            { $elemMatch: { name: 'item_aura', 'values.0': { $in: [98, 123] }, 'values.1': { $gte: 5 } } },
+            { $elemMatch: { name: 'item_charged_skill', 'values.1': { $in: [36, 522] } } },
+            // An unparameterised roll in values.2
+            { $elemMatch: { name: 'item_splashonhit', 'values.2': { $gte: 50 } } },
+            // One elemental damage line: min in values.0, max rolled in values.1
+            {
+              $elemMatch: {
+                name: { $in: ['firedam', 'firemindam'] },
+                'values.0': { $gte: 4 },
+                'values.1': { $gte: 14, $lte: 20 },
+              },
+            },
+            { $elemMatch: { name: { $in: ['colddam', 'coldmindam'] }, 'values.1': { $gte: 10 } } },
+          ],
+        },
+      },
+      false,
+    );
+    expect(gaps).toEqual([]);
+    expect(stripIds(filters)).toEqual([
+      { kind: 'mod', key: 'item_skillongethit{*,44}[0]', min: 15, enabled: true },
+      { kind: 'mod', key: 'item_aura{98|123}', min: 5, enabled: true },
+      { kind: 'mod', key: 'item_charged_skill{*,36|522}', enabled: true },
+      { kind: 'mod', key: 'item_splashonhit[2]', min: 50, enabled: true },
+      { kind: 'mod', key: 'firedam|firemindam{4..}', min: 14, max: 20, enabled: true },
+      { kind: 'mod', key: 'colddam|coldmindam[1]', min: 10, enabled: true },
+    ]);
+  });
+
+  it('reports a skill matched by its label as a gap', () => {
+    const { gaps } = marketQueryToFilters(
+      {
+        'item.modifiers': {
+          $all: [
+            { $elemMatch: { name: 'item_aura', label: { $regex: '^Level \\d+ Foo Aura' }, 'values.1': { $gte: 3 } } },
+          ],
+        },
+      },
+      false,
+    );
+    expect(gaps).toEqual(['label']);
+  });
+
   it('reads the item name regex as the exact name and charm bases as their type', () => {
-    expect(marketQueryToFilters({ 'item.name': { $regex: 'Spirit', $options: 'i' } }, false).itemName).toBe('Spirit');
+    expect(read({ 'item.name': { $regex: 'Spirit', $options: 'i' } }).itemName).toBe('Spirit');
     expect(
-      marketQueryToFilters(
-        { 'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] }, 'item.base_code': 'cm3' },
-        false,
-      ),
+      read({ 'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] }, 'item.base_code': 'cm3' }),
     ).toMatchObject({ typeCode: 'lcha', baseCode: 'cm3' });
   });
 
-  it('reads a grouped type ($in) as its Type option', () => {
-    expect(marketQueryToFilters({ 'item.base.type_code': { $in: ['h2h', 'h2h2'] } }, false).typeCode).toBe(
-      '{"$in": ["h2h", "h2h2"]}',
-    );
+  it('reads a grouped type or base ($in) as its catalog option', () => {
+    expect(read({ 'item.base.type_code': { $in: ['h2h', 'h2h2'] } }).typeCode).toBe('{"$in": ["h2h", "h2h2"]}');
+    expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
   });
 
   it('leaves out an unknown quality and absent fields', () => {
-    const filters = marketQueryToFilters({ 'item.quality.name': 'Weird' }, false);
+    const filters = read({ 'item.quality.name': 'Weird' });
     expect(filters.rarity).toBeUndefined();
     expect(filters.corrupted).toBeUndefined();
     expect(filters.stats).toEqual([]);
@@ -158,6 +213,21 @@ describe('priceCheckToMarketFilters', () => {
 
   it('switches to the sold archive window', () => {
     expect(priceCheckToMarketFilters(search({ archive: true }))).toMatchObject({ source: 'archive', maxAgeDays: 14 });
+  });
+
+  it('searches a runeword as a Runeword, whatever its base quality', () => {
+    const spirit: Item = {
+      name: 'Spirit',
+      quality: 'Normal',
+      type: 'Monarch',
+      isRuneword: true,
+      runeword: 'Spirit',
+      iLevel: 80,
+      stats: [],
+    };
+    const { filters, gaps } = priceCheckMarketSearch(search({ item: spirit, selected: new Set(), filters: {} }));
+    expect(filters).toMatchObject({ itemName: 'Spirit', rarity: ['Runeword'] });
+    expect(gaps).toEqual([]);
   });
 
   it('sends selected pseudo rows as pseudo filters, not PD2 modifiers', () => {

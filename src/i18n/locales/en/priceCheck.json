@@ -97,7 +97,12 @@
       "whisperCopied": "Copied whisper, right click to paste",
       "onlineCopyWhisper": "Online in-game · click to copy whisper",
       "seller": "Seller: <name>{{seller}}</name>",
-      "online": "Online in-game"
+      "online": "Online in-game",
+      "endedSold": "sold after {{duration}}",
+      "endedRemoved": "removed after {{duration}}",
+      "endedExpired": "expired after {{duration}}",
+      "endedAt": "Ended {{when}}",
+      "listedFor": "Listed for {{duration}}"
     }
   },
   "statRow": {

@@ -51,17 +51,24 @@ import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
-import { priceCheckToMarketFilters, type PriceCheckSearch } from '@/pages/market/store/priceCheckFilters';
+import {
+  ARCHIVE_STATUSES,
+  priceCheckMarketSearch,
+  priceCheckToMarketFilters,
+  type PriceCheckSearch,
+} from '@/pages/market/store/priceCheckFilters';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
-import type { MarketFilters } from '@/pages/market/lib/types';
-import { searchMarketListings } from '@/lib/market-search-api';
+import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
+import { withRowPresence } from '@/pages/market/lib/presence';
+import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
+import { reportApiError } from '@/lib/error-reporting';
+import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
 import { RunePricePopover } from './RunePricePopover';
 import { getStatKey, PSEUDO_KEY_PREFIX } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
-import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { imageToast, showToast, useOverlay } from '@/overlay';
@@ -98,9 +105,13 @@ import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /** The search whose results are listed. */
 interface ActiveSearch {
+  /** The same search as a PD2 query: searches the market service can't express, and pages it fails to answer. */
   query: MarketListingQuery;
-  /** Set when a pseudo stat is selected: PD2 can't filter computed totals, the market service searches instead. */
-  marketFilters: MarketFilters | null;
+  marketFilters: MarketFilters;
+  /** A selected row the market service can't filter (MarketFilterGap): PD2 answers every page. */
+  pd2Only: boolean;
+  /** A pseudo stat is selected: only the market service filters those, so PD2 never stands in. */
+  hasPseudo: boolean;
   archived: boolean;
   searchMode: number;
   /** Listings fetched so far: the `$skip` of the next page. */
@@ -110,7 +121,7 @@ interface ActiveSearch {
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { t } = useTranslation(['priceCheck', 'common']);
   const { settings, isLoading: settingsLoading } = useOptions();
-  const { getMarketListings, getMarketListingsArchive } = usePd2Website();
+  const { getMarketListings, getMarketListingsArchive, marketApi } = usePd2Website();
   const { findOneByName } = useItems();
   const { openPanel } = useOverlay();
   const priceHours = settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS;
@@ -139,8 +150,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName]);
 
-  // Market listings state
-  const [marketListings, setMarketListings] = useState<MarketListingEntry[]>([]);
+  // Market listings state: the rows as fetched; `marketRows` below merges PD2's current seller presence in
+  const [fetchedRows, setFetchedRows] = useState<ScoredListing[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [marketLoading, setMarketLoading] = useState(false);
   // `message` is the service's error text, when it sent one
@@ -157,6 +168,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const activeSearch = useRef<ActiveSearch | null>(null);
   // Bumped by each new search and item change: a response for an older one is dropped
   const searchGeneration = useRef(0);
+  // Seller presence pops in: rows render as the market service sent them, then PD2's current last-seen times
+  // (asked with the user's token) merge in. Ended listings aren't on PD2's live market; rows PD2 itself sent carry
+  // current presence already (remembered when they arrive).
+  const presenceIds = useMemo(
+    () => fetchedRows.filter((row) => !row.status || row.status === 'active').map((row) => row.listing._id),
+    [fetchedRows],
+  );
+  const presence = useListingPresence(settings.pd2Token ? marketApi : null, presenceIds);
+  const marketRows = useMemo(() => withRowPresence(fetchedRows, presence), [fetchedRows, presence]);
+  const marketListings = useMemo(() => marketRows.map((row) => row.listing), [marketRows]);
 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
@@ -472,7 +493,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // clear market listing result if new item is loaded; a search still in flight is for the old item
       searchGeneration.current += 1;
       activeSearch.current = null;
-      setMarketListings([]);
+      setFetchedRows([]);
       setTotalCount(0);
       setHasMore(false);
       setMarketLoading(false);
@@ -703,7 +724,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     [item, openPanel],
   );
 
-  /** Fetches the next page of `search`, its first page when nothing is fetched yet. */
+  /**
+   * Fetches the next page of `search`, its first page when nothing is fetched yet: from the market service, or
+   * PD2 for searches it can't express. A page the service fails (down, slow, rate limited, rejected filters) is
+   * asked from PD2 instead and the failure reported, unless a pseudo stat (service only) is selected.
+   */
   const fetchPage = useCallback(
     async (search: ActiveSearch) => {
       const generation = searchGeneration.current;
@@ -712,34 +737,55 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setMarketError(null);
       setMarketLoading(true);
       const startTime = performance.now();
+      let source: 'service' | 'pd2' = search.pd2Only ? 'pd2' : 'service';
+
+      const pd2Page = async () => {
+        const page = search.archived ? await getMarketListingsArchive(query) : await getMarketListings(query);
+        // null: PD2 refused the token and sign-in started
+        if (!page) throw new Error();
+        // PD2's rows carry the sellers' current presence: nothing to pop in
+        rememberListingPresence(page.data);
+        return {
+          rows: page.data.map((listing): ScoredListing => ({ listing, pseudo: {}, score: null, value: null })),
+          total: page.total,
+          fetched: page.fetched,
+        };
+      };
 
       try {
-        const result = search.marketFilters
-          ? await searchMarketListings(search.marketFilters, {
+        let result: { rows: ScoredListing[]; total: number; fetched: number };
+        if (search.pd2Only) result = await pd2Page();
+        else {
+          try {
+            const page = await searchMarketListings(search.marketFilters, {
               page: search.skip / ITEMS_PER_PAGE,
               limit: ITEMS_PER_PAGE,
-            }).then((page) => ({
-              data: page.items.map((row) => row.listing),
-              total: page.total,
-              fetched: page.fetched,
-            }))
-          : search.archived
-            ? await getMarketListingsArchive(query)
-            : await getMarketListings(query);
+            });
+            result = { rows: page.items, total: page.total, fetched: page.fetched };
+          } catch (e) {
+            if (!(e instanceof MarketBackendError) || search.hasPseudo) throw e;
+            reportApiError(e, 'market-service', '/api/market/search', e.status, {
+              kind: e.kind,
+              fallback: 'pd2',
+              archived: search.archived,
+            });
+            source = 'pd2';
+            result = await pd2Page();
+          }
+        }
         if (generation !== searchGeneration.current) return;
 
         const duration = performance.now() - startTime;
 
         if (isNewSearch) {
-          setMarketListings(result.data);
+          setFetchedRows(result.rows);
           setTotalCount(result.total);
           setSearched(true);
         } else {
-          setMarketListings((prev) => {
+          setFetchedRows((prev) => {
             // Filter duplicates
-            const existingIds = new Set(prev.map((l) => l._id));
-            const newItems = result.data.filter((l) => !existingIds.has(l._id));
-            return [...prev, ...newItems];
+            const existingIds = new Set(prev.map((row) => row.listing._id));
+            return [...prev, ...result.rows.filter((row) => !existingIds.has(row.listing._id))];
           });
         }
 
@@ -751,18 +797,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           'item_overlay_market_search',
           {
             duration_ms: duration,
-            returned_items: result.data.length,
+            returned_items: result.rows.length,
             total_items: isNewSearch ? result.total : undefined,
           },
           {
             outcome: 'success',
             archived: search.archived,
-            market_service: search.marketFilters !== null,
+            market_service: source === 'service',
             search_mode: search.searchMode,
             page: query.$skip / ITEMS_PER_PAGE,
           },
         );
-      } catch (e: any) {
+      } catch (e) {
         if (generation !== searchGeneration.current) return;
         const duration = performance.now() - startTime;
         trackMeasurement(
@@ -770,8 +816,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           { duration_ms: duration },
           { outcome: 'error', archived: search.archived, search_mode: search.searchMode },
         );
-        console.log(e.message || 'Failed to fetch market listings');
-        setMarketError({ message: e.message || undefined });
+        const message = e instanceof Error ? e.message : '';
+        console.log(message || 'Failed to fetch market listings');
+        setMarketError({ message: message || undefined });
         // Retry starts a new search; scrolling must not keep re-requesting the failed page
         setHasMore(false);
       } finally {
@@ -804,6 +851,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         corruptionNames,
         qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
       };
+      const { filters: marketFilters, gaps } = priceCheckMarketSearch(priceCheck);
       const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
       const search: ActiveSearch = {
         query: buildGetMarketListingQuery(
@@ -822,12 +870,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           corruptionNames.length > 0 ? corruptionNames : undefined,
           shouldUseToggle ? effectiveQuality : undefined,
         ),
-        marketFilters: hasPseudo
-          ? mergeFilters(
-              defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
-              priceCheckToMarketFilters(priceCheck),
-            )
-          : null,
+        marketFilters: mergeFilters(
+          defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
+          searchArchived ? { ...marketFilters, status: ARCHIVE_STATUSES } : marketFilters,
+        ),
+        // PD2 can't filter pseudo stats either: with one selected the service answers, without the gapped row
+        pd2Only: gaps.length > 0 && !hasPseudo,
+        hasPseudo,
         archived: searchArchived,
         searchMode: effectiveSearchMode,
         skip: 0,
@@ -1652,9 +1701,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       </tr>
                     </thead>
                     <tbody>
-                      {marketListings.map((listing: MarketListingEntry, idx: number) => (
-                        <ListingRow key={listing._id || idx}
-                          listing={listing}
+                      {marketRows.map((row, idx) => (
+                        <ListingRow key={row.listing._id || idx}
+                          row={row}
                           idx={idx} />
                       ))}
                     </tbody>
@@ -2048,13 +2097,32 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
   );
 }
 
-const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
+/** How an ended listing's row reads ("sold after 2 days"), by status. */
+const ENDED_KEYS = {
+  sold: 'overlay.listing.endedSold',
+  removed: 'overlay.listing.endedRemoved',
+  expired: 'overlay.listing.endedExpired',
+} as const;
+
+const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
   const { t } = useTranslation('priceCheck');
+  const { listing } = row;
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
   const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
   const isCorrupted = itemCorruptions(listing.item).length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
+  // Market service rows: how long the listing was up and, once it ended, how
+  const ended = row.status && row.status !== 'active' ? row.status : null;
+  const upFor =
+    typeof row.durationSeconds === 'number' ? moment.duration(row.durationSeconds, 'seconds').humanize() : null;
+  const listedTitle = ended
+    ? row.endedAt
+      ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() })
+      : undefined
+    : upFor
+      ? t('overlay.listing.listedFor', { duration: upFor })
+      : undefined;
 
   const copyWhisper = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2177,9 +2245,16 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             </div>
           </td>
 
-          {/* Listed Column */}
-          <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
-            {listing.bumped_at ? moment(listing.bumped_at).fromNow(true) : '-'}
+          {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
+          <td
+            className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground"
+            title={listedTitle}
+          >
+            {ended && upFor
+              ? t(ENDED_KEYS[ended], { duration: upFor })
+              : listing.bumped_at
+                ? moment(listing.bumped_at).fromNow(true)
+                : '-'}
           </td>
         </tr>
       </PopoverTrigger>

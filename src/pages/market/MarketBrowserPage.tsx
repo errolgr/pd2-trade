@@ -13,6 +13,7 @@ import { showToast, usePanel } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useListingPresence } from '@/hooks/useListingPresence';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMarketStore';
@@ -21,6 +22,7 @@ import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { indexListingOffers } from './lib/listing-offers';
 import { scoreListings } from './lib/search';
+import { withRowPresence } from './lib/presence';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
 import { FilterSidebar } from './components/FilterSidebar';
@@ -137,9 +139,17 @@ const MarketBrowserPage: React.FC = () => {
     [favorites.favorites, filters],
   );
 
+  // Seller presence pops in on search results: they render as the market service sent them, then PD2's current
+  // last-seen times (live listings only; asked with the user's token) merge in. Favorites come from PD2 already.
+  const presenceIds = useMemo(
+    () => search.items.filter((r) => !r.status || r.status === 'active').map((r) => r.listing._id),
+    [search.items],
+  );
+  const presence = useListingPresence(signedIn ? (marketApi ?? null) : null, presenceIds);
+  const searchRows = useMemo(() => withRowPresence(search.items, presence), [search.items, presence]);
   const rows = useMemo(
-    () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? search.items : []),
-    [tab, favoriteRows, search.items],
+    () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? searchRows : []),
+    [tab, favoriteRows, searchRows],
   );
   const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
   const deals = useDealIndicators(listings);

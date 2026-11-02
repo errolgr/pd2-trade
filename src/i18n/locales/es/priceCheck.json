@@ -100,7 +100,12 @@
       "whisperCopied": "Susurro copiado, clic derecho para pegar",
       "onlineCopyWhisper": "En línea en el juego · clic para copiar susurro",
       "seller": "Vendedor: <name>{{seller}}</name>",
-      "online": "En línea en el juego"
+      "online": "En línea en el juego",
+      "endedSold": "vendido tras {{duration}}",
+      "endedRemoved": "retirado tras {{duration}}",
+      "endedExpired": "caducado tras {{duration}}",
+      "endedAt": "Terminó {{when}}",
+      "listedFor": "Anunciado durante {{duration}}"
     }
   },
   "statRow": {

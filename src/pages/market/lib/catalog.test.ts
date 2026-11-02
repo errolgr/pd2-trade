@@ -91,11 +91,26 @@ describe('stats', () => {
     expect(STAT_OPTIONS.find((o) => o.key === 'fireresist')?.group).toBe('Resists');
   });
 
-  it('parses the site key grammar', () => {
-    expect(parseStatKey('maxhp')).toEqual({ names: ['maxhp'], params: [], valueIndex: 0 });
-    expect(parseStatKey('item_singleskill{54}')).toEqual({ names: ['item_singleskill'], params: [54], valueIndex: 1 });
-    expect(parseStatKey('a|b')).toEqual({ names: ['a', 'b'], params: [], valueIndex: 0 });
-    expect(parseStatKey('item_elemskill_cold')).toEqual({ names: ['item_elemskill_cold'], params: [], valueIndex: 1 });
+  it('parses the service key grammar', () => {
+    expect(parseStatKey('maxhp')).toEqual({ names: ['maxhp'], pins: [], valueIndex: 0 });
+    expect(parseStatKey('item_singleskill{54}')).toEqual({
+      names: ['item_singleskill'],
+      pins: [{ index: 0, values: [54] }],
+      valueIndex: 1,
+    });
+    expect(parseStatKey('a|b')).toEqual({ names: ['a', 'b'], pins: [], valueIndex: 0 });
+    expect(parseStatKey('item_elemskill_cold')).toEqual({ names: ['item_elemskill_cold'], pins: [], valueIndex: 1 });
+    expect(parseStatKey('item_skillongethit{*,44|45}[0]')).toEqual({
+      names: ['item_skillongethit'],
+      pins: [{ index: 1, values: [44, 45] }],
+      valueIndex: 0,
+    });
+    expect(parseStatKey('firedam|firemindam{4..}[1]')).toEqual({
+      names: ['firedam', 'firemindam'],
+      pins: [{ index: 0, min: 4 }],
+      valueIndex: 1,
+    });
+    expect(parseStatKey('item_splashonhit[2]')).toEqual({ names: ['item_splashonhit'], pins: [], valueIndex: 2 });
   });
 
   it('searches with shorthands, pseudo stats first', () => {

@@ -377,7 +377,8 @@
     "online": "online",
     "buyout": "kup teraz",
     "listingAge": "wiek ogłoszenia",
-    "sort": "sortowanie"
+    "sort": "sortowanie",
+    "extendedStat": "statystyka, której strona nie obsługuje"
   },
   "nameSearch": {
     "noSales": "brak sprzedaży",

@@ -347,7 +347,8 @@
     "online": "online",
     "buyout": "buyout",
     "listingAge": "listing age",
-    "sort": "sort"
+    "sort": "sort",
+    "extendedStat": "stat the site can't express"
   },
   "nameSearch": {
     "noSales": "no sales",

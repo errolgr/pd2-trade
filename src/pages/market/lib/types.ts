@@ -18,6 +18,9 @@ export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
 export type StatKind = 'mod' | 'pseudo' | 'corruption';
 
+/** A listing's state on the market service: still up, or how it ended. */
+export type MarketListingStatus = 'active' | 'sold' | 'removed' | 'expired';
+
 export interface StatFilter {
   /** Stable row id (uuid) for React keys / editing. */
   id: string;
@@ -53,7 +56,7 @@ export interface Requirements {
 }
 
 export interface MarketFilters {
-  /** `live` = market/listing, `archive` = market/listingArchive (sold). */
+  /** `live` = active listings, `archive` = sold listings (see `status` for removed/expired). */
   source: 'live' | 'archive';
   hardcore: boolean;
   ladder: boolean;
@@ -84,6 +87,11 @@ export interface MarketFilters {
   sellerName?: string;
   requirements: Requirements;
   stats: StatFilter[];
+  /**
+   * History: the statuses to search instead of the one `source` selects (`live` = active, `archive` = sold), each
+   * aged by its own time within `maxAgeDays`. Absent = `source`.
+   */
+  status?: MarketListingStatus[];
   /** updated_at window; site default 3. */
   maxAgeDays: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
@@ -135,6 +143,20 @@ export interface ScoredListing {
   score: number | null;
   /** score / hr_price; null when score null or hr_price ≤ 0. */
   value: number | null;
+  /** Market service rows (absent on rows scored in the overlay, e.g. favorites): the listing's state. */
+  status?: MarketListingStatus;
+  /** When it was listed (ISO); null when the service doesn't know. */
+  listedAt?: string | null;
+  /** When it sold / was removed / expired (ISO); null while active or unknown. */
+  endedAt?: string | null;
+  /** How long it was (or has been) up: listedAt → endedAt (→ now while active); null without both ends. */
+  durationSeconds?: number | null;
+}
+
+/** The seller's last-seen times on a listing, as PD2 reports them now. */
+export interface ListingPresence {
+  user_last_online: string | null;
+  user_last_ingame: string | null;
 }
 
 export interface SearchOptions {
@@ -190,6 +212,11 @@ export interface MarketApi {
   ) => Promise<{ items: ScoredListing[]; total: number; totalExact: boolean; fetched: number }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
+  /**
+   * The sellers' current last-seen times on live listings (`GET market/listing?_id[$in]=…`, at most 50 ids), by
+   * listing id; ids PD2 no longer lists are absent. Throws on any failure (401 included: it never starts a sign-in).
+   */
+  getListingPresence: (listingIds: string[]) => Promise<Map<string, ListingPresence>>;
   getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;

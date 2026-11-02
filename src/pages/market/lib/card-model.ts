@@ -1,7 +1,7 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
 import { itemCorruptions } from '@/lib/item-utils';
-import { parseStatKey } from './stats';
+import { parseStatKey, pinsMatch } from './stats';
 
 /*
  * Pure view model of the full-width result card: socketed items grouped, each item mod split into the item's own
@@ -46,8 +46,8 @@ export function perLevelLabel(label: string): { label: string; perLevel: boolean
 
 /** Does stat-filter key `key` (site grammar, e.g. `item_singleskill{54}`) select this mod line? */
 export function modMatchesStatKey(mod: Pick<Modifier, 'name' | 'values'>, key: string): boolean {
-  const { names, params } = parseStatKey(key);
-  return names.includes(mod.name) && params.every((p, i) => mod.values?.[i] === p);
+  const { names, pins } = parseStatKey(key);
+  return names.includes(mod.name) && pinsMatch(mod.values, pins);
 }
 
 export interface SocketGroup {
