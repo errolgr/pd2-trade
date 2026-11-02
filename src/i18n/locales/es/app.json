@@ -39,7 +39,6 @@
     "favorite": "Favorito: {{label}}",
     "addFavorite": "Añadir a favoritos (la pestaña)",
     "removeFavorite": "Quitar de favoritos (la pestaña)",
-    "layoutHint": "Marca con estrella para la pestaña · arrastra para ordenar",
     "menu": {
       "chat": "Chat",
       "market": "Explorador del mercado",

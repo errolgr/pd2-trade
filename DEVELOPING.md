@@ -209,8 +209,9 @@ src/i18n/locales/<language>/<namespace>.json   # en, de, fr, ru, es, pt-BR, pl, 
 A broken updater can only be fixed by users re-downloading the installer, so it is guarded at every stage:
 
 - `src/hooks/useAppUpdates.test.tsx`, `src/lib/updater.test.ts`: check → download → relaunch flow, opt-out, notifications.
-- `npm run verify:updater -- config`: version files agree; updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
-- Release workflow: before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
+- `npm run verify:updater -- config`: the six version files agree (`scripts/version-files.mjs`: package.json, package-lock.json, Cargo.toml, Cargo.lock, tauri.conf.json, docs appVersion); updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
+- Bumping: `npm run release -- <x.y.z|patch|minor|major>` rewrites the version in all six files, after checking the new version is newer than the live release, has no release yet (stray drafts included) and has a `changeLog.ts` entry. Commit it as `chore(release): x.y.z` and merge before running the publish workflow. Needs `GITHUB_TOKEN` or `gh auth login` to see drafts.
+- Release workflow: its first step, `release.mjs check`, runs the same checks for the committed version and stops the run before a draft or any build. Before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
 - `ci.yml` runs the live check daily.
 
 ## 🐛 Debugging

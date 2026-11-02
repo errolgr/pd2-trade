@@ -492,9 +492,6 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                 menuBelow ? 'top-full mt-1.5' : 'bottom-full mb-1.5',
               )}
             >
-              {(onOrderChange || onFavoritesChange) && (
-                <p className="px-2.5 pt-1 pb-1.5 text-xs text-muted-foreground">{t('chatButton.layoutHint')}</p>
-              )}
               <Reorder.Group
                 as="div"
                 axis="y"
