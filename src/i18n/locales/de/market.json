@@ -372,7 +372,8 @@
     "fallbackWindow": "Ø {{window}} · {{listings}}",
     "label": "Item-Name",
     "placeholder": "Items suchen…  ( / )",
-    "clear": "Item-Name leeren"
+    "clear": "Item-Name leeren",
+    "closeMatch": "ähnlicher Name"
   },
   "detail": {
     "label": "Inseratdetails",

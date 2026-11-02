@@ -408,7 +408,8 @@
     "fallbackWindow": "śr. {{window}} · {{listings}}",
     "label": "Nazwa przedmiotu",
     "placeholder": "Szukaj przedmiotów…  ( / )",
-    "clear": "Wyczyść nazwę przedmiotu"
+    "clear": "Wyczyść nazwę przedmiotu",
+    "closeMatch": "podobna nazwa"
   },
   "detail": {
     "label": "Szczegóły ogłoszenia",

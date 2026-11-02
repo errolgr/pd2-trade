@@ -120,6 +120,23 @@ afterEach(() => {
 });
 
 describe('useTradeOffers fetching', () => {
+  it('refetches on a new token or user, not on other settings changes or a fresh authData object', async () => {
+    const { rerender } = renderHook((props: { settings: ISettings; authData: AuthData }) => useTradeOffers(props), {
+      initialProps: { settings, authData },
+    });
+    await act(async () => {});
+    const fetches = () => vi.mocked(tauriFetch).mock.calls.length;
+    expect(fetches()).toBe(2);
+
+    // A settings toggle (a new settings object) and a re-fetched session (a new authData object, same user)
+    await act(async () => rerender({ settings: { ...settings, chatButtonOverlayEnabled: false }, authData }));
+    await act(async () => rerender({ settings, authData: { ...authData, user: { ...authData!.user } } as AuthData }));
+    expect(fetches()).toBe(2);
+
+    await act(async () => rerender({ settings: { ...settings, pd2Token: 'tok2' }, authData }));
+    expect(fetches()).toBe(4);
+  });
+
   it('maps incoming offers, skipping rejected ones and formatting HR-only offers', async () => {
     api.incoming = () =>
       apiResponse({

@@ -354,7 +354,8 @@
     "fallbackWindow": "{{window}} 均价 · {{listings}}",
     "label": "物品名称",
     "placeholder": "搜索物品…  ( / )",
-    "clear": "清除物品名称"
+    "clear": "清除物品名称",
+    "closeMatch": "相近名称"
   },
   "detail": {
     "label": "挂单详情",
