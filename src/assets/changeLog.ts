@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.10.14': ['🔧 Market browser: sockets are back to plain min / max boxes (the socket buttons are gone)'],
   '0.10.13': [
     '🆕 Market browser: filters show how many listings each choice finds (hover for the count), and the price box has a price chart. Click two sockets or two price bars to pick a range',
     '🆕 Price check: the quality toggle has an "Any" option, so you can search Rare and Crafted together',

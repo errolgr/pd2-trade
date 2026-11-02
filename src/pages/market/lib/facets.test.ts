@@ -8,7 +8,6 @@ import {
   pickIndex,
   priceFilter,
   priceRange,
-  socketRange,
   wantsFacets,
   type IndexRange,
   type PriceBucket,
@@ -72,17 +71,6 @@ describe('pickIndex (calendar-style range picking)', () => {
     expect(pickIndex({ lo: 3, hi: 5 }, 4)).toEqual(one(4));
     expect(pickIndex({ lo: 3, hi: 5 }, 5)).toEqual(one(5));
     expect(pickIndex({ lo: 3, hi: 5 }, 0)).toEqual(one(0));
-  });
-});
-
-describe('socketRange', () => {
-  it('covers min..max; one bound runs to 6 or from 0; none or crossed bounds cover nothing', () => {
-    expect(socketRange(3, 5)).toEqual({ lo: 3, hi: 5 });
-    expect(socketRange(4, 4)).toEqual({ lo: 4, hi: 4 });
-    expect(socketRange(2, undefined)).toEqual({ lo: 2, hi: 6 });
-    expect(socketRange(undefined, 0)).toEqual({ lo: 0, hi: 0 });
-    expect(socketRange(undefined, undefined)).toBeNull();
-    expect(socketRange(5, 3)).toBeNull();
   });
 });
 

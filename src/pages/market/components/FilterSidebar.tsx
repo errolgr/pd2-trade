@@ -25,7 +25,7 @@ import {
 } from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
-import { FACET_DIM, FacetRowTip, facetFill, SocketChips, useFacetText } from './FacetCounts';
+import { FACET_DIM, FacetRowTip, facetFill, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
@@ -207,7 +207,6 @@ export function FilterSidebar({
       quality: countsByValue(facets?.quality),
       typeCode: codeCounts(facets?.typeCode, CODE_FACET_SIZE.typeCode),
       baseCode: codeCounts(facets?.baseCode, CODE_FACET_SIZE.baseCode),
-      sockets: countsByValue(facets?.sockets),
       ethereal: countsByValue(facets?.ethereal),
       corrupted: countsByValue(facets?.corrupted),
     }),
@@ -305,17 +304,8 @@ export function FilterSidebar({
             counts={yesNo(counts.corrupted)}
             onChange={(corrupted) => set({ corrupted })}
           />
-          <Field label={t('filters.sockets')}>
-            <SocketChips
-              counts={counts.sockets}
-              min={f.socketsMin}
-              max={f.socketsMax}
-              onPick={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
-            />
-          </Field>
           <RangeField
             label={t('filters.sockets')}
-            showLabel={false}
             min={f.socketsMin}
             max={f.socketsMax}
             onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}

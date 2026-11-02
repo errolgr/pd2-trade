@@ -252,19 +252,16 @@ export function RangeField({
   max,
   onChange,
   step,
-  showLabel = true,
 }: {
   label: string;
   min: number | undefined;
   max: number | undefined;
   onChange: (min: number | undefined, max: number | undefined) => void;
   step?: number;
-  /** False when a control above already shows `label` (it still names the inputs for screen readers). */
-  showLabel?: boolean;
 }) {
   const { t } = useTranslation('market');
   return (
-    <Field label={showLabel ? label : ''}>
+    <Field label={label}>
       <div className="flex items-center gap-1">
         <NumberInput
           ariaLabel={t('controls.minLabel', { label })}
