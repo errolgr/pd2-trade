@@ -106,6 +106,16 @@ export interface PricedEquippedItem extends EquippedItem {
   priceHr: number | null;
 }
 
+/** A charm in the inventory's charm area (its bottom 4 rows); slot `Inventory`. */
+export interface CharmItem extends PricedEquippedItem {
+  /** 0–3 within the charm area. */
+  row: number;
+  /** 0–9 */
+  column: number;
+  /** Cells tall: small 1, large 2, grand 3. */
+  height: 1 | 2 | 3;
+}
+
 export interface Merc<Item> {
   /** Act/aura flavour (`Fire Arrow`, `Defensive Auras`, …). */
   type: string;
@@ -200,6 +210,8 @@ export interface CharacterDetail {
   skills: CharacterSkill[];
   equipped: PricedEquippedItem[];
   merc: Merc<PricedEquippedItem> | null;
+  /** Live builds only; missing for characters not re-crawled since charms were added. */
+  charms?: CharmItem[];
   gearValueHr: number | null;
   firstSeenAt: string;
   lastUpdated: string;

@@ -991,14 +991,14 @@ describe('ItemOverlayWidget extra header behaviour', () => {
       itemName: 'Harlequin Crest',
       corruptionPrices: [
         {
-          corruptionKey: ['item_tohit_percent'],
+          corruptionKey: ['tohit'],
           corruptionName: 'Tohit Percent',
           averagePrice: 5,
           medianPrice: 5.5,
           sampleCount: 8,
           socketPrices: [{ socketCount: 1, averagePrice: 6, medianPrice: 6.25, sampleCount: 3 }],
         },
-        { corruptionKey: ['item_maxhp'], corruptionName: 'Maxhp', averagePrice: 4, medianPrice: 4, sampleCount: 2 },
+        { corruptionKey: ['maxhp'], corruptionName: 'Maxhp', averagePrice: 4, medianPrice: 4, sampleCount: 2 },
       ],
     });
     // stat 360 carries the cube corruption key: 3 = attack rating %
@@ -1021,7 +1021,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     const f = lastFilters();
     expect(f).toMatchObject({ socketsMin: 1, socketsMax: 1 });
-    expect(f.stats).toContainEqual(expect.objectContaining({ kind: 'corruption', key: 'item_tohit_percent' }));
+    expect(f.stats).toContainEqual(expect.objectContaining({ kind: 'corruption', key: 'tohit' }));
   });
 });
 

@@ -87,8 +87,9 @@ import {
   CorruptionPrice,
   CorruptionPricesResponse,
 } from '@/pages/currency/lib/price-api';
-import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
-import { cubeCorruptions } from '@/assets/cube-corruptions';
+import { StatId } from '../lib/stat-mappings';
+import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
+import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { writePng, writeText } from '@/lib/browser-clipboard';
 import { whisperCommand } from '@/lib/whisper-history';
@@ -665,131 +666,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     extractRainbowFacetData,
   ]);
 
-  // Helper function to format corruption name the same way the server does
-  const formatCorruptionName = useCallback((corruptionNames: string[]): string => {
-    return corruptionNames
-      .map((c) => {
-        let formatted = c.trim();
-        formatted = formatted.replace(/^item_/, '');
-        formatted = formatted.replace(/_/g, ' ');
-        formatted = formatted
-          .split(' ')
-          .map((word) => {
-            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-          })
-          .join(' ');
-        return formatted;
-      })
-      .join(', ');
-  }, []);
-
-  // Get item's corruptions using stat_id 360/361 to look up in cube-corruptions.ts
+  // The item's own corruption: stat 360 holds the cube corruption roll, priced under its market corruption names
   const itemCorruptions = useMemo(() => {
-    if (!item.stats) return null;
     if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item) return null;
-
-    console.log(pd2Item);
-    // Look for stat_id 360 or 361 (corruption flags)
-    const corruptionStat = item.stats.find((stat) => stat.stat_id === 360);
-    if (!corruptionStat || corruptionStat.value === undefined) {
-      console.log('[ItemOverlayWidget] No corruption stat found (360/361)');
+    const roll = item.stats?.find((stat) => stat.stat_id === StatId.Corrupted)?.value;
+    if (roll === undefined) return null;
+    const corruptionKey = corruptionNamesForRoll(roll);
+    if (!corruptionKey) {
+      console.warn('[ItemOverlayWidget] Unknown corruption roll:', roll);
       return null;
     }
-
-    // The value corresponds to the 'key' field in cube-corruptions.ts
-    const corruptionKey = corruptionStat.value;
-    const cubeCorruption = cubeCorruptions.find((corruption) => corruption.key === corruptionKey);
-    if (!cubeCorruption) {
-      console.warn('[ItemOverlayWidget] Corruption key not found:', corruptionKey);
-      return null;
-    }
-
-    // Map corruption stats to property names
-    const itemCorruptionNames: string[] = [];
-
-    cubeCorruption.stats.forEach((corruptionStat) => {
-      // Skip transform_dye stats
-      if (corruptionStat.stat === 'dye') {
-        return;
-      }
-
-      // Get stat_id for this corruption stat key
-      const statId = getStatIdForCorruptionStatKey(corruptionStat.stat);
-      if (statId !== null) {
-        // Map stat_id to property name using statIdToProperty
-        const propertyName = statIdToProperty[statId];
-        if (propertyName) {
-          // Normalize property name (ensure it starts with "item_")
-          const normalizedName = propertyName.startsWith('item_') ? propertyName : `item_${propertyName}`;
-          itemCorruptionNames.push(normalizedName);
-        }
-      } else {
-        // If not found, log a warning
-        console.warn('[ItemOverlayWidget] Could not find stat_id for corruption stat:', corruptionStat.stat);
-      }
-    });
-
-    if (itemCorruptionNames.length === 0) {
-      console.warn('[ItemOverlayWidget] No corruption names mapped from stats');
-      return null;
-    }
-
-    // Sort and format the same way the server does
-    const sortedCorruptions = [...itemCorruptionNames].sort();
-    const formattedCorruptionName = formatCorruptionName(sortedCorruptions);
-
-    // Format each property name individually for partial matching
-    const formattedPropertyNames = sortedCorruptions.map((name) => {
-      let formatted = name.trim();
-      formatted = formatted.replace(/^item_/, '');
-      formatted = formatted.replace(/_/g, ' ');
-      formatted = formatted
-        .split(' ')
-        .map((word) => {
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(' ');
-      return formatted;
-    });
-
-    // Debug logging
-    console.log('[ItemOverlayWidget] Item corruptions:', {
-      corruptionStat: {
-        stat_id: corruptionStat.stat_id,
-        value: corruptionStat.value,
-      },
-      cubeCorruption: {
-        id: cubeCorruption.id,
-        key: cubeCorruption.key,
-        stats: cubeCorruption.stats,
-      },
-      itemCorruptionNames,
-      sortedCorruptions,
-      formattedCorruptionName,
-      formattedPropertyNames,
-      availableCorruptions: corruptionPrices?.corruptionPrices?.map((c) => c.corruptionName) || [],
-    });
-
-    // Find matching corruption price - match by comparing corruptionKey arrays
-    const matchingCorruption = corruptionPrices?.corruptionPrices?.find((corruption) => {
-      // Compare the sorted corruption key arrays
-      if (!corruption.corruptionKey || corruption.corruptionKey.length !== sortedCorruptions.length) {
-        return false;
-      }
-      // Sort both arrays and compare element by element
-      const sortedItemKey = [...sortedCorruptions].sort();
-      const sortedApiKey = [...corruption.corruptionKey].sort();
-      return sortedItemKey.every((key, index) => key === sortedApiKey[index]);
-    });
-
-    // Return the corruption data even if no price is found
-    return {
-      corruptionName: formattedCorruptionName,
-      corruptionKey: sortedCorruptions,
-      cubeCorruption,
-      priceData: matchingCorruption || null,
-    };
-  }, [item.stats, item.quality, corruptionPrices, formatCorruptionName, pd2Item]);
+    const priceData =
+      corruptionPrices?.corruptionPrices.find((corruption) =>
+        sameCorruptionNames(corruption.corruptionKey, corruptionKey),
+      ) ?? null;
+    const corruptionName =
+      priceData?.corruptionName ??
+      corruptionKey
+        .filter((name) => name !== 'dmg%')
+        .map((name) => corruptionOption(name).label)
+        .join(', ');
+    return { corruptionKey, corruptionName, priceData };
+  }, [item.stats, item.quality, corruptionPrices, pd2Item]);
 
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
@@ -1012,14 +910,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     runSearch([]);
   };
 
-  // Helper function to check if two corruption key arrays are equal
-  const areCorruptionKeysEqual = useCallback((key1: string[], key2: string[]): boolean => {
-    if (key1.length !== key2.length) return false;
-    const sorted1 = [...key1].sort();
-    const sorted2 = [...key2].sort();
-    return sorted1.every((key, index) => key === sorted2[index]);
-  }, []);
-
   // Handle corruption click - search for items with that specific corruption
   const handleCorruptionClick = useCallback(
     (corruptionKey: string | string[]) => {
@@ -1210,10 +1100,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Top corruptions exclude the item's own corruption (shown in its own section)
   const otherCorruptions = useMemo(
-    () =>
-      corruptionPrices?.corruptionPrices.filter(
-        (corruption) => !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName,
-      ) ?? [],
+    () => corruptionPrices?.corruptionPrices.filter((corruption) => corruption !== itemCorruptions?.priceData) ?? [],
     [corruptionPrices, itemCorruptions],
   );
   const visibleCorruptions = showAllCorruptions ? otherCorruptions : otherCorruptions.slice(0, 5);
@@ -1230,7 +1117,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       variant={variant}
       price={price}
       selected={
-        selectedCorruptionNames.length > 0 && areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames)
+        selectedCorruptionNames.length > 0 && sameCorruptionNames(corruption.corruptionKey, selectedCorruptionNames)
       }
       itemTitle={displayTitle}
       onSelect={() => handleCorruptionClick(corruption.corruptionKey)}

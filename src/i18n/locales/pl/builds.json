@@ -122,6 +122,7 @@
     "viewingSnapshot": "Podgląd <date>{{date}}</date><muted> · ceny ukryte</muted>",
     "backToNow": "Wróć do teraz",
     "equipment": "Ekwipunek",
+    "charms": "Charmy",
     "weaponSwitch": "Zmiana broni",
     "mercTitle": "Najemnik <muted>· {{type}}</muted>",
     "paneLabel": "Widok postaci",

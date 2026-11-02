@@ -37,7 +37,6 @@
     "favorite": "{{label}} als Favorit",
     "addFavorite": "Zu Favoriten hinzufügen (Leiste)",
     "removeFavorite": "Aus Favoriten entfernen (Leiste)",
-    "layoutHint": "Stern für die Leiste · ziehen zum Sortieren",
     "menu": {
       "chat": "Chat",
       "market": "Marktbrowser",

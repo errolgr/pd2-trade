@@ -1,11 +1,13 @@
 export const changeLog = {
   '0.10.13': [
+    '🔧 Changing a setting no longer reloads your offers and listing count from Project Diablo 2 each time, which could get you "Too Many Requests" errors',
     "✨ Price check searches the pd2trader market service, so its results match the market browser's (if the service is down, PD2 answers instead)",
     '✨ Price check and market browser: results show right away, then whether each seller is online right now pops in from PD2',
     '✨ Price check: Show Expired also lists removed and expired listings next to sold ones, and each says how long it was up ("sold after 2 days")',
     '🔧 Open in market (and price checks with a Σ total) keep runewords, chance to cast and charges skills, auras, splash and elemental damage ranges exactly as picked',
   ],
   '0.10.12': [
+    "🆕 Builds: a character's charms show under their gear, laid out like the bottom of their inventory, with the same art, tooltip and price as worn items",
     '🆕 Chat dock favorites: star any window in the dock menu to give it its own button on the dock (unstar to remove it), and drag the menu rows (or use ↑/↓ on the grip) into your own order; the dock follows it',
     '🆕 My listings (Manage tab) redesigned: big cards or compact rows (toggle in the tab, default in Settings → Market), item art with the full in-game tooltip on hover, and the price, note, price vs market, offers and bump status at a glance',
     '🆕 My listings: sort by needs attention, last bumped, last updated, price, date listed, price vs market or name (compact rows sort from their column headers too), and filter to bump-ready listings or listings with offers',
