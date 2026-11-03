@@ -35,7 +35,9 @@ describe('plugin trust', () => {
     });
     const otherSeed = new Uint8Array(32).fill(7);
     const foreign = await sign(bundleStatement('com.x.y', '1.0.0', sha256), otherSeed);
-    expect(await verifyBundle(bytes, { id: 'com.x.y', version: '1.0.0', sha256, signature: foreign })).toMatchObject({ ok: false });
+    expect(await verifyBundle(bytes, { id: 'com.x.y', version: '1.0.0', sha256, signature: foreign })).toMatchObject({
+      ok: false,
+    });
     expect(await verifyEd25519('m', 'not base64!!')).toBe(false);
   });
 

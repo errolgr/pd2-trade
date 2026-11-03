@@ -11,9 +11,7 @@
       "main": "src/panel.html"
     }
   },
-  "slots": [
-    "priceCheck.section"
-  ],
+  "slots": ["priceCheck.section"],
   "commands": [
     {
       "id": "open",
@@ -21,8 +19,5 @@
       "defaultHotkey": null
     }
   ],
-  "permissions": [
-    "prices:read",
-    "items:read"
-  ]
+  "permissions": ["prices:read", "items:read"]
 }

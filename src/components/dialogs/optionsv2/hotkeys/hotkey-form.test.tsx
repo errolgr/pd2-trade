@@ -219,7 +219,13 @@ describe('HotkeyForm plugin commands', () => {
   it('warns when two plugin commands share a combo', () => {
     vi.spyOn(pluginHost, 'commands').mockReturnValue([
       command({ hotkey: { modifier: 'alt', key: 'k' } }),
-      command({ pluginId: 'com.example.other', pluginName: 'Other', id: 'go', title: 'Go', hotkey: { modifier: 'alt', key: 'k' } }),
+      command({
+        pluginId: 'com.example.other',
+        pluginName: 'Other',
+        id: 'go',
+        title: 'Go',
+        hotkey: { modifier: 'alt', key: 'k' },
+      }),
     ]);
     renderForm();
     const warnings = screen.getAllByRole('status').map((el) => el.textContent);

@@ -255,8 +255,10 @@ export function MessageBubble({
               listings={listings} />
             <div className="flex items-center justify-end gap-1 text-3xs leading-4 tabular-nums text-muted-foreground">
               {failed && message.clientId ? (
-                <ErrorChip message={t('bubble.failedToSend')}
-                  onRetry={() => onRetry(message.conversation_id, message.clientId!)} />
+                <ErrorChip
+                  message={t('bubble.failedToSend')}
+                  onRetry={() => onRetry(message.conversation_id, message.clientId!)}
+                />
               ) : (
                 <>
                   {plugins.tags}

@@ -41,8 +41,9 @@ describe('toPluginItem', () => {
   });
 
   it('names runewords by runeword and other qualities by base', () => {
-    expect(toPluginItem(item({ quality: 'Normal', isRuneword: true, runeword: 'Spirit', name: 'Monarch', type: 'Monarch' })))
-      .toMatchObject({ name: 'Spirit', isRuneword: true, quality: 'normal' });
+    expect(
+      toPluginItem(item({ quality: 'Normal', isRuneword: true, runeword: 'Spirit', name: 'Monarch', type: 'Monarch' })),
+    ).toMatchObject({ name: 'Spirit', isRuneword: true, quality: 'normal' });
     expect(toPluginItem(item({ quality: 'Rare', name: 'Grim Shell', type: 'Shako' }))).toMatchObject({
       name: 'Shako',
       base: 'Shako',
@@ -76,7 +77,13 @@ describe('toCorePrice', () => {
       sampleCount: 42,
       priceChange7Days: { change: 0.1, changePercent: 7.5, previousMedianPrice: 1.4 },
     } as AveragePriceResponse;
-    expect(toCorePrice(price)).toEqual({ medianHr: 1.5, lowHr: 1, highHr: 2.25, sampleCount: 42, change7dPercent: 7.5 });
+    expect(toCorePrice(price)).toEqual({
+      medianHr: 1.5,
+      lowHr: 1,
+      highHr: 2.25,
+      sampleCount: 42,
+      change7dPercent: 7.5,
+    });
   });
 
   it('is null without a price and has no change without history', () => {

@@ -31,7 +31,10 @@ async function load(): Promise<void> {
   );
   try {
     const runes = await window.pd2.call<RunePrice[]>('prices.runes');
-    const top = runes.filter((r) => r.priceHr > 0).sort((a, b) => b.priceHr - a.priceHr).slice(0, 8);
+    const top = runes
+      .filter((r) => r.priceHr > 0)
+      .sort((a, b) => b.priceHr - a.priceHr)
+      .slice(0, 8);
     list.replaceChildren(...top.map((r) => row(r.name, `${r.priceHr.toFixed(2)} HR`)));
     status.className = 'pd2-muted';
     status.textContent = top.length ? '' : 'No rune prices yet.';

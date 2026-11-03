@@ -31,7 +31,18 @@ vi.mock('./hotkeys/layout', () => ({ default: () => <p>hotkeys-body</p> }));
 vi.mock('./plugins/layout', () => ({ default: () => <p>plugins-body</p> }));
 vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
 
-const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Market', 'Net Worth', 'Hotkeys', 'Plugins', 'About'];
+const SECTIONS = [
+  'General',
+  'Account',
+  'Chat',
+  'Interface',
+  'Price Check',
+  'Market',
+  'Net Worth',
+  'Hotkeys',
+  'Plugins',
+  'About',
+];
 
 let store: OptionsStore;
 const close = vi.fn();

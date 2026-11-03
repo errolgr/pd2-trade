@@ -53,13 +53,20 @@ export function usePluginSlot<S extends CallableSlotId>(
       call.result.then(
         (value) => {
           if (cancelled) return;
-          setResults((prev) => replaceAt(prev, index, { pluginId: call.pluginId, pluginName: call.pluginName, state: 'ok', value }));
+          setResults((prev) =>
+            replaceAt(prev, index, { pluginId: call.pluginId, pluginName: call.pluginName, state: 'ok', value }),
+          );
         },
         (error: unknown) => {
           if (cancelled) return;
           const message = error instanceof Error ? error.message : String(error);
           setResults((prev) =>
-            replaceAt(prev, index, { pluginId: call.pluginId, pluginName: call.pluginName, state: 'error', error: message }),
+            replaceAt(prev, index, {
+              pluginId: call.pluginId,
+              pluginName: call.pluginName,
+              state: 'error',
+              error: message,
+            }),
           );
         },
       );

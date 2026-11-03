@@ -17,7 +17,8 @@ export function fakeLauncher(): SandboxLauncher & { destroyed: number } {
     const listeners: Array<(event: MessageEvent) => void> = [];
     const sdk = createSdk({ addEventListener: (_type, listener) => listeners.push(listener) });
     program(sdk);
-    for (const listener of listeners) listener({ data: { t: 'pd2:connect' }, ports: [channel.port2] } as unknown as MessageEvent);
+    for (const listener of listeners)
+      listener({ data: { t: 'pd2:connect' }, ports: [channel.port2] } as unknown as MessageEvent);
     return {
       port: channel.port1,
       destroy: () => {

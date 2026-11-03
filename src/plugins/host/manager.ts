@@ -207,7 +207,9 @@ export class PluginManager {
     this.snapshot = {
       ready: !!this.opts,
       plugins,
-      consent: head ? { id: head.id, kind: head.kind, manifest: head.manifest, source: head.source, added: head.added } : null,
+      consent: head
+        ? { id: head.id, kind: head.kind, manifest: head.manifest, source: head.source, added: head.added }
+        : null,
       panels,
       themes,
     };
@@ -216,9 +218,11 @@ export class PluginManager {
 
   private persist(): Promise<void> {
     const settings = this.settings;
-    this.saving = this.saving.then(() => this.options.persistence.saveSettings(settings)).catch((error) => {
-      console.warn('[plugins] saving plugin settings failed:', error);
-    });
+    this.saving = this.saving
+      .then(() => this.options.persistence.saveSettings(settings))
+      .catch((error) => {
+        console.warn('[plugins] saving plugin settings failed:', error);
+      });
     return this.saving;
   }
 
@@ -473,7 +477,8 @@ export class PluginManager {
     if (!ok) return false;
     const id = manifest.id;
     const previous = this.settings.installed[id];
-    if (source.kind === 'marketplace') await this.options.persistence.writeBundle(bundleKey(id, manifest.version), bundle);
+    if (source.kind === 'marketplace')
+      await this.options.persistence.writeBundle(bundleKey(id, manifest.version), bundle);
     this.stopRuntime(id);
     this.update(id, {
       id,
@@ -498,7 +503,10 @@ export class PluginManager {
    * Applies a verified marketplace update: silent when it asks for nothing new, otherwise held as
    * `pendingUpdate` until the user re-consents (`approveUpdate`).
    */
-  async applyUpdate(bundle: PluginBundle, source: Extract<PluginSource, { kind: 'marketplace' }>): Promise<'updated' | 'held'> {
+  async applyUpdate(
+    bundle: PluginBundle,
+    source: Extract<PluginSource, { kind: 'marketplace' }>,
+  ): Promise<'updated' | 'held'> {
     const id = bundle.manifest.id;
     const installed = this.settings.installed[id];
     if (!installed) throw new Error(`${id} is not installed`);
@@ -541,7 +549,12 @@ export class PluginManager {
     const bundle = await this.options.persistence.readBundle(bundleKey(id, pending.version));
     if (!bundle) throw new Error('Update files are missing');
     const source: PluginSource = { kind: 'marketplace', sha256: pending.sha256, signature: pending.signature };
-    const ok = await this.requestConsent('update', bundle.manifest, source, missingGrants(bundle.manifest, installed.granted));
+    const ok = await this.requestConsent(
+      'update',
+      bundle.manifest,
+      source,
+      missingGrants(bundle.manifest, installed.granted),
+    );
     if (!ok) return false;
     this.stopRuntime(id);
     this.update(id, {
@@ -641,11 +654,14 @@ export class PluginManager {
       const installed = this.settings.installed[id];
       const instance = rt.instance;
       if (!installed?.enabled || rt.status !== 'running' || !instance || !rt.manifest?.slots.includes(slot)) continue;
-      const holds = (p: Permission) => rt.manifest!.permissions.includes(p) && installed.granted.permissions.includes(p);
+      const holds = (p: Permission) =>
+        rt.manifest!.permissions.includes(p) && installed.granted.permissions.includes(p);
       if (needed && !holds(needed)) continue;
       // ticker.widget input carries the stash summary only for plugins granted stash:read.
       const pluginInput =
-        slot === 'ticker.widget' && !holds('stash:read') ? { ...(input as SlotInput<'ticker.widget'>), netWorth: null } : input;
+        slot === 'ticker.widget' && !holds('stash:read')
+          ? { ...(input as SlotInput<'ticker.widget'>), netWorth: null }
+          : input;
       calls.push({ pluginId: id, pluginName: installed.name, result: instance.invokeSlot(slot, pluginInput) });
     }
     return calls;
@@ -654,7 +670,8 @@ export class PluginManager {
   /** True when any running plugin implements `slot` (lets surfaces skip building inputs). */
   hasSlot(slot: CallableSlotId): boolean {
     for (const [id, rt] of this.runtimes)
-      if (rt.status === 'running' && this.settings.installed[id]?.enabled && rt.manifest?.slots.includes(slot)) return true;
+      if (rt.status === 'running' && this.settings.installed[id]?.enabled && rt.manifest?.slots.includes(slot))
+        return true;
     return false;
   }
 
@@ -670,12 +687,19 @@ export class PluginManager {
 
   /** Every command of every running plugin (palette + hotkeys). */
   commands(): Array<{ pluginId: string; pluginName: string; id: string; title: string; hotkey: PluginHotkey | null }> {
-    const out: Array<{ pluginId: string; pluginName: string; id: string; title: string; hotkey: PluginHotkey | null }> = [];
+    const out: Array<{ pluginId: string; pluginName: string; id: string; title: string; hotkey: PluginHotkey | null }> =
+      [];
     for (const [id, rt] of this.runtimes) {
       const installed = this.settings.installed[id];
       if (!installed?.enabled || !rt.manifest) continue;
       for (const command of rt.manifest.commands)
-        out.push({ pluginId: id, pluginName: installed.name, id: command.id, title: command.title, hotkey: this.hotkeyFor(id, command.id) });
+        out.push({
+          pluginId: id,
+          pluginName: installed.name,
+          id: command.id,
+          title: command.title,
+          hotkey: this.hotkeyFor(id, command.id),
+        });
     }
     return out;
   }
@@ -697,7 +721,11 @@ export class PluginManager {
     pluginId: string,
     panel: string,
     onWorkerMessage: (data: unknown) => void,
-  ): { call(method: string, params: unknown): Promise<unknown>; toWorker(data: unknown): void; disconnect(): void } | null {
+  ): {
+    call(method: string, params: unknown): Promise<unknown>;
+    toWorker(data: unknown): void;
+    disconnect(): void;
+  } | null {
     const rt = this.runtimes.get(pluginId);
     const installed = this.settings.installed[pluginId];
     const manifest = rt?.manifest;

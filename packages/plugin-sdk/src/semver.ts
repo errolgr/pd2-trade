@@ -67,18 +67,28 @@ function parseComparator(token: string): Comparator[] | null {
   const pre = p[4] ? p[4].split('.') : [];
   if (pre.length && patchWild) return null;
   const base = v(major, minor, patch, pre);
-  const upper = (): SemVer =>
-    minorWild ? v(major + 1) : patchWild ? v(major, minor + 1) : v(major, minor, patch + 1);
+  const upper = (): SemVer => (minorWild ? v(major + 1) : patchWild ? v(major, minor + 1) : v(major, minor, patch + 1));
   switch (op) {
     case '^': {
       const hi = major > 0 || minorWild ? v(major + 1) : minor > 0 || patchWild ? v(0, minor + 1) : v(0, 0, patch + 1);
-      return [{ op: '>=', v: base }, { op: '<', v: hi }];
+      return [
+        { op: '>=', v: base },
+        { op: '<', v: hi },
+      ];
     }
     case '~':
-      return [{ op: '>=', v: base }, { op: '<', v: minorWild ? v(major + 1) : v(major, minor + 1) }];
+      return [
+        { op: '>=', v: base },
+        { op: '<', v: minorWild ? v(major + 1) : v(major, minor + 1) },
+      ];
     case '':
     case '=':
-      return minorWild || patchWild ? [{ op: '>=', v: base }, { op: '<', v: upper() }] : [{ op: '=', v: base }];
+      return minorWild || patchWild
+        ? [
+            { op: '>=', v: base },
+            { op: '<', v: upper() },
+          ]
+        : [{ op: '=', v: base }];
     case '>=':
       return [{ op: '>=', v: base }];
     case '>':

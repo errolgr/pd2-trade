@@ -79,7 +79,10 @@ const listingSchema = z.object({
   verified: z.boolean().default(false),
 });
 
-const listPageSchema = z.object({ items: z.array(listingSchema), nextCursor: z.string().nullable().optional() }) as unknown as z.ZodType<ListingPage>;
+const listPageSchema = z.object({
+  items: z.array(listingSchema),
+  nextCursor: z.string().nullable().optional(),
+}) as unknown as z.ZodType<ListingPage>;
 
 const listingDetailSchema = listingSchema.extend({
   versions: z

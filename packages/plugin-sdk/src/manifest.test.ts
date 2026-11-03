@@ -51,8 +51,12 @@ describe('manifest', () => {
     expect(parseManifest(themeOnly).errors).toEqual([]);
     const missing = { ...theme.vars };
     delete missing.primary;
-    expect(parseManifest({ ...themeOnly, theme: { ...theme, vars: missing } }).errors.join()).toMatch(/missing token primary/);
-    expect(parseManifest({ ...themeOnly, theme: { ...theme, vars: { ...theme.vars, bogus: '#fff' } } }).manifest).toBeUndefined();
+    expect(parseManifest({ ...themeOnly, theme: { ...theme, vars: missing } }).errors.join()).toMatch(
+      /missing token primary/,
+    );
+    expect(
+      parseManifest({ ...themeOnly, theme: { ...theme, vars: { ...theme.vars, bogus: '#fff' } } }).manifest,
+    ).toBeUndefined();
     // CSS injection through a token value
     const injected = { ...theme.vars, background: 'red; } body { background: url(https://evil.example/x)' };
     expect(parseManifest({ ...themeOnly, theme: { ...theme, vars: injected } }).manifest).toBeUndefined();
@@ -61,7 +65,13 @@ describe('manifest', () => {
   it('accepts every built-in theme as a plugin token set', () => {
     for (const t of THEMES.filter((t) => !Object.values(t.vars).some((v) => v.includes('color-mix')))) {
       const vars = Object.fromEntries(PLUGIN_THEME_TOKENS.map((k) => [k, t.vars[k]]));
-      const result = parseManifest({ id: 'com.example.t', name: 't', version: '1.0.0', sdk: '^1.0.0', theme: { mode: t.mode, vars } });
+      const result = parseManifest({
+        id: 'com.example.t',
+        name: 't',
+        version: '1.0.0',
+        sdk: '^1.0.0',
+        theme: { mode: t.mode, vars },
+      });
       expect(result.errors, t.id).toEqual([]);
     }
   });

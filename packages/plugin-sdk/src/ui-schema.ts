@@ -12,7 +12,14 @@ const tone = z.enum(TONES);
 const commandId = z.string().regex(/^[a-z][a-z0-9-]{0,31}$/);
 
 export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
-  z.union([z.null(), z.boolean(), z.number().finite(), z.string(), z.array(jsonValueSchema), z.record(jsonValueSchema)]),
+  z.union([
+    z.null(),
+    z.boolean(),
+    z.number().finite(),
+    z.string(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
 );
 
 const argsSchema = jsonValueSchema.refine((value) => JSON.stringify(value).length <= UI_LIMITS.maxArgsBytes, {

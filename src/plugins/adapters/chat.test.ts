@@ -32,7 +32,14 @@ describe('fromTradeMessageEvent', () => {
   });
 
   it("leaves out the watcher's null item and price and gives each line its own id", () => {
-    const event = { isIncoming: false, playerName: 'Bob', accountName: null, message: 'Hi', itemName: null, price: null };
+    const event = {
+      isIncoming: false,
+      playerName: 'Bob',
+      accountName: null,
+      message: 'Hi',
+      itemName: null,
+      price: null,
+    };
     const a = fromTradeMessageEvent(event, NOW);
     const b = fromTradeMessageEvent(event, NOW);
     expect(a).not.toHaveProperty('itemName');
@@ -45,9 +52,14 @@ describe('fromTradeMessageEvent', () => {
 describe('fromWhisperEvent', () => {
   it('maps a plain whisper and skips join notices', () => {
     expect(
-      fromWhisperEvent({ isTrade: false, from: 'tharok', message: 'still here', isJoin: false, isIncoming: false }, NOW),
+      fromWhisperEvent(
+        { isTrade: false, from: 'tharok', message: 'still here', isJoin: false, isIncoming: false },
+        NOW,
+      ),
     ).toMatchObject({ channel: 'whisper', direction: 'out', sender: 'tharok', text: 'still here' });
-    expect(fromWhisperEvent({ isTrade: false, from: 'x', message: 'joined', isJoin: true, isIncoming: true }, NOW)).toBeNull();
+    expect(
+      fromWhisperEvent({ isTrade: false, from: 'x', message: 'joined', isJoin: true, isIncoming: true }, NOW),
+    ).toBeNull();
   });
 });
 
@@ -114,7 +126,9 @@ describe('fromTimelineEntry', () => {
       channel: 'website',
     });
     expect(
-      fromTimelineEntry(entry({ trade: { outcome: 'sold', settledAt: NOW } as TimelineEntry['trade'] }), { other: 'Bob' }),
+      fromTimelineEntry(entry({ trade: { outcome: 'sold', settledAt: NOW } as TimelineEntry['trade'] }), {
+        other: 'Bob',
+      }),
     ).toBeNull();
   });
 });

@@ -1,4 +1,11 @@
-import { ui, type BadgeNode, type PriceCheckInput, type RunePrice, type SectionNode, type UiNode } from '@pd2-trader/plugin-sdk';
+import {
+  ui,
+  type BadgeNode,
+  type PriceCheckInput,
+  type RunePrice,
+  type SectionNode,
+  type UiNode,
+} from '@pd2-trader/plugin-sdk';
 import { runewordRunes } from './runewords';
 
 /** Rune prices keyed by short name ("Ber"), from sdk.prices.runes() ("Ber Rune"). */
@@ -68,7 +75,10 @@ function analyze({ item, price }: PriceCheckInput, table: RuneTable): Analysis {
   if (!runes || !table.size) return { cost: null, verdict: null };
   const cost = runeCost(runes, table);
   const market = price?.medianHr ?? null;
-  return { cost, verdict: market !== null && market > 0 && !cost.missing.length ? verdict(cost.totalHr, market) : null };
+  return {
+    cost,
+    verdict: market !== null && market > 0 && !cost.missing.length ? verdict(cost.totalHr, market) : null,
+  };
 }
 
 const VERDICT_BADGE: Record<Verdict, BadgeNode> = {
@@ -88,7 +98,8 @@ export function craftSection(input: PriceCheckInput, table: RuneTable): SectionN
       children.push(ui.row(label, line.totalHr === null ? '—' : formatHr(line.totalHr)));
     }
     children.push(ui.divider(), ui.row('Rune cost', formatHr(cost.totalHr)));
-    if (cost.missing.length) children.push(ui.text(`No price for ${cost.missing.join(', ')}`, { tone: 'muted', size: 'sm' }));
+    if (cost.missing.length)
+      children.push(ui.text(`No price for ${cost.missing.join(', ')}`, { tone: 'muted', size: 'sm' }));
     if (market !== null && market > 0) children.push(ui.row('Market price', formatHr(market)));
     if (result) children.push(VERDICT_BADGE[result]);
   }

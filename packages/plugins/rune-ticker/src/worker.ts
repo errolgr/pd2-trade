@@ -57,7 +57,8 @@ sdk.slots.register('ticker.widget', () => {
   const shown = ['Ber', 'Jah'].flatMap((name) => runes.filter((r) => r.name === name));
   if (!shown.length) return null;
   const nodes: InlineNode[] = [ui.text(shown.map((r) => r.name).join(' · '), { tone: 'q-rune', size: 'sm' })];
-  for (const rune of shown) nodes.push(ui.price(rune.priceHr, 'hr', trendOf(changePercent(rune.name, rune.priceHr, previous))));
+  for (const rune of shown)
+    nodes.push(ui.price(rune.priceHr, 'hr', trendOf(changePercent(rune.name, rune.priceHr, previous))));
   return nodes;
 });
 

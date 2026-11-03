@@ -75,7 +75,10 @@ export default function PluginHostBridge() {
         return value;
       },
       async itemPrice(name) {
-        const price = await fetchItemPriceByName(name, { ...priceConfig(), hours: live.current.settings.priceWindowHours });
+        const price = await fetchItemPriceByName(name, {
+          ...priceConfig(),
+          hours: live.current.settings.priceWindowHours,
+        });
         if (!price) return null;
         return {
           name: price.itemName,
@@ -112,27 +115,31 @@ export default function PluginHostBridge() {
   // Start once settings are loaded; plugin registry writes go through the settings file.
   useEffect(() => {
     if (isLoading) return;
-    void pluginHost.start({
-      services,
-      devLoader,
-      persistence: {
-        loadSettings: async () => live.current.settings.plugins ?? EMPTY_PLUGINS_SETTINGS,
-        saveSettings: async (plugins) => {
-          await live.current.updateSettings({ plugins });
+    void pluginHost
+      .start({
+        services,
+        devLoader,
+        persistence: {
+          loadSettings: async () => live.current.settings.plugins ?? EMPTY_PLUGINS_SETTINGS,
+          saveSettings: async (plugins) => {
+            await live.current.updateSettings({ plugins });
+          },
+          ...idbStore,
         },
-        ...idbStore,
-      },
-      telemetry: { error: (id, version, kind) => void marketplaceApi.reportError(id, version, kind) },
-      onAutoDisabled(plugin, reason) {
-        showToast({
-          title: t(reason === 'blocklisted' ? 'plugins:disabled.blocklisted' : 'plugins:disabled.failures', {
-            name: plugin.name,
-          }),
-          description: t(reason === 'blocklisted' ? 'plugins:disabled.blocklistedHint' : 'plugins:disabled.failuresHint'),
-          variant: 'warning',
-        });
-      },
-    }).then(() => marketplace.start());
+        telemetry: { error: (id, version, kind) => void marketplaceApi.reportError(id, version, kind) },
+        onAutoDisabled(plugin, reason) {
+          showToast({
+            title: t(reason === 'blocklisted' ? 'plugins:disabled.blocklisted' : 'plugins:disabled.failures', {
+              name: plugin.name,
+            }),
+            description: t(
+              reason === 'blocklisted' ? 'plugins:disabled.blocklistedHint' : 'plugins:disabled.failuresHint',
+            ),
+            variant: 'warning',
+          });
+        },
+      })
+      .then(() => marketplace.start());
     return () => {
       marketplace.stop();
       pluginHost.shutdown();

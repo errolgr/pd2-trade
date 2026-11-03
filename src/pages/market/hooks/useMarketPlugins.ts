@@ -65,7 +65,11 @@ function useSettled<S extends MarketSlot>(results: SlotResult<S>[]): Settled<S> 
   return next.values;
 }
 
-function failuresOf<S extends CallableSlotId>(slot: S, results: SlotResult<S>[], retry: () => void): PluginSlotFailure[] {
+function failuresOf<S extends CallableSlotId>(
+  slot: S,
+  results: SlotResult<S>[],
+  retry: () => void,
+): PluginSlotFailure[] {
   return results.flatMap((r) =>
     r.state === 'error' ? [{ key: `${slot}:${r.pluginId}`, pluginName: r.pluginName, error: r.error, retry }] : [],
   );
@@ -116,7 +120,11 @@ export function useMarketPlugins(rows: ScoredListing[], query: MarketFilters | n
   return {
     rows: applied,
     cells,
-    filters: filterValues.map((f) => ({ pluginId: f.pluginId, label: f.value.label, active: activeFilters.has(f.pluginId) })),
+    filters: filterValues.map((f) => ({
+      pluginId: f.pluginId,
+      label: f.value.label,
+      active: activeFilters.has(f.pluginId),
+    })),
     toggleFilter: (pluginId) =>
       setActiveFilters((prev) => {
         const next = new Set(prev);

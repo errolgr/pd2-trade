@@ -32,7 +32,11 @@ const settingProperty = z
     title: z.string().min(1).max(60),
     description: z.string().max(200).optional(),
     default: z.union([z.string().max(500), z.number().finite(), z.boolean()]).optional(),
-    enum: z.array(z.union([z.string().max(60), z.number().finite()])).min(1).max(30).optional(),
+    enum: z
+      .array(z.union([z.string().max(60), z.number().finite()]))
+      .min(1)
+      .max(30)
+      .optional(),
     minimum: z.number().finite().optional(),
     maximum: z.number().finite().optional(),
     maxLength: z.number().int().positive().max(500).optional(),
@@ -58,7 +62,8 @@ export type PluginSettingsSchema = z.infer<typeof settingsSchemaSchema>;
  * Theme value: oklch()/oklab()/hex colors (alpha allowed) or a rem/px length for `radius`. No var(), url(),
  * semicolons or braces: values are written into CSS custom properties.
  */
-const COLOR_RE = /^(?:oklch|oklab)\(\s*[\d.]+%?\s+-?[\d.]+%?\s+-?[\d.]+(?:deg)?\s*(?:\/\s*[\d.]+%?\s*)?\)$|^#[0-9a-fA-F]{3,8}$/;
+const COLOR_RE =
+  /^(?:oklch|oklab)\(\s*[\d.]+%?\s+-?[\d.]+%?\s+-?[\d.]+(?:deg)?\s*(?:\/\s*[\d.]+%?\s*)?\)$|^#[0-9a-fA-F]{3,8}$/;
 const LENGTH_RE = /^\d+(?:\.\d+)?(?:rem|px)$/;
 
 /** Derived by the host from background/popover so the window-transparency setting keeps working. */
@@ -77,7 +82,8 @@ export const themeSchema = z
   .superRefine((theme, ctx) => {
     for (const token of PLUGIN_THEME_TOKENS) {
       const value = theme.vars[token];
-      if (value === undefined) ctx.addIssue({ code: 'custom', path: ['vars', token], message: `missing token ${token}` });
+      if (value === undefined)
+        ctx.addIssue({ code: 'custom', path: ['vars', token], message: `missing token ${token}` });
       else if (!(token === 'radius' ? LENGTH_RE : COLOR_RE).test(value.trim()))
         ctx.addIssue({ code: 'custom', path: ['vars', token], message: `invalid value for ${token}` });
     }

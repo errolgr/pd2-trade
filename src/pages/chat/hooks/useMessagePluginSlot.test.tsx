@@ -54,7 +54,9 @@ describe('useMessagePluginSlot', () => {
       { pluginId: 'tagger', pluginName: 'Tagger', result: Promise.resolve({ tags: [{ type: 'badge', text: 'VIP' }] }) },
     ]);
     const first = renderHook(() => useMessagePluginSlot('chat.decorate', () => message, 'k1'));
-    await waitFor(() => expect(first.result.current[0]).toMatchObject({ state: 'ok', value: { tags: [{ text: 'VIP' }] } }));
+    await waitFor(() =>
+      expect(first.result.current[0]).toMatchObject({ state: 'ok', value: { tags: [{ text: 'VIP' }] } }),
+    );
     first.rerender();
     first.unmount();
 

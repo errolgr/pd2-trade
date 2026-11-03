@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
-import { applyPluginView, cellsByRow, MAX_PLUGIN_ROWS, pluginRows, rowsKey, toMarketQuery, toMarketRow } from './market';
+import {
+  applyPluginView,
+  cellsByRow,
+  MAX_PLUGIN_ROWS,
+  pluginRows,
+  rowsKey,
+  toMarketQuery,
+  toMarketRow,
+} from './market';
 
-const row = (id: string, over: Partial<MarketListingEntry> = {}, extra: Partial<ScoredListing> = {}): ScoredListing => ({
+const row = (
+  id: string,
+  over: Partial<MarketListingEntry> = {},
+  extra: Partial<ScoredListing> = {},
+): ScoredListing => ({
   listing: {
     _id: id,
     price: '',
@@ -76,7 +88,13 @@ describe('toMarketRow', () => {
 
 describe('toMarketQuery', () => {
   it('keeps the realm, source and item name only', () => {
-    const filters = { source: 'archive', ladder: true, hardcore: false, itemName: 'Shako', rarity: [] } as unknown as MarketFilters;
+    const filters = {
+      source: 'archive',
+      ladder: true,
+      hardcore: false,
+      itemName: 'Shako',
+      rarity: [],
+    } as unknown as MarketFilters;
     expect(toMarketQuery(filters)).toEqual({ source: 'archive', ladder: true, hardcore: false, itemName: 'Shako' });
     expect(toMarketQuery({ ...filters, itemName: undefined })).not.toHaveProperty('itemName');
   });

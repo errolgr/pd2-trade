@@ -13,9 +13,11 @@ const matched = new Set<string>();
 let saving: Promise<void> = Promise.resolve();
 const save = () => {
   const snapshot = matches.slice();
-  saving = saving.then(() => sdk.storage.set(MATCHES_KEY, snapshot)).catch((error: unknown) => {
-    sdk.log('Could not save matches:', error instanceof Error ? error.message : String(error));
-  });
+  saving = saving
+    .then(() => sdk.storage.set(MATCHES_KEY, snapshot))
+    .catch((error: unknown) => {
+      sdk.log('Could not save matches:', error instanceof Error ? error.message : String(error));
+    });
 };
 
 sdk.settings.onChange((values) => (settings = parseSettings(values)));

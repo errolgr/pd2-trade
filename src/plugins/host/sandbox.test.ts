@@ -31,7 +31,8 @@ describe('plugin sandboxes', () => {
     const conf = JSON.parse(readFileSync(join(__dirname, '../../../src-tauri/tauri.conf.json'), 'utf8'));
     const csp = conf.app?.security?.csp;
     if (csp === null || csp === undefined) return; // no app CSP: nothing blocks the bootstraps
-    const scriptSrc: string = typeof csp === 'string' ? (/script-src ([^;]*)/.exec(csp)?.[1] ?? '') : (csp['script-src'] ?? '');
+    const scriptSrc: string =
+      typeof csp === 'string' ? (/script-src ([^;]*)/.exec(csp)?.[1] ?? '') : (csp['script-src'] ?? '');
     expect(scriptSrc).toContain(WORKER_BOOTSTRAP_HASH);
     expect(scriptSrc).toContain(PANEL_BOOTSTRAP_HASH);
     expect(scriptSrc).toContain('blob:');

@@ -21,7 +21,10 @@ export function currentThemeInfo(root: HTMLElement = document.documentElement): 
 }
 
 /** Calls `onChange` with the new theme whenever the applied theme or window transparency changes. */
-export function watchTheme(onChange: (theme: ThemeInfo) => void, root: HTMLElement = document.documentElement): () => void {
+export function watchTheme(
+  onChange: (theme: ThemeInfo) => void,
+  root: HTMLElement = document.documentElement,
+): () => void {
   let last = JSON.stringify(currentThemeInfo(root));
   let frame = 0;
   const observer = new MutationObserver(() => {

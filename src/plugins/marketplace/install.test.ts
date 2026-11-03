@@ -2,7 +2,13 @@ import { createHash, generateKeyPairSync, sign, type KeyObject } from 'node:cryp
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsonValue, Permission } from '@pd2-trader/plugin-sdk';
 import { PluginManager } from '../host/manager';
-import { EMPTY_PLUGINS_SETTINGS, type HostServices, type PluginBundle, type PluginPersistence, type PluginsSettings } from '../host/types';
+import {
+  EMPTY_PLUGINS_SETTINGS,
+  type HostServices,
+  type PluginBundle,
+  type PluginPersistence,
+  type PluginsSettings,
+} from '../host/types';
 import { canonicalJson } from '../trust/verify';
 import type { BlocklistEntry, ListingDetail, MarketplaceApi, Release, SignedBlocklist } from './api';
 import { BundleVerificationError, MarketplaceClient } from './install';
@@ -88,7 +94,13 @@ class FakeApi implements MarketplaceApi {
   async release(id: string, version: string): Promise<Release> {
     const r = this.releases.get(`${id}@${version}`);
     if (!r) throw new Error('unknown release');
-    return { manifest: null, bundleUrl: `${id}/${version}/bundle`, sha256: r.sha256, signature: r.signature, publishedAt: '' };
+    return {
+      manifest: null,
+      bundleUrl: `${id}/${version}/bundle`,
+      sha256: r.sha256,
+      signature: r.signature,
+      publishedAt: '',
+    };
   }
 
   async blocklist(): Promise<SignedBlocklist> {
@@ -110,7 +122,8 @@ function memoryPersistence(): PluginPersistence {
     saveSettings: async (next) => void (settings = next),
     readBundle: async (key) => bundles.get(key) ?? null,
     writeBundle: async (key, b) => void bundles.set(key, b),
-    deleteBundles: async (id) => [...bundles.keys()].filter((k) => k.startsWith(`${id}@`)).forEach((k) => bundles.delete(k)),
+    deleteBundles: async (id) =>
+      [...bundles.keys()].filter((k) => k.startsWith(`${id}@`)).forEach((k) => bundles.delete(k)),
     readKv: async (id) => kv.get(id) ?? {},
     writeKv: async (id, data) => void kv.set(id, data),
   };
@@ -145,7 +158,11 @@ beforeEach(async () => {
 
 const installed = () => manager.getSnapshot().plugins.find((p) => p.installed.id === ID)?.installed;
 
-function signedBlocklist(entries: BlocklistEntry[], issuedAt: string, key: KeyObject = signer.privateKey): SignedBlocklist {
+function signedBlocklist(
+  entries: BlocklistEntry[],
+  issuedAt: string,
+  key: KeyObject = signer.privateKey,
+): SignedBlocklist {
   return { entries, issuedAt, signature: signWith(key, canonicalJson({ entries, issuedAt })) };
 }
 
@@ -190,7 +207,11 @@ describe('MarketplaceClient.applyBlocklist', () => {
   });
 
   it('ignores a blocklist with a bad signature', async () => {
-    const list = signedBlocklist([{ id: ID, versions: '*', reason: 'x' }], '2026-11-01T00:00:00Z', keyPair().privateKey);
+    const list = signedBlocklist(
+      [{ id: ID, versions: '*', reason: 'x' }],
+      '2026-11-01T00:00:00Z',
+      keyPair().privateKey,
+    );
     await expect(client.applyBlocklist(list)).resolves.toBe(false);
     expect(client.blocklist).toEqual([]);
     expect(installed().enabled).toBe(true);
@@ -237,7 +258,9 @@ describe('MarketplaceClient.checkUpdates', () => {
   });
 
   it('skips a blocklisted latest version', async () => {
-    await client.applyBlocklist(signedBlocklist([{ id: ID, versions: ['1.1.0'], reason: 'bad' }], '2026-11-01T00:00:00Z'));
+    await client.applyBlocklist(
+      signedBlocklist([{ id: ID, versions: ['1.1.0'], reason: 'bad' }], '2026-11-01T00:00:00Z'),
+    );
     api.publish(bundle('1.1.0'));
     await client.checkUpdates();
     expect(installed().version).toBe('1.0.0');

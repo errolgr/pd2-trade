@@ -27,10 +27,16 @@ export async function fetchVerifiedBundle(
   publicKey?: string,
 ): Promise<PluginBundle> {
   const bytes = await api.download(release.bundleUrl);
-  const check = await verifyBundle(bytes, { id, version, sha256: release.sha256, signature: release.signature }, publicKey);
+  const check = await verifyBundle(
+    bytes,
+    { id, version, sha256: release.sha256, signature: release.signature },
+    publicKey,
+  );
   if (!check.ok)
     throw new BundleVerificationError(
-      check.reason === 'hash-mismatch' ? 'Downloaded files do not match the published hash' : 'Bundle signature is invalid',
+      check.reason === 'hash-mismatch'
+        ? 'Downloaded files do not match the published hash'
+        : 'Bundle signature is invalid',
     );
   let bundle: PluginBundle;
   try {
@@ -82,7 +88,11 @@ export class MarketplaceClient {
     if (blocked) throw new BundleVerificationError(`This version is blocked: ${blocked.reason}`);
     const release = await api.release(id, target);
     const bundle = await fetchVerifiedBundle(api, id, release, target, publicKey);
-    const ok = await manager.install(bundle, { kind: 'marketplace', sha256: release.sha256, signature: release.signature });
+    const ok = await manager.install(bundle, {
+      kind: 'marketplace',
+      sha256: release.sha256,
+      signature: release.signature,
+    });
     if (ok) void api.reportInstall(id, target);
     return ok;
   }
@@ -126,7 +136,11 @@ export class MarketplaceClient {
         if (isBlocked(this.entries, installed.id, latest)) continue;
         const release = await api.release(installed.id, latest);
         const bundle = await fetchVerifiedBundle(api, installed.id, release, latest, publicKey);
-        await manager.applyUpdate(bundle, { kind: 'marketplace', sha256: release.sha256, signature: release.signature });
+        await manager.applyUpdate(bundle, {
+          kind: 'marketplace',
+          sha256: release.sha256,
+          signature: release.signature,
+        });
       } catch (error) {
         console.warn(`[plugins] update check for ${installed.id} failed:`, error);
       }

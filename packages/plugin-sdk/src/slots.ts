@@ -259,7 +259,10 @@ export const SLOT_OUTPUT_SCHEMAS = {
     .strict()
     .nullable(),
   'chat.action': z.array(buttonNodeSchema).max(3),
-  'networth.tab': z.object({ title: shortText, content: z.array(uiNodeSchema).max(50) }).strict().nullable(),
+  'networth.tab': z
+    .object({ title: shortText, content: z.array(uiNodeSchema).max(50) })
+    .strict()
+    .nullable(),
   'networth.metric': z
     .object({ label: shortText, value: z.discriminatedUnion('type', [priceNodeSchema, textNodeSchema]) })
     .strict()

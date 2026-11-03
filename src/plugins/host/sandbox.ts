@@ -12,7 +12,8 @@
  * sha256 is pinned in sandbox.test.ts. Changing a bootstrap means updating the hash in tauri.conf.json too.
  */
 
-export const WORKER_SANDBOX_CSP = "default-src 'none'; script-src blob: 'unsafe-inline'; worker-src blob:; connect-src 'none'";
+export const WORKER_SANDBOX_CSP =
+  "default-src 'none'; script-src blob: 'unsafe-inline'; worker-src blob:; connect-src 'none'";
 export const PANEL_SANDBOX_CSP =
   "default-src 'none'; script-src blob: 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'";
 

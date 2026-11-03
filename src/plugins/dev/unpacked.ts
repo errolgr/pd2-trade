@@ -37,9 +37,7 @@ export async function loadUnpacked(source: DevSource): Promise<PluginBundle> {
   }
   const { manifest, errors } = parseManifest(raw);
   if (!manifest) throw new Error(`Invalid manifest: ${errors.join('; ')}`);
-  const paths = [manifest.entry.worker, ...Object.values(manifest.entry.panels ?? {})].filter(
-    (p): p is string => !!p,
-  );
+  const paths = [manifest.entry.worker, ...Object.values(manifest.entry.panels ?? {})].filter((p): p is string => !!p);
   const files: Record<string, string> = {};
   for (const path of paths) files[path] = await readFrom(source, path);
   return parseBundle({ format: 'pd2-plugin-bundle@1', manifest, files });
