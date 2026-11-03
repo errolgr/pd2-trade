@@ -5,6 +5,7 @@ import { showToast } from '@/overlay';
 import { check } from '@tauri-apps/plugin-updater';
 import type { DownloadEvent, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
@@ -14,7 +15,7 @@ import { resetUpdateNotification, useAppUpdates } from './useAppUpdates';
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true, invoke: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useDialog', () => ({
   useDialog: () => ({ openDialog: vi.fn(), closeDialog: vi.fn() }),
@@ -56,6 +57,7 @@ beforeEach(() => {
   calls = [];
   resetUpdateNotification();
   resetManualUpdateRequired();
+  vi.mocked(invoke).mockResolvedValue(true);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(check).mockResolvedValue(fakeUpdate('1.2.0'));
@@ -235,6 +237,21 @@ describe('useAppUpdates manual install (Linux deb/rpm)', () => {
     vi.mocked(check).mockResolvedValue(failingUpdate('1.3.0', message));
     await advance(FIVE_MINUTES);
     expect(updateToasts()).toEqual([manualUpdateToast('1.2.0'), manualUpdateToast('1.3.0')]);
+  });
+
+  it('skips the download when this install cannot update itself', async () => {
+    const update = fakeUpdate('1.2.0');
+    vi.mocked(check).mockResolvedValue(update);
+    vi.mocked(invoke).mockResolvedValue(false);
+    renderAppUpdates({ autoUpdateEnabled: true });
+
+    await advance(2000);
+    await advance(FIVE_MINUTES);
+
+    expect(invoke).toHaveBeenCalledWith('self_update_supported');
+    expect(update.downloadAndInstall).not.toHaveBeenCalled();
+    expect(relaunch).not.toHaveBeenCalled();
+    expect(updateToasts()).toEqual([manualUpdateToast('1.2.0')]);
   });
 
   it('still reports other install failures', async () => {
