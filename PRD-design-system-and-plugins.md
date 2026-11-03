@@ -96,7 +96,7 @@ Built on the existing shadcn/Radix primitives, owned and extended (_Proposed_).
 ### A4. Packaging
 
 - Published package `@pd2-trader/ui` (_Proposed_), containing tokens, React components, a Tailwind preset and the generated CSS. The overlay consumes it like any plugin does, and it is versioned in step with the SDK.
-- Visual direction: formalize the current "modern neutral + D2 accents" look (_Proposed_). Present 2-3 SVG direction mockups (panel, price check, market row) before locking it.
+- Visual direction: **Refined current** (decided M0). Zinc neutrals as today; accent only via `--glow` and `--q-*`; type scale 11/12/13/16/24 with tabular numerals; radius 8/6/4; 4px spacing. Maps 1:1 onto existing tokens, so all 21 themes keep working. Rejected: Sanctuary dark-fantasy (theme-specific frames, low density, high cost) and Tactical/HUD (cold outside the game, light-theme issues).
 
 ### A5. Core migration
 
@@ -298,7 +298,7 @@ sequenceDiagram
 1. DS scope: overlay + plugins only, or include the website now? (_Proposed_: website later, M6.)
 2. Packaging: published npm package vs folder in pd2-trade vs separate monorepo (ui + sdk + cli + docs)? (_Proposed_: published package; monorepo layout to be decided.)
 3. Foundation: keep and own shadcn/Radix, or rebuild custom? (_Proposed_: keep and own.)
-4. Visual direction: formalize current neutral + D2 accents, or go strongly D2-themed? (_Proposed_: mockups in M0.)
+4. ~~Visual direction~~ Resolved: Refined current (§5 A4).
 5. Rule enforcement: which of lint, catalog site, AI rules file and review checklist ship in v1? (_Proposed_: all; catalog P1.)
 6. Plugin visual freedom: tokens-only, scoped accent override, or free styling inside own panels? (_Proposed_: scoped accent override.)
 7. Storefront: in-overlay + website, or one of the two? (_Proposed_: both; website P1.)
