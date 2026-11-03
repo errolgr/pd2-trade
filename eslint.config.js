@@ -4,20 +4,24 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import prettierConfig from "eslint-config-prettier";
-import designSystem from "./eslint-rules/design-system.js";
+import designSystem, { CONSISTENCY_RULES, TOKEN_RULES, pd2dsRules } from "./eslint-rules/design-system.js";
 
-// Design-system guard rails (PRD A3.2, packages/ui/DESIGN_RULES.md). Token sources and tests are exempt.
+// Design-system guard rails (PRD A3.2/A4, packages/ui/DESIGN_RULES.md). Token sources and tests are exempt.
 const designSystemIgnores = [
   "**/*.test.{ts,tsx}",
+  "**/test-utils.{ts,tsx}",
   "src/lib/themes.ts",
   "packages/ui/src/tokens/**",
   "packages/ui/scripts/**",
 ];
-const designSystemRules = (severity) => ({
-  "pd2-ds/no-raw-color": severity,
-  "pd2-ds/no-palette-class": severity,
-  "pd2-ds/no-arbitrary-value": severity,
-});
+// Consistency rules (no direct Radix/cmdk/sonner/vaul/cva imports, no styled raw controls, no local primitives)
+// stay warn-only in the app until the component move into @pd2-trader/ui lands; then set this to "error".
+const srcConsistencySeverity = "warn";
+// Plugin code (first-party plugins, create-pd2-plugin template) must be clean from day one: every rule errors.
+const pluginCode = [
+  "packages/plugins/*/src/**/*.{ts,tsx,js,jsx}",
+  "packages/create-pd2-plugin/template/**/*.{ts,tsx,js,jsx}",
+];
 
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -64,16 +68,26 @@ export default [
     },
   },
   {
-    // Warn-only in the app until each panel is migrated (PRD A5); the design-system package itself must be clean.
+    // Token rules are warn-only in the app until each panel is migrated (PRD A5); packages/ui must be clean.
     files: ["src/**/*.{ts,tsx}"],
     ignores: designSystemIgnores,
     plugins: { "pd2-ds": designSystem },
-    rules: designSystemRules("warn"),
+    rules: {
+      ...pd2dsRules(TOKEN_RULES, "warn"),
+      ...pd2dsRules(CONSISTENCY_RULES, srcConsistencySeverity),
+    },
   },
   {
+    // Consistency rules do not apply here: packages/ui is where primitives, Radix and cva belong.
     files: ["packages/ui/**/*.{ts,tsx}"],
     ignores: designSystemIgnores,
     plugins: { "pd2-ds": designSystem },
-    rules: designSystemRules("error"),
+    rules: pd2dsRules(TOKEN_RULES, "error"),
+  },
+  {
+    files: pluginCode,
+    ignores: designSystemIgnores,
+    plugins: { "pd2-ds": designSystem },
+    rules: pd2dsRules([...TOKEN_RULES, ...CONSISTENCY_RULES], "error"),
   },
 ];

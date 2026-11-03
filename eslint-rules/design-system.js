@@ -1,10 +1,13 @@
 /**
- * Local ESLint plugin `pd2-ds`: design-system guard rails (PRD A3.2).
+ * Local ESLint plugin `pd2-ds`: design-system guard rails (PRD A3.2, A4 "Consistency rule").
  *
- * Rules (each reports one category so it can be configured or disabled on its own):
+ * Token rules (each reports one category so it can be configured or disabled on its own):
  * - `pd2-ds/no-raw-color`      raw colors (#hex, rgb(), hsl(), oklch()…) in class strings, `style`, or color props.
  * - `pd2-ds/no-palette-class`  Tailwind palette color classes (`bg-red-500`, `text-zinc-400`, `border-white`).
  * - `pd2-ds/no-arbitrary-value` bracketed arbitrary values for spacing/size/type/radius/border (`w-[312px]`, `text-[13px]`).
+ *
+ * Consistency rules (./consistency.js; apply outside packages/ui only):
+ * - `pd2-ds/no-direct-primitive-import`, `pd2-ds/no-styled-raw-control`, `pd2-ds/no-local-primitive`.
  *
  * Inspected: `className`/`class`/`*ClassName` JSX attributes, arguments of `cn()`/`clsx()`/`cva()`/`twMerge()`…,
  * variables/properties named `*className`/`*classes`, the `style` attribute (raw colors only), and any JSX
@@ -13,8 +16,12 @@
  * Escape hatches:
  * - `// ds-allow: <reason>` (or `{/* ds-allow: <reason> *\/}`) on the same line or the line above. A reason is required.
  * - `// eslint-disable-next-line pd2-ds/no-arbitrary-value -- <reason>`.
- * - Rule option `{ allow: ['exact-class', '/regex/'] }` for project-wide exceptions.
+ * - Rule option `{ allow: ['exact-class', '/regex/'] }` for project-wide exceptions (token rules).
+ *
+ * `plugin.configs.plugin`: flat config with every rule at error, for plugin code and the create-pd2-plugin template.
  */
+
+import { consistencyRules, dsAllowedLines } from './consistency.js';
 
 const CLASS_FUNCTIONS = new Set(['cn', 'clsx', 'cx', 'cva', 'tv', 'twMerge', 'twJoin', 'classNames', 'classnames']);
 /** Functions whose object arguments are variant configs (keys are variant names, not classes). */
@@ -161,13 +168,7 @@ function createRule(category) {
       const allow = compileAllow(context.options[0]?.allow);
       const seen = new Set();
 
-      const allowedLines = new Set();
-      for (const comment of sourceCode.getAllComments()) {
-        if (/^\s*ds-allow:\s*\S/.test(comment.value)) {
-          allowedLines.add(comment.loc.end.line);
-          allowedLines.add(comment.loc.end.line + 1);
-        }
-      }
+      const allowedLines = dsAllowedLines(sourceCode);
 
       const isAllowed = (node, token) =>
         allowedLines.has(node.loc.start.line) ||
@@ -333,7 +334,28 @@ const plugin = {
     'no-raw-color': createRule('rawColor'),
     'no-palette-class': createRule('paletteClass'),
     'no-arbitrary-value': createRule('arbitraryValue'),
+    ...consistencyRules,
   },
+};
+
+/** Token rules: everywhere, including packages/ui. */
+export const TOKEN_RULES = ['no-raw-color', 'no-palette-class', 'no-arbitrary-value'];
+/** Consistency rules: everywhere except packages/ui, which is where primitives live. */
+export const CONSISTENCY_RULES = Object.keys(consistencyRules);
+
+/** `{ 'pd2-ds/<rule>': severity }` for the given rule names. */
+export const pd2dsRules = (names, severity) => Object.fromEntries(names.map((name) => [`pd2-ds/${name}`, severity]));
+
+plugin.configs = {
+  /** Plugin code (first-party plugins, create-pd2-plugin template): every rule is an error. */
+  plugin: [
+    {
+      files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+      ignores: ['**/*.test.{js,jsx,ts,tsx}'],
+      plugins: { 'pd2-ds': plugin },
+      rules: pd2dsRules([...TOKEN_RULES, ...CONSISTENCY_RULES], 'error'),
+    },
+  ],
 };
 
 export default plugin;
