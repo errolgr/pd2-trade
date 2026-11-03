@@ -171,6 +171,8 @@ const AppController: React.FC = () => {
     // Closed: reopens on the search it was showing (keepMounted)
     market: () => togglePanel('market'),
     builds: () => togglePanel('builds'),
+    // Typing starts right away: the palette takes the keyboard when it opens
+    palette: () => togglePanel('palette', undefined, { focus: true }),
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -185,7 +187,19 @@ const AppController: React.FC = () => {
   const onSnapshot = useCallback(() => hotkeysRef.current.snapshot(), []);
   const onMarket = useCallback(() => hotkeysRef.current.market(), []);
   const onBuilds = useCallback(() => hotkeysRef.current.builds(), []);
-  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot, onMarket, onBuilds);
+  const onPalette = useCallback(() => hotkeysRef.current.palette(), []);
+  useAppShortcuts(
+    onItemSearch,
+    onQuickList,
+    onCurrency,
+    onChat,
+    onOffers,
+    onDelist,
+    onSnapshot,
+    onMarket,
+    onBuilds,
+    onPalette,
+  );
 
   useAppUpdates();
   usePD2Auth();

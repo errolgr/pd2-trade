@@ -11,24 +11,31 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import {
+  ageDayOptions,
+  alertSecondsOptions,
+  AUTO_DELIST_OPTIONS,
+  AUTO_DELIST_VALUES,
+  BUYOUT_OPTIONS,
+  BUYOUT_VALUES,
+  LISTINGS_VIEW_OPTIONS,
+  LISTINGS_VIEW_VALUES,
+  optionLabel,
+  PAGE_SIZE_OPTIONS,
+  SELLER_OPTIONS,
+  SELLER_VALUES,
+  type SettingOption,
+  SORT_OPTIONS,
+  SORT_VALUES,
+} from '../setting-options';
 import { Trans, useTranslation } from '@/i18n';
 
-const AUTO_DELIST_OPTIONS = ['off', 'ask', 'auto'] as const;
-const LISTINGS_VIEW_OPTIONS = ['cards', 'rows'] as const;
-const SORT_OPTIONS = ['newest', 'cheapest', 'priciest'] as const;
-const SELLER_OPTIONS = ['all', 'online', 'in-game'] as const;
-const BUYOUT_OPTIONS = ['any', 'yes', 'no'] as const;
-/** The market filter sidebar's listing age choices. */
-const AGE_DAYS = [1, 3, 7, 14, 30, 90] as const;
-const PAGE_SIZES = [25, 50, 100] as const;
-const ALERT_SECONDS = [5, 8, 15, 30] as const;
-
 const marketFormSchema = z.object({
-  stashAutoDelist: z.enum(AUTO_DELIST_OPTIONS),
-  myListingsView: z.enum(LISTINGS_VIEW_OPTIONS),
-  marketDefaultSort: z.enum(SORT_OPTIONS),
-  marketDefaultSeller: z.enum(SELLER_OPTIONS),
-  marketDefaultHasBuyout: z.enum(BUYOUT_OPTIONS),
+  stashAutoDelist: z.enum(AUTO_DELIST_VALUES),
+  myListingsView: z.enum(LISTINGS_VIEW_VALUES),
+  marketDefaultSort: z.enum(SORT_VALUES),
+  marketDefaultSeller: z.enum(SELLER_VALUES),
+  marketDefaultHasBuyout: z.enum(BUYOUT_VALUES),
   marketDefaultMaxAgeDays: z.number().int().positive(),
   marketPageSize: z.union([z.literal(25), z.literal(50), z.literal(100)]),
   marketWhisperTemplate: z.string(),
@@ -61,24 +68,26 @@ function toFormValues(settings: ISettings | undefined): MarketFormValues {
   };
 }
 
-type Option = { value: string; label: string };
-
 /** A settings row with a Select bound to a form field; numeric fields round-trip through strings. */
 function SelectRow({
+  settingKey,
   label,
   description,
   value,
   options,
   onChange,
 }: {
+  settingKey: keyof MarketFormValues;
   label: string;
   description?: string;
   value: string;
-  options: Option[];
+  options: SettingOption[];
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation('settings');
   return (
     <SettingsRow
+      settingKey={settingKey}
       label={label}
       description={description}
       control={
@@ -94,7 +103,7 @@ function SelectRow({
             {options.map((option) => (
               <SelectItem key={option.value}
                 value={option.value}>
-                {option.label}
+                {optionLabel(t, option)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -156,6 +165,7 @@ export function MarketForm() {
       name={name}
       render={({ field }) => (
         <SettingsRow
+          settingKey={name}
           label={t(`${key}.label`)}
           description={t(`${key}.description`)}
           control={
@@ -170,8 +180,6 @@ export function MarketForm() {
     />
   );
 
-  const days = (n: number) => t('market:filters.days', { count: n });
-
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
@@ -181,13 +189,11 @@ export function MarketForm() {
             name="stashAutoDelist"
             render={({ field }) => (
               <SelectRow
+                settingKey="stashAutoDelist"
                 label={t('market.listings.autoDelist.label')}
                 description={t('market.listings.autoDelist.description')}
                 value={field.value}
-                options={AUTO_DELIST_OPTIONS.map((value) => ({
-                  value,
-                  label: t(`market.listings.autoDelist.options.${value}`),
-                }))}
+                options={AUTO_DELIST_OPTIONS}
                 onChange={field.onChange}
               />
             )}
@@ -197,13 +203,11 @@ export function MarketForm() {
             name="myListingsView"
             render={({ field }) => (
               <SelectRow
+                settingKey="myListingsView"
                 label={t('market.listings.view.label')}
                 description={t('market.listings.view.description')}
                 value={field.value}
-                options={LISTINGS_VIEW_OPTIONS.map((value) => ({
-                  value,
-                  label: t(`market.listings.view.options.${value}`),
-                }))}
+                options={LISTINGS_VIEW_OPTIONS}
                 onChange={field.onChange}
               />
             )}
@@ -216,10 +220,11 @@ export function MarketForm() {
             name="marketDefaultSort"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketDefaultSort"
                 label={t('market.browser.sort.label')}
                 description={t('market.browser.defaultsHint')}
                 value={field.value}
-                options={SORT_OPTIONS.map((value) => ({ value, label: t(`market.browser.sort.options.${value}`) }))}
+                options={SORT_OPTIONS}
                 onChange={field.onChange}
               />
             )}
@@ -229,12 +234,10 @@ export function MarketForm() {
             name="marketDefaultSeller"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketDefaultSeller"
                 label={t('market.browser.seller.label')}
                 value={field.value}
-                options={SELLER_OPTIONS.map((value) => ({
-                  value,
-                  label: t(`market.browser.seller.options.${value}`),
-                }))}
+                options={SELLER_OPTIONS}
                 onChange={field.onChange}
               />
             )}
@@ -244,12 +247,10 @@ export function MarketForm() {
             name="marketDefaultHasBuyout"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketDefaultHasBuyout"
                 label={t('market.browser.buyout.label')}
                 value={field.value}
-                options={BUYOUT_OPTIONS.map((value) => ({
-                  value,
-                  label: t(`market.browser.buyout.options.${value}`),
-                }))}
+                options={BUYOUT_OPTIONS}
                 onChange={field.onChange}
               />
             )}
@@ -259,12 +260,10 @@ export function MarketForm() {
             name="marketDefaultMaxAgeDays"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketDefaultMaxAgeDays"
                 label={t('market.browser.age.label')}
                 value={String(field.value)}
-                options={[...AGE_DAYS, ...(AGE_DAYS.some((d) => d === field.value) ? [] : [field.value])].map((n) => ({
-                  value: String(n),
-                  label: days(n),
-                }))}
+                options={ageDayOptions(field.value)}
                 onChange={(value) => field.onChange(Number(value))}
               />
             )}
@@ -274,9 +273,10 @@ export function MarketForm() {
             name="marketPageSize"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketPageSize"
                 label={t('market.browser.pageSize.label')}
                 value={String(field.value)}
-                options={PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
+                options={PAGE_SIZE_OPTIONS}
                 onChange={(value) => field.onChange(Number(value))}
               />
             )}
@@ -286,6 +286,7 @@ export function MarketForm() {
             name="marketWhisperTemplate"
             render={({ field }) => (
               <SettingsRow
+                settingKey="marketWhisperTemplate"
                 layout="stacked"
                 label={t('market.browser.whisper.label')}
                 description={t('market.browser.whisper.description')}
@@ -316,12 +317,11 @@ export function MarketForm() {
             name="marketAlertToastSeconds"
             render={({ field }) => (
               <SelectRow
+                settingKey="marketAlertToastSeconds"
                 label={t('market.alerts.duration.label')}
                 description={t('market.alerts.duration.description')}
                 value={String(field.value)}
-                options={[...ALERT_SECONDS, ...(ALERT_SECONDS.some((s) => s === field.value) ? [] : [field.value])].map(
-                  (n) => ({ value: String(n), label: t('market.alerts.duration.seconds', { count: n }) }),
-                )}
+                options={alertSecondsOptions(field.value)}
                 onChange={(value) => field.onChange(Number(value))}
               />
             )}
@@ -336,6 +336,7 @@ export function MarketForm() {
               const soundOff = !form.watch('marketAlertSoundEnabled');
               return (
                 <SettingsRow
+                  settingKey="marketAlertVolume"
                   disabled={soundOff}
                   label={
                     <Trans

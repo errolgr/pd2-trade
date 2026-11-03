@@ -1,0 +1,59 @@
+{
+  "input": {
+    "label": "Command palette",
+    "placeholder": "Search items, builds, settings…",
+    "scopedPlaceholder": "Search…"
+  },
+  "groups": {
+    "actions": "Actions",
+    "items": "Items",
+    "builds": "Builds",
+    "chat": "Chat",
+    "listings": "Listings",
+    "settings": "Settings",
+    "pinned": "Pinned",
+    "recent": "Recent"
+  },
+  "scope": {
+    "tabHint": "Tab to scope",
+    "remove": "Stop searching only {{label}}"
+  },
+  "loading": "Searching…",
+  "signIn": {
+    "title": "Sign in to search chats and listings"
+  },
+  "empty": {
+    "noResults": "No results for “{{query}}”"
+  },
+  "footer": {
+    "move": "↑↓ move",
+    "open": "↵ open",
+    "actions": "Ctrl+K actions",
+    "scope": "Tab scope",
+    "unscope": "Backspace unscope",
+    "close": "Esc close"
+  },
+  "menu": {
+    "label": "Actions for {{title}}",
+    "placeholder": "Search actions…",
+    "pin": "Pin to palette",
+    "unpin": "Unpin from palette"
+  },
+  "errors": {
+    "actionFailed": "That didn't work"
+  },
+  "actions": {
+    "market": "Market",
+    "chat": "Chat",
+    "offers": "Trade offers",
+    "builds": "Builds",
+    "stashValue": "Stash value",
+    "snapshot": "Take net worth snapshot",
+    "myListings": "My listings",
+    "settings": "Settings",
+    "changelog": "What's new",
+    "checkUpdates": "Check for updates",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  }
+}

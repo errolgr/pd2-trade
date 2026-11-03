@@ -80,7 +80,7 @@ export function ItemNameSearch({
     setShownValue(value);
     setText(value ?? '');
   }
-  const options = useItemNameSuggestions(text, NAME_SUGGESTIONS);
+  const { suggestions: options } = useItemNameSuggestions(text, NAME_SUGGESTIONS);
 
   const [priceOptions, setPriceOptions] = useState(options);
   useEffect(() => {

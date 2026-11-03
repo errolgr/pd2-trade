@@ -229,5 +229,9 @@
       "ethereal": "Éth",
       "sockets": "{{count}} ch."
     }
+  },
+  "palette": {
+    "openOffer": "Ouvrir dans le chat",
+    "showListing": "Afficher dans Gérer"
   }
 }

@@ -10,25 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_MAX } from '@/lib/themes';
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
-import { TICKER_ANCHOR_OPTIONS, tickerAnchorSchema } from '../networth/networth-form';
+import { tickerAnchorSchema } from '../networth/networth-form';
+import {
+  LANGUAGE_OPTIONS,
+  optionLabel,
+  TICKER_ANCHOR_OPTIONS,
+  TIMER_LAYOUT_OPTIONS,
+  TIMER_ZONES_OPTIONS,
+  ZONE_ALERT_OPTIONS,
+} from '../setting-options';
 import { MAX_ALERT_LEAD_MINUTES } from '@/lib/corrupted-zones';
-import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Trans, useTranslation } from '@/i18n';
-
-const ZONE_ALERT_OPTIONS = [
-  { value: 'off', labelKey: 'interface.zoneAlertOptions.off' },
-  { value: 'all', labelKey: 'interface.zoneAlertOptions.all' },
-  { value: 'followed', labelKey: 'interface.zoneAlertOptions.followed' },
-] as const;
-
-const TIMER_ZONES_OPTIONS = [
-  { value: 'all', labelKey: 'interface.timerZonesOptions.all' },
-  { value: 'followed', labelKey: 'interface.timerZonesOptions.followed' },
-] as const;
-
-const TIMER_LAYOUT_OPTIONS = [
-  { value: 'horizontal', labelKey: 'interface.timerLayoutOptions.horizontal' },
-  { value: 'vertical', labelKey: 'interface.timerLayoutOptions.vertical' },
-] as const;
+import { SUPPORTED_LANGUAGES, Trans, useTranslation } from '@/i18n';
 
 const interfaceFormSchema = z.object({
   language: z.enum(['system', ...SUPPORTED_LANGUAGES]),
@@ -118,6 +110,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                 name="language"
                 render={({ field }) => (
                   <SettingsRow
+                    settingKey="language"
                     label={t('interface.language.label')}
                     description={t('interface.language.description')}
                     control={
@@ -129,12 +122,11 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="system">{t('common:language.system')}</SelectItem>
-                          {SUPPORTED_LANGUAGES.map((language) => (
-                            <SelectItem key={language}
-                              value={language}
-                              lang={language}>
-                              {LANGUAGE_NAMES[language]}
+                          {LANGUAGE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value}
+                              value={option.value}
+                              lang={option.value === 'system' ? undefined : option.value}>
+                              {optionLabel(t, option)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -153,6 +145,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                 name="chatButtonOverlayEnabled"
                 render={({ field }) => (
                   <SettingsRow
+                    settingKey="chatButtonOverlayEnabled"
                     label={t('interface.chatButton.label')}
                     description={t('interface.chatButton.description')}
                     control={
@@ -171,6 +164,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                 name="windowTransparency"
                 render={({ field }) => (
                   <SettingsRow
+                    settingKey="windowTransparency"
                     label={
                       <Trans
                         t={t}
@@ -212,6 +206,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerEnabled"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerEnabled"
                   label={t('interface.zoneTimer.enabled.label')}
                   description={t('interface.zoneTimer.enabled.description')}
                   control={
@@ -230,6 +225,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerAnchor"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerAnchor"
                   label={t('interface.zoneTimer.position.label')}
                   description={t('interface.zoneTimer.position.description')}
                   control={
@@ -260,6 +256,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerLocked"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerLocked"
                   label={t('interface.zoneTimer.locked.label')}
                   description={t('interface.zoneTimer.locked.description')}
                   control={
@@ -278,6 +275,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerLayout"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerLayout"
                   label={t('interface.zoneTimer.layout.label')}
                   description={t('interface.zoneTimer.layout.description')}
                   control={
@@ -292,7 +290,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                         {TIMER_LAYOUT_OPTIONS.map((option) => (
                           <SelectItem key={option.value}
                             value={option.value}>
-                            {t(option.labelKey)}
+                            {optionLabel(t, option)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -308,6 +306,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerOpacity"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerOpacity"
                   label={
                     <Trans
                       t={t}
@@ -338,6 +337,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneTimerZones"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneTimerZones"
                   label={t('interface.zoneTimer.zones.label')}
                   description={t('interface.zoneTimer.zones.description')}
                   control={
@@ -352,7 +352,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                         {TIMER_ZONES_OPTIONS.map((option) => (
                           <SelectItem key={option.value}
                             value={option.value}>
-                            {t(option.labelKey)}
+                            {optionLabel(t, option)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -368,6 +368,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
               name="corruptedZoneAlerts"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="corruptedZoneAlerts"
                   label={t('interface.zoneTimer.alerts.label')}
                   description={t('interface.zoneTimer.alerts.description')}
                   control={
@@ -382,7 +383,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                         {ZONE_ALERT_OPTIONS.map((option) => (
                           <SelectItem key={option.value}
                             value={option.value}>
-                            {t(option.labelKey)}
+                            {optionLabel(t, option)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -399,6 +400,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                 name="corruptedZoneAlertLeadMinutes"
                 render={({ field }) => (
                   <SettingsRow
+                    settingKey="corruptedZoneAlertLeadMinutes"
                     label={
                       field.value === 0
                         ? t('interface.zoneTimer.lead.atStart')
@@ -431,6 +433,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                 name="corruptedZoneFollowed"
                 render={({ field }) => (
                   <SettingsRow
+                    settingKey="corruptedZoneFollowed"
                     label={t('interface.zoneTimer.followed.label')}
                     description={t('interface.zoneTimer.followed.description')}
                     control={<ZonePicker value={field.value}

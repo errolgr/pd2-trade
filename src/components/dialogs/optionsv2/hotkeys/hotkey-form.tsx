@@ -43,6 +43,8 @@ const makeHotkeyFormSchema = (t: TFunction) => {
       hotkeyKeyMarket: optionalKey,
       hotkeyModifierBuilds: z.enum(['ctrl', 'alt']),
       hotkeyKeyBuilds: optionalKey,
+      hotkeyModifierPalette: z.enum(['ctrl', 'alt']),
+      hotkeyKeyPalette: optionalKey,
     })
     .refine((data) => !(data.hotkeyModifier === 'ctrl' && hotkeyKeyToken(data.hotkeyKey) === 'C'), {
       message: t('hotkeys.validation.ctrlC'),
@@ -68,7 +70,8 @@ interface HotkeyRowConfig {
   optional?: boolean;
 }
 
-const HOTKEY_ROWS: HotkeyRowConfig[] = [
+/** The Hotkeys rows in order (the command palette's settings source lists them too). */
+export const HOTKEY_ROWS: HotkeyRowConfig[] = [
   {
     labelKey: 'hotkeys.rows.priceCheck.label',
     descriptionKey: 'hotkeys.rows.priceCheck.description',
@@ -132,6 +135,13 @@ const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeyBuilds',
     optional: true,
   },
+  {
+    labelKey: 'hotkeys.rows.palette.label',
+    descriptionKey: 'hotkeys.rows.palette.description',
+    modifier: 'hotkeyModifierPalette',
+    key: 'hotkeyKeyPalette',
+    optional: true,
+  },
 ];
 
 export function HotkeyForm() {
@@ -162,6 +172,8 @@ export function HotkeyForm() {
       hotkeyKeyMarket: 'm',
       hotkeyModifierBuilds: 'ctrl',
       hotkeyKeyBuilds: '',
+      hotkeyModifierPalette: 'ctrl',
+      hotkeyKeyPalette: 'space',
     },
   });
 
@@ -217,6 +229,7 @@ export function HotkeyForm() {
                 name={row.key}
                 render={({ field: keyField }) => (
                   <SettingsRow
+                    settingKey={row.key}
                     label={t(row.labelKey)}
                     description={t(row.descriptionKey)}
                     control={

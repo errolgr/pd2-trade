@@ -15,6 +15,7 @@ import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
+import type { PaletteRef } from '@/pages/palette/lib/types';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -136,6 +137,10 @@ export interface ISettings {
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
+  hotkeyModifierPalette?: 'ctrl' | 'alt';
+  hotkeyKeyPalette?: string; // command palette; '' = unbound
+  palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
+  paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
 }
 
 interface OptionsContextProps {
@@ -223,10 +228,19 @@ const DEFAULT_SETTINGS: ISettings = {
   autoUpdateEnabled: true,
   windowTransparency: 0,
   language: 'system',
+  hotkeyModifierPalette: 'ctrl',
+  hotkeyKeyPalette: 'space',
+  palettePins: [
+    { id: 'actions:market', group: 'actions', title: 'Market' },
+    { id: 'actions:chat', group: 'actions', title: 'Chat' },
+    { id: 'actions:builds', group: 'actions', title: 'Builds' },
+    { id: 'actions:settings', group: 'actions', title: 'Settings' },
+  ],
+  paletteRecents: [],
 };
 
-/** The hotkeys besides the market one, as [modifier field, key field]. */
-const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+/** Every hotkey, as [modifier field, key field]. */
+const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifier', 'hotkeyKey'],
   ['hotkeyModifierListItem', 'hotkeyKeyListItem'],
   ['hotkeyModifierSettings', 'hotkeyKeySettings'],
@@ -235,20 +249,34 @@ const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
 ];
 
+/** Hotkeys added after release with a default key, in the order they were added. */
+const ADDED_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+];
+
+const combo = (settings: ISettings, [modifier, key]: [keyof ISettings, keyof ISettings]) =>
+  `${settings[modifier] ?? 'ctrl'}+${String(settings[key] ?? '').toLowerCase()}`;
+
 /**
- * Settings saved before the market hotkey existed get the default Ctrl+M, unless the user already bound that
- * combo to another hotkey: then the market hotkey starts unbound rather than stealing it.
+ * Settings saved before a hotkey existed get its default (Ctrl+M market, Ctrl+Space palette), unless the user already
+ * bound that combo to another hotkey: then the new hotkey starts unbound rather than stealing it.
  */
-export function migrateMarketHotkey(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
-  if (saved?.hotkeyKeyMarket !== undefined) return merged;
-  const combo = `${merged.hotkeyModifierMarket}+${merged.hotkeyKeyMarket?.toLowerCase()}`;
-  const taken = OTHER_HOTKEYS.some(
-    ([modifier, key]) => `${merged[modifier] ?? 'ctrl'}+${String(merged[key] ?? '').toLowerCase()}` === combo,
-  );
-  return taken ? { ...merged, hotkeyKeyMarket: '' } : merged;
+export function migrateAddedHotkeys(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
+  let out = merged;
+  for (const added of ADDED_HOTKEYS) {
+    const [, key] = added;
+    if (saved?.[key] !== undefined || !out[key]) continue;
+    const wanted = combo(out, added);
+    const taken = HOTKEYS.some((other) => other[1] !== key && out[other[1]] && combo(out, other) === wanted);
+    if (taken) out = { ...out, [key]: '' };
+  }
+  return out;
 }
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -320,7 +348,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
         // would merge them by index, bringing back removed toast types or deleted chat templates).
-        const merged: ISettings = migrateMarketHotkey(
+        const merged: ISettings = migrateAddedHotkeys(
           parsed,
           mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
             Array.isArray(saved) ? saved : undefined,

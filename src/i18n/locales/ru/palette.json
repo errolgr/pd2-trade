@@ -1,0 +1,59 @@
+{
+  "input": {
+    "label": "Палитра команд",
+    "placeholder": "Поиск предметов, билдов, настроек…",
+    "scopedPlaceholder": "Поиск…"
+  },
+  "groups": {
+    "actions": "Действия",
+    "items": "Предметы",
+    "builds": "Билды",
+    "chat": "Чат",
+    "listings": "Лоты",
+    "settings": "Настройки",
+    "pinned": "Закреплённые",
+    "recent": "Недавние"
+  },
+  "scope": {
+    "tabHint": "Tab — сузить поиск",
+    "remove": "Искать не только в разделе «{{label}}»"
+  },
+  "loading": "Поиск…",
+  "signIn": {
+    "title": "Войдите, чтобы искать по чатам и лотам"
+  },
+  "empty": {
+    "noResults": "Ничего не найдено по запросу «{{query}}»"
+  },
+  "footer": {
+    "move": "↑↓ выбор",
+    "open": "↵ открыть",
+    "actions": "Ctrl+K действия",
+    "scope": "Tab сузить",
+    "unscope": "Backspace сбросить",
+    "close": "Esc закрыть"
+  },
+  "menu": {
+    "label": "Действия: {{title}}",
+    "placeholder": "Поиск действий…",
+    "pin": "Закрепить в палитре",
+    "unpin": "Открепить от палитры"
+  },
+  "errors": {
+    "actionFailed": "Не получилось"
+  },
+  "actions": {
+    "market": "Рынок",
+    "chat": "Чат",
+    "offers": "Предложения обмена",
+    "builds": "Билды",
+    "stashValue": "Стоимость тайника",
+    "snapshot": "Снимок состояния",
+    "myListings": "Мои лоты",
+    "settings": "Настройки",
+    "changelog": "Что нового",
+    "checkUpdates": "Проверить обновления",
+    "signIn": "Войти",
+    "signOut": "Выйти"
+  }
+}

@@ -11,6 +11,8 @@ export interface ItemNameSuggestion extends ItemNameOption {
   highlight?: { start: number; end: number };
   /** Found despite a typo (a fuzzy match). */
   closeMatch?: boolean;
+  /** Found by one of its nicknames (the server's aliases, e.g. "shako" for Harlequin Crest). */
+  alias?: boolean;
 }
 
 export const suggestionKey = (o: ItemNameOption) => `${o.quality}:${o.name}`;
@@ -31,11 +33,12 @@ export function hitOption(item: CatalogItem): ItemNameOption | null {
   return null;
 }
 
-/** An option with what explains the match: the typed text's place in the name, else that it was a typo match. */
+/** An option with what explains the match: the typed text's place in the name, else a nickname or typo match. */
 function describe(query: string, option: ItemNameOption, hit?: CatalogSearchHit): ItemNameSuggestion {
   const q = query.trim().toLowerCase();
   const at = q ? option.name.toLowerCase().indexOf(q) : -1;
   if (at >= 0) return { ...option, highlight: { start: at, end: at + q.length } };
+  if (hit?.matchedOn === 'alias') return { ...option, alias: true };
   return hit?.matchedOn === 'fuzzy' ? { ...option, closeMatch: true } : option;
 }
 

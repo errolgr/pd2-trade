@@ -21,13 +21,14 @@ export type PanelId =
   | 'market'
   | 'corruptedZoneTimer'
   | 'listingDetail'
-  | 'builds';
+  | 'builds'
+  | 'palette';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
   itemSearch: { text: string } | undefined;
-  /** item = encodeItemForQuickList(raw); undefined = manage mode */
-  quickList: { item?: string; error?: 'not_in_stash' } | undefined;
+  /** item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and its price editor open. */
+  quickList: { item?: string; error?: 'not_in_stash'; listingId?: string; edit?: boolean } | undefined;
   currency: { tab?: NetWorthTab } | undefined;
   /**
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a
@@ -53,8 +54,8 @@ export interface PanelPayloads {
       }
     | undefined;
   chatButton: undefined;
-  /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat). */
-  settings: { section?: SettingsSectionId } | undefined;
+  /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat); field: the ISettings key to scroll to and highlight. */
+  settings: { section?: SettingsSectionId; field?: string } | undefined;
   changeLog: undefined;
   signIn: undefined;
   /** Market listings matching the delisted item (2+; the user picks which one to remove). */
@@ -68,6 +69,8 @@ export interface PanelPayloads {
   listingDetail: ListingPanelPayload;
   /** A character to show, Meta filters, or a tab; undefined = reopen where it was (keepMounted). */
   builds: BuildsPanelPayload | undefined;
+  /** The command palette always opens fresh. */
+  palette: undefined;
 }
 
 /** CSS px relative to the overlay viewport. */

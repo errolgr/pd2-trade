@@ -202,7 +202,7 @@
     "group": "快捷键",
     "modifierLabel": "{{action}} 修饰键",
     "off": "关闭",
-    "hint": "点击按键框并按下要使用的按键。在快照、市场或配装的按键框中按 Backspace 即可关闭该快捷键。",
+    "hint": "点击按键框并按下要使用的按键。在快照、市场、配装或命令面板的按键框中按 Backspace 即可关闭该快捷键。",
     "rows": {
       "priceCheck": {
         "label": "查价",
@@ -243,6 +243,10 @@
       "builds": {
         "label": "配装",
         "description": "显示或隐藏 Ladder 配装。"
+      },
+      "palette": {
+        "label": "命令面板",
+        "description": "在一个搜索框中查找操作、物品、配装和设置。"
       }
     }
   },
@@ -615,5 +619,13 @@
         "ariaLabel": "市场提醒音量"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "在设置中打开",
+    "turnOn": "开启",
+    "turnOff": "关闭",
+    "change": "更改",
+    "select": "选择",
+    "current": "当前"
   }
 }

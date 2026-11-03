@@ -166,4 +166,19 @@ describe('HotkeyForm', () => {
     expect(keyInput('Price check').value).toBe('P');
     expect(store.updateSettings).not.toHaveBeenCalled();
   });
+
+  it('lets the command palette key be cleared to unbind it', () => {
+    renderForm({ ...HOTKEYS, hotkeyModifierPalette: 'ctrl', hotkeyKeyPalette: 'space' });
+    expect(keyInput('Command palette').value).toBe('Space');
+    pressKey('Command palette', 'Backspace');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeyPalette).toBe('');
+    expect(keyInput('Command palette').value).toBe('');
+  });
+
+  it('warns when another action takes the command palette combo', () => {
+    renderForm({ ...HOTKEYS, hotkeyModifierPalette: 'ctrl', hotkeyKeyPalette: 'space' });
+    pressKey('Chat Window', ' ', 'Space');
+    const warnings = screen.getAllByRole('status').map((el) => el.textContent);
+    expect(warnings).toEqual(['Also used by Command palette.', 'Also used by Chat Window.']);
+  });
 });

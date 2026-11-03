@@ -38,24 +38,46 @@ function reportOnce(error: unknown, query: string) {
   });
 }
 
+export interface ItemNameSuggestionsOptions {
+  /** Pause in typing before the server is asked (default SUGGEST_DEBOUNCE_MS). */
+  debounceMs?: number;
+  /** Shorter queries get the local list only (default 1: any text asks the server). */
+  minChars?: number;
+}
+
+export interface ItemNameSuggestionsResult {
+  suggestions: ItemNameSuggestion[];
+  /** The server is being asked about the current text (its answer will replace the local list). */
+  loading: boolean;
+}
+
 /**
  * Suggestions for the item-name box: the local list right away, replaced by the server's typo- and
  * nickname-tolerant ranking once it answers for the current text. Each pause in typing asks once; a newer
  * text cancels the request in flight, so an older answer never replaces a newer one.
  */
-export function useItemNameSuggestions(text: string, limit: number): ItemNameSuggestion[] {
+export function useItemNameSuggestions(
+  text: string,
+  limit: number,
+  { debounceMs = SUGGEST_DEBOUNCE_MS, minChars = 1 }: ItemNameSuggestionsOptions = {},
+): ItemNameSuggestionsResult {
   const query = text.trim();
   const key = cacheKey(query, limit);
-  const [answer, setAnswer] = useState<{ key: string; hits: CatalogSearchHit[] } | null>(null);
-  const hits = query ? (cache.get(key) ?? (answer?.key === key ? answer.hits : null)) : null;
+  const asks = query.length >= Math.max(1, minChars);
+  /** The server's answer for `key`; null hits: it failed or was too slow (the local list stays). */
+  const [answer, setAnswer] = useState<{ key: string; hits: CatalogSearchHit[] | null } | null>(null);
+  const cached = asks ? cache.get(key) : undefined;
+  const hits = asks ? (cached ?? (answer?.key === key ? answer.hits : null)) : null;
+  const loading = asks && !cached && answer?.key !== key;
 
   useEffect(() => {
-    if (!query || cache.has(key)) return;
+    if (!asks || cache.has(key)) return;
     const controller = new AbortController();
     let slow: number | undefined;
     const start = window.setTimeout(() => {
       slow = window.setTimeout(() => {
         reportOnce(new CatalogSearchError(`The catalog search took longer than ${SUGGEST_TIMEOUT_MS} ms.`), query);
+        setAnswer({ key, hits: null });
         controller.abort();
       }, SUGGEST_TIMEOUT_MS);
       searchCatalog(query, { limit, signal: controller.signal })
@@ -68,17 +90,23 @@ export function useItemNameSuggestions(text: string, limit: number): ItemNameSug
           },
           (error: unknown) => {
             // Cancelled: newer text, unmount, or already reported as too slow
-            if (!controller.signal.aborted) reportOnce(error, query);
+            if (controller.signal.aborted) return;
+            reportOnce(error, query);
+            setAnswer({ key, hits: null });
           },
         )
         .finally(() => window.clearTimeout(slow));
-    }, SUGGEST_DEBOUNCE_MS);
+    }, debounceMs);
     return () => {
       window.clearTimeout(start);
       window.clearTimeout(slow);
       controller.abort();
     };
-  }, [query, key, limit]);
+  }, [asks, query, key, limit, debounceMs]);
 
-  return useMemo(() => itemNameSuggestions(query, itemNameOptions(query, limit), hits, limit), [query, hits, limit]);
+  const suggestions = useMemo(
+    () => itemNameSuggestions(query, itemNameOptions(query, limit), hits, limit),
+    [query, hits, limit],
+  );
+  return useMemo(() => ({ suggestions, loading }), [suggestions, loading]);
 }

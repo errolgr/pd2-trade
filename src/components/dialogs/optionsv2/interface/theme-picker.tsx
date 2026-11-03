@@ -4,6 +4,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { getTheme, Theme, THEMES, themeStyle } from '@/lib/themes';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
 type ModeFilter = 'all' | 'dark' | 'light';
@@ -80,7 +81,14 @@ export function ThemePicker() {
   };
 
   return (
-    <div className="flex flex-col gap-y-4 pr-2">
+    <div
+      data-setting-key="themeId"
+      className={cn(
+        'flex flex-col gap-y-4 rounded-lg pr-2 transition-[background-color,box-shadow] duration-(--dur-med) ease-out',
+        'data-[highlighted]:ring-offset-4 data-[highlighted]:ring-offset-background',
+        SETTING_HIGHLIGHT,
+      )}
+    >
       <div className="flex items-center justify-between gap-4">
         <ToggleGroup
           type="single"

@@ -219,5 +219,9 @@
       "ethereal": "无形",
       "sockets": "{{count}} 孔"
     }
+  },
+  "palette": {
+    "openOffer": "在聊天中打开",
+    "showListing": "在“管理”中显示"
   }
 }

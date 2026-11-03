@@ -200,5 +200,15 @@
     "lv": "Lv {{level}}",
     "skillLevel": "· {{level}} 级",
     "usageCount_other": "{{formatted}} 个角色"
+  },
+  "palette": {
+    "character": "角色",
+    "account": "账号",
+    "class": "职业",
+    "skillOf": "{{className}}技能",
+    "hardcore": "专家",
+    "openBuild": "打开配装",
+    "showCharacters": "查看角色",
+    "showMeta": "在主流中查看"
   }
 }

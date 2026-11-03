@@ -205,7 +205,7 @@
     "group": "Tastenkürzel",
     "modifierLabel": "Modifikator für {{action}}",
     "off": "Aus",
-    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt oder Builds die Rücktaste, um diesen Hotkey zu deaktivieren.",
+    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt, Builds oder Befehlspalette die Rücktaste, um diesen Hotkey zu deaktivieren.",
     "rows": {
       "priceCheck": {
         "label": "Preischeck",
@@ -246,6 +246,10 @@
       "builds": {
         "label": "Builds",
         "description": "Die Ladder-Builds ein- oder ausblenden."
+      },
+      "palette": {
+        "label": "Befehlspalette",
+        "description": "Aktionen, Items, Builds und Einstellungen in einem Feld durchsuchen."
       }
     }
   },
@@ -621,5 +625,13 @@
         "ariaLabel": "Lautstärke Marktalarm"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "In Einstellungen öffnen",
+    "turnOn": "Einschalten",
+    "turnOff": "Ausschalten",
+    "change": "Ändern",
+    "select": "Auswählen",
+    "current": "Aktuell"
   }
 }

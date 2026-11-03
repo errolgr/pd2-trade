@@ -145,6 +145,18 @@ describe('OptionsProvider loading', () => {
     expect(result.current.settings).toMatchObject({ hotkeyModifierMarket: 'alt', hotkeyKeyMarket: 'm' });
   });
 
+  it('gives older settings the Ctrl+Space palette hotkey unless another hotkey already uses it', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({ hotkeyModifierPalette: 'ctrl', hotkeyKeyPalette: 'space' });
+    cleanup();
+
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierBuilds: 'ctrl', hotkeyKeyBuilds: 'space' }));
+    const taken = await renderLoaded();
+    expect(taken.result.current.settings.hotkeyKeyPalette).toBe('');
+    expect(taken.result.current.settings.hotkeyKeyBuilds).toBe('space');
+  });
+
   it('does not rewrite a file that already has every default key', async () => {
     state.dirExists = false;
     await renderLoaded();

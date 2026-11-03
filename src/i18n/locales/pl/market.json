@@ -552,5 +552,14 @@
     "notRemoved": "Nie usunięto z ulubionych",
     "notSaved": "Nie zapisano w ulubionych",
     "refused": "projectdiablo2.com odrzuciło zmianę. Spróbuj ponownie za chwilę."
+  },
+  "palette": {
+    "openInMarket": "Szukaj na rynku",
+    "watchPrice": "Obserwuj cenę",
+    "stopWatching": "Przestań obserwować",
+    "buildsUsing": "Buildy z tym przedmiotem",
+    "copyName": "Kopiuj nazwę",
+    "nameCopied": "Skopiowano nazwę",
+    "nameNotCopied": "Nie skopiowano nazwy"
   }
 }

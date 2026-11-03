@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.10.15': [
+    '🆕 Command palette (Ctrl+Space in game): one search box for everything. Type to find panels, items with their price and 7-day change, characters, accounts and build meta, your chats, listings and trade offers, and every setting. Enter opens it, Tab searches only one kind, Ctrl+K shows more actions (watch, relist, delist, follow, pin). Settings switches and choices change right in the palette. Rebind or turn it off in Settings → Hotkeys',
     "🆕 List Item, queued listings, Ctrl+U and auto-delist find items in your characters' personal stashes too, not only the shared stash (characters of the mode picked in Settings). Moving an item between a personal stash and the shared stash doesn't count as taking it out",
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
   ],
