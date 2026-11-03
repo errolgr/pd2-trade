@@ -4,6 +4,20 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import prettierConfig from "eslint-config-prettier";
+import designSystem from "./eslint-rules/design-system.js";
+
+// Design-system guard rails (PRD A3.2, packages/ui/DESIGN_RULES.md). Token sources and tests are exempt.
+const designSystemIgnores = [
+  "**/*.test.{ts,tsx}",
+  "src/lib/themes.ts",
+  "packages/ui/src/tokens/**",
+  "packages/ui/scripts/**",
+];
+const designSystemRules = (severity) => ({
+  "pd2-ds/no-raw-color": severity,
+  "pd2-ds/no-palette-class": severity,
+  "pd2-ds/no-arbitrary-value": severity,
+});
 
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -48,5 +62,18 @@ export default [
         { object: 'Promise', property: 'withResolvers', message: 'Needs Chromium 119; older WebView2 runtimes lack it. Use new Promise().' },
       ],
     },
-  }
+  },
+  {
+    // Warn-only in the app until each panel is migrated (PRD A5); the design-system package itself must be clean.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: designSystemIgnores,
+    plugins: { "pd2-ds": designSystem },
+    rules: designSystemRules("warn"),
+  },
+  {
+    files: ["packages/ui/**/*.{ts,tsx}"],
+    ignores: designSystemIgnores,
+    plugins: { "pd2-ds": designSystem },
+    rules: designSystemRules("error"),
+  },
 ];

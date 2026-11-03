@@ -11,7 +11,12 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.{ts,mjs}'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'scripts/**/*.test.{ts,mjs}',
+      'packages/*/{src,scripts}/**/*.test.{ts,tsx}',
+      'eslint-rules/**/*.test.{js,mjs}',
+    ],
     environment: 'node',
     setupFiles: ['src/i18n/test-setup.ts'],
     restoreMocks: true,

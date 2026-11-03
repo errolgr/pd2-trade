@@ -1,17 +1,23 @@
 import { useReducedMotion, type Transition, type Variants } from 'framer-motion';
+import { DURATION_MS, EASING } from '@pd2-trader/ui/tokens';
 
 /**
- * Shared framer-motion presets. Values mirror the CSS motion tokens in globals.css
- * (--ease-out, --ease-spring, --dur-fast/med/slow).
+ * Shared framer-motion presets built from the motion scale in @pd2-trader/ui/tokens (the same values back the
+ * CSS tokens --ease-out, --ease-spring, --dur-fast/med/slow).
  *
  * Reduced motion: wrap trees in `<MotionConfig reducedMotion="user">` or gate transforms
  * with `useReducedMotionSafe()`; the global CSS rule does not affect JS-driven animations.
  */
 
-export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-export const EASE_SPRING = [0.34, 1.56, 0.64, 1] as const;
+export const EASE_OUT = EASING.out;
+export const EASE_SPRING = EASING.spring;
 
-export const DUR = { fast: 0.12, med: 0.2, slow: 0.3 } as const;
+/** Seconds, as framer-motion expects. */
+export const DUR = {
+  fast: DURATION_MS.fast / 1000,
+  med: DURATION_MS.med / 1000,
+  slow: DURATION_MS.slow / 1000,
+} as const;
 
 export const springSnappy: Transition = { type: 'spring', stiffness: 520, damping: 34, mass: 0.7 };
 export const springSoft: Transition = { type: 'spring', stiffness: 260, damping: 28, mass: 0.9 };

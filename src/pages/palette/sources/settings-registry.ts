@@ -29,7 +29,8 @@ import {
 import { HOTKEY_ROWS } from '@/components/dialogs/optionsv2/hotkeys/hotkey-form';
 import { formatHotkey } from '../lib/hotkey';
 import { getSeasonSettingOptions } from '@/lib/seasons';
-import { clampWindowTransparency, getTheme, THEMES } from '@/lib/themes';
+import { getTheme, THEMES } from '@pd2-trader/ui/tokens';
+import { clampWindowTransparency } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS } from '@/lib/price-window';
 
 /**

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import * as Sentry from '@sentry/react';
+import { Z_LAYERS } from '@pd2-trader/ui/tokens';
 import { claimKeyboard, isHeldOverFullscreenGame, isKeyboardClaimed, releaseKeyboard } from './keyboard';
 import { holdRegionLoop } from './region';
 import { clampRectInto, clampRectVisible } from './layout-storage';
@@ -203,7 +204,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
         top: rect.y,
         width: rect.width,
         height: rect.height,
-        zIndex: 10 + panel.z,
+        zIndex: Z_LAYERS.panel + panel.z,
         display: visible ? undefined : 'none',
       }}
       onPointerDownCapture={onPointerDownCapture}

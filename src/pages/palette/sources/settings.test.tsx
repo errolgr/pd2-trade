@@ -3,7 +3,7 @@ import { cleanup, render, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ISettings, useOptions } from '@/hooks/useOptions';
-import { DEFAULT_THEME_ID, getTheme, THEMES } from '@/lib/themes';
+import { DEFAULT_THEME_ID, getTheme, THEMES } from '@pd2-trader/ui/tokens';
 import { createOptionsStore, type OptionsStore } from '@/components/dialogs/optionsv2/test-utils';
 import type { PaletteItem, PaletteRunContext, PaletteSourceInput } from '../lib/types';
 import i18n from '@/i18n';
@@ -114,9 +114,11 @@ describe('useSettingsSource', () => {
     const { result } = renderSource({ chatButtonOverlayEnabled: true }, { query: 'chat button' });
     const item = result.current.items[0];
     expect(item.ref.id).toBe('settings:chatButtonOverlayEnabled');
-    expect(render(<>{item.trailing}</>).container.querySelector('[data-state]')?.getAttribute('data-state')).toBe(
-      'checked',
-    );
+    expect(
+      render(<>{item.trailing}</>)
+        .container.querySelector('[data-state]')
+        ?.getAttribute('data-state'),
+    ).toBe('checked');
     expect(item.primary.keepOpen).toBe(true);
     item.primary.run(context());
     expect(store.updateSettings).toHaveBeenCalledWith({ chatButtonOverlayEnabled: false });
@@ -144,9 +146,12 @@ describe('useSettingsSource', () => {
   });
 
   it('shows a hotkey’s combo, and Off when unbound', () => {
-    const { result } = renderSource({ hotkeyModifierPalette: 'alt', hotkeyKeyPalette: 'space', hotkeyKeyBuilds: '' }, {
-      query: 'command palette',
-    });
+    const { result } = renderSource(
+      { hotkeyModifierPalette: 'alt', hotkeyKeyPalette: 'space', hotkeyKeyBuilds: '' },
+      {
+        query: 'command palette',
+      },
+    );
     expect(text(result.current.items[0].trailing)).toBe('Alt+Space');
     const builds = renderSource({ hotkeyKeyBuilds: '' }, { query: 'builds' }).result.current.items;
     expect(text(builds.find((item) => item.ref.id === 'settings:hotkeyKeyBuilds')?.trailing)).toBe('Off');
@@ -157,11 +162,31 @@ describe('useSettingsSource', () => {
       { corruptedZoneAlerts: 'off' },
       {
         refs: [
-          { id: 'settings:themeId=x', group: 'settings', title: 'gone', data: { key: 'themeId', value: 'no-such-theme' } },
-          { id: 'settings:mode=hardcore', group: 'settings', title: 'Hardcore', data: { key: 'mode', value: 'hardcore' } },
+          {
+            id: 'settings:themeId=x',
+            group: 'settings',
+            title: 'gone',
+            data: { key: 'themeId', value: 'no-such-theme' },
+          },
+          {
+            id: 'settings:mode=hardcore',
+            group: 'settings',
+            title: 'Hardcore',
+            data: { key: 'mode', value: 'hardcore' },
+          },
           // Hidden while zone notifications are off, like the form's row
-          { id: 'settings:corruptedZoneAlertLeadMinutes', group: 'settings', title: 'x', data: { key: 'corruptedZoneAlertLeadMinutes' } },
-          { id: 'settings:debugLoggingEnabled', group: 'settings', title: 'Debug', data: { key: 'debugLoggingEnabled' } },
+          {
+            id: 'settings:corruptedZoneAlertLeadMinutes',
+            group: 'settings',
+            title: 'x',
+            data: { key: 'corruptedZoneAlertLeadMinutes' },
+          },
+          {
+            id: 'settings:debugLoggingEnabled',
+            group: 'settings',
+            title: 'Debug',
+            data: { key: 'debugLoggingEnabled' },
+          },
         ],
       },
     );

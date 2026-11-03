@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
-import { DEFAULT_THEME_ID, THEMES } from '@/lib/themes';
+import { DEFAULT_THEME_ID, THEMES } from '@pd2-trader/ui/tokens';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { ThemePicker } from './theme-picker';
 

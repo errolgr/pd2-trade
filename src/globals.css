@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Theme tokens, scales and the Tailwind @theme mapping, generated from packages/ui/src/tokens. */
+@import "@pd2-trader/ui/tailwind.css";
 
 @plugin "tailwindcss-animate";
 
@@ -8,92 +10,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Per-theme tokens: src/lib/themes.ts writes them inline on <html> (applyTheme).
- * The values below are the `sanctuary` theme so first paint is correct without JS.
- * Keep in sync with the `sanctuary` entry in themes.ts.
- */
-:root {
-    --background: hsl(240 10% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(240 3.7% 15.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(240 10% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(240 5.9% 10%);
-    --secondary: hsl(240 3.7% 15.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(240 3.7% 15.9%);
-    --muted-foreground: hsl(240 5% 64.9%);
-    --accent: hsl(240 3.7% 15.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 72% 51%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(240 3.7% 15.9%);
-    --input: oklch(0.551 0.027 264.364);
-    --ring: hsl(240 4.9% 83.9%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar: hsl(240 10% 3.9%);
-    --sidebar-foreground: hsl(0 0% 98%);
-    --sidebar-primary: hsl(0 0% 98%);
-    --sidebar-primary-foreground: hsl(240 5.9% 10%);
-    --sidebar-accent: hsl(240 3.7% 15.9%);
-    --sidebar-accent-foreground: hsl(0 0% 98%);
-    --sidebar-border: hsl(240 3.7% 15.9%);
-    --sidebar-ring: hsl(240 4.9% 83.9%);
-    --success: oklch(0.723 0.219 149.579);
-    --success-foreground: hsl(240 10% 4%);
-    --warning: oklch(0.828 0.189 84.429);
-    --warning-foreground: hsl(240 10% 4%);
-    --info: oklch(0.746 0.16 232.661);
-    --info-foreground: hsl(240 10% 4%);
-    /* Window transparency (Settings → Interface): applyWindowTransparency in themes.ts sets both; opaque by default. */
-    --window-opacity: 100%;
-    --window-opacity-elevated: 100%;
-    --surface: color-mix(in oklab, hsl(240 10% 3.9%) var(--window-opacity), transparent);
-    --surface-foreground: hsl(0 0% 98%);
-    --surface-elevated: color-mix(in oklab, hsl(240 6% 10%) var(--window-opacity-elevated), transparent);
-    --glow: #dfb679;
-    --scrim: hsl(0 0% 0% / 0.6);
-    --q-unique: #dfb679;
-    --q-set: oklch(0.792 0.209 151.711);
-    --q-rare: oklch(0.852 0.199 91.936);
-    --q-magic: oklch(0.707 0.165 254.624);
-    --q-crafted: oklch(0.681 0.162 75.834);
-    --q-rune: oklch(0.75 0.18 55);
-    --q-normal: oklch(0.967 0.003 264.542);
-    --q-gold: hsl(42 75% 62%);
-    --q-corrupted: oklch(0.704 0.191 22.216);
-    --q-corrupted-zone: oklch(0.714 0.203 305.504);
-    --radius: 0.5rem;
-
-    color-scheme: dark;
-}
-
-/* Global (not per theme) */
+/* App font (not part of the token package); the classic theme swaps in the D2 font. */
 :root {
     --font-family: 'Inter', sans-serif;
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --dur-fast: 120ms;
-    --dur-med: 200ms;
-    --dur-slow: 300ms;
 }
 
 html[data-theme='classic-diablo-ii'] {
     --font-family: "DiabloFont", serif;
 }
 
-/* Literal values (not var()) to avoid self-referencing the same-named :root vars. */
 @theme {
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --animate-shimmer: shimmer 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    --animate-shimmer: shimmer 1.6s var(--ease-out) infinite;
     --animate-bump-flash: bump-flash 1.05s ease both;
 
     @keyframes shimmer {
@@ -116,81 +43,6 @@ html[data-theme='classic-diablo-ii'] {
             opacity: 1;
         }
     }
-}
-
-@theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-
-    --color-success: var(--success);
-    --color-success-foreground: var(--success-foreground);
-    --color-warning: var(--warning);
-    --color-warning-foreground: var(--warning-foreground);
-    --color-info: var(--info);
-    --color-info-foreground: var(--info-foreground);
-    --color-surface: var(--surface);
-    --color-surface-foreground: var(--surface-foreground);
-    --color-surface-elevated: var(--surface-elevated);
-    --color-glow: var(--glow);
-    --color-scrim: var(--scrim);
-
-    --color-q-unique: var(--q-unique);
-    --color-q-set: var(--q-set);
-    --color-q-rare: var(--q-rare);
-    --color-q-magic: var(--q-magic);
-    --color-q-crafted: var(--q-crafted);
-    --color-q-rune: var(--q-rune);
-    --color-q-normal: var(--q-normal);
-    --color-q-gold: var(--q-gold);
-    --color-q-corrupted: var(--q-corrupted);
-    --color-q-corrupted-zone: var(--q-corrupted-zone);
-
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-
-    --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--glow) 40%, transparent), 0 0 18px -4px var(--glow);
-    --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.12), 0 12px 32px -12px rgb(0 0 0 / 0.45);
-
-    /* Attack Class Colors using HSL values */
-    --color-normal: hsl(120, 60%, 50%);            /* Green for Normal Hit */
-    --color-critical: hsl(0, 80%, 50%);             /* Red for Critical Hit */
-    --color-missed: hsl(0, 0%, 60%);                /* Grey for Missed Attack */
-    --color-full-resist: hsl(210, 70%, 50%);        /* Blue for Full Damage Resist */
-    --color-partial-resist: hsl(45, 90%, 50%);      /* Amber for Partial Damage Resist */
-    --color-pressure-plate: hsl(280, 60%, 50%);     /* Purple for Explosion Resist (Pressure Plate) */
-    --color-unknown: hsl(210, 10%, 50%);            /* Blue Grey for Unknown */
 }
 
 @layer base {

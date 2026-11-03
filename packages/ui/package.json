@@ -1,0 +1,31 @@
+{
+  "name": "@pd2-trader/ui",
+  "version": "0.1.0",
+  "private": false,
+  "description": "PD2 Trader design system: design tokens, theme definitions and the generated Tailwind 4 theme CSS.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "default": "./src/tokens/index.ts"
+    },
+    "./tailwind.css": "./generated/tailwind.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "generated",
+    "DESIGN_RULES.md",
+    "llms.txt"
+  ],
+  "scripts": {
+    "build:css": "tsx scripts/build-css.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

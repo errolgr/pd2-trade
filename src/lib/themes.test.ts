@@ -1,17 +1,8 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  applyTheme,
-  DEFAULT_THEME_ID,
-  getTheme,
-  initTheme,
-  THEME_STORAGE_KEY,
-  THEME_TOKENS,
-  THEMES,
-  themeStyle,
-  useThemeMode,
-} from './themes';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_THEME_ID, THEME_TOKENS, THEMES } from '@pd2-trader/ui/tokens';
+import { applyTheme, initTheme, THEME_STORAGE_KEY, themeStyle, useThemeMode } from './themes';
 
 const root = document.documentElement;
 const darkTheme = THEMES.find((t) => t.mode === 'dark' && t.id !== DEFAULT_THEME_ID)!;
@@ -23,49 +14,10 @@ function resetRoot() {
   delete root.dataset.theme;
 }
 
-beforeEach(() => {});
-
 afterEach(() => {
   cleanup();
   resetRoot();
   localStorage.clear();
-});
-
-describe('theme registry', () => {
-  it('has 21 unique ids, both mode counts, and the default theme present', () => {
-    expect(THEMES).toHaveLength(21);
-    expect(new Set(THEMES.map((t) => t.id)).size).toBe(THEMES.length);
-    expect(THEMES.filter((t) => t.mode === 'dark')).toHaveLength(11);
-    expect(THEMES.filter((t) => t.mode === 'light')).toHaveLength(10);
-    expect(getTheme(DEFAULT_THEME_ID).id).toBe(DEFAULT_THEME_ID);
-  });
-
-  it('defines every token with a non-empty value for every theme', () => {
-    for (const theme of THEMES) {
-      const missing = THEME_TOKENS.filter((token) => !theme.vars[token]?.trim());
-      expect({ id: theme.id, missing }).toEqual({ id: theme.id, missing: [] });
-    }
-  });
-
-  it('produces well-formed alpha colors (no doubled alpha or unbalanced parens)', () => {
-    for (const theme of THEMES) {
-      for (const token of THEME_TOKENS) {
-        const value = theme.vars[token];
-        const opens = (value.match(/\(/g) ?? []).length;
-        const closes = (value.match(/\)/g) ?? []).length;
-        expect({ id: theme.id, token, balanced: opens === closes }).toEqual({ id: theme.id, token, balanced: true });
-        expect((value.match(/ \/ /g) ?? []).length).toBeLessThanOrEqual(1);
-      }
-    }
-  });
-});
-
-describe('getTheme', () => {
-  it('returns the matching theme or falls back to the default for unknown/missing ids', () => {
-    expect(getTheme(lightTheme.id)).toBe(lightTheme);
-    expect(getTheme('no-such-theme').id).toBe(DEFAULT_THEME_ID);
-    expect(getTheme(undefined).id).toBe(DEFAULT_THEME_ID);
-  });
 });
 
 describe('themeStyle', () => {

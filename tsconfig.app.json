@@ -4,7 +4,8 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@pd2-trader/ui/tokens": ["./packages/ui/src/tokens/index.ts"]
     },
     "jsx": "react-jsx",
     "module": "ESNext",

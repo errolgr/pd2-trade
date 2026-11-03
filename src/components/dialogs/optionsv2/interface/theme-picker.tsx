@@ -1,7 +1,8 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
-import { getTheme, Theme, THEMES, themeStyle } from '@/lib/themes';
+import { getTheme, type Theme, THEMES } from '@pd2-trader/ui/tokens';
+import { themeStyle } from '@/lib/themes';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { SETTING_HIGHLIGHT } from '../settings-ui';

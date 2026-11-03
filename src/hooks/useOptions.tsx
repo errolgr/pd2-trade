@@ -7,7 +7,8 @@ import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import { applyTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
-import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
+import { DEFAULT_THEME_ID, getTheme } from '@pd2-trader/ui/tokens';
+import { applyTheme, applyWindowTransparency } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
@@ -135,7 +136,7 @@ export interface ISettings {
   hotkeyKeyBuilds?: string; // '' = unbound
   followedBuildCharacters?: BuildCharacterRef[]; // builds panel: starred characters
   recentBuildCharacters?: BuildCharacterRef[]; // builds panel: last viewed characters, newest first
-  themeId?: string; // Color theme id from src/lib/themes.ts
+  themeId?: string; // Color theme id from @pd2-trader/ui/tokens (THEMES)
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
