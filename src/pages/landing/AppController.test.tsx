@@ -232,20 +232,20 @@ describe('AppController list and delist hotkeys', () => {
     expect(toasts()).toEqual([]);
   });
 
-  it('opens Quick List in an error state and explains when the item is not in the shared stash', async () => {
+  it('opens Quick List in an error state and explains when the item is not in a stash', async () => {
     itemUnderCursor = 'ITEM inventory ring';
     await mount();
     await press(1);
     await advance(300);
     expect(h.overlay.openPanel).toHaveBeenCalledWith(
       'quickList',
-      { error: 'not_shared_stash' },
+      { error: 'not_in_stash' },
       { placement: 'cursor' },
     );
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
-        description: expect.stringContaining('not in your shared stash'),
+        description: 'This item is not in your stash (shared or personal) and cannot be listed.',
       }),
     );
   });
@@ -257,7 +257,7 @@ describe('AppController list and delist hotkeys', () => {
     await advance(300);
     expect(h.overlay.openPanel).toHaveBeenCalledWith(
       'quickList',
-      { error: 'not_shared_stash' },
+      { error: 'not_in_stash' },
       { placement: 'cursor' },
     );
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));

@@ -17,7 +17,7 @@
     "itemNotSupported": "Objet non pris en charge ou invalide.",
     "nothingCopied": "Aucun objet n'a été copié. Survolez un objet en jeu et réessayez, ou appuyez d'abord sur Ctrl+C dessus.",
     "cannotListItem": "Impossible de mettre en vente",
-    "notInSharedStash": "Cet objet n'est pas dans votre coffre partagé et ne peut pas être mis en vente.",
+    "notInStash": "Cet objet n'est pas dans votre coffre (partagé ou personnel) et ne peut pas être mis en vente.",
     "delist": "Retirer",
     "noItemUnderCursor": "Aucun objet valide sous le curseur."
   },

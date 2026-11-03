@@ -3,7 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import io from 'socket.io-client';
 import type { ISettings } from '@/hooks/useOptions';
-import { useSocket } from './useSocket';
+import { SOCKET_REQUEST_TIMEOUT_MS, SocketRequestError, useSocket } from './useSocket';
 
 vi.mock('socket.io-client', () => ({ default: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: undefined }) }));
@@ -28,10 +28,14 @@ class FakeWs {
   }
 }
 
+type Ack = (err: unknown, data?: unknown) => void;
+
 class FakeSocket {
   handlers = new Map<string, (arg?: unknown) => void>();
   io = { engine: { transport: { ws: new FakeWs() } } };
   disconnect = vi.fn();
+  /** Every emit, ack callback last (socket.io's convention). */
+  emit = vi.fn((..._args: unknown[]) => this);
   on(event: string, cb: (arg?: unknown) => void) {
     this.handlers.set(event, cb);
     return this;
@@ -41,6 +45,18 @@ class FakeSocket {
   }
   fire(event: string, arg?: unknown) {
     act(() => this.handlers.get(event)!(arg));
+  }
+  /** Emits of the given method + service path. */
+  calls(method: string, path: string) {
+    return this.emit.mock.calls.filter(([m, p]) => m === method && p === path);
+  }
+  /** Answers the n-th emit of method + path through its ack callback. */
+  answer(method: string, path: string, err: unknown, data?: unknown, n = -1) {
+    const call = this.calls(method, path).at(n)!;
+    (call.at(-1) as Ack)(err, data);
+  }
+  signIn(err: unknown = null) {
+    this.answer('create', 'security/session', err, err ? undefined : { accessToken: 'jwt', user: { _id: 'u1' } });
   }
 }
 
@@ -91,9 +107,13 @@ describe('connection lifecycle', () => {
 
     expect(hook.result.current.isConnected).toBe(true);
     expect(hook.result.current.getSocket()).toBe(socket);
-    expect(socket.ws.sent).toEqual([
-      '420' + JSON.stringify(['create', 'security/session', { strategy: 'oauth', accessToken: 'tok-A' }]),
-    ]);
+    expect(socket.emit).toHaveBeenCalledTimes(1);
+    expect(socket.emit).toHaveBeenCalledWith(
+      'create',
+      'security/session',
+      { strategy: 'oauth', accessToken: 'tok-A' },
+      expect.any(Function),
+    );
   });
 
   it('connect_error surfaces the message and marks disconnected; a later connect clears it', () => {
@@ -120,11 +140,12 @@ describe('connection lifecycle', () => {
     const oldWs = socket.ws;
     socket.io.engine.transport.ws = new FakeWs();
     socket.fire('connect');
-    expect(socket.ws.sent[0]).toContain('"accessToken":"tok"');
+    expect(socket.calls('create', 'security/session')).toHaveLength(2);
+    expect(socket.calls('create', 'security/session')[1][2]).toEqual({ strategy: 'oauth', accessToken: 'tok' });
 
     socket.ws.deliver('42' + JSON.stringify(['social/message pushed', { _id: 'fresh' }]));
     expect(onMessage).toHaveBeenCalledWith({ _id: 'fresh' });
-    expect(oldWs.send).toHaveBeenCalledTimes(1);
+    expect(oldWs.listeners.size).toBe(0);
   });
 
   it('a token change tears down the old socket and authenticates a new one', () => {
@@ -133,7 +154,12 @@ describe('connection lifecycle', () => {
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(sockets).toHaveLength(2);
     sockets[1].fire('connect');
-    expect(sockets[1].ws.sent[0]).toContain('"accessToken":"new"');
+    expect(sockets[1].emit).toHaveBeenCalledWith(
+      'create',
+      'security/session',
+      { strategy: 'oauth', accessToken: 'new' },
+      expect.any(Function),
+    );
   });
 
   it('unmount disconnects and stops listening', () => {
@@ -142,6 +168,70 @@ describe('connection lifecycle', () => {
 
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(socket.ws.listeners.size).toBe(0);
+  });
+});
+
+describe('request', () => {
+  it('waits for the sign-in, then calls the service and resolves with its answer', async () => {
+    const { hook, socket } = connectedSocket();
+    const answer = hook.result.current.request('get', 'game/character', 'Doreetd', {});
+    await Promise.resolve();
+    expect(socket.calls('get', 'game/character')).toHaveLength(0);
+
+    socket.signIn();
+    await vi.waitFor(() => expect(socket.calls('get', 'game/character')).toHaveLength(1));
+    expect(socket.calls('get', 'game/character')[0].slice(0, 4)).toEqual(['get', 'game/character', 'Doreetd', {}]);
+    socket.answer('get', 'game/character', null, { items: [] });
+    await expect(answer).resolves.toEqual({ items: [] });
+  });
+
+  it("rejects with PD2's error message and code", async () => {
+    const { hook, socket } = connectedSocket();
+    socket.signIn();
+    const answer = hook.result.current.request('get', 'game/character', 'Nobody', {});
+    await vi.waitFor(() => expect(socket.calls('get', 'game/character')).toHaveLength(1));
+    socket.answer('get', 'game/character', { name: 'NotFound', message: 'No record found', code: 404 });
+    const err = await answer.catch((e) => e);
+    expect(err).toBeInstanceOf(SocketRequestError);
+    expect(err).toMatchObject({ message: 'No record found', code: 404 });
+  });
+
+  it('a refused sign-in fails the call without sending it', async () => {
+    const { hook, socket } = connectedSocket();
+    socket.signIn({ name: 'NotAuthenticated', message: 'jwt expired', code: 401 });
+    await expect(hook.result.current.request('get', 'game/character', 'Doreetd', {})).rejects.toMatchObject({
+      code: 401,
+    });
+    expect(socket.calls('get', 'game/character')).toHaveLength(0);
+  });
+
+  it('gives up when PD2 does not answer in time', async () => {
+    const { hook, socket } = connectedSocket();
+    socket.signIn();
+    const answer = hook.result.current.request('get', 'game/character', 'Doreetd', {}).catch((e) => e);
+    await vi.advanceTimersByTimeAsync(SOCKET_REQUEST_TIMEOUT_MS);
+    expect(await answer).toBeInstanceOf(SocketRequestError);
+  });
+
+  it('a call made while reconnecting waits for the new connection to sign in', async () => {
+    const { hook, socket } = connectedSocket();
+    socket.signIn();
+    socket.fire('disconnect');
+    const answer = hook.result.current.request('get', 'game/character', 'Doreetd', {});
+    await Promise.resolve();
+    expect(socket.calls('get', 'game/character')).toHaveLength(0);
+
+    socket.io.engine.transport.ws = new FakeWs();
+    socket.fire('connect');
+    socket.signIn();
+    await vi.waitFor(() => expect(socket.calls('get', 'game/character')).toHaveLength(1));
+    socket.answer('get', 'game/character', null, { ok: true });
+    await expect(answer).resolves.toEqual({ ok: true });
+  });
+
+  it('fails right away without a socket', async () => {
+    const { result } = renderHook(() => useSocket({ settings: {} as ISettings }));
+    await expect(result.current.request('get', 'game/character', 'x', {})).rejects.toBeInstanceOf(SocketRequestError);
   });
 });
 

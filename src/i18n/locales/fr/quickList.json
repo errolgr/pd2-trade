@@ -3,7 +3,7 @@
     "listItem": "Vendre",
     "manage": "Gérer",
     "queued": "En attente",
-    "mustBeInStash": "L'objet doit être dans votre coffre partagé pour être mis en vente."
+    "mustBeInStash": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente."
   },
   "shortcut": {
     "findFailed": "Impossible de trouver les objets",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copiez un objet en jeu (Ctrl+C) et rouvrez cette fenêtre pour le mettre en vente, ou sélectionnez « Gérer les annonces » pour voir vos échanges actifs.",
     "noItemsFound": "Aucun objet ne correspond à « {{name}} »",
     "whyNotFound": "Pourquoi mon objet est-il introuvable ?",
-    "notFoundTooltip": "Un objet n'est trouvé que s'il est placé dans votre coffre partagé (pas le coffre personnel) et que vous avez créé une nouvelle partie.",
+    "notFoundTooltip": "Un objet est trouvé dès qu'il se trouve dans votre coffre partagé ou dans le coffre personnel d'un personnage du mode choisi dans les Paramètres, et que vous avez créé une nouvelle partie.",
     "queueHint": "Vous pouvez mettre cet objet en attente pour qu'il soit mis en vente automatiquement. Nous attendrons que le serveur le synchronise depuis votre coffre (quelques minutes en général).",
     "noneMatch": "Aucun ne correspond ?",
     "queueModeHint": "Mettez cet objet en attente jusqu'à ce que le nouveau apparaisse dans votre coffre (quelques minutes en général).",
@@ -135,7 +135,7 @@
     "noMatches": "Aucun résultat",
     "noMatchesFor": "Aucun objet ne correspond à « {{query}} »",
     "noActiveTitle": "Aucune annonce active",
-    "noActiveDescription": "Les objets que vous mettez en vente depuis votre coffre partagé apparaîtront ici.",
+    "noActiveDescription": "Les objets que vous mettez en vente depuis votre coffre apparaîtront ici.",
     "notSignedInTitle": "Non connecté",
     "notSignedInDescription": "Connectez-vous à votre compte PD2 pour gérer vos annonces."
   },

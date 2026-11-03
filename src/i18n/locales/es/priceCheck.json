@@ -77,7 +77,7 @@
       "openTradeTooltip": "Abrir esta búsqueda en projectdiablo2.com",
       "openInMarket": "Abrir en el mercado",
       "list": "Anunciar",
-      "listDisabled": "El objeto debe estar en tu alijo compartido para anunciarlo.",
+      "listDisabled": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo.",
       "showExpired": "Mostrar caducados"
     },
     "results": {

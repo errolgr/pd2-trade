@@ -547,7 +547,7 @@
       "group": "Twoje ogłoszenia",
       "autoDelist": {
         "label": "Gdy wystawiony przedmiot opuści skrzynię",
-        "description": "Przeniesienie między zakładkami się nie liczy. Sprawdzane co minutę, gdy Diablo II jest na pierwszym planie. Jeśli przez identyczne przedmioty nie wiadomo, który zniknął, zawsze wybierasz sam.",
+        "description": "Przeniesienie między zakładkami lub między skrzynią osobistą a wspólną się nie liczy. Sprawdzane co minutę, gdy Diablo II jest na pierwszym planie. Jeśli przez identyczne przedmioty nie wiadomo, który zniknął, zawsze wybierasz sam.",
         "options": {
           "off": "Nic nie rób",
           "ask": "Zapytaj mnie",

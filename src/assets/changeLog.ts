@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.10.15': [
+    "🆕 List Item, queued listings, Ctrl+U and auto-delist find items in your characters' personal stashes too, not only the shared stash (characters of the mode picked in Settings). Moving an item between a personal stash and the shared stash doesn't count as taking it out",
+    '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
+  ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',
     '🆕 Price check: each listing shows if the seller is in game (green) and on the trade site (blue); click the dot above the list to show only those sellers',

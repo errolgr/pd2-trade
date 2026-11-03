@@ -37,13 +37,13 @@ describe('QuickListPage', () => {
     expect(shownItem()).toEqual(item);
   });
 
-  it('shows no item in manage mode, for the not_shared_stash error, or for a malformed item', () => {
+  it('shows no item in manage mode, for the not_in_stash error, or for a malformed item', () => {
     open(undefined);
     render(<QuickListPage />);
     expect(shownItem()).toBeNull();
     cleanup();
 
-    open({ item: encoded, error: 'not_shared_stash' });
+    open({ item: encoded, error: 'not_in_stash' });
     render(<QuickListPage />);
     expect(shownItem()).toBeNull();
     cleanup();
@@ -60,7 +60,7 @@ describe('QuickListPage', () => {
     view.rerender(<QuickListPage />);
     expect(shownItem()).toEqual(item);
 
-    open({ error: 'not_shared_stash' });
+    open({ error: 'not_in_stash' });
     view.rerender(<QuickListPage />);
     expect(shownItem()).toBeNull();
 

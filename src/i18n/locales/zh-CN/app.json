@@ -17,7 +17,7 @@
     "itemNotSupported": "物品不受支持或无效。",
     "nothingCopied": "未复制任何物品。请在游戏中将鼠标悬停在物品上后重试，或先在物品上按 Ctrl+C。",
     "cannotListItem": "无法挂单",
-    "notInSharedStash": "此物品不在你的共享储物箱中，无法挂单。",
+    "notInStash": "此物品不在你的储物箱（共享或个人）中，无法挂单。",
     "delist": "下架",
     "noItemUnderCursor": "光标下未找到有效物品。"
   },

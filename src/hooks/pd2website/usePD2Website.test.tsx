@@ -19,7 +19,7 @@ import {
 } from './usePD2Website';
 
 const openSignIn = vi.hoisted(() => vi.fn());
-const socket = vi.hoisted(() => ({ isConnected: false, subscribe: vi.fn() }));
+const socket = vi.hoisted(() => ({ isConnected: false, subscribe: vi.fn(), request: vi.fn() }));
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn, isOpen: false }) }));

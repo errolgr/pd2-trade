@@ -15,6 +15,7 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingArtCandidates } from '../lib/listing-art';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
+import { isPersonalStashLocation } from '@/hooks/pd2website/personal-stash';
 
 /**
  * Inline pill for listing links, so "interested in your [Ohm Rune 75 wss]" reads as one sentence. Shared by
@@ -90,12 +91,12 @@ export const nameColor = (listing: MarketListingEntry) =>
 function stashLabel(listing: MarketListingEntry): string | null {
   const location = listing.item.location;
   if (!location?.storage) return null;
+  if (isPersonalStashLocation(location)) return t('chat:listing.stashPersonal');
   if (/shared/i.test(location.storage)) {
     return typeof location.stash_page === 'number'
       ? t('chat:listing.stashShared', { page: location.stash_page })
       : t('chat:listing.stashSharedOnly');
   }
-  if (/^(personal )?stash$/i.test(location.storage)) return t('chat:listing.stashPersonal');
   return location.storage;
 }
 

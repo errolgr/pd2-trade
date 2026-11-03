@@ -3,7 +3,7 @@
     "listItem": "挂单物品",
     "manage": "管理",
     "queued": "排队中",
-    "mustBeInStash": "物品必须在共享储物箱中才能挂单。"
+    "mustBeInStash": "物品必须在储物箱（共享或个人）中才能挂单。"
   },
   "shortcut": {
     "findFailed": "查找物品失败",
@@ -28,7 +28,7 @@
     "noItemDescription": "在游戏中复制物品（Ctrl+C）后重新打开此窗口即可挂单，或选择“管理挂单”查看你的有效交易。",
     "noItemsFound": "未找到与“{{name}}”匹配的物品",
     "whyNotFound": "为什么找不到我的物品？",
-    "notFoundTooltip": "物品必须放在共享储物箱（而非个人储物箱）中，并且你已创建新游戏，才能被找到。",
+    "notFoundTooltip": "物品放入共享储物箱，或放入设置中所选模式下某个角色的个人储物箱，并且你已创建新游戏后，即可被找到。",
     "queueHint": "你可以将此物品排队以自动挂单。我们会等待服务器从你的储物箱同步它（通常需要几分钟）。",
     "noneMatch": "都不匹配？",
     "queueModeHint": "将此物品排队，等待新物品出现在你的储物箱中（通常需要几分钟）。",
@@ -129,7 +129,7 @@
     "noMatches": "无匹配",
     "noMatchesFor": "未找到与“{{query}}”匹配的物品",
     "noActiveTitle": "无有效挂单",
-    "noActiveDescription": "你从共享储物箱挂单的物品会显示在这里。",
+    "noActiveDescription": "你从储物箱挂单的物品会显示在这里。",
     "notSignedInTitle": "未登录",
     "notSignedInDescription": "登录你的 PD2 账号以管理挂单。"
   },

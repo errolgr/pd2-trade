@@ -117,7 +117,7 @@ const AppController: React.FC = () => {
     const { raw: copiedRaw, copied } = await copyItemUnderCursor(true);
     const raw = clipboardContainsValidItem(copiedRaw) ? copiedRaw : null;
 
-    let payload: PanelPayloads['quickList'] = { error: 'not_shared_stash' };
+    let payload: PanelPayloads['quickList'] = { error: 'not_in_stash' };
     if (raw && isStashItem(raw)) payload = { item: encodeItemForQuickList(raw) };
     openPanel('quickList', payload, { placement: 'cursor' });
 
@@ -131,7 +131,7 @@ const AppController: React.FC = () => {
     } else if (!isStashItem(raw)) {
       showToast({
         title: t('app:controller.cannotListItem'),
-        description: t('app:controller.notInSharedStash'),
+        description: t('app:controller.notInStash'),
         variant: 'error',
       });
     }

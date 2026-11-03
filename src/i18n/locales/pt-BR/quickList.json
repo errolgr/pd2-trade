@@ -3,7 +3,7 @@
     "listItem": "Anunciar item",
     "manage": "Gerenciar",
     "queued": "Na fila",
-    "mustBeInStash": "O item precisa estar no seu baú compartilhado para ser anunciado."
+    "mustBeInStash": "O item precisa estar no seu baú (compartilhado ou pessoal) para ser anunciado."
   },
   "shortcut": {
     "findFailed": "Falha ao encontrar itens",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copie um item no jogo (Ctrl+C) e reabra esta janela para anunciá-lo, ou selecione \"Gerenciar anúncios\" para ver suas trocas ativas.",
     "noItemsFound": "Nenhum item encontrado para \"{{name}}\"",
     "whyNotFound": "Por que meu item não foi encontrado?",
-    "notFoundTooltip": "Um item só será encontrado se estiver no seu baú compartilhado (não no baú pessoal) e você tiver criado um novo jogo.",
+    "notFoundTooltip": "Um item é encontrado quando está no seu baú compartilhado ou no baú pessoal de um personagem do modo escolhido nas Configurações, e você criou um novo jogo.",
     "queueHint": "Você pode colocar este item na fila para ser anunciado automaticamente. Aguardaremos o servidor sincronizá-lo do seu baú (geralmente leva alguns minutos).",
     "noneMatch": "Nenhum corresponde?",
     "queueModeHint": "Coloque este item na fila para aguardar o novo aparecer no seu baú (geralmente leva alguns minutos).",
@@ -135,7 +135,7 @@
     "noMatches": "Nenhum resultado",
     "noMatchesFor": "Nenhum item encontrado para \"{{query}}\"",
     "noActiveTitle": "Nenhum anúncio ativo",
-    "noActiveDescription": "Os itens que você anunciar do seu baú compartilhado aparecerão aqui.",
+    "noActiveDescription": "Os itens que você anunciar do seu baú aparecerão aqui.",
     "notSignedInTitle": "Você não entrou",
     "notSignedInDescription": "Entre na sua conta do PD2 para gerenciar seus anúncios."
   },
