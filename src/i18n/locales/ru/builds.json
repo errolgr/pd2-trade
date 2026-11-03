@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Имя персонажа…",
     "lookupLabel": "Найти персонажа",
     "mode": "Режим",
+    "followingShortcut": "Отслеживаемые ({{n}})",
     "tabs": {
       "meta": "Мета",
       "characters": "Персонажи"
@@ -118,6 +119,8 @@
     "updated": "Обновлено {{time}}",
     "firstSeen": "Впервые замечен {{time}}",
     "follow": "Отслеживать",
+    "followedToast": "Вы отслеживаете {{name}}",
+    "followedToastDescription": "Сохранено в {{characters}} → {{following}}",
     "openSite": "Открыть на pd2trader.com",
     "viewingSnapshot": "Просмотр <date>{{date}}</date><muted> · цены скрыты</muted>",
     "backToNow": "К текущему",

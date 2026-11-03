@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { Search, Trophy } from 'lucide-react';
+import { Search, Star, Trophy } from 'lucide-react';
 import { fadeIn, springSnappy } from '@/lib/motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
@@ -25,11 +26,14 @@ const isTextEntry = (target: EventTarget | null) =>
 const BuildsPage: React.FC = () => {
   const { payload, payloadVersion, close, visible } = usePanel<'builds'>();
   const { openPanel } = useOverlay();
-  const { settings } = useOptions();
+  const { settings, isLoading } = useOptions();
   const { t } = useTranslation('builds');
 
   const [tab, setTab] = useState<BuildsTab>('meta');
-  const [charactersView, setCharactersView] = useState<CharactersView>('mine');
+  const followedCount = settings?.followedBuildCharacters?.length ?? 0;
+  // Unpicked: Following when the user follows anyone (that list is what they come back for), else Mine
+  const [charactersViewChoice, setCharactersView] = useState<CharactersView | null>(null);
+  const charactersView: CharactersView = charactersViewChoice ?? (followedCount > 0 ? 'following' : 'mine');
   const [character, setCharacter] = useState<{ name: string; mode?: BuildsMode } | null>(null);
   const [filters, setFilters] = useState<BuildsFilters>(EMPTY_BUILDS_FILTERS);
   const [modeChoice, setModeChoice] = useState<BuildsMode | null>(null);
@@ -42,6 +46,9 @@ const BuildsPage: React.FC = () => {
   // keepMounted: nothing is fetched until the panel was first shown
   const [activated, setActivated] = useState(false);
   if (visible && !activated) setActivated(true);
+  // The default holds once shown: unfollowing the last character doesn't swap the list away under the cursor
+  if (activated && !isLoading && tab === 'characters' && !character && charactersViewChoice === null)
+    setCharactersView(charactersView);
 
   // openPanel('builds', payload), adjusted during render; no payload = keep where it was
   const [handledVersion, setHandledVersion] = useState(-1);
@@ -96,6 +103,12 @@ const BuildsPage: React.FC = () => {
     setModeChoice(next);
     // Viewing a character: look for it in the other mode
     if (character) setCharacter({ name: character.name, mode: next });
+  };
+
+  const showFollowing = () => {
+    setTab('characters');
+    setCharactersView('following');
+    setCharacter(null);
   };
 
   const openLookup = () => {
@@ -173,6 +186,19 @@ const BuildsPage: React.FC = () => {
                       { value: 'hardcore', label: 'HC', title: 'Hardcore' },
                     ]}
                   />
+                  {followedCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                      title={t('page.followingShortcut', { n: followedCount })}
+                      aria-label={t('page.followingShortcut', { n: followedCount })}
+                      onClick={showFollowing}
+                    >
+                      <Star className="size-3.5 fill-q-gold text-q-gold" />
+                      <span className="tabular-nums">{followedCount}</span>
+                    </Button>
+                  )}
                   <Tabs
                     value={character ? '' : tab}
                     onValueChange={(v) => {
