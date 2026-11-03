@@ -13,29 +13,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
+import { preferredSimCharacter } from '@/lib/sim-characters';
 import {
   createSimExport,
   describeSimExportError,
-  getMyCharacters,
   isSessionError,
   isSimCandidate,
   MAX_SIM_EXPORT_ITEMS,
-  orderedAccounts,
   SimExportApiError,
-  type SimCharacters,
 } from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
@@ -59,32 +50,16 @@ const sectionLabel = 'text-[11px] font-semibold uppercase tracking-wider text-mu
 export function SimExportTab({ token, account }: { token: string; account: string }) {
   const { fetchAndCacheStash } = usePd2Website();
   const { openPanel } = useOverlay();
-  const [characters, setCharacters] = useState<Load<SimCharacters>>({ status: 'loading' });
   const [charactersVersion, setCharactersVersion] = useState(0);
+  const characters = useSimLadderCharacters(token, account, charactersVersion);
   const [stash, setStash] = useState<Load<GameStashItem[]>>({ status: 'loading' });
   const [stashVersion, setStashVersion] = useState(0);
-  const [character, setCharacter] = useState('');
+  const [pickedCharacter, setPickedCharacter] = useState('');
+  // The selected account's highest level, unless the pick is listed
+  const character = preferredSimCharacter(characters.status === 'ok' ? characters.data : [], pickedCharacter);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [query, setQuery] = useState('');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
-
-  useEffect(() => {
-    let live = true;
-    setCharacters({ status: 'loading' });
-    getMyCharacters(token).then(
-      (data) => {
-        if (!live) return;
-        setCharacters({ status: 'ok', data });
-        // The selected account's characters come first; keep a choice that still exists.
-        const names = orderedAccounts(data, account).flatMap((a) => a.characters);
-        setCharacter((current) => (names.includes(current) ? current : (names[0] ?? '')));
-      },
-      (error) => live && setCharacters({ status: 'error', error }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [token, account, charactersVersion]);
 
   // The provider's fetch changes identity with every settings update; only account and retries refetch.
   const fetchStashRef = useRef(fetchAndCacheStash);
@@ -185,30 +160,14 @@ export function SimExportTab({ token, account }: { token: string; account: strin
         )}
         {characters.status === 'ok' &&
           (character ? (
-            <Select value={character}
-              onValueChange={setCharacter}>
-              <SelectTrigger className="w-64"
-                aria-label="Character">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {orderedAccounts(characters.data, account).map((a) => (
-                  <SelectGroup key={a.account}>
-                    <SelectLabel>{a.account}</SelectLabel>
-                    {a.characters.map((name) => (
-                      <SelectItem key={`${a.account}/${name}`}
-                        value={name}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            <SimCharacterPicker characters={characters.data}
+              value={character}
+              onChange={setPickedCharacter}
+              className="w-64" />
           ) : (
             <EmptyState compact
               icon={<UserRound />}
-              title="No characters found on your PD2 accounts." />
+              title="No ladder characters found on your PD2 accounts." />
           ))}
       </section>
 
