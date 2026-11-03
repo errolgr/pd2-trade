@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { isNetworkError } from '@/lib/network-errors';
 
 /**
  * `listed`: still on the market. `unlisted`: moved to the listing archive (sold or removed by the seller).
@@ -30,7 +31,10 @@ const byIds = (ids: string[]) =>
     $limit: ids.length,
   }) as Partial<MarketListingQuery> as MarketListingQuery;
 
-/** One batch: live listings first, the archive for the rest. Throws when either request fails. */
+/**
+ * One batch: live listings first, the archive for the rest. Throws when either request fails; a 401 (null page, the
+ * provider already re-checks the session and refreshes or asks to sign in) throws AuthenticationError.
+ */
 async function resolveBatch(
   ids: string[],
   getListings: FetchListings,
@@ -38,13 +42,13 @@ async function resolveBatch(
 ): Promise<Map<string, ResolvedState>> {
   const resolved = new Map<string, ResolvedState>();
   const live = await getListings(byIds(ids));
-  if (!live) throw new Error('market listing lookup was not authorized');
+  if (!live) throw new AuthenticationError('market listing lookup was not authorized');
   for (const listing of live.data) resolved.set(listing._id, { status: 'listed', listing });
 
   const rest = ids.filter((id) => !resolved.has(id));
   if (rest.length === 0) return resolved;
   const archived = await getArchive(byIds(rest));
-  if (!archived) throw new Error('archived listing lookup was not authorized');
+  if (!archived) throw new AuthenticationError('archived listing lookup was not authorized');
   for (const listing of archived.data) {
     if (!resolved.has(listing._id)) resolved.set(listing._id, { status: 'unlisted', listing });
   }
@@ -89,7 +93,11 @@ export function useChatListings(listingIds: readonly string[]): ReadonlyMap<stri
       const at = Date.now();
       for (const result of results) {
         if (result.status === 'rejected') {
-          console.error('[Chat] Failed to load linked market listings:', result.reason);
+          // Offline / PD2 unreachable, or PD2 refused the token (401, handled by the provider): the cards show as
+          // failed; nothing to report
+          if (isNetworkError(result.reason) || result.reason instanceof AuthenticationError)
+            console.warn('[Chat] Failed to load linked market listings:', result.reason);
+          else console.error('[Chat] Failed to load linked market listings:', result.reason);
           continue;
         }
         for (const [id, state] of result.value) cache.set(id, { state, at });

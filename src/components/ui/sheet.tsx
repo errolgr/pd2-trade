@@ -3,6 +3,7 @@
 import * as React from 'react';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 import { cn } from '@/lib/utils';
 import { usePanelPortalContainer } from '@/overlay/portal';
@@ -52,6 +53,7 @@ function SheetContent({
 }) {
   // Inside an overlay panel the sheet slides over the panel, not the monitor edge
   const inPanel = !!usePanelPortalContainer();
+  const { t } = useTranslation();
   return (
     <SheetPortal>
       <SheetOverlay className={inPanel ? 'absolute' : undefined} />
@@ -75,7 +77,7 @@ function SheetContent({
         {children}
         <SheetPrimitive.Close className="ring-offset-background focus-visible:ring-ring/60 text-muted-foreground hover:text-foreground hover:bg-accent data-[state=open]:bg-secondary absolute top-4 right-4 rounded-md p-0.5 opacity-80 transition-[color,background-color,opacity,transform] duration-(--dur-fast) ease-out hover:opacity-100 motion-safe:active:scale-90 focus-visible:ring-2 focus-visible:ring-offset-0 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{t('common:actions.close')}</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

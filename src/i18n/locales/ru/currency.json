@@ -1,0 +1,237 @@
+{
+  "window": {
+    "title": "Состояние",
+    "retry": "Повторить",
+    "tabs": {
+      "overview": "Обзор",
+      "runes": "Руны",
+      "currency": "Валюта",
+      "ubers": "Uber-материалы",
+      "gemsMats": "Камни и материалы",
+      "uniquesSets": "Uniques и Sets",
+      "other": "Прочее",
+      "rares": "Rares",
+      "raresCrafted": "Rares и Crafted",
+      "history": "История"
+    }
+  },
+  "header": {
+    "netWorth": "Состояние",
+    "deltaLast": "посл.",
+    "delta24h": "24 ч",
+    "deltaSeason": "сезон",
+    "refresh": "Обновить",
+    "refreshing": "Обновление",
+    "refreshTooltip": "Переоценить сундук сейчас",
+    "asOf": "на {{time}}",
+    "prices": "цены {{day}}",
+    "gold": "{{amount}} золота",
+    "ladderFallback": "оценено по ценам ladder (нет данных рынка non-ladder)"
+  },
+  "trackingDisabled": {
+    "title": "История выключена.",
+    "description": "Включите «Сохранять историю состояния» в Настройки → Состояние, чтобы видеть график, сессии с HR/час и изменения между снимками."
+  },
+  "signedOut": {
+    "chooseAccount": "Выберите аккаунт PD2 в настройках, чтобы оценить сундук.",
+    "signInPrompt": "Войдите с аккаунтом PD2, чтобы оценить сундук.",
+    "signIn": "Войти"
+  },
+  "tabSkeleton": {
+    "title": "Оценки пока нет.",
+    "description": "Не удалось оценить сундук. Нажмите «Повторить» выше, когда PD2 будет доступен."
+  },
+  "categories": {
+    "runes": "Руны",
+    "currency": "Валюта",
+    "ubers": "Uber-материалы",
+    "gems": "Камни",
+    "mats": "Материалы",
+    "uniques": "Uniques",
+    "sets": "Sets",
+    "other": "Прочее"
+  },
+  "columns": {
+    "item": "Предмет",
+    "qty": "Кол-во",
+    "unit": "За шт.",
+    "value": "Стоимость",
+    "share": "%",
+    "change7d": "7 дн.",
+    "price": "Цена"
+  },
+  "table": {
+    "noResults": "Нет результатов.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "по возрастанию",
+    "sortDescending": "по убыванию",
+    "clearSorting": "сбросить сортировку"
+  },
+  "confidence": {
+    "ok": {
+      "label": "рынок",
+      "hint": "Средняя цена на рынке за 7 дней"
+    },
+    "fixed": {
+      "label": "фикс.",
+      "hint": "Фиксированная цена руны (мало объявлений)"
+    },
+    "low": {
+      "label": "мало",
+      "hint": "Меньше 10 объявлений — считается неточным, не входит в итог"
+    },
+    "none": {
+      "label": "без цены",
+      "hint": "Нет данных о цене — оценено в 0"
+    },
+    "listings_one": "{{count}} объявление",
+    "listings_few": "{{count}} объявления",
+    "listings_many": "{{count}} объявлений",
+    "listings_other": "{{count}} объявления"
+  },
+  "overview": {
+    "noPricedHoldings": "Пока нет оценённых предметов.",
+    "topAside_one": "по стоимости · топ {{count}}",
+    "topAside_few": "по стоимости · топ {{count}}",
+    "topAside_many": "по стоимости · топ {{count}}",
+    "topAside_other": "по стоимости · топ {{count}}",
+    "topHoldings": "Самое ценное",
+    "nothingPriced": "Пока ничего не оценено.",
+    "unpriced_one": "{{count}} предмет без цены",
+    "unpriced_few": "{{count}} предмета без цены",
+    "unpriced_many": "{{count}} предметов без цены",
+    "unpriced_other": "{{count}} предмета без цены",
+    "uncertain": "{{value}} под вопросом (низкая точность, не в итоге)",
+    "gold": "{{amount}} золота (не пересчитано)",
+    "byStashTab": "По вкладкам сундука"
+  },
+  "holdings": {
+    "searchPlaceholder": "Поиск…",
+    "searchLabel": "Поиск предметов",
+    "clearSearch": "Очистить поиск",
+    "hideZero": "Скрыть нулевые",
+    "nothingMatches": "Ничего не найдено.",
+    "noneInStash": "В сундуке нет.",
+    "zeroHidden_one": "Скрыта {{count}} строка с нулевой стоимостью (предметы без цены показаны, но оценены в 0).",
+    "zeroHidden_few": "Скрыто {{count}} строки с нулевой стоимостью (предметы без цены показаны, но оценены в 0).",
+    "zeroHidden_many": "Скрыто {{count}} строк с нулевой стоимостью (предметы без цены показаны, но оценены в 0).",
+    "zeroHidden_other": "Скрыто {{count}} строки с нулевой стоимостью (предметы без цены показаны, но оценены в 0).",
+    "count_one": "{{count}} позиция",
+    "count_few": "{{count}} позиции",
+    "count_many": "{{count}} позиций",
+    "count_other": "{{count}} позиции"
+  },
+  "history": {
+    "showMore": "Показать ещё ({{remaining}} старых)",
+    "chartRange": "Период графика",
+    "ranges": {
+      "24h": "24 ч",
+      "7d": "7 дн.",
+      "season": "Сезон",
+      "all": "Всё"
+    },
+    "rangeChange": "Изменение за выбранный период",
+    "stackByCategory": "По категориям",
+    "chart": {
+      "netWorth": "Состояние",
+      "emptyTitle": "В этом периоде пока нет снимков.",
+      "emptyDescription": "Снимки делаются при запуске, каждые несколько минут, пока Diablo в фокусе, и при обновлении."
+    },
+    "sessions": {
+      "title": "Сессии",
+      "start": "Начать новую сессию",
+      "stop": "Завершить сессию",
+      "emptyTitle": "Сессий пока нет.",
+      "emptyDescription": "Сессии формируются автоматически из снимков с интервалом меньше 30 минут.",
+      "columns": {
+        "when": "Когда",
+        "duration": "Длительность",
+        "farmed": "Нафармлено",
+        "drift": "Дрейф",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Сегодня {{time}}",
+      "yesterday": "Вчера {{time}}",
+      "open": "Открыть сессию",
+      "manual": "вручную",
+      "best": "Лучший HR/h в этом сезоне",
+      "noGains": "Новых предметов нет.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} снимок",
+      "tooltipSummary_few": "{{from}} → {{to}} HR · {{count}} снимка",
+      "tooltipSummary_many": "{{from}} → {{to}} HR · {{count}} снимков",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} снимка"
+    },
+    "snapshots": {
+      "title": "Снимки",
+      "selected": "Выбрано {{selected}}/2",
+      "pickTwo": "Выберите два для сравнения",
+      "emptyTitle": "В этом периоде нет снимков.",
+      "select": "Выбрать снимок {{time}}",
+      "compareWithPrevious": "Сравнить с предыдущим"
+    },
+    "diff": {
+      "priceBasis": "Основа цен",
+      "pricesThen": "Цены тогда",
+      "pricesNow": "Цены сейчас",
+      "close": "Закрыть сравнение",
+      "farmed": "Нафармлено",
+      "marketDrift": "Дрейф рынка",
+      "total": "Итого",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "Изменений нет.",
+      "change": "Изменение"
+    },
+    "delete": {
+      "thisSeason": "этот сезон",
+      "privacy": "История видна только вашему входу PD2 и хранится на pd2trader.com.",
+      "button": "Удалить историю",
+      "title": "Удалить историю состояния?",
+      "description": "Удалит сохранённые снимки для {{account}} ({{ladder}}, {{core}}). Это нельзя отменить.",
+      "season": "Удалить {{season}}",
+      "allSeasons": "Удалить все сезоны",
+      "deleted_one": "Удалён {{count}} снимок.",
+      "deleted_few": "Удалено {{count}} снимка.",
+      "deleted_many": "Удалено {{count}} снимков.",
+      "deleted_other": "Удалено {{count}} снимка."
+    }
+  },
+  "rares": {
+    "stashFallback": "Сундук",
+    "emptyTitle": "В сундуке нет rares",
+    "emptyDescription": "Здесь оцениваются rare-кольца, амулеты, самоцветы, доспехи и оружие из сундука (Оставить · Проверить · Продать NPC).",
+    "groups": {
+      "keep": "Оставить",
+      "worthALook": "Стоит взглянуть"
+    },
+    "estTitle": "Оценка по запрашиваемым ценам похожих rares за {{season}} — не входит в итог",
+    "summary": {
+      "raresLine_one": "<label>Rares: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейку)</note>",
+      "raresLine_few": "<label>Rares: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейки)</note>",
+      "raresLine_many": "<label>Rares: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячеек)</note>",
+      "raresLine_other": "<label>Rares: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейки)</note>",
+      "craftedLine_one": "<label>Crafted: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейку)</note>",
+      "craftedLine_few": "<label>Crafted: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейки)</note>",
+      "craftedLine_many": "<label>Crafted: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячеек)</note>",
+      "craftedLine_other": "<label>Crafted: </label><keep>оставить: {{keep}}</keep><sep> · </sep><check>стоит взглянуть: {{checkHigh}}</check><sep> · </sep><vendor>скорее продать NPC: {{count}}</vendor> <note>(освободит {{count}} ячейки)</note>",
+      "unpricedRares_one": "{{count}} rare «Оставить» без рыночного диапазона не учтён",
+      "unpricedRares_few": "{{count}} rares «Оставить» без рыночного диапазона не учтены",
+      "unpricedRares_many": "{{count}} rares «Оставить» без рыночного диапазона не учтены",
+      "unpricedRares_other": "{{count}} rare «Оставить» без рыночного диапазона не учтены",
+      "unpricedCrafted_one": "{{count}} crafted-предмет «Оставить» без рыночного диапазона не учтён",
+      "unpricedCrafted_few": "{{count}} crafted-предмета «Оставить» без рыночного диапазона не учтены",
+      "unpricedCrafted_many": "{{count}} crafted-предметов «Оставить» без рыночного диапазона не учтены",
+      "unpricedCrafted_other": "{{count}} crafted-предмета «Оставить» без рыночного диапазона не учтены",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> в rares «Оставить» (оценка, не в итоге)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> в crafted-предметах «Оставить» (оценка, не в итоге)"
+    },
+    "fold": {
+      "vendorTitle": "Скорее продать NPC: {{n}} · {{tab}}",
+      "vendorNote_one": "Освободит {{count}} ячейку сундука",
+      "vendorNote_few": "Освободит {{count}} ячейки сундука",
+      "vendorNote_many": "Освободит {{count}} ячеек сундука",
+      "vendorNote_other": "Освободит {{count}} ячейки сундука",
+      "lowTitle": "Вероятно, малоценные: {{n}} · {{tab}}",
+      "lowNote": "Проверьте предметы без ключевого стата"
+    }
+  }
+}

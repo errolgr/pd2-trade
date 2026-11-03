@@ -1,6 +1,7 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
-import { parseStatKey } from './stats';
+import { itemCorruptions } from '@/lib/item-utils';
+import { parseStatKey, pinsMatch } from './stats';
 
 /*
  * Pure view model of the full-width result card: socketed items grouped, each item mod split into the item's own
@@ -45,8 +46,8 @@ export function perLevelLabel(label: string): { label: string; perLevel: boolean
 
 /** Does stat-filter key `key` (site grammar, e.g. `item_singleskill{54}`) select this mod line? */
 export function modMatchesStatKey(mod: Pick<Modifier, 'name' | 'values'>, key: string): boolean {
-  const { names, params } = parseStatKey(key);
-  return names.includes(mod.name) && params.every((p, i) => mod.values?.[i] === p);
+  const { names, pins } = parseStatKey(key);
+  return names.includes(mod.name) && pinsMatch(mod.values, pins);
 }
 
 export interface SocketGroup {
@@ -218,6 +219,7 @@ export function buildCardModel(item: ItemDetail): CardModel {
   const { groups, socketGroups } = groupSockets(socketed);
   // Runeword bonuses belong to the runeword (its runes are listed, not credited)
   const attribute = !item.is_runeword && groups.length > 0;
+  const corruptions = itemCorruptions(item);
 
   const mods = orderedMods(item).map((mod): CardMod => {
     const { label, perLevel } = perLevelLabel(mod.label);
@@ -226,7 +228,7 @@ export function buildCardModel(item: ItemDetail): CardModel {
       mod,
       label,
       perLevel,
-      corrupted: mod.corrupted === true || !!item.corruptions?.includes(mod.name),
+      corrupted: mod.corrupted === true || corruptions.includes(mod.name),
       ...split,
     };
   });

@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Valeur nette",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Valeur nette — cliquez pour les détails, glissez pour déplacer",
+    "snapshotFailed": "Échec de l'instantané",
+    "lastSnapshot": "Dernier instantané {{time}}",
+    "noSnapshot": "Aucun instantané",
+    "session": "session"
+  },
+  "panel": {
+    "title": "Valeur nette",
+    "hide": "Masquer",
+    "openFullView": "Vue complète",
+    "signInPrompt": "Connectez-vous avec votre compte PD2 pour suivre votre valeur nette.",
+    "signIn": "Se connecter",
+    "uncertain": "+{{value}} HR incertain",
+    "sessionDelta": "{{change}} HR (session)",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} min",
+    "thisSession": "Cette session",
+    "last24Hours": "Dernières 24 heures",
+    "notEnoughSnapshots": "Pas encore assez d'instantanés",
+    "recentSnapshots": "Instantanés récents",
+    "noChanges": "Aucune modification enregistrée.",
+    "historyOff": "L'historique est désactivé. Activez « Enregistrer l'historique de la valeur nette » dans Paramètres → Valeur nette pour voir les sessions et les variations.",
+    "snapshotNow": "Instantané",
+    "startSession": "Démarrer la session",
+    "stopSession": "Arrêter la session"
+  },
+  "profile": {
+    "publicProfile": "Profil public",
+    "private": "Privé",
+    "publicTooltip": "Votre nom de compte, classements, valeur, graphique, badges et trouvailles notables sont publics sur pd2trader.com.",
+    "privateTooltip": "Vous seul voyez votre valeur nette. Activez pour apparaître dans les classements de pd2trader.com avec un profil public.",
+    "saveFailed": "Échec de l'enregistrement",
+    "couldNotSave": "Enregistrement impossible",
+    "viewProfile": "Voir le profil"
+  }
+}

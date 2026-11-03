@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { z } from 'zod';
 
 /** A `{name}` in a template: a token filled from the conversation, or a placeholder asked for on use. */
@@ -57,24 +58,59 @@ export const CHAT_TEMPLATE_TEXT_MAX = 500;
 
 /** Name and text of a chat template as the settings editor validates them. */
 export const chatTemplateSchema = z.object({
+  // Messages come from errorMap (resolved per parse) so they follow the UI language
   name: z
-    .string()
+    .string({
+      errorMap: (issue, ctx) =>
+        issue.code === 'too_small'
+          ? { message: t('system:chatTemplates.nameRequired') }
+          : issue.code === 'too_big'
+            ? { message: t('system:chatTemplates.nameTooLong', { max: CHAT_TEMPLATE_NAME_MAX }) }
+            : { message: ctx.defaultError },
+    })
     .trim()
-    .min(1, 'Give the template a name')
-    .max(CHAT_TEMPLATE_NAME_MAX, `Name: at most ${CHAT_TEMPLATE_NAME_MAX} characters`),
+    .min(1)
+    .max(CHAT_TEMPLATE_NAME_MAX),
   text: z
-    .string()
+    .string({
+      errorMap: (issue, ctx) =>
+        issue.code === 'too_small'
+          ? { message: t('system:chatTemplates.textRequired') }
+          : issue.code === 'too_big'
+            ? { message: t('system:chatTemplates.textTooLong', { max: CHAT_TEMPLATE_TEXT_MAX }) }
+            : { message: ctx.defaultError },
+    })
     .trim()
-    .min(1, 'Write the message')
-    .max(CHAT_TEMPLATE_TEXT_MAX, `Message: at most ${CHAT_TEMPLATE_TEXT_MAX} characters`),
+    .min(1)
+    .max(CHAT_TEMPLATE_TEXT_MAX),
 });
 
 /** The tokens a chat template can use, filled from the open conversation. */
 export const CHAT_TEMPLATE_TOKENS = [
-  { token: '{accountName}', description: 'Their account name' },
-  { token: '{characterName}', description: "Their character's name" },
-  { token: '{itemName}', description: 'The item last linked or whispered about' },
-  { token: '{price}', description: 'Its price' },
+  {
+    token: '{accountName}',
+    get description() {
+      return t('system:chatTemplates.tokens.accountName');
+    },
+  },
+  {
+    token: '{characterName}',
+    get description() {
+      return t('system:chatTemplates.tokens.characterName');
+    },
+  },
+  {
+    token: '{itemName}',
+    get description() {
+      return t('system:chatTemplates.tokens.itemName');
+    },
+  },
+  {
+    token: '{price}',
+    get description() {
+      return t('system:chatTemplates.tokens.price');
+    },
+  },
 ] as const;
 
 /** The templates new installs (and settings files from before custom templates) start with. */

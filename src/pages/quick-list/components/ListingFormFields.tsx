@@ -8,6 +8,7 @@ import { Check, Loader2, NotebookPen } from 'lucide-react';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useOptions } from '@/hooks/useOptions';
+import { Trans, useTranslation } from '@/i18n';
 import { ShortcutFormData } from './types';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -36,6 +37,7 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   onSubmit,
   allowQueue = false,
 }) => {
+  const { t } = useTranslation(['quickList', 'common']);
   const { settings } = useOptions();
   const macros = (settings?.listingNoteMacros ?? []).filter(isValidMacro);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -70,7 +72,11 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   const hasPrice = !!price && (typeof price === 'number' ? price > 0 : Number(price) > 0);
   const isFormValid = hasNote || hasPrice;
 
-  const submitLabel = isAlreadyListed ? 'Update' : allowQueue && !selectedItem ? 'Queue Item' : 'Post';
+  const submitLabel = isAlreadyListed
+    ? t('form.update')
+    : allowQueue && !selectedItem
+      ? t('form.queueItem')
+      : t('form.post');
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card/50 p-1.5 shadow-xs transition-colors duration-(--dur-fast) focus-within:border-ring/50">
@@ -88,8 +94,8 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
             variant="ghost"
             size="icon"
             className="relative h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-            title="Note macros"
-            aria-label="Note macros"
+            title={t('form.noteMacros')}
+            aria-label={t('form.noteMacros')}
           >
             <NotebookPen className="h-4 w-4" />
             {macros.length > 0 && (
@@ -106,9 +112,9 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
               <span className="flex size-7 items-center justify-center rounded-md bg-primary/12 text-primary">
                 <NotebookPen className="size-4" />
               </span>
-              Note Macros
+              {t('form.macrosTitle')}
             </SheetTitle>
-            <SheetDescription>Click a macro to fill the note field, or manage your macros below.</SheetDescription>
+            <SheetDescription>{t('form.macrosDescription')}</SheetDescription>
           </SheetHeader>
           <AnimatePresence mode="wait"
             initial={false}>
@@ -122,7 +128,12 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
                 className="flex flex-col gap-3 px-4"
               >
                 <p className="text-sm text-muted-foreground">
-                  Fill in the values for <span className="font-semibold text-foreground">{pendingMacro.label}</span>:
+                  <Trans
+                    t={t}
+                    i18nKey="form.fillValues"
+                    values={{ label: pendingMacro.label }}
+                    components={{ label: <span className="font-semibold text-foreground" /> }}
+                  />
                 </p>
                 <div className="rounded-lg border border-border bg-secondary/60 px-3 py-2 text-xs text-secondary-foreground">
                   <MacroTemplate text={pendingMacro.text} />
@@ -150,13 +161,13 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
                     size="sm"
                     onClick={() => applyMacro(pendingMacro, placeholderValues)}>
                     <Check className="size-4" />
-                    Apply
+                    {t('common:actions.apply')}
                   </Button>
                   <Button type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setPendingMacro(null)}>
-                    Cancel
+                    {t('common:actions.cancel')}
                   </Button>
                 </div>
               </motion.div>
@@ -182,12 +193,14 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
         name="note"
         render={({ field }) => (
           <FormItem className="flex-1 m-0 p-0 min-w-0">
-            <FormLabel className="sr-only">Note</FormLabel>
+            <FormLabel className="sr-only">{t('form.note')}</FormLabel>
             <FormControl>
-              <Input placeholder="Note..."
+              <Input
+                placeholder={t('form.notePlaceholder')}
                 {...field}
                 value={field.value || ''}
-                autoComplete={'off'} />
+                autoComplete={'off'}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -200,13 +213,13 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
         name="price"
         render={({ field }) => (
           <FormItem className="m-0 p-0 min-w-0 w-20">
-            <FormLabel className="sr-only">HR</FormLabel>
+            <FormLabel className="sr-only">{t('form.hr')}</FormLabel>
             <FormControl>
               <Input
                 type="number"
                 min={0}
                 step={0.01}
-                placeholder="HR"
+                placeholder={t('form.hr')}
                 className="tabular-nums"
                 {...field}
                 value={field.value || ''}

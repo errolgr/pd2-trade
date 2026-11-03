@@ -5,44 +5,59 @@
 import { ToastActionType, type CustomToastPayload } from '@/common/types/Events';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
 import type { MarketAlert } from './saved-search-api';
+import { t } from '@/i18n';
 
 /** More alerts than this at once (a catch-up after a reconnect) show as one summary popup. */
 export const MAX_ALERT_TOASTS = 3;
 
+/** ms a market watch popup stays (sonner's default 4 s is too short to read it, hover it or act on it). */
+export const DEFAULT_ALERT_TOAST_DURATION_MS = 8_000;
+
 /** "Harlequin Crest — 1.5 HR" (listing text is shown as plain text). */
 export function alertListingText(alert: MarketAlert): string {
   const { listing } = alert;
-  const item = (listing?.name || listing?.baseName || 'Item').slice(0, 60);
+  const item = (listing?.name || listing?.baseName || t('market:listing.itemFallback')).slice(0, 60);
   const price =
     listing?.hrPrice != null && listing.hrPrice > 0
       ? `${listing.hrPrice} HR`
-      : (listing?.price ?? '').trim().slice(0, 40) || 'no price';
-  return `${item} — ${price}`;
+      : (listing?.price ?? '').trim().slice(0, 40) || t('market:alerts.noPrice');
+  return t('market:alerts.listingText', { item, price });
 }
 
 const viewAction = (alert: MarketAlert): CustomToastPayload['action'] => ({
-  label: 'View',
+  label: t('market:alerts.view'),
   type: ToastActionType.OPEN_MARKET_PANEL,
   data: { savedSearchId: alert.savedSearchId, focusListingId: alert.listingId, tab: 'search' },
 });
 
 /** The popups for new alerts (oldest first): one each, or one summary when there are many. */
-export function alertToasts(alerts: readonly MarketAlert[]): CustomToastPayload[] {
+export function alertToasts(
+  alerts: readonly MarketAlert[],
+  durationMs: number = DEFAULT_ALERT_TOAST_DURATION_MS,
+): CustomToastPayload[] {
   if (alerts.length === 0) return [];
   if (alerts.length > MAX_ALERT_TOASTS) {
     const newest = alerts[alerts.length - 1];
     return [
       {
-        title: 'Market watch',
-        description: `${alerts.length} new matches. Newest: ${newest.savedSearchName}: ${alertListingText(newest)}`,
+        title: t('market:alerts.title'),
+        duration: durationMs,
+        description: t('market:alerts.summary', {
+          count: alerts.length,
+          search: newest.savedSearchName,
+          listing: alertListingText(newest),
+        }),
         action: viewAction(newest),
+        listing: { listingId: newest.listingId, savedSearchId: newest.savedSearchId },
       },
     ];
   }
   return alerts.map((alert) => ({
-    title: 'Market watch',
-    description: `${alert.savedSearchName}: ${alertListingText(alert)}`,
+    title: t('market:alerts.title'),
+    duration: durationMs,
+    description: t('market:alerts.single', { search: alert.savedSearchName, listing: alertListingText(alert) }),
     action: viewAction(alert),
+    listing: { listingId: alert.listingId, savedSearchId: alert.savedSearchId },
   }));
 }
 
@@ -65,7 +80,16 @@ export function watchKey(filters: MarketFilters): string {
     requirements: clean({ ...(requirements ?? {}) }),
     stats: (stats ?? [])
       .filter((s) => s.enabled !== false)
-      .map((s) => clean({ kind: s.kind ?? 'mod', key: s.key, min: s.min, max: s.max, or: s.or || undefined }))
+      .map((s) =>
+        clean({
+          kind: s.kind ?? 'mod',
+          key: s.key,
+          min: s.min,
+          max: s.max,
+          or: s.or || undefined,
+          not: s.not || undefined,
+        }),
+      )
       .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
   });
 }

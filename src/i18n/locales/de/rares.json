@@ -1,0 +1,154 @@
+{
+  "notes": {
+    "craftedUnreliable": "Crafted-Items in diesem Slot können noch nicht zuverlässig bewertet werden (zu wenig Crafted-Daten)"
+  },
+  "slots": {
+    "ring": {
+      "label": "Ring",
+      "plural": "Ringe",
+      "inSentence": "Ringe"
+    },
+    "amul": {
+      "label": "Amulett",
+      "plural": "Amulette",
+      "inSentence": "Amulette"
+    },
+    "circ": {
+      "label": "Diadem",
+      "plural": "Diademe",
+      "inSentence": "Diademe"
+    },
+    "jewl": {
+      "label": "Juwel",
+      "plural": "Juwelen",
+      "inSentence": "Juwelen"
+    },
+    "glov": {
+      "label": "Handschuhe",
+      "plural": "Handschuhe",
+      "inSentence": "Handschuhe"
+    },
+    "boot": {
+      "label": "Stiefel",
+      "plural": "Stiefel",
+      "inSentence": "Stiefel"
+    },
+    "belt": {
+      "label": "Gürtel",
+      "plural": "Gürtel",
+      "inSentence": "Gürtel"
+    },
+    "tors": {
+      "label": "Rüstung",
+      "plural": "Rüstungen",
+      "inSentence": "Rüstungen"
+    },
+    "helm": {
+      "label": "Helm",
+      "plural": "Helme",
+      "inSentence": "Helme"
+    },
+    "shield": {
+      "label": "Schild",
+      "plural": "Schilde",
+      "inSentence": "Schilde"
+    },
+    "quiver": {
+      "label": "Köcher",
+      "plural": "Köcher",
+      "inSentence": "Köcher"
+    },
+    "weapon": {
+      "label": "Waffe",
+      "plural": "Waffen",
+      "inSentence": "Waffen"
+    },
+    "unknown": {
+      "plural": "Items",
+      "inSentence": "Items"
+    }
+  },
+  "verdicts": {
+    "keep": "Behalten",
+    "check": "Prüfen",
+    "vendor": "Verkaufen"
+  },
+  "priority": {
+    "high": "Hat einen ★★-Schlüsselwert oder besser",
+    "medium": "Hat einen ★-Schlüsselwert",
+    "low": "Keine Schlüsselwerte"
+  },
+  "crafted": {
+    "lowConfidence": "Geringe Sicherheit",
+    "lowConfidenceTitle": "Geringe Sicherheit: Das Crafted-Modell dieses Slots basiert auf wenigen Crafted-Inseraten, nimm Urteil und Bereich also nur als grobe Orientierung."
+  },
+  "rank": {
+    "top": "obere {{percent}} %",
+    "bottom": "untere {{percent}} %"
+  },
+  "ordinal": {
+    "st": "{{n}}.",
+    "nd": "{{n}}.",
+    "rd": "{{n}}.",
+    "th": "{{n}}."
+  },
+  "keyStatTitle": "Schlüsselwert: {{multiplier}} Preis zum Saisonende für diese Stufe",
+  "marketSource": {
+    "atThisRank": "{{slots}} auf diesem Rang · {{where}}",
+    "lastSeason": "letzte Saison",
+    "hardcoreListings": "Hardcore-Inserate"
+  },
+  "rankBar": {
+    "ariaLabel": "Voraussichtlich im {{percentile}} Perzentil der Preise für {{slots}}, plus/minus {{error}} Punkte",
+    "vendor": "verkaufen",
+    "keep": "behalten"
+  },
+  "rankBlocks": {
+    "title": "Rang unter {{slots}} <note>(diese Saison)</note>",
+    "ariaLabel": "Rang unter {{slots}}: {{block}}",
+    "bottom25": "untere 25 %",
+    "bottom50": "untere 50 %",
+    "top50": "obere 50 %",
+    "top25": "obere 25 %",
+    "top15": "obere 15 %",
+    "top5": "obere 5 %"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} auf {{slots}} nur durch Corruption",
+    "nearMiss": "knapp verfehlt: {{from}}+ ist {{multiplier}} auf {{slots}}",
+    "nearMissCorruption": "knapp verfehlt: {{from}}+ ist {{multiplier}} auf {{slots}} (nur durch Corruption)",
+    "valuableFrom": "wertvoll ab {{from}} auf {{slots}}",
+    "valuableFromCorruption": "wertvoll ab {{from}} auf {{slots}} (nur durch Corruption)"
+  },
+  "stats": {
+    "title": "Werte auf diesem Item",
+    "keyStats_one": "{{count}} Schlüsselwert",
+    "keyStats_other": "{{count}} Schlüsselwerte",
+    "noKeyStats": "keine Schlüsselwerte",
+    "roll": "Roll {{percent}} %"
+  },
+  "hardcore": {
+    "model": "Hardcore: Preismodell und Sterne aus Softcore-Daten",
+    "rankedHardcore": "eingestuft gegenüber Hardcore-Inseraten",
+    "rankedBlended": "eingestuft gegenüber Hardcore-Inseraten, gemischt mit Softcore ({{percent}} % Hardcore)",
+    "rankedSoftcore": "eingestuft gegenüber Softcore-Inseraten",
+    "pricesHardcore": "Preise aus Hardcore-Inseraten",
+    "pricesSoftcore": "Preise aus Softcore-Inseraten"
+  },
+  "stashPosition": "Spalte {{column}}, Zeile {{row}}",
+  "detail": {
+    "verdict": "Urteil",
+    "howVerdictsWork": "So funktionieren Urteile",
+    "usuallyListed": "Üblicher Preis",
+    "samples": "Stichproben",
+    "comparedWith": "Verglichen mit",
+    "stash": "Truhe"
+  },
+  "history": {
+    "title": "Item-Verlauf",
+    "aside_one": "{{times}}× · {{count}} Verkäufer · seit {{date}}",
+    "aside_other": "{{times}}× · {{count}} Verkäufer · seit {{date}}",
+    "newOwner": "neuer Besitzer",
+    "noPrice": "kein Preis"
+  }
+}

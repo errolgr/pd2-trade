@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { NET_WORTH_CATEGORIES } from '@/lib/networth-api';
 import {
   CATEGORY_COLORS,
-  CATEGORY_LABELS,
+  categoryLabel,
   deltaClass,
   deltaPillClass,
   formatDuration,
@@ -79,7 +79,7 @@ describe('deltaClass / deltaPillClass', () => {
 describe('category tables', () => {
   it('label and colour every net worth category the API can return', () => {
     for (const c of NET_WORTH_CATEGORIES) {
-      expect(CATEGORY_LABELS[c], c).toBeTruthy();
+      expect(categoryLabel(c), c).toBeTruthy();
       expect(CATEGORY_COLORS[c], c).toMatch(/^var\(--/);
     }
   });

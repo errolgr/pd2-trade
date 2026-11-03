@@ -10,6 +10,18 @@ import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from 
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
+import * as Sentry from '@sentry/react';
+import type { BuildsMode } from '@/lib/builds-api';
+import { applyLanguage, type LanguageSetting, t } from '@/i18n';
+import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
+import type { ChatDockItem } from '@/pages/chat/chat-dock';
+import type { PaletteRef } from '@/pages/palette/lib/types';
+
+/** A tracked character the builds panel remembers (followed / recently viewed). */
+export interface BuildCharacterRef {
+  name: string;
+  mode: BuildsMode;
+}
 
 export type NetWorthTickerAnchor =
   | 'top-left'
@@ -19,6 +31,12 @@ export type NetWorthTickerAnchor =
   | 'bottom-right'
   | 'above-chat'
   | 'custom';
+
+/** Settings → Market: what happens when a listed item leaves the stash. */
+export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
+/** Settings → Market: a fresh market search's order (newest bump, cheapest first, priciest first). */
+export type MarketDefaultSort = 'newest' | 'cheapest' | 'priciest';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -53,6 +71,8 @@ export interface ISettings {
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
   chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
+  chatDockOrder?: ChatDockItem[]; // The chat dock menu's window order (pages/chat/chat-dock.ts); unset = default order
+  chatDockFavorites?: ChatDockItem[]; // Windows shown on the chat dock's tab as buttons; unset = chat + offers
   whisperIgnoreList?: string[];
   whisperAnnouncementsEnabled?: boolean;
   whisperJoinNotificationsEnabled?: boolean;
@@ -82,13 +102,45 @@ export interface ISettings {
   netWorthTickerOpacity?: number; // 0-100
   netWorthAutoSnapshotMinutes?: number; // 0 = off, otherwise >= 5
   netWorthToastThresholdHr?: number;
+  corruptedZoneTimerEnabled?: boolean; // Corrupted zone timer overlay (src/lib/corrupted-zones.ts)
+  corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
+  corruptedZoneTimerOpacity?: number; // 30-100
+  corruptedZoneTimerLocked?: boolean; // true: dragging the timer does not move it (clicks still open the schedule)
+  corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
+  corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
+  corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
+  corruptedZoneAlertLeadMinutes?: number; // 0-15: toast that long before the zone starts (0 = when it starts)
+  corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
+  // Settings → Market (src/components/dialogs/optionsv2/market)
+  stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
+  marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
+  marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
+  marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
+  marketDefaultMaxAgeDays?: number; // a fresh live search's listing age window (archive keeps 14 days)
+  marketPageSize?: 25 | 50 | 100; // market results per page
+  marketWhisperTemplate?: string; // "Copy whisper" body; placeholders {item} {price} {seller} {account}; '' = default
+  marketShowDealBadges?: boolean; // deal badge (price vs market) on listings
+  marketShowPriceHistory?: boolean; // price history chart in the listing detail
+  marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
+  marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
+  myListingsView?: 'cards' | 'rows'; // My Listings: big cards or compact rows
+  myListingsSort?: ListingsSort; // My Listings order (both views)
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
   hotkeyKeyMarket?: string; // '' = unbound
+  hotkeyModifierBuilds?: 'ctrl' | 'alt';
+  hotkeyKeyBuilds?: string; // '' = unbound
+  followedBuildCharacters?: BuildCharacterRef[]; // builds panel: starred characters
+  recentBuildCharacters?: BuildCharacterRef[]; // builds panel: last viewed characters, newest first
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
+  language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
+  hotkeyModifierPalette?: 'ctrl' | 'alt';
+  hotkeyKeyPalette?: string; // command palette; '' = unbound
+  palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
+  paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
 }
 
 interface OptionsContextProps {
@@ -142,17 +194,53 @@ const DEFAULT_SETTINGS: ISettings = {
   netWorthTickerOpacity: 90,
   netWorthAutoSnapshotMinutes: 15,
   netWorthToastThresholdHr: 0.5,
+  corruptedZoneTimerEnabled: false,
+  corruptedZoneTimerAnchor: 'top-right',
+  corruptedZoneTimerOpacity: 90,
+  corruptedZoneTimerLocked: false,
+  corruptedZoneTimerLayout: 'horizontal',
+  corruptedZoneTimerZones: 'all',
+  corruptedZoneAlerts: 'off',
+  corruptedZoneAlertLeadMinutes: 0,
+  corruptedZoneFollowed: [],
+  stashAutoDelist: 'ask',
+  marketDefaultSort: 'newest',
+  marketDefaultSeller: 'all',
+  marketDefaultHasBuyout: 'any',
+  marketDefaultMaxAgeDays: 3,
+  marketPageSize: 25,
+  marketWhisperTemplate: '',
+  marketShowDealBadges: true,
+  marketShowPriceHistory: true,
+  marketShowSellerCard: true,
+  marketAlertToastSeconds: 8,
+  myListingsView: 'cards',
+  myListingsSort: DEFAULT_LISTINGS_SORT,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',
   hotkeyKeyMarket: 'm',
+  hotkeyModifierBuilds: 'ctrl',
+  hotkeyKeyBuilds: '',
+  followedBuildCharacters: [],
+  recentBuildCharacters: [],
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
+  language: 'system',
+  hotkeyModifierPalette: 'ctrl',
+  hotkeyKeyPalette: 'space',
+  palettePins: [
+    { id: 'actions:market', group: 'actions', title: 'Market' },
+    { id: 'actions:chat', group: 'actions', title: 'Chat' },
+    { id: 'actions:builds', group: 'actions', title: 'Builds' },
+    { id: 'actions:settings', group: 'actions', title: 'Settings' },
+  ],
+  paletteRecents: [],
 };
 
-/** The hotkeys besides the market one, as [modifier field, key field]. */
-const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+/** Every hotkey, as [modifier field, key field]. */
+const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifier', 'hotkeyKey'],
   ['hotkeyModifierListItem', 'hotkeyKeyListItem'],
   ['hotkeyModifierSettings', 'hotkeyKeySettings'],
@@ -161,19 +249,34 @@ const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
+  ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
 ];
 
+/** Hotkeys added after release with a default key, in the order they were added. */
+const ADDED_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+];
+
+const combo = (settings: ISettings, [modifier, key]: [keyof ISettings, keyof ISettings]) =>
+  `${settings[modifier] ?? 'ctrl'}+${String(settings[key] ?? '').toLowerCase()}`;
+
 /**
- * Settings saved before the market hotkey existed get the default Ctrl+M, unless the user already bound that
- * combo to another hotkey: then the market hotkey starts unbound rather than stealing it.
+ * Settings saved before a hotkey existed get its default (Ctrl+M market, Ctrl+Space palette), unless the user already
+ * bound that combo to another hotkey: then the new hotkey starts unbound rather than stealing it.
  */
-export function migrateMarketHotkey(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
-  if (saved?.hotkeyKeyMarket !== undefined) return merged;
-  const combo = `${merged.hotkeyModifierMarket}+${merged.hotkeyKeyMarket?.toLowerCase()}`;
-  const taken = OTHER_HOTKEYS.some(
-    ([modifier, key]) => `${merged[modifier] ?? 'ctrl'}+${String(merged[key] ?? '').toLowerCase()}` === combo,
-  );
-  return taken ? { ...merged, hotkeyKeyMarket: '' } : merged;
+export function migrateAddedHotkeys(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
+  let out = merged;
+  for (const added of ADDED_HOTKEYS) {
+    const [, key] = added;
+    if (saved?.[key] !== undefined || !out[key]) continue;
+    const wanted = combo(out, added);
+    const taken = HOTKEYS.some((other) => other[1] !== key && out[other[1]] && combo(out, other) === wanted);
+    if (taken) out = { ...out, [key]: '' };
+  }
+  return out;
 }
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -208,6 +311,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Skip if nothing actually changed
         if (updatedJson === settingsJsonRef.current) return;
 
+        // The config dir can disappear after load (Windows reports os error 3 on write), so recreate it.
+        if (!(await exists('', { baseDir: SETTINGS_DIR }))) await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
         await writeTextFile(SETTINGS_FILENAME, updatedJson, {
           baseDir: SETTINGS_DIR,
         });
@@ -216,7 +321,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSettings(updated);
       });
     } catch (error) {
-      console.error('Error updating settings:', error);
+      // Fixed message: the fs error embeds the user's home path, which would split the Sentry issue per user.
+      Sentry.captureException(new Error('Error updating settings'), { extra: { cause: String(error) } });
     }
   }, []);
 
@@ -242,7 +348,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
         // would merge them by index, bringing back removed toast types or deleted chat templates).
-        const merged: ISettings = migrateMarketHotkey(
+        const merged: ISettings = migrateAddedHotkeys(
           parsed,
           mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
             Array.isArray(saved) ? saved : undefined,
@@ -296,7 +402,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         showToast({
           title: 'PD2 Trader',
-          description: 'Token loaded from URL successfully!',
+          description: t('system:options.tokenLoaded'),
         });
       }
     }
@@ -320,6 +426,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (settings.debugLoggingEnabled) startDebugLogging();
     else stopDebugLogging();
   }, [isLoading, settings.debugLoggingEnabled]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyLanguage(settings.language);
+  }, [isLoading, settings.language]);
 
   return (
     <OptionsContext.Provider value={{ isOpen, setIsOpen, settings, updateSettings, isLoading }}>

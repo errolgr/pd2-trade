@@ -1,0 +1,237 @@
+{
+  "window": {
+    "title": "Majątek",
+    "retry": "Ponów",
+    "tabs": {
+      "overview": "Przegląd",
+      "runes": "Runy",
+      "currency": "Waluta",
+      "ubers": "Materiały Uber",
+      "gemsMats": "Kamienie i materiały",
+      "uniquesSets": "Unikaty i sety",
+      "other": "Inne",
+      "rares": "Rare",
+      "raresCrafted": "Rare i craftowane",
+      "history": "Historia"
+    }
+  },
+  "header": {
+    "netWorth": "Majątek",
+    "deltaLast": "ostatnio",
+    "delta24h": "24 godz.",
+    "deltaSeason": "sezon",
+    "refresh": "Odśwież",
+    "refreshing": "Odświeżanie",
+    "refreshTooltip": "Wyceń skrzynię ponownie teraz",
+    "asOf": "stan na {{time}}",
+    "prices": "ceny {{day}}",
+    "gold": "{{amount}} złota",
+    "ladderFallback": "wyceniono cenami ladder (brak danych rynku non-ladder)"
+  },
+  "trackingDisabled": {
+    "title": "Historia jest wyłączona.",
+    "description": "Włącz „Zapisuj historię majątku” w Ustawienia → Majątek, aby zobaczyć wykres, sesje z HR/godz. i zmiany między migawkami."
+  },
+  "signedOut": {
+    "chooseAccount": "Wybierz konto PD2 w Ustawieniach, aby wycenić skrzynię.",
+    "signInPrompt": "Zaloguj się kontem PD2, aby wycenić skrzynię.",
+    "signIn": "Zaloguj się"
+  },
+  "tabSkeleton": {
+    "title": "Brak wyceny.",
+    "description": "Nie udało się wycenić skrzyni. Użyj Ponów powyżej, gdy PD2 będzie dostępne."
+  },
+  "categories": {
+    "runes": "Runy",
+    "currency": "Waluta",
+    "ubers": "Materiały Uber",
+    "gems": "Kamienie",
+    "mats": "Materiały",
+    "uniques": "Unikaty",
+    "sets": "Sety",
+    "other": "Inne"
+  },
+  "columns": {
+    "item": "Przedmiot",
+    "qty": "Ilość",
+    "unit": "Sztuka",
+    "value": "Wartość",
+    "share": "%",
+    "change7d": "7 dni",
+    "price": "Cena"
+  },
+  "table": {
+    "noResults": "Brak wyników.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "sortuj rosnąco",
+    "sortDescending": "sortuj malejąco",
+    "clearSorting": "wyczyść sortowanie"
+  },
+  "confidence": {
+    "ok": {
+      "label": "rynek",
+      "hint": "Średnia rynkowa z 7 dni"
+    },
+    "fixed": {
+      "label": "stała",
+      "hint": "Stała wartość runy (mało ogłoszeń)"
+    },
+    "low": {
+      "label": "niska",
+      "hint": "Mniej niż 10 ogłoszeń — liczone jako niepewne, poza sumą"
+    },
+    "none": {
+      "label": "bez ceny",
+      "hint": "Brak danych o cenie — wyceniono na 0"
+    },
+    "listings_one": "{{count}} ogłoszenie",
+    "listings_few": "{{count}} ogłoszenia",
+    "listings_many": "{{count}} ogłoszeń",
+    "listings_other": "{{count}} ogłoszenia"
+  },
+  "overview": {
+    "noPricedHoldings": "Brak wycenionych zasobów.",
+    "topAside_one": "wg wartości · top {{count}}",
+    "topAside_few": "wg wartości · top {{count}}",
+    "topAside_many": "wg wartości · top {{count}}",
+    "topAside_other": "wg wartości · top {{count}}",
+    "topHoldings": "Najcenniejsze zasoby",
+    "nothingPriced": "Nic jeszcze nie wyceniono.",
+    "unpriced_one": "{{count}} przedmiot bez ceny",
+    "unpriced_few": "{{count}} przedmioty bez ceny",
+    "unpriced_many": "{{count}} przedmiotów bez ceny",
+    "unpriced_other": "{{count}} przedmiotu bez ceny",
+    "uncertain": "{{value}} niepewne (niska pewność, poza sumą)",
+    "gold": "{{amount}} złota (nie przeliczono)",
+    "byStashTab": "Wg zakładki skrzyni"
+  },
+  "holdings": {
+    "searchPlaceholder": "Szukaj…",
+    "searchLabel": "Szukaj zasobów",
+    "clearSearch": "Wyczyść wyszukiwanie",
+    "hideZero": "Ukryj zerową wartość",
+    "nothingMatches": "Nic nie pasuje.",
+    "noneInStash": "Brak w twojej skrzyni.",
+    "zeroHidden_one": "Ukryto {{count}} wiersz o zerowej wartości (przedmioty bez ceny są pokazane, ale wycenione na 0).",
+    "zeroHidden_few": "Ukryto {{count}} wiersze o zerowej wartości (przedmioty bez ceny są pokazane, ale wycenione na 0).",
+    "zeroHidden_many": "Ukryto {{count}} wierszy o zerowej wartości (przedmioty bez ceny są pokazane, ale wycenione na 0).",
+    "zeroHidden_other": "Ukryto {{count}} wiersza o zerowej wartości (przedmioty bez ceny są pokazane, ale wycenione na 0).",
+    "count_one": "{{count}} pozycja",
+    "count_few": "{{count}} pozycje",
+    "count_many": "{{count}} pozycji",
+    "count_other": "{{count}} pozycji"
+  },
+  "history": {
+    "showMore": "Pokaż więcej ({{remaining}} starszych)",
+    "chartRange": "Zakres wykresu",
+    "ranges": {
+      "24h": "24 godz.",
+      "7d": "7 dni",
+      "season": "Sezon",
+      "all": "Wszystko"
+    },
+    "rangeChange": "Zmiana w wybranym zakresie",
+    "stackByCategory": "Grupuj wg kategorii",
+    "chart": {
+      "netWorth": "Majątek",
+      "emptyTitle": "Brak migawek w tym zakresie.",
+      "emptyDescription": "Migawki są robione przy uruchomieniu, co kilka minut, gdy Diablo jest aktywne, oraz przy odświeżeniu."
+    },
+    "sessions": {
+      "title": "Sesje",
+      "start": "Rozpocznij nową sesję",
+      "stop": "Zakończ sesję",
+      "emptyTitle": "Brak sesji.",
+      "emptyDescription": "Sesje tworzą się automatycznie z migawek zrobionych w odstępie poniżej 30 minut.",
+      "columns": {
+        "when": "Kiedy",
+        "duration": "Czas",
+        "farmed": "Zdobyte",
+        "drift": "Wahania",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Dziś {{time}}",
+      "yesterday": "Wczoraj {{time}}",
+      "open": "Otwarta sesja",
+      "manual": "ręczna",
+      "best": "Najlepsze HR/h w tym sezonie",
+      "noGains": "Brak zdobytych przedmiotów.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} migawka",
+      "tooltipSummary_few": "{{from}} → {{to}} HR · {{count}} migawki",
+      "tooltipSummary_many": "{{from}} → {{to}} HR · {{count}} migawek",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} migawki"
+    },
+    "snapshots": {
+      "title": "Migawki",
+      "selected": "Wybrano {{selected}}/2",
+      "pickTwo": "Wybierz dwie do porównania",
+      "emptyTitle": "Brak migawek w tym zakresie.",
+      "select": "Wybierz migawkę {{time}}",
+      "compareWithPrevious": "Porównaj z poprzednią"
+    },
+    "diff": {
+      "priceBasis": "Podstawa cen",
+      "pricesThen": "Ceny wtedy",
+      "pricesNow": "Ceny teraz",
+      "close": "Zamknij porównanie",
+      "farmed": "Zdobyte",
+      "marketDrift": "Wahania rynku",
+      "total": "Suma",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "Żadne zasoby się nie zmieniły.",
+      "change": "Zmiana"
+    },
+    "delete": {
+      "thisSeason": "ten sezon",
+      "privacy": "Historia jest prywatna dla twojego logowania PD2 i przechowywana na pd2trader.com.",
+      "button": "Usuń historię",
+      "title": "Usunąć historię majątku?",
+      "description": "Usuwa zapisane migawki dla {{account}} ({{ladder}}, {{core}}). Tej operacji nie można cofnąć.",
+      "season": "Usuń {{season}}",
+      "allSeasons": "Usuń wszystkie sezony",
+      "deleted_one": "Usunięto {{count}} migawkę.",
+      "deleted_few": "Usunięto {{count}} migawki.",
+      "deleted_many": "Usunięto {{count}} migawek.",
+      "deleted_other": "Usunięto {{count}} migawki."
+    }
+  },
+  "rares": {
+    "stashFallback": "Skrzynia",
+    "emptyTitle": "Brak rare w twojej skrzyni",
+    "emptyDescription": "Rare pierścienie, amulety, klejnoty, zbroje i bronie z twojej skrzyni są tu wyceniane (Zachowaj · Sprawdź · Sprzedaj).",
+    "groups": {
+      "keep": "Zachowaj",
+      "worthALook": "Warte uwagi"
+    },
+    "estTitle": "Oszacowano z cen ofertowych podobnych rare z {{season}} — poza sumą",
+    "summary": {
+      "raresLine_one": "<label>Rare: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsce)</note>",
+      "raresLine_few": "<label>Rare: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsca)</note>",
+      "raresLine_many": "<label>Rare: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsc)</note>",
+      "raresLine_other": "<label>Rare: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsca)</note>",
+      "craftedLine_one": "<label>Craftowane: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsce)</note>",
+      "craftedLine_few": "<label>Craftowane: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsca)</note>",
+      "craftedLine_many": "<label>Craftowane: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsc)</note>",
+      "craftedLine_other": "<label>Craftowane: </label><keep>{{keep}} do zachowania</keep><sep> · </sep><check>{{checkHigh}} warte uwagi</check><sep> · </sep><vendor>{{count}} prawdop. do sprzedaży</vendor> <note>(zwalnia {{count}} miejsca)</note>",
+      "unpricedRares_one": "Nie uwzględniono {{count}} rare do zachowania bez przedziału rynkowego",
+      "unpricedRares_few": "Nie uwzględniono {{count}} rare do zachowania bez przedziału rynkowego",
+      "unpricedRares_many": "Nie uwzględniono {{count}} rare do zachowania bez przedziału rynkowego",
+      "unpricedRares_other": "Nie uwzględniono {{count}} rare do zachowania bez przedziału rynkowego",
+      "unpricedCrafted_one": "Nie uwzględniono {{count}} craftowanego przedmiotu do zachowania bez przedziału rynkowego",
+      "unpricedCrafted_few": "Nie uwzględniono {{count}} craftowanych przedmiotów do zachowania bez przedziału rynkowego",
+      "unpricedCrafted_many": "Nie uwzględniono {{count}} craftowanych przedmiotów do zachowania bez przedziału rynkowego",
+      "unpricedCrafted_other": "Nie uwzględniono {{count}} craftowanego przedmiotu do zachowania bez przedziału rynkowego",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> w rare do zachowania (szacunkowo, poza sumą)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> w craftowanych do zachowania (szacunkowo, poza sumą)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} prawdop. do sprzedaży · {{tab}}",
+      "vendorNote_one": "Zwalnia {{count}} miejsce w skrzyni",
+      "vendorNote_few": "Zwalnia {{count}} miejsca w skrzyni",
+      "vendorNote_many": "Zwalnia {{count}} miejsc w skrzyni",
+      "vendorNote_other": "Zwalnia {{count}} miejsca w skrzyni",
+      "lowTitle": "{{n}} prawdop. niskiej wartości · {{tab}}",
+      "lowNote": "Sprawdź przedmioty bez kluczowej statystyki"
+    }
+  }
+}

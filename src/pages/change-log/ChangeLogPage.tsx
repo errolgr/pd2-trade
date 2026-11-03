@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { listItem, listStagger } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 type EntryType = 'feature' | 'fix' | 'other';
 
@@ -54,6 +55,7 @@ function VersionSection({
   isCurrent: boolean;
   stagger: boolean;
 }) {
+  const { t } = useTranslation('app');
   return (
     <motion.section
       variants={stagger ? listItem : undefined}
@@ -77,11 +79,11 @@ function VersionSection({
           <Badge variant="outline"
             className="gap-1 border-primary/50 text-xs text-primary">
             <Sparkles />
-            Current
+            {t('changeLog.current')}
           </Badge>
         )}
         <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-          {entries.length} change{entries.length === 1 ? '' : 's'}
+          {t('changeLog.changes', { count: entries.length })}
         </span>
       </div>
       <ul className="space-y-1.5">
@@ -120,6 +122,7 @@ function ChangelogSkeleton() {
 }
 
 export default function ChangelogPage() {
+  const { t } = useTranslation('app');
   const { settings, updateSettings } = useOptions();
   const { close } = usePanel();
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
@@ -140,10 +143,10 @@ export default function ChangelogPage() {
       <WindowPanel animate
         className="h-full w-full">
         <WindowChrome
-          title="What's New"
+          title={t('changeLog.title')}
           icon={<Sparkles className="text-primary" />}
           onClose={close}
-          closeLabel="Close changelog"
+          closeLabel={t('changeLog.close')}
           className="h-12 px-3"
           titleClassName="text-base font-bold"
         />

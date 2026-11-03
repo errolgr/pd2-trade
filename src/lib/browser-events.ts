@@ -1,8 +1,9 @@
 /**
  * Subscriptions to events emitted by the Rust side (chat watcher, Diablo focus, plugin events).
  *
- * The frontend never emits app events: UI actions go through the overlay API (`@/overlay`) and data
- * through providers. In browser mode (`isTauri() === false`) there is no Rust side, so `listen` is a
+ * The frontend emits app events only between Main and the sign-in window (hooks/useSignIn); other UI actions
+ * go through the overlay API (`@/overlay`) and data through providers. In browser mode (`isTauri() === false`)
+ * there is no Rust side, so `listen` is a
  * no-op that resolves to a harmless unlisten function.
  */
 

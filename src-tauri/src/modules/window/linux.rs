@@ -183,6 +183,12 @@ pub fn diablo_running() -> bool {
     with_connection(|conn, _| find_diablo_window(conn).ok().flatten().is_some()).unwrap_or(false)
 }
 
+/// Windows only (D2GL fullscreen hiding the overlay, see windows.rs): never reported here, so panels never take
+/// the foreground just to be seen.
+pub fn diablo_fullscreen() -> bool {
+    false
+}
+
 /// Work area (monitor minus panels/taskbar) of the monitor containing the Diablo II window (by its center), else
 /// the primary monitor's. Matches Windows, where covering the taskbar greys it out.
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {

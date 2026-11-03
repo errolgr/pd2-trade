@@ -9,6 +9,7 @@ import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { useMarketActions } from './useMarketActions';
 import { AuthenticationError } from './usePD2Website';
+import { subscribeListingDeleted } from './listing-events';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
@@ -48,6 +49,7 @@ const priceCheckItem = { name: 'Harlequin Crest', type: 'Shako', quality: 'Uniqu
 function market(
   opts: {
     settings?: Partial<ISettings>;
+    authData?: AuthData | null;
     cache?: { data: GameData; timestamp: number } | null;
     findItemsByName?: (items: GameStashItem[], item: PriceCheckItem) => GameStashItem[];
   } = {},
@@ -59,7 +61,7 @@ function market(
   const { result } = renderHook(() =>
     useMarketActions({
       settings: { ...baseSettings, ...opts.settings } as ISettings,
-      authData,
+      authData: opts.authData === undefined ? authData : opts.authData,
       fetchAndCacheStash,
       findItemsByName,
       stashCache,
@@ -151,6 +153,21 @@ describe('listSpecificItem', () => {
     const body = JSON.parse(lastCall().init.body as string);
     expect([body.is_hardcore, body.is_ladder]).toEqual([false, true]);
   });
+
+  // DMG-METER-FRONTEND-4Y1: posting after the session was cleared read `null.user`
+  it('signed out: rejects with AuthenticationError and sends nothing', async () => {
+    const { actions } = market({ authData: null });
+    await expect(actions.listSpecificItem(shako, 1, '', 'exact')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-6CK: a 401 resolved to null and the caller read `null._id`
+  it('401: starts re-authentication and rejects with AuthenticationError instead of resolving null', async () => {
+    const { actions, onAuthError } = market();
+    fetchMock.mockResolvedValueOnce(fakeResponse(401, { message: 'jwt expired' }));
+    await expect(actions.listSpecificItem(shako, 1, '', 'exact')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(onAuthError).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('listing queries', () => {
@@ -161,6 +178,9 @@ describe('listing queries', () => {
     $sort: { bumped_at: -1 },
     $limit: 50,
   };
+  beforeEach(() => {
+    fetchMock.mockResolvedValue(fakeResponse(200, { total: 0, limit: 0, skip: 0, data: [] }));
+  });
 
   it('serializes nested operators with literal bracket keys and indexed arrays', async () => {
     const { actions } = market();
@@ -203,6 +223,17 @@ describe('listing queries', () => {
     await expect(actions.getMarketListings(query as never)).resolves.toBeNull();
     expect(onAuthError).toHaveBeenCalledTimes(1);
   });
+
+  it('drops listings PD2 sent without an item, live and archived (chat cards and prices need one)', async () => {
+    const page = { total: 2, limit: 25, skip: 0, data: [{ _id: 'L1', item: { name: 'Shako' } }, { _id: 'L2' }] };
+    // `fetched` keeps the rows PD2 sent, so callers still page on a full page
+    const expected = { ...page, data: [page.data[0]], fetched: 2 };
+    const { actions } = market();
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, page));
+    await expect(actions.getMarketListings(query as never)).resolves.toEqual(expected);
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, page));
+    await expect(actions.getMarketListingsArchive(query as never)).resolves.toEqual(expected);
+  });
 });
 
 describe('listing mutations', () => {
@@ -215,14 +246,29 @@ describe('listing mutations', () => {
     expect(JSON.parse(init.body as string)).toEqual({ hr_price: 3 });
   });
 
-  it('deleteMarketListing DELETEs by id and propagates failures', async () => {
-    const { actions } = market();
+  it('deleteMarketListing DELETEs by id, treats an already-gone listing as deleted, and propagates failures', async () => {
+    const deleted = vi.fn();
+    const unsubscribe = subscribeListingDeleted(deleted);
+    const { actions, onAuthError } = market();
     await actions.deleteMarketListing('L2');
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/listing/L2');
     expect(lastCall().init.method).toBe('DELETE');
 
-    fetchMock.mockResolvedValueOnce(fakeResponse(404, 'gone', 'https://api.projectdiablo2.com/market/listing/L2'));
-    await expect(actions.deleteMarketListing('L2')).rejects.toThrow('API Error: 404');
+    fetchMock.mockResolvedValueOnce(fakeResponse(404, 'gone', 'https://api.projectdiablo2.com/market/listing/L3'));
+    await expect(actions.deleteMarketListing('L3')).resolves.toBeUndefined();
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(500, 'boom', 'https://api.projectdiablo2.com/market/listing/L4'));
+    await expect(actions.deleteMarketListing('L4')).rejects.toThrow('API Error: 500');
+
+    // Expired/refused session: re-auth starts, and the listing is still up, so it must not resolve as removed
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/listing/L5'),
+    );
+    await expect(actions.deleteMarketListing('L5')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(onAuthError).toHaveBeenCalledTimes(1);
+    // Removed (or already gone) listings are announced to the quick list; failures are not
+    expect(deleted.mock.calls).toEqual([['L2'], ['L3']]);
+    unsubscribe();
   });
 
   it("bumpAllMarketListings PATCHes all of the user's listings with the current time", async () => {
@@ -247,6 +293,15 @@ describe('market browser API', () => {
     expect(lastCall().init.method).toBe('GET');
   });
 
+  it('getFavorites keeps a favorite whose listing came without an item, minus that listing', async () => {
+    const shown = { _id: 'F1', listing_id: 'L1', listing: { _id: 'L1', item: { name: 'Shako' } } };
+    const bare = { _id: 'F2', listing_id: 'L2', listing: { _id: 'L2' } };
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { total: 2, data: [shown, bare] }));
+    const { actions } = market();
+    const page = await actions.getFavorites();
+    expect(page.data).toEqual([shown, { _id: 'F2', listing_id: 'L2' }]);
+  });
+
   it('addFavorite posts the listing and seller; removeFavorite deletes by favorite id', async () => {
     const { actions } = market();
     await actions.addFavorite('L1', 'S1');
@@ -259,13 +314,17 @@ describe('market browser API', () => {
     expect(lastCall().init.method).toBe('DELETE');
   });
 
-  it('getListing reads one listing with its seller; 404 is null, 401 is an error (not "gone")', async () => {
-    fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
+  it('getListing reads one listing with its seller; 404 or no item is null, 401 is an error (not "gone")', async () => {
+    const listing = { _id: 'L1', price: '2 hr', item: { name: 'Shako' } };
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, listing));
     const { actions, onAuthError } = market();
-    await expect(actions.getListing('L1')).resolves.toEqual({ _id: 'L1', price: '2 hr' });
+    await expect(actions.getListing('L1')).resolves.toEqual(listing);
     expect(lastCall().url).toBe(
       'https://api.projectdiablo2.com/market/listing/L1?$resolve[user][in_game_account]=true',
     );
+
+    fetchMock.mockResolvedValueOnce(fakeResponse(200, { _id: 'L1', price: '2 hr' }));
+    await expect(actions.getListing('L1')).resolves.toBeNull();
 
     fetchMock.mockResolvedValueOnce(fakeResponse(404, { name: 'NotFound' }));
     await expect(actions.getListing('L1')).resolves.toBeNull();
@@ -282,6 +341,37 @@ describe('market browser API', () => {
     expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/offer');
     expect(lastCall().init.method).toBe('POST');
     expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', offer: '2 ist', hr_offer: 0.5 });
+  });
+
+  it('createOffer has the offers lists refetched once PD2 took the offer, not on a 401 or a failure', async () => {
+    const onOfferCreated = vi.fn();
+    const { result } = renderHook(() =>
+      useMarketActions({
+        settings: baseSettings,
+        authData,
+        fetchAndCacheStash: vi.fn(),
+        findItemsByName: vi.fn(),
+        stashCache: { current: null },
+        CACHE_TTL: TTL,
+        onAuthError: vi.fn(),
+        onOfferCreated,
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(201, { _id: 'offer-1' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' });
+    expect(onOfferCreated).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(401, { message: 'expired' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' }).catch(() => {});
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(500, { message: 'boom' }, 'https://api.projectdiablo2.com/market/offer'),
+    );
+    await result.current.createOffer('L1', { price: '2 ist' }).catch(() => {});
+    expect(onOfferCreated).toHaveBeenCalledTimes(1);
   });
 
   it('marketApi exposes the same functions and stays stable across renders', () => {

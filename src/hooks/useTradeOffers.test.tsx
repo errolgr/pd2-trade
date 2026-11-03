@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setBadgeCount, showToast } from '@/overlay';
+import { showToast } from '@/overlay';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { getDeletedOffers, markOfferAsDeleted } from '@/lib/deleted-offers-storage';
 import type { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import type { ISettings } from './useOptions';
 import { useTradeOffers } from './useTradeOffers';
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), setBadgeCount: vi.fn() }));
+vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 // The real module drags in the whole PD2 website provider; this stub keeps handleApiResponse's contract:
 // ok → JSON body, 401 → onAuthError() and null, anything else → throw.
@@ -120,6 +120,23 @@ afterEach(() => {
 });
 
 describe('useTradeOffers fetching', () => {
+  it('refetches on a new token or user, not on other settings changes or a fresh authData object', async () => {
+    const { rerender } = renderHook((props: { settings: ISettings; authData: AuthData }) => useTradeOffers(props), {
+      initialProps: { settings, authData },
+    });
+    await act(async () => {});
+    const fetches = () => vi.mocked(tauriFetch).mock.calls.length;
+    expect(fetches()).toBe(2);
+
+    // A settings toggle (a new settings object) and a re-fetched session (a new authData object, same user)
+    await act(async () => rerender({ settings: { ...settings, chatButtonOverlayEnabled: false }, authData }));
+    await act(async () => rerender({ settings, authData: { ...authData, user: { ...authData!.user } } as AuthData }));
+    expect(fetches()).toBe(2);
+
+    await act(async () => rerender({ settings: { ...settings, pd2Token: 'tok2' }, authData }));
+    expect(fetches()).toBe(4);
+  });
+
   it('maps incoming offers, skipping rejected ones and formatting HR-only offers', async () => {
     api.incoming = () =>
       apiResponse({
@@ -137,9 +154,11 @@ describe('useTradeOffers fetching', () => {
       });
     const { result } = await renderOffers();
 
-    expect(result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.acceptedOfferId])).toEqual([
-      ['o1', 'buyer-o1', '2 ist', 'o1'],
-      ['o3', 'Unknown', '3 HR', 'o1'],
+    expect(
+      result.current.incomingOffers.map((o) => [o.id, o.playerName, o.price, o.hrOffer, o.acceptedOfferId]),
+    ).toEqual([
+      ['o1', 'buyer-o1', '2 ist', undefined, 'o1'],
+      ['o3', 'Unknown', '3 HR', 3, 'o1'],
     ]);
     expect(result.current.incomingOffers[0]).toMatchObject({
       isIncoming: true,
@@ -231,12 +250,23 @@ describe('useTradeOffers fetching', () => {
     expect(result.current.outgoingOffers.map((o) => o.id)).toEqual(['x']);
   });
 
-  it('publishes the total offer count as the tradeOffers badge', async () => {
-    api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('o1'), websiteOffer('o2')])] });
-    api.outgoing = () => apiResponse({ data: [outgoingOffer('a')] });
-    await renderOffers();
+  it('keeps the newest list when an older, slower refetch answers last', async () => {
+    const { result } = await renderOffers();
+    const slow = Promise.withResolvers<Response>();
+    api.incoming = () => slow.promise;
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.refresh();
+    });
+    api.incoming = () => apiResponse({ data: [incomingListing([websiteOffer('new')])] });
+    await act(async () => result.current.refresh());
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
 
-    expect(vi.mocked(setBadgeCount)).toHaveBeenLastCalledWith('tradeOffers', 3);
+    await act(async () => {
+      slow.resolve(apiResponse({ data: [] }));
+      await first;
+    });
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(['new']);
   });
 
   // BUG: useTradeOffers.tsx:330-342/344-375 — incoming and outgoing fetches share one `loading` flag, so

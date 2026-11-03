@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 import { cursorPosition, getCurrentWindow } from '@tauri-apps/api/window';
 import type { OverlayRect } from './types';
 
@@ -8,11 +9,28 @@ import type { OverlayRect } from './types';
 export const GAME_BLUR_DEBOUNCE_MS = 500;
 const RECT_REFRESH_MS = 2000;
 
-interface ScreenRect {
+/** Diablo II's render aspect (PD2's 1068x600). */
+export const GAME_ASPECT = 16 / 9;
+/** Wider than this counts as pillarboxed; absorbs rounding such as 1366x768. */
+const PILLARBOX_TOLERANCE = 1.01;
+
+export interface ScreenRect {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+/**
+ * The part of the Diablo II window the game draws in and traps the cursor in. Fullscreen on a monitor wider than
+ * 16:9 (21:9, 32:9) the window spans the monitor but the game is pillarboxed to a centered 16:9 area, so UI
+ * anchored to the window edges would sit in the black bars, out of the cursor's reach. Up to 16:9 (incl. 16:10)
+ * and in windowed mode the window rect is returned as is.
+ */
+export function gamePlayRect(rect: ScreenRect): ScreenRect {
+  if (rect.height <= 0 || rect.width <= rect.height * GAME_ASPECT * PILLARBOX_TOLERANCE) return rect;
+  const width = Math.round(rect.height * GAME_ASPECT);
+  return { x: rect.x + Math.round((rect.width - width) / 2), y: rect.y, width, height: rect.height };
 }
 
 export function viewportRect(): OverlayRect {
@@ -67,11 +85,12 @@ async function fetchGameRect(): Promise<OverlayRect> {
   if (!rect) return viewportRect();
   const win = getCurrentWindow();
   const [outer, sf] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
-  return screenToOverlayRect(rect, outer, sf);
+  return screenToOverlayRect(gamePlayRect(rect), outer, sf);
 }
 
 /**
- * Game rect (CSS px relative to the overlay; the viewport when there is no game / in a browser) and
+ * Game rect (CSS px relative to the overlay: the game's play area, see gamePlayRect; the viewport when there is no
+ * game / in a browser) and
  * debounced game focus: false only after GAME_BLUR_DEBOUNCE_MS outside the game context (Rust window::focus:
  * Diablo in front, or the overlay entered from it). The overlay having focus on its own isn't the game: Settings
  * opened from the tray takes focus to type without bringing the in-game panels back.
@@ -84,11 +103,7 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
 
   useEffect(() => {
     let disposed = false;
-    const unlisteners: (() => void)[] = [];
-    const track = (p: Promise<() => void>) =>
-      p
-        .then((off) => (disposed ? off() : unlisteners.push(off)))
-        .catch((error) => console.warn('[overlay] listener failed:', error));
+    const releases: (() => void)[] = [];
     const applyRect = (next: OverlayRect) => {
       if (disposed || sameRect(rectRef.current, next)) return;
       rectRef.current = next;
@@ -145,20 +160,23 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
       })
       .catch(() => updateFocus());
 
-    track(
-      listen<boolean>('diablo-focus-changed', ({ payload }) => {
-        inGame = payload;
-        updateFocus();
-        refreshRect();
-      }),
-    );
     const win = getCurrentWindow();
-    track(win.onMoved(refreshRect));
-    track(win.onResized(refreshRect));
+    releases.push(
+      holdListener(
+        listen<boolean>('diablo-focus-changed', ({ payload }) => {
+          inGame = payload;
+          updateFocus();
+          refreshRect();
+        }),
+        'diablo-focus-changed',
+      ),
+      holdListener(win.onMoved(refreshRect), 'window moved'),
+      holdListener(win.onResized(refreshRect), 'window resized'),
+    );
 
     return () => {
       disposed = true;
-      unlisteners.forEach((off) => off());
+      releases.forEach((release) => release());
       clearTimeout(blurTimer);
       setRefreshing(false);
     };

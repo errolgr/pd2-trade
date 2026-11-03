@@ -47,6 +47,7 @@ The backend is built with **Tauri** using **Rust**. It handles system-level task
 - **Window Management**: `src-tauri/src/modules/window/`. Finds the Diablo II window (rect, focus, `focus_diablo`), brings the overlay to the front for typing (`focus_overlay`), sizes the overlay window to the game's monitor, tracks foreground changes (`focus.rs`: game context and raw foreground owner) and watches for clicks outside the panels (`outside_click.rs`, Windows). `src-tauri/src/modules/region.rs` applies the interactive region (click-through outside panels) so that the overlay appears correctly over the game.
 - **Keystroke Simulation**: Implemented in `src-tauri/src/modules/keyboard.rs` using the **Enigo** crate.
   - **How it works**: The frontend sends a string like "Ctrl+V". The backend parses this string, separating modifiers (Ctrl, Alt) from the main key (V). It then uses OS-level inputs to simulate pressing the modifiers down, clicking the main key, and releasing the modifiers. This is essential for features like "Quick List" or Item Search, where you can hover over an item and press the hotkey to quick list it and the application will first copy the item you are hovering over then issuing the list command.
+- **Opener**: `src-tauri/src/modules/opener.rs` (`open_url`, `open_config_dir`). Opens links in the browser (`src/lib/browser-opener.ts`) and the config folder. On Linux it runs the host's `xdg-open` itself, without the AppImage's paths in its environment, and fails when the launcher does.
 
 ### 👶 "Explain it like I'm 5"
 
@@ -104,9 +105,9 @@ Authentication is handled securely via **JSON Web Tokens (JWT)**.
 - **Token Storage**: The JWT is stored in the application settings (`src/hooks/useOptions.tsx`).
 - **Login**:
   - If no token exists or it is expired, `usePD2Auth.tsx` triggers a login flow.
-  - **Tauri**: Opens a secure webview to `projectdiablo2.com/auth`.
-  - **Browser**: Redirects to the auth page.
-- **Handover**: Once authenticated on the website, the site passes the token back to the application via a custom protocol or event, which is captured and saved.
+  - **Tauri**: `useOAuth` gets a sign-in URL from pd2trader.com, opens it in the system browser (`open_url`) and polls pd2trader.com until the sign-in completes. While it waits, the sign-in window and Settings > Account offer **Copy link**, for when no browser opened.
+  - **Browser**: Opens the sign-in page in a new tab and polls the same way.
+- **Handover**: Polling returns the tokens once the user has signed in on the website; they are saved to the settings.
 
 ### API Security
 

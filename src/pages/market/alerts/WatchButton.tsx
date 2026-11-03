@@ -5,8 +5,56 @@ import { cn } from '@/lib/utils';
 import { EASE_OUT, springSnappy } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
-import { isPendingSearch, retrySavedSearchSync, useMarketStore } from '@/pages/market/store/useMarketStore';
+import {
+  isPendingSearch,
+  type MarketStore,
+  retrySavedSearchSync,
+  useMarketStore,
+} from '@/pages/market/store/useMarketStore';
 import { findWatch } from './alert-logic';
+import { t as translate, useTranslation } from '@/i18n';
+
+/** What Watch would do for `filters`, and whether it can now (signed in, saved searches loaded, not sold listings). */
+export function watchState(store: MarketStore, filters: MarketFilters | null) {
+  const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
+  const signedOut = store.syncStatus === 'signedOut';
+  /** pd2trader.com refused the PD2 token: Watch waits for a new sign-in. */
+  const refused = store.syncStatus === 'unauthorized';
+  /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
+  const unsynced = store.syncStatus === 'error';
+  const archive = filters?.source === 'archive';
+  const busy = (!!watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
+  const disabled = !filters || signedOut || refused || unsynced || (archive && !watching) || busy;
+  return { watching, saved, signedOut, refused, unsynced, archive, busy, disabled };
+}
+
+/** Starts watching `filters` (reusing a saved search with them), or stops the watch on them; toasts the outcome. */
+export function toggleWatch(store: MarketStore, filters: MarketFilters): void {
+  const { watching, saved } = findWatch(store.savedSearches, filters);
+  if (watching) {
+    store.setSearchAlert(watching.id, false);
+    showToast({ title: translate('market:watch.stoppedToast'), description: watching.name, variant: 'info' });
+    return;
+  }
+  if (!store.alertsEnabled) store.setAlertsEnabled(true);
+  if (saved && !isPendingSearch(saved)) {
+    if (!store.setSearchAlert(saved.id, true)) {
+      showToast({
+        title: translate('market:watch.tooManyTitle'),
+        description: translate('market:watch.tooManyDescription', { count: store.limits.maxAlerting }),
+        variant: 'warning',
+      });
+    }
+    return;
+  }
+  if (store.saveSearch(undefined, filters, true)) {
+    showToast({
+      title: translate('market:watch.watching'),
+      description: translate('market:watch.startedDescription'),
+      variant: 'success',
+    });
+  }
+}
 
 /**
  * "Watch" the current market filters: a popup and a sound for every new listing that matches them (an alerting
@@ -14,19 +62,14 @@ import { findWatch } from './alert-logic';
  * stops watching (the saved search stays, without alerts).
  */
 export function WatchButton({ filters, className }: { filters: MarketFilters | null; className?: string }) {
+  const { t } = useTranslation('market');
   const store = useMarketStore();
   const { visible } = usePanel<'market'>();
   // Saved searches failed to load: try again whenever the market panel shows (the store also retries on a timer)
   useEffect(() => {
     if (visible) retrySavedSearchSync();
   }, [visible]);
-  const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
-  const signedOut = store.syncStatus === 'signedOut';
-  /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
-  const unsynced = store.syncStatus === 'error';
-  const archive = filters?.source === 'archive';
-  const busy = (watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
-  const disabled = !filters || signedOut || unsynced || (archive && !watching) || !!busy;
+  const { watching, signedOut, refused, unsynced, archive, busy, disabled } = watchState(store, filters);
   // One soft pulse when watching starts (not when the panel opens on a watched search)
   const [pulses, setPulses] = useState(0);
   const [wasWatching, setWasWatching] = useState(!!watching);
@@ -36,41 +79,20 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
   }
 
   const toggle = () => {
-    if (!filters) return;
-    if (watching) {
-      store.setSearchAlert(watching.id, false);
-      showToast({ title: 'Stopped watching', description: watching.name, variant: 'info' });
-      return;
-    }
-    if (!store.alertsEnabled) store.setAlertsEnabled(true);
-    if (saved && !isPendingSearch(saved)) {
-      if (!store.setSearchAlert(saved.id, true)) {
-        showToast({
-          title: 'Too many watches',
-          description: `Up to ${store.limits.maxAlerting} searches can be watched at once. Stop one first (Saved tab).`,
-          variant: 'warning',
-        });
-      }
-      return;
-    }
-    if (store.saveSearch(undefined, filters, true)) {
-      showToast({
-        title: 'Watching',
-        description: "You'll get a popup for every new listing matching this search.",
-        variant: 'success',
-      });
-    }
+    if (filters) toggleWatch(store, filters);
   };
 
   const label = signedOut
-    ? 'Sign in to watch this search'
-    : unsynced
-      ? "Your saved searches couldn't be loaded from pd2trader.com; retrying…"
-      : archive && !watching
-        ? 'Sold listings cannot be watched'
-        : watching
-          ? 'Watching: click to stop the popups for new listings matching this search'
-          : 'Watch: get a popup and a sound for every new listing matching this search';
+    ? t('watch.labels.signedOut')
+    : refused
+      ? t('watch.labels.refused')
+      : unsynced
+        ? t('watch.labels.unsynced')
+        : archive && !watching
+          ? t('watch.labels.archive')
+          : watching
+            ? t('watch.labels.watching')
+            : t('watch.labels.watch');
 
   return (
     <button
@@ -120,7 +142,7 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
           </motion.span>
         </AnimatePresence>
       </span>
-      {watching ? 'Watching' : 'Watch'}
+      {watching ? t('watch.watching') : t('watch.watch')}
     </button>
   );
 }

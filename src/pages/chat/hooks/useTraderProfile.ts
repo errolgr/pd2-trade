@@ -2,6 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { t } from '@/i18n';
 import { ONLINE_THRESHOLD_MS } from '@/lib/user-online-status';
 
 /**
@@ -79,27 +80,29 @@ export function traderPresence(listings: readonly MarketListingEntry[], now: num
 /** "just now", "12m", "3h", "3d", "2mo", "1y": how long ago `at` was. */
 export function shortAgo(at: number, now: number): string {
   const minutes = Math.floor((now - at) / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t('common:time.justNow');
+  if (minutes < 60) return t('common:time.minutesAgoShort', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('common:time.hoursAgoShort', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('common:time.daysAgoShort', { count: days });
   const months = Math.floor(days / 30);
-  return months < 12 ? `${months}mo ago` : `${Math.floor(days / 365)}y ago`;
+  return months < 12
+    ? t('common:time.monthsAgoShort', { count: months })
+    : t('common:time.yearsAgoShort', { count: Math.floor(days / 365) });
 }
 
 /** 'In game now' / 'Online 12m ago' / 'Last seen 3d ago' / 'Unknown'. */
 export function presenceLabel(presence: TraderPresence, now: number): string {
   switch (presence.kind) {
     case 'ingame':
-      return 'In game now';
+      return t('chat:presence.inGame');
     case 'online':
-      return `Online ${shortAgo(presence.at, now)}`;
+      return t('chat:presence.online', { ago: shortAgo(presence.at, now) });
     case 'seen':
-      return `Last seen ${shortAgo(presence.at, now)}`;
+      return t('chat:presence.lastSeen', { ago: shortAgo(presence.at, now) });
     default:
-      return 'Unknown';
+      return t('chat:presence.unknown');
   }
 }
 

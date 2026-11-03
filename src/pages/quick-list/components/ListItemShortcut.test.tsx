@@ -5,13 +5,19 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import { showToast } from '@/overlay';
 import { useInView } from 'react-intersection-observer';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import {
+  AccountMismatchError,
+  AuthenticationError,
+  NoAccountSelectedError,
+  usePd2Website,
+} from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
+import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
 import ListItemShortcutForm from './ListItemShortcut';
 
 const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
@@ -21,7 +27,8 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AuthenticationError extends Error {}
   class AccountMismatchError extends Error {}
-  return { usePd2Website: vi.fn(), AuthenticationError, AccountMismatchError };
+  class NoAccountSelectedError extends Error {}
+  return { usePd2Website: vi.fn(), AuthenticationError, AccountMismatchError, NoAccountSelectedError };
 });
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
@@ -173,6 +180,17 @@ describe('tabs', () => {
     expect(tab(/Manage/).textContent).toBe('Manage12');
   });
 
+  it('refetches the count when a listing is removed elsewhere (Ctrl+U delist, chat)', async () => {
+    userListings = [marketListing(5), marketListing(6)];
+    userTotal = 12;
+    renderForm();
+    await flush();
+    userTotal = 11;
+    await act(async () => publishListingDeleted('L5'));
+    await flush();
+    expect(tab(/Manage/).textContent).toBe('Manage11');
+  });
+
   it('close closes the panel', async () => {
     renderForm();
     await flush();
@@ -205,6 +223,68 @@ describe('finding the item', () => {
     expect(submitButton().textContent).toBe('Post');
   });
 
+  describe('an inspected item among many similar ones', () => {
+    const inspected = {
+      name: 'Storm Eye',
+      quality: 'Rare',
+      type: 'Jewel',
+      iLevel: 87,
+      location: 'Stash',
+      stats: [
+        { stat_id: 17, name: '% Enhanced Damage', value: 25 },
+        { stat_id: 18, name: '% Enhanced Damage', value: 25 },
+        { stat_id: 1, name: 'to Energy', value: 5 },
+      ],
+    } as unknown as PriceCheckItem;
+    const jewel = (n: number, ed: number): GameStashItem =>
+      ({
+        hash: `j${n}`,
+        name: 'Jewel',
+        quality: { name: 'Rare' },
+        item_level: 87,
+        socket_count: 0,
+        is_ethereal: false,
+        modifiers: [
+          { name: 'maxdamage_percent', values: [ed, ed], label: `+${ed}% Enhanced Damage` },
+          { name: 'energy', values: [5], label: '+5 to Energy' },
+        ],
+      }) as never;
+    const jewels = [jewel(1, 30), jewel(2, 25), jewel(3, 20)];
+    const cards = () => screen.getAllByRole('button', { name: /^Jewel/ });
+
+    it('goes straight to listing that exact item', async () => {
+      api.findMatchingItems.mockResolvedValue(jewels);
+      renderForm(inspected);
+      await flush();
+      expect(cards()).toHaveLength(1);
+      expect(cards()[0].getAttribute('aria-pressed')).toBe('true');
+      expect(submitButton().textContent).toBe('Post');
+      fireEvent.change(priceInput(), { target: { value: '3' } });
+      await submit();
+      expect(api.listSpecificItem.mock.calls).toEqual([[jewels[1], 3, '', 'exact']]);
+    });
+
+    it('falls back to every similar item when none is provably the inspected one', async () => {
+      api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
+      renderForm(inspected);
+      await flush();
+      expect(cards()).toHaveLength(2);
+      expect(screen.queryByPlaceholderText('HR')).toBeNull();
+    });
+
+    it('queues against every similar item, not just the exact match', async () => {
+      api.findMatchingItems.mockResolvedValue(jewels);
+      renderForm(inspected);
+      await flush();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Queue Item' }));
+      });
+      fireEvent.change(noteInput(), { target: { value: 'wts' } });
+      await submit();
+      expect(storedQueue()[0].initialMatchingHashes).toEqual(['j1', 'j2', 'j3']);
+    });
+  });
+
   it('shows a retryable error when the stash lookup fails', async () => {
     api.findMatchingItems.mockRejectedValueOnce(new Error('Stash API down'));
     renderForm();
@@ -235,6 +315,25 @@ describe('finding the item', () => {
     expect(screen.getByRole('alert').textContent).toContain('Session expired');
     expect(console.error).not.toHaveBeenCalled();
     expect(toasts()).toEqual([]);
+  });
+
+  it('asks for an in-game account without logging it as an app error', async () => {
+    api.findMatchingItems.mockRejectedValueOnce(new NoAccountSelectedError('Choose your in-game account'));
+    renderForm();
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('Choose your in-game account');
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-4G9: PD2 unreachable rejects with the HTTP plugin's error string, not an Error
+  it('reports PD2 being unreachable as a warning with its reason, not an app error', async () => {
+    const reason = 'error sending request for url (https://api.projectdiablo2.com/game/stash/MyAcc)';
+    api.findMatchingItems.mockRejectedValueOnce(reason);
+    renderForm();
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('Failed to find items');
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith('[QuickList] Failed to find items:', reason);
   });
 
   it('does not search before the user is authenticated', async () => {
@@ -297,6 +396,18 @@ describe('listing a new item', () => {
     fireEvent.change(priceInput(), { target: { value: '1' } });
     await submit();
     expect(screen.getByRole('alert').textContent).toContain('Item already listed');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-4Y1: signed out (or a 401) while the form was open
+  it('asks to sign in when the session is gone, without logging an app error', async () => {
+    api.listSpecificItem.mockRejectedValueOnce(new AuthenticationError('Sign in to PD2 to list this item'));
+    renderForm();
+    await flush();
+    fireEvent.change(priceInput(), { target: { value: '1' } });
+    await submit();
+    expect(screen.getByRole('alert').textContent).toContain('Sign in to PD2 to list this item');
+    expect(console.error).not.toHaveBeenCalled();
     expect(close).not.toHaveBeenCalled();
   });
 });
@@ -480,6 +591,39 @@ describe('queueing', () => {
     expect(toasts().at(-1)).toEqual({ title: 'Failed to list item', description: 'rejected', variant: 'error' });
   });
 
+  // DMG-METER-FRONTEND-6CK: a 401 on the queued listing's POST used to resolve null and crash on `listing._id`
+  it('asks to sign in when the session expired before a queued item is listed', async () => {
+    api.findMatchingItems.mockResolvedValue([]);
+    renderForm();
+    await flush();
+    await queueWithNote('x');
+    api.listSpecificItem.mockRejectedValueOnce(new AuthenticationError('Sign in to PD2 to list this item'));
+    api.findMatchingItems.mockResolvedValue([stash(4)]);
+    await tick(POLL_INTERVAL);
+    expect(toasts().at(-1)).toEqual({
+      title: 'Failed to list item',
+      description: 'Sign in to PD2 to list this item',
+      variant: 'error',
+    });
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('does not crash when the listings count check hits a 401 (null page)', async () => {
+    api.findMatchingItems.mockResolvedValue([]);
+    renderForm();
+    await flush();
+    await queueWithNote('x');
+    api.getMarketListings.mockResolvedValueOnce(null as never);
+    api.findMatchingItems.mockResolvedValue([stash(4)]);
+    await tick(POLL_INTERVAL);
+    expect(api.listSpecificItem).not.toHaveBeenCalled();
+    expect(toasts().at(-1)).toMatchObject({
+      title: 'Failed to list item',
+      description: 'Sign in to PD2 to list this item',
+    });
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   async function queueThenCancel() {
     api.findMatchingItems.mockResolvedValue([]);
     renderForm();
@@ -559,13 +703,4 @@ describe('queueing', () => {
     await flush();
     expect(tab(/Queued/).getAttribute('data-state')).toBe('active');
   });
-});
-
-it('Manage tab receives the prefetched first page', async () => {
-  userListings = [marketListing(5), marketListing(6)];
-  renderForm();
-  await flush();
-  await selectTab(/Manage/);
-  await waitFor(() => expect(screen.queryByText('Shako #5')).not.toBeNull());
-  expect(screen.queryByText('Shako #6')).not.toBeNull();
 });

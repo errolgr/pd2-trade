@@ -2,6 +2,7 @@ import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/
 import { allItems } from '@/assets/items';
 import type { ItemType } from '@/assets/itemFuzzySearch';
 import { listingArtUrl } from '@/pages/chat/lib/listing-art';
+import { t } from '@/i18n';
 
 /** The listing's page on projectdiablo2.com (the format the site's own share/"I'm interested" links use). */
 export function listingUrl(listing: Pick<MarketListingEntry, '_id'>): string {
@@ -16,12 +17,12 @@ export function listingAge(
   const at = Date.parse(listing.bumped_at || listing.updated_at || '');
   if (Number.isNaN(at)) return '';
   const minutes = Math.max(0, Math.floor((now.getTime() - at) / 60_000));
-  if (minutes < 1) return 'now';
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 1) return t('market:age.now');
+  if (minutes < 60) return t('market:age.minutes', { n: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return t('market:age.hours', { n: hours });
   const days = Math.floor(hours / 24);
-  return days < 14 ? `${days}d` : `${Math.floor(days / 7)}w`;
+  return days < 14 ? t('market:age.days', { n: days }) : t('market:age.weeks', { n: Math.floor(days / 7) });
 }
 
 /**
@@ -39,7 +40,7 @@ export function itemDisplayName(item: Pick<ItemDetail, 'name' | 'quality' | 'bas
   if ((quality === 'Rare' || quality === 'Magic' || quality === 'Crafted') && baseName && item.name === baseName) {
     return `${quality} ${baseName}`;
   }
-  return item.name || baseName || 'Item';
+  return item.name || baseName || t('market:listing.itemFallback');
 }
 
 let itemsByName: Record<string, ItemType> | null = null;

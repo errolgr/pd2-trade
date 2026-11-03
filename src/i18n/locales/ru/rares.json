@@ -1,0 +1,107 @@
+{
+  "notes": {
+    "craftedUnreliable": "крафтовые предметы в этом слоте пока нельзя надёжно оценить (слишком мало данных по крафту)"
+  },
+  "slots": {
+    "ring": { "label": "Кольцо", "plural": "Кольца", "inSentence": "кольца" },
+    "amul": { "label": "Амулет", "plural": "Амулеты", "inSentence": "амулеты" },
+    "circ": { "label": "Венец", "plural": "Венцы", "inSentence": "венцы" },
+    "jewl": { "label": "Самоцвет", "plural": "Самоцветы", "inSentence": "самоцветы" },
+    "glov": { "label": "Перчатки", "plural": "Перчатки", "inSentence": "перчатки" },
+    "boot": { "label": "Обувь", "plural": "Обувь", "inSentence": "обувь" },
+    "belt": { "label": "Пояс", "plural": "Пояса", "inSentence": "пояса" },
+    "tors": { "label": "Доспех", "plural": "Доспехи", "inSentence": "доспехи" },
+    "helm": { "label": "Шлем", "plural": "Шлемы", "inSentence": "шлемы" },
+    "shield": { "label": "Щит", "plural": "Щиты", "inSentence": "щиты" },
+    "quiver": { "label": "Колчан", "plural": "Колчаны", "inSentence": "колчаны" },
+    "weapon": { "label": "Оружие", "plural": "Оружие", "inSentence": "оружие" },
+    "unknown": { "plural": "Предметы", "inSentence": "предметы" }
+  },
+  "verdicts": {
+    "keep": "Оставить",
+    "check": "Проверить",
+    "vendor": "Продать NPC"
+  },
+  "priority": {
+    "high": "Есть ключевой стат ★★ или выше",
+    "medium": "Есть ключевой стат ★",
+    "low": "Нет ключевых статов"
+  },
+  "crafted": {
+    "lowConfidence": "Низкая точность",
+    "lowConfidenceTitle": "Низкая точность: модель крафта для этого слота основана на малом числе объявлений, поэтому считайте вердикт и диапазон лишь ориентиром."
+  },
+  "rank": {
+    "top": "лучшие {{percent}}%",
+    "bottom": "худшие {{percent}}%"
+  },
+  "ordinal": {
+    "st": "{{n}}-й",
+    "nd": "{{n}}-й",
+    "rd": "{{n}}-й",
+    "th": "{{n}}-й"
+  },
+  "keyStatTitle": "Ключевой стат: {{multiplier}} от цены конца сезона для этого уровня",
+  "marketSource": {
+    "atThisRank": "{{slots}} на этом месте · {{where}}",
+    "lastSeason": "прошлый сезон",
+    "hardcoreListings": "объявления hardcore"
+  },
+  "rankBar": {
+    "ariaLabel": "Прогноз: {{percentile}} перцентиль цен ({{slots}}), погрешность ±{{error}} п.",
+    "vendor": "продать",
+    "keep": "оставить"
+  },
+  "rankBlocks": {
+    "title": "Место среди: {{slots}} <note>(этот сезон)</note>",
+    "ariaLabel": "Место среди: {{slots}}: {{block}}",
+    "bottom25": "худшие 25%",
+    "bottom50": "худшие 50%",
+    "top50": "лучшие 50%",
+    "top25": "лучшие 25%",
+    "top15": "лучшие 15%",
+    "top5": "лучшие 5%"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} ({{slots}}) только через corruption",
+    "nearMiss": "почти: {{from}}+ даёт {{multiplier}} ({{slots}})",
+    "nearMissCorruption": "почти: {{from}}+ даёт {{multiplier}} ({{slots}}, только через corruption)",
+    "valuableFrom": "ценно от {{from}} ({{slots}})",
+    "valuableFromCorruption": "ценно от {{from}} ({{slots}}, только через corruption)"
+  },
+  "stats": {
+    "title": "Статы предмета",
+    "keyStats_one": "{{count}} ключевой стат",
+    "keyStats_few": "{{count}} ключевых стата",
+    "keyStats_many": "{{count}} ключевых статов",
+    "keyStats_other": "{{count}} ключевого стата",
+    "noKeyStats": "нет ключевых статов",
+    "roll": "ролл {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore: модель цен и звёзды по данным softcore",
+    "rankedHardcore": "сравнение с объявлениями hardcore",
+    "rankedBlended": "сравнение с объявлениями hardcore вместе с softcore ({{percent}}% hardcore)",
+    "rankedSoftcore": "сравнение с объявлениями softcore",
+    "pricesHardcore": "цены по объявлениям hardcore",
+    "pricesSoftcore": "цены по объявлениям softcore"
+  },
+  "stashPosition": "столбец {{column}}, ряд {{row}}",
+  "detail": {
+    "verdict": "Вердикт",
+    "howVerdictsWork": "Как работают вердикты",
+    "usuallyListed": "Обычно выставляют",
+    "samples": "Выборка",
+    "comparedWith": "Сравнение с",
+    "stash": "Сундук"
+  },
+  "history": {
+    "title": "История предмета",
+    "aside_one": "{{times}}× · {{count}} продавец · с {{date}}",
+    "aside_few": "{{times}}× · {{count}} продавца · с {{date}}",
+    "aside_many": "{{times}}× · {{count}} продавцов · с {{date}}",
+    "aside_other": "{{times}}× · {{count}} продавца · с {{date}}",
+    "newOwner": "новый владелец",
+    "noPrice": "без цены"
+  }
+}

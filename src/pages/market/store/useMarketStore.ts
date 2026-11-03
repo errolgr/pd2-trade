@@ -22,9 +22,11 @@ import {
   DEFAULT_LIMITS,
   deleteSavedSearch,
   listSavedSearches,
+  SavedSearchApiError,
   type SavedSearchLimits,
   updateSavedSearch,
 } from '@/pages/market/alerts/saved-search-api';
+import { t } from '@/i18n';
 
 export const MARKET_PREFS_FILENAME = 'market-prefs.json';
 const PREFS_DIR = BaseDirectory.AppConfig;
@@ -54,8 +56,11 @@ export interface MarketLocalPrefs {
   legacySavedSearches: SavedSearch[];
 }
 
-/** `signedOut`: no PD2 token, nothing listed. */
-export type SavedSearchSyncStatus = 'signedOut' | 'loading' | 'ready' | 'error';
+/**
+ * `signedOut`: no PD2 token, nothing listed. `unauthorized`: pd2trader.com refused the token (401); nothing is
+ * retried with it, the session owner refreshes it or asks to sign in again.
+ */
+export type SavedSearchSyncStatus = 'signedOut' | 'loading' | 'ready' | 'error' | 'unauthorized';
 
 /** Server saved searches. */
 export interface SavedSearchState {
@@ -207,8 +212,14 @@ export function changeMarketPrefs(change: (prefs: MarketLocalPrefs) => MarketLoc
 // ---- server saved searches ----
 
 let remote: SavedSearchState = SIGNED_OUT;
+interface SyncSession {
+  token: string;
+  generation: number;
+  /** Told once when the server refuses `token` (401). */
+  onUnauthorized?: () => void;
+}
 /** The signed-in token the saved searches belong to; a new one discards answers meant for the old one. */
-let session: { token: string; generation: number } | null = null;
+let session: SyncSession | null = null;
 let generation = 0;
 
 function publishRemote(next: SavedSearchState) {
@@ -230,16 +241,28 @@ const replaceSearch = (id: string, next: SavedSearch | null) =>
     next ? searches.map((s) => (s.id === id ? upgradeSearch(next) : s)) : searches.filter((s) => s.id !== id),
   );
 
+const refusedMessage = () => t('market:store.refused');
+
+const statusOf = (error: unknown) =>
+  error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
+
 const errorMessage = (error: unknown) => {
-  const status = error && typeof error === 'object' && 'status' in error ? error.status : null;
-  if (status === 401) return 'Sign in again to sync your saved searches.';
+  const status = statusOf(error);
+  if (status === 401) return refusedMessage();
   if (error instanceof Error && status) return error.message;
-  return "Couldn't reach pd2trader.com. Try again in a moment.";
+  return t('market:store.unreachable');
 };
 
 function toastError(title: string, error: unknown) {
   console.warn(`[market] ${title}:`, error);
   showToast({ title, description: errorMessage(error), variant: 'error' });
+}
+
+/** The server refused the session's token: no more requests with it (no retry timer), and its owner is told. */
+function refuseSession(owner: SyncSession) {
+  clearTimeout(retryTimer);
+  if (remote.syncStatus !== 'unauthorized') publishRemote({ ...remote, syncStatus: 'unauthorized' });
+  owner.onUnauthorized?.();
 }
 
 /** Runs `request` for the current session; `onDone` / `onError` only when the session is still the same. */
@@ -251,21 +274,27 @@ function withSession<T>(
   const owner = session;
   if (!owner) {
     showToast({
-      title: 'Saved searches',
-      description: 'Sign in to save searches and watch the market.',
+      title: t('market:store.title'),
+      description: t('market:store.signIn'),
       variant: 'warning',
     });
     return false;
   }
+  // The token was refused: another request with it would only be refused again
+  if (remote.syncStatus === 'unauthorized') {
+    showToast({ title: t('market:store.title'), description: refusedMessage(), variant: 'warning' });
+    return false;
+  }
   request(owner.token).then(
     (result) => session === owner && onDone(result),
-    (error) => session === owner && onError(error),
+    (error) => {
+      if (session !== owner) return;
+      if (statusOf(error) === 401) refuseSession(owner);
+      onError(error);
+    },
   );
   return true;
 }
-
-const statusOf = (error: unknown) =>
-  error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : null;
 
 export interface LegacyUploadApi {
   create: (search: { name: string; filters: MarketFilters; alert: boolean }) => Promise<unknown>;
@@ -339,24 +368,27 @@ async function migrateLegacySearches(owner: { token: string }): Promise<void> {
   });
   if (session === owner && (uploaded > 0 || dropped > 0)) {
     showToast({
-      title: 'Saved searches moved to your account',
+      title: t('market:store.migratedTitle'),
       description:
         dropped > 0
-          ? `${uploaded} moved; ${dropped} could not be (invalid or over the ${remote.limits.maxSearches} search limit).`
-          : `${uploaded} saved search${uploaded === 1 ? '' : 'es'} now follow you on every device.`,
+          ? t('market:store.migratedPartial', { uploaded, dropped, max: remote.limits.maxSearches })
+          : t('market:store.migrated', { count: uploaded }),
       variant: dropped > 0 ? 'warning' : 'success',
     });
   }
 }
 
-/** Retries of a failed list: 2 s, 4 s … 60 s (± jitter) while the same token is signed in. */
+/**
+ * Retries of a failed list: 2 s, 4 s … 60 s (± jitter), never sooner than a 429/503 Retry-After, while the same
+ * token is signed in. A 401 is not retried (the token was refused).
+ */
 export const SYNC_RETRY_BASE_MS = 2_000;
 export const SYNC_RETRY_MAX_MS = 60_000;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let retryAttempt = 0;
 
-/** Lists the session's saved searches; on failure, `error` and a retry with backoff. */
-async function listForSession(owner: { token: string; generation: number }): Promise<void> {
+/** Lists the session's saved searches; on failure, `error` and a retry with backoff (`unauthorized` on a 401). */
+async function listForSession(owner: SyncSession): Promise<void> {
   clearTimeout(retryTimer);
   try {
     const { items, limits } = await listSavedSearches(owner.token);
@@ -372,29 +404,42 @@ async function listForSession(owner: { token: string; generation: number }): Pro
   } catch (error) {
     if (session !== owner) return;
     console.warn('[market] listing saved searches failed:', error);
+    if (statusOf(error) === 401) {
+      refuseSession(owner);
+      return;
+    }
     publishRemote({ ...remote, syncStatus: 'error' });
-    const delay = Math.min(SYNC_RETRY_MAX_MS, SYNC_RETRY_BASE_MS * 2 ** retryAttempt) * (0.5 + Math.random());
+    const backoff = Math.min(SYNC_RETRY_MAX_MS, SYNC_RETRY_BASE_MS * 2 ** retryAttempt) * (0.5 + Math.random());
+    const retryAfterMs = error instanceof SavedSearchApiError ? (error.retryAfterMs ?? 0) : 0;
     retryAttempt++;
-    retryTimer = setTimeout(() => {
-      if (session === owner) void listForSession(owner);
-    }, delay);
+    retryTimer = setTimeout(
+      () => {
+        if (session === owner) void listForSession(owner);
+      },
+      Math.max(backoff, retryAfterMs),
+    );
   }
 }
 
 /**
  * Follows the sign-in: with a token, uploads legacy local saved searches once, then lists the user's saved
  * searches (retrying with backoff while that fails); without one, clears them. Calling again with the same token
- * does nothing.
+ * only swaps `onUnauthorized`. `onUnauthorized` is told when the server refuses the token (right away if it already
+ * has); nothing is sent with that token again.
  */
-export function syncSavedSearches(token: string | null): void {
+export function syncSavedSearches(token: string | null, onUnauthorized?: () => void): void {
   if (!token) {
     session = null;
     clearTimeout(retryTimer);
     if (remote !== SIGNED_OUT) publishRemote(SIGNED_OUT);
     return;
   }
-  if (session?.token === token) return;
-  const owner = { token, generation: ++generation };
+  if (session?.token === token) {
+    session.onUnauthorized = onUnauthorized;
+    if (remote.syncStatus === 'unauthorized') onUnauthorized?.();
+    return;
+  }
+  const owner: SyncSession = { token, generation: ++generation, onUnauthorized };
   session = owner;
   retryAttempt = 0;
   publishRemote({ savedSearches: [], syncStatus: 'loading', limits: remote.limits });
@@ -409,6 +454,11 @@ export function syncSavedSearches(token: string | null): void {
   })();
 }
 
+/** Something else (the alert stream) got a 401 with `token`: the saved searches stop using it too. */
+export function refuseSavedSearchToken(token: string): void {
+  if (session?.token === token) refuseSession(session);
+}
+
 /** A failed list: try again now (the panel or Saved tab was shown, or Retry pressed). */
 export function retrySavedSearchSync(): void {
   if (session && remote.syncStatus === 'error') {
@@ -421,8 +471,8 @@ const alertingCount = () => remote.savedSearches.filter((s) => s.alert).length;
 
 const capMessage = (what: 'searches' | 'alerting', limits: SavedSearchLimits) =>
   what === 'searches'
-    ? `You can keep up to ${limits.maxSearches} saved searches. Delete one first.`
-    : `Up to ${limits.maxAlerting} saved searches can alert at once. Turn one off first.`;
+    ? t('market:store.capSearches', { count: limits.maxSearches })
+    : t('market:saved.tooManyDescription', { count: limits.maxAlerting });
 
 /** Store actions; usable outside React (they read the current state). */
 export const marketStoreActions = {
@@ -436,27 +486,37 @@ export const marketStoreActions = {
     // Until the list is in, a save could duplicate a search the user already has
     if (session && remote.syncStatus !== 'ready') {
       showToast({
-        title: 'Saved searches',
+        title: t('market:store.title'),
         description:
-          remote.syncStatus === 'error'
-            ? "Your saved searches couldn't be loaded from pd2trader.com yet. Try again in a moment."
-            : 'Your saved searches are still loading.',
+          remote.syncStatus === 'unauthorized'
+            ? refusedMessage()
+            : remote.syncStatus === 'error'
+              ? t('market:store.notLoaded')
+              : t('market:store.stillLoading'),
         variant: 'warning',
       });
       return null;
     }
     if (session && remote.savedSearches.length >= limits.maxSearches) {
-      showToast({ title: 'Too many saved searches', description: capMessage('searches', limits), variant: 'warning' });
+      showToast({
+        title: t('market:store.tooManySearches'),
+        description: capMessage('searches', limits),
+        variant: 'warning',
+      });
       return null;
     }
     if (session && alert && alertingCount() >= limits.maxAlerting) {
-      showToast({ title: 'Too many watches', description: capMessage('alerting', limits), variant: 'warning' });
+      showToast({
+        title: t('market:watch.tooManyTitle'),
+        description: capMessage('alerting', limits),
+        variant: 'warning',
+      });
       return null;
     }
     const trimmed = name?.trim().slice(0, 80) || undefined;
     const pending: SavedSearch = {
       id: `${PENDING_ID_PREFIX}${crypto.randomUUID()}`,
-      name: trimmed ?? 'Saving…',
+      name: trimmed ?? t('market:store.saving'),
       filters,
       alert,
       createdAt: new Date().toISOString(),
@@ -466,7 +526,7 @@ export const marketStoreActions = {
       (saved) => replaceSearch(pending.id, saved),
       (error) => {
         replaceSearch(pending.id, null);
-        toastError(statusOf(error) === 409 ? 'Limit reached' : "Couldn't save the search", error);
+        toastError(statusOf(error) === 409 ? t('market:store.limitReached') : t('market:store.saveFailed'), error);
       },
     );
     if (!started) return null;
@@ -474,11 +534,11 @@ export const marketStoreActions = {
     return pending;
   },
   updateSearch(id: string, changes: Partial<Pick<SavedSearch, 'name' | 'filters'>>): void {
-    marketStoreActions.patchSearch(id, changes, "Couldn't update the search");
+    marketStoreActions.patchSearch(id, changes, t('market:store.updateFailed'));
   },
   renameSearch(id: string, name: string): void {
     const trimmed = name.trim().slice(0, 80);
-    if (trimmed) marketStoreActions.patchSearch(id, { name: trimmed }, "Couldn't rename the search");
+    if (trimmed) marketStoreActions.patchSearch(id, { name: trimmed }, t('market:store.renameFailed'));
   },
   /** Turns a search's alert (Watch) on/off; false when refused locally (alert cap: the caller says so). */
   setSearchAlert(id: string, alert: boolean): boolean {
@@ -486,7 +546,11 @@ export const marketStoreActions = {
     if (!search || isPendingSearch(search)) return false;
     if (search.alert === alert) return true;
     if (alert && alertingCount() >= remote.limits.maxAlerting) return false;
-    marketStoreActions.patchSearch(id, { alert }, alert ? "Couldn't turn the alert on" : "Couldn't turn the alert off");
+    marketStoreActions.patchSearch(
+      id,
+      { alert },
+      alert ? t('market:store.alertOnFailed') : t('market:store.alertOffFailed'),
+    );
     return true;
   },
   /** Optimistic PATCH: shows `changes` now, the server's answer when it comes, the old search on failure. */
@@ -519,7 +583,7 @@ export const marketStoreActions = {
           next.splice(Math.min(index, next.length), 0, search);
           return next;
         });
-        toastError("Couldn't delete the search", error);
+        toastError(t('market:store.deleteFailed'), error);
       },
     );
     if (!started) return null;

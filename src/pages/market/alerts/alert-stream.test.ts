@@ -232,6 +232,54 @@ describe('runAlertStream', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
+  it('backs off and retries on network errors and 5xx', async () => {
+    const sleeps: number[] = [];
+    const controller = new AbortController();
+    const onUnauthorized = vi.fn();
+    const open = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(Object.assign(new Error('down'), { status: 503 }))
+      .mockImplementationOnce(async () => {
+        controller.abort();
+        throw new TypeError('Failed to fetch');
+      });
+    await runAlertStream({
+      token: 'tok',
+      open,
+      catchUp: vi.fn(),
+      onAlerts: vi.fn(),
+      onUnauthorized,
+      signal: controller.signal,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+      },
+      random: () => 0.5,
+    });
+    expect(open).toHaveBeenCalledTimes(3);
+    expect(sleeps).toEqual([1000, 2000]);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('a catch-up refused with a 401 closes the open stream right away and stops', async () => {
+    const first = streamResponse([hello('2026-10-21T08:00:00Z')], true);
+    const second = streamResponse([hello('2026-10-21T08:05:00Z')]);
+    const open = vi.fn().mockResolvedValueOnce(first.response).mockResolvedValueOnce(second.response);
+    const onUnauthorized = vi.fn();
+    await runAlertStream({
+      token: 'tok',
+      open,
+      catchUp: vi.fn().mockRejectedValue(Object.assign(new Error('nope'), { status: 401 })),
+      onAlerts: vi.fn(),
+      onUnauthorized,
+      signal: new AbortController().signal,
+      sleep: async () => {},
+    });
+    // Resolved without the second stream ever ending on its own
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
   it('reconnects when the connection goes silent (no heartbeat)', async () => {
     vi.useFakeTimers();
     const silent = streamResponse([hello('2026-10-21T08:00:00Z')]);

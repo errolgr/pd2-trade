@@ -7,6 +7,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { usePanel, useOverlay, type OverlayApi, type PanelContextValue, type PanelPayloads } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import {
   getPoints,
   type NetWorthCategory,
@@ -25,6 +26,7 @@ vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useWealthRank', () => ({ useWealthRank: vi.fn() }));
 vi.mock('@/hooks/useSimAccess', () => ({ useSimAccess: vi.fn() }));
 vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
@@ -145,7 +147,7 @@ let settings: { pd2Token?: string };
 let panel: { payload: PanelPayloads['currency']; payloadVersion: number };
 let gameFocused: boolean;
 let close: Mock;
-let openPanel: Mock;
+let openSignIn: Mock;
 
 /** openPanel('currency', payload) again: new payload, bumped payloadVersion. */
 function reopen(payload: PanelPayloads['currency']) {
@@ -208,9 +210,10 @@ beforeEach(() => {
   panel = { payload: undefined, payloadVersion: 1 };
   gameFocused = true;
   close = vi.fn();
-  openPanel = vi.fn();
+  openSignIn = vi.fn();
   vi.mocked(usePanel).mockImplementation(() => ({ ...panel, close }) as unknown as PanelContextValue<'currency'>);
-  vi.mocked(useOverlay).mockImplementation(() => ({ gameFocused, openPanel }) as unknown as OverlayApi);
+  vi.mocked(useOverlay).mockImplementation(() => ({ gameFocused }) as unknown as OverlayApi);
+  vi.mocked(useSignIn).mockImplementation(() => ({ openSignIn, isOpen: false }) as never);
   vi.mocked(getPoints).mockResolvedValue({ points: [] });
 });
 
@@ -227,7 +230,7 @@ describe('StashValueWindow signed out', () => {
     expect(screen.getByText('Sign in with your PD2 account to value your stash.')).not.toBeNull();
     expect(screen.queryByRole('tablist')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(openPanel.mock.calls).toEqual([['signIn']]);
+    expect(openSignIn).toHaveBeenCalledTimes(1);
   });
 
   it('asks to pick an account when signed in without one', () => {

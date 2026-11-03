@@ -1,6 +1,5 @@
 import type { NetWorthTickerAnchor } from '@/hooks/useOptions';
 import type { OverlayRect } from '@/overlay';
-import { chatDockRect } from '@/pages/chat/chat-dock';
 
 /** Formats an HR amount for compact overlay display (1 decimal under 1000, none above). */
 export function formatHr(value: number): string {
@@ -29,16 +28,15 @@ export function clampToArea(rect: OverlayRect, area: OverlayRect): { x: number; 
 
 /**
  * Top-left (overlay px) of a `size` ticker at `anchor` on the game rect: a corner or top center inset by
- * TICKER_EDGE_MARGIN, or right-aligned just above the chat dock at `dockOffset` (see chat-dock.ts).
+ * TICKER_EDGE_MARGIN, or right-aligned just above the chat `dock` tab (see chat-dock.ts).
  */
 export function tickerPosition(
   anchor: Exclude<NetWorthTickerAnchor, 'custom'>,
   size: { width: number; height: number },
   game: OverlayRect,
-  dockOffset: number,
+  dock: OverlayRect,
 ): { x: number; y: number } {
   if (anchor === 'above-chat') {
-    const dock = chatDockRect(game, dockOffset);
     return {
       x: Math.round(dock.x + dock.width - size.width),
       y: Math.round(dock.y - size.height - CHAT_DOCK_GAP),

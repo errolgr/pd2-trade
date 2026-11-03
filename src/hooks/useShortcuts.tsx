@@ -2,6 +2,8 @@ import { useEffect, useRef, useMemo } from 'react';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
+import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { useOptions } from './useOptions';
 
 type ShortcutHandler = () => void | Promise<void>;
@@ -14,8 +16,10 @@ interface ShortcutConfig {
 
 // Right Alt is AltGr on many keyboard layouts; Windows reports it as Ctrl+Alt, so an Alt
 // shortcut also needs a Control+Alt alias to fire from the right Alt key.
+// A key the parser cannot take (the settings window flags it) registers nothing.
 const formatShortcuts = (modifier: 'ctrl' | 'alt', key: string): string[] => {
-  const k = key.toUpperCase();
+  const k = hotkeyKeyToken(key);
+  if (!k) return [];
   return modifier === 'ctrl' ? [`Control+${k}`] : [`Alt+${k}`, `Control+Alt+${k}`];
 };
 
@@ -106,24 +110,20 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         });
 
         // 2. Listen for changes
-        const unlisten = await listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
-          scheduleOperation(async () => {
-            if (lastFocusState.current === isFocused) return;
-            lastFocusState.current = isFocused;
+        const release = holdListener(
+          listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+            scheduleOperation(async () => {
+              if (lastFocusState.current === isFocused) return;
+              lastFocusState.current = isFocused;
 
-            if (isFocused) await registerShortcuts();
-            else await unregisterAllShortcuts();
-          });
-        });
-        // Effect was cleaned up while listen() was pending: release the listener now instead of
-        // storing it, so a later cleanup can never call an already-released Tauri listener.
-        if (cancelled) {
-          Promise.resolve()
-            .then(unlisten)
-            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-        } else {
-          unlistenRef.current = unlisten;
-        }
+              if (isFocused) await registerShortcuts();
+              else await unregisterAllShortcuts();
+            });
+          }),
+          'diablo-focus-changed',
+        );
+        if (cancelled) release();
+        else unlistenRef.current = release;
       } catch (error) {
         console.error('Failed to setup shortcut listener:', error);
       }
@@ -133,14 +133,8 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
 
     return () => {
       cancelled = true;
-      const unlisten = unlistenRef.current;
+      unlistenRef.current?.();
       unlistenRef.current = null;
-      if (unlisten) {
-        // Tauri's unlisten is async; a failure is a rejection, not a sync throw
-        Promise.resolve()
-          .then(unlisten)
-          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-      }
       // Cleanup: Unregister
       scheduleOperation(async () => {
         await unregisterAllShortcuts();
@@ -158,6 +152,8 @@ export const useAppShortcuts = (
   onDelist?: ShortcutHandler,
   onNetWorthSnapshot?: ShortcutHandler,
   onMarket?: ShortcutHandler,
+  onBuilds?: ShortcutHandler,
+  onPalette?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -240,6 +236,22 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeyBuilds && onBuilds) {
+      configs.push({
+        modifier: settings.hotkeyModifierBuilds ?? 'ctrl',
+        key: settings.hotkeyKeyBuilds,
+        handler: onBuilds,
+      });
+    }
+
+    if (settings.hotkeyKeyPalette && onPalette) {
+      configs.push({
+        modifier: settings.hotkeyModifierPalette ?? 'ctrl',
+        key: settings.hotkeyKeyPalette,
+        handler: onPalette,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -259,6 +271,10 @@ export const useAppShortcuts = (
     settings.hotkeyKeySnapshot,
     settings.hotkeyModifierMarket,
     settings.hotkeyKeyMarket,
+    settings.hotkeyModifierBuilds,
+    settings.hotkeyKeyBuilds,
+    settings.hotkeyModifierPalette,
+    settings.hotkeyKeyPalette,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
@@ -267,6 +283,8 @@ export const useAppShortcuts = (
     onDelist,
     onNetWorthSnapshot,
     onMarket,
+    onBuilds,
+    onPalette,
   ]);
 
   useShortcuts(shortcuts);

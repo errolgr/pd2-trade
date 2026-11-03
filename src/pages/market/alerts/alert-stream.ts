@@ -99,7 +99,7 @@ export interface AlertStreamOptions {
   catchUp: (token: string, since: string) => Promise<MarketAlert[]>;
   /** New alerts, oldest first: one live alert, or what a reconnect caught up on. */
   onAlerts: (alerts: MarketAlert[], source: 'live' | 'catch-up') => void;
-  /** 401: the stream stops (the caller restarts it with a new token). */
+  /** 401 (stream or catch-up), told once: the stream closes and never retries that token. */
   onUnauthorized: () => void;
   signal: AbortSignal;
   /** Shared across restarts so an alert never shows twice. */
@@ -149,6 +149,8 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
   let serverRetryMs = MIN_RECONNECT_MS;
   let attempt = 0;
   let stopped = false;
+  /** The open connection: a refused catch-up closes it at once instead of at the next heartbeat. */
+  let connection: AbortController | null = null;
 
   const deliver = (alerts: MarketAlert[], source: 'live' | 'catch-up') => {
     const fresh = takeUnseen(seen, alerts);
@@ -159,7 +161,9 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
   };
 
   const unauthorized = () => {
+    if (stopped) return;
     stopped = true;
+    connection?.abort();
     onUnauthorized();
   };
 
@@ -182,8 +186,9 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
   };
 
   while (!signal.aborted && !stopped) {
-    const connection = new AbortController();
-    const abortConnection = () => connection.abort();
+    const current = new AbortController();
+    connection = current;
+    const abortConnection = () => current.abort();
     signal.addEventListener('abort', abortConnection);
     let retryAfterMs: number | null = null;
     let idle: ReturnType<typeof setTimeout> | undefined;
@@ -191,15 +196,15 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
     let connectedAt: number | null = null;
     const resetIdle = () => {
       clearTimeout(idle);
-      idle = setTimeout(() => connection.abort(), idleTimeoutMs);
+      idle = setTimeout(() => current.abort(), idleTimeoutMs);
     };
     try {
-      const response = await open(token, connection.signal);
+      const response = await open(token, current.signal);
       connectedAt = now();
       const reader = response.body?.getReader();
       if (!reader) throw new Error('Alert stream has no body');
       // Some fetch implementations don't fail a pending read on abort: cancel it so the loop wakes up
-      connection.signal.addEventListener('abort', () => void reader.cancel().catch(() => {}), { once: true });
+      current.signal.addEventListener('abort', () => void reader.cancel().catch(() => {}), { once: true });
       const decoder = new TextDecoder();
       const parser = createSseParser(
         (event) => {
@@ -224,13 +229,13 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
         parser.push(decoder.decode(value, { stream: true }));
       }
     } catch (error) {
+      if (!signal.aborted && !current.signal.aborted) console.warn('[market alerts] stream error:', error);
       if (statusOf(error) === 401) unauthorized();
       retryAfterMs = retryAfterOf(error);
-      if (!signal.aborted && !connection.signal.aborted) console.warn('[market alerts] stream error:', error);
     } finally {
       clearTimeout(idle);
       signal.removeEventListener('abort', abortConnection);
-      connection.abort();
+      current.abort();
     }
     if (signal.aborted || stopped) return;
     // Only a connection that stayed up resets the backoff (accept-then-drop keeps backing off)

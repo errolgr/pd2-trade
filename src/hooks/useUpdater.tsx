@@ -6,6 +6,7 @@ import { useDialog } from '@/hooks/useDialog';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import React from 'react';
+import { t } from '@/i18n';
 
 export function useUpdater() {
   const { openDialog, closeDialog } = useDialog();
@@ -16,9 +17,9 @@ export function useUpdater() {
     openDialog(
       <div className="flex flex-col gap-4">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-center">Downloading Update</AlertDialogTitle>
+          <AlertDialogTitle className="text-center">{t('system:updates.dialogTitle')}</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Please wait while the update is being downloaded.
+            {t('system:updates.dialogDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Progress value={currentProgress} />

@@ -6,10 +6,18 @@ import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/Game
 import { ItemQuality } from '@/common/types/Item';
 import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 import { statIdToProperty } from '@/pages/price-check/lib/stat-mappings';
-import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import {
+  AccountMismatchError,
+  AuthenticationError,
+  handleApiResponse,
+  NoAccountSelectedError,
+  PD2ApiError,
+} from './usePD2Website';
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
+import { fetchPersonalStashes, type PersonalStashes } from './personal-stash';
+import type { SocketRequest } from './useSocket';
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   if (!query) return base;
@@ -20,24 +28,40 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   return url.toString();
 }
 
+/**
+ * The selected account's stash: the shared stash (REST) plus the personal stash of each character in the selected
+ * mode (socket; see fetchPersonalStashes). Callers see one item list; personal stash items carry `character_id`.
+ */
 export function useStashCache(
   authData,
   settings,
   onAuthErrorRef?: React.MutableRefObject<(() => void | Promise<void>) | null>,
+  requestSocket?: SocketRequest,
 ) {
   const stashCache = useRef(null);
+  // The last personal stash read per character, for the account and mode it was read for
+  const personalStashes = useRef<{ key: string; stashes: PersonalStashes } | null>(null);
   const itemsMapByKey = useMemo(() => createItemsMapByKey(allItems), []);
 
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  // Helper: fetch stash from server and update cache (RESTful)
+  // Helper: fetch stash from server and update cache
   const fetchAndCacheStash = useCallback(async () => {
-    if (!authData) throw new Error('Not authenticated');
+    // Signed out (or the session expired): expected user state; callers skip error reports for AuthenticationError
+    if (!authData) throw new AuthenticationError('Not authenticated');
     if (!settings) throw new Error('Settings not found!');
 
     const is_hardcore = settings.mode === 'hardcore';
     const is_ladder = settings.ladder === 'ladder';
     const account = settings.account;
+    if (!account?.trim()) throw new NoAccountSelectedError();
+
+    // Read alongside the shared stash: an item moved between the two then can hardly be missed by both reads
+    const personalKey = `${account.toLowerCase()}|${is_hardcore}|${is_ladder}`;
+    const previous = personalStashes.current?.key === personalKey ? personalStashes.current.stashes : new Map();
+    const personalRead = requestSocket
+      ? fetchPersonalStashes(requestSocket, account, { hardcore: is_hardcore, ladder: is_ladder }, previous)
+      : Promise.resolve(previous);
 
     const params = {
       account,
@@ -52,12 +76,46 @@ export function useStashCache(
       },
     });
     const onAuthError = onAuthErrorRef?.current || undefined;
-    const stashData: GameData | null = await handleApiResponse(response, onAuthError);
+    let stashData: GameData | null;
+    try {
+      stashData = await handleApiResponse(response, onAuthError);
+    } catch (error) {
+      // PD2 answers the same 404 "Page not found" for someone else's account and when its realm lookup fails
+      // (S14 launch). For an account linked to this login, ask /game/account: a 5xx (or no answer) there is
+      // the realm outage, so the stash 404 is transient; a 200 means the stash 404 is real.
+      const linked: string[] = authData.user?.game?.accounts ?? [];
+      if (!(error instanceof AccountMismatchError) || !linked.some((a) => a.toLowerCase() === account.toLowerCase())) {
+        throw error;
+      }
+      const realmDown = await tauriFetch(`https://api.projectdiablo2.com/game/account/${encodeURIComponent(account)}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${settings.pd2Token}` },
+      }).then(
+        (r) => r.status >= 500,
+        () => true,
+      );
+      if (realmDown) {
+        throw new PD2ApiError(
+          `PD2 couldn't load the stash for "${account}" right now. Try again in a minute.`,
+          404,
+          `/game/stash/${account}`,
+        );
+      }
+      const mode = `${is_hardcore ? 'hardcore' : 'softcore'} ${is_ladder ? 'ladder' : 'non-ladder'}`;
+      throw new AccountMismatchError(
+        `PD2 has no ${mode} stash for "${account}". Check the account and mode in Settings → Account.`,
+        404,
+        account,
+      );
+    }
     // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
     if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
-    stashCache.current = { data: stashData, timestamp: Date.now() };
-    return stashData;
-  }, [settings, authData, onAuthErrorRef]);
+    const stashes = await personalRead;
+    personalStashes.current = { key: personalKey, stashes };
+    const data: GameData = { ...stashData, items: [...(stashData.items ?? []), ...[...stashes.values()].flat()] };
+    stashCache.current = { data, timestamp: Date.now() };
+    return data;
+  }, [settings, authData, onAuthErrorRef, requestSocket]);
 
   // Helper: calculate modifier similarity score between PriceCheckItem and stash item
   function calculateModifierSimilarity(priceCheckItem: PriceCheckItem, stashItem: GameStashItem): number {
@@ -226,9 +284,10 @@ export function useStashCache(
     [stashCache],
   );
 
-  // Clear the stash cache
+  // Clear the stash cache (and the personal stash fallback: the next user or account starts fresh)
   const clearStashCache = useCallback(() => {
     stashCache.current = null;
+    personalStashes.current = null;
   }, []);
 
   return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache };

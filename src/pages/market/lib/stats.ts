@@ -6,39 +6,72 @@ import type { CorruptionOption, PseudoDef, StatOption } from './types';
 /** A stat picker entry: a property, a pseudo stat or a cube corruption. */
 export type StatChoice = StatOption | PseudoDef | CorruptionOption;
 
+/** A constrained `values[index]` of a stat key: equal to one of `values`, or within `min`..`max`. */
+export interface ParamPin {
+  index: number;
+  /** Any of these values (`{98|123}`; one for a plain `{98}`). */
+  values?: number[];
+  min?: number;
+  max?: number;
+}
+
 export interface ParsedStatKey {
   /** Modifier names to match (more than one for `a|b` alternatives). */
   names: string[];
-  /** Leading `values[i]` that must equal these params (`name{p0,p1}`). */
-  params: number[];
+  /** Constrained leading values (`name{p0,p1}`); unpinned `*` slots are left out. */
+  pins: ParamPin[];
   /** Index into `values` that min/max (and scoring) read. */
   valueIndex: number;
 }
 
-const PARAM_KEY = /^([\w_]+)\{([\d,]+)\}$/;
+const INT = '\\d{1,6}';
+/** `*` (any), `N` or `N|M|…` (any of), `N..M` / `N..` / `..M` (range). */
+const SLOT = `\\*|${INT}(?:\\|${INT}){0,7}|(?:${INT})?\\.\\.(?:${INT})?`;
+const KEY = new RegExp(`^([\\w]+(?:\\|[\\w]+)*)(?:\\{((?:${SLOT})(?:,(?:${SLOT})){0,3})\\})?(?:\\[([0-4])\\])?$`);
+
+/** A `{…}` slot as a pin; null for `*`. */
+function slotPin(slot: string, index: number): ParamPin | null {
+  if (slot === '*') return null;
+  if (!slot.includes('..')) return { index, values: slot.split('|').map((v) => parseInt(v, 10)) };
+  const [lo, hi] = slot.split('..');
+  return { index, ...(lo ? { min: parseInt(lo, 10) } : {}), ...(hi ? { max: parseInt(hi, 10) } : {}) };
+}
 
 /**
- * The site's property-key grammar: `name`, `name{p0,p1}` (params pinned to `values.0`, `values.1`… and the roll
- * read after them) or `a|b|c` (any of these names). `item_elemskill_*` rolls live in `values.1`.
+ * The market service's property-key grammar (its `filters/stats.ts`): `name` or `a|b|c` (any of these names), then
+ * optionally `{s0,s1,…}` constraining the leading values, each slot `N`, `N|M` (any of), `N..M` / `N..` / `..M` or
+ * `*` (unconstrained), then optionally `[i]`, the value min/max and scoring read. Without `[i]` the roll follows
+ * the slots (`item_singleskill{54}` → `values.1`); without slots `item_elemskill_*` rolls live in `values.1`,
+ * everything else in `values.0`. E.g. `item_skillongethit{*,44}[0]`, `item_aura{98|123}`, `item_splashonhit[2]`,
+ * `firedam|firemindam{4..}[1]`. A key outside the grammar reads as unpinned `a|b` names.
  */
 export function parseStatKey(key: string): ParsedStatKey {
-  const match = PARAM_KEY.exec(key);
-  if (match) {
-    const params = match[2].split(',').map((p) => parseInt(p, 10));
-    return { names: [match[1]], params, valueIndex: params.length };
-  }
-  const names = key.split('|');
-  return { names, params: [], valueIndex: names[0].includes('item_elemskill_') ? 1 : 0 };
+  const match = KEY.exec(key);
+  const names = match ? match[1].split('|') : key.split('|');
+  const slots = match?.[2]?.split(',') ?? [];
+  const pins = slots.flatMap((slot, i) => slotPin(slot, i) ?? []);
+  const valueIndex =
+    match?.[3] !== undefined ? Number(match[3]) : slots.length || (names[0].includes('item_elemskill_') ? 1 : 0);
+  return { names, pins, valueIndex };
+}
+
+/** Whether a modifier line's values satisfy a key's pins. */
+export function pinsMatch(values: readonly unknown[] | undefined, pins: readonly ParamPin[]): boolean {
+  return pins.every(({ index, values: anyOf, min, max }) => {
+    const value = values?.[index];
+    if (typeof value !== 'number') return false;
+    if (anyOf) return anyOf.includes(value);
+    return (min === undefined || value >= min) && (max === undefined || value <= max);
+  });
 }
 
 /** The stat's roll on these modifiers (largest when several lines match), or null when the item lacks it. */
 export function readStatValue(mods: Modifier[] | undefined, key: string): number | null {
   if (!mods?.length) return null;
-  const { names, params, valueIndex } = parseStatKey(key);
+  const { names, pins, valueIndex } = parseStatKey(key);
   let best: number | null = null;
   for (const mod of mods) {
-    if (!names.includes(mod.name)) continue;
-    if (params.some((p, i) => mod.values?.[i] !== p)) continue;
+    if (!names.includes(mod.name) || !pinsMatch(mod.values, pins)) continue;
     const value = mod.values?.[valueIndex];
     if (typeof value !== 'number') continue;
     if (best === null || value > best) best = value;
@@ -102,9 +135,18 @@ export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.map(([key, label]) =
 const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
 const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
 
-/** Label template for a property key or pseudo id; the key itself when unknown. */
+/**
+ * Label template for a property key or pseudo id; a key the site list lacks (`a|b` alternatives, extended slots)
+ * takes the label of its first known name; the key itself when unknown.
+ */
 export function statLabel(key: string): string {
-  return OPTION_BY_KEY.get(key)?.label ?? PSEUDO_BY_ID.get(key)?.label ?? key;
+  const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key);
+  if (known) return known.label;
+  for (const name of parseStatKey(key).names) {
+    const option = OPTION_BY_KEY.get(name);
+    if (option) return option.label;
+  }
+  return key;
 }
 
 /** True for pseudo entries returned by searchStats. */
@@ -147,6 +189,19 @@ function normalize(text: string): string {
   return text.replace(/\{X\}/g, ' ').replace(/[+%]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+/** A normalized label without filler: leading "to " / "total ", trailing "(…)" notes ("+{X} to Life" → "life"). */
+function coreName(label: string): string {
+  return label
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/^(to|total) /, '')
+    .trim();
+}
+
+/** Whole-name match ("life" → "+{X} to Life") beats any partial match. */
+const EXACT_BONUS = 5;
+/** Per character of the core name: shorter names win close calls ("Life" over "Life stolen per hit"). */
+const LENGTH_WEIGHT = 1 / 25;
+
 function scoreMatch(haystack: string, tokens: string[]): number | null {
   let score = 0;
   for (const token of tokens) {
@@ -156,7 +211,13 @@ function scoreMatch(haystack: string, tokens: string[]): number | null {
     score += at === 0 ? 0 : haystack[at - 1] === ' ' ? 1 : 3;
     score += at / 100;
   }
-  return score + haystack.length / 1000;
+  // Whole name: the same number of words, each equal to its query word or, from 4 letters, starting with it
+  // ("cold res" → "cold resist" ≈ "Cold Resistance"; "def" ≠ "Defiance")
+  const words = coreName(haystack).split(' ');
+  const whole =
+    words.length === tokens.length &&
+    words.every((w, i) => w === tokens[i] || (tokens[i].length >= 4 && w.startsWith(tokens[i])));
+  return score + words.join(' ').length * LENGTH_WEIGHT - (whole ? EXACT_BONUS : 0);
 }
 
 /** Query words asking for corruptions ("corrupt", "corrupted", "corruption"). */

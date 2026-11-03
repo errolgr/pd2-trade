@@ -1,6 +1,6 @@
 import type { Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
-import { normalizeName, type WhisperPerson } from '@/lib/whisper-history';
+import { nameAliases, normalizeName, type WhisperPerson } from '@/lib/whisper-history';
 
 /** A website user a whisper sender can be linked to, with the in-game accounts known for them. */
 export interface LinkCandidate {
@@ -40,15 +40,10 @@ export function linkSender(
   sender: Pick<WhisperPerson, 'key' | 'accountName' | 'characterName' | 'playerName'>,
   candidates: readonly LinkCandidate[],
 ): string | undefined {
-  const names = new Set(
-    [sender.key, sender.accountName, sender.characterName, sender.playerName].map(normalizeName).filter(Boolean),
-  );
+  const names = new Set([sender.key, sender.accountName, sender.characterName, sender.playerName].flatMap(nameAliases));
   if (names.size === 0) return undefined;
   return candidates.find((candidate) =>
-    candidate.accounts.some((account) => {
-      const normalized = normalizeName(account);
-      return normalized !== '' && names.has(normalized);
-    }),
+    candidate.accounts.some((account) => nameAliases(account).some((alias) => names.has(alias))),
   )?.threadId;
 }
 

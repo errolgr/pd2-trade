@@ -14,6 +14,11 @@ import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
 import { displayMods, itemNameColor } from './ItemTooltip';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
+import { SellerName } from './SellerName';
+import { OfferBadge } from './OfferBadge';
+import type { ListingOffers } from '../lib/listing-offers';
+import { useOpenTrader } from '../hooks/useListingActions';
+import { useTranslation } from '@/i18n';
 
 const ROW_HEIGHT = 58;
 /** Rows from the end at which the next server page is requested. */
@@ -36,6 +41,7 @@ export interface LoadMoreState {
 
 /** Under the results: "Loading more…", or "Couldn't load more · Retry" after a failed page. */
 export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreState & { loading: boolean }) {
+  const { t } = useTranslation(['market', 'common']);
   // Rate limited: Retry unlocks when `retryAt` has passed (the timer marks it; no clock read during render)
   const [unlockedAt, setUnlockedAt] = useState<number | null>(null);
   const waiting = retryAt !== null && unlockedAt !== retryAt;
@@ -50,7 +56,7 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
       <div aria-busy
         className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
         <Loader2 className="size-3.5 animate-spin" />
-        Loading more…
+        {t('results.loadingMore')}
       </div>
     );
   }
@@ -58,16 +64,18 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
   return (
     <div role="status"
       className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
-      <span title={error}>{"Couldn't load more"}</span>
+      <span title={error}>{t('results.loadMoreFailed')}</span>
       <span aria-hidden>·</span>
       <button
         type="button"
         disabled={waiting}
-        title={waiting && retryAt !== null ? `Rate limited until ${moment(retryAt).format('LT')}` : error}
+        title={
+          waiting && retryAt !== null ? t('results.rateLimitedUntil', { time: moment(retryAt).format('LT') }) : error
+        }
         onClick={onRetry}
         className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
       >
-        Retry
+        {t('common:actions.retry')}
       </button>
     </div>
   );
@@ -77,10 +85,14 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
 export function OnlineDots({ listing, className }: { listing: MarketListingEntry; className?: string }) {
   const site = isUserOnlineIngame(listing.user_last_online);
   const game = isUserOnlineIngame(listing.user_last_ingame);
+  const { t } = useTranslation('market');
   return (
     <span
       className={cn('inline-flex items-center gap-0.5', className)}
-      title={`${site ? 'Online' : 'Offline'} on the site · ${game ? 'in game' : 'not in game'}`}
+      title={t('presence.dots', {
+        site: site ? t('presence.siteOnline') : t('presence.siteOffline'),
+        game: game ? t('presence.inGame') : t('presence.notInGame'),
+      })}
     >
       <span className={cn('size-1.5 rounded-full', site ? 'bg-info' : 'bg-muted-foreground/35')} />
       <span
@@ -96,6 +108,8 @@ export interface ResultsListProps {
   /** Click: select the row and show it in the detail pane. */
   onSelect: (listingId: string) => void;
   deals: ReadonlyMap<string, Deal>;
+  /** The signed-in user's offers by listing id (made, or received on their listings). */
+  offers: ReadonlyMap<string, ListingOffers>;
   /** Enabled pseudo stat keys: their totals show on each row. */
   pseudoKeys: string[];
   favoriteIds: Set<string>;
@@ -115,6 +129,7 @@ export function ResultsList({
   selectedId,
   onSelect,
   deals,
+  offers,
   pseudoKeys,
   favoriteIds,
   hasMore,
@@ -124,6 +139,7 @@ export function ResultsList({
   enter,
   footer,
 }: ResultsListProps) {
+  const { t } = useTranslation('market');
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
   const virtualizer = useVirtualizer({
@@ -134,6 +150,12 @@ export function ResultsList({
     getItemKey: (index) => rows[index].listing._id,
     overscan: 10,
   });
+
+  // A fresh result set (new search, filter change) starts at the top; appended pages keep the position.
+  // Before the selection effect, so a kept selection still scrolls into view.
+  useEffect(() => {
+    virtualizer.scrollToOffset(0);
+  }, [enter.generation, virtualizer]);
 
   // Keep the keyboard selection in view
   const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
@@ -154,7 +176,7 @@ export function ResultsList({
     >
       <div
         role="listbox"
-        aria-label="Listings"
+        aria-label={t('results.listings')}
         className="relative w-full"
         style={{ height: virtualizer.getTotalSize() }}
       >
@@ -175,6 +197,7 @@ export function ResultsList({
                   selected={row.listing._id === selectedId}
                   onSelect={onSelect}
                   deal={deals.get(row.listing._id)}
+                  offers={offers.get(row.listing._id)}
                   pseudoKeys={pseudoKeys}
                   favorite={favoriteIds.has(row.listing._id)}
                 />
@@ -195,6 +218,7 @@ const ResultRow = React.memo(function ResultRow({
   selected,
   onSelect,
   deal,
+  offers,
   pseudoKeys,
   favorite,
 }: {
@@ -202,12 +226,15 @@ const ResultRow = React.memo(function ResultRow({
   selected: boolean;
   onSelect: (id: string) => void;
   deal: Deal | undefined;
+  offers: ListingOffers | undefined;
   pseudoKeys: string[];
   favorite: boolean;
 }) {
+  const { t } = useTranslation('market');
   const { listing } = row;
   const { item } = listing;
   const price = formatHrPrice(listing.hr_price);
+  const openTrader = useOpenTrader(listing);
   const summary = displayMods(item)
     .slice(0, SUMMARY_MODS)
     .map((m) => m.label)
@@ -237,8 +264,12 @@ const ResultRow = React.memo(function ResultRow({
             <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
           )}
           {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
-          {favorite && <Heart className="size-3 shrink-0 fill-destructive text-destructive"
-            aria-label="Favorite" />}
+          {favorite && (
+            <Heart className="size-3 shrink-0 fill-destructive text-destructive"
+              aria-label={t('results.favorite')} />
+          )}
+          <OfferBadge offers={offers}
+            compact />
         </div>
         <div className="truncate text-[11px] leading-4 text-muted-foreground"
           title={summary}>
@@ -261,18 +292,29 @@ const ResultRow = React.memo(function ResultRow({
       </div>
 
       <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 max-w-full items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
           <span
-            className={cn('text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-muted-foreground')}
+            className={cn('truncate text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-foreground/85')}
             title={listing.price || undefined}
           >
-            {price ?? (listing.price ? 'Offer' : '—')}
+            {price ?? (listing.price || '—')}
           </span>
         </div>
+        {price && listing.price && (
+          <span className="max-w-full truncate text-[10px] text-muted-foreground"
+            title={listing.price}>
+            {listing.price}
+          </span>
+        )}
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <span className="max-w-16 truncate">{listing.user?.username}</span>
+          {listing.user?.username && (
+            <SellerName onOpen={openTrader}
+              className="max-w-16">
+              {listing.user.username}
+            </SellerName>
+          )}
           <OnlineDots listing={listing} />
           <span className="tabular-nums">{listingAge(listing)}</span>
         </div>

@@ -11,6 +11,8 @@ import {
   loadWhisperHistory,
   markRead,
   MAX_MESSAGES_PER_PERSON,
+  accountOf,
+  nameAliases,
   normalizeName,
   OPEN_TRADE_MS,
   parseHistory,
@@ -21,8 +23,11 @@ import {
   RETENTION_MS,
   SAVE_DEBOUNCE_MS,
   saveWhisperHistory,
+  settleTrade,
   unreadWhispers,
   WHISPER_HISTORY_FILENAME,
+  whisperCommand,
+  whisperTarget,
   type TradeMessageEvent,
   type WhisperEvent,
   type WhisperHistory,
@@ -69,6 +74,56 @@ describe('normalizeName and findPerson', () => {
     expect(findPerson(history, ['bobsorc'])?.key).toBe('bob');
     expect(findPerson(history, [' *BOB'])?.key).toBe('bob');
     expect(findPerson(history, ['', undefined, '  '])).toBeUndefined();
+  });
+
+  it('nameAliases expands a legacy "character*account" into the whole, the character and the account', () => {
+    expect(nameAliases('frostwind*tharok')).toEqual(['frostwind*tharok', 'frostwind', 'tharok']);
+    expect(nameAliases('*tharok')).toEqual(['tharok']);
+    expect(nameAliases('plainname')).toEqual(['plainname']);
+    expect(nameAliases('')).toEqual([]);
+  });
+
+  it('finds a legacy "character*account" person by either half (so new whispers merge in)', () => {
+    const legacy = {
+      key: 'frostwind*tharok',
+      accountName: undefined,
+      characterName: undefined,
+      playerName: 'frostwind*tharok',
+      messages: [],
+      trades: [],
+      readAt: 0,
+    };
+    const history: WhisperHistory = { people: { 'frostwind*tharok': legacy } };
+    expect(findPerson(history, ['tharok'])?.key).toBe('frostwind*tharok');
+    expect(findPerson(history, ['frostwind'])?.key).toBe('frostwind*tharok');
+  });
+
+  it('accountOf is the account half of a legacy name, else the name without its "*"', () => {
+    expect(accountOf('frostwind*tharok')).toBe('tharok');
+    expect(accountOf(' *Tharok ')).toBe('Tharok');
+    expect(accountOf('quietvale')).toBe('quietvale');
+    expect(accountOf('odd*')).toBe('odd');
+  });
+
+  it('whispers a legacy "character*account" sender at their account', () => {
+    expect(whisperTarget({ playerName: 'frostwind*tharok' })).toBe('tharok');
+    expect(whisperTarget({ accountName: 'Bob', playerName: 'Bob' })).toBe('Bob');
+  });
+
+  // #148: accepting an offer copied `/w *frostwind*tharok …` ("user is not online")
+  it('copies a whisper with exactly one "*" before the account', () => {
+    const accept = 'Your offer has been accepted. Game: shako1////pw';
+    expect(whisperCommand(whisperTarget({ playerName: 'frostwind*tharok' }), accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand('frostwind*tharok', accept)).toBe(
+      '/w *tharok Your offer has been accepted. Game: shako1////pw',
+    );
+    expect(whisperCommand(whisperTarget({ accountName: 'tharok', playerName: 'tharok' }), 'yes')).toBe(
+      '/w *tharok yes',
+    );
+    expect(whisperCommand('tharok', 'yes')).toBe('/w *tharok yes');
+    expect(whisperCommand('*tharok', 'yes')).toBe('/w *tharok yes');
   });
 });
 
@@ -152,6 +207,16 @@ describe('copied whispers, trades and read state', () => {
     expect(isOpenTrade(trade, T0 + OPEN_TRADE_MS)).toBe(false);
     history = dismissTrade(history, 'bob', trade.id);
     expect(isOpenTrade(history.people.bob.trades[0], T0)).toBe(false);
+  });
+
+  it('settles a trade once (closed, keeping its first outcome) and saves the outcome', () => {
+    let history = recordTrade(EMPTY_HISTORY, tradeFromBob, T0);
+    const [trade] = history.people.bob.trades;
+    history = settleTrade(history, 'bob', trade.id, 'sold', T0 + 60_000);
+    expect(history.people.bob.trades[0]).toMatchObject({ outcome: 'sold', settledAt: T0 + 60_000 });
+    expect(isOpenTrade(history.people.bob.trades[0], T0 + 60_000)).toBe(false);
+    expect(settleTrade(history, 'bob', trade.id, 'rejected', T0 + 90_000)).toBe(history);
+    expect(parseHistory(JSON.stringify(history))).toEqual(history);
   });
 
   it('counts incoming whispers after readAt as unread and marks them read', () => {

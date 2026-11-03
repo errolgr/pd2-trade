@@ -51,15 +51,21 @@ import {
 import { useNetWorth } from '@/hooks/useNetWorth';
 import {
   CATEGORY_COLORS,
-  CATEGORY_LABELS,
   CATEGORY_NAME_CLASS,
+  categoryLabel,
   deltaClass,
   deltaPillClass,
+  formatClock,
   formatDuration,
+  formatMonthDay,
   formatSignedHr,
+  formatStamp,
+  formatWeekday,
 } from '../lib/networth-format';
 import { useNetWorthQuery } from '../lib/useNetWorthQuery';
 import { Banner, EmptyState } from './StatePanel';
+import { useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
 
 type Range = '24h' | '7d' | 'season' | 'all';
 
@@ -76,17 +82,21 @@ interface HistoryTabProps {
 
 const SNAPSHOT_PAGE = 30;
 const SESSION_PAGE = 8;
-const SESSION_CALENDAR = {
-  sameDay: '[Today] HH:mm',
-  lastDay: '[Yesterday] HH:mm',
-  lastWeek: 'ddd HH:mm',
-  sameElse: 'MMM D HH:mm',
-};
-const RANGES: { value: Range; label: string }[] = [
-  { value: '24h', label: '24h' },
-  { value: '7d', label: '7d' },
-  { value: 'season', label: 'Season' },
-  { value: 'all', label: 'All' },
+/** Session start like moment's calendar(): "Today 14:05", "Yesterday 14:05", "Mon 14:05", else "Oct 18 14:05". */
+function formatSessionStart(start: string, t: TFunction): string {
+  const days = moment(start).diff(moment().startOf('day'), 'days', true);
+  const time = formatClock(start);
+  if (days >= 0 && days < 1) return t('history.sessions.today', { time });
+  if (days >= -1 && days < 0) return t('history.sessions.yesterday', { time });
+  if (days >= -6 && days < -1) return `${formatWeekday(start)} ${time}`;
+  return formatStamp(start);
+}
+
+const RANGES: { value: Range; labelKey: string }[] = [
+  { value: '24h', labelKey: 'history.ranges.24h' },
+  { value: '7d', labelKey: 'history.ranges.7d' },
+  { value: 'season', labelKey: 'history.ranges.season' },
+  { value: 'all', labelKey: 'history.ranges.all' },
 ];
 
 function SectionHeader({
@@ -110,19 +120,21 @@ function SectionHeader({
 }
 
 function ShowMore({ remaining, onClick }: { remaining: number; onClick: () => void }) {
+  const { t } = useTranslation('currency');
   return (
     <button
       type="button"
       className="w-full py-2 text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40"
       onClick={onClick}
     >
-      Show more ({remaining} older)
+      {t('history.showMore', { remaining })}
     </button>
   );
 }
 
 export function HistoryTab(props: HistoryTabProps) {
   const { token, owner, seasons, currentSeasonId, seasonPoints, refreshKey, onHistoryChanged } = props;
+  const { t } = useTranslation('currency');
   const [range, setRange] = useState<Range>('7d');
   const [stacked, setStacked] = useState(false);
 
@@ -159,13 +171,13 @@ export function HistoryTab(props: HistoryTabProps) {
               size="sm"
               value={range}
               onValueChange={(v) => v && setRange(v as Range)}
-              aria-label="Chart range"
+              aria-label={t('history.chartRange')}
             >
               {RANGES.map((r) => (
                 <ToggleGroupItem key={r.value}
                   value={r.value}
                   className="flex-none px-3 text-xs">
-                  {r.label}
+                  {t(r.labelKey)}
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
@@ -190,7 +202,7 @@ export function HistoryTab(props: HistoryTabProps) {
                     'rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
                     deltaPillClass(rangeChange),
                   )}
-                  title="Change over the selected range"
+                  title={t('history.rangeChange')}
                 >
                   {formatSignedHr(rangeChange)}
                 </motion.span>
@@ -203,7 +215,7 @@ export function HistoryTab(props: HistoryTabProps) {
               onCheckedChange={setStacked} />
             <Label htmlFor="stacked"
               className="cursor-pointer text-xs text-muted-foreground">
-              Stack by category
+              {t('history.stackByCategory')}
             </Label>
           </div>
         </div>
@@ -216,7 +228,7 @@ export function HistoryTab(props: HistoryTabProps) {
               <Button size="sm"
                 variant="outline"
                 onClick={rangeQuery.reload}>
-                Retry
+                {t('common:actions.retry')}
               </Button>
             }
           >
@@ -254,17 +266,12 @@ export function HistoryTab(props: HistoryTabProps) {
   );
 }
 
-const chartConfig: ChartConfig = {
-  totalHr: { label: 'Net worth', color: 'var(--chart-1)' },
-  ...Object.fromEntries(NET_WORTH_CATEGORIES.map((c) => [c, { label: CATEGORY_LABELS[c], color: CATEGORY_COLORS[c] }])),
-};
-
 type ChartRow = { t: number; totalHr: number } & Partial<Record<NetWorthCategory, number>>;
 
 function ChartTooltipCard({ row, stacked }: { row: ChartRow; stacked: boolean }) {
   return (
     <div className="min-w-36 rounded-lg border border-border bg-surface-elevated px-2.5 py-2 text-xs text-popover-foreground shadow-panel backdrop-blur-md">
-      <p className="text-muted-foreground">{moment(row.t).format('MMM D HH:mm')}</p>
+      <p className="text-muted-foreground">{formatStamp(row.t)}</p>
       <p className="text-sm font-semibold tabular-nums">{row.totalHr.toFixed(2)} HR</p>
       {stacked && (
         <div className="mt-1.5 space-y-0.5 border-t border-border pt-1.5">
@@ -274,7 +281,7 @@ function ChartTooltipCard({ row, stacked }: { row: ChartRow; stacked: boolean })
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <span className="size-2 rounded-full"
                   style={{ background: CATEGORY_COLORS[c] }} />
-                {CATEGORY_LABELS[c]}
+                {categoryLabel(c)}
               </span>
               <span className="tabular-nums">{(row[c] ?? 0).toFixed(2)}</span>
             </p>
@@ -286,7 +293,17 @@ function ChartTooltipCard({ row, stacked }: { row: ChartRow; stacked: boolean })
 }
 
 function NetWorthChart({ points, stacked, seasons }: { points: NetWorthPoint[]; stacked: boolean; seasons: Season[] }) {
+  const { t } = useTranslation('currency');
   const reduce = useReducedMotionSafe();
+  const chartConfig = useMemo<ChartConfig>(
+    () => ({
+      totalHr: { label: t('history.chart.netWorth'), color: 'var(--chart-1)' },
+      ...Object.fromEntries(
+        NET_WORTH_CATEGORIES.map((c) => [c, { label: categoryLabel(c), color: CATEGORY_COLORS[c] }]),
+      ),
+    }),
+    [t],
+  );
   const data = useMemo<ChartRow[]>(
     () => points.map((p) => ({ t: Date.parse(p.takenAt), totalHr: p.totalHr, ...p.byCategory })),
     [points],
@@ -296,15 +313,20 @@ function NetWorthChart({ points, stacked, seasons }: { points: NetWorthPoint[]; 
       <EmptyState
         className="h-60 justify-center py-0"
         icon={<ChartArea />}
-        title="No snapshots in this range yet."
-        description="Snapshots are taken on start-up, every few minutes while Diablo is focused, and when you refresh."
+        title={t('history.chart.emptyTitle')}
+        description={t('history.chart.emptyDescription')}
       />
     );
   }
   const first = data[0].t;
   const last = data[data.length - 1].t;
   const spanHours = (last - first) / 3_600_000;
-  const tickFormat = spanHours <= 36 ? 'HH:mm' : spanHours <= 24 * 10 ? 'ddd HH:mm' : 'MMM D';
+  const formatTick = (ms: number) =>
+    spanHours <= 36
+      ? formatClock(ms)
+      : spanHours <= 24 * 10
+        ? `${formatWeekday(ms)} ${formatClock(ms)}`
+        : formatMonthDay(ms);
   const boundaries = seasons
     .map((s) => ({ t: Date.parse(s.startDate), label: s.label }))
     .filter((b) => b.t > first && b.t <= last);
@@ -339,7 +361,7 @@ function NetWorthChart({ points, stacked, seasons }: { points: NetWorthPoint[]; 
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
-            tickFormatter={(t: number) => moment(t).format(tickFormat)}
+            tickFormatter={formatTick}
             minTickGap={40}
             tickLine={false}
             axisLine={false}
@@ -416,6 +438,7 @@ function SessionsSection({
   seasonId: string | null;
   refreshKey: string | null;
 }) {
+  const { t } = useTranslation('currency');
   const { currentSession, startSession, stopSession } = useNetWorth();
   const [busy, setBusy] = useState(false);
   const [limit, setLimit] = useState(SESSION_PAGE);
@@ -440,20 +463,22 @@ function SessionsSection({
 
   return (
     <section className="space-y-2.5">
-      <SectionHeader title="Sessions"
-        meta={sessions && sessions.length > 0 ? sessions.length : undefined}>
+      <SectionHeader
+        title={t('history.sessions.title')}
+        meta={sessions && sessions.length > 0 ? sessions.length : undefined}
+      >
         <div className="flex gap-2">
           <Button size="sm"
             variant="outline"
             disabled={busy}
             onClick={() => mark(startSession)}>
-            <Play className="size-3.5" /> Start new session
+            <Play className="size-3.5" /> {t('history.sessions.start')}
           </Button>
           <Button size="sm"
             variant="outline"
             disabled={busy || !currentSession}
             onClick={() => mark(stopSession)}>
-            <Square className="size-3.5" /> Stop session
+            <Square className="size-3.5" /> {t('history.sessions.stop')}
           </Button>
         </div>
       </SectionHeader>
@@ -474,18 +499,18 @@ function SessionsSection({
         <EmptyState
           compact
           icon={<Timer />}
-          title="No sessions yet."
-          description="Sessions build automatically from snapshots taken less than 30 minutes apart."
+          title={t('history.sessions.emptyTitle')}
+          description={t('history.sessions.emptyDescription')}
         />
       )}
       {sessions && sessions.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-border bg-card/40 text-sm">
           <div className="grid grid-cols-[1fr_4.5rem_5.5rem_5.5rem_4rem] gap-2 border-b border-border bg-muted/30 px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <span>When</span>
-            <span className="text-right">Duration</span>
-            <span className="text-right">Farmed</span>
-            <span className="text-right">Drift</span>
-            <span className="text-right">HR/h</span>
+            <span>{t('history.sessions.columns.when')}</span>
+            <span className="text-right">{t('history.sessions.columns.duration')}</span>
+            <span className="text-right">{t('history.sessions.columns.farmed')}</span>
+            <span className="text-right">{t('history.sessions.columns.drift')}</span>
+            <span className="text-right">{t('history.sessions.columns.hrPerHour')}</span>
           </div>
           <motion.div variants={listStagger}
             initial="hidden"
@@ -510,6 +535,7 @@ function SessionsSection({
 }
 
 function SessionRow({ session: s, best }: { session: SessionSummary; best: boolean }) {
+  const { t } = useTranslation('currency');
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -524,22 +550,22 @@ function SessionRow({ session: s, best }: { session: SessionSummary; best: boole
           <span className="flex min-w-0 items-center gap-1.5">
             {s.isOpen && (
               <span className="relative flex size-2 shrink-0"
-                aria-label="Open session">
+                aria-label={t('history.sessions.open')}>
                 <span className="absolute inline-flex size-full rounded-full bg-success opacity-60 motion-safe:animate-ping" />
                 <span className="relative inline-flex size-2 rounded-full bg-success" />
               </span>
             )}
             <span className="truncate">
-              {moment(s.start).calendar(null, SESSION_CALENDAR)}–{moment(s.end).format('HH:mm')}
+              {formatSessionStart(s.start, t)}–{formatClock(s.end)}
             </span>
             {s.manual && (
               <span className="shrink-0 rounded-sm border border-border px-1 text-[10px] leading-4 text-muted-foreground">
-                manual
+                {t('history.sessions.manual')}
               </span>
             )}
             {best && (
               <Star className="size-3.5 shrink-0 fill-q-unique text-q-unique"
-                aria-label="Best HR/h this season" />
+                aria-label={t('history.sessions.best')} />
             )}
           </span>
           <span className="text-right tabular-nums text-muted-foreground">{formatDuration(s.durationMinutes)}</span>
@@ -555,7 +581,11 @@ function SessionRow({ session: s, best }: { session: SessionSummary; best: boole
       <TooltipContent side="bottom"
         className="max-w-xs">
         <p className="mb-1 font-medium tabular-nums">
-          {s.startHr.toFixed(2)} → {s.endHr.toFixed(2)} HR · {s.snapshotCount} snapshots
+          {t('history.sessions.tooltipSummary', {
+            from: s.startHr.toFixed(2),
+            to: s.endHr.toFixed(2),
+            count: s.snapshotCount,
+          })}
         </p>
         {s.topGains.length > 0 ? (
           s.topGains.map((g) => (
@@ -569,7 +599,7 @@ function SessionRow({ session: s, best }: { session: SessionSummary; best: boole
             </p>
           ))
         ) : (
-          <p className="text-muted-foreground">No item gains.</p>
+          <p className="text-muted-foreground">{t('history.sessions.noGains')}</p>
         )}
       </TooltipContent>
     </Tooltip>
@@ -577,6 +607,7 @@ function SessionRow({ session: s, best }: { session: SessionSummary; best: boole
 }
 
 function SnapshotsSection({ token, owner, points }: { token: string; owner: NetWorthOwner; points: NetWorthPoint[] }) {
+  const { t } = useTranslation('currency');
   const [selected, setSelected] = useState<string[]>([]);
   const [limit, setLimit] = useState(SNAPSHOT_PAGE);
   const [priceBasis, setPriceBasis] = useState<'then' | 'now'>('then');
@@ -600,27 +631,27 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
 
   return (
     <section className="space-y-2.5">
-      <SectionHeader title="Snapshots"
+      <SectionHeader title={t('history.snapshots.title')}
         meta={rows.length > 0 ? rows.length : undefined}>
         {selected.length > 0 ? (
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="tabular-nums">{selected.length}/2 selected</span>
+            <span className="tabular-nums">{t('history.snapshots.selected', { selected: selected.length })}</span>
             <button
               type="button"
               className="rounded px-1.5 py-0.5 font-medium text-foreground/80 outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
               onClick={() => setSelected([])}
             >
-              Clear
+              {t('common:actions.clear')}
             </button>
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">Pick two to compare</span>
+          <span className="text-xs text-muted-foreground">{t('history.snapshots.pickTwo')}</span>
         )}
       </SectionHeader>
       {rows.length === 0 ? (
         <EmptyState compact
           icon={<HistoryIcon />}
-          title="No snapshots in this range." />
+          title={t('history.snapshots.emptyTitle')} />
       ) : (
         <div className="max-h-72 overflow-y-auto rounded-lg border border-border bg-card/40 text-sm">
           <div className="divide-y divide-border/60">
@@ -641,10 +672,10 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                   <Checkbox
                     checked={isSelected}
                     disabled={!p.hasHoldings}
-                    aria-label={`Select snapshot ${moment(p.takenAt).format('MMM D HH:mm')}`}
+                    aria-label={t('history.snapshots.select', { time: formatStamp(p.takenAt) })}
                     onCheckedChange={() => toggle(p.snapshotId)}
                   />
-                  <span className="truncate tabular-nums">{moment(p.takenAt).format('MMM D HH:mm')}</span>
+                  <span className="truncate tabular-nums">{formatStamp(p.takenAt)}</span>
                   <span className="text-right font-medium tabular-nums">{p.totalHr.toFixed(2)}</span>
                   <span className={cn('text-right tabular-nums', deltaClass(change))}>
                     {change === null ? '' : formatSignedHr(change)}
@@ -658,8 +689,8 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                     size="icon"
                     variant="ghost"
                     className="size-7 text-muted-foreground hover:text-foreground"
-                    title="Compare with previous"
-                    aria-label="Compare with previous"
+                    title={t('history.snapshots.compareWithPrevious')}
+                    aria-label={t('history.snapshots.compareWithPrevious')}
                     disabled={!prev || !p.hasHoldings || !prev.hasHoldings}
                     onClick={() => prev && setSelected([prev.snapshotId, p.snapshotId])}
                   >
@@ -692,7 +723,7 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
               <p className="flex min-w-0 items-center gap-2 text-sm font-medium tabular-nums">
                 <GitCompareArrows className="size-4 shrink-0 text-muted-foreground" />
                 <span className="truncate">
-                  {moment(pair.from.takenAt).format('MMM D HH:mm')} → {moment(pair.to.takenAt).format('MMM D HH:mm')}
+                  {formatStamp(pair.from.takenAt)} → {formatStamp(pair.to.takenAt)}
                 </span>
                 {diff.loading && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
               </p>
@@ -703,22 +734,22 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                   variant="outline"
                   value={priceBasis}
                   onValueChange={(v) => v && setPriceBasis(v as 'then' | 'now')}
-                  aria-label="Price basis"
+                  aria-label={t('history.diff.priceBasis')}
                 >
                   <ToggleGroupItem value="then"
                     className="flex-none px-3 text-xs">
-                    Prices then
+                    {t('history.diff.pricesThen')}
                   </ToggleGroupItem>
                   <ToggleGroupItem value="now"
                     className="flex-none px-3 text-xs">
-                    Prices now
+                    {t('history.diff.pricesNow')}
                   </ToggleGroupItem>
                 </ToggleGroup>
                 <Button
                   size="icon"
                   variant="ghost"
                   className="size-8"
-                  aria-label="Close comparison"
+                  aria-label={t('history.diff.close')}
                   onClick={() => setSelected([])}
                 >
                   <X className="size-4" />
@@ -742,27 +773,30 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
             {diff.data && !diff.loading && (
               <>
                 <div className="grid grid-cols-3 gap-2">
-                  <DiffStat label="Farmed">
+                  <DiffStat label={t('history.diff.farmed')}>
                     <span className={deltaClass(diff.data.farmedHr)}>{formatSignedHr(diff.data.farmedHr)}</span>
                   </DiffStat>
-                  <DiffStat label="Market drift">
+                  <DiffStat label={t('history.diff.marketDrift')}>
                     <span className={deltaClass(diff.data.marketDriftHr)}>
                       {formatSignedHr(diff.data.marketDriftHr)}
                     </span>
                   </DiffStat>
-                  <DiffStat label="Total">
-                    {diff.data.from.totalHr.toFixed(2)} → {diff.data.to.totalHr.toFixed(2)} HR
+                  <DiffStat label={t('history.diff.total')}>
+                    {t('history.diff.totalValue', {
+                      from: diff.data.from.totalHr.toFixed(2),
+                      to: diff.data.to.totalHr.toFixed(2),
+                    })}
                   </DiffStat>
                 </div>
                 {diff.data.lines.length === 0 ? (
-                  <p className="py-3 text-center text-sm text-muted-foreground">No holdings changed.</p>
+                  <p className="py-3 text-center text-sm text-muted-foreground">{t('history.diff.noChanges')}</p>
                 ) : (
                   <div className="overflow-hidden rounded-md border border-border/70">
                     <div className="grid grid-cols-[1fr_6rem_4rem_5.5rem] gap-2 border-b border-border/70 bg-muted/30 px-2.5 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      <span>Item</span>
-                      <span className="text-right">Qty</span>
-                      <span className="text-right">Change</span>
-                      <span className="text-right">Value</span>
+                      <span>{t('columns.item')}</span>
+                      <span className="text-right">{t('columns.qty')}</span>
+                      <span className="text-right">{t('history.diff.change')}</span>
+                      <span className="text-right">{t('columns.value')}</span>
                     </div>
                     <motion.div
                       variants={listStagger}
@@ -823,15 +857,16 @@ function DeleteHistory({
   currentSeasonId: string | null;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation('currency');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
-  const seasonLabel = seasons.find((s) => s.id === currentSeasonId)?.label ?? 'this season';
+  const seasonLabel = seasons.find((s) => s.id === currentSeasonId)?.label ?? t('history.delete.thisSeason');
 
   const run = async (seasonId?: string) => {
     setBusy(true);
     try {
       const { deletedPoints } = await deleteHistory(token, owner, seasonId);
-      setResult({ ok: true, text: `Deleted ${deletedPoints} snapshots.` });
+      setResult({ ok: true, text: t('history.delete.deleted', { count: deletedPoints }) });
       onDeleted();
     } catch (err) {
       setResult({ ok: false, text: err instanceof Error ? err.message : String(err) });
@@ -845,7 +880,7 @@ function DeleteHistory({
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-px size-3.5 shrink-0 opacity-80" />
         <span>
-          History is private to your PD2 login and stored on pd2trader.com.{' '}
+          {t('history.delete.privacy')}{' '}
           {result && (
             <span role="status"
               className={cn('font-medium', result.ok ? 'text-success' : 'text-destructive')}>
@@ -862,7 +897,8 @@ function DeleteHistory({
             className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={busy}
           >
-            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />} Delete history
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}{' '}
+            {t('history.delete.button')}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -871,15 +907,18 @@ function DeleteHistory({
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/12 text-destructive">
                 <Trash2 className="size-4" />
               </span>
-              <AlertDialogTitle>Delete net worth history?</AlertDialogTitle>
+              <AlertDialogTitle>{t('history.delete.title')}</AlertDialogTitle>
             </div>
             <AlertDialogDescription>
-              Removes stored snapshots for {owner.account} ({owner.isLadder ? 'ladder' : 'non-ladder'},{' '}
-              {owner.isHardcore ? 'hardcore' : 'softcore'}). This cannot be undone.
+              {t('history.delete.description', {
+                account: owner.account,
+                ladder: owner.isLadder ? 'ladder' : 'non-ladder',
+                core: owner.isHardcore ? 'hardcore' : 'softcore',
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             {currentSeasonId && (
               <AlertDialogAction
                 className={buttonVariants({
@@ -889,12 +928,12 @@ function DeleteHistory({
                 })}
                 onClick={() => run(currentSeasonId)}
               >
-                Delete {seasonLabel}
+                {t('history.delete.season', { season: seasonLabel })}
               </AlertDialogAction>
             )}
             <AlertDialogAction className={buttonVariants({ variant: 'destructive' })}
               onClick={() => run()}>
-              Delete all seasons
+              {t('history.delete.allSeasons')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

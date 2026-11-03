@@ -1,0 +1,56 @@
+{
+  "actions": {
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "remove": "Entfernen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "confirm": "Bestätigen",
+    "retry": "Wiederholen",
+    "refresh": "Aktualisieren",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "search": "Suchen",
+    "clear": "Leeren",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "done": "Fertig",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nein",
+    "open": "Öffnen",
+    "reset": "Zurücksetzen",
+    "apply": "Anwenden",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "tryAgain": "Erneut versuchen"
+  },
+  "status": {
+    "loading": "Wird geladen…",
+    "error": "Etwas ist schiefgelaufen",
+    "noResults": "Keine Ergebnisse"
+  },
+  "time": {
+    "justNow": "gerade eben",
+    "secondsAgoShort": "vor {{count}} Sek.",
+    "minutesAgoShort": "vor {{count}} Min.",
+    "hoursAgoShort": "vor {{count}} Std.",
+    "daysAgoShort": "vor {{count}} T.",
+    "monthsAgoShort": "vor {{count}} Mon.",
+    "yearsAgoShort": "vor {{count}} J.",
+    "secondsAgo_one": "vor {{count}} Sekunde",
+    "secondsAgo_other": "vor {{count}} Sekunden",
+    "minutesAgo_one": "vor {{count}} Minute",
+    "minutesAgo_other": "vor {{count}} Minuten",
+    "hoursAgo_one": "vor {{count}} Stunde",
+    "hoursAgo_other": "vor {{count}} Stunden",
+    "daysAgo_one": "vor {{count}} Tag",
+    "daysAgo_other": "vor {{count}} Tagen"
+  },
+  "language": {
+    "system": "Systemstandard"
+  }
+}

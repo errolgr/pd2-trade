@@ -1,0 +1,158 @@
+{
+  "notes": {
+    "craftedUnreliable": "przedmiotów craftowanych w tym slocie nie da się jeszcze wiarygodnie wycenić (za mało danych)"
+  },
+  "slots": {
+    "ring": {
+      "label": "Pierścień",
+      "plural": "Pierścienie",
+      "inSentence": "pierścieni"
+    },
+    "amul": {
+      "label": "Amulet",
+      "plural": "Amulety",
+      "inSentence": "amuletów"
+    },
+    "circ": {
+      "label": "Diadem",
+      "plural": "Diademy",
+      "inSentence": "diademów"
+    },
+    "jewl": {
+      "label": "Klejnot",
+      "plural": "Klejnoty",
+      "inSentence": "klejnotów"
+    },
+    "glov": {
+      "label": "Rękawice",
+      "plural": "Rękawice",
+      "inSentence": "rękawic"
+    },
+    "boot": {
+      "label": "Buty",
+      "plural": "Buty",
+      "inSentence": "butów"
+    },
+    "belt": {
+      "label": "Pas",
+      "plural": "Pasy",
+      "inSentence": "pasów"
+    },
+    "tors": {
+      "label": "Zbroja",
+      "plural": "Zbroje",
+      "inSentence": "zbroi"
+    },
+    "helm": {
+      "label": "Hełm",
+      "plural": "Hełmy",
+      "inSentence": "hełmów"
+    },
+    "shield": {
+      "label": "Tarcza",
+      "plural": "Tarcze",
+      "inSentence": "tarcz"
+    },
+    "quiver": {
+      "label": "Kołczan",
+      "plural": "Kołczany",
+      "inSentence": "kołczanów"
+    },
+    "weapon": {
+      "label": "Broń",
+      "plural": "Bronie",
+      "inSentence": "broni"
+    },
+    "unknown": {
+      "plural": "Przedmioty",
+      "inSentence": "przedmiotów"
+    }
+  },
+  "verdicts": {
+    "keep": "Zachowaj",
+    "check": "Sprawdź",
+    "vendor": "Sprzedaj"
+  },
+  "priority": {
+    "high": "Ma kluczową statystykę ★★ lub lepszą",
+    "medium": "Ma kluczową statystykę ★",
+    "low": "Brak kluczowych statystyk"
+  },
+  "crafted": {
+    "lowConfidence": "Niska pewność",
+    "lowConfidenceTitle": "Niska pewność: model craftowanych przedmiotów dla tego slotu opiera się na ograniczonych danych z ogłoszeń, więc traktuj werdykt i przedział orientacyjnie."
+  },
+  "rank": {
+    "top": "górne {{percent}}%",
+    "bottom": "dolne {{percent}}%"
+  },
+  "ordinal": {
+    "st": "{{n}}.",
+    "nd": "{{n}}.",
+    "rd": "{{n}}.",
+    "th": "{{n}}."
+  },
+  "keyStatTitle": "Kluczowa statystyka: {{multiplier}} ceny z końca sezonu dla tego progu",
+  "marketSource": {
+    "atThisRank": "{{slots}} na tej pozycji · {{where}}",
+    "lastSeason": "poprzedni sezon",
+    "hardcoreListings": "ogłoszenia hardcore"
+  },
+  "rankBar": {
+    "ariaLabel": "Przewidywany {{percentile}} percentyl cen {{slots}}, z dokładnością ±{{error}} pkt",
+    "vendor": "sprzedaj",
+    "keep": "zachowaj"
+  },
+  "rankBlocks": {
+    "title": "Pozycja wśród {{slots}} <note>(ten sezon)</note>",
+    "ariaLabel": "Pozycja wśród {{slots}}: {{block}}",
+    "bottom25": "dolne 25%",
+    "bottom50": "dolne 50%",
+    "top50": "górne 50%",
+    "top25": "górne 25%",
+    "top15": "górne 15%",
+    "top5": "górne 5%"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} na {{slots}} tylko przez korupcję",
+    "nearMiss": "blisko: {{from}}+ to {{multiplier}} dla {{slots}}",
+    "nearMissCorruption": "blisko: {{from}}+ to {{multiplier}} dla {{slots}} (tylko przez korupcję)",
+    "valuableFrom": "wartościowe od {{from}} dla {{slots}}",
+    "valuableFromCorruption": "wartościowe od {{from}} dla {{slots}} (tylko przez korupcję)"
+  },
+  "stats": {
+    "title": "Statystyki tego przedmiotu",
+    "keyStats_one": "{{count}} kluczowa statystyka",
+    "keyStats_few": "{{count}} kluczowe statystyki",
+    "keyStats_many": "{{count}} kluczowych statystyk",
+    "keyStats_other": "{{count}} kluczowej statystyki",
+    "noKeyStats": "brak kluczowych statystyk",
+    "roll": "roll {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore: model cen i gwiazdki z danych softcore",
+    "rankedHardcore": "porównane z ogłoszeniami hardcore",
+    "rankedBlended": "porównane z ogłoszeniami hardcore zmieszanymi z softcore ({{percent}}% hardcore)",
+    "rankedSoftcore": "porównane z ogłoszeniami softcore",
+    "pricesHardcore": "ceny z ogłoszeń hardcore",
+    "pricesSoftcore": "ceny z ogłoszeń softcore"
+  },
+  "stashPosition": "kol. {{column}}, rząd {{row}}",
+  "detail": {
+    "verdict": "Werdykt",
+    "howVerdictsWork": "Jak działają werdykty",
+    "usuallyListed": "Zwykle wystawiane",
+    "samples": "Próbki",
+    "comparedWith": "W porównaniu z",
+    "stash": "Skrzynia"
+  },
+  "history": {
+    "title": "Historia przedmiotu",
+    "aside_one": "{{times}}× · {{count}} sprzedawca · od {{date}}",
+    "aside_few": "{{times}}× · {{count}} sprzedawcy · od {{date}}",
+    "aside_many": "{{times}}× · {{count}} sprzedawców · od {{date}}",
+    "aside_other": "{{times}}× · {{count}} sprzedawcy · od {{date}}",
+    "newOwner": "nowy właściciel",
+    "noPrice": "brak ceny"
+  }
+}

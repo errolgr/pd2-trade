@@ -1,0 +1,225 @@
+{
+  "window": {
+    "title": "Patrimônio",
+    "retry": "Tentar de novo",
+    "tabs": {
+      "overview": "Visão geral",
+      "runes": "Runas",
+      "currency": "Moedas",
+      "ubers": "Uber Mats",
+      "gemsMats": "Gemas e Mats",
+      "uniquesSets": "Únicos e Sets",
+      "other": "Outros",
+      "rares": "Raros",
+      "raresCrafted": "Raros e Crafted",
+      "history": "Histórico"
+    }
+  },
+  "header": {
+    "netWorth": "Patrimônio",
+    "deltaLast": "último",
+    "delta24h": "24h",
+    "deltaSeason": "temporada",
+    "refresh": "Atualizar",
+    "refreshing": "Atualizando",
+    "refreshTooltip": "Reavaliar seu baú agora",
+    "asOf": "em {{time}}",
+    "prices": "preços de {{day}}",
+    "gold": "{{amount}} de ouro",
+    "ladderFallback": "avaliado com preços de Ladder (sem dados de mercado Non-Ladder)"
+  },
+  "trackingDisabled": {
+    "title": "O histórico está desativado.",
+    "description": "Ative \"Salvar histórico de patrimônio\" em Configurações → Patrimônio para ver um gráfico, sessões com HR/hora e o que mudou entre registros."
+  },
+  "signedOut": {
+    "chooseAccount": "Escolha sua conta do PD2 nas Configurações para avaliar seu baú.",
+    "signInPrompt": "Entre com sua conta do PD2 para avaliar seu baú.",
+    "signIn": "Entrar"
+  },
+  "tabSkeleton": {
+    "title": "Nenhuma avaliação ainda.",
+    "description": "Não foi possível avaliar seu baú. Use Tentar de novo acima quando o PD2 estiver acessível."
+  },
+  "categories": {
+    "runes": "Runas",
+    "currency": "Moedas",
+    "ubers": "Uber Mats",
+    "gems": "Gemas",
+    "mats": "Mats",
+    "uniques": "Únicos",
+    "sets": "Sets",
+    "other": "Outros"
+  },
+  "columns": {
+    "item": "Item",
+    "qty": "Qtd",
+    "unit": "Unid.",
+    "value": "Valor",
+    "share": "%",
+    "change7d": "7d",
+    "price": "Preço"
+  },
+  "table": {
+    "noResults": "Nenhum resultado.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "ordenar crescente",
+    "sortDescending": "ordenar decrescente",
+    "clearSorting": "limpar ordenação"
+  },
+  "confidence": {
+    "ok": {
+      "label": "mercado",
+      "hint": "Média de mercado de 7 dias"
+    },
+    "fixed": {
+      "label": "fixo",
+      "hint": "Valor fixo de runa (poucos anúncios)"
+    },
+    "low": {
+      "label": "baixa",
+      "hint": "Menos de 10 anúncios — contado como incerto, fora do total"
+    },
+    "none": {
+      "label": "sem preço",
+      "hint": "Sem dados de preço — avaliado em 0"
+    },
+    "listings_one": "{{count}} anúncio",
+    "listings_many": "{{count}} de anúncios",
+    "listings_other": "{{count}} anúncios"
+  },
+  "overview": {
+    "noPricedHoldings": "Nenhum item com preço ainda.",
+    "topAside_one": "por valor · top {{count}}",
+    "topAside_many": "por valor · top {{count}}",
+    "topAside_other": "por valor · top {{count}}",
+    "topHoldings": "Principais itens",
+    "nothingPriced": "Nada com preço ainda.",
+    "unpriced_one": "{{count}} item sem preço",
+    "unpriced_many": "{{count}} de itens sem preço",
+    "unpriced_other": "{{count}} itens sem preço",
+    "uncertain": "{{value}} incerto (baixa confiança, fora do total)",
+    "gold": "{{amount}} de ouro (não convertido)",
+    "byStashTab": "Por aba do baú"
+  },
+  "holdings": {
+    "searchPlaceholder": "Buscar…",
+    "searchLabel": "Buscar itens",
+    "clearSearch": "Limpar busca",
+    "hideZero": "Ocultar valor zero",
+    "nothingMatches": "Nenhum resultado.",
+    "noneInStash": "Nenhum no seu baú.",
+    "zeroHidden_one": "{{count}} linha de valor zero oculta (itens sem preço são listados, mas avaliados em 0).",
+    "zeroHidden_many": "{{count}} de linhas de valor zero ocultas (itens sem preço são listados, mas avaliados em 0).",
+    "zeroHidden_other": "{{count}} linhas de valor zero ocultas (itens sem preço são listados, mas avaliados em 0).",
+    "count_one": "{{count}} item",
+    "count_many": "{{count}} de itens",
+    "count_other": "{{count}} itens"
+  },
+  "history": {
+    "showMore": "Mostrar mais ({{remaining}} anteriores)",
+    "chartRange": "Período do gráfico",
+    "ranges": {
+      "24h": "24h",
+      "7d": "7d",
+      "season": "Temporada",
+      "all": "Tudo"
+    },
+    "rangeChange": "Variação no período selecionado",
+    "stackByCategory": "Empilhar por categoria",
+    "chart": {
+      "netWorth": "Patrimônio",
+      "emptyTitle": "Nenhum registro neste período ainda.",
+      "emptyDescription": "Registros são feitos ao iniciar, a cada poucos minutos enquanto o Diablo está em foco e quando você atualiza."
+    },
+    "sessions": {
+      "title": "Sessões",
+      "start": "Nova sessão",
+      "stop": "Parar sessão",
+      "emptyTitle": "Nenhuma sessão ainda.",
+      "emptyDescription": "Sessões são montadas automaticamente a partir de registros feitos com menos de 30 minutos de intervalo.",
+      "columns": {
+        "when": "Quando",
+        "duration": "Duração",
+        "farmed": "Farmado",
+        "drift": "Variação",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Hoje {{time}}",
+      "yesterday": "Ontem {{time}}",
+      "open": "Sessão aberta",
+      "manual": "manual",
+      "best": "Melhor HR/h nesta temporada",
+      "noGains": "Nenhum ganho de itens.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} registro",
+      "tooltipSummary_many": "{{from}} → {{to}} HR · {{count}} de registros",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} registros"
+    },
+    "snapshots": {
+      "title": "Registros",
+      "selected": "{{selected}}/2 selecionados",
+      "pickTwo": "Escolha dois para comparar",
+      "emptyTitle": "Nenhum registro neste período.",
+      "select": "Selecionar registro {{time}}",
+      "compareWithPrevious": "Comparar com anterior"
+    },
+    "diff": {
+      "priceBasis": "Base de preço",
+      "pricesThen": "Preços da época",
+      "pricesNow": "Preços atuais",
+      "close": "Fechar comparação",
+      "farmed": "Farmado",
+      "marketDrift": "Variação do mercado",
+      "total": "Total",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "Nenhum item mudou.",
+      "change": "Variação"
+    },
+    "delete": {
+      "thisSeason": "esta temporada",
+      "privacy": "O histórico é privado ao seu login do PD2 e armazenado em pd2trader.com.",
+      "button": "Excluir histórico",
+      "title": "Excluir histórico de patrimônio?",
+      "description": "Remove os registros armazenados de {{account}} ({{ladder}}, {{core}}). Isso não pode ser desfeito.",
+      "season": "Excluir {{season}}",
+      "allSeasons": "Excluir todas as temporadas",
+      "deleted_one": "{{count}} registro excluído.",
+      "deleted_many": "{{count}} de registros excluídos.",
+      "deleted_other": "{{count}} registros excluídos."
+    }
+  },
+  "rares": {
+    "stashFallback": "Baú",
+    "emptyTitle": "Nenhum raro no seu baú",
+    "emptyDescription": "Anéis, amuletos, joias, armaduras e armas raros do seu baú são avaliados aqui (Manter · Conferir · Vender).",
+    "groups": {
+      "keep": "Manter",
+      "worthALook": "Vale conferir"
+    },
+    "estTitle": "Estimado a partir de preços pedidos em {{season}} por raros semelhantes — fora do total",
+    "summary": {
+      "raresLine_one": "<label>Raros: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} provável venda</vendor> <note>(libera {{count}} espaço)</note>",
+      "raresLine_many": "<label>Raros: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} prováveis vendas</vendor> <note>(libera {{count}} de espaços)</note>",
+      "raresLine_other": "<label>Raros: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} prováveis vendas</vendor> <note>(libera {{count}} espaços)</note>",
+      "craftedLine_one": "<label>Crafted: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} provável venda</vendor> <note>(libera {{count}} espaço)</note>",
+      "craftedLine_many": "<label>Crafted: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} prováveis vendas</vendor> <note>(libera {{count}} de espaços)</note>",
+      "craftedLine_other": "<label>Crafted: </label><keep>{{keep}} Manter</keep><sep> · </sep><check>{{checkHigh}} vale conferir</check><sep> · </sep><vendor>{{count}} prováveis vendas</vendor> <note>(libera {{count}} espaços)</note>",
+      "unpricedRares_one": "{{count}} raro Manter sem faixa de mercado não incluído",
+      "unpricedRares_many": "{{count}} de raros Manter sem faixa de mercado não incluídos",
+      "unpricedRares_other": "{{count}} raros Manter sem faixa de mercado não incluídos",
+      "unpricedCrafted_one": "{{count}} item crafted Manter sem faixa de mercado não incluído",
+      "unpricedCrafted_many": "{{count}} de itens crafted Manter sem faixa de mercado não incluídos",
+      "unpricedCrafted_other": "{{count}} itens crafted Manter sem faixa de mercado não incluídos",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> em raros Manter (estimado, fora do total)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> em itens crafted Manter (estimado, fora do total)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} provável venda · {{tab}}",
+      "vendorNote_one": "Libera {{count}} espaço do baú",
+      "vendorNote_many": "Libera {{count}} de espaços do baú",
+      "vendorNote_other": "Libera {{count}} espaços do baú",
+      "lowTitle": "{{n}} provável baixo valor · {{tab}}",
+      "lowNote": "Confira itens sem um atributo-chave"
+    }
+  }
+}

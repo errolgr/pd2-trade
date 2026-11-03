@@ -4,8 +4,10 @@ import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget'
 import type { Item } from '@/pages/price-check/lib/interfaces';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel } from '@/overlay';
+import { useTranslation } from '@/i18n';
 
 const ItemWindow: React.FC = () => {
+  const { t } = useTranslation('priceCheck');
   const { payload, payloadVersion, close } = usePanel<'itemSearch'>();
   const [search, setSearch] = useState<{ version: number; item: Item | null }>({ version: 0, item: null });
 
@@ -29,7 +31,7 @@ const ItemWindow: React.FC = () => {
     <WindowPanel animate
       className="h-full w-full">
       <WindowChrome
-        title="Price Check"
+        title={t('overlay.title')}
         titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
         showGrip={false}
         onClose={close}
@@ -38,10 +40,8 @@ const ItemWindow: React.FC = () => {
         <div className="flex size-12 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground">
           <PackageSearch className="size-6" />
         </div>
-        <p className="max-w-[260px] text-sm text-muted-foreground">No item data provided or failed to parse.</p>
-        <p className="max-w-[260px] text-xs text-muted-foreground/80">
-          Hover an item in game and press your price check hotkey to try again.
-        </p>
+        <p className="max-w-[260px] text-sm text-muted-foreground">{t('itemPage.noItem')}</p>
+        <p className="max-w-[260px] text-xs text-muted-foreground/80">{t('itemPage.noItemHint')}</p>
       </div>
     </WindowPanel>
   ) : (

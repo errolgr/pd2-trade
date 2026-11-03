@@ -1,12 +1,13 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import * as Sentry from '@sentry/react';
-import { claimKeyboard, isKeyboardClaimed, releaseKeyboard } from './keyboard';
+import { claimKeyboard, isHeldOverFullscreenGame, isKeyboardClaimed, releaseKeyboard } from './keyboard';
 import { holdRegionLoop } from './region';
 import { clampRectInto, clampRectVisible } from './layout-storage';
 import { viewportRect } from './game';
 import { isPanelVisible, useOverlay, useOverlayInternals } from './OverlayProvider';
 import { PanelPortalContext } from './portal';
 import type { OverlayRect, PanelId, PanelPayloads } from './types';
+import { t } from '@/i18n';
 
 export interface PanelContextValue<K extends PanelId = PanelId> {
   id: K;
@@ -39,6 +40,8 @@ const TEXT_ENTRY_SELECTOR =
   'textarea, [contenteditable=""], [contenteditable="true"], ' +
   'input:not([type=button]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=hidden])' +
   ':not([type=image]):not([type=radio]):not([type=range]):not([type=reset]):not([type=submit])';
+/** Regions whose text the user selects and copies (Ctrl+C must reach the WebView, not the game). */
+const KEEP_KEYBOARD_SELECTOR = '[data-keep-keyboard]';
 
 function textEntryAt(target: EventTarget | null): HTMLElement | null {
   const field = target instanceof Element ? target.closest<HTMLElement>(TEXT_ENTRY_SELECTOR) : null;
@@ -150,13 +153,17 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   const onPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
     bringToFront(id);
     if (def.keyboard !== 'onPointerDown') return;
-    // Take the keyboard only to type: anything else leaves the game in front (and its sound playing)
+    // Take the keyboard only to type or to copy selected text: anything else leaves the game in front (and its
+    // sound playing). Over a fullscreen game the panel stays in front instead: handing the foreground back would
+    // hide it (see showOverFullscreenGame).
     const field = textEntryAt(e.target);
     if (field) {
       void claimKeyboard().then(() => {
         if (field.isConnected && document.activeElement !== field) field.focus();
       });
-    } else if (isKeyboardClaimed()) {
+    } else if (e.target instanceof Element && e.target.closest(KEEP_KEYBOARD_SELECTOR)) {
+      void claimKeyboard();
+    } else if (isKeyboardClaimed() && !isHeldOverFullscreenGame()) {
       void releaseKeyboard();
     }
   };
@@ -207,7 +214,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
           <Sentry.ErrorBoundary
             fallback={({ resetError }) => (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border bg-popover p-4 text-sm text-popover-foreground">
-                <span>This panel crashed.</span>
+                <span>{t('app:panel.crashed')}</span>
                 <button
                   type="button"
                   className="rounded-md bg-muted px-2.5 py-1 text-xs"
@@ -216,7 +223,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
                     close();
                   }}
                 >
-                  Close
+                  {t('common:actions.close')}
                 </button>
               </div>
             )}

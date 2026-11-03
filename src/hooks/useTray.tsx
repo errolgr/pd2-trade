@@ -1,14 +1,16 @@
+import i18n, { t } from '@/i18n';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
+import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
 import { TrayIcon, TrayIconEvent } from '@tauri-apps/api/tray';
 import { defaultWindowIcon } from '@tauri-apps/api/app';
-import { appConfigDir } from '@tauri-apps/api/path';
-import { openPath } from '@tauri-apps/plugin-opener';
+import * as Sentry from '@sentry/react';
 import { exit } from '@tauri-apps/plugin-process';
 
 type TrayContextValue = {
@@ -18,6 +20,9 @@ type TrayContextValue = {
 const TrayContext = createContext<TrayContextValue>({ tray: null });
 
 export const useTray = () => useContext(TrayContext);
+
+/** Rust → Main: the app was launched again while it runs (src-tauri lib.rs, single-instance). */
+export const APP_RELAUNCHED_EVENT = 'app-relaunched';
 
 // The tray lives in Rust and outlives the page, so every reload or remount would add another icon
 // unless the previous one (found by this fixed id) is removed first. Queued so create/remove never interleave.
@@ -32,12 +37,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const { settings } = useOptions();
   const { openPanel } = useOverlay();
   const trayRef = useRef<any | null>(null);
+  const menuRef = useRef<Menu | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
   // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
-    if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
+    const key = hotkeyKeyToken(settings?.hotkeyKeySettings);
+    // A key the parser cannot take is flagged in the settings window; register nothing for it
+    if (!isTauri() || !settings?.hotkeyModifierSettings || !key) return;
 
-    const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
+    const shortcut = `${settings.hotkeyModifierSettings}+${key}`.toLowerCase();
 
     const unregisterShortcut = async () => {
       if (lastShortcutRef.current) {
@@ -66,11 +74,13 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       } catch (err) {
         // Cross-run races (old cleanup vs new effect) can still surface "already registered".
         // Only treat it as success if the plugin confirms we own it; otherwise another app holds the chord.
-        if (
-          String(err).toLowerCase().includes('already registered') &&
-          (await isRegistered(shortcut).catch(() => false))
-        ) {
-          lastShortcutRef.current = shortcut;
+        if (String(err).toLowerCase().includes('already registered')) {
+          if (await isRegistered(shortcut).catch(() => false)) {
+            lastShortcutRef.current = shortcut;
+            return;
+          }
+          // Another app holds the chord: the user's setup (pick a different hotkey), not an app bug
+          console.warn('Settings shortcut is held by another app:', err);
           return;
         }
         console.error('Failed to register settings shortcut:', err);
@@ -85,34 +95,15 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
 
     // Listen for Diablo focus changes to register/unregister hotkey
-    let unlisten: (() => void) | null = null;
-    let cancelled = false;
-
-    listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
-      schedule(isFocused ? registerShortcut : unregisterShortcut);
-    })
-      .then((off) => {
-        if (cancelled) {
-          Promise.resolve()
-            .then(off)
-            .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-        } else {
-          unlisten = off;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to listen for diablo-focus-changed event:', error);
-      });
+    const releaseFocusListener = holdListener(
+      listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
+        schedule(isFocused ? registerShortcut : unregisterShortcut);
+      }),
+      'diablo-focus-changed',
+    );
 
     return () => {
-      cancelled = true;
-      const off = unlisten;
-      unlisten = null;
-      if (off) {
-        Promise.resolve()
-          .then(off)
-          .catch((error) => console.warn('Failed to release diablo-focus-changed listener:', error));
-      }
+      releaseFocusListener();
       // Unregister shortcut on cleanup
       schedule(unregisterShortcut);
     };
@@ -134,26 +125,28 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
           items: [
             {
               id: 'settings',
-              text: 'Settings',
+              text: t('system:tray.settings'),
               action: () => {
                 openPanel('settings');
               },
             },
             {
               id: 'open-config',
-              text: 'Open config location',
+              text: t('system:tray.openConfig'),
               action: async () => {
                 try {
-                  const configPath = await appConfigDir();
-                  await openPath(configPath);
+                  await invoke('open_config_dir');
                 } catch (err) {
-                  console.error('Failed to open config location:', err);
+                  // Fixed message so every user's home path groups into one Sentry issue.
+                  Sentry.captureException(new Error('Failed to open config location'), {
+                    extra: { cause: String(err) },
+                  });
                 }
               },
             },
             {
               id: 'quit',
-              text: 'Quit',
+              text: t('system:tray.quit'),
               action: () => {
                 exit();
               },
@@ -182,6 +175,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         });
 
         if (isMounted) {
+          menuRef.current = menu;
           trayRef.current = instance;
           setTray(instance);
         }
@@ -194,11 +188,44 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     return () => {
       isMounted = false;
+      menuRef.current = null;
       trayRef.current = null;
       queueTray(() => TrayIcon.removeById(TRAY_ID));
     };
     // openPanel is stable: the tray is created once.
   }, [openPanel]);
+
+  // The native menu is built once: retitle its items when the UI language changes
+  useEffect(() => {
+    const retitle = () => {
+      const menu = menuRef.current;
+      if (!menu) return;
+      queueTray(async () => {
+        const texts: [string, string][] = [
+          ['settings', t('system:tray.settings')],
+          ['open-config', t('system:tray.openConfig')],
+          ['quit', t('system:tray.quit')],
+        ];
+        for (const [id, text] of texts) {
+          const item = await menu.get(id);
+          if (item && 'setText' in item) await item.setText(text);
+        }
+      });
+    };
+    i18n.on('languageChanged', retitle);
+    return () => i18n.off('languageChanged', retitle);
+  }, []);
+
+  // Launching the app again while it runs shows Settings, like the tray's Settings item: the new launch exits, and
+  // nothing else of this one may be on screen
+  useEffect(
+    () =>
+      holdListener(
+        listen(APP_RELAUNCHED_EVENT, () => openPanel('settings')),
+        APP_RELAUNCHED_EVENT,
+      ),
+    [openPanel],
+  );
 
   return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
 };

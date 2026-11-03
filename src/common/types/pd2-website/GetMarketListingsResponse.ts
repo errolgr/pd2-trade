@@ -5,6 +5,11 @@ export interface MarketListingResult {
   limit: number;
   skip: number;
   data: MarketListingEntry[];
+  /**
+   * Rows PD2 sent for this page. `data` leaves out listings without an item, so page on this (a full page
+   * means more may follow), never on `data.length`.
+   */
+  fetched: number;
 }
 
 export interface MarketListingEntry {
@@ -61,7 +66,8 @@ export interface ItemDetail {
   name: string;
   requirements: Requirements;
   corrupted: boolean;
-  corruptions?: string[];
+  /** Corruption roll names; not always an array, read through itemCorruptions. */
+  corruptions?: unknown;
   desecrated: boolean;
   properties: string[];
   hash: string;

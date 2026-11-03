@@ -4,12 +4,21 @@
  */
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
+import { t } from '@/i18n';
 import { EMPTY_PREFS, isArchived, prefsFor, type ChatPrefs } from '@/lib/chat-prefs';
-import { isOpenTrade, normalizeName, unreadWhispers, whisperTarget, type WhisperPerson } from '@/lib/whisper-history';
+import {
+  isOpenTrade,
+  nameAliases,
+  unreadWhispers,
+  whisperTarget,
+  type WhisperPerson,
+  type WhisperTrade,
+} from '@/lib/whisper-history';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
-import { messagePreview } from './market-links';
+import { linkMention, messagePreview } from './market-links';
+import { whisperedItemName } from '@/pages/delist/trade-match';
 
 /** 'archived' shows only archived threads; the others leave them out. */
 export type InboxFilter = 'all' | 'selling' | 'buying' | 'archived';
@@ -34,6 +43,7 @@ export interface InboxThread {
   id: string;
   name: string;
   conversation?: Conversation;
+  /** The website user's profile: the conversation's other participant, else the user an offer resolved. */
   participant?: Participant;
   /** The website user on the other side, if known (website DMs can reach them). */
   userId?: string;
@@ -63,8 +73,12 @@ export interface InboxInput {
   offers: readonly TradeOffer[];
   now: number;
   prefs?: ChatPrefs;
-  /** Website users opened from elsewhere (a seller in the market) who get a thread even without any history. */
-  contacts?: readonly { userId: string; name: string }[];
+  /**
+   * Website users opened from elsewhere (a seller in the market) who get a thread even without any history.
+   * `user` seeds the thread's participant so an in-game-only trader resolved from their account (see
+   * useResolvedSellers) brings its registered game accounts along, letting whispers link in via linkSender.
+   */
+  contacts?: readonly { userId: string; name: string; user?: Participant }[];
 }
 
 /** Pinned threads first (newest first among them), then the rest newest first (threads without any message last). */
@@ -121,17 +135,36 @@ export function buildInbox({
       });
     }
     thread.offers.push(offer);
+    // An offer-only thread still knows who they are: username, joined date, every account their whispers can come from
+    thread.participant ??= offer.user;
   }
 
+  // Accounts a contact's user brings to a thread that already has them (its conversation partner may list none)
+  const contactAccounts = new Map<string, { accountName: string }[]>();
   for (const contact of contacts) {
-    if (!byUser.has(contact.userId)) {
-      add({ id: `user:${contact.userId}`, name: contact.name, userId: contact.userId, ...blank() });
+    const existing = byUser.get(contact.userId);
+    if (!existing) {
+      add({
+        id: `user:${contact.userId}`,
+        name: contact.name,
+        userId: contact.userId,
+        participant: contact.user,
+        ...blank(),
+      });
+      continue;
     }
+    existing.participant ??= contact.user;
+    const accounts = contact.user?.game?.accounts ?? [];
+    if (accounts.length > 0)
+      contactAccounts.set(
+        existing.id,
+        accounts.map((accountName) => ({ accountName })),
+      );
   }
 
   // Accounts once every offer is in: a conversation partner may only show accounts on their offers
   const candidates = [...threads.values()].map((thread) => {
-    thread.accounts = knownAccounts(thread.participant, thread.offers);
+    thread.accounts = knownAccounts(thread.participant, [...thread.offers, ...(contactAccounts.get(thread.id) ?? [])]);
     return { threadId: thread.id, accounts: thread.accounts };
   });
 
@@ -162,7 +195,13 @@ export function buildInbox({
     }
     for (const offer of thread.offers) {
       items.push({
-        text: `${offer.isIncoming ? 'Offer' : 'Your offer'}: ${offer.price ?? '?'}${offer.itemName ? ` for ${offer.itemName}` : ''}`,
+        text: offer.isIncoming
+          ? offer.itemName
+            ? t('chat:inbox.offerFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.offer', { price: offer.price ?? '?' })
+          : offer.itemName
+            ? t('chat:inbox.yourOfferFor', { price: offer.price ?? '?', item: offer.itemName })
+            : t('chat:inbox.yourOffer', { price: offer.price ?? '?' }),
         at: offer.timestamp.getTime(),
         own: !offer.isIncoming,
         source: 'website',
@@ -200,8 +239,7 @@ export function threadAliases(
     ...thread.people.flatMap((p) => [p.key, p.accountName, p.characterName, p.playerName]),
     ...thread.accounts,
   ]) {
-    const key = normalizeName(name);
-    if (key) ids.add(whisperThreadId(key));
+    for (const key of nameAliases(name)) ids.add(whisperThreadId(key));
   }
   return [...ids];
 }
@@ -231,13 +269,18 @@ export function visibleThreads(threads: readonly InboxThread[], filter: InboxFil
 export const threadWhisperAccount = (thread: Pick<InboxThread, 'people' | 'accounts'>) =>
   thread.people[0] ? whisperTarget(thread.people[0]) : thread.accounts[0];
 
-/** One message of a thread's timeline, from either source. */
+/** One message of a thread's timeline, from either source, or one of your settled offers or trade whispers. */
 export interface TimelineEntry {
   /** Stable list key (a website send keeps its client id across the server ack). */
   key: string;
   source: MessageSource;
   own: boolean;
   content: string;
+  /**
+   * What the bubble shows, when not `content`: an in-game trade whisper about one of your listings, its item
+   * linked to that listing (see linkMention), so it reads as the listing's pill like a website message's link.
+   */
+  displayContent?: string;
   /** ISO timestamp. */
   createdAt: string;
   /** Website messages: send status, read receipts, retry. */
@@ -246,34 +289,78 @@ export interface TimelineEntry {
   copied?: boolean;
   /** From them and not read yet. */
   unread: boolean;
+  /** An offer you made that is no longer open: an event row at the time you made it, not a message. */
+  offer?: TradeOffer;
+  /** A trade whisper you settled (sold, rejected, delisted): an event row at the time you settled it. */
+  trade?: WhisperTrade & Required<Pick<WhisperTrade, 'outcome' | 'settledAt'>>;
 }
 
 /**
- * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers of
- * `people` by time. While older website pages are still unloaded, whispers before the oldest loaded website
- * message are left out, so paging back never slips website messages in above whispers already shown.
+ * Website messages (kept in their order: confirmed, then pending sends) interleaved with the whispers and
+ * settled trades of `people` and the `offers` (your settled ones) by time. While older website pages are still
+ * unloaded, whispers and offers before the oldest loaded website message are left out, so paging back never
+ * slips website messages in above entries already shown. `tradeListings` (trade id → listing id, see
+ * useTradeListings) links the whisper of each trade to you to the listing it is about.
  */
 export function buildTimeline(
   website: readonly ChatMessage[],
   people: readonly WhisperPerson[],
   currentUserId: string | undefined,
   hasOlder: boolean,
+  offers: readonly TradeOffer[] = [],
+  tradeListings: ReadonlyMap<string, string> = new Map(),
 ): TimelineEntry[] {
   const oldestWebsite = website.length > 0 && hasOlder ? Date.parse(website[0].created_at) : -Infinity;
-  const whispers = people
-    .flatMap((person) =>
-      person.messages.map(
-        (m): TimelineEntry => ({
+  const others = [
+    ...people.flatMap((person) =>
+      person.messages.map((m): TimelineEntry => {
+        // The trade this whisper started (recorded with it: same text and time)
+        const trade = m.isIncoming
+          ? person.trades.find((t) => t.isIncoming && t.timestamp === m.timestamp && t.message === m.message)
+          : undefined;
+        const listingId = trade && tradeListings.get(trade.id);
+        const name = trade && whisperedItemName(trade);
+        return {
           key: `w:${person.key}:${m.id}`,
           source: 'whisper',
           own: !m.isIncoming,
           content: m.message,
+          displayContent: listingId && name ? linkMention(m.message, listingId, name) : undefined,
           createdAt: new Date(m.timestamp).toISOString(),
           copied: m.copied,
           unread: m.isIncoming && m.timestamp > person.readAt,
-        }),
+        };
+      }),
+    ),
+    ...people.flatMap((person) =>
+      person.trades.flatMap((trade): TimelineEntry[] =>
+        trade.outcome && trade.settledAt !== undefined
+          ? [
+              {
+                key: `trade:${person.key}:${trade.id}`,
+                source: 'whisper',
+                own: true,
+                content: '',
+                createdAt: new Date(trade.settledAt).toISOString(),
+                unread: false,
+                trade: { ...trade, outcome: trade.outcome, settledAt: trade.settledAt },
+              },
+            ]
+          : [],
       ),
-    )
+    ),
+    ...offers.map(
+      (offer): TimelineEntry => ({
+        key: `offer:${offer.id}`,
+        source: 'website',
+        own: true,
+        content: '',
+        createdAt: offer.timestamp.toISOString(),
+        unread: false,
+        offer,
+      }),
+    ),
+  ]
     .filter((entry) => Date.parse(entry.createdAt) >= oldestWebsite)
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 
@@ -281,7 +368,7 @@ export function buildTimeline(
   let w = 0;
   for (const message of website) {
     const at = Date.parse(message.created_at);
-    while (w < whispers.length && Date.parse(whispers[w].createdAt) < at) entries.push(whispers[w++]);
+    while (w < others.length && Date.parse(others[w].createdAt) < at) entries.push(others[w++]);
     const own = message.sender_id === currentUserId;
     entries.push({
       key: message.clientId ?? message._id,
@@ -293,5 +380,5 @@ export function buildTimeline(
       unread: !own && !message.status && !!currentUserId && !message.reader_ids?.includes(currentUserId),
     });
   }
-  return entries.concat(whispers.slice(w));
+  return entries.concat(others.slice(w));
 }

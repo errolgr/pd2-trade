@@ -3,9 +3,11 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import {
   claimKeyboard,
   FOREGROUND_EVENT,
+  isHeldOverFullscreenGame,
   isKeyboardClaimed,
   releaseKeyboard,
   resetKeyboardStateForTests,
+  showOverFullscreenGame,
   trackKeyboardFocus,
   type ForegroundOwner,
 } from './keyboard';
@@ -97,6 +99,65 @@ describe('claimKeyboard', () => {
     await claimKeyboard();
     expect(win.setFocusable).not.toHaveBeenCalled();
     expect(isKeyboardClaimed()).toBe(false);
+  });
+});
+
+describe('showOverFullscreenGame', () => {
+  it('takes the foreground when the game fills its monitor, and holds it', async () => {
+    commands.is_diablo_fullscreen = true;
+    await showOverFullscreenGame();
+    expect(win.setFocusable).toHaveBeenCalledWith(true);
+    expect(calls('focus_overlay')).toBe(1);
+    expect(isKeyboardClaimed()).toBe(true);
+    expect(isHeldOverFullscreenGame()).toBe(true);
+
+    await showOverFullscreenGame(); // the next panel while the overlay is in front
+    expect(calls('focus_overlay')).toBe(1);
+  });
+
+  it('leaves a windowed game in front', async () => {
+    commands.is_diablo_fullscreen = false;
+    await showOverFullscreenGame();
+    expect(win.setFocusable).not.toHaveBeenCalled();
+    expect(calls('focus_overlay')).toBe(0);
+    expect(isKeyboardClaimed()).toBe(false);
+  });
+
+  it('leaves another app in front while the game sits fullscreen behind it', async () => {
+    commands.is_diablo_fullscreen = true;
+    commands.is_diablo_focused = false;
+    await showOverFullscreenGame();
+    expect(calls('focus_overlay')).toBe(0);
+    expect(isKeyboardClaimed()).toBe(false);
+  });
+
+  it('backs out when the overlay could not come to the front', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    commands.is_diablo_fullscreen = true;
+    commands.focus_overlay = false;
+    await showOverFullscreenGame();
+    expect(isKeyboardClaimed()).toBe(false);
+    expect(isHeldOverFullscreenGame()).toBe(false);
+    expect(win.setFocusable).toHaveBeenLastCalledWith(false);
+  });
+
+  it('holds a text field claim over a fullscreen game too, but not over a windowed one', async () => {
+    commands.is_diablo_fullscreen = true;
+    await claimKeyboard();
+    expect(isHeldOverFullscreenGame()).toBe(true);
+    await releaseKeyboard();
+    expect(isHeldOverFullscreenGame()).toBe(false);
+
+    commands.is_diablo_fullscreen = false;
+    await claimKeyboard();
+    expect(isKeyboardClaimed()).toBe(true);
+    expect(isHeldOverFullscreenGame()).toBe(false);
+  });
+
+  it('is a no-op in a browser', async () => {
+    vi.mocked(isTauri).mockReturnValue(false);
+    await showOverFullscreenGame();
+    expect(invoke).not.toHaveBeenCalled();
   });
 });
 

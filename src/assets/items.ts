@@ -5,7 +5,7 @@ export const uniqueItems = [
     key: 'The Gnasher',
     base_code: 'hax',
     name: 'The Gnasher',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'str',
@@ -60,7 +60,7 @@ export const uniqueItems = [
     key: 'Deathspade',
     base_code: 'axe',
     name: 'Deathspade',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'stupidity',
@@ -121,7 +121,7 @@ export const uniqueItems = [
     key: 'Bladebone',
     base_code: '2ax',
     name: 'Bladebone',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'dmg-undead',
@@ -182,7 +182,7 @@ export const uniqueItems = [
     key: 'Mindrend',
     base_code: 'mpi',
     name: 'Skull Splitter',
-    level: 28,
+    level: 21,
     modifiers: [
       {
         key: 'stupidity',
@@ -255,19 +255,19 @@ export const uniqueItems = [
     key: 'Rakescar',
     base_code: 'wax',
     name: 'Rakescar',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'pois-min',
         param_id: 1,
-        min: 194,
-        max: 194,
+        min: 389,
+        max: 389,
       },
       {
         key: 'pois-max',
         param_id: 2,
-        min: 194,
-        max: 194,
+        min: 389,
+        max: 389,
       },
       {
         key: 'pois-len',
@@ -322,7 +322,7 @@ export const uniqueItems = [
     key: 'Fechmars Axe',
     base_code: 'lax',
     name: 'Axe of Fechmar',
-    level: 11,
+    level: 8,
     modifiers: [
       {
         key: 'dmg%',
@@ -377,7 +377,7 @@ export const uniqueItems = [
     key: 'Goreshovel',
     base_code: 'bax',
     name: 'Goreshovel',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'swing3',
@@ -438,7 +438,7 @@ export const uniqueItems = [
     key: 'The Chieftan',
     base_code: 'btx',
     name: 'The Chieftain',
-    level: 26,
+    level: 19,
     modifiers: [
       {
         key: 'dmg%',
@@ -493,7 +493,7 @@ export const uniqueItems = [
     key: 'Brainhew',
     base_code: 'gax',
     name: 'Brainhew',
-    level: 34,
+    level: 25,
     modifiers: [
       {
         key: 'dmg-min',
@@ -560,7 +560,7 @@ export const uniqueItems = [
     key: 'The Humongous',
     base_code: 'gix',
     name: 'Humongous',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'str',
@@ -633,7 +633,7 @@ export const uniqueItems = [
     key: 'Iros Torch',
     base_code: 'wnd',
     name: 'Torch of Iro',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'nec',
@@ -693,7 +693,7 @@ export const uniqueItems = [
     key: 'Maelstromwrath',
     base_code: 'ywn',
     name: 'Maelstrom',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'res-ltng',
@@ -744,8 +744,8 @@ export const uniqueItems = [
       {
         key: 'mana-kill',
         param_id: 8,
-        min: 1,
-        max: 2,
+        min: 2,
+        max: 3,
       },
     ],
     requirements: {
@@ -763,7 +763,7 @@ export const uniqueItems = [
     key: 'Gravenspine',
     base_code: 'bwn',
     name: 'Gravenspine',
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'str',
@@ -843,7 +843,7 @@ export const uniqueItems = [
     key: 'Umes Lament',
     base_code: 'gwn',
     name: "Ume's Lament",
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'nec',
@@ -899,7 +899,7 @@ export const uniqueItems = [
     key: 'Felloak',
     base_code: 'clb',
     name: 'Felloak',
-    level: 4,
+    level: 3,
     modifiers: [
       {
         key: 'res-ltng',
@@ -967,7 +967,7 @@ export const uniqueItems = [
     key: 'Knell Striker',
     base_code: 'scp',
     name: 'Knell Striker',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'crush',
@@ -1028,7 +1028,7 @@ export const uniqueItems = [
     key: 'Rusthandle',
     base_code: 'gsc',
     name: 'Rusthandle',
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'pal',
@@ -1103,7 +1103,7 @@ export const uniqueItems = [
     key: 'Stormeye',
     base_code: 'wsp',
     name: 'Stormeye',
-    level: 31,
+    level: 23,
     modifiers: [
       {
         key: 'ltng-min',
@@ -1180,7 +1180,7 @@ export const uniqueItems = [
     key: 'Stoutnail',
     base_code: 'spc',
     name: 'Stoutnail',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'thorns',
@@ -1236,7 +1236,7 @@ export const uniqueItems = [
     key: 'Crushflange',
     base_code: 'mac',
     name: 'Crushflange',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'str',
@@ -1291,7 +1291,7 @@ export const uniqueItems = [
     key: 'Bloodrise',
     base_code: 'mst',
     name: 'Bloodrise',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'dmg%',
@@ -1359,7 +1359,7 @@ export const uniqueItems = [
     key: 'The Generals Tan Do Li Ga',
     base_code: 'fla',
     name: "The General's Tan Do Li Ga",
-    level: 28,
+    level: 21,
     modifiers: [
       {
         key: 'dmg-min',
@@ -1426,7 +1426,7 @@ export const uniqueItems = [
     key: 'Ironstone',
     base_code: 'whm',
     name: 'Ironstone',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'att',
@@ -1487,7 +1487,7 @@ export const uniqueItems = [
     key: 'Bonesob',
     base_code: 'mau',
     name: 'Bonesnap',
-    level: 32,
+    level: 24,
     modifiers: [
       {
         key: 'dmg%',
@@ -1542,7 +1542,7 @@ export const uniqueItems = [
     key: 'Steeldriver',
     base_code: 'gma',
     name: 'Steeldriver',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'ease',
@@ -1591,7 +1591,7 @@ export const uniqueItems = [
     key: 'Rixots Keen',
     base_code: 'ssd',
     name: "Rixot's Keen",
-    level: 3,
+    level: 2,
     modifiers: [
       {
         key: 'dmg-min',
@@ -1652,7 +1652,7 @@ export const uniqueItems = [
     key: 'Blood Crescent',
     base_code: 'scm',
     name: 'Blood Crescent',
-    level: 10,
+    level: 7,
     modifiers: [
       {
         key: 'res-all',
@@ -1663,8 +1663,8 @@ export const uniqueItems = [
       {
         key: 'dmg%',
         param_id: 2,
-        min: 40,
-        max: 60,
+        min: 60,
+        max: 80,
       },
       {
         key: 'Deep-Wounds',
@@ -1719,7 +1719,7 @@ export const uniqueItems = [
     key: 'Krintizs Skewer',
     base_code: 'sbr',
     name: 'Skewer of Krintiz',
-    level: 14,
+    level: 10,
     modifiers: [
       {
         key: 'ignore-ac',
@@ -1780,7 +1780,7 @@ export const uniqueItems = [
     key: 'Gleamscythe',
     base_code: 'flc',
     name: 'Gleamscythe',
-    level: 18,
+    level: 13,
     modifiers: [
       {
         key: 'light',
@@ -1853,7 +1853,7 @@ export const uniqueItems = [
     key: 'Griswolds Edge',
     base_code: 'bsd',
     name: "Griswold's Edge",
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'fire-min',
@@ -1914,7 +1914,7 @@ export const uniqueItems = [
     key: 'Hellplague',
     base_code: 'lsd',
     name: 'Hellplague',
-    level: 30,
+    level: 22,
     modifiers: [
       {
         key: 'manasteal',
@@ -1987,7 +1987,7 @@ export const uniqueItems = [
     key: 'Culwens Point',
     base_code: 'wsd',
     name: "Culwen's Point",
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'allskills',
@@ -2048,7 +2048,7 @@ export const uniqueItems = [
     key: 'Shadowfang',
     base_code: '2hs',
     name: 'Shadowfang',
-    level: 16,
+    level: 12,
     modifiers: [
       {
         key: 'manasteal',
@@ -2116,7 +2116,7 @@ export const uniqueItems = [
     key: 'Soulflay',
     base_code: 'clm',
     name: 'Soulflay',
-    level: 26,
+    level: 19,
     modifiers: [
       {
         key: 'manasteal',
@@ -2171,7 +2171,7 @@ export const uniqueItems = [
     key: 'Kinemils Awl',
     base_code: 'gis',
     name: "Kinemil's Awl",
-    level: 31,
+    level: 23,
     modifiers: [
       {
         key: 'att',
@@ -2233,7 +2233,7 @@ export const uniqueItems = [
     key: 'Blacktongue',
     base_code: 'bsw',
     name: 'Blacktongue',
-    level: 35,
+    level: 26,
     modifiers: [
       {
         key: 'dmg-pois',
@@ -2295,7 +2295,7 @@ export const uniqueItems = [
     key: 'Ripsaw',
     base_code: 'flb',
     name: 'Ripsaw',
-    level: 35,
+    level: 26,
     modifiers: [
       {
         key: 'openwounds',
@@ -2356,7 +2356,7 @@ export const uniqueItems = [
     key: 'The Patriarch',
     base_code: 'gsd',
     name: 'The Patriarch',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'red-dmg',
@@ -2395,12 +2395,6 @@ export const uniqueItems = [
         max: 10,
       },
       {
-        key: 'swing2',
-        param_id: 7,
-        min: -40,
-        max: -40,
-      },
-      {
         key: 'splash',
         param_id: 12,
         param: 358,
@@ -2423,7 +2417,7 @@ export const uniqueItems = [
     key: 'Gull',
     base_code: 'dgr',
     name: 'Gull',
-    level: 6,
+    level: 4,
     modifiers: [
       {
         key: 'dmg-min',
@@ -2478,7 +2472,7 @@ export const uniqueItems = [
     key: 'The Diggler',
     base_code: 'dir',
     name: 'The Diggler',
-    level: 15,
+    level: 11,
     modifiers: [
       {
         key: 'dex',
@@ -2545,7 +2539,7 @@ export const uniqueItems = [
     key: 'The Jade Tan Do',
     base_code: 'kri',
     name: 'The Jade Tan Do',
-    level: 26,
+    level: 19,
     modifiers: [
       {
         key: 'att',
@@ -2620,7 +2614,7 @@ export const uniqueItems = [
     key: 'Irices Shard',
     base_code: 'bld',
     name: 'Spectral Shard',
-    level: 34,
+    level: 25,
     modifiers: [
       {
         key: 'cast3',
@@ -2675,7 +2669,7 @@ export const uniqueItems = [
     key: 'The Dragon Chang',
     base_code: 'spr',
     name: 'The Dragon Chang',
-    level: 11,
+    level: 8,
     modifiers: [
       {
         key: 'att',
@@ -2737,7 +2731,7 @@ export const uniqueItems = [
     key: 'Razortine',
     base_code: 'tri',
     name: 'Razortine',
-    level: 16,
+    level: 12,
     modifiers: [
       {
         key: 'slow',
@@ -2798,7 +2792,7 @@ export const uniqueItems = [
     key: 'Bloodthief',
     base_code: 'brn',
     name: 'Bloodthief',
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'openwounds',
@@ -2859,7 +2853,7 @@ export const uniqueItems = [
     key: 'Lance of Yaggai',
     base_code: 'spt',
     name: 'Lance of Yaggai',
-    level: 30,
+    level: 22,
     modifiers: [
       {
         key: 'thorns',
@@ -2928,7 +2922,7 @@ export const uniqueItems = [
     key: 'The Tannr Gorerod',
     base_code: 'pik',
     name: 'The Tannr Gorerod',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'fire-min',
@@ -3001,7 +2995,7 @@ export const uniqueItems = [
     key: 'Dimoaks Hew',
     base_code: 'bar',
     name: "Dimoak's Hew",
-    level: 11,
+    level: 8,
     modifiers: [
       {
         key: 'dex',
@@ -3050,7 +3044,7 @@ export const uniqueItems = [
     key: 'Steelgoad',
     base_code: 'vou',
     name: 'Steelgoad',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'howl',
@@ -3111,7 +3105,7 @@ export const uniqueItems = [
     key: 'Soul Harvest',
     base_code: 'scy',
     name: 'Soul Harvest',
-    level: 26,
+    level: 19,
     modifiers: [
       {
         key: 'dmg-pois',
@@ -3180,7 +3174,7 @@ export const uniqueItems = [
     key: 'The Battlebranch',
     base_code: 'pax',
     name: 'The Battlebranch',
-    level: 34,
+    level: 25,
     modifiers: [
       {
         key: 'swing3',
@@ -3235,7 +3229,7 @@ export const uniqueItems = [
     key: 'Woestave',
     base_code: 'hal',
     name: 'Woestave',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'slow',
@@ -3308,7 +3302,7 @@ export const uniqueItems = [
     key: 'The Grim Reaper',
     base_code: 'wsc',
     name: 'The Grim Reaper',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'deadly',
@@ -3369,7 +3363,7 @@ export const uniqueItems = [
     key: 'Bane Ash',
     base_code: 'sst',
     name: 'Bane Ash',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'cast-skill',
@@ -3444,7 +3438,7 @@ export const uniqueItems = [
     key: 'Serpent Lord',
     base_code: 'lst',
     name: 'Serpent Lord',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'dmg-pois',
@@ -3526,7 +3520,7 @@ export const uniqueItems = [
     key: 'Lazarus Spire',
     base_code: 'cst',
     name: 'Spire of Lazarus',
-    level: 24,
+    level: 18,
     modifiers: [
       {
         key: 'res-ltng',
@@ -3614,7 +3608,7 @@ export const uniqueItems = [
     key: 'The Salamander',
     base_code: 'bst',
     name: 'The Salamander',
-    level: 28,
+    level: 21,
     modifiers: [
       {
         key: 'dmg-fire',
@@ -3659,7 +3653,7 @@ export const uniqueItems = [
         key: 'cast-skill',
         param_id: 7,
         param: 383,
-        min: 20,
+        min: 24,
         max: 14,
       },
       {
@@ -3691,7 +3685,7 @@ export const uniqueItems = [
     key: 'The Iron Jang Bong',
     base_code: 'wst',
     name: 'The Iron Jang Bong',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'ac',
@@ -3773,7 +3767,7 @@ export const uniqueItems = [
     key: 'Pluckeye',
     base_code: 'sbw',
     name: 'Pluckeye',
-    level: 10,
+    level: 7,
     modifiers: [
       {
         key: 'att',
@@ -3834,7 +3828,7 @@ export const uniqueItems = [
     key: 'Witherstring',
     base_code: 'hbw',
     name: 'Witherstring',
-    level: 18,
+    level: 13,
     modifiers: [
       {
         key: 'swing3',
@@ -3872,6 +3866,12 @@ export const uniqueItems = [
         min: 40,
         max: 50,
       },
+      {
+        key: 'slow',
+        param_id: 7,
+        min: 30,
+        max: 30,
+      },
     ],
     requirements: {
       level: 13,
@@ -3888,7 +3888,7 @@ export const uniqueItems = [
     key: 'Rimeraven',
     base_code: 'lbw',
     name: 'Raven Claw',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'att%',
@@ -3936,7 +3936,7 @@ export const uniqueItems = [
     key: 'Piercerib',
     base_code: 'cbw',
     name: "Rogue's Bow",
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'res-all',
@@ -3977,7 +3977,7 @@ export const uniqueItems = [
       {
         key: 'skill',
         param_id: 7,
-        param: 22,
+        param: 12,
         min: 2,
         max: 3,
       },
@@ -3997,7 +3997,7 @@ export const uniqueItems = [
     key: 'Pullspite',
     base_code: 'sbb',
     name: 'Stormstrike',
-    level: 34,
+    level: 25,
     modifiers: [
       {
         key: 'ltng-min',
@@ -4057,7 +4057,7 @@ export const uniqueItems = [
     key: 'Wizendraw',
     base_code: 'lbb',
     name: 'Wizendraw',
-    level: 35,
+    level: 26,
     modifiers: [
       {
         key: 'magicarrow',
@@ -4123,7 +4123,7 @@ export const uniqueItems = [
     key: 'Hellclap',
     base_code: 'swb',
     name: 'Hellclap',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'swing1',
@@ -4195,7 +4195,7 @@ export const uniqueItems = [
     key: 'Blastbark',
     base_code: 'lwb',
     name: 'Blastbark',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'dmg%',
@@ -4256,7 +4256,7 @@ export const uniqueItems = [
     key: 'Leadcrow',
     base_code: 'lxb',
     name: 'Leadcrow',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'dex',
@@ -4295,10 +4295,11 @@ export const uniqueItems = [
         max: 40,
       },
       {
-        key: 'swing2',
+        key: 'reanimate',
         param_id: 7,
-        min: 20,
-        max: 20,
+        param: 15,
+        min: 12,
+        max: 12,
       },
     ],
     requirements: {
@@ -4316,7 +4317,7 @@ export const uniqueItems = [
     key: 'Ichorsting',
     base_code: 'mxb',
     name: 'Ichorsting',
-    level: 24,
+    level: 18,
     modifiers: [
       {
         key: 'dmg-pois',
@@ -4371,7 +4372,7 @@ export const uniqueItems = [
     key: 'Hellcast',
     base_code: 'hxb',
     name: 'Hellcast',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'explosivearrow',
@@ -4431,7 +4432,7 @@ export const uniqueItems = [
     key: 'Doomspittle',
     base_code: 'rxb',
     name: 'Doomslinger',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'ama',
@@ -4486,7 +4487,7 @@ export const uniqueItems = [
     key: 'War Bonnet',
     base_code: 'cap',
     name: "Biggin's Bonnet",
-    level: 4,
+    level: 3,
     modifiers: [
       {
         key: 'hp',
@@ -4534,7 +4535,7 @@ export const uniqueItems = [
     key: 'Tarnhelm',
     base_code: 'skp',
     name: 'Tarnhelm',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'gold%',
@@ -4576,7 +4577,7 @@ export const uniqueItems = [
     key: 'Coif of Glory',
     base_code: 'hlm',
     name: 'Coif of Glory',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'light-thorns',
@@ -4630,7 +4631,7 @@ export const uniqueItems = [
     key: 'Duskdeep',
     base_code: 'fhl',
     name: 'Duskdeep',
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'light',
@@ -4684,7 +4685,7 @@ export const uniqueItems = [
     key: 'Wormskull',
     base_code: 'bhm',
     name: 'Wormskull',
-    level: 28,
+    level: 21,
     modifiers: [
       {
         key: 'nec',
@@ -4740,7 +4741,7 @@ export const uniqueItems = [
     key: 'Howltusk',
     base_code: 'ghm',
     name: 'Howltusk',
-    level: 34,
+    level: 25,
     modifiers: [
       {
         key: 'red-mag',
@@ -4794,7 +4795,7 @@ export const uniqueItems = [
     key: 'Undead Crown',
     base_code: 'crn',
     name: 'Undead Crown',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'lifesteal',
@@ -4862,7 +4863,7 @@ export const uniqueItems = [
     key: 'The Face of Horror',
     base_code: 'msk',
     name: 'The Face of Horror',
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'howl',
@@ -4910,7 +4911,7 @@ export const uniqueItems = [
     key: 'Greyform',
     base_code: 'qui',
     name: 'Greyform',
-    level: 10,
+    level: 7,
     modifiers: [
       {
         key: 'red-mag',
@@ -4964,7 +4965,7 @@ export const uniqueItems = [
     key: 'Blinkbats Form',
     base_code: 'lea',
     name: "Blinkbat's Form",
-    level: 16,
+    level: 12,
     modifiers: [
       {
         key: 'ac-miss',
@@ -5018,7 +5019,7 @@ export const uniqueItems = [
     key: 'The Centurion',
     base_code: 'hla',
     name: 'The Centurion',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'ac',
@@ -5084,7 +5085,7 @@ export const uniqueItems = [
     key: 'Twitchthroe',
     base_code: 'stu',
     name: 'Twitchthroe',
-    level: 22,
+    level: 16,
     modifiers: [
       {
         key: 'swing2',
@@ -5138,7 +5139,7 @@ export const uniqueItems = [
     key: 'Darkglow',
     base_code: 'rng',
     name: 'Darkglow',
-    level: 19,
+    level: 14,
     modifiers: [
       {
         key: 'att',
@@ -5192,7 +5193,7 @@ export const uniqueItems = [
     key: 'Hawkmail',
     base_code: 'scl',
     name: 'Hawkmail',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'ac%',
@@ -5247,7 +5248,7 @@ export const uniqueItems = [
     key: 'Sparking Mail',
     base_code: 'chn',
     name: 'Sparking Mail',
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'ac%',
@@ -5295,7 +5296,7 @@ export const uniqueItems = [
     key: 'Venomsward',
     base_code: 'brs',
     name: 'Venom Ward',
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'res-pois-max',
@@ -5349,7 +5350,7 @@ export const uniqueItems = [
     key: 'Iceblink',
     base_code: 'spl',
     name: 'Iceblink',
-    level: 30,
+    level: 22,
     modifiers: [
       {
         key: 'freeze',
@@ -5403,7 +5404,7 @@ export const uniqueItems = [
     key: 'Boneflesh',
     base_code: 'plt',
     name: 'Boneflesh',
-    level: 35,
+    level: 26,
     modifiers: [
       {
         key: 'lifesteal',
@@ -5457,7 +5458,7 @@ export const uniqueItems = [
     key: 'Rockfleece',
     base_code: 'fld',
     name: 'Rockfleece',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'ease',
@@ -5505,7 +5506,7 @@ export const uniqueItems = [
     key: 'Rattlecage',
     base_code: 'gth',
     name: 'Rattlecage',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'howl',
@@ -5553,7 +5554,7 @@ export const uniqueItems = [
     key: 'Goldskin',
     base_code: 'ful',
     name: 'Goldskin',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'ac%',
@@ -5601,7 +5602,7 @@ export const uniqueItems = [
     key: 'Victors Silk',
     base_code: 'aar',
     name: 'Silks of the Victor',
-    level: 38,
+    level: 28,
     modifiers: [
       {
         key: 'manasteal',
@@ -5655,7 +5656,7 @@ export const uniqueItems = [
     key: 'Heavenly Garb',
     base_code: 'ltp',
     name: 'Heavenly Garb',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'ac%',
@@ -5721,7 +5722,7 @@ export const uniqueItems = [
     key: 'Pelta Lunata',
     base_code: 'buc',
     name: 'Pelta Lunata',
-    level: 3,
+    level: 2,
     modifiers: [
       {
         key: 'ac',
@@ -5787,7 +5788,7 @@ export const uniqueItems = [
     key: 'Umbral Disk',
     base_code: 'sml',
     name: 'Umbral Disk',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'stupidity',
@@ -5853,7 +5854,7 @@ export const uniqueItems = [
     key: 'Stormguild',
     base_code: 'lrg',
     name: 'Stormguild',
-    level: 18,
+    level: 13,
     modifiers: [
       {
         key: 'red-mag',
@@ -5919,7 +5920,7 @@ export const uniqueItems = [
     key: 'Wall of the Eyeless',
     base_code: 'bsh',
     name: 'Wall of the Eyeless',
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'mana-kill',
@@ -5985,7 +5986,7 @@ export const uniqueItems = [
     key: 'Swordback Hold',
     base_code: 'spk',
     name: 'Swordback Hold',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'thorns',
@@ -6045,7 +6046,7 @@ export const uniqueItems = [
     key: 'Steelclash',
     base_code: 'kit',
     name: 'Steelclash',
-    level: 23,
+    level: 17,
     modifiers: [
       {
         key: 'block',
@@ -6111,7 +6112,7 @@ export const uniqueItems = [
     key: 'Bverrit Keep',
     base_code: 'tow',
     name: 'Bverrit Keep',
-    level: 26,
+    level: 19,
     modifiers: [
       {
         key: 'ac',
@@ -6177,7 +6178,7 @@ export const uniqueItems = [
     key: 'The Ward',
     base_code: 'gts',
     name: 'The Ward',
-    level: 35,
+    level: 26,
     modifiers: [
       {
         key: 'ac',
@@ -6231,7 +6232,7 @@ export const uniqueItems = [
     key: 'The Hand of Broc',
     base_code: 'lgl',
     name: 'The Hand of Broc',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'manasteal',
@@ -6298,7 +6299,7 @@ export const uniqueItems = [
     key: 'Bloodfist',
     base_code: 'vgl',
     name: 'Bloodfist',
-    level: 12,
+    level: 9,
     modifiers: [
       {
         key: 'dmg-max',
@@ -6359,7 +6360,7 @@ export const uniqueItems = [
     key: 'Chance Guards',
     base_code: 'mgl',
     name: 'Chance Guards',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'gold%',
@@ -6419,7 +6420,7 @@ export const uniqueItems = [
     key: 'Magefist',
     base_code: 'tgl',
     name: 'Magefist',
-    level: 31,
+    level: 23,
     modifiers: [
       {
         key: 'cast3',
@@ -6473,7 +6474,7 @@ export const uniqueItems = [
     key: 'Frostburn',
     base_code: 'hgl',
     name: 'Frostburn',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'ac',
@@ -6490,8 +6491,8 @@ export const uniqueItems = [
       {
         key: 'mana%',
         param_id: 3,
-        min: 15,
-        max: 25,
+        min: 20,
+        max: 40,
       },
       {
         key: 'dmg-cold',
@@ -6501,20 +6502,14 @@ export const uniqueItems = [
         max: 22,
       },
       {
-        key: 'ac%',
+        key: 'pierce-fire',
         param_id: 5,
-        min: 10,
-        max: 20,
-      },
-      {
-        key: 'pierce-cold',
-        param_id: 6,
         min: 5,
         max: 10,
       },
       {
-        key: 'pierce-fire',
-        param_id: 7,
+        key: 'pierce-cold',
+        param_id: 6,
         min: 5,
         max: 10,
       },
@@ -6534,7 +6529,7 @@ export const uniqueItems = [
     key: 'Hotspur',
     base_code: 'lbt',
     name: 'Hotspur',
-    level: 7,
+    level: 5,
     modifiers: [
       {
         key: 'res-fire-max',
@@ -6643,7 +6638,7 @@ export const uniqueItems = [
     key: 'Treads of Cthon',
     base_code: 'mbt',
     name: 'Treads of Cthon',
-    level: 20,
+    level: 15,
     modifiers: [
       {
         key: 'move2',
@@ -6703,7 +6698,7 @@ export const uniqueItems = [
     key: 'Goblin Toe',
     base_code: 'tbt',
     name: 'Goblin Toe',
-    level: 30,
+    level: 22,
     modifiers: [
       {
         key: 'crush',
@@ -6763,7 +6758,7 @@ export const uniqueItems = [
     key: 'Tearhaunch',
     base_code: 'hbt',
     name: 'Tearhaunch',
-    level: 39,
+    level: 29,
     modifiers: [
       {
         key: 'ac',
@@ -6831,7 +6826,7 @@ export const uniqueItems = [
     key: 'Lenyms Cord',
     base_code: 'lbl',
     name: 'Lenymo',
-    level: 10,
+    level: 7,
     modifiers: [
       {
         key: 'mana',
@@ -6879,7 +6874,7 @@ export const uniqueItems = [
     key: 'Snakecord',
     base_code: 'vbl',
     name: 'Snakecord',
-    level: 16,
+    level: 12,
     modifiers: [
       {
         key: 'extra-pois',
@@ -6933,7 +6928,7 @@ export const uniqueItems = [
     key: 'Nightsmoke',
     base_code: 'mbl',
     name: 'Nightsmoke',
-    level: 27,
+    level: 20,
     modifiers: [
       {
         key: 'res-all',
@@ -6987,7 +6982,7 @@ export const uniqueItems = [
     key: 'Goldwrap',
     base_code: 'tbl',
     name: 'Goldwrap',
-    level: 36,
+    level: 27,
     modifiers: [
       {
         key: 'mag%',
@@ -7934,8 +7929,8 @@ export const uniqueItems = [
       {
         key: 'slow',
         param_id: 2,
-        min: 10,
-        max: 10,
+        min: 40,
+        max: 40,
       },
       {
         key: 'dmg-fire',
@@ -8162,7 +8157,7 @@ export const uniqueItems = [
         param_id: 8,
         param: 442,
         min: 60,
-        max: 18,
+        max: 14,
       },
       {
         key: 'hit-skill',
@@ -8654,7 +8649,7 @@ export const uniqueItems = [
       {
         key: 'nec',
         param_id: 7,
-        min: 1,
+        min: 2,
         max: 2,
       },
       {
@@ -8834,7 +8829,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 2,
         min: 15,
-        max: 10,
+        max: 6,
       },
       {
         key: 'gethit-skill',
@@ -8846,9 +8841,9 @@ export const uniqueItems = [
       {
         key: 'dmg-pois',
         param_id: 4,
-        param: 100,
-        min: 409,
-        max: 409,
+        param: 50,
+        min: 819,
+        max: 819,
       },
       {
         key: 'dmg%',
@@ -9424,7 +9419,7 @@ export const uniqueItems = [
         param_id: 1,
         param: 442,
         min: 12,
-        max: 31,
+        max: 27,
       },
       {
         key: 'gethit-skill',
@@ -9461,7 +9456,7 @@ export const uniqueItems = [
         param_id: 7,
         param: 442,
         min: 3,
-        max: 8,
+        max: 4,
       },
       {
         key: 'curse-effectiveness',
@@ -9904,8 +9899,8 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 1,
         param: 92,
-        min: 5,
-        max: 14,
+        min: 8,
+        max: 20,
       },
       {
         key: 'dmg-pois',
@@ -10134,7 +10129,7 @@ export const uniqueItems = [
         param_id: 5,
         param: 64,
         min: 33,
-        max: 15,
+        max: 25,
       },
       {
         key: 'dmg%',
@@ -10184,7 +10179,7 @@ export const uniqueItems = [
         param_id: 1,
         param: 442,
         min: 18,
-        max: 31,
+        max: 27,
       },
       {
         key: 'dmg-und/lvl',
@@ -10742,11 +10737,11 @@ export const uniqueItems = [
         max: 120,
       },
       {
-        key: 'gethit-skill',
+        key: 'hit-skill',
         param_id: 4,
         param: 38,
-        min: 75,
-        max: 23,
+        min: 25,
+        max: 32,
       },
       {
         key: 'dmg%',
@@ -11886,7 +11881,7 @@ export const uniqueItems = [
         key: 'nec',
         param_id: 5,
         min: 2,
-        max: 2,
+        max: 3,
       },
       {
         key: 'cast3',
@@ -12080,8 +12075,8 @@ export const uniqueItems = [
       {
         key: 'mana-kill',
         param_id: 6,
-        min: 2,
-        max: 2,
+        min: 3,
+        max: 6,
       },
     ],
     requirements: {
@@ -12162,7 +12157,7 @@ export const uniqueItems = [
         param_id: 1,
         param: 442,
         min: 14,
-        max: 31,
+        max: 27,
       },
       {
         key: 'res-all',
@@ -12244,14 +12239,14 @@ export const uniqueItems = [
       {
         key: 'dmg-min',
         param_id: 6,
-        min: 5,
-        max: 10,
+        min: 10,
+        max: 20,
       },
       {
         key: 'dmg-max',
         param_id: 7,
-        min: 20,
-        max: 30,
+        min: 30,
+        max: 40,
       },
       {
         key: 'swing2',
@@ -12366,8 +12361,8 @@ export const uniqueItems = [
       {
         key: 'dmg%',
         param_id: 1,
-        min: 200,
-        max: 250,
+        min: 225,
+        max: 275,
       },
       {
         key: 'att%',
@@ -12496,7 +12491,7 @@ export const uniqueItems = [
         param_id: 2,
         param: 447,
         min: 28,
-        max: 35,
+        max: 26,
       },
       {
         key: 'ease',
@@ -12532,7 +12527,7 @@ export const uniqueItems = [
         key: 'allskills',
         param_id: 8,
         min: 2,
-        max: 3,
+        max: 2,
       },
       {
         key: 'heal-hit',
@@ -16303,8 +16298,8 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 2,
         param: 442,
-        min: 8,
-        max: 33,
+        min: 14,
+        max: 29,
       },
       {
         key: 'str',
@@ -16771,8 +16766,8 @@ export const uniqueItems = [
       {
         key: 'ltng-max',
         param_id: 8,
-        min: 1e3,
-        max: 1e3,
+        min: 1000,
+        max: 1000,
       },
       {
         key: 'light-thorns',
@@ -17240,7 +17235,7 @@ export const uniqueItems = [
         param_id: 5,
         param: 442,
         min: 8,
-        max: 15,
+        max: 11,
       },
       {
         key: 'att%',
@@ -18445,10 +18440,10 @@ export const uniqueItems = [
         max: 30,
       },
       {
-        key: 'deadly',
+        key: 'crit-strike-chance',
         param_id: 4,
-        min: 50,
-        max: 50,
+        min: 25,
+        max: 35,
       },
       {
         key: 'hit-skill',
@@ -18457,10 +18452,10 @@ export const uniqueItems = [
         max: 40,
       },
       {
-        key: 'deadly-strike-multiplier',
+        key: 'crit-strike-multiplier',
         param_id: 6,
         min: 25,
-        max: 25,
+        max: 35,
       },
       {
         key: 'splash',
@@ -19059,14 +19054,14 @@ export const uniqueItems = [
       {
         key: 'dmg-demon',
         param_id: 3,
-        min: 50,
-        max: 80,
+        min: 80,
+        max: 120,
       },
       {
         key: 'dmg-undead',
         param_id: 4,
-        min: 50,
-        max: 80,
+        min: 80,
+        max: 120,
       },
       {
         key: 'att-demon',
@@ -19159,7 +19154,7 @@ export const uniqueItems = [
       {
         key: 'Deep-Wounds',
         param_id: 7,
-        min: 300,
+        min: 320,
         max: 360,
       },
       {
@@ -19167,7 +19162,7 @@ export const uniqueItems = [
         param_id: 8,
         param: 20,
         min: 2,
-        max: 2,
+        max: 3,
       },
       {
         key: 'deadly',
@@ -19307,21 +19302,21 @@ export const uniqueItems = [
         key: 'skill',
         param_id: 5,
         param: 240,
-        min: 4,
-        max: 6,
+        min: 3,
+        max: 4,
       },
       {
         key: 'skill',
         param_id: 6,
         param: 245,
-        min: 4,
-        max: 6,
+        min: 3,
+        max: 4,
       },
       {
         key: 'cast-skill',
         param_id: 7,
-        min: 15,
-        max: 28,
+        min: 30,
+        max: 32,
       },
       {
         key: 'splash',
@@ -19567,8 +19562,8 @@ export const uniqueItems = [
       {
         key: 'att%',
         param_id: 4,
-        min: 80,
-        max: 120,
+        min: 120,
+        max: 180,
       },
       {
         key: 'openwounds',
@@ -19580,7 +19575,7 @@ export const uniqueItems = [
         key: 'skill',
         param_id: 6,
         param: 232,
-        min: 1,
+        min: 2,
         max: 2,
       },
       {
@@ -19593,7 +19588,7 @@ export const uniqueItems = [
         key: 'skill',
         param_id: 8,
         param: 242,
-        min: 1,
+        min: 2,
         max: 2,
       },
     ],
@@ -19890,7 +19885,7 @@ export const uniqueItems = [
         key: 'kill-skill',
         param_id: 4,
         min: 50,
-        max: 25,
+        max: 21,
       },
       {
         key: 'swing2',
@@ -20174,7 +20169,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 2,
         min: 8,
-        max: 31,
+        max: 27,
       },
       {
         key: 'swing2',
@@ -20265,7 +20260,7 @@ export const uniqueItems = [
         key: 'cast-skill',
         param_id: 7,
         min: 12,
-        max: 20,
+        max: 11,
       },
       {
         key: 'splash',
@@ -20301,7 +20296,7 @@ export const uniqueItems = [
       {
         key: 'dmg-pois',
         param_id: 2,
-        param: 25,
+        param: 50,
         min: 7168,
         max: 7168,
       },
@@ -20510,7 +20505,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 2,
         min: 33,
-        max: 31,
+        max: 27,
       },
       {
         key: 'ignore-ac',
@@ -20821,7 +20816,7 @@ export const uniqueItems = [
       },
     ],
     requirements: {
-      level: 64,
+      level: 65,
     },
     image: {
       invfile: 'invne5',
@@ -21028,7 +21023,7 @@ export const uniqueItems = [
       },
     ],
     requirements: {
-      level: 62,
+      level: 66,
     },
     image: {
       invfile: 'invbld',
@@ -21065,14 +21060,14 @@ export const uniqueItems = [
       {
         key: 'mana-kill',
         param_id: 4,
-        min: 4,
+        min: 5,
         max: 8,
       },
       {
         key: 'hit-skill',
         param_id: 5,
         min: 33,
-        max: 24,
+        max: 50,
       },
       {
         key: 'ethereal',
@@ -21096,8 +21091,8 @@ export const uniqueItems = [
       {
         key: 'cast1',
         param_id: 9,
-        min: 20,
-        max: 20,
+        min: 25,
+        max: 25,
       },
       {
         key: 'splash',
@@ -21383,8 +21378,8 @@ export const uniqueItems = [
       {
         key: 'pierce-fire',
         param_id: 4,
-        min: 10,
-        max: 20,
+        min: 15,
+        max: 25,
       },
       {
         key: 'swing2',
@@ -21401,8 +21396,8 @@ export const uniqueItems = [
       {
         key: 'pierce-ltng',
         param_id: 7,
-        min: 10,
-        max: 20,
+        min: 15,
+        max: 25,
       },
       {
         key: 'splash',
@@ -21925,7 +21920,7 @@ export const uniqueItems = [
         key: 'gethit-skill',
         param_id: 3,
         min: 10,
-        max: 14,
+        max: 5,
       },
       {
         key: 'lifesteal',
@@ -22115,7 +22110,7 @@ export const uniqueItems = [
       {
         key: 'dmg%',
         param_id: 1,
-        min: 170,
+        min: 180,
         max: 240,
       },
       {
@@ -22151,8 +22146,8 @@ export const uniqueItems = [
       {
         key: 'vit',
         param_id: 7,
-        min: 5,
-        max: 10,
+        min: 10,
+        max: 20,
       },
       {
         key: 'aura',
@@ -22600,47 +22595,40 @@ export const uniqueItems = [
         max: 170,
       },
       {
-        key: 'skilltab',
-        param_id: 2,
-        param: 13,
-        min: 2,
-        max: 2,
-      },
-      {
         key: 'bar',
-        param_id: 3,
+        param_id: 2,
         min: 2,
         max: 2,
       },
       {
         key: 'balance2',
-        param_id: 4,
+        param_id: 3,
         min: 20,
         max: 20,
       },
       {
         key: 'red-dmg%',
-        param_id: 5,
+        param_id: 4,
         min: 10,
         max: 15,
       },
       {
         key: 'skill',
-        param_id: 6,
+        param_id: 5,
         param: 149,
-        min: 1,
-        max: 2,
+        min: 2,
+        max: 3,
       },
       {
         key: 'skill',
-        param_id: 7,
+        param_id: 6,
         param: 146,
-        min: 1,
-        max: 2,
+        min: 2,
+        max: 3,
       },
       {
         key: 'att/lvl',
-        param_id: 8,
+        param_id: 7,
         param: 6,
       },
     ],
@@ -22657,7 +22645,7 @@ export const uniqueItems = [
     id: 363,
     kind: 'item.unique',
     key: "Warriv's Warder",
-    base_code: 'ula',
+    base_code: 'uuc',
     name: "Warriv's Warder",
     level: 49,
     modifiers: [
@@ -22670,14 +22658,14 @@ export const uniqueItems = [
       {
         key: 'oskill',
         param_id: 2,
-        min: 2,
-        max: 2,
+        min: 6,
+        max: 8,
       },
       {
-        key: 'hp%',
+        key: 'regen-stam',
         param_id: 3,
-        min: -10,
-        max: -10,
+        min: 75,
+        max: 75,
       },
       {
         key: 'move2',
@@ -22686,38 +22674,38 @@ export const uniqueItems = [
         max: 30,
       },
       {
-        key: 'noheal',
+        key: 'block',
         param_id: 5,
-        min: 1,
-        max: 1,
+        min: -100,
+        max: -100,
       },
       {
-        key: 'regen-stam',
+        key: 'res-all',
         param_id: 6,
-        min: 50,
-        max: 75,
+        min: 35,
+        max: 35,
       },
       {
-        key: 'gold%',
+        key: 'crush',
         param_id: 7,
-        min: 45,
-        max: 45,
+        min: 20,
+        max: 20,
       },
       {
-        key: 'red-dmg%',
+        key: 'abs-ltng',
         param_id: 8,
-        min: -10,
-        max: -10,
+        min: 5,
+        max: 5,
       },
     ],
     requirements: {
       level: 41,
     },
     image: {
-      invfile: 'invhla',
-      invtransform: 'lgld',
+      invfile: 'invwarrivwarder',
+      invtransform: '',
     },
-    base: 'Scarab Husk',
+    base: 'Heater',
   },
   {
     id: 364,
@@ -22936,14 +22924,14 @@ export const uniqueItems = [
       {
         key: 'str',
         param_id: 5,
-        min: 20,
-        max: 30,
+        min: 40,
+        max: 50,
       },
       {
         key: 'vit',
         param_id: 6,
-        min: 20,
-        max: 30,
+        min: 40,
+        max: 50,
       },
       {
         key: 'curse-effectiveness',
@@ -23492,7 +23480,7 @@ export const uniqueItems = [
         key: 'thorns',
         param_id: 1,
         min: 750,
-        max: 1e3,
+        max: 1000,
       },
       {
         key: 'res-all',
@@ -23778,8 +23766,8 @@ export const uniqueItems = [
       {
         key: 'slow',
         param_id: 2,
-        min: 15,
-        max: 15,
+        min: 25,
+        max: 25,
       },
       {
         key: 'att%',
@@ -23985,8 +23973,8 @@ export const uniqueItems = [
       {
         key: 'reduce-ac',
         param_id: 4,
-        min: 25,
-        max: 25,
+        min: 75,
+        max: 75,
       },
       {
         key: 'mag%',
@@ -24121,7 +24109,7 @@ export const uniqueItems = [
       {
         key: 'kill-skill',
         param_id: 5,
-        min: 10,
+        min: 14,
         max: 28,
       },
       {
@@ -24188,14 +24176,14 @@ export const uniqueItems = [
       {
         key: 'mana-kill',
         param_id: 4,
-        min: 5,
+        min: 8,
         max: 15,
       },
       {
         key: 'dmg-mag',
         param_id: 5,
         min: 200,
-        max: 300,
+        max: 450,
       },
       {
         key: 'curse-effectiveness',
@@ -24208,6 +24196,13 @@ export const uniqueItems = [
         param_id: 7,
         min: 1,
         max: 1,
+      },
+      {
+        key: 'reanimate',
+        param_id: 8,
+        param: 39,
+        min: 6,
+        max: 6,
       },
       {
         key: 'splash',
@@ -24491,7 +24486,7 @@ export const uniqueItems = [
         key: 'hit-skill',
         param_id: 7,
         min: 12,
-        max: 31,
+        max: 27,
       },
       {
         key: 'curse-effectiveness',
@@ -25175,7 +25170,7 @@ export const uniqueItems = [
         param_id: 6,
         param: 442,
         min: 25,
-        max: 31,
+        max: 27,
       },
       {
         key: 'vit',
@@ -25230,7 +25225,7 @@ export const uniqueItems = [
         param_id: 3,
         param: 447,
         min: 25,
-        max: 30,
+        max: 21,
       },
       {
         key: 'dmg-fire',
@@ -25279,7 +25274,7 @@ export const uniqueItems = [
     key: 'True Silver',
     base_code: 'am5',
     name: 'True Silver',
-    level: 24,
+    level: 20,
     modifiers: [
       {
         key: 'dmg%',
@@ -25333,7 +25328,7 @@ export const uniqueItems = [
     key: 'Quetzalcoatl',
     base_code: 'dr2',
     name: 'Quetzalcoatl',
-    level: 35,
+    level: 29,
     modifiers: [
       {
         key: 'ac%',
@@ -25442,7 +25437,7 @@ export const uniqueItems = [
     key: "Sankekur's Fall",
     base_code: 'pa3',
     name: "Sankekur's Fall",
-    level: 37,
+    level: 29,
     modifiers: [
       {
         key: 'dmg-cold',
@@ -25546,6 +25541,12 @@ export const uniqueItems = [
         param_id: 7,
         min: 10,
         max: 15,
+      },
+      {
+        key: 'ass',
+        param_id: 8,
+        min: 1,
+        max: 1,
       },
       {
         key: 'splash',
@@ -26215,10 +26216,10 @@ export const uniqueItems = [
         max: 40,
       },
       {
-        key: 'deadly',
+        key: 'crit-strike-chance',
         param_id: 4,
         min: 20,
-        max: 30,
+        max: 20,
       },
       {
         key: 'skill',
@@ -26235,10 +26236,10 @@ export const uniqueItems = [
         max: 4,
       },
       {
-        key: 'max-deadly',
+        key: 'crit-strike-multiplier',
         param_id: 7,
-        min: 10,
-        max: 10,
+        min: 30,
+        max: 50,
       },
       {
         key: 'splash',
@@ -26396,7 +26397,7 @@ export const uniqueItems = [
     key: 'Nightmares Feast',
     base_code: 'drf',
     name: "Ursa's Nightmare",
-    level: 50,
+    level: 85,
     modifiers: [
       {
         key: 'noheal',
@@ -26449,7 +26450,7 @@ export const uniqueItems = [
       },
     ],
     requirements: {
-      level: 42,
+      level: 66,
     },
     image: {
       invfile: 'nightmarefeast',
@@ -26891,7 +26892,7 @@ export const uniqueItems = [
         max: 20,
       },
       {
-        key: 'ama',
+        key: 'allskills',
         param_id: 10,
         min: 3,
         max: 4,
@@ -26992,7 +26993,7 @@ export const uniqueItems = [
     key: 'Mirror Shield',
     base_code: 'urg',
     name: "Twilight's Reflection",
-    level: 18,
+    level: 56,
     modifiers: [
       {
         key: 'block-skill',
@@ -27038,7 +27039,7 @@ export const uniqueItems = [
       },
     ],
     requirements: {
-      level: 13,
+      level: 48,
     },
     image: {
       invfile: 'invmirrorshield',
@@ -27098,7 +27099,7 @@ export const uniqueItems = [
       },
     ],
     requirements: {
-      level: 53,
+      level: 54,
     },
     image: {
       invfile: 'invdiamondmail',
@@ -27195,7 +27196,7 @@ export const uniqueItems = [
       {
         key: 'kill-skill',
         param_id: 5,
-        min: 16,
+        min: 18,
         max: 32,
       },
       {
@@ -27445,7 +27446,7 @@ export const uniqueItems = [
         key: 'pierce-phys',
         param_id: 7,
         min: 5,
-        max: 8,
+        max: 5,
       },
       {
         key: 'dmg-undead',
@@ -27817,7 +27818,7 @@ export const uniqueItems = [
         key: 'pierce-phys',
         param_id: 7,
         min: 5,
-        max: 10,
+        max: 8,
       },
       {
         key: 'dex',
@@ -28153,7 +28154,7 @@ export const uniqueItems = [
         key: 'move2',
         param_id: 1,
         min: 20,
-        max: 30,
+        max: 40,
       },
       {
         key: 'dmg-ac',
@@ -28164,7 +28165,7 @@ export const uniqueItems = [
       {
         key: 'dex',
         param_id: 3,
-        min: 15,
+        min: 25,
         max: 35,
       },
       {
@@ -28420,8 +28421,8 @@ export const uniqueItems = [
       {
         key: 'deadly',
         param_id: 1,
-        min: 20,
-        max: 30,
+        min: 25,
+        max: 35,
       },
       {
         key: 'max-deadly',
@@ -28432,8 +28433,8 @@ export const uniqueItems = [
       {
         key: 'dmg-max',
         param_id: 3,
-        min: 60,
-        max: 80,
+        min: 40,
+        max: 60,
       },
       {
         key: 'half-freeze',
@@ -28457,8 +28458,8 @@ export const uniqueItems = [
       {
         key: 'dmg-demon',
         param_id: 7,
-        min: 60,
-        max: 80,
+        min: 80,
+        max: 100,
       },
     ],
     requirements: {
@@ -28542,7 +28543,7 @@ export const uniqueItems = [
         key: 'gethit-skill',
         param_id: 2,
         min: 10,
-        max: 31,
+        max: 27,
       },
       {
         key: 'noheal',
@@ -29278,8 +29279,8 @@ export const uniqueItems = [
       {
         key: 'red-dmg%',
         param_id: 2,
-        min: 12,
-        max: 20,
+        min: 15,
+        max: 25,
       },
       {
         key: 'ac%',
@@ -29619,7 +29620,67 @@ export const uniqueItems = [
     },
     base: 'Map',
   },
-] as const;
+  {
+    id: 484,
+    kind: 'item.unique',
+    key: 'Spectral Plate',
+    base_code: 'urs',
+    name: 'Spectral Plate',
+    level: 87,
+    modifiers: [
+      {
+        key: 'allskills',
+        param_id: 1,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'equipped-skill',
+        param_id: 2,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'red-dmg%',
+        param_id: 3,
+        min: 8,
+        max: 12,
+      },
+      {
+        key: 'ethereal',
+        param_id: 4,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'indestruct',
+        param_id: 5,
+        min: 1,
+        max: 1,
+      },
+      {
+        key: 'enr',
+        param_id: 6,
+        min: 24,
+        max: 38,
+      },
+      {
+        key: 'res-ltng',
+        param_id: 7,
+        min: 40,
+        max: 50,
+      },
+    ],
+    requirements: {
+      level: 65,
+    },
+    image: {
+      invfile: 'invspectralplate',
+      invtransform: '',
+    },
+    base: 'Great Hauberk',
+  },
+];
 
 export const setItems = [
   {
@@ -33478,14 +33539,14 @@ export const setItems = [
       {
         key: 'dmg-demon',
         param_id: 3,
-        min: 175,
-        max: 225,
+        min: 150,
+        max: 200,
       },
       {
         key: 'dmg-undead',
         param_id: 4,
-        min: 125,
-        max: 225,
+        min: 100,
+        max: 200,
       },
       {
         key: 'crush',
@@ -33496,8 +33557,8 @@ export const setItems = [
       {
         key: 'dmg%',
         param_id: 6,
-        min: 175,
-        max: 225,
+        min: 150,
+        max: 200,
       },
       {
         key: 'splash',
@@ -36655,7 +36716,7 @@ export const setItems = [
     base: 'Bone Wand',
     set: "Sander's Folly",
   },
-] as const;
+];
 
 export const runeWords = [
   {
@@ -37332,22 +37393,22 @@ export const runeWords = [
       {
         key: 'deadly',
         param: '',
-        min: 33,
-        max: 66,
+        min: 50,
+        max: 50,
         modifiers: [
           {
             name: 'item_deadlystrike',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 85,
               value: 1,
               label: {
                 positive_code: 'ModStr5q',
                 negative_code: 'ModStr5q',
                 group: {},
-                positive: 'Deadly Strike',
-                negative: 'Deadly Strike',
+                positive: 'Chance of Deadly Strike',
+                negative: 'Chance of Deadly Strike',
               },
             },
           },
@@ -37428,15 +37489,15 @@ export const runeWords = [
         name: 'item_deadlystrike',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 85,
           value: 1,
           label: {
             positive_code: 'ModStr5q',
             negative_code: 'ModStr5q',
             group: {},
-            positive: 'Deadly Strike',
-            negative: 'Deadly Strike',
+            positive: 'Chance of Deadly Strike',
+            negative: 'Chance of Deadly Strike',
           },
         },
       },
@@ -37812,15 +37873,15 @@ export const runeWords = [
             name: 'item_deadlystrike',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 85,
               value: 1,
               label: {
                 positive_code: 'ModStr5q',
                 negative_code: 'ModStr5q',
                 group: {},
-                positive: 'Deadly Strike',
-                negative: 'Deadly Strike',
+                positive: 'Chance of Deadly Strike',
+                negative: 'Chance of Deadly Strike',
               },
             },
           },
@@ -37914,15 +37975,15 @@ export const runeWords = [
         name: 'item_deadlystrike',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 85,
           value: 1,
           label: {
             positive_code: 'ModStr5q',
             negative_code: 'ModStr5q',
             group: {},
-            positive: 'Deadly Strike',
-            negative: 'Deadly Strike',
+            positive: 'Chance of Deadly Strike',
+            negative: 'Chance of Deadly Strike',
           },
         },
       },
@@ -39101,7 +39162,7 @@ export const runeWords = [
             name: 'item_openwounds',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 83,
               value: 1,
               label: {
@@ -39253,7 +39314,7 @@ export const runeWords = [
         name: 'item_openwounds',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 83,
           value: 1,
           label: {
@@ -41902,7 +41963,7 @@ export const runeWords = [
             name: 'item_openwounds',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 83,
               value: 1,
               label: {
@@ -41950,7 +42011,7 @@ export const runeWords = [
         name: 'item_openwounds',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 83,
           value: 1,
           label: {
@@ -42143,7 +42204,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -42336,7 +42397,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -43239,7 +43300,7 @@ export const runeWords = [
         key: 'lifesteal',
         param: '',
         min: 8,
-        max: 8,
+        max: 12,
         modifiers: [
           {
             name: 'lifedrainmindam',
@@ -44281,7 +44342,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -44301,7 +44362,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -44321,7 +44382,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -44357,7 +44418,7 @@ export const runeWords = [
     ],
     types: {
       base: ['weap'],
-      extended: [],
+      extended: ['miss'],
     },
     runes: ['r11', 'r08', 'r23', 'r24', 'r27'],
     modifiers: [
@@ -44398,7 +44459,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -44410,7 +44471,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -44422,7 +44483,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -44859,6 +44920,26 @@ export const runeWords = [
           },
         ],
       },
+      {
+        key: 'oskill',
+        param: 'Delirium Form',
+        min: 1,
+        max: 1,
+        modifiers: [
+          {
+            name: 'item_nonclassskill',
+            encoding: 1,
+            description: {
+              function: 28,
+              priority: 152,
+              value: 0,
+              label: {
+                group: {},
+              },
+            },
+          },
+        ],
+      },
     ],
     types: {
       base: ['helm'],
@@ -44959,6 +45040,18 @@ export const runeWords = [
             group: {},
             positive: 'to All Skills',
             negative: 'to All Skills',
+          },
+        },
+      },
+      {
+        name: 'item_nonclassskill',
+        encoding: 1,
+        description: {
+          function: 28,
+          priority: 152,
+          value: 0,
+          label: {
+            group: {},
           },
         },
       },
@@ -45881,17 +45974,15 @@ export const runeWords = [
             name: 'extra_revives',
             encoding: 0,
             description: {
-              function: 9,
-              priority: 68,
-              value: 2,
+              function: 1,
+              priority: 151,
+              value: 1,
               label: {
-                secondary_code: 'StrExtraRevives2',
-                positive_code: 'StrExtraRevives',
-                negative_code: 'StrExtraRevives',
+                positive_code: 'StrExtraRevives2',
+                negative_code: 'StrExtraRevives2',
                 group: {},
-                secondary: 'Additional Revives',
-                positive: 'You May Summon',
-                negative: 'You May Summon',
+                positive: 'to Maximum Revives',
+                negative: 'to Maximum Revives',
               },
             },
           },
@@ -45900,15 +45991,15 @@ export const runeWords = [
       {
         key: 'oskill',
         param: 'Revive',
-        min: 4,
-        max: 4,
+        min: 12,
+        max: 12,
         modifiers: [
           {
             name: 'item_nonclassskill',
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -46016,17 +46107,15 @@ export const runeWords = [
         name: 'extra_revives',
         encoding: 0,
         description: {
-          function: 9,
-          priority: 68,
-          value: 2,
+          function: 1,
+          priority: 151,
+          value: 1,
           label: {
-            secondary_code: 'StrExtraRevives2',
-            positive_code: 'StrExtraRevives',
-            negative_code: 'StrExtraRevives',
+            positive_code: 'StrExtraRevives2',
+            negative_code: 'StrExtraRevives2',
             group: {},
-            secondary: 'Additional Revives',
-            positive: 'You May Summon',
-            negative: 'You May Summon',
+            positive: 'to Maximum Revives',
+            negative: 'to Maximum Revives',
           },
         },
       },
@@ -46035,7 +46124,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -46238,7 +46327,7 @@ export const runeWords = [
         key: 'hit-skill',
         param: 'Decrepify Proc',
         min: 25,
-        max: 18,
+        max: 14,
         modifiers: [
           {
             name: 'item_skillonhit',
@@ -46419,8 +46508,8 @@ export const runeWords = [
       {
         key: 'pierce-cold',
         param: '',
-        min: 10,
-        max: 15,
+        min: 15,
+        max: 20,
         modifiers: [
           {
             name: 'passive_cold_pierce',
@@ -46467,8 +46556,8 @@ export const runeWords = [
       {
         key: 'pierce-fire',
         param: '',
-        min: 10,
-        max: 15,
+        min: 15,
+        max: 20,
         modifiers: [
           {
             name: 'passive_fire_pierce',
@@ -46491,8 +46580,8 @@ export const runeWords = [
       {
         key: 'pierce-ltng',
         param: '',
-        min: 10,
-        max: 15,
+        min: 15,
+        max: 20,
         modifiers: [
           {
             name: 'passive_ltng_pierce',
@@ -46897,8 +46986,8 @@ export const runeWords = [
       {
         key: 'aura',
         param: 'Holy Fire',
-        min: 12,
-        max: 12,
+        min: 14,
+        max: 14,
         modifiers: [
           {
             name: 'item_aura',
@@ -47698,7 +47787,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -47835,7 +47924,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -47884,7 +47973,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -47928,7 +48017,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -48021,7 +48110,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -48049,7 +48138,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -48256,7 +48345,7 @@ export const runeWords = [
         key: 'balance2',
         param: '',
         min: 20,
-        max: 40,
+        max: 20,
         modifiers: [
           {
             name: 'item_fastergethitrate',
@@ -48277,24 +48366,24 @@ export const runeWords = [
         ],
       },
       {
-        key: 'dmg-to-mana',
+        key: 'maxcurse',
         param: '',
-        min: 5,
-        max: 5,
+        min: 1,
+        max: 1,
         modifiers: [
           {
-            name: 'item_damagetomana',
+            name: 'max_curses',
             encoding: 0,
             description: {
-              function: 2,
-              priority: 11,
-              value: 1,
+              function: 3,
+              priority: 159,
+              value: 0,
               label: {
-                positive_code: 'ModStr3w_PD2',
-                negative_code: 'ModStr3w_PD2',
+                positive_code: 'StrToMaxCurses',
+                negative_code: 'StrToMaxCurses',
                 group: {},
-                positive: 'Damage Taken Gained as Mana when Hit',
-                negative: 'Damage Taken Gained as Mana when Hit',
+                positive: 'You May Apply An Additional Curse',
+                negative: 'You May Apply An Additional Curse',
               },
             },
           },
@@ -48303,8 +48392,8 @@ export const runeWords = [
       {
         key: 'curse-effectiveness',
         param: '',
-        min: 20,
-        max: 20,
+        min: 30,
+        max: 40,
         modifiers: [
           {
             name: 'curse_effectiveness',
@@ -48488,18 +48577,18 @@ export const runeWords = [
         },
       },
       {
-        name: 'item_damagetomana',
+        name: 'max_curses',
         encoding: 0,
         description: {
-          function: 2,
-          priority: 11,
-          value: 1,
+          function: 3,
+          priority: 159,
+          value: 0,
           label: {
-            positive_code: 'ModStr3w_PD2',
-            negative_code: 'ModStr3w_PD2',
+            positive_code: 'StrToMaxCurses',
+            negative_code: 'StrToMaxCurses',
             group: {},
-            positive: 'Damage Taken Gained as Mana when Hit',
-            negative: 'Damage Taken Gained as Mana when Hit',
+            positive: 'You May Apply An Additional Curse',
+            negative: 'You May Apply An Additional Curse',
           },
         },
       },
@@ -49278,8 +49367,8 @@ export const runeWords = [
       {
         key: 'dmg%',
         param: '',
-        min: 260,
-        max: 290,
+        min: 275,
+        max: 325,
         modifiers: [],
       },
       {
@@ -49293,7 +49382,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -49337,7 +49426,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -49357,7 +49446,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -49410,7 +49499,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -49438,7 +49527,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -49450,7 +49539,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -50315,7 +50404,7 @@ export const runeWords = [
             name: 'item_openwounds',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 83,
               value: 1,
               label: {
@@ -50464,7 +50553,7 @@ export const runeWords = [
         name: 'item_openwounds',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 83,
           value: 1,
           label: {
@@ -53277,7 +53366,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -53358,7 +53447,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -53452,7 +53541,7 @@ export const runeWords = [
         key: 'gethit-skill',
         param: 'AmpDmg Proc',
         min: 65,
-        max: 31,
+        max: 27,
         modifiers: [
           {
             name: 'item_skillongethit',
@@ -53530,17 +53619,15 @@ export const runeWords = [
             name: 'extra_skele_archer',
             encoding: 0,
             description: {
-              function: 9,
-              priority: 150,
-              value: 2,
+              function: 1,
+              priority: 149,
+              value: 1,
               label: {
-                secondary_code: 'ExtraSkeleArcher',
-                positive_code: 'YouMaySummon',
-                negative_code: 'YouMaySummon',
+                positive_code: 'ExtraSkeleArcher',
+                negative_code: 'ExtraSkeleArcher',
                 group: {},
-                secondary: 'Additional Skeleton Archers',
-                positive: 'You May Summon',
-                negative: 'You May Summon',
+                positive: 'to Maximum Skeleton Archers',
+                negative: 'to Maximum Skeleton Archers',
               },
             },
           },
@@ -53637,17 +53724,15 @@ export const runeWords = [
         name: 'extra_skele_archer',
         encoding: 0,
         description: {
-          function: 9,
-          priority: 150,
-          value: 2,
+          function: 1,
+          priority: 149,
+          value: 1,
           label: {
-            secondary_code: 'ExtraSkeleArcher',
-            positive_code: 'YouMaySummon',
-            negative_code: 'YouMaySummon',
+            positive_code: 'ExtraSkeleArcher',
+            negative_code: 'ExtraSkeleArcher',
             group: {},
-            secondary: 'Additional Skeleton Archers',
-            positive: 'You May Summon',
-            negative: 'You May Summon',
+            positive: 'to Maximum Skeleton Archers',
+            negative: 'to Maximum Skeleton Archers',
           },
         },
       },
@@ -53750,8 +53835,8 @@ export const runeWords = [
                 negative_code: 'ModStr5q',
                 group: {},
                 secondary: '(Based on Character Level)',
-                positive: 'Deadly Strike',
-                negative: 'Deadly Strike',
+                positive: 'Chance of Deadly Strike',
+                negative: 'Chance of Deadly Strike',
               },
             },
           },
@@ -53768,7 +53853,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -53876,8 +53961,8 @@ export const runeWords = [
             negative_code: 'ModStr5q',
             group: {},
             secondary: '(Based on Character Level)',
-            positive: 'Deadly Strike',
-            negative: 'Deadly Strike',
+            positive: 'Chance of Deadly Strike',
+            negative: 'Chance of Deadly Strike',
           },
         },
       },
@@ -53886,7 +53971,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -53948,13 +54033,225 @@ export const runeWords = [
     kind: 'item.runeword',
     key: 'Runeword21',
     name: 'Deception',
-    properties: [],
+    properties: [
+      {
+        key: 'ac',
+        param: '',
+        min: 80,
+        max: 120,
+        modifiers: [
+          {
+            name: 'armorclass',
+            encoding: 0,
+            description: {
+              function: 1,
+              priority: 71,
+              value: 1,
+              label: {
+                positive_code: 'ModStr1i',
+                negative_code: 'ModStr1i',
+                group: {},
+                positive: 'Defense',
+                negative: 'Defense',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'crit-strike-chance',
+        param: '',
+        min: 5,
+        max: 10,
+        modifiers: [
+          {
+            name: 'item_crit_chance',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 84,
+              value: 1,
+              label: {
+                positive_code: 'StrCritChanceStat',
+                negative_code: 'StrCritChanceStat',
+                group: {},
+                positive: 'Chance of Critical Strike',
+                negative: 'Chance of Critical Strike',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'crit-strike-multiplier',
+        param: '',
+        min: 15,
+        max: 20,
+        modifiers: [
+          {
+            name: 'item_crit_multiplier',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 85,
+              value: 1,
+              label: {
+                positive_code: 'StrCritMultiplierStat',
+                negative_code: 'StrCritMultiplierStat',
+                group: {},
+                positive: 'Critical Strike Multiplier',
+                negative: 'Critical Strike Multiplier',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'hp',
+        param: '',
+        min: -50,
+        max: -50,
+        modifiers: [
+          {
+            name: 'maxhp',
+            encoding: 0,
+            description: {
+              function: 1,
+              priority: 59,
+              value: 1,
+              label: {
+                positive_code: 'ModStr1u',
+                negative_code: 'ModStr1u',
+                group: {},
+                positive: 'to Life',
+                negative: 'to Life',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'str',
+        param: '',
+        min: 0,
+        max: 10,
+        modifiers: [
+          {
+            name: 'strength',
+            encoding: 0,
+            description: {
+              function: 1,
+              priority: 67,
+              value: 1,
+              label: {
+                positive_code: 'ModStr1a',
+                negative_code: 'ModStr1a',
+                group: {
+                  positive_code: 'Moditem2allattrib',
+                  negative_code: 'Moditem2allattrib',
+                  positive: 'to all Attributes',
+                  negative: 'to all Attributes',
+                },
+                positive: 'to Strength',
+                negative: 'to Strength',
+              },
+            },
+          },
+        ],
+      },
+    ],
     types: {
-      base: [],
+      base: ['helm'],
       extended: [],
     },
-    runes: [],
-    modifiers: [],
+    runes: ['r19', 'r11', 'r15'],
+    modifiers: [
+      {
+        name: 'armorclass',
+        encoding: 0,
+        description: {
+          function: 1,
+          priority: 71,
+          value: 1,
+          label: {
+            positive_code: 'ModStr1i',
+            negative_code: 'ModStr1i',
+            group: {},
+            positive: 'Defense',
+            negative: 'Defense',
+          },
+        },
+      },
+      {
+        name: 'item_crit_chance',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 84,
+          value: 1,
+          label: {
+            positive_code: 'StrCritChanceStat',
+            negative_code: 'StrCritChanceStat',
+            group: {},
+            positive: 'Chance of Critical Strike',
+            negative: 'Chance of Critical Strike',
+          },
+        },
+      },
+      {
+        name: 'item_crit_multiplier',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 85,
+          value: 1,
+          label: {
+            positive_code: 'StrCritMultiplierStat',
+            negative_code: 'StrCritMultiplierStat',
+            group: {},
+            positive: 'Critical Strike Multiplier',
+            negative: 'Critical Strike Multiplier',
+          },
+        },
+      },
+      {
+        name: 'maxhp',
+        encoding: 0,
+        description: {
+          function: 1,
+          priority: 59,
+          value: 1,
+          label: {
+            positive_code: 'ModStr1u',
+            negative_code: 'ModStr1u',
+            group: {},
+            positive: 'to Life',
+            negative: 'to Life',
+          },
+        },
+      },
+      {
+        name: 'strength',
+        encoding: 0,
+        description: {
+          function: 1,
+          priority: 67,
+          value: 1,
+          label: {
+            positive_code: 'ModStr1a',
+            negative_code: 'ModStr1a',
+            group: {
+              positive_code: 'Moditem2allattrib',
+              negative_code: 'Moditem2allattrib',
+              positive: 'to all Attributes',
+              negative: 'to all Attributes',
+            },
+            positive: 'to Strength',
+            negative: 'to Strength',
+          },
+        },
+      },
+    ],
   },
   {
     id: 85,
@@ -54375,17 +54672,15 @@ export const runeWords = [
             name: 'extra_hydra',
             encoding: 0,
             description: {
-              function: 9,
-              priority: 240,
-              value: 2,
+              function: 1,
+              priority: 149,
+              value: 1,
               label: {
-                secondary_code: 'ExtraHydra',
-                positive_code: 'YouMaySummon',
-                negative_code: 'YouMaySummon',
+                positive_code: 'ExtraHydra',
+                negative_code: 'ExtraHydra',
                 group: {},
-                secondary: 'Additional Hydra',
-                positive: 'You May Summon',
-                negative: 'You May Summon',
+                positive: 'to Maximum Hydras',
+                negative: 'to Maximum Hydras',
               },
             },
           },
@@ -54496,17 +54791,15 @@ export const runeWords = [
         name: 'extra_hydra',
         encoding: 0,
         description: {
-          function: 9,
-          priority: 240,
-          value: 2,
+          function: 1,
+          priority: 149,
+          value: 1,
           label: {
-            secondary_code: 'ExtraHydra',
-            positive_code: 'YouMaySummon',
-            negative_code: 'YouMaySummon',
+            positive_code: 'ExtraHydra',
+            negative_code: 'ExtraHydra',
             group: {},
-            secondary: 'Additional Hydra',
-            positive: 'You May Summon',
-            negative: 'You May Summon',
+            positive: 'to Maximum Hydras',
+            negative: 'to Maximum Hydras',
           },
         },
       },
@@ -55429,7 +55722,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -55453,7 +55746,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -55530,7 +55823,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -55546,7 +55839,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -56016,8 +56309,8 @@ export const runeWords = [
       {
         key: 'pierce-ltng',
         param: '',
-        min: 45,
-        max: 55,
+        min: 40,
+        max: 50,
         modifiers: [
           {
             name: 'passive_ltng_pierce',
@@ -56048,7 +56341,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -56151,7 +56444,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -56517,20 +56810,24 @@ export const runeWords = [
         ],
       },
       {
-        key: 'oskill',
-        param: 'Critical Strike',
-        min: 1,
-        max: 6,
+        key: 'crit-strike-chance',
+        param: '',
+        min: 15,
+        max: 25,
         modifiers: [
           {
-            name: 'item_nonclassskill',
-            encoding: 1,
+            name: 'item_crit_chance',
+            encoding: 0,
             description: {
-              function: 28,
-              priority: 81,
-              value: 0,
+              function: 4,
+              priority: 84,
+              value: 1,
               label: {
+                positive_code: 'StrCritChanceStat',
+                negative_code: 'StrCritChanceStat',
                 group: {},
+                positive: 'Chance of Critical Strike',
+                negative: 'Chance of Critical Strike',
               },
             },
           },
@@ -56716,14 +57013,18 @@ export const runeWords = [
         },
       },
       {
-        name: 'item_nonclassskill',
-        encoding: 1,
+        name: 'item_crit_chance',
+        encoding: 0,
         description: {
-          function: 28,
-          priority: 81,
-          value: 0,
+          function: 4,
+          priority: 84,
+          value: 1,
           label: {
+            positive_code: 'StrCritChanceStat',
+            negative_code: 'StrCritChanceStat',
             group: {},
+            positive: 'Chance of Critical Strike',
+            negative: 'Chance of Critical Strike',
           },
         },
       },
@@ -56850,13 +57151,214 @@ export const runeWords = [
     kind: 'item.runeword',
     key: 'Runeword63',
     name: 'Jealousy',
-    properties: [],
+    properties: [
+      {
+        key: 'oskill',
+        param: 'Split Throw',
+        min: 12,
+        max: 12,
+        modifiers: [
+          {
+            name: 'item_nonclassskill',
+            encoding: 1,
+            description: {
+              function: 28,
+              priority: 152,
+              value: 0,
+              label: {
+                group: {},
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'dmg%',
+        param: '',
+        min: 260,
+        max: 320,
+        modifiers: [],
+      },
+      {
+        key: 'balance2',
+        param: '',
+        min: 20,
+        max: 20,
+        modifiers: [
+          {
+            name: 'item_fastergethitrate',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 139,
+              value: 1,
+              label: {
+                positive_code: 'ModStr4p',
+                negative_code: 'ModStr4p',
+                group: {},
+                positive: 'Faster Hit Recovery',
+                negative: 'Faster Hit Recovery',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'skilltab',
+        param: 1,
+        min: 2,
+        max: 2,
+        modifiers: [
+          {
+            name: 'item_addskill_tab',
+            encoding: 0,
+            description: {
+              function: 14,
+              priority: 151,
+              value: 0,
+              label: {
+                positive_code: 'StrSklTabItem1',
+                negative_code: 'StrSklTabItem1',
+                group: {},
+                positive: '+%d to Javelin and Spear Skills',
+                negative: '+%d to Javelin and Spear Skills',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'lifesteal',
+        param: '',
+        min: 5,
+        max: 5,
+        modifiers: [
+          {
+            name: 'lifedrainmindam',
+            encoding: 0,
+            description: {
+              function: 2,
+              priority: 88,
+              value: 1,
+              label: {
+                positive_code: 'ModStr2z',
+                negative_code: 'ModStr2z',
+                group: {},
+                positive: 'Life stolen per hit',
+                negative: 'Life stolen per hit',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'pierce-pois',
+        param: '',
+        min: 12,
+        max: 16,
+        modifiers: [
+          {
+            name: 'passive_pois_pierce',
+            encoding: 0,
+            description: {
+              function: 20,
+              priority: 88,
+              value: 1,
+              label: {
+                positive_code: 'Moditemenrespoissk',
+                negative_code: 'Moditemenrespoissk',
+                group: {},
+                positive: 'to Enemy Poison Resistance',
+                negative: 'to Enemy Poison Resistance',
+              },
+            },
+          },
+        ],
+      },
+    ],
     types: {
-      base: [],
+      base: ['ajav'],
       extended: [],
     },
-    runes: [],
-    modifiers: [],
+    runes: ['r28', 'r25', 'r10'],
+    modifiers: [
+      {
+        name: 'item_nonclassskill',
+        encoding: 1,
+        description: {
+          function: 28,
+          priority: 152,
+          value: 0,
+          label: {
+            group: {},
+          },
+        },
+      },
+      {
+        name: 'item_fastergethitrate',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 139,
+          value: 1,
+          label: {
+            positive_code: 'ModStr4p',
+            negative_code: 'ModStr4p',
+            group: {},
+            positive: 'Faster Hit Recovery',
+            negative: 'Faster Hit Recovery',
+          },
+        },
+      },
+      {
+        name: 'item_addskill_tab',
+        encoding: 0,
+        description: {
+          function: 14,
+          priority: 151,
+          value: 0,
+          label: {
+            positive_code: 'StrSklTabItem1',
+            negative_code: 'StrSklTabItem1',
+            group: {},
+            positive: '+%d to Javelin and Spear Skills',
+            negative: '+%d to Javelin and Spear Skills',
+          },
+        },
+      },
+      {
+        name: 'lifedrainmindam',
+        encoding: 0,
+        description: {
+          function: 2,
+          priority: 88,
+          value: 1,
+          label: {
+            positive_code: 'ModStr2z',
+            negative_code: 'ModStr2z',
+            group: {},
+            positive: 'Life stolen per hit',
+            negative: 'Life stolen per hit',
+          },
+        },
+      },
+      {
+        name: 'passive_pois_pierce',
+        encoding: 0,
+        description: {
+          function: 20,
+          priority: 88,
+          value: 1,
+          label: {
+            positive_code: 'Moditemenrespoissk',
+            negative_code: 'Moditemenrespoissk',
+            group: {},
+            positive: 'to Enemy Poison Resistance',
+            negative: 'to Enemy Poison Resistance',
+          },
+        },
+      },
+    ],
   },
   {
     id: 105,
@@ -56893,29 +57395,29 @@ export const runeWords = [
       {
         key: 'dmg%',
         param: '',
-        min: 350,
-        max: 400,
+        min: 375,
+        max: 425,
         modifiers: [],
       },
       {
-        key: 'att-skill',
-        param: 'Charged Bolt',
-        min: 60,
-        max: 40,
+        key: 'maxcurse',
+        param: '',
+        min: 1,
+        max: 1,
         modifiers: [
           {
-            name: 'item_skillonattack',
-            encoding: 2,
+            name: 'max_curses',
+            encoding: 0,
             description: {
-              function: 15,
-              priority: 160,
+              function: 3,
+              priority: 159,
               value: 0,
               label: {
-                positive_code: 'ItemExpansiveChancX',
-                negative_code: 'ItemExpansiveChancX',
+                positive_code: 'StrToMaxCurses',
+                negative_code: 'StrToMaxCurses',
                 group: {},
-                positive: '%d%% Chance to cast level %d %s on attack',
-                negative: '%d%% Chance to cast level %d %s on attack',
+                positive: 'You May Apply An Additional Curse',
+                negative: 'You May Apply An Additional Curse',
               },
             },
           },
@@ -57022,8 +57524,8 @@ export const runeWords = [
       {
         key: 'aura',
         param: 'Might',
-        min: 19,
-        max: 19,
+        min: 20,
+        max: 20,
         modifiers: [
           {
             name: 'item_aura',
@@ -57051,18 +57553,18 @@ export const runeWords = [
     runes: ['r31', 'r23', 'r31', 'r29', 'r31', 'r30'],
     modifiers: [
       {
-        name: 'item_skillonattack',
-        encoding: 2,
+        name: 'max_curses',
+        encoding: 0,
         description: {
-          function: 15,
-          priority: 160,
+          function: 3,
+          priority: 159,
           value: 0,
           label: {
-            positive_code: 'ItemExpansiveChancX',
-            negative_code: 'ItemExpansiveChancX',
+            positive_code: 'StrToMaxCurses',
+            negative_code: 'StrToMaxCurses',
             group: {},
-            positive: '%d%% Chance to cast level %d %s on attack',
-            negative: '%d%% Chance to cast level %d %s on attack',
+            positive: 'You May Apply An Additional Curse',
+            negative: 'You May Apply An Additional Curse',
           },
         },
       },
@@ -57272,7 +57774,7 @@ export const runeWords = [
         key: 'hit-skill',
         param: 'Decrepify Proc',
         min: 20,
-        max: 15,
+        max: 11,
         modifiers: [
           {
             name: 'item_skillonhit',
@@ -57790,13 +58292,365 @@ export const runeWords = [
     kind: 'item.runeword',
     key: 'Runeword79',
     name: 'Madness',
-    properties: [],
+    properties: [
+      {
+        key: 'dmg%',
+        param: '',
+        min: 200,
+        max: 250,
+        modifiers: [],
+      },
+      {
+        key: 'hit-skill',
+        param: 'LowRes Proc',
+        min: 19,
+        max: 26,
+        modifiers: [
+          {
+            name: 'item_skillonhit',
+            encoding: 2,
+            description: {
+              function: 15,
+              priority: 160,
+              value: 0,
+              label: {
+                positive_code: 'ItemExpansiveChanc1',
+                negative_code: 'ItemExpansiveChanc1',
+                group: {},
+                positive: '%d%% Chance to cast level %d %s on striking',
+                negative: '%d%% Chance to cast level %d %s on striking',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'hit-skill',
+        param: 'AmpDmg Proc',
+        min: 19,
+        max: 27,
+        modifiers: [
+          {
+            name: 'item_skillonhit',
+            encoding: 2,
+            description: {
+              function: 15,
+              priority: 160,
+              value: 0,
+              label: {
+                positive_code: 'ItemExpansiveChanc1',
+                negative_code: 'ItemExpansiveChanc1',
+                group: {},
+                positive: '%d%% Chance to cast level %d %s on striking',
+                negative: '%d%% Chance to cast level %d %s on striking',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'hit-skill',
+        param: 'Life Tap Proc',
+        min: 8,
+        max: 11,
+        modifiers: [
+          {
+            name: 'item_skillonhit',
+            encoding: 2,
+            description: {
+              function: 15,
+              priority: 160,
+              value: 0,
+              label: {
+                positive_code: 'ItemExpansiveChanc1',
+                negative_code: 'ItemExpansiveChanc1',
+                group: {},
+                positive: '%d%% Chance to cast level %d %s on striking',
+                negative: '%d%% Chance to cast level %d %s on striking',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'dmg-max',
+        param: '',
+        min: 70,
+        max: 120,
+        modifiers: [],
+      },
+      {
+        key: 'res-all',
+        param: '',
+        min: 20,
+        max: 30,
+        modifiers: [
+          {
+            name: 'fireresist',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 36,
+              value: 2,
+              label: {
+                positive_code: 'ModStr1j',
+                negative_code: 'ModStr1j',
+                group: {
+                  positive_code: 'strModAllResistances',
+                  negative_code: 'strModAllResistancesNeg',
+                  positive: 'All Resistances +%d',
+                  negative: 'All Resistances %d',
+                },
+                positive: 'Fire Resist',
+                negative: 'Fire Resist',
+              },
+            },
+          },
+          {
+            name: 'lightresist',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 38,
+              value: 2,
+              label: {
+                positive_code: 'ModStr1l',
+                negative_code: 'ModStr1l',
+                group: {
+                  positive_code: 'strModAllResistances',
+                  negative_code: 'strModAllResistancesNeg',
+                  positive: 'All Resistances +%d',
+                  negative: 'All Resistances %d',
+                },
+                positive: 'Lightning Resist',
+                negative: 'Lightning Resist',
+              },
+            },
+          },
+          {
+            name: 'coldresist',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 40,
+              value: 2,
+              label: {
+                positive_code: 'ModStr1k',
+                negative_code: 'ModStr1k',
+                group: {
+                  positive_code: 'strModAllResistances',
+                  negative_code: 'strModAllResistancesNeg',
+                  positive: 'All Resistances +%d',
+                  negative: 'All Resistances %d',
+                },
+                positive: 'Cold Resist',
+                negative: 'Cold Resist',
+              },
+            },
+          },
+          {
+            name: 'poisonresist',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 34,
+              value: 2,
+              label: {
+                positive_code: 'ModStr1n',
+                negative_code: 'ModStr1n',
+                group: {
+                  positive_code: 'strModAllResistances',
+                  negative_code: 'strModAllResistancesNeg',
+                  positive: 'All Resistances +%d',
+                  negative: 'All Resistances %d',
+                },
+                positive: 'Poison Resist',
+                negative: 'Poison Resist',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'swing2',
+        param: '',
+        min: 25,
+        max: 25,
+        modifiers: [
+          {
+            name: 'item_fasterattackrate',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 145,
+              value: 1,
+              label: {
+                positive_code: 'ModStr4m',
+                negative_code: 'ModStr4m',
+                group: {},
+                positive: 'Increased Attack Speed',
+                negative: 'Increased Attack Speed',
+              },
+            },
+          },
+        ],
+      },
+    ],
     types: {
-      base: [],
+      base: ['weap'],
       extended: [],
     },
-    runes: [],
-    modifiers: [],
+    runes: ['r29', 'r23', 'r26', 'r13'],
+    modifiers: [
+      {
+        name: 'item_skillonhit',
+        encoding: 2,
+        description: {
+          function: 15,
+          priority: 160,
+          value: 0,
+          label: {
+            positive_code: 'ItemExpansiveChanc1',
+            negative_code: 'ItemExpansiveChanc1',
+            group: {},
+            positive: '%d%% Chance to cast level %d %s on striking',
+            negative: '%d%% Chance to cast level %d %s on striking',
+          },
+        },
+      },
+      {
+        name: 'item_skillonhit',
+        encoding: 2,
+        description: {
+          function: 15,
+          priority: 160,
+          value: 0,
+          label: {
+            positive_code: 'ItemExpansiveChanc1',
+            negative_code: 'ItemExpansiveChanc1',
+            group: {},
+            positive: '%d%% Chance to cast level %d %s on striking',
+            negative: '%d%% Chance to cast level %d %s on striking',
+          },
+        },
+      },
+      {
+        name: 'item_skillonhit',
+        encoding: 2,
+        description: {
+          function: 15,
+          priority: 160,
+          value: 0,
+          label: {
+            positive_code: 'ItemExpansiveChanc1',
+            negative_code: 'ItemExpansiveChanc1',
+            group: {},
+            positive: '%d%% Chance to cast level %d %s on striking',
+            negative: '%d%% Chance to cast level %d %s on striking',
+          },
+        },
+      },
+      {
+        name: 'fireresist',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 36,
+          value: 2,
+          label: {
+            positive_code: 'ModStr1j',
+            negative_code: 'ModStr1j',
+            group: {
+              positive_code: 'strModAllResistances',
+              negative_code: 'strModAllResistancesNeg',
+              positive: 'All Resistances +%d',
+              negative: 'All Resistances %d',
+            },
+            positive: 'Fire Resist',
+            negative: 'Fire Resist',
+          },
+        },
+      },
+      {
+        name: 'lightresist',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 38,
+          value: 2,
+          label: {
+            positive_code: 'ModStr1l',
+            negative_code: 'ModStr1l',
+            group: {
+              positive_code: 'strModAllResistances',
+              negative_code: 'strModAllResistancesNeg',
+              positive: 'All Resistances +%d',
+              negative: 'All Resistances %d',
+            },
+            positive: 'Lightning Resist',
+            negative: 'Lightning Resist',
+          },
+        },
+      },
+      {
+        name: 'coldresist',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 40,
+          value: 2,
+          label: {
+            positive_code: 'ModStr1k',
+            negative_code: 'ModStr1k',
+            group: {
+              positive_code: 'strModAllResistances',
+              negative_code: 'strModAllResistancesNeg',
+              positive: 'All Resistances +%d',
+              negative: 'All Resistances %d',
+            },
+            positive: 'Cold Resist',
+            negative: 'Cold Resist',
+          },
+        },
+      },
+      {
+        name: 'poisonresist',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 34,
+          value: 2,
+          label: {
+            positive_code: 'ModStr1n',
+            negative_code: 'ModStr1n',
+            group: {
+              positive_code: 'strModAllResistances',
+              negative_code: 'strModAllResistancesNeg',
+              positive: 'All Resistances +%d',
+              negative: 'All Resistances %d',
+            },
+            positive: 'Poison Resist',
+            negative: 'Poison Resist',
+          },
+        },
+      },
+      {
+        name: 'item_fasterattackrate',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 145,
+          value: 1,
+          label: {
+            positive_code: 'ModStr4m',
+            negative_code: 'ModStr4m',
+            group: {},
+            positive: 'Increased Attack Speed',
+            negative: 'Increased Attack Speed',
+          },
+        },
+      },
+    ],
   },
   {
     id: 114,
@@ -58257,7 +59111,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -58388,7 +59242,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -58955,7 +59809,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -58969,16 +59823,16 @@ export const runeWords = [
         ],
       },
       {
-        key: 'oskill',
-        param: 'Critical Strike',
+        key: 'skill',
+        param: 9,
         min: 2,
-        max: 2,
+        max: 3,
         modifiers: [
           {
-            name: 'item_nonclassskill',
+            name: 'item_singleskill',
             encoding: 1,
             description: {
-              function: 28,
+              function: 27,
               priority: 81,
               value: 0,
               label: {
@@ -58998,17 +59852,15 @@ export const runeWords = [
             name: 'extra_valk',
             encoding: 0,
             description: {
-              function: 9,
-              priority: 240,
-              value: 2,
+              function: 1,
+              priority: 149,
+              value: 1,
               label: {
-                secondary_code: 'ExtraValk',
-                positive_code: 'YouMaySummon',
-                negative_code: 'YouMaySummon',
+                positive_code: 'ExtraValk',
+                negative_code: 'ExtraValk',
                 group: {},
-                secondary: 'Additional Valkyrie',
-                positive: 'You May Summon',
-                negative: 'You May Summon',
+                positive: 'to Maximum Valkyries',
+                negative: 'to Maximum Valkyries',
               },
             },
           },
@@ -59042,7 +59894,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -59054,10 +59906,10 @@ export const runeWords = [
         },
       },
       {
-        name: 'item_nonclassskill',
+        name: 'item_singleskill',
         encoding: 1,
         description: {
-          function: 28,
+          function: 27,
           priority: 81,
           value: 0,
           label: {
@@ -59069,17 +59921,15 @@ export const runeWords = [
         name: 'extra_valk',
         encoding: 0,
         description: {
-          function: 9,
-          priority: 240,
-          value: 2,
+          function: 1,
+          priority: 149,
+          value: 1,
           label: {
-            secondary_code: 'ExtraValk',
-            positive_code: 'YouMaySummon',
-            negative_code: 'YouMaySummon',
+            positive_code: 'ExtraValk',
+            negative_code: 'ExtraValk',
             group: {},
-            secondary: 'Additional Valkyrie',
-            positive: 'You May Summon',
-            negative: 'You May Summon',
+            positive: 'to Maximum Valkyries',
+            negative: 'to Maximum Valkyries',
           },
         },
       },
@@ -59162,24 +60012,24 @@ export const runeWords = [
         ],
       },
       {
-        key: 'hit-skill',
+        key: 'att-skill',
         param: 'Firestorm',
-        min: 20,
+        min: 33,
         max: 40,
         modifiers: [
           {
-            name: 'item_skillonhit',
+            name: 'item_skillonattack',
             encoding: 2,
             description: {
               function: 15,
               priority: 160,
               value: 0,
               label: {
-                positive_code: 'ItemExpansiveChanc1',
-                negative_code: 'ItemExpansiveChanc1',
+                positive_code: 'ItemExpansiveChancX',
+                negative_code: 'ItemExpansiveChancX',
                 group: {},
-                positive: '%d%% Chance to cast level %d %s on striking',
-                negative: '%d%% Chance to cast level %d %s on striking',
+                positive: '%d%% Chance to cast level %d %s on attack',
+                negative: '%d%% Chance to cast level %d %s on attack',
               },
             },
           },
@@ -59281,18 +60131,18 @@ export const runeWords = [
         },
       },
       {
-        name: 'item_skillonhit',
+        name: 'item_skillonattack',
         encoding: 2,
         description: {
           function: 15,
           priority: 160,
           value: 0,
           label: {
-            positive_code: 'ItemExpansiveChanc1',
-            negative_code: 'ItemExpansiveChanc1',
+            positive_code: 'ItemExpansiveChancX',
+            negative_code: 'ItemExpansiveChancX',
             group: {},
-            positive: '%d%% Chance to cast level %d %s on striking',
-            negative: '%d%% Chance to cast level %d %s on striking',
+            positive: '%d%% Chance to cast level %d %s on attack',
+            negative: '%d%% Chance to cast level %d %s on attack',
           },
         },
       },
@@ -59406,7 +60256,7 @@ export const runeWords = [
         key: 'gethit-skill',
         param: 'LowRes Proc',
         min: 30,
-        max: 35,
+        max: 26,
         modifiers: [
           {
             name: 'item_skillongethit',
@@ -59509,8 +60359,8 @@ export const runeWords = [
                 negative_code: 'ModStr5q',
                 group: {},
                 secondary: '(Based on Character Level)',
-                positive: 'Deadly Strike',
-                negative: 'Deadly Strike',
+                positive: 'Chance of Deadly Strike',
+                negative: 'Chance of Deadly Strike',
               },
             },
           },
@@ -59664,8 +60514,8 @@ export const runeWords = [
             negative_code: 'ModStr5q',
             group: {},
             secondary: '(Based on Character Level)',
-            positive: 'Deadly Strike',
-            negative: 'Deadly Strike',
+            positive: 'Chance of Deadly Strike',
+            negative: 'Chance of Deadly Strike',
           },
         },
       },
@@ -60073,8 +60923,8 @@ export const runeWords = [
       {
         key: 'hit-skill',
         param: 'Holy Bolt',
-        min: 75,
-        max: 25,
+        min: 40,
+        max: 30,
         modifiers: [
           {
             name: 'item_skillonhit',
@@ -60105,7 +60955,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -60218,7 +61068,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -60827,7 +61677,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -60908,7 +61758,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -61614,7 +62464,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -61695,7 +62545,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -63428,7 +64278,7 @@ export const runeWords = [
         key: 'hit-skill',
         param: 'AmpDmg Proc',
         min: 60,
-        max: 31,
+        max: 27,
         modifiers: [
           {
             name: 'item_skillonhit',
@@ -63914,7 +64764,7 @@ export const runeWords = [
         modifiers: [],
       },
       {
-        key: 'infinityspeed',
+        key: 'move2',
         param: '',
         min: 35,
         max: 35,
@@ -63932,22 +64782,6 @@ export const runeWords = [
                 group: {},
                 positive: 'Faster Run/Walk',
                 negative: 'Faster Run/Walk',
-              },
-            },
-          },
-          {
-            name: 'item_fastercastrate',
-            encoding: 0,
-            description: {
-              function: 4,
-              priority: 142,
-              value: 1,
-              label: {
-                positive_code: 'ModStr4v',
-                negative_code: 'ModStr4v',
-                group: {},
-                positive: 'Faster Cast Rate',
-                negative: 'Faster Cast Rate',
               },
             },
           },
@@ -64030,8 +64864,8 @@ export const runeWords = [
       {
         key: 'pierce-ltng',
         param: '',
-        min: 45,
-        max: 55,
+        min: 40,
+        max: 50,
         modifiers: [
           {
             name: 'passive_ltng_pierce',
@@ -64095,22 +64929,6 @@ export const runeWords = [
             group: {},
             positive: 'Faster Run/Walk',
             negative: 'Faster Run/Walk',
-          },
-        },
-      },
-      {
-        name: 'item_fastercastrate',
-        encoding: 0,
-        description: {
-          function: 4,
-          priority: 142,
-          value: 1,
-          label: {
-            positive_code: 'ModStr4v',
-            negative_code: 'ModStr4v',
-            group: {},
-            positive: 'Faster Cast Rate',
-            negative: 'Faster Cast Rate',
           },
         },
       },
@@ -64541,24 +65359,24 @@ export const runeWords = [
         ],
       },
       {
-        key: 'hit-skill',
+        key: 'att-skill',
         param: 'Firestorm',
-        min: 20,
+        min: 33,
         max: 40,
         modifiers: [
           {
-            name: 'item_skillonhit',
+            name: 'item_skillonattack',
             encoding: 2,
             description: {
               function: 15,
               priority: 160,
               value: 0,
               label: {
-                positive_code: 'ItemExpansiveChanc1',
-                negative_code: 'ItemExpansiveChanc1',
+                positive_code: 'ItemExpansiveChancX',
+                negative_code: 'ItemExpansiveChancX',
                 group: {},
-                positive: '%d%% Chance to cast level %d %s on striking',
-                negative: '%d%% Chance to cast level %d %s on striking',
+                positive: '%d%% Chance to cast level %d %s on attack',
+                negative: '%d%% Chance to cast level %d %s on attack',
               },
             },
           },
@@ -64684,18 +65502,18 @@ export const runeWords = [
         },
       },
       {
-        name: 'item_skillonhit',
+        name: 'item_skillonattack',
         encoding: 2,
         description: {
           function: 15,
           priority: 160,
           value: 0,
           label: {
-            positive_code: 'ItemExpansiveChanc1',
-            negative_code: 'ItemExpansiveChanc1',
+            positive_code: 'ItemExpansiveChancX',
+            negative_code: 'ItemExpansiveChancX',
             group: {},
-            positive: '%d%% Chance to cast level %d %s on striking',
-            negative: '%d%% Chance to cast level %d %s on striking',
+            positive: '%d%% Chance to cast level %d %s on attack',
+            negative: '%d%% Chance to cast level %d %s on attack',
           },
         },
       },
@@ -65092,7 +65910,7 @@ export const runeWords = [
             encoding: 1,
             description: {
               function: 28,
-              priority: 81,
+              priority: 152,
               value: 0,
               label: {
                 group: {},
@@ -65154,7 +65972,24 @@ export const runeWords = [
         param: '',
         min: 200,
         max: 250,
-        modifiers: [],
+        modifiers: [
+          {
+            name: 'item_attackertakesdamage',
+            encoding: 0,
+            description: {
+              function: 3,
+              priority: 13,
+              value: 2,
+              label: {
+                positive_code: 'ModStr1v',
+                negative_code: 'ModStr1v',
+                group: {},
+                positive: 'Attacker Takes Damage of',
+                negative: 'Attacker Takes Damage of',
+              },
+            },
+          },
+        ],
       },
     ],
     types: {
@@ -65200,7 +66035,7 @@ export const runeWords = [
         encoding: 1,
         description: {
           function: 28,
-          priority: 81,
+          priority: 152,
           value: 0,
           label: {
             group: {},
@@ -65236,6 +66071,22 @@ export const runeWords = [
             group: {},
             positive: 'Magic Damage Taken Reduced by',
             negative: 'Magic Damage Taken Reduced by',
+          },
+        },
+      },
+      {
+        name: 'item_attackertakesdamage',
+        encoding: 0,
+        description: {
+          function: 3,
+          priority: 13,
+          value: 2,
+          label: {
+            positive_code: 'ModStr1v',
+            negative_code: 'ModStr1v',
+            group: {},
+            positive: 'Attacker Takes Damage of',
+            negative: 'Attacker Takes Damage of',
           },
         },
       },
@@ -65355,7 +66206,7 @@ export const runeWords = [
             encoding: 0,
             description: {
               function: 13,
-              priority: 150,
+              priority: 157,
               value: 1,
               label: {
                 positive_code: 'ModStr3a',
@@ -65402,17 +66253,15 @@ export const runeWords = [
             name: 'extra_golem',
             encoding: 0,
             description: {
-              function: 9,
-              priority: 150,
-              value: 2,
+              function: 1,
+              priority: 149,
+              value: 1,
               label: {
-                secondary_code: 'ExtraGolem',
-                positive_code: 'YouMaySummon',
-                negative_code: 'YouMaySummon',
+                positive_code: 'ExtraGolem',
+                negative_code: 'ExtraGolem',
                 group: {},
-                secondary: 'Additional Golem',
-                positive: 'You May Summon',
-                negative: 'You May Summon',
+                positive: 'to Maximum Golems',
+                negative: 'to Maximum Golems',
               },
             },
           },
@@ -65495,7 +66344,7 @@ export const runeWords = [
         encoding: 0,
         description: {
           function: 13,
-          priority: 150,
+          priority: 157,
           value: 1,
           label: {
             positive_code: 'ModStr3a',
@@ -65526,17 +66375,15 @@ export const runeWords = [
         name: 'extra_golem',
         encoding: 0,
         description: {
-          function: 9,
-          priority: 150,
-          value: 2,
+          function: 1,
+          priority: 149,
+          value: 1,
           label: {
-            secondary_code: 'ExtraGolem',
-            positive_code: 'YouMaySummon',
-            negative_code: 'YouMaySummon',
+            positive_code: 'ExtraGolem',
+            negative_code: 'ExtraGolem',
             group: {},
-            secondary: 'Additional Golem',
-            positive: 'You May Summon',
-            negative: 'You May Summon',
+            positive: 'to Maximum Golems',
+            negative: 'to Maximum Golems',
           },
         },
       },
@@ -65630,8 +66477,8 @@ export const runeWords = [
       {
         key: 'allskills',
         param: '',
-        min: 2,
-        max: 2,
+        min: 3,
+        max: 3,
         modifiers: [
           {
             name: 'item_allskills',
@@ -65654,8 +66501,8 @@ export const runeWords = [
       {
         key: 'dmg-elem',
         param: 100,
-        min: 360,
-        max: 420,
+        min: 430,
+        max: 500,
         modifiers: [
           {
             name: 'firemindam',
@@ -66728,7 +67575,7 @@ export const runeWords = [
       {
         key: 'cast-skill',
         param: 'Firestorm',
-        min: 20,
+        min: 33,
         max: 40,
         modifiers: [
           {
@@ -67306,8 +68153,8 @@ export const runeWords = [
       {
         key: 'allskills',
         param: '',
-        min: 2,
-        max: 2,
+        min: 4,
+        max: 4,
         modifiers: [
           {
             name: 'item_allskills',
@@ -67337,7 +68184,7 @@ export const runeWords = [
             name: 'item_openwounds',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 83,
               value: 1,
               label: {
@@ -67402,7 +68249,7 @@ export const runeWords = [
       {
         key: 'hit-skill',
         param: 121,
-        min: 25,
+        min: 28,
         max: 40,
         modifiers: [
           {
@@ -67471,7 +68318,7 @@ export const runeWords = [
         name: 'item_openwounds',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 83,
           value: 1,
           label: {
@@ -67578,8 +68425,8 @@ export const runeWords = [
       {
         key: 'allskills',
         param: '',
-        min: 2,
-        max: 2,
+        min: 4,
+        max: 4,
         modifiers: [
           {
             name: 'item_allskills',
@@ -67609,7 +68456,7 @@ export const runeWords = [
             name: 'item_openwounds',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 83,
               value: 1,
               label: {
@@ -67674,7 +68521,7 @@ export const runeWords = [
       {
         key: 'cast-skill',
         param: 121,
-        min: 25,
+        min: 28,
         max: 40,
         modifiers: [
           {
@@ -67743,7 +68590,7 @@ export const runeWords = [
         name: 'item_openwounds',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 83,
           value: 1,
           label: {
@@ -69343,15 +70190,15 @@ export const runeWords = [
             name: 'item_deadlystrike',
             encoding: 0,
             description: {
-              function: 2,
+              function: 4,
               priority: 85,
               value: 1,
               label: {
                 positive_code: 'ModStr5q',
                 negative_code: 'ModStr5q',
                 group: {},
-                positive: 'Deadly Strike',
-                negative: 'Deadly Strike',
+                positive: 'Chance of Deadly Strike',
+                negative: 'Chance of Deadly Strike',
               },
             },
           },
@@ -69359,9 +70206,9 @@ export const runeWords = [
       },
       {
         key: 'hit-skill',
-        param: 91,
-        min: 30,
-        max: 35,
+        param: 'LowRes Proc',
+        min: 47,
+        max: 26,
         modifiers: [
           {
             name: 'item_skillonhit',
@@ -69485,15 +70332,15 @@ export const runeWords = [
         name: 'item_deadlystrike',
         encoding: 0,
         description: {
-          function: 2,
+          function: 4,
           priority: 85,
           value: 1,
           label: {
             positive_code: 'ModStr5q',
             negative_code: 'ModStr5q',
             group: {},
-            positive: 'Deadly Strike',
-            negative: 'Deadly Strike',
+            positive: 'Chance of Deadly Strike',
+            negative: 'Chance of Deadly Strike',
           },
         },
       },
@@ -69705,8 +70552,8 @@ export const runeWords = [
       {
         key: 'cast2',
         param: '',
-        min: 20,
-        max: 20,
+        min: 35,
+        max: 35,
         modifiers: [
           {
             name: 'item_fastercastrate',
@@ -69807,7 +70654,7 @@ export const runeWords = [
         key: 'dmg-ltng',
         param: '',
         min: 1,
-        max: 750,
+        max: 1250,
         modifiers: [
           {
             name: 'lightmindam',
@@ -71256,6 +72103,181 @@ export const runeWords = [
             group: {},
             positive: 'Bonus to Attack Rating',
             negative: 'Bonus to Attack Rating',
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 198,
+    kind: 'item.runeword',
+    key: 'Finesse',
+    name: 'Finesse',
+    properties: [
+      {
+        key: 'ac%',
+        param: '',
+        min: 50,
+        max: 100,
+        modifiers: [
+          {
+            name: 'item_armor_percent',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 74,
+              value: 1,
+              label: {
+                positive_code: 'Modstr2v',
+                negative_code: 'Modstr2v',
+                group: {},
+                positive: 'Enhanced Defense',
+                negative: 'Enhanced Defense',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'pierce',
+        param: '',
+        min: 25,
+        max: 35,
+        modifiers: [
+          {
+            name: 'item_pierce',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 132,
+              value: 1,
+              label: {
+                positive_code: 'ModPierceChance',
+                negative_code: 'ModPierceChance',
+                group: {},
+                positive: 'Chance to Pierce',
+                negative: 'Chance to Pierce',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'swing2',
+        param: '',
+        min: 20,
+        max: 20,
+        modifiers: [
+          {
+            name: 'item_fasterattackrate',
+            encoding: 0,
+            description: {
+              function: 4,
+              priority: 145,
+              value: 1,
+              label: {
+                positive_code: 'ModStr4m',
+                negative_code: 'ModStr4m',
+                group: {},
+                positive: 'Increased Attack Speed',
+                negative: 'Increased Attack Speed',
+              },
+            },
+          },
+        ],
+      },
+      {
+        key: 'gold%',
+        param: '',
+        min: 45,
+        max: 45,
+        modifiers: [
+          {
+            name: 'item_goldbonus',
+            encoding: 0,
+            description: {
+              function: 2,
+              priority: 10,
+              value: 1,
+              label: {
+                positive_code: 'ModStr1w',
+                negative_code: 'ModStr1w',
+                group: {},
+                positive: 'Extra Gold from Monsters',
+                negative: 'Extra Gold from Monsters',
+              },
+            },
+          },
+        ],
+      },
+    ],
+    types: {
+      base: ['tors'],
+      extended: [],
+    },
+    runes: ['r04', 'r08', 'r14'],
+    modifiers: [
+      {
+        name: 'item_armor_percent',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 74,
+          value: 1,
+          label: {
+            positive_code: 'Modstr2v',
+            negative_code: 'Modstr2v',
+            group: {},
+            positive: 'Enhanced Defense',
+            negative: 'Enhanced Defense',
+          },
+        },
+      },
+      {
+        name: 'item_pierce',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 132,
+          value: 1,
+          label: {
+            positive_code: 'ModPierceChance',
+            negative_code: 'ModPierceChance',
+            group: {},
+            positive: 'Chance to Pierce',
+            negative: 'Chance to Pierce',
+          },
+        },
+      },
+      {
+        name: 'item_fasterattackrate',
+        encoding: 0,
+        description: {
+          function: 4,
+          priority: 145,
+          value: 1,
+          label: {
+            positive_code: 'ModStr4m',
+            negative_code: 'ModStr4m',
+            group: {},
+            positive: 'Increased Attack Speed',
+            negative: 'Increased Attack Speed',
+          },
+        },
+      },
+      {
+        name: 'item_goldbonus',
+        encoding: 0,
+        description: {
+          function: 2,
+          priority: 10,
+          value: 1,
+          label: {
+            positive_code: 'ModStr1w',
+            negative_code: 'ModStr1w',
+            group: {},
+            positive: 'Extra Gold from Monsters',
+            negative: 'Extra Gold from Monsters',
           },
         },
       },

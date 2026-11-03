@@ -3,8 +3,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { bandRange, fmtBandHr } from '@/components/rares/rares-format';
 import { cn } from '@/lib/utils';
 import type { Deal, DealVerdict } from './deal';
+import { useTranslation } from '@/i18n';
 
-const VERDICT_LABELS: Record<DealVerdict, string> = { steal: 'Steal', good: 'Good', fair: 'Fair', high: 'High' };
+const VERDICT_LABEL_KEYS: Record<DealVerdict, { labelKey: string }> = {
+  steal: { labelKey: 'deal.verdict.steal' },
+  good: { labelKey: 'deal.verdict.good' },
+  fair: { labelKey: 'deal.verdict.fair' },
+  high: { labelKey: 'deal.verdict.high' },
+};
 
 /** Tinted pill classes per verdict (theme tokens, same pattern as the rare verdict badges). */
 const VERDICT_CLASSES: Record<DealVerdict, string> = {
@@ -14,9 +20,9 @@ const VERDICT_CLASSES: Record<DealVerdict, string> = {
   high: 'border-warning/40 bg-warning/12 text-warning',
 };
 
-const SOURCE_LABELS: Record<NonNullable<Deal['source']>, string> = {
-  economy: 'Market price (pd2trader)',
-  appraisal: 'Rare appraisal (similar listings)',
+const SOURCE_LABEL_KEYS: Record<NonNullable<Deal['source']>, { labelKey: string }> = {
+  economy: { labelKey: 'deal.source.economy' },
+  appraisal: { labelKey: 'deal.source.appraisal' },
 };
 
 /** "-35%" / "+12%" / "±0%" of the asking price against the estimate. */
@@ -26,27 +32,28 @@ export function dealPercent(ratio: number): string {
 }
 
 function DealTooltip({ deal }: { deal: Deal }) {
+  const { t } = useTranslation('market');
   return (
     <div className="space-y-0.5">
       {deal.estimateHr !== null && (
         <div className="font-semibold">
-          Est. ~{fmtBandHr(deal.estimateHr)} HR
+          {t('deal.estimate', { value: fmtBandHr(deal.estimateHr) })}
           {deal.band && (
             <span className="font-normal text-muted-foreground">
               {' '}
-              (band {bandRange(deal.band.lowHr, deal.band.highHr)})
+              {t('deal.band', { range: bandRange(deal.band.lowHr, deal.band.highHr) })}
             </span>
           )}
         </div>
       )}
       {deal.ratio !== null ? (
-        <div>Asking {dealPercent(deal.ratio)} vs estimate</div>
+        <div>{t('deal.asking', { percent: dealPercent(deal.ratio) })}</div>
       ) : (
-        <div className="text-muted-foreground">No HR price on this listing</div>
+        <div className="text-muted-foreground">{t('deal.noHrPrice')}</div>
       )}
-      {deal.source && <div className="text-muted-foreground">{SOURCE_LABELS[deal.source]}</div>}
+      {deal.source && <div className="text-muted-foreground">{t(SOURCE_LABEL_KEYS[deal.source].labelKey)}</div>}
       {deal.detail && <div className="text-muted-foreground">{deal.detail}</div>}
-      {deal.confidence === 'low' && <div className="text-warning">Low confidence: treat as a rough guide</div>}
+      {deal.confidence === 'low' && <div className="text-warning">{t('deal.lowConfidence')}</div>}
     </div>
   );
 }
@@ -56,19 +63,20 @@ function DealTooltip({ deal }: { deal: Deal }) {
  * listings (estimate, no verdict). `compact` (list rows) drops the percentage. Host mounts a TooltipProvider.
  */
 export function DealBadge({ deal, compact = false }: { deal: Deal | undefined; compact?: boolean }) {
+  const { t } = useTranslation('market');
   if (!deal || deal.estimateHr === null) return null;
   const verdict = deal.verdict;
   const text = verdict
     ? compact || deal.ratio === null
-      ? VERDICT_LABELS[verdict]
-      : `${VERDICT_LABELS[verdict]} ${dealPercent(deal.ratio)}`
+      ? t(VERDICT_LABEL_KEYS[verdict].labelKey)
+      : t('deal.verdictPercent', { verdict: t(VERDICT_LABEL_KEYS[verdict].labelKey), percent: dealPercent(deal.ratio) })
     : `~${fmtBandHr(deal.estimateHr)} HR`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span
           tabIndex={0}
-          aria-label={`Deal: ${text}`}
+          aria-label={t('deal.ariaLabel', { text })}
           className={cn(
             'inline-flex shrink-0 cursor-default items-center gap-1 rounded-full border px-1.5 py-px text-[10px] leading-4 whitespace-nowrap tabular-nums',
             verdict ? VERDICT_CLASSES[verdict] : 'border-border/60 text-muted-foreground',

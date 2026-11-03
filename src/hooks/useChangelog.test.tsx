@@ -2,12 +2,14 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getVersion } from '@/lib/browser-app';
-import { useOverlay, usePanelOpen } from '@/overlay';
+import { useOverlay } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import { CHANGELOG_DELAY_MS, useChangelog } from './useChangelog';
 
 vi.mock('@/lib/browser-app', () => ({ getVersion: vi.fn() }));
-vi.mock('@/overlay', () => ({ useOverlay: vi.fn(), usePanelOpen: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/assets/changeLog', () => ({ changeLog: { '1.2.0': ['New thing'] } }));
 
@@ -37,7 +39,7 @@ beforeEach(() => {
   signInOpen = false;
   vi.mocked(useOptions).mockImplementation(() => options as never);
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
-  vi.mocked(usePanelOpen).mockImplementation((id) => id === 'signIn' && signInOpen);
+  vi.mocked(useSignIn).mockImplementation(() => ({ openSignIn: vi.fn(), isOpen: signInOpen }) as never);
 });
 
 afterEach(() => {

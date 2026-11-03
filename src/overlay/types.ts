@@ -3,7 +3,8 @@ import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
-import type { MarketPanelPayload } from '@/pages/market/lib/types';
+import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
+import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
   | 'itemSearch'
@@ -17,13 +18,17 @@ export type PanelId =
   | 'delist'
   | 'netWorthTicker'
   | 'netWorthPanel'
-  | 'market';
+  | 'market'
+  | 'corruptedZoneTimer'
+  | 'listingDetail'
+  | 'builds'
+  | 'palette';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
   itemSearch: { text: string } | undefined;
-  /** item = encodeItemForQuickList(raw); undefined = manage mode */
-  quickList: { item?: string; error?: 'not_shared_stash' } | undefined;
+  /** item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and its price editor open. */
+  quickList: { item?: string; error?: 'not_in_stash'; listingId?: string; edit?: boolean } | undefined;
   currency: { tab?: NetWorthTab } | undefined;
   /**
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a
@@ -44,11 +49,13 @@ export interface PanelPayloads {
         userId?: string;
         userName?: string;
         draft?: string;
+        /** Show the Trader sidebar on the opened thread (a market seller's name was clicked). */
+        trader?: boolean;
       }
     | undefined;
   chatButton: undefined;
-  /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat). */
-  settings: { section?: SettingsSectionId } | undefined;
+  /** section: the settings section to show (e.g. the chat's "Manage templates…" opens Chat); field: the ISettings key to scroll to and highlight. */
+  settings: { section?: SettingsSectionId; field?: string } | undefined;
   changeLog: undefined;
   signIn: undefined;
   /** Market listings matching the delisted item (2+; the user picks which one to remove). */
@@ -57,6 +64,13 @@ export interface PanelPayloads {
   netWorthPanel: undefined;
   /** Filters to search right away (merged over defaults), a saved search to run, a listing to focus. */
   market: MarketPanelPayload | undefined;
+  corruptedZoneTimer: undefined;
+  /** The listing drawer: one market listing (a watch toast's Details). */
+  listingDetail: ListingPanelPayload;
+  /** A character to show, Meta filters, or a tab; undefined = reopen where it was (keepMounted). */
+  builds: BuildsPanelPayload | undefined;
+  /** The command palette always opens fresh. */
+  palette: undefined;
 }
 
 /** CSS px relative to the overlay viewport. */
@@ -80,7 +94,10 @@ export interface OpenOptions {
   reposition?: boolean;
   /** Already open: only bring it to front (keep payload and payloadVersion, e.g. a half-filled form). */
   keepPayload?: boolean;
-  /** Claim keyboard focus right away. Opening never does by default: it would take focus (and sound) from the game. */
+  /**
+   * Claim keyboard focus right away. Opening never does by default: it would take focus (and sound) from the game.
+   * Only over a fullscreen game does an 'onPointerDown' panel take it on open anyway, or it would not show.
+   */
   focus?: boolean;
 }
 
@@ -98,7 +115,8 @@ export interface PanelDef {
   persist: boolean;
   /**
    * onPointerDown: a pointerdown on a text field inside the panel claims keyboard focus (the only time the game
-   * loses focus); a pointerdown anywhere else in the panel gives it back.
+   * loses focus, short of opening over a fullscreen game); a pointerdown anywhere else in the panel gives it back
+   * (not over a fullscreen game, where the panel would vanish).
    */
   keyboard: 'never' | 'onPointerDown';
   /** Closed => display:none but still mounted (state/listeners survive). Mounted (closed) from startup. */

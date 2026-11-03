@@ -4,14 +4,16 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, t
 import { MotionGlobalConfig } from 'framer-motion';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
-import { usePanel, useOverlay, type OverlayApi, type PanelContextValue } from '@/overlay';
+import { usePanel, type PanelContextValue } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { getPoints, type NetWorthPoint, type SessionSummary, type SnapshotResponse } from '@/lib/networth-api';
 import type * as NetWorthApi from '@/lib/networth-api';
 import NetWorthPanelPage from './NetWorthPanelPage';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
-vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
@@ -23,7 +25,7 @@ const OWNER = { account: 'Hammerdin', isLadder: true, isHardcore: false };
 let settings: Partial<ISettings>;
 let netWorth: NetWorthContextValue;
 let close: Mock;
-let openPanel: Mock;
+let openSignIn: Mock;
 
 function latest(totalHr: number, overrides: { snapshotId?: string; uncertainHr?: number } = {}): SnapshotResponse {
   return {
@@ -108,9 +110,9 @@ beforeEach(() => {
   vi.mocked(useNetWorth).mockImplementation(() => netWorth);
   vi.mocked(getPoints).mockResolvedValue({ points: [] });
   close = vi.fn();
-  openPanel = vi.fn();
+  openSignIn = vi.fn();
   vi.mocked(usePanel).mockReturnValue({ close } as unknown as PanelContextValue<'netWorthPanel'>);
-  vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
+  vi.mocked(useSignIn).mockReturnValue({ openSignIn, isOpen: false } as never);
 });
 
 afterEach(() => {
@@ -126,7 +128,7 @@ describe('NetWorthPanel signed out', () => {
     expect(screen.getByText('Sign in with your PD2 account to track your net worth.')).not.toBeNull();
     expect(screen.queryByRole('button', { name: /Open full view/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(openPanel.mock.calls).toEqual([['signIn']]);
+    expect(openSignIn).toHaveBeenCalledTimes(1);
     expect(getPoints).not.toHaveBeenCalled();
   });
 

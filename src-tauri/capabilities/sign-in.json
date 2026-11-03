@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "sign-in",
+  "description": "Sign-in window: a view that talks to Main over events",
+  "windows": ["SignIn"],
+  "permissions": ["core:default"]
+}

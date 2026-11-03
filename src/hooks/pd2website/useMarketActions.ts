@@ -1,15 +1,16 @@
 import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { MarketApi, MarketFavorite } from '@/pages/market/lib/types';
+import type { ListingPresence, MarketApi, MarketFavorite } from '@/pages/market/lib/types';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
 import { AuthenticationError, handleApiResponse } from './usePD2Website';
+import { publishListingDeleted } from './listing-events';
 
 interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -41,6 +42,8 @@ interface UseMarketActionsProps {
   stashCache: React.MutableRefObject<{ data: GameData; timestamp: number } | null>;
   CACHE_TTL: number;
   onAuthError?: () => void | Promise<void>;
+  /** Called after an offer was made (the offers lists refetch); read when it fires, so it may change freely. */
+  onOfferCreated?: () => void | Promise<void>;
 }
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
@@ -56,6 +59,15 @@ function axiosStyleSerializer(obj) {
   });
 }
 
+/**
+ * PD2 returns some listings without an `item` (nothing to show, price or link); drop them here so every
+ * MarketListingEntry downstream has one, keeping the page's row count in `fetched` for paging. null (a 401)
+ * passes through.
+ */
+function withItems(result: Omit<MarketListingResult, 'fetched'> | null): MarketListingResult | null {
+  return result && { ...result, data: result.data.filter((listing) => listing.item), fetched: result.data.length };
+}
+
 export function useMarketActions({
   settings,
   authData,
@@ -64,7 +76,13 @@ export function useMarketActions({
   stashCache,
   CACHE_TTL,
   onAuthError,
+  onOfferCreated,
 }: UseMarketActionsProps): UseMarketActionsReturn {
+  const onOfferCreatedRef = useRef(onOfferCreated);
+  useEffect(() => {
+    onOfferCreatedRef.current = onOfferCreated;
+  }, [onOfferCreated]);
+
   // Find matching items
   const findMatchingItems = useCallback(
     async (item: PriceCheckItem): Promise<GameStashItem[]> => {
@@ -93,6 +111,8 @@ export function useMarketActions({
       note: string,
       type: 'exact' | 'note',
     ): Promise<MarketListingEntry> => {
+      // Signed out meanwhile (a 401 elsewhere cleared the session): expected, like a 401 here
+      if (!authData?.user) throw new AuthenticationError('Sign in to PD2 to list this item');
       const is_hardcore = settings.mode === 'hardcore';
       const is_ladder = settings.ladder === 'ladder';
       const bumped_at = new Date().toISOString();
@@ -119,7 +139,10 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError, body);
+      const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, body);
+      // 401: re-authentication started and nothing was listed
+      if (!listing) throw new AuthenticationError('Sign in to PD2 to list this item');
+      return listing;
     },
     [settings, authData, onAuthError],
   );
@@ -134,7 +157,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      return withItems(await handleApiResponse(response, onAuthError, query));
     },
     [settings.pd2Token, onAuthError],
   );
@@ -149,7 +172,7 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      return withItems(await handleApiResponse(response, onAuthError, query));
     },
     [settings.pd2Token, onAuthError],
   );
@@ -179,7 +202,13 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      await handleApiResponse(response, onAuthError, { listingId });
+      // Already gone (sold, expired, or removed elsewhere): what the user asked for
+      if (response.status !== 404) {
+        await handleApiResponse(response, onAuthError, { listingId });
+        // A 401 resolves (re-authentication started) but the listing is still up: never report it as removed
+        if (response.status === 401) throw new AuthenticationError('Sign in to PD2 to remove this listing');
+      }
+      publishListingDeleted(listingId);
     },
     [settings, onAuthError],
   );
@@ -217,7 +246,18 @@ export function useMarketActions({
           Authorization: `Bearer ${settings.pd2Token}`,
         },
       });
-      return await handleApiResponse(response, onAuthError, query);
+      const page: { total: number; data: MarketFavorite[] } | null = await handleApiResponse(
+        response,
+        onAuthError,
+        query,
+      );
+      // A favorite whose listing came without an item stays (the star still toggles); its listing has no card
+      return (
+        page && {
+          ...page,
+          data: page.data.map((f) => (f.listing && !f.listing.item ? { ...f, listing: undefined } : f)),
+        }
+      );
     },
     [settings.pd2Token, onAuthError],
   );
@@ -268,12 +308,16 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError, body);
+      const created = await handleApiResponse(response, onAuthError, body);
+      // null: a 401, the sign-in flow takes over
+      if (created !== null) void onOfferCreatedRef.current?.();
+      return created;
     },
     [settings.pd2Token, onAuthError],
   );
 
-  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it
+  // One listing as PD2 has it now (GET /market/listing/:id); null when PD2 no longer has it, or has it
+  // without an item (nothing left to offer on or whisper about)
   const getListing = useCallback(
     async (listingId: string): Promise<MarketListingEntry | null> => {
       const query = { $resolve: { user: { in_game_account: true } } };
@@ -291,15 +335,44 @@ export function useMarketActions({
       const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, { listingId });
       // 401: re-authentication started; that isn't "gone"
       if (!listing) throw new AuthenticationError('Sign in to PD2 to check this listing');
-      return listing;
+      return listing.item ? listing : null;
     },
     [settings.pd2Token, onAuthError],
+  );
+
+  // Sellers' current last-seen times on live listings (GET /market/listing?_id[$in]=…). Not through
+  // handleApiResponse: a background lookup neither reports PD2 errors nor starts a sign-in on 401.
+  const getListingPresence = useCallback(
+    async (listingIds: string[]): Promise<Map<string, ListingPresence>> => {
+      const query = {
+        _id: { $in: listingIds },
+        $limit: listingIds.length,
+        $select: ['user_id', 'user_last_online', 'user_last_ingame'],
+      };
+      const response = await tauriFetch(buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query), {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${settings.pd2Token}` },
+      });
+      if (!response.ok) throw new Error(`Listing presence lookup answered ${response.status}`);
+      const body: { data?: unknown } = await response.json();
+      const presence = new Map<string, ListingPresence>();
+      for (const row of Array.isArray(body?.data) ? body.data : []) {
+        if (typeof row?._id !== 'string') continue;
+        presence.set(row._id, {
+          user_last_online: typeof row.user_last_online === 'string' ? row.user_last_online : null,
+          user_last_ingame: typeof row.user_last_ingame === 'string' ? row.user_last_ingame : null,
+        });
+      }
+      return presence;
+    },
+    [settings.pd2Token],
   );
 
   const marketApi = useMemo<MarketApi>(
     () => ({
       searchListings: searchMarketListings,
       getListing,
+      getListingPresence,
       getMarketListings,
       getMarketListingsArchive,
       getFavorites,
@@ -307,7 +380,16 @@ export function useMarketActions({
       removeFavorite,
       createOffer,
     }),
-    [getListing, getMarketListings, getMarketListingsArchive, getFavorites, addFavorite, removeFavorite, createOffer],
+    [
+      getListing,
+      getListingPresence,
+      getMarketListings,
+      getMarketListingsArchive,
+      getFavorites,
+      addFavorite,
+      removeFavorite,
+      createOffer,
+    ],
   );
 
   return {

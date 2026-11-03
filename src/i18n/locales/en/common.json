@@ -1,0 +1,56 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "remove": "Remove",
+    "edit": "Edit",
+    "add": "Add",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "copy": "Copy",
+    "copied": "Copied",
+    "search": "Search",
+    "clear": "Clear",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "open": "Open",
+    "reset": "Reset",
+    "apply": "Apply",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "tryAgain": "Try again"
+  },
+  "status": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "noResults": "No results"
+  },
+  "time": {
+    "justNow": "just now",
+    "secondsAgoShort": "{{count}}s ago",
+    "minutesAgoShort": "{{count}}m ago",
+    "hoursAgoShort": "{{count}}h ago",
+    "daysAgoShort": "{{count}}d ago",
+    "monthsAgoShort": "{{count}}mo ago",
+    "yearsAgoShort": "{{count}}y ago",
+    "secondsAgo_one": "{{count}} second ago",
+    "secondsAgo_other": "{{count}} seconds ago",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  },
+  "language": {
+    "system": "System default"
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "window": {
+    "title": "Valeur nette",
+    "retry": "Réessayer",
+    "tabs": {
+      "overview": "Aperçu",
+      "runes": "Runes",
+      "currency": "Monnaies",
+      "ubers": "Matériaux Uber",
+      "gemsMats": "Gemmes et matériaux",
+      "uniquesSets": "Uniques et sets",
+      "other": "Autres",
+      "rares": "Rares",
+      "raresCrafted": "Rares et craftés",
+      "history": "Historique"
+    }
+  },
+  "header": {
+    "netWorth": "Valeur nette",
+    "deltaLast": "dernier",
+    "delta24h": "24 h",
+    "deltaSeason": "saison",
+    "refresh": "Actualiser",
+    "refreshing": "Actualisation",
+    "refreshTooltip": "Réévaluer votre coffre maintenant",
+    "asOf": "au {{time}}",
+    "prices": "prix {{day}}",
+    "gold": "{{amount}} or",
+    "ladderFallback": "évalué avec les prix ladder (pas de données de marché non-ladder)"
+  },
+  "trackingDisabled": {
+    "title": "L'historique est désactivé.",
+    "description": "Activez « Enregistrer l'historique de la valeur nette » dans Paramètres → Valeur nette pour voir un graphique, les sessions avec HR/heure et ce qui a changé entre les instantanés."
+  },
+  "signedOut": {
+    "chooseAccount": "Choisissez votre compte PD2 dans les Paramètres pour évaluer votre coffre.",
+    "signInPrompt": "Connectez-vous avec votre compte PD2 pour évaluer votre coffre.",
+    "signIn": "Se connecter"
+  },
+  "tabSkeleton": {
+    "title": "Aucune évaluation.",
+    "description": "Votre coffre n'a pas pu être évalué. Utilisez Réessayer ci-dessus dès que PD2 est joignable."
+  },
+  "categories": {
+    "runes": "Runes",
+    "currency": "Monnaies",
+    "ubers": "Matériaux Uber",
+    "gems": "Gemmes",
+    "mats": "Matériaux",
+    "uniques": "Uniques",
+    "sets": "Sets",
+    "other": "Autres"
+  },
+  "columns": {
+    "item": "Objet",
+    "qty": "Qté",
+    "unit": "Unité",
+    "value": "Valeur",
+    "share": "%",
+    "change7d": "7 j",
+    "price": "Prix"
+  },
+  "table": {
+    "noResults": "Aucun résultat.",
+    "sortLabel": "{{title}} : {{action}}",
+    "sortAscending": "tri croissant",
+    "sortDescending": "tri décroissant",
+    "clearSorting": "annuler le tri"
+  },
+  "confidence": {
+    "ok": {
+      "label": "marché",
+      "hint": "Moyenne du marché sur 7 jours"
+    },
+    "fixed": {
+      "label": "fixe",
+      "hint": "Valeur de rune fixe (peu d'annonces)"
+    },
+    "low": {
+      "label": "faible",
+      "hint": "Moins de 10 annonces — compté comme incertain, hors total"
+    },
+    "none": {
+      "label": "sans prix",
+      "hint": "Aucune donnée de prix — évalué à 0"
+    },
+    "listings_one": "{{count}} annonce",
+    "listings_many": "{{count}} d'annonces",
+    "listings_other": "{{count}} annonces"
+  },
+  "overview": {
+    "noPricedHoldings": "Aucun avoir évalué.",
+    "topAside_one": "par valeur · top {{count}}",
+    "topAside_many": "par valeur · top {{count}}",
+    "topAside_other": "par valeur · top {{count}}",
+    "topHoldings": "Principaux avoirs",
+    "nothingPriced": "Rien d'évalué.",
+    "unpriced_one": "{{count}} objet sans prix",
+    "unpriced_many": "{{count}} d'objets sans prix",
+    "unpriced_other": "{{count}} objets sans prix",
+    "uncertain": "{{value}} incertain (fiabilité faible, hors total)",
+    "gold": "{{amount}} or (non converti)",
+    "byStashTab": "Par onglet de coffre"
+  },
+  "holdings": {
+    "searchPlaceholder": "Rechercher…",
+    "searchLabel": "Rechercher dans les avoirs",
+    "clearSearch": "Effacer la recherche",
+    "hideZero": "Masquer valeur nulle",
+    "nothingMatches": "Aucun résultat.",
+    "noneInStash": "Aucun dans votre coffre.",
+    "zeroHidden_one": "{{count}} ligne à valeur nulle masquée (les objets sans prix sont listés mais évalués à 0).",
+    "zeroHidden_many": "{{count}} de lignes à valeur nulle masquées (les objets sans prix sont listés mais évalués à 0).",
+    "zeroHidden_other": "{{count}} lignes à valeur nulle masquées (les objets sans prix sont listés mais évalués à 0).",
+    "count_one": "{{count}} avoir",
+    "count_many": "{{count}} d'avoirs",
+    "count_other": "{{count}} avoirs"
+  },
+  "history": {
+    "showMore": "Afficher plus ({{remaining}} plus anciens)",
+    "chartRange": "Période du graphique",
+    "ranges": {
+      "24h": "24 h",
+      "7d": "7 j",
+      "season": "Saison",
+      "all": "Tout"
+    },
+    "rangeChange": "Variation sur la période sélectionnée",
+    "stackByCategory": "Empiler par catégorie",
+    "chart": {
+      "netWorth": "Valeur nette",
+      "emptyTitle": "Aucun instantané sur cette période.",
+      "emptyDescription": "Les instantanés sont pris au démarrage, toutes les quelques minutes lorsque Diablo est au premier plan, et quand vous actualisez."
+    },
+    "sessions": {
+      "title": "Sessions",
+      "start": "Nouvelle session",
+      "stop": "Arrêter la session",
+      "emptyTitle": "Aucune session.",
+      "emptyDescription": "Les sessions se créent automatiquement à partir d'instantanés pris à moins de 30 minutes d'intervalle.",
+      "columns": {
+        "when": "Quand",
+        "duration": "Durée",
+        "farmed": "Farmé",
+        "drift": "Dérive",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Aujourd'hui {{time}}",
+      "yesterday": "Hier {{time}}",
+      "open": "Session en cours",
+      "manual": "manuelle",
+      "best": "Meilleur HR/h de la saison",
+      "noGains": "Aucun gain d'objet.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} instantané",
+      "tooltipSummary_many": "{{from}} → {{to}} HR · {{count}} d'instantanés",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} instantanés"
+    },
+    "snapshots": {
+      "title": "Instantanés",
+      "selected": "{{selected}}/2 sélectionnés",
+      "pickTwo": "Choisissez-en deux à comparer",
+      "emptyTitle": "Aucun instantané sur cette période.",
+      "select": "Sélectionner l'instantané {{time}}",
+      "compareWithPrevious": "Comparer au précédent"
+    },
+    "diff": {
+      "priceBasis": "Base de prix",
+      "pricesThen": "Prix d'alors",
+      "pricesNow": "Prix actuels",
+      "close": "Fermer la comparaison",
+      "farmed": "Farmé",
+      "marketDrift": "Dérive du marché",
+      "total": "Total",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "Aucun avoir modifié.",
+      "change": "Variation"
+    },
+    "delete": {
+      "thisSeason": "cette saison",
+      "privacy": "L'historique est privé, lié à votre connexion PD2 et stocké sur pd2trader.com.",
+      "button": "Supprimer l'historique",
+      "title": "Supprimer l'historique de la valeur nette ?",
+      "description": "Supprime les instantanés stockés pour {{account}} ({{ladder}}, {{core}}). Action irréversible.",
+      "season": "Supprimer {{season}}",
+      "allSeasons": "Supprimer toutes les saisons",
+      "deleted_one": "{{count}} instantané supprimé.",
+      "deleted_many": "{{count}} d'instantanés supprimés.",
+      "deleted_other": "{{count}} instantanés supprimés."
+    }
+  },
+  "rares": {
+    "stashFallback": "Coffre",
+    "emptyTitle": "Aucun rare dans votre coffre",
+    "emptyDescription": "Les anneaux, amulettes, joyaux, armures et armes rares de votre coffre sont évalués ici (Garder · Vérifier · Vendre au PNJ).",
+    "groups": {
+      "keep": "Garder",
+      "worthALook": "À examiner"
+    },
+    "estTitle": "Estimé d'après les prix demandés pour des rares similaires en {{season}} — hors total",
+    "summary": {
+      "raresLine_one": "<label>Rares : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} case)</note>",
+      "raresLine_many": "<label>Rares : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} de cases)</note>",
+      "raresLine_other": "<label>Rares : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} cases)</note>",
+      "craftedLine_one": "<label>Craftés : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} case)</note>",
+      "craftedLine_many": "<label>Craftés : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} de cases)</note>",
+      "craftedLine_other": "<label>Craftés : </label><keep>{{keep}} à garder</keep><sep> · </sep><check>{{checkHigh}} à examiner</check><sep> · </sep><vendor>{{count}} pour le PNJ</vendor> <note>(libère {{count}} cases)</note>",
+      "unpricedRares_one": "{{count}} rare à garder sans fourchette de marché non inclus",
+      "unpricedRares_many": "{{count}} de rares à garder sans fourchette de marché non inclus",
+      "unpricedRares_other": "{{count}} rares à garder sans fourchette de marché non inclus",
+      "unpricedCrafted_one": "{{count}} objet crafté à garder sans fourchette de marché non inclus",
+      "unpricedCrafted_many": "{{count}} d'objets craftés à garder sans fourchette de marché non inclus",
+      "unpricedCrafted_other": "{{count}} objets craftés à garder sans fourchette de marché non inclus",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> en rares à garder (estimé, hors total)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> en objets craftés à garder (estimé, hors total)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} pour le PNJ · {{tab}}",
+      "vendorNote_one": "Libère {{count}} case du coffre",
+      "vendorNote_many": "Libère {{count}} de cases du coffre",
+      "vendorNote_other": "Libère {{count}} cases du coffre",
+      "lowTitle": "{{n}} probablement de faible valeur · {{tab}}",
+      "lowNote": "Vérifiez les objets sans stat clé"
+    }
+  }
+}

@@ -6,6 +6,7 @@ import {
   encodeItemForQuickList,
   escapeUnicode,
   isStashItem,
+  repairClipboardText,
   sleep,
 } from './item-utils';
 import type { ItemType } from '@/assets/itemFuzzySearch';
@@ -42,6 +43,33 @@ describe('item encoding', () => {
     const encoded = encodeItem(raw);
     expect(encoded).not.toMatch(/[+/=]/);
     expect(decode(decodeURIComponent(encoded))).toBe(raw);
+  });
+});
+
+describe('repairClipboardText', () => {
+  // UTF-8 bytes of `s` read back one byte per character as Windows-1252, as an ANSI clipboard delivers them
+  const asCp1252 = (s: string) => {
+    const high: Record<number, string> = { 0x80: '€', 0x92: '’', 0x99: '™' };
+    return [...new TextEncoder().encode(s)].map((b) => high[b] ?? String.fromCharCode(b)).join('');
+  };
+
+  it('restores colour codes that arrived as "Ã¿c"', () => {
+    const raw = JSON.stringify({ name: 'ÿc0Monster Density:ÿc3 +206%' });
+    expect(asCp1252(raw)).toContain('Ã¿c0Monster Density');
+    expect(repairClipboardText(asCp1252(raw))).toBe(raw);
+  });
+
+  it('restores characters whose bytes fall in the Windows-1252 0x80-0x9F range', () => {
+    const raw = JSON.stringify({ name: 'Tal Rasha’s Lidless Eye' });
+    expect(repairClipboardText(asCp1252(raw))).toBe(raw);
+  });
+
+  it.each([
+    ['plain ASCII', '{"name":"Shako"}'],
+    ['correct UTF-8 text', '{"name":"ÿc4Tal Rasha’s"}'],
+    ['Latin-1 text that is not valid UTF-8 once re-encoded', 'Ãé'],
+  ])('leaves %s unchanged', (_, text) => {
+    expect(repairClipboardText(text)).toBe(text);
   });
 });
 

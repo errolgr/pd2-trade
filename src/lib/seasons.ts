@@ -7,6 +7,7 @@
  * before being sent to the net worth API. The bundled list is a fallback; the net worth
  * provider prefers the server list from `GET /api/seasons`.
  */
+import { t } from '@/i18n';
 
 export interface Season {
   id: string;
@@ -52,7 +53,10 @@ export function getSeasonById(id: string, seasons: Season[] = SEASONS): Season |
 export function getSeasonSettingOptions(seasons: Season[] = SEASONS): { value: string; label: string }[] {
   const current = getCurrentSeason(seasons);
   return [
-    { value: CURRENT_SEASON_SETTING, label: current ? `${current.label} (current)` : 'Current season' },
+    {
+      value: CURRENT_SEASON_SETTING,
+      label: current ? t('system:seasons.current', { season: current.label }) : t('system:seasons.currentGeneric'),
+    },
     ...startedSeasons(seasons)
       .filter((s) => s.id !== current?.id)
       .map((s) => ({ value: s.id, label: s.label })),

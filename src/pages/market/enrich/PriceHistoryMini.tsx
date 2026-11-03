@@ -1,11 +1,12 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { fmtBandHr, plural } from '@/components/rares/rares-format';
+import { fmtBandHr } from '@/components/rares/rares-format';
 import { PriceSparkline } from '@/pages/price-check/components/PriceSparkline';
 import { shortAgo } from '@/pages/chat/hooks/useTraderProfile';
 import { usePriceHistory } from './usePriceHistory';
 import { useNow } from './useNow';
+import { useTranslation } from '@/i18n';
 
 /** Earlier listings shown for a rare. */
 const RARE_ROWS = 5;
@@ -15,15 +16,18 @@ const RARE_ROWS = 5;
  * rares/crafted. Renders nothing when there is no history to show.
  */
 export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
+  const { t } = useTranslation('market');
   const state = usePriceHistory(listing);
   const now = useNow();
   if (state.kind === 'none') return null;
 
   if (state.kind === 'economy') {
     return (
-      <section aria-label="Price history"
+      <section aria-label={t('history.priceHistory')}
         className="space-y-1">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">30-day market</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t('history.market30d')}
+        </div>
         <PriceSparkline query={state.query} />
       </section>
     );
@@ -33,19 +37,24 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
     return (
       <div className="flex h-6 items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="size-3 animate-spin" />
-        Loading item history...
+        {t('history.loading')}
       </div>
     );
   }
 
   const { history } = state;
   return (
-    <section aria-label="Item history"
+    <section aria-label={t('history.itemHistory')}
       className="space-y-1">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Seen before</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {t('history.seenBefore')}
+      </div>
       <div className="text-xs text-muted-foreground">
-        Listed {plural(history.timesListed, 'time')} by {plural(history.distinctSellers, 'seller')}, first{' '}
-        {shortAgo(Date.parse(history.firstSeen), now)}
+        {t('history.summary', {
+          times: t('history.times', { count: history.timesListed }),
+          sellers: t('history.sellers', { count: history.distinctSellers }),
+          first: shortAgo(Date.parse(history.firstSeen), now),
+        })}
       </div>
       <ul className="space-y-0.5 text-xs">
         {history.listings.slice(0, RARE_ROWS).map((l) => (
@@ -57,7 +66,7 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
             <span className="min-w-0 truncate tabular-nums">
               {l.hrPrice !== null && l.hrPrice > 0 ? `${fmtBandHr(l.hrPrice)} HR` : (l.priceText ?? '—')}
             </span>
-            {l.sellerChanged && <span className="shrink-0 text-[10px] text-info">new seller</span>}
+            {l.sellerChanged && <span className="shrink-0 text-[10px] text-info">{t('history.newSeller')}</span>}
           </li>
         ))}
       </ul>

@@ -1,0 +1,59 @@
+{
+  "input": {
+    "label": "Befehlspalette",
+    "placeholder": "Items, Builds, Einstellungen suchen…",
+    "scopedPlaceholder": "Suchen…"
+  },
+  "groups": {
+    "actions": "Aktionen",
+    "items": "Items",
+    "builds": "Builds",
+    "chat": "Chat",
+    "listings": "Angebote",
+    "settings": "Einstellungen",
+    "pinned": "Angeheftet",
+    "recent": "Zuletzt"
+  },
+  "scope": {
+    "tabHint": "Tab zum Eingrenzen",
+    "remove": "Nicht mehr nur in {{label}} suchen"
+  },
+  "loading": "Suche läuft…",
+  "signIn": {
+    "title": "Anmelden, um Chats und Angebote zu durchsuchen"
+  },
+  "empty": {
+    "noResults": "Keine Ergebnisse für „{{query}}“"
+  },
+  "footer": {
+    "move": "↑↓ bewegen",
+    "open": "↵ öffnen",
+    "actions": "Strg+K Aktionen",
+    "scope": "Tab eingrenzen",
+    "unscope": "Rücktaste aufheben",
+    "close": "Esc schließen"
+  },
+  "menu": {
+    "label": "Aktionen für {{title}}",
+    "placeholder": "Aktionen suchen…",
+    "pin": "An Palette anheften",
+    "unpin": "Von Palette lösen"
+  },
+  "errors": {
+    "actionFailed": "Das hat nicht geklappt"
+  },
+  "actions": {
+    "market": "Markt",
+    "chat": "Chat",
+    "offers": "Handelsangebote",
+    "builds": "Builds",
+    "stashValue": "Truhenwert",
+    "snapshot": "Vermögens-Snapshot erstellen",
+    "myListings": "Meine Angebote",
+    "settings": "Einstellungen",
+    "changelog": "Neuigkeiten",
+    "checkUpdates": "Nach Updates suchen",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden"
+  }
+}

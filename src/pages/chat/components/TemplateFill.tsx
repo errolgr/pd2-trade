@@ -2,6 +2,7 @@ import React, { useId, useRef, useState } from 'react';
 import { CornerDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
 
 /** Answers given to template placeholders this session, by name: offered again next time ({game}, {pw}...). */
@@ -26,6 +27,7 @@ interface TemplateFillProps {
  * and inserts from the last one (Ctrl/Cmd+Enter from any), Esc goes back to the list.
  */
 export function TemplateFill({ label, template, placeholders, vars, onInsert, onCancel }: TemplateFillProps) {
+  const { t } = useTranslation(['chat', 'common']);
   const id = useId();
   const [answers, setAnswers] = useState<Record<string, string>>(() =>
     Object.fromEntries(placeholders.map((name) => [name, rememberedAnswers.get(name) ?? ''])),
@@ -41,7 +43,7 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
 
   return (
     <form
-      aria-label={`Fill in ${label}`}
+      aria-label={t('templateFill.fillIn', { label })}
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -92,7 +94,7 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
       {/* Preview and actions on one line */}
       <div className="flex items-center gap-2">
         <p
-          aria-label="Preview"
+          aria-label={t('templateFill.preview')}
           title={preview}
           className="min-w-0 flex-1 truncate rounded-md bg-muted/40 px-2 py-1 text-xs text-foreground/90"
         >
@@ -102,19 +104,19 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
           size="sm"
           className="h-7 px-2.5 text-xs">
           <CornerDownLeft />
-          Insert
+          {t('templateFill.insert')}
         </Button>
         <Button type="button"
           variant="ghost"
           size="sm"
           className="h-7 px-2 text-xs"
           onClick={onCancel}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
       </div>
       {blank.length > 0 && (
         <p className="-mt-1 text-[11px] text-muted-foreground">
-          Left empty, inserted blank: {blank.map((name) => `{${name}}`).join(' ')}
+          {t('templateFill.leftEmpty', { names: blank.map((name) => `{${name}}`).join(' ') })}
         </p>
       )}
     </form>

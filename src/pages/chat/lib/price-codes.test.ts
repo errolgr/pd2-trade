@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { listingPriceCode } from './price-codes';
+import { listingPriceCode, namePriceCode } from './price-codes';
 
 const item = (over: Record<string, unknown>) =>
   ({ is_identified: true, is_runeword: false, quality: { id: 2, name: 'Normal' }, ...over }) as unknown as ItemDetail;
@@ -10,7 +10,8 @@ describe('listingPriceCode', () => {
     [
       'a rune by its base id',
       item({ name: 'Ohm Rune', base_code: 'r27', base: { id: 'r27', name: 'Ohm Rune' } }),
-      'r27'],
+      'r27',
+    ],
     ['a stacked rune without the s', item({ name: 'Ber Rune', base_code: 'r30s', base: { id: 'r30s' } }), 'r30'],
     ['a rune from base_code alone', item({ name: 'Jah Rune', base_code: 'r31' }), 'r31'],
     ['an uber ingredient', item({ name: 'Key of Terror', base_code: 'tes', base: { id: 'tes' } }), 'tes'],
@@ -18,15 +19,18 @@ describe('listingPriceCode', () => {
     [
       'a tier 5 map',
       item({ name: 'Ruins of Viz-Jun', base_code: 't51', base: { id: 't51', type_code: 't5m' } }),
-      't51'],
+      't51',
+    ],
     [
       'a unique by normalized name',
       item({ name: 'Harlequin Crest', quality: { name: 'Unique' }, base: { name: 'Shako' } }),
-      'harlequin_crest'],
+      'harlequin_crest',
+    ],
     [
       'a set item with an apostrophe',
       item({ name: "Tal Rasha's Guardianship", quality: { name: 'Set' }, base: { name: 'Lacquered Plate' } }),
-      'tal_rasha_s_guardianship'],
+      'tal_rasha_s_guardianship',
+    ],
   ])('prices %s', (_, detail, code) => {
     expect(listingPriceCode(detail)).toBe(code);
   });
@@ -62,5 +66,17 @@ describe('listingPriceCode', () => {
     ],
   ])('skips %s', (_, detail) => {
     expect(listingPriceCode(detail)).toBeNull();
+  });
+});
+
+describe('namePriceCode', () => {
+  it.each([
+    ['a rune by its rune code', 'Ber Rune', 'Base', 'r30'],
+    ['a unique by its normalized name', 'Harlequin Crest', 'Unique', 'harlequin_crest'],
+    ['a runeword: not priced by name', 'Enigma', 'Runeword', null],
+    ['a plain base: not priced', 'Shako', 'Base', null],
+    ['a per-variant unique: a name lookup would mix variants', 'Rainbow Facet', 'Unique', null],
+  ] as const)('%s', (_, name, quality, code) => {
+    expect(namePriceCode(name, quality)).toBe(code);
   });
 });

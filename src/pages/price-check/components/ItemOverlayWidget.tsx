@@ -1,5 +1,5 @@
 import { PopoverKeyValue, PopoverSectionTitle, PopoverTile } from '@/components/custom/popover-parts';
-import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
+import { encodeItemForQuickList, isStashItem, itemCorruptions } from '@/lib/item-utils';
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { RELEASE_PAGE_URL, isManualUpdateRequired } from '@/lib/manual-update';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertCircle,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   ChevronUp,
   ExternalLink,
+  ImageDown,
   ListPlus,
   Loader2,
   LuggageIcon,
@@ -48,18 +50,32 @@ import { Props } from '../lib/types';
 import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
-import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
-import { priceCheckToMarketFilters } from '@/pages/market/store/priceCheckFilters';
+import { BASE_QUALITIES, buildGetMarketListingQuery, buildTradeUrl, type QualitySearch } from '../lib/tradeUrlBuilder';
+import {
+  priceCheckServiceSearch,
+  priceCheckToMarketFilters,
+  type PriceCheckSearch,
+} from '@/pages/market/store/priceCheckFilters';
+import { useRelaxationCounts } from '@/pages/market/hooks/useRelaxations';
+import { RelaxationChips, relaxationChips } from '@/pages/market/components/RelaxationChips';
+import { FILTER_HIGHLIGHT_CLASS } from '@/pages/market/components/controls';
+import { type PriceCheckRelaxation, priceCheckRelaxations } from '../lib/relaxations';
+import { statText } from '../lib/tooltip-lines';
+import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
+import { withRowPresence } from '@/pages/market/lib/presence';
+import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
+import { reportApiError } from '@/lib/error-reporting';
+import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey } from '../lib/utils';
+import { getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
-import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { useOverlay } from '@/overlay';
-import { getSeasonDateConfig } from '@/lib/seasons';
+import { imageToast, showToast, useOverlay } from '@/overlay';
+import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -74,10 +90,16 @@ import {
   CorruptionPrice,
   CorruptionPricesResponse,
 } from '@/pages/currency/lib/price-api';
-import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
-import { cubeCorruptions } from '@/assets/cube-corruptions';
+import { StatId } from '../lib/stat-mappings';
+import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
+import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { writeText } from '@/lib/browser-clipboard';
+import { listingAge } from '@/pages/market/lib/listing';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { writePng, writeText } from '@/lib/browser-clipboard';
+import { whisperCommand } from '@/lib/whisper-history';
+import { buildItemCard, renderItemCard } from '../lib/item-card';
+import { CaptureSweep } from './CaptureSweep';
 import { useRareAppraisal } from '../hooks/useRareAppraisal';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
 import { appraisalNote } from '@/components/rares/rares-format';
@@ -85,10 +107,51 @@ import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { SimulatorButton } from './SimulatorButton';
+import { currentLocale, Trans, useTranslation } from '@/i18n';
+
+/** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
+const ANY_QUALITY = 'any' as const;
+
+/** The search whose results are listed. */
+interface ActiveSearch {
+  /** The same search as a PD2 query: searches the market service can't express, and pages it fails to answer. */
+  query: MarketListingQuery;
+  marketFilters: MarketFilters;
+  /** A selected row the market service can't filter (MarketFilterGap): PD2 answers every page. */
+  pd2Only: boolean;
+  /** A pseudo stat is selected: only the market service filters those, so PD2 never stands in. */
+  hasPseudo: boolean;
+  archived: boolean;
+  searchMode: number;
+  /** Listings fetched so far: the `$skip` of the next page. */
+  skip: number;
+}
+
+/** The results' order, set from the column headers: price (HR) or listing bump time. */
+interface ResultsSort {
+  by: 'price' | 'bumped';
+  dir: 'asc' | 'desc';
+}
+
+/** The header dots' seller filter: neither on = anyone; both on = sellers who are either. */
+interface SellerFilter {
+  inGame: boolean;
+  onSite: boolean;
+}
+
+/** Whether a row's seller passes `filter` (by the presence the row shows, PD2's live times merged in). */
+function sellerMatches(listing: MarketListingEntry, filter: SellerFilter): boolean {
+  if (!filter.inGame && !filter.onSite) return true;
+  return (
+    (filter.inGame && isUserOnlineIngame(listing.user_last_ingame)) ||
+    (filter.onSite && isUserOnlineIngame(listing.user_last_online))
+  );
+}
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
+  const { t } = useTranslation(['priceCheck', 'common']);
   const { settings, isLoading: settingsLoading } = useOptions();
-  const { getMarketListings, getMarketListingsArchive } = usePd2Website();
+  const { getMarketListings, getMarketListingsArchive, marketApi } = usePd2Website();
   const { findOneByName } = useItems();
   const { openPanel } = useOverlay();
   const priceHours = settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS;
@@ -110,29 +173,64 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     toggle,
     corruptedState,
     setCorruptedState,
+    pseudos,
+    togglePseudo,
+    setActivePseudos,
   } = useStatSelection(item);
 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName]);
 
-  // Market listings state
-  const [marketListings, setMarketListings] = useState<MarketListingEntry[]>([]);
+  // Market listings state: the rows as fetched; `marketRows` below merges PD2's current seller presence in
+  const [fetchedRows, setFetchedRows] = useState<ScoredListing[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [marketLoading, setMarketLoading] = useState(false);
-  const [marketError, setMarketError] = useState<string | null>(null);
+  // `message` is the service's error text, when it sent one
+  const [marketError, setMarketError] = useState<{ message?: string } | null>(null);
   const [searchArchived, setSearchArchived] = useState(false);
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   // True once a new search has completed for the current item (drives the "no listings" empty state)
   const [searched, setSearched] = useState(false);
-  const [triggerCorruptionSearch, setTriggerCorruptionSearch] = useState(false);
-  const [triggerSocketSearch, setTriggerSocketSearch] = useState(false);
+  // Set with filter changes that search as soon as they apply (corruption/socket price clicks, a Keep rare)
+  const [searchPending, setSearchPending] = useState(false);
+  /** The last search sent: what an empty result's relaxations widen (`pd2Only`: PD2 answered, nothing to count). */
+  const [ranSearch, setRanSearch] = useState<{
+    search: PriceCheckSearch;
+    sort: MarketFilters['sort'];
+    pd2Only: boolean;
+  } | null>(null);
   const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 20;
+  // Column-header sort and the header dots' seller filter; both outlive item changes (a habit, not a search)
+  const [sort, setSort] = useState<ResultsSort>({ by: 'bumped', dir: 'desc' });
+  const [sellerFilter, setSellerFilter] = useState<SellerFilter>({ inGame: false, onSite: false });
+  // More pages continue this search's query, never the filters as edited since
+  const activeSearch = useRef<ActiveSearch | null>(null);
+  // Bumped by each new search and item change: a response for an older one is dropped
+  const searchGeneration = useRef(0);
+  // Seller presence pops in: rows render as the market service sent them, then PD2's current last-seen times
+  // (asked with the user's token) merge in. Ended listings aren't on PD2's live market; rows PD2 itself sent carry
+  // current presence already (remembered when they arrive).
+  const presenceIds = useMemo(
+    () => fetchedRows.filter((row) => !row.status || row.status === 'active').map((row) => row.listing._id),
+    [fetchedRows],
+  );
+  const presence = useListingPresence(settings.pd2Token ? marketApi : null, presenceIds);
+  const marketRows = useMemo(() => withRowPresence(fetchedRows, presence), [fetchedRows, presence]);
+  const marketListings = useMemo(() => marketRows.map((row) => row.listing), [marketRows]);
+  // The seller filter hides loaded rows only: the search (and its total) stay as they are, and scrolling, or a
+  // short list keeping the loader in view, fetches more pages
+  const sellerFiltered = sellerFilter.inGame || sellerFilter.onSite;
+  const visibleRows = useMemo(
+    () => (sellerFiltered ? marketRows.filter((row) => sellerMatches(row.listing, sellerFilter)) : marketRows),
+    [marketRows, sellerFilter, sellerFiltered],
+  );
 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
   const [averagePriceLoading, setAveragePriceLoading] = useState(false);
-  const [averagePriceError, setAveragePriceError] = useState<string | null>(null);
+  const [averagePriceError, setAveragePriceError] = useState<{ reason: 'noData' | 'failed'; message?: string } | null>(
+    null,
+  );
 
   // Corruption prices state
   const [corruptionPrices, setCorruptionPrices] = useState<CorruptionPricesResponse | null>(null);
@@ -146,8 +244,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Search mode: 0 = category (base), 1 = typeLabel
   const [searchMode, setSearchMode] = useState(0);
-  // Quality override: null = use item's original quality
-  const [qualityOverride, setQualityOverride] = useState<ItemQuality | null>(null);
+  // Quality override: null = use item's original quality; ANY_QUALITY = every base quality
+  const [qualityOverride, setQualityOverride] = useState<ItemQuality | typeof ANY_QUALITY | null>(null);
 
   // Rare appraisal (pd2trader.com): verdict pill + key-stat stars on the stat rows; null mode until settings load.
   const rareMode = useMemo(
@@ -159,8 +257,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
   const appraisalNoteText = rareResponse?.reason ? appraisalNote(rareResponse.reason) : null;
-  // Set when an appraisal pre-selects key stats of a Keep rare: runs the search once the filters are applied.
-  const [triggerRareSearch, setTriggerRareSearch] = useState(false);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -377,22 +473,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [item.type]);
 
   // Check if item should use toggle (only for base item qualities, not uniques/sets/runewords)
-  const shouldUseToggle = useMemo(() => {
-    return (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior
-    );
-  }, [item.quality]);
+  const shouldUseToggle = BASE_QUALITIES.includes(item.quality);
 
-  const availableQualities = useMemo(() => {
-    if (!shouldUseToggle) return [];
-    return [ItemQuality.Normal, ItemQuality.Superior, ItemQuality.Magic, ItemQuality.Rare, ItemQuality.Crafted].filter(
-      (q) => q !== item.quality,
-    );
-  }, [item.quality, shouldUseToggle]);
+  // The header cycles: the item's quality → Any → each other base quality → back
+  const availableQualities = useMemo<(ItemQuality | typeof ANY_QUALITY)[]>(
+    () => (shouldUseToggle ? [ANY_QUALITY, ...BASE_QUALITIES.filter((q) => q !== item.quality)] : []),
+    [item.quality, shouldUseToggle],
+  );
 
   const cycleQuality = useCallback(() => {
     if (availableQualities.length === 0) return;
@@ -405,6 +492,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [availableQualities]);
 
   const effectiveQuality = qualityOverride ?? item.quality;
+  /** What the searches filter on (undefined: the item's own quality, for uniques / sets / runewords). */
+  const searchedQuality: QualitySearch | undefined = !shouldUseToggle
+    ? undefined
+    : effectiveQuality === ANY_QUALITY
+      ? BASE_QUALITIES
+      : effectiveQuality;
 
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
@@ -421,7 +514,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       searchArchived,
       corruptedState,
-      shouldUseToggle ? effectiveQuality : undefined,
+      searchedQuality,
     );
   }, [
     selected,
@@ -435,52 +528,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     shouldUseToggle,
     searchArchived,
     corruptedState,
-    effectiveQuality,
-  ]);
-
-  const pd2MarketQuery = useMemo(() => {
-    // Only use searchMode for items that support toggle, otherwise use default (0)
-    const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
-    return buildGetMarketListingQuery(
-      item,
-      pd2Item,
-      selected,
-      filters,
-      settings,
-      statMapper,
-      searchArchived,
-      effectiveSearchMode,
-      matchedItemType,
-      corruptedState,
-      ITEMS_PER_PAGE,
-      page * ITEMS_PER_PAGE,
-      selectedCorruptionNames.length > 0 ? selectedCorruptionNames : undefined,
-      shouldUseToggle ? effectiveQuality : undefined,
-    );
-  }, [
-    selected,
-    filters,
-    item,
-    statMapper,
-    settings,
-    searchArchived,
-    pd2Item,
-    searchMode,
-    matchedItemType,
-    shouldUseToggle,
-    corruptedState,
-    page,
-    selectedCorruptionNames,
-    effectiveQuality,
+    searchedQuality,
   ]);
 
   useEffect(() => {
     if (item) {
-      // clear market listing result if new item is loaded
-      setMarketListings([]);
+      // clear market listing result if new item is loaded; a search still in flight is for the old item
+      searchGeneration.current += 1;
+      activeSearch.current = null;
+      setFetchedRows([]);
       setTotalCount(0);
-      setPage(0);
       setHasMore(false);
+      setMarketLoading(false);
+      setMarketError(null);
       setSearched(false);
       setSelected(new Set());
       setFilters({});
@@ -522,7 +582,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         return next;
       });
     }
-    if (appraisal.verdict === 'keep') setTriggerRareSearch(true);
+    if (appraisal.verdict === 'keep') setSearchPending(true);
     // Once per appraisal: later stat/setting changes must not re-apply the selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appraisal]);
@@ -568,12 +628,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           setAveragePriceData(priceData);
           setAveragePriceLoading(false);
         } else {
-          setAveragePriceError('No price data available');
+          setAveragePriceError({ reason: 'noData' });
           setAveragePriceLoading(false);
         }
       } catch (error: any) {
         console.error('[ItemOverlayWidget] Error fetching average price:', error);
-        setAveragePriceError(error.message || 'Failed to fetch price data');
+        setAveragePriceError({ reason: 'failed', message: error.message || undefined });
         setAveragePriceLoading(false);
       }
     };
@@ -649,131 +709,28 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     extractRainbowFacetData,
   ]);
 
-  // Helper function to format corruption name the same way the server does
-  const formatCorruptionName = useCallback((corruptionNames: string[]): string => {
-    return corruptionNames
-      .map((c) => {
-        let formatted = c.trim();
-        formatted = formatted.replace(/^item_/, '');
-        formatted = formatted.replace(/_/g, ' ');
-        formatted = formatted
-          .split(' ')
-          .map((word) => {
-            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-          })
-          .join(' ');
-        return formatted;
-      })
-      .join(', ');
-  }, []);
-
-  // Get item's corruptions using stat_id 360/361 to look up in cube-corruptions.ts
+  // The item's own corruption: stat 360 holds the cube corruption roll, priced under its market corruption names
   const itemCorruptions = useMemo(() => {
-    if (!item.stats) return null;
     if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item) return null;
-
-    console.log(pd2Item);
-    // Look for stat_id 360 or 361 (corruption flags)
-    const corruptionStat = item.stats.find((stat) => stat.stat_id === 360);
-    if (!corruptionStat || corruptionStat.value === undefined) {
-      console.log('[ItemOverlayWidget] No corruption stat found (360/361)');
+    const roll = item.stats?.find((stat) => stat.stat_id === StatId.Corrupted)?.value;
+    if (roll === undefined) return null;
+    const corruptionKey = corruptionNamesForRoll(roll);
+    if (!corruptionKey) {
+      console.warn('[ItemOverlayWidget] Unknown corruption roll:', roll);
       return null;
     }
-
-    // The value corresponds to the 'key' field in cube-corruptions.ts
-    const corruptionKey = corruptionStat.value;
-    const cubeCorruption = cubeCorruptions.find((corruption) => corruption.key === corruptionKey);
-    if (!cubeCorruption) {
-      console.warn('[ItemOverlayWidget] Corruption key not found:', corruptionKey);
-      return null;
-    }
-
-    // Map corruption stats to property names
-    const itemCorruptionNames: string[] = [];
-
-    cubeCorruption.stats.forEach((corruptionStat) => {
-      // Skip transform_dye stats
-      if (corruptionStat.stat === 'dye') {
-        return;
-      }
-
-      // Get stat_id for this corruption stat key
-      const statId = getStatIdForCorruptionStatKey(corruptionStat.stat);
-      if (statId !== null) {
-        // Map stat_id to property name using statIdToProperty
-        const propertyName = statIdToProperty[statId];
-        if (propertyName) {
-          // Normalize property name (ensure it starts with "item_")
-          const normalizedName = propertyName.startsWith('item_') ? propertyName : `item_${propertyName}`;
-          itemCorruptionNames.push(normalizedName);
-        }
-      } else {
-        // If not found, log a warning
-        console.warn('[ItemOverlayWidget] Could not find stat_id for corruption stat:', corruptionStat.stat);
-      }
-    });
-
-    if (itemCorruptionNames.length === 0) {
-      console.warn('[ItemOverlayWidget] No corruption names mapped from stats');
-      return null;
-    }
-
-    // Sort and format the same way the server does
-    const sortedCorruptions = [...itemCorruptionNames].sort();
-    const formattedCorruptionName = formatCorruptionName(sortedCorruptions);
-
-    // Format each property name individually for partial matching
-    const formattedPropertyNames = sortedCorruptions.map((name) => {
-      let formatted = name.trim();
-      formatted = formatted.replace(/^item_/, '');
-      formatted = formatted.replace(/_/g, ' ');
-      formatted = formatted
-        .split(' ')
-        .map((word) => {
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(' ');
-      return formatted;
-    });
-
-    // Debug logging
-    console.log('[ItemOverlayWidget] Item corruptions:', {
-      corruptionStat: {
-        stat_id: corruptionStat.stat_id,
-        value: corruptionStat.value,
-      },
-      cubeCorruption: {
-        id: cubeCorruption.id,
-        key: cubeCorruption.key,
-        stats: cubeCorruption.stats,
-      },
-      itemCorruptionNames,
-      sortedCorruptions,
-      formattedCorruptionName,
-      formattedPropertyNames,
-      availableCorruptions: corruptionPrices?.corruptionPrices?.map((c) => c.corruptionName) || [],
-    });
-
-    // Find matching corruption price - match by comparing corruptionKey arrays
-    const matchingCorruption = corruptionPrices?.corruptionPrices?.find((corruption) => {
-      // Compare the sorted corruption key arrays
-      if (!corruption.corruptionKey || corruption.corruptionKey.length !== sortedCorruptions.length) {
-        return false;
-      }
-      // Sort both arrays and compare element by element
-      const sortedItemKey = [...sortedCorruptions].sort();
-      const sortedApiKey = [...corruption.corruptionKey].sort();
-      return sortedItemKey.every((key, index) => key === sortedApiKey[index]);
-    });
-
-    // Return the corruption data even if no price is found
-    return {
-      corruptionName: formattedCorruptionName,
-      corruptionKey: sortedCorruptions,
-      cubeCorruption,
-      priceData: matchingCorruption || null,
-    };
-  }, [item.stats, item.quality, corruptionPrices, formatCorruptionName, pd2Item]);
+    const priceData =
+      corruptionPrices?.corruptionPrices.find((corruption) =>
+        sameCorruptionNames(corruption.corruptionKey, corruptionKey),
+      ) ?? null;
+    const corruptionName =
+      priceData?.corruptionName ??
+      corruptionKey
+        .filter((name) => name !== 'dmg%')
+        .map((name) => corruptionOption(name).label)
+        .join(', ');
+    return { corruptionKey, corruptionName, priceData };
+  }, [item.stats, item.quality, corruptionPrices, pd2Item]);
 
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
@@ -793,13 +750,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const getSearchModeDisplay = useCallback(() => {
     switch (searchMode) {
       case 0:
-        return `Base: ${item.type}`;
+        return t('overlay.header.base', { type: item.type });
       case 1:
-        return matchedItemType ? `Type: ${matchedItemType.typeLabel}` : `Base: ${item.type}`;
+        return matchedItemType
+          ? t('overlay.header.type', { type: matchedItemType.typeLabel })
+          : t('overlay.header.base', { type: item.type });
       default:
-        return `Base: ${item.type}`;
+        return t('overlay.header.base', { type: item.type });
     }
-  }, [searchMode, item.type, matchedItemType]);
+  }, [searchMode, item.type, matchedItemType, t]);
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
@@ -808,95 +767,204 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     [item, openPanel],
   );
 
-  const fetchListings = useCallback(
-    async (isNewSearch: boolean = false) => {
-      if (settingsLoading) return;
+  /**
+   * Fetches the next page of `search`, its first page when nothing is fetched yet: from the market service, or
+   * PD2 for searches it can't express. A page the service fails (down, slow, rate limited, rejected filters) is
+   * asked from PD2 instead and the failure reported, unless a pseudo stat (service only) is selected.
+   */
+  const fetchPage = useCallback(
+    async (search: ActiveSearch) => {
+      const generation = searchGeneration.current;
+      const isNewSearch = search.skip === 0;
+      const query = { ...search.query, $skip: search.skip };
       setMarketError(null);
       setMarketLoading(true);
       const startTime = performance.now();
+      let source: 'service' | 'pd2' = search.pd2Only ? 'pd2' : 'service';
+
+      const pd2Page = async () => {
+        const page = search.archived ? await getMarketListingsArchive(query) : await getMarketListings(query);
+        // null: PD2 refused the token and sign-in started
+        if (!page) throw new Error();
+        // PD2's rows carry the sellers' current presence: nothing to pop in
+        rememberListingPresence(page.data);
+        return {
+          rows: page.data.map((listing): ScoredListing => ({ listing, pseudo: {}, score: null, value: null })),
+          total: page.total,
+          fetched: page.fetched,
+        };
+      };
 
       try {
-        const result = searchArchived
-          ? await getMarketListingsArchive(pd2MarketQuery)
-          : await getMarketListings(pd2MarketQuery);
+        let result: { rows: ScoredListing[]; total: number; fetched: number };
+        if (search.pd2Only) result = await pd2Page();
+        else {
+          try {
+            const page = await searchMarketListings(search.marketFilters, {
+              page: search.skip / ITEMS_PER_PAGE,
+              limit: ITEMS_PER_PAGE,
+            });
+            result = { rows: page.items, total: page.total, fetched: page.fetched };
+          } catch (e) {
+            if (!(e instanceof MarketBackendError) || search.hasPseudo) throw e;
+            reportApiError(e, 'market-service', '/api/market/search', e.status, {
+              kind: e.kind,
+              fallback: 'pd2',
+              archived: search.archived,
+            });
+            source = 'pd2';
+            result = await pd2Page();
+          }
+        }
+        if (generation !== searchGeneration.current) return;
 
         const duration = performance.now() - startTime;
 
         if (isNewSearch) {
-          setMarketListings(result.data);
+          setFetchedRows(result.rows);
           setTotalCount(result.total);
-          setPage(0);
           setSearched(true);
         } else {
-          setMarketListings((prev) => {
+          setFetchedRows((prev) => {
             // Filter duplicates
-            const existingIds = new Set(prev.map((l) => l._id));
-            const newItems = result.data.filter((l) => !existingIds.has(l._id));
-            return [...prev, ...newItems];
+            const existingIds = new Set(prev.map((row) => row.listing._id));
+            return [...prev, ...result.rows.filter((row) => !existingIds.has(row.listing._id))];
           });
         }
 
-        setHasMore(result.data.length === ITEMS_PER_PAGE);
+        search.skip += ITEMS_PER_PAGE;
+        // A full page of rows, not of listings shown (item-less ones are dropped), means more may follow
+        setHasMore(result.fetched === ITEMS_PER_PAGE);
 
         trackMeasurement(
           'item_overlay_market_search',
           {
             duration_ms: duration,
-            returned_items: result.data.length,
+            returned_items: result.rows.length,
             total_items: isNewSearch ? result.total : undefined,
           },
           {
             outcome: 'success',
-            archived: searchArchived,
-            search_mode: shouldUseToggle ? searchMode : 0,
-            page: isNewSearch ? 0 : page,
+            archived: search.archived,
+            market_service: source === 'service',
+            search_mode: search.searchMode,
+            page: query.$skip / ITEMS_PER_PAGE,
           },
         );
-      } catch (e: any) {
+      } catch (e) {
+        if (generation !== searchGeneration.current) return;
         const duration = performance.now() - startTime;
         trackMeasurement(
           'item_overlay_market_search',
           { duration_ms: duration },
-          { outcome: 'error', archived: searchArchived, search_mode: shouldUseToggle ? searchMode : 0 },
+          { outcome: 'error', archived: search.archived, search_mode: search.searchMode },
         );
-        console.log(e.message || 'Failed to fetch market listings');
-        setMarketError(e.message || 'Failed to fetch market listings');
+        const message = e instanceof Error ? e.message : '';
+        console.log(message || 'Failed to fetch market listings');
+        setMarketError({ message: message || undefined });
+        // Retry starts a new search; scrolling must not keep re-requesting the failed page
+        setHasMore(false);
       } finally {
-        setMarketLoading(false);
+        if (generation === searchGeneration.current) setMarketLoading(false);
       }
     },
+    [getMarketListings, getMarketListingsArchive],
+  );
+
+  /**
+   * Searches the current filters from the first page; `corruptionNames` narrows it to items with those
+   * corruptions. Built here, not kept as state, so it never carries the `$skip` of a list scrolled earlier.
+   */
+  const runSearch = useCallback(
+    (corruptionNames: string[]) => {
+      if (settingsLoading) return;
+      // Only use searchMode for items that support toggle, otherwise use default (0)
+      const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
+      const priceCheck: PriceCheckSearch = {
+        item,
+        pd2Item,
+        selected,
+        filters,
+        settings,
+        statMapper,
+        archive: searchArchived,
+        searchMode: effectiveSearchMode,
+        matchedItemType,
+        corruptedState,
+        corruptionNames,
+        qualityOverride: searchedQuality,
+      };
+      const serviceSort = { by: sort.by, dir: sort.dir };
+      const { filters: marketFilters, gaps } = priceCheckServiceSearch(priceCheck, serviceSort);
+      const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
+      const query = buildGetMarketListingQuery(
+        item,
+        pd2Item,
+        selected,
+        filters,
+        settings,
+        statMapper,
+        searchArchived,
+        effectiveSearchMode,
+        matchedItemType,
+        corruptedState,
+        ITEMS_PER_PAGE,
+        0,
+        corruptionNames.length > 0 ? corruptionNames : undefined,
+        searchedQuality,
+      );
+      const order = sort.dir === 'desc' ? -1 : 1;
+      const search: ActiveSearch = {
+        // PD2 ranks unpriced listings (hr_price 0) first in ascending price order: those can't be ranked, so drop them
+        query:
+          sort.by === 'price'
+            ? { ...query, $sort: { hr_price: order }, ...(order === 1 && { hr_price: { $gt: 0 } }) }
+            : { ...query, $sort: { bumped_at: order } },
+        marketFilters,
+        // PD2 can't filter pseudo stats either: with one selected the service answers, without the gapped row
+        pd2Only: gaps.length > 0 && !hasPseudo,
+        hasPseudo,
+        archived: searchArchived,
+        searchMode: effectiveSearchMode,
+        skip: 0,
+      };
+      searchGeneration.current += 1;
+      // The relaxations of an empty search widen this search, not controls changed since
+      setRanSearch({ search: priceCheck, sort: serviceSort, pd2Only: search.pd2Only });
+      activeSearch.current = search;
+      setHasMore(false);
+      fetchPage(search);
+    },
     [
-      pd2MarketQuery,
-      getMarketListings,
-      getMarketListingsArchive,
+      settingsLoading,
+      item,
+      pd2Item,
+      selected,
+      filters,
+      settings,
+      statMapper,
       searchArchived,
       searchMode,
       shouldUseToggle,
-      page,
-      settingsLoading,
+      matchedItemType,
+      corruptedState,
+      searchedQuality,
+      sort,
+      fetchPage,
     ],
   );
 
-  // Initial Search / Reset
+  // Search button, Enter and Retry: a manual search drops the corruption filter a corruption price click set
   const handleSearch = () => {
-    // Clear corruption names filter when manually searching
     setSelectedCorruptionNames([]);
-    if (page === 0) {
-      fetchListings(true);
-    } else {
-      setPage(0);
-      // Wait for state to update so pd2MarketQuery reflects page 0
-      setTimeout(() => fetchListings(true), 0);
-    }
+    runSearch([]);
   };
 
-  // Helper function to check if two corruption key arrays are equal
-  const areCorruptionKeysEqual = useCallback((key1: string[], key2: string[]): boolean => {
-    if (key1.length !== key2.length) return false;
-    const sorted1 = [...key1].sort();
-    const sorted2 = [...key2].sort();
-    return sorted1.every((key, index) => key === sorted2[index]);
-  }, []);
+  // Column headers: another column sorts descending (priciest / newest first), the same one again flips it
+  const sortBy = (by: ResultsSort['by']) => {
+    setSort((prev) => (prev.by === by ? { by, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { by, dir: 'desc' }));
+    if (searched) setSearchPending(true);
+  };
 
   // Handle corruption click - search for items with that specific corruption
   const handleCorruptionClick = useCallback(
@@ -904,11 +972,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Clear existing selections and add the corruption property names to the array for direct filtering
       setSelected(new Set());
       setFilters({});
+      setActivePseudos([]);
       setSelectedCorruptionNames(Array.isArray(corruptionKey) ? corruptionKey : [corruptionKey]); // Set the corruption property names to filter by
       setCorruptedState(1); // Set to corrupted only
       setSearchArchived(true); // Enable expired listings
-      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
-      setTriggerCorruptionSearch(true); // Trigger search after state updates
+      setSearchPending(true);
     },
     [corruptionPrices, itemCorruptions],
   );
@@ -941,75 +1009,44 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       // Set the numsockets corruption key filter
       setSelectedCorruptionNames(corruptionKey);
 
-      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
-      setTriggerSocketSearch(true); // Trigger search after state updates
+      setSearchPending(true);
     },
     [sortedStats],
   );
 
-  // Trigger search when corruption search is requested
+  // Corruption/socket price clicks and a Keep rare search once their filter changes have applied
   useEffect(() => {
-    if (triggerCorruptionSearch) {
-      setTriggerCorruptionSearch(false);
-      setPage(0); // Reset to first page before searching
-      // Use setTimeout to ensure state updates are applied
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerCorruptionSearch, fetchListings]);
+    if (!searchPending) return;
+    setSearchPending(false);
+    runSearch(selectedCorruptionNames);
+  }, [searchPending, runSearch, selectedCorruptionNames]);
 
-  // Search once the key stats of a Keep rare are pre-selected (filters are applied by then)
+  // Infinite scroll: the next page of the listed search
   useEffect(() => {
-    if (triggerRareSearch) {
-      setTriggerRareSearch(false);
-      setPage(0);
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerRareSearch, fetchListings]);
-
-  // Trigger search when socket search is requested
-  useEffect(() => {
-    if (triggerSocketSearch) {
-      setTriggerSocketSearch(false);
-      setPage(0); // Reset to first page before searching
-      // Use setTimeout to ensure state updates are applied
-      setTimeout(() => {
-        fetchListings(true);
-      }, 0);
-    }
-  }, [triggerSocketSearch, fetchListings]);
-
-  // We need to distinguish between "page changed because of scroll" vs "reset to 0"
-  // Let's simplify: Search button resets everything and fetches page 0.
-  // Scroll increments page.
-  // pd2MarketQuery updates when page changes.
-
-  useEffect(() => {
-    // If page > 0, it means we scrolled.
-    // Don't trigger if we're doing a corruption or socket search (triggers handle that)
-    if (page > 0 && !triggerCorruptionSearch && !triggerSocketSearch) {
-      fetchListings(false);
-    }
-  }, [page, fetchListings, triggerCorruptionSearch]);
-
-  // Trigger infinite scroll
-  useEffect(() => {
-    if (inView && !marketLoading && hasMore) {
-      setPage((prev) => prev + 1);
-    }
-  }, [inView, marketLoading, hasMore]);
+    if (inView && !marketLoading && hasMore && activeSearch.current) fetchPage(activeSearch.current);
+  }, [inView, marketLoading, hasMore, fetchPage]);
 
   const openSettingsPage = useCallback(() => openPanel('settings'), [openPanel]);
 
-  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`)
+  // QOL: reset every stat filter, including the tri-state corrupted filter (which also lives in `selected`) and the
+  // Σ totals folded in
   const clearSelectedStats = useCallback(() => {
     setSelected(new Set());
     setFilters({});
     setCorruptedState(0);
-  }, [setSelected, setFilters, setCorruptedState]);
+    setActivePseudos([]);
+  }, [setSelected, setFilters, setCorruptedState, setActivePseudos]);
+
+  // "Clear ranges": every selected stat keeps its tick, its min / max empty; each row plays its clear wipe
+  const hasAnyRange = [...selected].some((k) => RANGE_FIELDS.some((field) => !!filters[k]?.[field]));
+  const [rangeWipe, setRangeWipe] = useState(0);
+  const clearAllRanges = () => {
+    const empty = Object.fromEntries(RANGE_FIELDS.map((field) => [field, '']));
+    setFilters((f) =>
+      Object.fromEntries(Object.entries(f).map(([k, v]) => [k, selected.has(k) ? { ...v, ...empty } : v])),
+    );
+    setRangeWipe((n) => n + 1);
+  };
 
   const openTradeUrl = () => {
     if (tradeUrl) {
@@ -1036,7 +1073,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       matchedItemType,
       corruptedState,
       corruptionNames: selectedCorruptionNames,
-      qualityOverride: shouldUseToggle ? effectiveQuality : undefined,
+      qualityOverride: searchedQuality,
     });
     openPanel('market', { filters: marketFilters, tab: 'search' });
   };
@@ -1069,12 +1106,57 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     </span>
   );
 
+  // "Copy image": the item as a PD2 tooltip with this price check under it, as a PNG on the clipboard.
+  const [copyingImage, setCopyingImage] = useState(false);
+  // Bumped per press: remounts the border sweep so it replays.
+  const [sweepKey, setSweepKey] = useState(0);
+  const copyItemImage = async () => {
+    if (copyingImage) return;
+    setCopyingImage(true);
+    setSweepKey((k) => k + 1);
+    try {
+      const season = getSeasonById(settings.selectedSeasonId || 'current');
+      const context = [
+        season && (/\((S\d+)\)/.exec(season.label)?.[1] ?? season.label),
+        `${settings.mode === 'hardcore' ? 'Hardcore' : 'Softcore'} ${settings.ladder === 'ladder' ? 'Ladder' : 'Non-Ladder'}`,
+        new Date().toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric', year: 'numeric' }),
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      const card = buildItemCard({
+        item,
+        average:
+          averagePriceData && headlinePrice !== null
+            ? {
+                data: averagePriceData,
+                headline: headlinePrice,
+                basis: windowNote
+                  ? `${basisLabel(requestedWindow)} (${windowNote.label})`
+                  : basisLabel(requestedWindow),
+              }
+            : null,
+        listings: searched ? { entries: marketListings, total: totalCount, archived: searchArchived } : null,
+        context,
+      });
+      const png = await renderItemCard(card);
+      await writePng(png);
+      trackEvent('item_overlay_image_copied', { quality: item.quality, prices: card.prices.length });
+      imageToast({
+        title: t('overlay.copyImage.copiedTitle'),
+        description: t('overlay.copyImage.copiedDescription'),
+        imageUrl: URL.createObjectURL(png),
+      });
+    } catch (error) {
+      console.error('[ItemOverlayWidget] Failed to copy the item image:', error);
+      showToast({ title: t('overlay.copyImage.failedTitle'), description: String(error), variant: 'error' });
+    } finally {
+      setCopyingImage(false);
+    }
+  };
+
   // Top corruptions exclude the item's own corruption (shown in its own section)
   const otherCorruptions = useMemo(
-    () =>
-      corruptionPrices?.corruptionPrices.filter(
-        (corruption) => !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName,
-      ) ?? [],
+    () => corruptionPrices?.corruptionPrices.filter((corruption) => corruption !== itemCorruptions?.priceData) ?? [],
     [corruptionPrices, itemCorruptions],
   );
   const visibleCorruptions = showAllCorruptions ? otherCorruptions : otherCorruptions.slice(0, 5);
@@ -1091,7 +1173,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       variant={variant}
       price={price}
       selected={
-        selectedCorruptionNames.length > 0 && areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames)
+        selectedCorruptionNames.length > 0 && sameCorruptionNames(corruption.corruptionKey, selectedCorruptionNames)
       }
       itemTitle={displayTitle}
       onSelect={() => handleCorruptionClick(corruption.corruptionKey)}
@@ -1102,6 +1184,83 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const showIdleHint = !searched && !marketLoading && !marketError && marketListings.length === 0;
   const showNoResults = searched && !marketLoading && !marketError && marketListings.length === 0;
+  // A search that found nothing (not just hidden by the seller filter): count what each relaxation would find
+  const relaxCandidates = useMemo(
+    () =>
+      showNoResults && totalCount === 0 && ranSearch && !ranSearch.pd2Only
+        ? priceCheckRelaxations(ranSearch.search, ranSearch.sort, {
+            searchType: shouldUseToggle && !!matchedItemType,
+            anyQuality: shouldUseToggle,
+          })
+        : null,
+    [showNoResults, totalCount, ranSearch, shouldUseToggle, matchedItemType],
+  );
+  const relaxations = useRelaxationCounts(searchMarketListings, relaxCandidates);
+  // The suggestion the pointer is on: the rows or header control it would change are ringed (only while shown)
+  const [hoveredRelax, setHoveredRelax] = useState<string | null>(null);
+  const hoveredRelaxation = relaxations?.find((r) => r.id === hoveredRelax)?.value;
+  const markedRows = useMemo(() => {
+    switch (hoveredRelaxation?.kind) {
+      case 'stat':
+        return new Set([hoveredRelaxation.key]);
+      case 'ranges':
+        return new Set([...selected].filter((k) => RANGE_FIELDS.some((field) => !!filters[k]?.[field])));
+      case 'corrupted':
+        return new Set([`id:${StatId.Corrupted}`]);
+      default:
+        return new Set<string>();
+    }
+  }, [hoveredRelaxation, selected, filters]);
+  /** A relaxation's chip: the filter it drops (the base, the quality, a stat row…). */
+  const relaxationLabel = (r: PriceCheckRelaxation): string => {
+    switch (r.kind) {
+      case 'ranges':
+        return t('overlay.results.relax.ranges');
+      case 'stat': {
+        const row = sortedStats.find((s) => getStatKey(s) === r.key);
+        return row ? (statText(row, item) ?? row.name) : r.key;
+      }
+      case 'type':
+        return item.type;
+      case 'quality': {
+        const quality = ranSearch?.search.qualityOverride;
+        return typeof quality === 'string' ? quality : item.quality;
+      }
+      case 'corrupted':
+        return ranSearch?.search.corruptedState === 2
+          ? t('overlay.results.relax.notCorrupted')
+          : t('overlay.results.relax.corrupted');
+      case 'corruptions':
+        return t('overlay.results.relax.corruptions');
+    }
+  };
+  /** Picks a relaxation: the one change on the controls, then the search again. */
+  const relax = (r: PriceCheckRelaxation) => {
+    trackEvent('item_overlay_relax_search', { kind: r.kind });
+    switch (r.kind) {
+      case 'ranges':
+        clearAllRanges();
+        break;
+      case 'stat':
+        setSelected((prev) => new Set([...prev].filter((k) => k !== r.key)));
+        setFilters(({ [r.key]: _dropped, ...rest }) => rest);
+        break;
+      case 'type':
+        setSearchMode(1);
+        break;
+      case 'quality':
+        setQualityOverride(ANY_QUALITY);
+        break;
+      case 'corrupted':
+        setCorruptedState(0);
+        setSelected((prev) => new Set([...prev].filter((k) => k !== `id:${StatId.Corrupted}`)));
+        break;
+      case 'corruptions':
+        setSelectedCorruptionNames([]);
+        break;
+    }
+    setSearchPending(true);
+  };
 
   /** -------------------
    *  Render
@@ -1109,13 +1268,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
-        <WindowPanel className="h-full w-full">
+        <WindowPanel className="relative h-full w-full">
+          {sweepKey > 0 && <CaptureSweep key={sweepKey} />}
           {/* Top Bar */}
           <div id="titlebar-drag-handle"
             data-panel-drag
             className="flex-none bg-muted/30">
             <WindowChrome
-              title="Price Check"
+              title={t('overlay.title')}
               titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
               showGrip={false}
               icon={
@@ -1128,7 +1288,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     selectedRuneCombinations={selectedRuneCombinations}
                     onRuneBreakdownSelect={setSelectedRuneBreakdown}
                   />
-                  <ToolbarButton label="Net Worth"
+                  <ToolbarButton label={t('overlay.toolbar.netWorth')}
                     onClick={openCurrencyValuation}>
                     <LuggageIcon />
                   </ToolbarButton>
@@ -1137,14 +1297,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               actions={
                 <>
                   <UpdatePill />
-                  <ToolbarButton label="Settings"
+                  <ToolbarButton label={t('overlay.toolbar.copyImage')}
+                    onClick={copyItemImage}>
+                    {copyingImage ? <Loader2 className="animate-spin" /> : <ImageDown />}
+                  </ToolbarButton>
+                  <ToolbarButton label={t('overlay.toolbar.settings')}
                     onClick={openSettingsPage}>
                     <SettingsIcon />
                   </ToolbarButton>
                 </>
               }
               onClose={onClose}
-              closeLabel="Close"
+              closeLabel={t('common:actions.close')}
             />
           </div>
 
@@ -1172,15 +1336,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   {shouldUseToggle ? (
                     <HeaderToggle
                       onClick={toggleSearchMode}
-                      title="Click to toggle search mode"
+                      title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
+                      marked={hoveredRelaxation?.kind === 'type'}
                     >
                       {getSearchModeDisplay()}
                     </HeaderToggle>
                   ) : (
                     <div className="px-1.5 text-muted-foreground"
                       style={{ fontFamily: 'DiabloFont' }}>
-                      Base: {item.type}
+                      {t('overlay.header.base', { type: item.type })}
                     </div>
                   )}
                   {shouldUseToggle && (
@@ -1189,10 +1354,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         className="h-4 w-px bg-border" />
                       <HeaderToggle
                         onClick={cycleQuality}
-                        title="Click to cycle quality"
-                        className={qualityColor(effectiveQuality)}
+                        title={t('overlay.header.cycleQuality')}
+                        className={
+                          effectiveQuality === ANY_QUALITY ? 'text-foreground' : qualityColor(effectiveQuality)
+                        }
+                        marked={hoveredRelaxation?.kind === 'quality'}
                       >
-                        {effectiveQuality}
+                        {effectiveQuality === ANY_QUALITY ? t('overlay.header.anyQuality') : effectiveQuality}
                       </HeaderToggle>
                     </>
                   )}
@@ -1206,7 +1374,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 className="gap-1.5 rounded-md border-border bg-background/40 px-2 py-0.5 text-xs text-muted-foreground"
               >
                 <ShieldIcon className="text-muted-foreground" />
-                Defense: <span className="font-semibold tabular-nums text-foreground">{item.defense}</span>
+                <Trans
+                  t={t}
+                  i18nKey="overlay.header.defense"
+                  values={{ defense: item.defense }}
+                  components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
+                />
               </Badge>
             )}
 
@@ -1229,7 +1402,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {appraisalNoteText && (
               <span className="text-[11px] text-muted-foreground/70"
                 title={appraisalNoteText.title}>
-                Appraisal note: {appraisalNoteText.text}
+                {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
               </span>
             )}
 
@@ -1246,7 +1419,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       <Skeleton className="h-3.5 w-16 bg-muted-foreground/15" />
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Loader2 className="size-3 animate-spin" />
-                        Loading price data...
+                        {t('overlay.price.loading')}
                       </span>
                     </div>
                   </div>
@@ -1254,7 +1427,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 {averagePriceError && !averagePriceLoading && (
                   <div className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
                     <AlertCircle className="size-3.5" />
-                    {averagePriceError}
+                    {averagePriceError.reason === 'noData'
+                      ? t('overlay.price.noData')
+                      : averagePriceError.message || t('overlay.price.fetchFailed')}
                   </div>
                 )}
                 {averagePriceData && !averagePriceLoading && itemIcon && (
@@ -1271,14 +1446,22 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                               emphasis>
                               {headlinePrice?.toFixed(2)} HR
                             </PopoverTile>
-                            <PopoverTile label="Median">{averagePriceData.medianPrice.toFixed(2)} HR</PopoverTile>
-                            <PopoverTile label="Min">{averagePriceData.minPrice.toFixed(2)} HR</PopoverTile>
-                            <PopoverTile label="Max">{averagePriceData.maxPrice.toFixed(2)} HR</PopoverTile>
+                            <PopoverTile label={t('overlay.price.median')}>
+                              {averagePriceData.medianPrice.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label={t('overlay.price.min')}>
+                              {averagePriceData.minPrice.toFixed(2)} HR
+                            </PopoverTile>
+                            <PopoverTile label={t('overlay.price.max')}>
+                              {averagePriceData.maxPrice.toFixed(2)} HR
+                            </PopoverTile>
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
-                            <PopoverKeyValue label="Samples">{averagePriceData.sampleCount}</PopoverKeyValue>
+                            <PopoverKeyValue label={t('overlay.price.samples')}>
+                              {averagePriceData.sampleCount}
+                            </PopoverKeyValue>
                             {averagePriceData.priceChange7Days && (
-                              <PopoverKeyValue label="7d Change">
+                              <PopoverKeyValue label={t('overlay.price.change7d')}>
                                 <ChangeLabel
                                   change={averagePriceData.priceChange7Days.change}
                                   percent={averagePriceData.priceChange7Days.changePercent}
@@ -1288,10 +1471,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           </div>
                           <div className="space-y-1.5 border-t border-border pt-2">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-xs font-semibold">Last 30 days</span>
+                              <span className="text-xs font-semibold">{t('overlay.price.last30Days')}</span>
                               <WebLink onClick={openPd2Trader}
                                 inPopover>
-                                Open on pd2trader.com
+                                {t('overlay.price.openOnPd2Trader')}
                               </WebLink>
                             </div>
                             <PriceSparkline
@@ -1308,7 +1491,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {itemCorruptions && (
                             <div className="border-t border-border pt-2">
                               <PopoverSectionTitle className="text-q-corrupted">
-                                This Item&apos;s Corruption
+                                {t('overlay.corruptions.thisItem')}
                               </PopoverSectionTitle>
                               {renderCorruptionRow(itemCorruptions, itemCorruptions.priceData, 'item')}
                             </div>
@@ -1316,10 +1499,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {/* Corruption Prices */}
                           {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
                             <div className="border-t border-border pt-2">
-                              <PopoverSectionTitle>Top Corruptions</PopoverSectionTitle>
+                              <PopoverSectionTitle>{t('overlay.corruptions.top')}</PopoverSectionTitle>
                               {showAllCorruptions ? (
-                                <ScrollArea className="w-full overflow-x-hidden"
-                                  viewportClassName="max-h-[200px]">
+                                <ScrollArea
+                                  className="w-full overflow-x-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
+                                  viewportClassName="max-h-[200px]"
+                                >
                                   <div className="w-full space-y-0.5 overflow-x-hidden px-1.5 pr-3">
                                     {visibleCorruptions.map((corruption, idx) =>
                                       renderCorruptionRow(corruption, corruption, 'top', idx),
@@ -1343,12 +1528,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                   {showAllCorruptions ? (
                                     <>
                                       <ChevronUp className="size-3" />
-                                      Show Less
+                                      {t('overlay.corruptions.showLess')}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="size-3" />
-                                      {`Show More (${otherCorruptions.length - 5} more)`}
+                                      {t('overlay.corruptions.showMore', { count: otherCorruptions.length - 5 })}
                                     </>
                                   )}
                                 </button>
@@ -1358,7 +1543,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           {corruptionPricesLoading && (
                             <div className="flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
                               <Loader2 className="size-3 animate-spin" />
-                              Loading corruption prices...
+                              {t('overlay.corruptions.loading')}
                             </div>
                           )}
                         </div>
@@ -1396,8 +1581,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 )}
                 {!averagePriceLoading && !averagePriceError && !averagePriceData && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">No price data available</span>
-                    <WebLink onClick={openPd2Trader}>View on Web</WebLink>
+                    <span className="text-xs text-muted-foreground">{t('overlay.price.noData')}</span>
+                    <WebLink onClick={openPd2Trader}>{t('overlay.price.viewOnWeb')}</WebLink>
                   </div>
                 )}
               </div>
@@ -1410,43 +1595,73 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               <section className="flex flex-none flex-col gap-1">
                 <div className="flex h-5 items-center justify-between px-2">
                   <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Stats
+                    {t('overlay.stats.title')}
                   </span>
                   <AnimatePresence initial={false}>
                     {(selected.size > 0 || corruptedState !== 0) && (
-                      <motion.button
-                        type="button"
+                      <motion.div
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 6 }}
                         transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                        onClick={clearSelectedStats}
-                        className="inline-flex items-center gap-1 rounded-sm text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
                       >
-                        <span className="tabular-nums">{selected.size} selected</span>
+                        <span className="tabular-nums">{t('overlay.stats.selected', { count: selected.size })}</span>
+                        {/* Empties every selected stat's min / max (stats stay selected); only while one is set */}
+                        {hasAnyRange && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <button
+                              type="button"
+                              onClick={clearAllRanges}
+                              title={t('overlay.stats.clearRangesTitle')}
+                              className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                            >
+                              {t('overlay.stats.clearRanges')}
+                            </button>
+                          </>
+                        )}
                         <span aria-hidden>·</span>
-                        <span className="underline-offset-2 hover:underline">Clear</span>
-                      </motion.button>
+                        <button
+                          type="button"
+                          onClick={clearSelectedStats}
+                          title={t('overlay.stats.clearTitle')}
+                          className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          {t('common:actions.clear')}
+                        </button>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
                 <ScrollArea className="flex-none pr-2"
                   viewportClassName="max-h-[30vh]">
                   <div>
-                    {sortedStats.map((s) => (
-                      <StatRow
-                        toggle={toggle}
-                        key={getStatKey(s)}
-                        stat={s}
-                        nested={false}
-                        updateFilter={updateFilter}
-                        filters={filters}
-                        selected={selected}
-                        corruptedState={corruptedState}
-                        onSubmit={handleSearch}
-                        rare={rareStats.get(getStatKey(s))}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {sortedStats.map((s) => {
+                        // Σ chip menu: the totals over this row, or over the rows a Σ row folded in
+                        const keys = s.folded ? s.folded.map(getStatKey) : [getStatKey(s)];
+                        return (
+                          <StatRow
+                            toggle={toggle}
+                            key={getStatKey(s)}
+                            stat={s}
+                            item={item}
+                            nested={false}
+                            updateFilter={updateFilter}
+                            filters={filters}
+                            selected={selected}
+                            corruptedState={corruptedState}
+                            onSubmit={handleSearch}
+                            rare={rareStats.get(getStatKey(s))}
+                            pseudoOptions={pseudos.filter((o) => o.covers.some((k) => keys.includes(k)))}
+                            wipe={rangeWipe}
+                            marked={markedRows.has(getStatKey(s))}
+                            onPseudo={togglePseudo}
+                          />
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 </ScrollArea>
               </section>
@@ -1458,31 +1673,31 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <Button className="min-w-24 cursor-pointer"
                   onClick={handleSearch}>
                   {marketLoading ? <Loader2 className="animate-spin" /> : <SearchIcon />}
-                  Search
+                  {t('common:actions.search')}
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      aria-label="Open search on projectdiablo2.com"
+                      aria-label={t('overlay.actions.openTradeAria')}
                       className="cursor-pointer border-l border-primary-foreground/15 px-3"
                       onClick={openTradeUrl}
                     >
                       <SquareArrowOutUpRight />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Open this search on projectdiablo2.com</TooltipContent>
+                  <TooltipContent side="top">{t('overlay.actions.openTradeTooltip')}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      aria-label="Open in market"
+                      aria-label={t('overlay.actions.openInMarket')}
                       className="cursor-pointer border-l border-primary-foreground/15 px-3"
                       onClick={openInMarket}
                     >
                       <Store />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Open in market</TooltipContent>
+                  <TooltipContent side="top">{t('overlay.actions.openInMarket')}</TooltipContent>
                 </Tooltip>
               </ButtonGroup>
 
@@ -1494,13 +1709,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       onClick={openListWindow}
                       disabled={!canList}>
                       <ListPlus />
-                      List
+                      {t('overlay.actions.list')}
                     </Button>
                   </span>
                 </TooltipTrigger>
                 {!canList && (
                   <TooltipContent side="top">
-                    <p>Item must be in your shared stash to list.</p>
+                    <p>{t('overlay.actions.listDisabled')}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -1519,7 +1734,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   htmlFor="archived-toggle"
                   className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Show Expired
+                  {t('overlay.actions.showExpired')}
                 </Label>
               </div>
             </div>
@@ -1535,10 +1750,29 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   className="-mb-1 flex flex-none items-center gap-2 px-2 text-xs text-muted-foreground"
                 >
                   <span>
-                    Matches: <span className="font-semibold tabular-nums text-foreground">{totalCount}</span>
+                    <Trans
+                      t={t}
+                      i18nKey="overlay.results.matches"
+                      values={{ total: totalCount }}
+                      components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
+                    />
                   </span>
                   {marketListings.length < totalCount && (
-                    <span className="tabular-nums">· showing {marketListings.length}</span>
+                    <span className="tabular-nums">
+                      {t('overlay.results.showing', { shown: marketListings.length })}
+                    </span>
+                  )}
+                  {sellerFiltered && (
+                    <span className="tabular-nums">
+                      {t(
+                        sellerFilter.inGame && sellerFilter.onSite
+                          ? 'overlay.results.filteredOnline'
+                          : sellerFilter.inGame
+                            ? 'overlay.results.filteredInGame'
+                            : 'overlay.results.filteredOnSite',
+                        { count: visibleRows.length },
+                      )}
+                    </span>
                   )}
                   {marketLoading && <Loader2 className="size-3 animate-spin" />}
                 </motion.div>
@@ -1550,7 +1784,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <div aria-busy="true">
                   <div className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" />
-                    <span>Loading market listings...</span>
+                    <span>{t('overlay.results.loading')}</span>
                   </div>
                   <div className="space-y-1.5 pr-3">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -1576,8 +1810,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">Couldn&apos;t load listings</div>
-                    <div className="text-xs break-words opacity-90">{marketError}</div>
+                    <div className="font-medium">{t('overlay.results.errorTitle')}</div>
+                    <div className="text-xs break-words opacity-90">
+                      {marketError.message || t('overlay.results.fetchFailed')}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -1586,23 +1822,56 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     onClick={handleSearch}
                   >
                     <RotateCw />
-                    Retry
+                    {t('common:actions.retry')}
                   </Button>
                 </motion.div>
               )}
               {showNoResults && (
-                <EmptyState icon={<SearchX />}
-                  title="No listings found">
-                  {searchArchived
-                    ? 'Try loosening your stat filters.'
-                    : 'Try loosening your stat filters or turn on Show Expired.'}
+                <EmptyState
+                  icon={<SearchX />}
+                  title={relaxations?.length ? t('overlay.results.relax.title') : t('overlay.results.noListings')}
+                  action={
+                    (relaxations?.length || !searchArchived) && (
+                      <div className="flex flex-col items-center gap-2">
+                        {!!relaxations?.length && (
+                          <RelaxationChips
+                            chips={relaxationChips(relaxations, relaxationLabel)}
+                            onPick={(id) => {
+                              const picked = relaxations.find((r) => r.id === id);
+                              if (picked) relax(picked.value);
+                            }}
+                            onHover={setHoveredRelax}
+                          />
+                        )}
+                        {!searchArchived && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSearchArchived(true);
+                              setSearchPending(true);
+                            }}
+                          >
+                            {t('overlay.results.relax.showExpired')}
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  }
+                >
+                  {relaxations?.length
+                    ? t('overlay.results.relax.hint')
+                    : searchArchived
+                      ? t('overlay.results.loosenFilters')
+                      : t('overlay.results.loosenFiltersOrExpired')}
                 </EmptyState>
               )}
               {showIdleHint && (
                 <EmptyState icon={<SearchIcon />}
-                  title="Ready to search"
+                  title={t('overlay.results.readyTitle')}
                   subtle>
-                  Pick the stats that matter, then hit Search or press Enter in a min/max field.
+                  {t('overlay.results.readyHint')}
                 </EmptyState>
               )}
               {marketListings.length > 0 && (
@@ -1610,20 +1879,50 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                     <thead>
                       <tr>
-                        <th className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          Price
+                        <th
+                          aria-sort={sort.by === 'price' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                          className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <SortHeader
+                              label={t('overlay.results.price')}
+                              title={t('overlay.results.sortPrice')}
+                              active={sort.by === 'price'}
+                              dir={sort.dir}
+                              onClick={() => sortBy('price')}
+                            />
+                            <SellerFilterMenu filter={sellerFilter}
+                              onChange={setSellerFilter} />
+                          </div>
                         </th>
-                        <th className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1.5 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                          Listed
+                        <th
+                          aria-sort={sort.by === 'bumped' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                          className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1 text-right text-[11px] font-medium text-muted-foreground"
+                        >
+                          <SortHeader
+                            label={t('overlay.results.age')}
+                            title={t('overlay.results.sortListed')}
+                            active={sort.by === 'bumped'}
+                            dir={sort.dir}
+                            onClick={() => sortBy('bumped')}
+                          />
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {marketListings.map((listing: MarketListingEntry, idx: number) => (
-                        <ListingRow key={listing._id || idx}
-                          listing={listing}
+                      {visibleRows.map((row, idx) => (
+                        <ListingRow key={row.listing._id || idx}
+                          row={row}
                           idx={idx} />
                       ))}
+                      {visibleRows.length === 0 && (
+                        <tr>
+                          <td colSpan={2}
+                            className="px-2 py-3 text-center text-xs text-muted-foreground">
+                            {hasMore ? t('overlay.results.loadingMore') : t('overlay.results.noSellerMatch')}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                   {/* Load more trigger */}
@@ -1633,7 +1932,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       className="flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground"
                     >
                       {marketLoading && <Loader2 className="size-3 animate-spin" />}
-                      {marketLoading ? 'Loading more...' : 'Load more'}
+                      {marketLoading ? t('overlay.results.loadingMore') : t('overlay.results.loadMore')}
                     </div>
                   )}
                 </div>
@@ -1648,22 +1947,39 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
 /** "Restart to update" in the title bar: price check is the window users look at most. */
 function UpdatePill() {
+  const { t } = useTranslation('priceCheck');
   const version = useAvailableUpdate();
-  const [state, setState] = useState<'idle' | 'installing' | 'failed'>('idle');
+  const [state, setState] = useState<'idle' | 'installing' | 'failed' | 'manual'>(() =>
+    isManualUpdateRequired() ? 'manual' : 'idle',
+  );
   if (!version) return null;
 
   const install = async () => {
+    // Linux deb/rpm installs can't update in place: send the user to the release page
+    if (state === 'manual') {
+      await openUrl(RELEASE_PAGE_URL);
+      return;
+    }
     setState('installing');
     // Success relaunches the app; false means the install failed and the app is still running
-    if (!(await installUpdateAndRelaunch())) setState('failed');
+    if (!(await installUpdateAndRelaunch())) setState(isManualUpdateRequired() ? 'manual' : 'failed');
   };
 
   // Short labels: the title bar also holds the title, toolbar icons and close in a narrow window
-  const label = state === 'installing' ? 'Updating…' : state === 'failed' ? 'Retry update' : 'Restart to update';
+  const label =
+    state === 'installing'
+      ? t('overlay.update.updating')
+      : state === 'failed'
+        ? t('overlay.update.retry')
+        : state === 'manual'
+          ? t('overlay.update.get')
+          : t('overlay.update.restart');
   const hint =
     state === 'failed'
-      ? `Updating to v${version} failed. Click to try again.`
-      : `Version ${version} is available. Downloads, installs and restarts PD2 Trader.`;
+      ? t('overlay.update.failedHint', { version })
+      : state === 'manual'
+        ? t('overlay.update.manualHint', { version })
+        : t('overlay.update.availableHint', { version });
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -1722,11 +2038,14 @@ function HeaderToggle({
   onClick,
   title,
   className,
+  marked,
   children,
 }: {
   onClick: () => void;
   title: string;
   className?: string;
+  /** An empty search's hovered suggestion would change this: ringed. */
+  marked?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -1737,6 +2056,7 @@ function HeaderToggle({
       className={cn(
         'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
         className,
+        marked && FILTER_HIGHLIGHT_CLASS,
       )}
       style={{ fontFamily: 'DiabloFont' }}
     >
@@ -1830,11 +2150,14 @@ function EmptyState({
   icon,
   title,
   subtle,
+  action,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtle?: boolean;
+  /** Under the text, e.g. the no-results search suggestions. */
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -1849,6 +2172,7 @@ function EmptyState({
       </div>
       <div className="text-sm font-medium text-foreground">{title}</div>
       <p className="max-w-[260px] text-xs leading-relaxed text-muted-foreground">{children}</p>
+      {action && <div className="mt-2">{action}</div>}
     </motion.div>
   );
 }
@@ -1874,6 +2198,7 @@ function CorruptionRow({
   onSocketSelect,
   onOpenWeb,
 }: CorruptionRowProps) {
+  const { t } = useTranslation('priceCheck');
   const isTruncated = name.length > 40;
   const socketPrices = price?.socketPrices ?? [];
   const hasSocketPrices = socketPrices.length > 0;
@@ -1902,7 +2227,7 @@ function CorruptionRow({
         e.stopPropagation();
         onSelect();
       }}
-      title="Click to search for items with this corruption"
+      title={t('overlay.corruptions.searchTitle')}
     >
       <div className="min-w-0 flex-1 overflow-hidden">
         {isTruncated ? (
@@ -1924,7 +2249,7 @@ function CorruptionRow({
             className="-mr-0.5 size-3 text-muted-foreground" />}
         </div>
       ) : (
-        <span className="shrink-0 text-[10px] text-muted-foreground">No price data</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
       )}
     </div>
   );
@@ -1940,10 +2265,10 @@ function CorruptionRow({
             <span className="truncate">{itemTitle}</span>
             <WebLink onClick={onOpenWeb}
               inPopover>
-              Link
+              {t('overlay.corruptions.link')}
             </WebLink>
           </div>
-          <div className="mb-2 text-xs font-semibold">{name} - Socket Prices</div>
+          <div className="mb-2 text-xs font-semibold">{t('overlay.corruptions.socketPrices', { name })}</div>
           <div className="space-y-0.5">
             {socketPrices.map((socketPrice, socketIdx) => (
               <div
@@ -1955,11 +2280,10 @@ function CorruptionRow({
                   e.stopPropagation();
                   onSocketSelect(socketPrice.socketCount);
                 }}
-                title="Click to filter by this socket count"
+                title={t('overlay.corruptions.filterBySocket')}
               >
                 <span className="text-muted-foreground">
-                  {socketPrice.socketCount} Socket
-                  {socketPrice.socketCount !== 1 ? 's' : ''}
+                  {t('overlay.sockets', { count: socketPrice.socketCount })}
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
@@ -1976,7 +2300,7 @@ function CorruptionRow({
   );
 }
 
-/** Small round indicator in a listing row (ethereal / corrupted / sockets). */
+/** Small rounded-square tag in a listing row (ethereal / corrupted / sockets): square = the item, round = the seller. */
 function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; tooltip: string; className: string }) {
   return (
     <Tooltip disableHoverableContent={true}
@@ -1984,7 +2308,7 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
       <TooltipTrigger asChild>
         <div
           className={cn(
-            'flex size-4 items-center justify-center rounded-full border text-[10px] font-bold leading-none tabular-nums shadow-xs',
+            'flex size-4 items-center justify-center rounded-[4px] border text-[10px] font-bold leading-none tabular-nums shadow-xs',
             className,
           )}
         >
@@ -1998,12 +2322,165 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
   );
 }
 
-const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
+/** An empty tag slot: keeps the other tags in their columns. */
+function BadgeSlot() {
+  return <span aria-hidden
+    className="size-4" />;
+}
+
+/** A sortable column header: the active one reads in full with its direction's arrow. */
+function SortHeader({
+  label,
+  title,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  title: string;
+  active: boolean;
+  dir: ResultsSort['dir'];
+  onClick: () => void;
+}) {
+  const Arrow = dir === 'desc' ? ChevronDown : ChevronUp;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+        active && 'font-semibold text-foreground',
+      )}
+    >
+      {label}
+      {active && <Arrow aria-hidden
+        className="size-3" />}
+    </button>
+  );
+}
+
+/**
+ * A seller's presence as one mark: in game (green, left) overlapping on the trade site (blue, right); a faded half
+ * is a no. The same mark heads the column as the seller filter.
+ */
+function PresenceMark({ inGame, onSite }: { inGame: boolean; onSite: boolean }) {
+  const half = 'size-2 rounded-full ring-[1.5px] ring-surface-elevated transition-colors duration-(--dur-fast)';
+  return (
+    <span aria-hidden
+      className="flex items-center">
+      <span className={cn(half, 'relative z-10', inGame ? 'bg-success' : 'bg-muted-foreground/35')} />
+      <span className={cn(half, '-ml-0.5', onSite ? 'bg-info' : 'bg-muted-foreground/35')} />
+    </span>
+  );
+}
+
+const SELLER_OPTIONS: { key: 'anyone' | 'inGame' | 'onSite' | 'either'; filter: SellerFilter }[] = [
+  { key: 'anyone', filter: { inGame: false, onSite: false } },
+  { key: 'inGame', filter: { inGame: true, onSite: false } },
+  { key: 'onSite', filter: { inGame: false, onSite: true } },
+  { key: 'either', filter: { inGame: true, onSite: true } },
+];
+
+const SELLER_LABEL_KEYS = {
+  anyone: 'overlay.results.sellerAnyone',
+  inGame: 'overlay.results.sellerInGame',
+  onSite: 'overlay.results.sellerOnSite',
+  either: 'overlay.results.sellerEither',
+} as const;
+
+/** The seller filter: the column's presence mark (lit halves = the current choice) opening the four choices. */
+function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange: (filter: SellerFilter) => void }) {
+  const { t } = useTranslation('priceCheck');
+  const [open, setOpen] = useState(false);
+  const filtered = filter.inGame || filter.onSite;
+  return (
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('overlay.results.sellerFilter')}
+          title={t('overlay.results.sellerFilter')}
+          className={cn(
+            'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
+            filtered && 'ring-1 ring-foreground/30',
+          )}
+        >
+          <PresenceMark inGame={filter.inGame}
+            onSite={filter.onSite} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end"
+        className="w-52 p-1">
+        <div role="menu"
+          aria-label={t('overlay.results.sellerFilter')}>
+          <div className="px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            {t('overlay.results.seller')}
+          </div>
+          {SELLER_OPTIONS.map((option) => {
+            const checked = option.filter.inGame === filter.inGame && option.filter.onSite === filter.onSite;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                role="menuitemradio"
+                aria-checked={checked}
+                onClick={() => {
+                  onChange(option.filter);
+                  setOpen(false);
+                }}
+                className={cn(
+                  'cursor-pointer flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent focus-visible:bg-accent',
+                  checked ? 'text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <span className="flex w-5 justify-center">
+                  <PresenceMark inGame={option.filter.inGame}
+                    onSite={option.filter.onSite} />
+                </span>
+                <span className="flex-1">{t(SELLER_LABEL_KEYS[option.key])}</span>
+                {checked && <Check aria-hidden
+                  className="size-3.5 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** How an ended listing's row reads ("sold after 2 days"), by status. */
+const ENDED_KEYS = {
+  sold: 'overlay.listing.endedSold',
+  removed: 'overlay.listing.endedRemoved',
+  expired: 'overlay.listing.endedExpired',
+} as const;
+
+const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
+  const { t } = useTranslation('priceCheck');
+  const { listing } = row;
   const [open, setOpen] = useState(false);
   const [whisperCopied, setWhisperCopied] = useState(false);
-  const [onlineTooltipHover, setOnlineTooltipHover] = useState(false);
-  const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
+  const [presenceTooltipHover, setPresenceTooltipHover] = useState(false);
+  const isCorrupted = itemCorruptions(listing.item).length > 0;
   const online = isUserOnlineIngame(listing.user_last_ingame);
+  const onSite = isUserOnlineIngame(listing.user_last_online);
+  const presenceText = `${online ? t('overlay.listing.inGame') : t('overlay.listing.notInGame')} · ${
+    onSite ? t('overlay.listing.onSite') : t('overlay.listing.notOnSite')
+  }`;
+  // Market service rows: how long the listing was up and, once it ended, how
+  const ended = row.status && row.status !== 'active' ? row.status : null;
+  const upFor =
+    typeof row.durationSeconds === 'number' ? moment.duration(row.durationSeconds, 'seconds').humanize() : null;
+  const listedTitle = ended
+    ? row.endedAt
+      ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() })
+      : undefined
+    : upFor
+      ? t('overlay.listing.listedFor', { duration: upFor })
+      : undefined;
 
   const copyWhisper = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2011,7 +2488,10 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
     const account = listing.user?.in_game_account || listing.user?.game?.accounts?.[0] || listing.user?.username || '';
     const itemName = listing.item?.name || listing.item?.base?.name || 'item';
     const priceStr = listing.hr_price ? `${listing.hr_price} HR` : listing.price || '';
-    const message = `/w *${account} Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`;
+    const message = whisperCommand(
+      account,
+      `Hi, I'm interested in your ${itemName}${priceStr ? ` listed for ${priceStr}` : ''}`,
+    );
     try {
       await writeText(message);
       setWhisperCopied(true);
@@ -2039,8 +2519,8 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
           onMouseLeave={() => setOpen(false)}
         >
           {/* Price Column */}
-          <td className="flex flex-row items-center justify-between whitespace-nowrap rounded-l-md px-2 py-1">
-            <div className="mr-2 flex-1 truncate">
+          <td className="flex flex-row items-center gap-2 whitespace-nowrap rounded-l-md px-2 py-1">
+            <div className="flex-1 truncate">
               {listing.hr_price ? (
                 <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
               ) : listing.price && listing.price.length > 40 ? (
@@ -2067,67 +2547,75 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
               )}
             </div>
 
+            {/* Item tags in fixed slots (ethereal · corrupted · sockets), so they line up down the list */}
             <div className="flex flex-row items-center gap-1">
-              {/* Online Indicator */}
-              {online && (
-                <Tooltip
-                  disableHoverableContent={true}
-                  delayDuration={0}
-                  open={whisperCopied || onlineTooltipHover}
-                  onOpenChange={setOnlineTooltipHover}
-                >
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={copyWhisper}
-                      className={cn(
-                        'mx-0.5 size-2.5 cursor-pointer rounded-full bg-success ring-2 ring-success/25 outline-none transition-[transform,box-shadow] duration-(--dur-fast) hover:scale-125 hover:ring-success/45 focus-visible:ring-ring/60',
-                        whisperCopied && 'scale-125 ring-4 ring-success/40',
-                      )}
-                      aria-label="Copy whisper"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent className="pointer-events-none">
-                    <p className="flex items-center gap-1.5">
-                      {whisperCopied && <Check className="size-3 text-success" />}
-                      {whisperCopied
-                        ? 'Copied whisper, right click to paste'
-                        : 'Online in-game · click to copy whisper'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Ethereal Indicator */}
-              {listing.item.is_ethereal && (
+              {listing.item.is_ethereal ? (
                 <ListingBadge label="E"
                   tooltip="Ethereal"
                   className="border-border bg-foreground text-background" />
+              ) : (
+                <BadgeSlot />
               )}
-
-              {/* Corruption Indicator */}
-              {isCorrupted && (
+              {isCorrupted ? (
                 <ListingBadge
                   label="C"
                   tooltip="Corrupted"
                   className="border-destructive/60 bg-destructive text-destructive-foreground"
                 />
+              ) : (
+                <BadgeSlot />
               )}
-
-              {/* Sockets Indicator */}
-              {(listing.item.socket_count || 0) > 0 && (
+              {(listing.item.socket_count || 0) > 0 ? (
                 <ListingBadge
                   label={listing.item.socket_count}
-                  tooltip={`${listing.item.socket_count} ${listing.item.socket_count === 1 ? 'Socket' : 'Sockets'}`}
+                  tooltip={t('overlay.sockets', { count: listing.item.socket_count })}
                   className="border-border bg-secondary text-secondary-foreground"
                 />
+              ) : (
+                <BadgeSlot />
               )}
             </div>
+            {/* Seller presence, under the column's filter mark; clicking it when they're in game copies a whisper */}
+            <Tooltip
+              disableHoverableContent={true}
+              delayDuration={0}
+              open={whisperCopied || presenceTooltipHover}
+              onOpenChange={setPresenceTooltipHover}
+            >
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={online ? copyWhisper : (e) => e.stopPropagation()}
+                  aria-label={online ? t('overlay.listing.copyWhisper') : presenceText}
+                  className={cn(
+                    'flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-transform duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+                    online ? 'cursor-pointer hover:scale-125' : 'cursor-default',
+                    whisperCopied && 'scale-125',
+                  )}
+                >
+                  <PresenceMark inGame={online}
+                    onSite={onSite} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="pointer-events-none">
+                <p className="flex items-center gap-1.5">
+                  {whisperCopied && <Check className="size-3 text-success" />}
+                  {whisperCopied
+                    ? t('overlay.listing.whisperCopied')
+                    : online
+                      ? t('overlay.listing.presenceWhisper', { presence: presenceText })
+                      : presenceText}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </td>
 
-          {/* Listed Column */}
-          <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
-            {listing.bumped_at ? moment(listing.bumped_at).fromNow(true) : '-'}
+          {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
+          <td
+            className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground"
+            title={listedTitle}
+          >
+            {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
           </td>
         </tr>
       </PopoverTrigger>
@@ -2150,11 +2638,18 @@ const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number
             <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
               <UserIcon className="size-3" />
               <span>
-                Seller: <span className="text-foreground">{listing.user.username}</span>
+                <Trans
+                  t={t}
+                  i18nKey="overlay.listing.seller"
+                  values={{ seller: listing.user.username }}
+                  components={{ name: <span className="text-foreground" /> }}
+                />
               </span>
               {online && (
-                <div className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                  title="Online in-game" />
+                <div
+                  className="size-2 rounded-full bg-success ring-2 ring-success/25"
+                  title={t('overlay.listing.online')}
+                />
               )}
             </div>
           )}

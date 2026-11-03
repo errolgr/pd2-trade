@@ -4,10 +4,12 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { Item, Stat } from './interfaces';
 import { StatId } from './stat-mappings';
 import {
+  BASE_QUALITIES,
   buildGetAllUserMarketListingsQuery,
   buildGetMarketListingByStashItemQuery,
   buildGetMarketListingQuery,
   buildTradeUrl,
+  type QualitySearch,
 } from './tradeUrlBuilder';
 
 type Filters = Record<string, { value?: string; min?: string; max?: string }>;
@@ -39,7 +41,7 @@ function urlParams(
     matched?: Parameters<typeof buildTradeUrl>[7];
     archive?: boolean;
     corrupted?: number;
-    quality?: string;
+    quality?: QualitySearch;
   } = {},
 ) {
   const url = new URL(
@@ -80,6 +82,10 @@ describe('buildTradeUrl', () => {
     expect(urlParams(makeItem(), [], {}, { quality: 'Unique' }).p.get('quality')).toBe('Unique');
   });
 
+  it('"Any" quality leaves the quality filter off (the site only takes one quality)', () => {
+    expect(urlParams(makeItem(), [], {}, { quality: BASE_QUALITIES }).p.has('quality')).toBe(false);
+  });
+
   it.each([
     [0, null],
     [1, 'true'],
@@ -116,7 +122,12 @@ describe('buildTradeUrl', () => {
       ],
     });
     const statMapper = (id: number) => (id === 105 ? 'custom_fcr' : undefined);
-    const { p } = urlParams(item, ['id:105', 'id:4242'], { 'id:105': { min: '5' }, 'id:4242': { min: '1' } }, { statMapper });
+    const { p } = urlParams(
+      item,
+      ['id:105', 'id:4242'],
+      { 'id:105': { min: '5' }, 'id:4242': { min: '1' } },
+      { statMapper },
+    );
     expect(p.get('properties[custom_fcr][min]')).toBe('5');
     expect(p.get('properties[stat_4242][min]')).toBe('1');
   });
@@ -129,6 +140,69 @@ describe('buildTradeUrl', () => {
     const item = makeItem({ stats: [{ stat_id: 107, name: skill, skill, value: 2 }] });
     const key = `skill:${skill.toLowerCase()}`;
     expect(urlParams(item, [key], { [key]: { min: '2' } }).p.get(`properties[${prop}][min]`)).toBe('2');
+  });
+
+  // Ctrl+C exports auras as the bare line ("Level 8 Might Aura When Equipped"): no stat_id, no value.
+  const templarsMight = makeItem({
+    quality: 'Unique',
+    name: "Templar's Might",
+    type: 'Sacred Armor',
+    stats: [{ name: 'Level 8 Might Aura When Equipped', range: { min: 6, max: 8 } } as Stat],
+  });
+
+  it('maps an aura line to item_aura{skill id}', () => {
+    const { p } = urlParams(templarsMight, ['id:151:might'], { 'id:151:might': { min: '7' } });
+    expect(p.get('properties[item_aura{98}][min]')).toBe('7');
+  });
+
+  it('maps chance-to-cast and charge lines to their unpinned site keys, filtering the skill level', () => {
+    const item = makeItem({
+      stats: [
+        { name: '12% Chance to cast level 40 Twister on striking', chance: 12, level: 40 } as Stat,
+        { charges: '(25/31 Charges)', level: 3, skill: 'Teleport' } as Stat,
+      ],
+    });
+    const filters = { 'id:198:twister': { min: '35' }, 'id:204:teleport': { min: '3' } };
+    const { p } = urlParams(item, ['id:198:twister', 'id:204:teleport'], filters);
+    expect(p.get('properties[item_skillonhit][min]')).toBe('35');
+    expect(p.get('properties[item_charged_skill][min]')).toBe('3');
+  });
+
+  // Ctrl+C exports +skill lines by the name the game draws, without a stat id (Discord 1464520236102451220, 1458036873527164949).
+  const hawkmail = makeItem({
+    name: 'Hawkmail',
+    quality: 'Unique',
+    type: 'Scale Mail',
+    stats: [
+      { stat_id: 96, name: 'Faster Run/Walk', value: 25 },
+      { name: '+3 to Raven', skill: 'Raven', value: 3 } as Stat,
+      { stat_id: 16, name: 'Enhanced Defense', value: 80 },
+    ],
+  });
+  const necroHead = makeItem({
+    name: undefined,
+    quality: 'Normal',
+    type: 'Demon Head',
+    stats: [
+      { name: '+3 to Lower Resist', skill: 'Lower Resist', value: 3 } as Stat,
+      { name: '+3 to Fire Golem', skill: 'Fire Golem', value: 3 } as Stat,
+    ],
+  });
+
+  it.each([
+    [hawkmail, 'Raven', 'item_nonclassskill{221}'],
+    [necroHead, 'Lower Resist', 'item_singleskill{91}'],
+    [necroHead, 'Fire Golem', 'item_singleskill{94}'],
+  ])('maps exported skill line %#: %s to %s', (item, skill, prop) => {
+    const key = `skill:${skill.toLowerCase()}`;
+    expect(urlParams(item, [key], { [key]: { min: '3' } }).p.get(`properties[${prop}][min]`)).toBe('3');
+  });
+
+  it('searches the o-skill on the market modifier item_nonclassskill', () => {
+    const key = 'skill:raven';
+    expect(
+      buildGetMarketListingQuery(hawkmail, noMapped, new Set([key]), {}, SC_LADDER)['item.modifiers']?.$all,
+    ).toEqual([{ $elemMatch: { name: 'item_nonclassskill', 'values.0': 221 } }]);
   });
 
   it('maps socket filters to sockets_min/sockets_max', () => {
@@ -187,7 +261,8 @@ describe('buildTradeUrl', () => {
   it('combines four equal attributes (incl. "to Strength" remapped by name) into all_attributes', () => {
     const item = makeItem({
       stats: [
-        { stat_id: 9999, name: 'to Strength', value: 5 },
+        // BH's Ctrl+C sends Strength without a stat_id
+        { name: 'to Strength', value: 5 } as Stat,
         { stat_id: 1, name: 'Energy', value: 5 },
         { stat_id: 2, name: 'Dexterity', value: 5 },
         { stat_id: 3, name: 'Vitality', value: 5 },
@@ -227,7 +302,9 @@ describe('buildTradeUrl', () => {
 
     it('searches uniques by mapped name, falling back to the parsed name', () => {
       const unique = makeItem({ quality: 'Unique', name: 'stormshield' });
-      expect(urlParams(unique, [], {}, { mapped: { name: 'Stormshield' } as PD2Item }).p.get('name')).toBe('Stormshield');
+      expect(urlParams(unique, [], {}, { mapped: { name: 'Stormshield' } as PD2Item }).p.get('name')).toBe(
+        'Stormshield',
+      );
       expect(urlParams(unique).p.get('name')).toBe('stormshield');
     });
 
@@ -300,7 +377,7 @@ describe('buildGetMarketListingQuery', () => {
       limit?: number;
       offset?: number;
       corruptions?: string[];
-      quality?: string;
+      quality?: QualitySearch;
     } = {},
   ) {
     return buildGetMarketListingQuery(
@@ -339,9 +416,26 @@ describe('buildGetMarketListingQuery', () => {
   });
 
   it('looks back 14 days in archive mode and honors paging, realm and quality override', () => {
-    const q = query(makeItem(), [], {}, { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' });
+    const q = query(
+      makeItem(),
+      [],
+      {},
+      { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' },
+    );
     expect(q.updated_at.$gte).toBe('2026-10-04T12:00:00.000Z');
-    expect(q).toMatchObject({ $limit: 50, $skip: 100, is_hardcore: true, is_ladder: false, 'item.quality.name': 'Crafted' });
+    expect(q).toMatchObject({
+      $limit: 50,
+      $skip: 100,
+      is_hardcore: true,
+      is_ladder: false,
+      'item.quality.name': 'Crafted',
+    });
+  });
+
+  it('"Any" quality searches every base quality with $in', () => {
+    expect(query(makeItem(), [], {}, { quality: BASE_QUALITIES })['item.quality.name']).toEqual({
+      $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'],
+    });
   });
 
   it.each([
@@ -364,11 +458,65 @@ describe('buildGetMarketListingQuery', () => {
         { stat_id: 4242, name: 'Unmapped', value: 1 },
       ],
     });
-    const q = query(item, ['id:105', 'id:7', 'id:4242'], { 'id:105': { min: '10', max: '20' }, 'id:7': { min: '', max: '' } });
+    const q = query(item, ['id:105', 'id:7', 'id:4242'], {
+      'id:105': { min: '10', max: '20' },
+      'id:7': { min: '', max: '' },
+    });
     expect(q['item.modifiers']).toEqual({
       $all: [
         { $elemMatch: { name: 'item_fastercastrate', 'values.0': { $gte: 10, $lte: 20 } } },
         { $elemMatch: { name: 'maxhp' } },
+      ],
+    });
+  });
+
+  it('matches an aura line as item_aura with the skill id in values.0 and the level range in values.1', () => {
+    const item = makeItem({
+      quality: 'Unique',
+      stats: [{ name: 'Level 12 Conviction Aura When Equipped' } as Stat],
+    });
+    const q = query(item, ['id:151:conviction'], { 'id:151:conviction': { min: '10', max: '12' } });
+    expect(q['item.modifiers']).toEqual({
+      $all: [{ $elemMatch: { name: 'item_aura', 'values.0': 123, 'values.1': { $gte: 10, $lte: 12 } } }],
+    });
+  });
+
+  it('matches chance-to-cast and charge lines with the skill id in values.1 and the level range in values.0', () => {
+    const item = makeItem({
+      stats: [
+        { name: '28% Chance to cast level 35 Blessed Hammer on casting', chance: 28, level: 35 } as Stat,
+        { charges: '(25/31 Charges)', level: 3, skill: 'Teleport' } as Stat,
+      ],
+    });
+    const keys = ['id:200:blessed hammer', 'id:204:teleport'];
+    const q = query(item, keys, { [keys[0]]: { min: '30' }, [keys[1]]: { max: '5' } });
+    expect(q['item.modifiers']).toEqual({
+      $all: [
+        { $elemMatch: { name: 'item_skilloncast', 'values.1': 112, 'values.0': { $gte: 30 } } },
+        { $elemMatch: { name: 'item_charged_skill', 'values.1': 54, 'values.0': { $lte: 5 } } },
+      ],
+    });
+  });
+
+  // Items cast curses as procs (Amplify Damage: skill 66, proc 442) and draw some procs by a name no skill
+  // table has ("Static Field Proc", skill 610): match either id, or the market line.
+  it('matches a curse proc by any id of its name, and an unknown skill by its line', () => {
+    const item = makeItem({
+      stats: [
+        { name: '33% Chance to cast level 27 Amplify Damage on striking', chance: 33, level: 27 } as Stat,
+        { name: '20% Chance to cast level 25 Static Field Proc when struck', chance: 20, level: 25 } as Stat,
+      ],
+    });
+    const q = query(item, ['id:198:amplify damage', 'id:201:static field proc']);
+    expect(q['item.modifiers']).toEqual({
+      $all: [
+        { $elemMatch: { name: 'item_skillonhit', 'values.1': { $in: [66, 442] } } },
+        {
+          $elemMatch: {
+            name: 'item_skillongethit',
+            label: { $regex: '^\\d+% Chance to cast level \\d+ Static Field Proc when struck$' },
+          },
+        },
       ],
     });
   });
@@ -386,6 +534,50 @@ describe('buildGetMarketListingQuery', () => {
     expect(query(item, [key])['item.modifiers'].$all).toEqual([{ $elemMatch: { name, 'values.0': id } }]);
   });
 
+  it('filters melee splash on its chance (values [level, skill, chance]), the roll the clipboard reports', () => {
+    const item = makeItem({
+      type: 'Feral Claws',
+      stats: [{ stat_id: 359, name: 'Melee Attacks Deal Splash Damage', value: 100 }],
+    });
+    expect(query(item, ['id:359'], { 'id:359': { min: '95', max: '105' } })['item.modifiers'].$all).toEqual([
+      { $elemMatch: { name: 'item_splashonhit', 'values.2': { $gte: 95, $lte: 105 } } },
+    ]);
+  });
+
+  it('searches a fire damage row on the market pair modifier: min damage in values.0, max in values.1', () => {
+    const item = makeItem({
+      stats: [
+        { stat_id: 48, name: 'to Minimum Fire Damage', value: 4 },
+        { stat_id: 49, name: 'to Maximum Fire Damage', value: 14 },
+      ],
+    });
+    const key = 'id:1003';
+    const filters = { [key]: { min: '3', max: '5', maxMin: '12', maxMax: '' } };
+    expect(query(item, [key], filters)['item.modifiers'].$all).toEqual([
+      {
+        $elemMatch: {
+          name: { $in: ['firedam', 'firemindam'] },
+          'values.0': { $gte: 3, $lte: 5 },
+          'values.1': { $gte: 12 },
+        },
+      },
+    ]);
+  });
+
+  it('searches a physical damage row as separate min and max damage modifiers', () => {
+    const item = makeItem({
+      stats: [
+        { stat_id: 21, name: 'to Minimum Damage', value: 10 },
+        { stat_id: 22, name: 'to Maximum Damage', value: 30 },
+      ],
+    });
+    const key = 'id:1008';
+    expect(query(item, [key], { [key]: { min: '8', maxMin: '25' } })['item.modifiers'].$all).toEqual([
+      { $elemMatch: { name: { $in: ['min_damage', 'mindamage', 'secondary_mindamage'] }, 'values.0': { $gte: 8 } } },
+      { $elemMatch: { name: { $in: ['max_damage', 'maxdamage', 'secondary_maxdamage'] }, 'values.0': { $gte: 25 } } },
+    ]);
+  });
+
   it('merges socket min and max into one socket_count range', () => {
     const q = query(makeItem({ sockets: 4 }), ['id:1000'], { 'id:1000': { min: '2', max: '4' } });
     expect(q['item.socket_count']).toEqual({ $gte: 2, $lte: 4 });
@@ -396,19 +588,43 @@ describe('buildGetMarketListingQuery', () => {
     expect(query(makeItem({ isEthereal: true }), ['id:1001'])['item.is_ethereal']).toBe(true);
   });
 
-  // BUG: tradeUrlBuilder.ts:216 checks `stat.stat_id === StatId.Ethereal || item.isEthereal`, so for an ethereal item
-  // every selected regular/skill stat short-circuits to `is_ethereal` and its modifier filter is silently dropped.
-  it.fails('keeps stat filters for ethereal items', () => {
+  it('keeps stat filters for ethereal items', () => {
     const item = makeItem({ isEthereal: true, stats: [{ stat_id: 105, name: 'FCR', value: 20 }] });
     const q = query(item, ['id:105'], { 'id:105': { min: '10' } });
     expect(q['item.modifiers']).toEqual({
       $all: [{ $elemMatch: { name: 'item_fastercastrate', 'values.0': { $gte: 10 } } }],
     });
+    expect(q).not.toHaveProperty(['item.is_ethereal']);
+  });
+
+  // #146: an ethereal superior base searched by Enhanced Damage returned every superior base of that type.
+  it('filters an ethereal superior base on its enhanced damage range, and drops it when deselected', () => {
+    const item = makeItem({
+      quality: 'Superior',
+      isEthereal: true,
+      stats: [
+        { stat_id: 17, name: '+% Enhanced Maximum Damage', value: 19 },
+        { stat_id: 18, name: '+% Enhanced Minimum Damage', value: 19 },
+      ],
+    });
+    const ed = 'id:998';
+    const filters = { [ed]: { min: '19', max: '20' } };
+    const on = query(item, ['id:1001', ed], filters);
+    expect(on['item.is_ethereal']).toBe(true);
+    expect(on['item.modifiers']).toEqual({
+      $all: [{ $elemMatch: { name: 'maxdamage_percent', 'values.0': { $gte: 19, $lte: 20 } } }],
+    });
+    const off = query(item, ['id:1001'], filters);
+    expect(off['item.is_ethereal']).toBe(true);
+    expect(off).not.toHaveProperty(['item.modifiers']);
   });
 
   describe('item identity', () => {
     it('matches jewels and charms by type/base code', () => {
-      expect(query(makeItem({ type: 'Jewel' }))).toMatchObject({ 'item.base.type_code': 'jewl', 'item.base_code': 'jew' });
+      expect(query(makeItem({ type: 'Jewel' }))).toMatchObject({
+        'item.base.type_code': 'jewl',
+        'item.base_code': 'jew',
+      });
       expect(query(makeItem({ type: 'Small Charm', quality: 'Magic' }))).toMatchObject({
         'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] },
         'item.base_code': 'cm1',
@@ -430,6 +646,13 @@ describe('buildGetMarketListingQuery', () => {
       expect(query(unique)['item.name'].$regex).toBe('tal rasha');
     });
 
+    it('sends no name filter for a nameless item: PD2 answers an empty $regex with a 500', () => {
+      const q = query(makeItem({ quality: 'Inferior', name: undefined, type: 'Short Sword' }));
+      expect(q['item.quality.name']).toBe('Inferior');
+      expect(q).not.toHaveProperty(['item.name']);
+      expect(query(makeItem({ quality: 'Normal', isRuneword: true, name: '' }))).not.toHaveProperty(['item.name']);
+    });
+
     it('parses $in category and base values into query objects', () => {
       expect(query(makeItem({ type: 'Ring' }))).toMatchObject({
         'item.base.type_code': { $in: ['amul', 'ring', 'amus'] },
@@ -445,6 +668,13 @@ describe('buildGetMarketListingQuery', () => {
       const matched = { typeLabel: 'Shield', typeValue: 'shie', bases: [] };
       const q = query(makeItem(), [], {}, { searchMode: 1, matched });
       expect(q['item.base.type_code']).toBe('shie');
+      expect(q).not.toHaveProperty(['item.base_code']);
+    });
+
+    it('searches a grouped type in typeLabel mode as its $in object', () => {
+      const matched = { typeLabel: 'Fist Weapon', typeValue: '{"$in": ["h2h", "h2h2"]}', bases: [] };
+      const q = query(makeItem({ type: 'Feral Claws' }), [], {}, { searchMode: 1, matched });
+      expect(q['item.base.type_code']).toEqual({ $in: ['h2h', 'h2h2'] });
       expect(q).not.toHaveProperty(['item.base_code']);
     });
 

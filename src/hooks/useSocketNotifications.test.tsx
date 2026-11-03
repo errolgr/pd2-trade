@@ -6,7 +6,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { ISettings } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
 import { changeChatPrefs, resetChatPrefs, setThreadPrefs } from '@/lib/chat-prefs';
-import { isToastEnabled, useSocketNotifications } from './useSocketNotifications';
+import { isToastEnabled, OFFER_TOAST_DURATION_MS, useSocketNotifications } from './useSocketNotifications';
 
 type Handler = (event: { payload: unknown }) => unknown;
 type SocketHandler = (data: unknown) => void;
@@ -57,6 +57,13 @@ const pd2 = vi.hoisted(() => ({ isConnected: false, refresh: vi.fn() }));
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
+// The module fetches the sound at import to make its blob: URL; keep that off the network
+vi.hoisted(() =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  ),
+);
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
 vi.mock('@/lib/browser-fs', () => ({
@@ -162,8 +169,41 @@ describe('isToastEnabled', () => {
   });
 });
 
+describe('playNotificationSound', () => {
+  async function playedSrc(fetchSound: () => Promise<Response>) {
+    vi.resetModules();
+    vi.stubGlobal('fetch', vi.fn(fetchSound));
+    const played: string[] = [];
+    vi.stubGlobal(
+      'Audio',
+      class {
+        volume = 1;
+        constructor(public src: string) {}
+        play() {
+          played.push(this.src);
+          return Promise.resolve();
+        }
+      },
+    );
+    // Fresh module load: the blob: URL is made when the module is evaluated
+    const { playNotificationSound } = await import('./useSocketNotifications');
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+    await act(async () => {});
+    playNotificationSound();
+    return played[0];
+  }
+
+  it('plays a blob: URL of the bundled sound (Linux WebKitGTK refuses media from tauri://)', async () => {
+    expect(await playedSrc(async () => new Response(new Blob(['mp3'])))).toMatch(/^blob:/);
+  });
+
+  it('falls back to the asset URL when the sound cannot be fetched', async () => {
+    expect(await playedSrc(async () => Promise.reject(new Error('offline')))).toBe('whisper.mp3');
+  });
+});
+
 describe('useSocketNotifications offer notifications', () => {
-  it('plays the sound at the configured volume, shows a listing toast and asks offers to refresh', async () => {
+  it('plays the sound at the configured volume, shows a toast opening the offer in chat and asks offers to refresh', async () => {
     await renderNotifications({ isConnected: true, settings: { whisperNotificationVolume: 40 } });
 
     await fire(OFFER_EVENT, offer('n1'));
@@ -173,7 +213,12 @@ describe('useSocketNotifications offer notifications', () => {
       {
         title: 'New Offer',
         description: 'Bob offered 2 ist',
-        action: { label: 'View Listing', type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'listing-1' } },
+        duration: OFFER_TOAST_DURATION_MS,
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: 'n1', accepted: false },
+        },
       },
     ]);
     expect(pd2.refresh).toHaveBeenCalledTimes(1);
@@ -200,14 +245,81 @@ describe('useSocketNotifications offer notifications', () => {
     expect(sounds).toHaveLength(102);
   });
 
-  it('ignores other notification types and offers without a listing', async () => {
+  it('ignores other notification types, logging only their type at debug level', async () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
     await renderNotifications({ isConnected: true });
 
-    await fire(OFFER_EVENT, offer('a', { type: 'listing_sold' }));
-    await fire(OFFER_EVENT, offer('b', { data: {} }));
+    await fire(OFFER_EVENT, offer('a', { type: 'listing_sold', meta: { string: 'secret' } }));
 
     expect(sounds).toEqual([]);
     expect(pd2.refresh).not.toHaveBeenCalled();
+    expect(debug.mock.calls).toEqual([['[Notifications] Unhandled system/notification push type:', 'listing_sold']]);
+    debug.mockRestore();
+  });
+
+  it('reads offers leniently: without a listing or an id there is still a sound and a toast opening the chat', async () => {
+    await renderNotifications({ isConnected: true });
+
+    await fire(OFFER_EVENT, { type: 'offer_received' });
+
+    expect(sounds).toHaveLength(1);
+    expect(toasts()).toEqual([
+      {
+        title: 'New Offer',
+        description: 'New offer received',
+        duration: OFFER_TOAST_DURATION_MS,
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: expect.any(String), accepted: false },
+        },
+      },
+    ]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('an accepted offer gets its own toast and sound, and refreshes the offers', async () => {
+    await renderNotifications({ isConnected: true, settings: { whisperNotificationVolume: 40 } });
+
+    await fire(OFFER_EVENT, offer('acc1', { type: 'offer_accepted', meta: { string: 'alice accepted your offer' } }));
+
+    expect(sounds).toEqual([0.4]);
+    expect(toasts()).toEqual([
+      {
+        title: 'Offer Accepted',
+        description: 'alice accepted your offer',
+        duration: OFFER_TOAST_DURATION_MS,
+        action: {
+          label: 'View offer',
+          type: ToastActionType.OPEN_CHAT_OFFER,
+          data: { notificationId: 'acc1', accepted: true },
+        },
+      },
+    ]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('an accepted offer follows the offers toast setting and the trade sound setting', async () => {
+    await renderNotifications({
+      isConnected: true,
+      settings: { tradeNotificationsEnabled: false, toastPopupTypes: ['whispers'] },
+    });
+
+    await fire(OFFER_EVENT, offer('acc1', { type: 'offer_accepted', meta: {} }));
+
+    expect(sounds).toEqual([]);
+    expect(toasts()).toEqual([]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('a withdrawn offer only refreshes the offers, quietly', async () => {
+    await renderNotifications({ isConnected: true });
+
+    await fire(OFFER_EVENT, offer('rev1', { type: 'offer_revoked' }));
+
+    expect(sounds).toEqual([]);
+    expect(toasts()).toEqual([]);
+    expect(pd2.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('still refreshes offers with sound and toast both disabled, using a default description', async () => {
@@ -394,10 +506,7 @@ describe('useSocketNotifications whispers', () => {
     expect(bus.listenerCount('whisper-received')).toBe(0);
   });
 
-  // BUG: useSocketNotifications.tsx:304-309 — the whisper listener's `unlisten` is assigned only after
-  // listen() resolves; a settings change before that leaks the first listener, so every whisper
-  // notifies twice for the rest of the session.
-  it.fails('notifies a whisper once after settings change during listener registration', async () => {
+  it('notifies a whisper once after settings change during listener registration', async () => {
     bus.state.hold = true;
     const { rerender } = await renderNotifications({ isConnected: false, settings: { whisperNotificationVolume: 50 } });
     rerender({ isConnected: false, settings: { whisperNotificationVolume: 60 } });
@@ -452,6 +561,14 @@ describe('useSocketNotifications chat messages', () => {
     await fire(CHAT_EVENT, { ...chat, _id: 'm2', content: 'z'.repeat(100) });
 
     expect(toasts()).toEqual([expect.objectContaining({ description: `${'z'.repeat(80)}...` })]);
+  });
+
+  it('never cuts a preview inside a listing link (the toast shows the link as the item pill)', async () => {
+    await renderNotifications({ isConnected: true });
+    const link = 'https://www.projectdiablo2.com/market/listing/6a0bf54e6c42aba37528ae01?display="Silkweave"';
+    const content = `Hi, I'm interested in your ${link} listed for 10 wss, still available?`;
+    await fire(CHAT_EVENT, { ...chat, _id: 'm3', content });
+    expect(toasts()).toEqual([expect.objectContaining({ description: `Hi, I'm interested in your ${link}...` })]);
   });
 
   it('respects the whispers toast type', async () => {

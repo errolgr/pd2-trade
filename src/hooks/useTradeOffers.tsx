@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { t } from '@/i18n';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { handleApiResponse } from './pd2website/usePD2Website';
 import { ISettings } from './useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
-import { setBadgeCount, showToast } from '@/overlay';
+import type { Participant } from '@/common/types/pd2-website/ChatTypes';
+import { showToast } from '@/overlay';
 import qs from 'qs';
 import {
   getDeletedOffers,
@@ -23,11 +25,16 @@ export interface TradeOffer {
   /** The other user's first in-game account. */
   accountName?: string;
   itemName?: string;
+  /** The offer text, or `N HR` when only an HR value was offered. */
   price?: string;
+  /** The offer's HR value, when the offerer gave one. */
+  hrOffer?: number;
   timestamp: Date;
   listingId?: string;
   /** The other user's website id. */
   userId?: string;
+  /** The other user's website profile as the market resolves it: username, every registered account, joined date. */
+  user?: Participant;
   /** The offer the listing accepted, if any (this one or another). */
   acceptedOfferId?: string;
   /** Outgoing only: the listing was sold or delisted (archived). */
@@ -43,13 +50,7 @@ interface WebsiteOffer {
   created_at: string;
   updated_at: string;
   rejected?: boolean;
-  user?: {
-    _id: string;
-    username: string;
-    game?: {
-      accounts?: string[];
-    };
-  };
+  user?: Participant;
   listing?: {
     _id: string;
     item?: {
@@ -58,13 +59,7 @@ interface WebsiteOffer {
     price?: string;
     hr_price?: number;
     accepted_offer_id?: string | null;
-    user?: {
-      _id: string;
-      username: string;
-      game?: {
-        accounts?: string[];
-      };
-    };
+    user?: Participant;
   };
   listing_archive?: {
     _id: string;
@@ -74,13 +69,7 @@ interface WebsiteOffer {
     price?: string;
     hr_price?: number;
     accepted_offer_id?: string | null;
-    user?: {
-      _id: string;
-      username: string;
-      game?: {
-        accounts?: string[];
-      };
-    };
+    user?: Participant;
   };
 }
 
@@ -94,13 +83,7 @@ interface IncomingListing {
   price?: string;
   hr_price?: number;
   offers?: WebsiteOffer[];
-  user?: {
-    _id: string;
-    username: string;
-    game?: {
-      accounts?: string[];
-    };
-  };
+  user?: Participant;
 }
 
 interface UseTradeOffersProps {
@@ -139,8 +122,8 @@ function axiosStyleSerializer(obj) {
 
 // Get incoming offers (listings with offers)
 const getIncomingOffers = async (
-  settings: ISettings,
-  authData: AuthData,
+  token: string,
+  userId: string,
   onAuthError?: () => void | Promise<void>,
 ): Promise<TradeOffer[]> => {
   const query = {
@@ -154,7 +137,7 @@ const getIncomingOffers = async (
         },
       },
     },
-    user_id: authData.user._id,
+    user_id: userId,
     $limit: 250,
     $sort: {
       bumped_at: -1,
@@ -165,7 +148,7 @@ const getIncomingOffers = async (
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -184,9 +167,11 @@ const getIncomingOffers = async (
             accountName: offer.user?.game?.accounts?.[0],
             itemName: listing.item?.name,
             price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+            hrOffer: offer.hr_offer || undefined,
             timestamp: new Date(offer.created_at),
             listingId: listing._id,
             userId: offer.user?._id,
+            user: offer.user,
             acceptedOfferId: listing.accepted_offer_id || undefined,
           });
         }
@@ -199,8 +184,8 @@ const getIncomingOffers = async (
 
 // Get outgoing offers (offers made by user)
 const getOutgoingOffers = async (
-  settings: ISettings,
-  authData: AuthData,
+  token: string,
+  userId: string,
   onAuthError?: () => void | Promise<void>,
 ): Promise<TradeOffer[]> => {
   const query = {
@@ -216,7 +201,7 @@ const getOutgoingOffers = async (
         },
       },
     },
-    user_id: authData.user._id,
+    user_id: userId,
     $limit: 10,
     $skip: 0,
     $sort: {
@@ -228,7 +213,7 @@ const getOutgoingOffers = async (
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -248,9 +233,11 @@ const getOutgoingOffers = async (
         accountName: listing?.user?.game?.accounts?.[0],
         itemName: listing?.item?.name,
         price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+        hrOffer: offer.hr_offer || undefined,
         timestamp: new Date(offer.created_at),
         listingId: listing?._id,
         userId: listing?.user?._id,
+        user: listing?.user,
         acceptedOfferId: listing?.accepted_offer_id || undefined,
         listingClosed: !offer.listing,
       };
@@ -333,37 +320,48 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
   const [outgoingOffers, setOutgoingOffers] = useState<TradeOffer[]>([]);
   const [hiddenOutgoingOffers, setHiddenOutgoingOffers] = useState<TradeOffer[]>([]);
   const [loading, setLoading] = useState(false);
+  // Fetches overlap (socket push, chat open, actions): only the newest started one may set its list, so a slow
+  // older response never replaces a newer list (dropping an offer that just came in)
+  const incomingSeq = useRef(0);
+  const outgoingSeq = useRef(0);
 
   // Purge old deleted offers on mount
   useEffect(() => {
     purgeOldDeletedOffers();
   }, []);
 
+  // The lists depend on the token and the user only: refetching on every settings change (a toggle, a dock
+  // reorder) sent PD2 two requests per change and drew 429s
+  const token = settings?.pd2Token;
+  const userId = authData?.user?._id;
   const fetchIncomingOffers = useCallback(async () => {
-    if (!authData?.user?._id || !settings?.pd2Token) {
+    if (!userId || !token) {
       return;
     }
 
+    const seq = ++incomingSeq.current;
     setLoading(true);
     try {
-      const offers = await getIncomingOffers(settings, authData, onAuthError);
-      setIncomingOffers(offers);
+      const offers = await getIncomingOffers(token, userId, onAuthError);
+      if (seq === incomingSeq.current) setIncomingOffers(offers);
     } catch (error) {
       console.error('Failed to fetch incoming offers:', error);
-      setIncomingOffers([]);
+      if (seq === incomingSeq.current) setIncomingOffers([]);
     } finally {
       setLoading(false);
     }
-  }, [authData, settings]);
+  }, [token, userId, onAuthError]);
 
   const fetchOutgoingOffers = useCallback(async () => {
-    if (!authData?.user?._id || !settings?.pd2Token) {
+    if (!userId || !token) {
       return;
     }
 
+    const seq = ++outgoingSeq.current;
     setLoading(true);
     try {
-      const offers = await getOutgoingOffers(settings, authData, onAuthError);
+      const offers = await getOutgoingOffers(token, userId, onAuthError);
+      if (seq !== outgoingSeq.current) return;
       // Get deleted offer IDs from localStorage
       const deletedOfferIds = getDeletedOffers();
 
@@ -382,19 +380,20 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
       deletedIdsToRemove.forEach((id) => unmarkOfferAsDeleted(id));
     } catch (error) {
       console.error('Failed to fetch outgoing offers:', error);
+      if (seq !== outgoingSeq.current) return;
       setOutgoingOffers([]);
       setHiddenOutgoingOffers([]);
     } finally {
       setLoading(false);
     }
-  }, [authData, settings, onAuthError]);
+  }, [token, userId, onAuthError]);
 
   useEffect(() => {
-    if (authData?.user?._id && settings?.pd2Token) {
+    if (userId && token) {
       fetchIncomingOffers();
       fetchOutgoingOffers();
     }
-  }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
+  }, [userId, token, fetchIncomingOffers, fetchOutgoingOffers]);
 
   // Single owner of the offers lists (Pd2WebsiteProvider): socket notifications and offer actions call this.
   // Actions await it, so their callers stay busy until the lists show the change.
@@ -419,8 +418,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Revoked',
-          description: offer ? `Your offer on ${offer.itemName || 'item'} has been revoked` : 'Offer has been revoked',
+          title: t('system:offers.revoked'),
+          description: offer
+            ? t('system:offers.revokedDescription', { item: offer.itemName || t('system:offers.item') })
+            : t('system:offers.revokedFallback'),
           variant: 'success',
         });
 
@@ -431,8 +432,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         void refresh();
         // Show error toast
         showToast({
-          title: 'Failed to Revoke Offer',
-          description: 'An error occurred while revoking the offer',
+          title: t('system:offers.revokeFailed'),
+          description: t('system:offers.revokeFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -454,10 +455,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Accepted',
+          title: t('system:offers.accepted'),
           description: offer
-            ? `You accepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been accepted',
+            ? t('system:offers.acceptedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.acceptedFallback'),
           variant: 'success',
         });
 
@@ -466,8 +470,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         console.error('Failed to accept offer:', error);
         // Show error toast
         showToast({
-          title: 'Failed to Accept Offer',
-          description: 'An error occurred while accepting the offer',
+          title: t('system:offers.acceptFailed'),
+          description: t('system:offers.acceptFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -493,10 +497,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Rejected',
+          title: t('system:offers.rejected'),
           description: offer
-            ? `You rejected ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been rejected',
+            ? t('system:offers.rejectedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.rejectedFallback'),
           variant: 'success',
         });
 
@@ -507,8 +514,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         void refresh();
         // Show error toast
         showToast({
-          title: 'Failed to Reject Offer',
-          description: 'An error occurred while rejecting the offer',
+          title: t('system:offers.rejectFailed'),
+          description: t('system:offers.rejectFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -530,10 +537,13 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
         // Show success toast
         showToast({
-          title: 'Offer Unaccepted',
+          title: t('system:offers.unaccepted'),
           description: offer
-            ? `You unaccepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
-            : 'Offer has been unaccepted',
+            ? t('system:offers.unacceptedDescription', {
+                player: offer.playerName,
+                item: offer.itemName || t('system:offers.item'),
+              })
+            : t('system:offers.unacceptedFallback'),
           variant: 'success',
         });
 
@@ -542,8 +552,8 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
         console.error('Failed to unaccept offer:', error);
         // Show error toast
         showToast({
-          title: 'Failed to Unaccept Offer',
-          description: 'An error occurred while unaccepting the offer',
+          title: t('system:offers.unacceptFailed'),
+          description: t('system:offers.unacceptFailedDescription'),
           variant: 'error',
         });
         throw error;
@@ -568,10 +578,10 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
       // Show success toast
       showToast({
-        title: 'Offer Hidden',
+        title: t('system:offers.hidden'),
         description: offer
-          ? `Your offer on ${offer.itemName || 'item'} has been hidden. It will be removed after 7 days.`
-          : 'Offer has been hidden',
+          ? t('system:offers.hiddenDescription', { item: offer.itemName || t('system:offers.item') })
+          : t('system:offers.hiddenFallback'),
         variant: 'success',
       });
     },
@@ -594,18 +604,15 @@ export const useTradeOffers = ({ settings, authData, onAuthError }: UseTradeOffe
 
       // Show success toast
       showToast({
-        title: 'Offer Restored',
-        description: offer ? `Your offer on ${offer.itemName || 'item'} has been restored` : 'Offer has been restored',
+        title: t('system:offers.restored'),
+        description: offer
+          ? t('system:offers.restoredDescription', { item: offer.itemName || t('system:offers.item') })
+          : t('system:offers.restoredFallback'),
         variant: 'success',
       });
     },
     [hiddenOutgoingOffers],
   );
-
-  // Chat button badge
-  useEffect(() => {
-    setBadgeCount('tradeOffers', incomingOffers.length + outgoingOffers.length);
-  }, [incomingOffers.length, outgoingOffers.length]);
 
   return {
     incomingOffers,

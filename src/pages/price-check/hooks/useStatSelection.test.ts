@@ -18,7 +18,15 @@ const life = (value: number | undefined, range?: Stat['range']): Stat => ({
   range,
 });
 
-type TestItem = { type: string; stats: Stat[]; sockets?: number; isEthereal?: boolean };
+type TestItem = {
+  type: string;
+  stats: Stat[];
+  sockets?: number;
+  isEthereal?: boolean;
+  name?: string;
+  quality?: string;
+  iLevel?: number;
+};
 
 function setup(item: TestItem) {
   return renderHook(({ item }) => useStatSelection(item), { initialProps: { item } });
@@ -80,12 +88,8 @@ describe('useStatSelection: sortedStats', () => {
     expect('_injected' in corrupted[0]).toBe(false);
   });
 
-  // BUG: isItemCorruptable compares the *type* value of the base against CORRUPTABLE_TYPE_CODES, but
-  // rings/amulets/belts share a '{"$in": [...]}' type value (useStatSelection.ts:85-89), so the
-  // whitelisted 'rin'/'amu'/'bels'/'belt' codes never match: no Corrupted row and no default
-  // corrupted filter for rings, amulets and belts.
-  it.fails('treats rings, amulets and belts as corruptable', () => {
-    for (const type of ['Ring', 'Amulet', 'Sash']) {
+  it('treats rings, amulets, belts and claws (grouped type codes) as corruptable', () => {
+    for (const type of ['Ring', 'Amulet', 'Sash', 'Blade Talons']) {
       const { result } = setup({ type, stats: [] });
       expect(ids(result.current.sortedStats)).toContain(StatId.Corrupted);
     }
@@ -104,25 +108,45 @@ describe('useStatSelection: sortedStats', () => {
     expect(result.current.sortedStats[0].name).toBe('Frozen Orb');
   });
 
+  it('folds a stat listed twice (natural roll + corruption) into one summed, corrupted row in its place', () => {
+    const { result } = setup({
+      type: 'Ring',
+      stats: [
+        life(30),
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10 },
+        { stat_id: 2, name: 'to Dexterity', value: 5 },
+        { stat_id: 105, name: 'Faster Cast Rate', value: 10, corrupted: true },
+      ],
+    });
+    const rows = result.current.sortedStats.filter((s) => s.stat_id !== StatId.Corrupted);
+    expect(ids(rows)).toEqual([7, 105, 2]);
+    expect(byId(rows, 105)).toMatchObject({ value: 20, corrupted: true });
+  });
+
+  it('keeps one row per skill for skill stats sharing a stat id', () => {
+    const { result } = setup({
+      type: 'Grand Charm',
+      stats: [
+        { stat_id: 107, name: '+1 to x', skill: 'Frozen Orb', value: 1 },
+        { stat_id: 107, name: '+1 to y', skill: 'Blizzard', value: 1 },
+      ],
+    });
+    expect(result.current.sortedStats.map((s) => s.name)).toEqual(['Frozen Orb', 'Blizzard']);
+  });
+
   describe('enhanced damage', () => {
-    it('combines min/max ED into one row, clamping the margin to the known range', () => {
+    it('combines min/max ED into one row', () => {
       const { result } = setup({
         type: 'Shako',
         stats: [
-          { stat_id: 18, name: 'min', value: 200, range: { min: 180, max: 220 } },
-          { stat_id: 17, name: 'max', value: 200, range: { min: 150, max: 205 } },
+          { stat_id: 18, name: 'min', value: 200 },
+          { stat_id: 17, name: 'max', value: 200 },
         ],
       });
       const stats = result.current.sortedStats;
       expect(ids(stats)).not.toContain(17);
       expect(ids(stats)).not.toContain(18);
-      // 5% of 200 = 10 -> [190, 210], clamped to [180 (min's min), 205 (max's max)].
-      expect(byId(stats, 998)).toEqual({
-        stat_id: 998,
-        name: '% Enhanced Damage',
-        value: 200,
-        range: { min: 190, max: 205 },
-      });
+      expect(byId(stats, 998)).toEqual({ stat_id: 998, name: '% Enhanced Damage', value: 200 });
     });
 
     it('marks the combined row corrupted when either part is corrupted', () => {
@@ -136,22 +160,44 @@ describe('useStatSelection: sortedStats', () => {
       expect(byId(result.current.sortedStats, 998)?.corrupted).toBe(true);
     });
 
-    it.each([17, 18])('converts a lone stat %i into the combined row with a ±margin range', (statId) => {
+    it.each([17, 18])('converts a lone stat %i into the combined row', (statId) => {
       const { result } = setup({ type: 'Shako', stats: [{ stat_id: statId, name: 'ed', value: 100 }] });
-      expect(byId(result.current.sortedStats, 998)).toMatchObject({ value: 100, range: { min: 95, max: 105 } });
+      expect(byId(result.current.sortedStats, 998)).toMatchObject({ value: 100 });
     });
 
-    it('uses the fixed 5–40 jewel range for jewels, without margin', () => {
-      const { result } = setup({ type: 'Jewel', stats: [{ stat_id: 18, name: 'ed', value: 30 }] });
-      expect(byId(result.current.sortedStats, 998)?.range).toEqual({ min: 5, max: 40 });
-    });
-
-    it('applies the jewel range to an existing "% Enhanced Damage" row', () => {
+    it('takes the range PD2 shows on the ED line (magic jewel ED affixes roll 5-40)', () => {
       const { result } = setup({
         type: 'Jewel',
-        stats: [{ stat_id: 25, name: '% Enhanced Damage', value: 30, range: { min: 30, max: 30 } }],
+        quality: 'Magic',
+        iLevel: 90,
+        stats: [
+          { stat_id: 17, name: 'max', value: 30 },
+          { stat_id: 18, name: 'min', value: 30 },
+        ],
       });
-      expect(byId(result.current.sortedStats, 998)).toMatchObject({ value: 30, range: { min: 5, max: 40 } });
+      expect(byId(result.current.sortedStats, 998)?.range).toEqual({ min: 5, max: 40 });
+    });
+  });
+
+  describe('stat ranges', () => {
+    it('replaces the clipboard range with the one PD2 draws on the tooltip', () => {
+      const { result } = setup({
+        type: 'Shako',
+        name: 'Harlequin Crest',
+        quality: 'Unique',
+        stats: [{ stat_id: 80, name: 'Better Chance of Getting Magic Items', value: 40, range: { min: 40, max: 41 } }],
+      });
+      expect(byId(result.current.sortedStats, 80)?.range).toEqual({ min: 25, max: 50 });
+    });
+
+    it('drops a range PD2 does not draw (a fixed stat)', () => {
+      const { result } = setup({
+        type: 'Shako',
+        name: 'Harlequin Crest',
+        quality: 'Unique',
+        stats: [{ stat_id: 127, name: 'to All Skills', value: 2, range: { min: 1, max: 3 } }],
+      });
+      expect(byId(result.current.sortedStats, 127)?.range).toBeUndefined();
     });
   });
 
@@ -166,13 +212,12 @@ describe('useStatSelection: sortedStats', () => {
       }));
 
     it('combines four equal resistances into All Resistances', () => {
-      const { result } = setup({ type: 'Grand Charm', stats: res(20, { min: 10, max: 30 }, true) });
+      const { result } = setup({ type: 'Grand Charm', stats: res(20, undefined, true) });
       expect(ids(result.current.sortedStats)).toEqual([999]);
       expect(result.current.sortedStats[0]).toEqual({
         stat_id: 999,
         name: 'All Resistances',
         value: 20,
-        range: { min: 19, max: 21 },
         corrupted: true,
       });
     });
@@ -190,12 +235,75 @@ describe('useStatSelection: sortedStats', () => {
     });
   });
 
+  describe('damage pairs', () => {
+    it('shows min + max fire damage as one row with the ranges the tooltip draws', () => {
+      const { result } = setup({
+        type: 'Spiked Club',
+        quality: 'Rare',
+        iLevel: 42,
+        stats: [
+          { stat_id: 48, name: 'to Minimum Fire Damage', value: 4 },
+          { stat_id: 49, name: 'to Maximum Fire Damage', value: 14 },
+        ],
+      });
+      const rows = result.current.sortedStats.filter((s) => s.stat_id !== StatId.Corrupted);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ stat_id: StatId.FireDamage, name: 'Fire Damage', value: 4, maxValue: 14 });
+      expect(rows[0].range && rows[0].maxRange).toBeTruthy();
+    });
+
+    it('shows poison as the in-game totals and duration', () => {
+      const { result } = setup({
+        type: 'Grand Charm',
+        stats: [
+          { stat_id: 57, name: 'min', value: 256 },
+          { stat_id: 58, name: 'max', value: 512 },
+          { stat_id: 59, name: 'length', value: 75 },
+        ],
+      });
+      expect(result.current.sortedStats).toEqual([
+        { stat_id: StatId.PoisonDamage, name: 'Poison Damage', value: 75, maxValue: 150, seconds: 3 },
+      ]);
+    });
+
+    it('keeps physical min/max damage apart unless min < max (as the game draws them)', () => {
+      const same = setup({
+        type: 'Grand Charm',
+        stats: [
+          { stat_id: 21, name: 'min', value: 5 },
+          { stat_id: 22, name: 'max', value: 5 },
+        ],
+      });
+      expect(ids(same.result.current.sortedStats)).toEqual([21, 22]);
+      const pair = setup({
+        type: 'Grand Charm',
+        stats: [
+          { stat_id: 21, name: 'min', value: 5 },
+          { stat_id: 22, name: 'max', value: 9 },
+        ],
+      });
+      expect(ids(pair.result.current.sortedStats)).toEqual([StatId.Damage]);
+    });
+
+    it('selecting a damage row fills both the min and the max damage pair', () => {
+      const { result } = setup({
+        type: 'Grand Charm',
+        stats: [
+          { stat_id: 48, name: 'min', value: 40 },
+          { stat_id: 49, name: 'max', value: 100 },
+        ],
+      });
+      act(() => result.current.toggle(byId(result.current.sortedStats, StatId.FireDamage)!));
+      expect(result.current.filters['id:1003']).toEqual({ min: '38', max: '42', maxMin: '95', maxMax: '105' });
+    });
+  });
+
   describe('all attributes', () => {
     it('combines four equal attributes (incl. name-remapped "to Strength") into All Attributes', () => {
       const { result } = setup({
         type: 'Grand Charm',
         stats: [
-          { stat_id: 220, name: 'to Strength', value: 10 },
+          { name: 'to Strength', value: 10 } as Stat,
           { stat_id: 1, name: 'energy', value: 10 },
           { stat_id: 2, name: 'dex', value: 10 },
           { stat_id: 3, name: 'vit', value: 10 },
@@ -351,5 +459,46 @@ describe('useStatSelection: corrupted tri-state', () => {
     settings = { ...settings, statDefaultCorruptedFilter: 'non-corrupted' };
     rerender({ item });
     expect(result.current.corruptedState).toBe(2);
+  });
+});
+
+describe('useStatSelection: Σ totals', () => {
+  const resists = (): TestItem => ({
+    type: 'Grand Charm',
+    stats: [
+      { stat_id: 39, name: 'Fire Resist', value: 20 },
+      { stat_id: 45, name: 'Poison Resist', value: 40 },
+    ],
+  });
+
+  it('folds the covered rows into a selected Σ row, dropping their own selections', () => {
+    const { result } = setup(resists());
+    act(() => result.current.toggle(byId(result.current.sortedStats, 39)!));
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    const { sortedStats, selected, filters } = result.current;
+    expect(ids(sortedStats)).toEqual([StatId.Pseudo]);
+    expect(sortedStats[0]).toMatchObject({ pseudo: 'pseudo_total_res', value: 60 });
+    expect([...selected]).toEqual(['pseudo:pseudo_total_res']);
+    expect(filters).toEqual({ 'pseudo:pseudo_total_res': { min: '57', max: '63' } });
+  });
+
+  it('replaces an active total over the same rows, and unfolds when picked again', () => {
+    const { result } = setup(resists());
+    act(() => result.current.togglePseudo('pseudo_fire_res'));
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    expect([...result.current.selected]).toEqual(['pseudo:pseudo_total_res']);
+    expect(ids(result.current.sortedStats)).toEqual([StatId.Pseudo]);
+
+    act(() => result.current.togglePseudo('pseudo_total_res'));
+    expect(ids(result.current.sortedStats)).toEqual([39, 45]);
+    expect(result.current.selected.size).toBe(0);
+  });
+
+  it('keeps independent element totals side by side', () => {
+    const { result } = setup(resists());
+    act(() => result.current.togglePseudo('pseudo_fire_res'));
+    act(() => result.current.togglePseudo('pseudo_poison_res'));
+    expect(result.current.sortedStats.map((s) => s.pseudo)).toEqual(['pseudo_fire_res', 'pseudo_poison_res']);
+    expect(result.current.selected.size).toBe(2);
   });
 });

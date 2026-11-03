@@ -213,7 +213,8 @@ export interface Item {
   class_specifics: boolean;
   unique?: UniqueInfo;
   durability: Durability;
-  corruptions: string[];
+  /** Corruption roll names; not always an array, read through itemCorruptions. */
+  corruptions?: unknown;
   socket_count: number;
   modifiers: Modifier[];
   name: string;
@@ -227,6 +228,8 @@ export interface Item {
   properties: string[];
   damage?: Partial<DamageRange>;
   hash: string;
+  /** Lowercase name of the character whose personal stash holds the item; absent for shared stash items. */
+  character_id?: string;
 }
 
 export interface BaseInfo {

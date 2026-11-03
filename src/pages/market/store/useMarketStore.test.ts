@@ -18,6 +18,7 @@ import {
   MARKET_PREFS_FILENAME,
   marketStoreActions as actions,
   parseMarketPrefs,
+  refuseSavedSearchToken,
   resetMarketPrefs,
   retrySavedSearchSync,
   SYNC_RETRY_BASE_MS,
@@ -233,6 +234,75 @@ describe('server saved searches', () => {
     syncSavedSearches(null);
     await vi.advanceTimersByTimeAsync(SYNC_RETRY_MAX_MS * 2);
     expect(listSavedSearches).toHaveBeenCalledTimes(1);
+  });
+
+  it('never retries a list the server refused (401): unauthorized, owner told once, no more requests', async () => {
+    await loadFrom({});
+    const onUnauthorized = vi.fn();
+    vi.mocked(listSavedSearches).mockRejectedValue(new SavedSearchApiError('Unauthorized', 401));
+    syncSavedSearches('tok', onUnauthorized);
+    await flush();
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    // Neither the backoff nor the panel / Retry send anything with the refused token
+    retrySavedSearchSync();
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MAX_MS * 10);
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+    // Edits are refused locally instead of being sent
+    expect(actions.saveSearch('x', filters('x'))).toBeNull();
+    expect(createSavedSearch).not.toHaveBeenCalled();
+
+    // A remounted owner hears about it right away; a new token starts over
+    const remounted = vi.fn();
+    syncSavedSearches('tok', remounted);
+    expect(remounted).toHaveBeenCalledTimes(1);
+    vi.mocked(listSavedSearches).mockResolvedValue({ items: [server('a')], limits: LIMITS });
+    syncSavedSearches('tok2');
+    await flush();
+    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
+    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'ready', savedSearches: [{ id: 'a' }] });
+  });
+
+  it('waits out a 429 Retry-After before listing again', async () => {
+    await loadFrom({});
+    vi.mocked(listSavedSearches)
+      .mockRejectedValueOnce(new SavedSearchApiError('Too Many Requests', 429, 90_000))
+      .mockResolvedValue({ items: [], limits: LIMITS });
+    syncSavedSearches('tok');
+    await flush();
+    expect(getMarketPrefs().syncStatus).toBe('error');
+    await vi.advanceTimersByTimeAsync(89_999);
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+  });
+
+  it('an edit refused with a 401 marks the session unauthorized; so does a 401 on the alert stream', async () => {
+    await loadFrom({});
+    const onUnauthorized = vi.fn();
+    vi.mocked(listSavedSearches).mockResolvedValue({ items: [server('a'), server('b')], limits: LIMITS });
+    syncSavedSearches('tok', onUnauthorized);
+    await flush();
+    vi.mocked(updateSavedSearch).mockRejectedValue(new SavedSearchApiError('Unauthorized', 401));
+    actions.renameSearch('a', 'renamed');
+    await flush();
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(getMarketPrefs().savedSearches.find((s) => s.id === 'a')?.name).toBe('A');
+    actions.renameSearch('b', 'renamed');
+    expect(updateSavedSearch).toHaveBeenCalledTimes(1);
+
+    syncSavedSearches(null);
+    const stream = vi.fn();
+    await signIn([server('a')]);
+    syncSavedSearches('tok', stream);
+    refuseSavedSearchToken('other');
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+    refuseSavedSearchToken('tok');
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    expect(stream).toHaveBeenCalledTimes(1);
   });
 
   it('refuses to save until the list is in (no duplicates of searches it has not seen)', async () => {

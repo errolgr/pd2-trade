@@ -225,6 +225,32 @@ describe('useShortcuts', () => {
 
     expect(register).not.toHaveBeenCalled();
   });
+
+  it('registers parser key names for keys older versions saved as typed characters', async () => {
+    const shortcuts = [
+      { modifier: 'ctrl' as const, key: '+', handler: vi.fn() },
+      { modifier: 'ctrl' as const, key: ' ', handler: vi.fn() },
+      // Russian layout: the [ key types х
+      { modifier: 'ctrl' as const, key: 'х', handler: vi.fn() },
+    ];
+    renderHook(() => useShortcuts(shortcuts));
+    await flush();
+
+    expect([...state.registered.keys()].sort()).toEqual(['Control+BracketLeft', 'Control+Equal', 'Control+Space']);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('never hands the plugin a key it cannot parse, and still binds the others', async () => {
+    const shortcuts = [
+      { modifier: 'alt' as const, key: 'é', handler: vi.fn() },
+      { modifier: 'ctrl' as const, key: 'd', handler: vi.fn() },
+    ];
+    renderHook(() => useShortcuts(shortcuts));
+    await flush();
+
+    expect(vi.mocked(register).mock.calls.map(([s]) => s)).toEqual(['Control+D']);
+    expect(console.error).not.toHaveBeenCalled();
+  });
 });
 
 describe('useAppShortcuts', () => {
@@ -257,6 +283,7 @@ describe('useAppShortcuts', () => {
     delist: vi.fn(),
     snapshot: vi.fn(),
     market: vi.fn(),
+    builds: vi.fn(),
   };
 
   it('registers nothing while settings are loading', async () => {
@@ -355,6 +382,31 @@ describe('useAppShortcuts', () => {
     await flush();
 
     expect(state.registered.has('Control+M')).toBe(false);
+  });
+
+  it('binds the builds hotkey only once a key is set', async () => {
+    const useBuildsShortcuts = () =>
+      useAppShortcuts(
+        handlers.search,
+        handlers.list,
+        handlers.currency,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        handlers.builds,
+      );
+    mockOptions({ ...baseSettings, hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: '' });
+    const { rerender } = renderHook(useBuildsShortcuts);
+    await flush();
+    expect(state.registered.has('Alt+K')).toBe(false);
+
+    mockOptions({ ...baseSettings, hotkeyModifierBuilds: 'alt', hotkeyKeyBuilds: 'k' });
+    rerender();
+    await flush();
+    press('Alt+K');
+    expect(handlers.builds).toHaveBeenCalledTimes(1);
   });
 
   it('rebinds when a hotkey setting changes', async () => {

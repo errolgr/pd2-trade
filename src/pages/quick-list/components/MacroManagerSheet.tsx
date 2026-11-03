@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, X, ChevronUp, ChevronDown, Pencil, Check, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Trans, useTranslation } from '@/i18n';
 import { fadeInUp, listItem, listStagger, springSnappy } from '@/lib/motion';
 
 export interface NoteMacro {
@@ -66,6 +67,7 @@ interface MacroManagerSheetProps {
 }
 
 const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
+  const { t } = useTranslation(['quickList', 'common']);
   const { settings, updateSettings } = useOptions();
   const macros = (settings?.listingNoteMacros ?? []).filter(isValidMacro);
   const [newLabel, setNewLabel] = useState('');
@@ -84,7 +86,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
     const text = newText.trim();
     if (!label || !text) return;
     if (macros.some((m) => m.label === label)) {
-      setError(`A macro named "${label}" already exists.`);
+      setError(t('macros.duplicate', { label }));
       return;
     }
     setError(null);
@@ -164,16 +166,16 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
                       className="h-7 text-xs"
-                      placeholder="Macro name"
-                      aria-label="Macro name"
+                      placeholder={t('macros.name')}
+                      aria-label={t('macros.name')}
                       autoFocus
                     />
                     <Input
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       className="h-7 text-xs"
-                      placeholder="e.g. WTS {itemName} - {sockets} sockets"
-                      aria-label="Macro text"
+                      placeholder={t('macros.textPlaceholder')}
+                      aria-label={t('macros.text')}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -186,7 +188,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                         size="sm"
                         className="h-7 text-xs"
                         onClick={saveEdit}>
-                        <Check className="size-3.5" /> Save
+                        <Check className="size-3.5" /> {t('common:actions.save')}
                       </Button>
                       <Button
                         type="button"
@@ -195,7 +197,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                         className="h-7 text-xs"
                         onClick={() => setEditingIndex(null)}
                       >
-                        Cancel
+                        {t('common:actions.cancel')}
                       </Button>
                     </div>
                   </div>
@@ -204,7 +206,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                     type="button"
                     className="min-w-0 flex-1 cursor-pointer rounded-l-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                     onClick={() => onApply?.(macro)}
-                    title="Use this macro"
+                    title={t('macros.use')}
                   >
                     <span className="font-semibold">{macro.label}</span>
                     <span className="mx-1.5 text-muted-foreground">&rarr;</span>
@@ -219,8 +221,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       onClick={() => moveUp(index)}
                       className={macroAction}
                       disabled={index === 0}
-                      aria-label={`Move ${macro.label} up`}
-                      title="Move up"
+                      aria-label={t('macros.moveUpLabel', { label: macro.label })}
+                      title={t('macros.moveUp')}
                     >
                       <ChevronUp />
                     </button>
@@ -229,8 +231,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       onClick={() => moveDown(index)}
                       className={macroAction}
                       disabled={index === macros.length - 1}
-                      aria-label={`Move ${macro.label} down`}
-                      title="Move down"
+                      aria-label={t('macros.moveDownLabel', { label: macro.label })}
+                      title={t('macros.moveDown')}
                     >
                       <ChevronDown />
                     </button>
@@ -238,8 +240,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       type="button"
                       onClick={() => startEdit(index)}
                       className={macroAction}
-                      aria-label={`Edit ${macro.label}`}
-                      title="Edit"
+                      aria-label={t('macros.editLabel', { label: macro.label })}
+                      title={t('common:actions.edit')}
                     >
                       <Pencil />
                     </button>
@@ -247,8 +249,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       type="button"
                       onClick={() => removeMacro(index)}
                       className={cn(macroAction, 'hover:bg-destructive/15 hover:text-destructive')}
-                      aria-label={`Delete ${macro.label}`}
-                      title="Delete"
+                      aria-label={t('macros.deleteLabel', { label: macro.label })}
+                      title={t('common:actions.delete')}
                     >
                       <X />
                     </button>
@@ -268,12 +270,14 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
           <span className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <NotebookPen className="size-4" />
           </span>
-          <p className="text-sm text-muted-foreground">No macros yet. Add one below.</p>
+          <p className="text-sm text-muted-foreground">{t('macros.empty')}</p>
         </motion.div>
       )}
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">New macro</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t('macros.newMacro')}
+        </span>
         <AnimatePresence>
           {error && (
             <motion.p
@@ -288,8 +292,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
           )}
         </AnimatePresence>
         <Input
-          placeholder="Macro name"
-          aria-label="Macro name"
+          placeholder={t('macros.name')}
+          aria-label={t('macros.name')}
           value={newLabel}
           onChange={(e) => {
             setNewLabel(e.target.value);
@@ -297,8 +301,8 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
           }}
         />
         <Input
-          placeholder="e.g. WTS {itemName} - {sockets} sockets"
-          aria-label="Macro text"
+          placeholder={t('macros.textPlaceholder')}
+          aria-label={t('macros.text')}
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
           onKeyDown={(e) => {
@@ -309,8 +313,9 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
           }}
         />
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          <code className={tokenClass}>{'{itemName}'}</code> is filled automatically; any other{' '}
-          <code className={tokenClass}>{'{name}'}</code> asks for a value when used.
+          <Trans t={t}
+            i18nKey="macros.hint"
+            components={{ token: <code className={tokenClass} /> }} />
         </p>
         <Button
           type="button"
@@ -320,7 +325,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
           disabled={!newLabel.trim() || !newText.trim()}
         >
           <Plus className="size-4" />
-          Add Macro
+          {t('macros.add')}
         </Button>
       </div>
     </div>

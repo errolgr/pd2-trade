@@ -5,17 +5,20 @@ use std::{ffi::OsStr, iter, os::windows::prelude::OsStrExt, ptr};
 use tauri::AppHandle;
 
 use windows_sys::Win32::{
-    Foundation::{HWND, POINT, RECT},
+    Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::Gdi::{
         GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
         MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
     },
     System::Threading::{AttachThreadInput, GetCurrentThreadId},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
+    UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
     UI::WindowsAndMessaging::{
-        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowRect,
-        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, ShowWindow,
-        EVENT_SYSTEM_FOREGROUND, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
+        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowLongW, GetWindowRect,
+        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW, SetWindowPos,
+        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT, SWP_FRAMECHANGED,
+        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
+        WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
     },
 };
 
@@ -29,8 +32,16 @@ fn find_diablo_hwnd() -> Option<HWND> {
     (hwnd != 0).then_some(hwnd)
 }
 
-pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
-    let hwnd = find_diablo_hwnd()?;
+fn to_window_rect(r: RECT) -> WindowRect {
+    WindowRect {
+        x: r.left,
+        y: r.top,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+    }
+}
+
+fn window_rect(hwnd: HWND) -> Option<WindowRect> {
     let mut r = RECT {
         left: 0,
         top: 0,
@@ -38,15 +49,30 @@ pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
         bottom: 0,
     };
     let ok = unsafe { GetWindowRect(hwnd, &mut r as *mut RECT) };
-    if ok == 0 {
-        return None;
+    (ok != 0).then(|| to_window_rect(r))
+}
+
+pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
+    window_rect(find_diablo_hwnd()?)
+}
+
+/// Diablo II fills its monitor exactly, as D2GL's fullscreen mode sizes it (a borderless window at the monitor
+/// rect, not topmost). Graphics drivers present such an OpenGL window straight to the screen while it holds the
+/// foreground, bypassing the compositor: nothing else on that monitor is drawn, the always-on-top overlay
+/// included, although the overlay is above the game and still gets the mouse. (cnc-ddraw, PD2's DDraw renderer,
+/// makes its borderless window one pixel taller than the monitor to avoid exactly this.)
+pub fn diablo_fullscreen() -> bool {
+    let Some(hwnd) = find_diablo_hwnd() else {
+        return false;
+    };
+    if unsafe { IsIconic(hwnd) } != 0 {
+        return false;
     }
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    let monitor = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+    match (window_rect(hwnd), monitor_rects(monitor)) {
+        (Some(window), Some((monitor, _work))) => window == monitor,
+        _ => false,
+    }
 }
 
 /// The overlay window (Main), the only one of ours that counts as `Foreground::OwnWindow`.
@@ -54,6 +80,60 @@ static OVERLAY_WINDOW: AtomicIsize = AtomicIsize::new(0);
 
 pub fn set_overlay_window(hwnd: HWND) {
     OVERLAY_WINDOW.store(hwnd, Ordering::SeqCst);
+}
+
+/// The overlay's extended style: a tool window (no taskbar button, no Alt+Tab entry).
+///
+/// Browsers (Chromium, Firefox) stop painting a window they think is fully covered, and they count
+/// any visible window that is not a tool window, transparent or layered, and whose region is empty
+/// or a single rect, as opaque over its whole window rect. The overlay spans the monitor's work
+/// area, so with at most one panel showing (e.g. the sign-in panel during the OAuth login), every
+/// browser window on that monitor froze until it was moved to another one.
+fn overlay_ex_style(style: u32) -> u32 {
+    (style | WS_EX_TOOLWINDOW) & !WS_EX_APPWINDOW
+}
+
+const OVERLAY_STYLE_SUBCLASS_ID: usize = 0x7064_3274;
+
+/// Makes the overlay a tool window and keeps it one: tao rewrites the whole extended style on every
+/// flag change (focusable, always on top), so the subclass applies it to each change. Call on the
+/// thread that owns the window.
+pub fn keep_overlay_tool_window(hwnd: HWND) {
+    unsafe {
+        SetWindowSubclass(hwnd, Some(overlay_style_proc), OVERLAY_STYLE_SUBCLASS_ID, 0);
+        let style = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+        SetWindowLongW(hwnd, GWL_EXSTYLE, overlay_ex_style(style) as i32);
+        SetWindowPos(
+            hwnd,
+            0,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+        );
+    }
+}
+
+unsafe extern "system" fn overlay_style_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _id: usize,
+    _data: usize,
+) -> LRESULT {
+    match msg {
+        WM_STYLECHANGING if wparam as i32 == GWL_EXSTYLE => {
+            let change = &mut *(lparam as *mut STYLESTRUCT);
+            change.styleNew = overlay_ex_style(change.styleNew);
+        }
+        WM_NCDESTROY => {
+            RemoveWindowSubclass(hwnd, Some(overlay_style_proc), OVERLAY_STYLE_SUBCLASS_ID);
+        }
+        _ => {}
+    }
+    DefSubclassProc(hwnd, msg, wparam, lparam)
 }
 
 pub fn foreground() -> Foreground {
@@ -138,7 +218,8 @@ pub fn bring_to_foreground(hwnd: HWND) -> bool {
     }
 }
 
-fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
+/// Monitor rect and work area (monitor minus taskbar) of `monitor`.
+fn monitor_rects(monitor: HMONITOR) -> Option<(WindowRect, WindowRect)> {
     if monitor == 0 {
         return None;
     }
@@ -147,13 +228,7 @@ fn work_area(monitor: HMONITOR) -> Option<WindowRect> {
     if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
         return None;
     }
-    let r = info.rcWork;
-    Some(WindowRect {
-        x: r.left,
-        y: r.top,
-        width: r.right - r.left,
-        height: r.bottom - r.top,
-    })
+    Some((to_window_rect(info.rcMonitor), to_window_rect(info.rcWork)))
 }
 
 /// Work area (monitor minus taskbar) of the monitor containing Diablo II, else the primary monitor. Not the full
@@ -164,7 +239,7 @@ pub fn get_appropriate_window_bounds(_app: &AppHandle) -> Option<WindowRect> {
         Some(hwnd) => unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) },
         None => unsafe { MonitorFromPoint(POINT { x: 0, y: 0 }, MONITOR_DEFAULTTOPRIMARY) },
     };
-    work_area(monitor)
+    monitor_rects(monitor).map(|(_monitor, work)| work)
 }
 
 // --- Event-driven foreground monitoring ---
@@ -225,6 +300,26 @@ mod tests {
     const DIABLO: HWND = 20;
     const TRAY_MENU_OWNER: HWND = 30;
     const BROWSER: HWND = 40;
+
+    #[test]
+    fn the_overlay_is_always_a_tool_window_without_a_taskbar_entry() {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{WS_EX_NOACTIVATE, WS_EX_TOPMOST};
+        // tao's styles for the overlay: topmost, app window, not focusable
+        let tao = WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_NOACTIVATE;
+        assert_eq!(
+            overlay_ex_style(tao),
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
+        );
+        // Focusable while typing: only NOACTIVATE goes, the tool window bit stays
+        assert_eq!(
+            overlay_ex_style(WS_EX_TOPMOST | WS_EX_APPWINDOW),
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+        );
+        assert_eq!(
+            overlay_ex_style(overlay_ex_style(tao)),
+            overlay_ex_style(tao)
+        );
+    }
 
     #[test]
     fn only_the_overlay_counts_as_our_window() {

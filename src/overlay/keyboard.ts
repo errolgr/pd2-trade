@@ -1,6 +1,7 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@/lib/browser-events';
+import { holdListener } from '@/lib/listener';
 
 /**
  * Keyboard focus for the single non-focusable overlay window.
@@ -9,6 +10,9 @@ import { listen } from '@/lib/browser-events';
  * only when the user clicks into a text field in a panel (setFocusable(true) + focus_overlay); the claim ends
  * when the user leaves the overlay, clicks elsewhere in a panel, or the last keyboard panel closes (then focus
  * goes back to the game).
+ *
+ * Diablo II in fullscreen is the exception (showOverFullscreenGame): there a panel is only seen while the overlay
+ * holds the foreground, so opening one claims it and clicks elsewhere in a panel keep it.
  */
 let claimed = false;
 /** When releaseKeyboard() last handed focus away; the focus loss that follows is ours, not a user click. */
@@ -18,20 +22,45 @@ const HANDOFF_BLUR_MS = 1000;
 let foregroundOwner: ForegroundOwner | null = null;
 /** The keyboard was claimed while the user was in the game, so releasing it hands focus back to the game. */
 let claimedFromGame = false;
+/** The claim was made in the game while it filled its monitor: handing the foreground back hides every panel. */
+let claimedOverFullscreenGame = false;
+
+interface GameWindow {
+  /** Game context: Diablo II in front, or our overlay focused from it (is_diablo_focused). */
+  inGame: boolean;
+  /** Diablo II fills its monitor (is_diablo_fullscreen). */
+  fullscreen: boolean;
+}
 
 export function isKeyboardClaimed(): boolean {
   return claimed;
 }
 
-export async function claimKeyboard(): Promise<void> {
-  if (!isTauri() || (claimed && foregroundOwner === 'ownWindow')) return;
+/** Claimed over a fullscreen game: only leaving the overlay or closing the last keyboard panel should end it. */
+export function isHeldOverFullscreenGame(): boolean {
+  return claimed && claimedOverFullscreenGame;
+}
+
+const canClaim = () => isTauri() && !(claimed && foregroundOwner === 'ownWindow');
+
+async function readGameWindow(): Promise<GameWindow> {
+  const [inGame, fullscreen] = await Promise.all([
+    invoke<boolean>('is_diablo_focused'),
+    invoke<boolean>('is_diablo_fullscreen'),
+  ]);
+  return { inGame, fullscreen };
+}
+
+async function claim(known?: GameWindow): Promise<void> {
   claimed = true;
   // A hand-off to the game that produced no focus change (the game was already in front) must not excuse
   // the user's next click into the game.
   handoffAt = 0;
   try {
+    const game = known ?? (await readGameWindow());
     // Settings opened from the tray while in another app must not pull the game forward when it lets go
-    claimedFromGame = await invoke<boolean>('is_diablo_focused');
+    claimedFromGame = game.inGame;
+    claimedOverFullscreenGame = game.inGame && game.fullscreen;
     const win = getCurrentWindow();
     await win.setFocusable(true);
     // Not win.setFocus(): Windows refuses it while the game holds the foreground right (after a global hotkey
@@ -49,6 +78,32 @@ export async function claimKeyboard(): Promise<void> {
     claimed = false;
     console.warn('[overlay] Failed to claim keyboard focus:', error);
   }
+}
+
+export async function claimKeyboard(): Promise<void> {
+  if (canClaim()) await claim();
+}
+
+/**
+ * Shows a panel just opened in the game over Diablo II in fullscreen, where it would otherwise stay invisible.
+ * D2GL's fullscreen is an OpenGL window exactly the size of its monitor, and graphics drivers send such a window
+ * straight to the screen while it holds the foreground: nothing else on that monitor is drawn, the always-on-top
+ * overlay included, though the overlay still gets the mouse (the cursor turns into the Windows arrow over the
+ * invisible panel). Taking the foreground ends that, so the panel claims it (like a text field click) until the
+ * user goes back to the game or the last keyboard panel closes. Windowed, or outside the game, it does nothing.
+ */
+export async function showOverFullscreenGame(): Promise<void> {
+  if (!canClaim()) return;
+  let game: GameWindow;
+  try {
+    game = await readGameWindow();
+  } catch (error) {
+    console.warn('[overlay] Failed to read the game window state:', error);
+    return;
+  }
+  // canClaim again: a claim (e.g. a text field the panel focused) may have landed meanwhile
+  if (!game.inGame || !game.fullscreen || !canClaim()) return;
+  await claim(game);
 }
 
 /**
@@ -80,42 +135,34 @@ export const FOREGROUND_EVENT = 'foreground-changed';
  */
 export function trackKeyboardFocus(onFocusChange?: (focused: boolean, handoff: boolean) => void): () => void {
   if (!isTauri()) return () => {};
-  let disposed = false;
-  let unlisten: (() => void) | null = null;
-  listen<ForegroundOwner>(FOREGROUND_EVENT, ({ payload: owner }) => {
-    if (owner === 'unknown') return;
-    const from = foregroundOwner;
-    foregroundOwner = owner;
+  return holdListener(
+    listen<ForegroundOwner>(FOREGROUND_EVENT, ({ payload: owner }) => {
+      if (owner === 'unknown') return;
+      const from = foregroundOwner;
+      foregroundOwner = owner;
 
-    if (owner === 'ownWindow') {
-      claimed = true;
+      if (owner === 'ownWindow') {
+        claimed = true;
+        handoffAt = 0;
+        onFocusChange?.(true, false);
+        return;
+      }
+      if (owner === from) return;
+      const left = from === 'ownWindow' || (from === 'diablo' && owner === 'other');
+      if (!left) return;
+
+      const handoff = Date.now() - handoffAt < HANDOFF_BLUR_MS;
       handoffAt = 0;
-      onFocusChange?.(true, false);
-      return;
-    }
-    if (owner === from) return;
-    const left = from === 'ownWindow' || (from === 'diablo' && owner === 'other');
-    if (!left) return;
-
-    const handoff = Date.now() - handoffAt < HANDOFF_BLUR_MS;
-    handoffAt = 0;
-    if (claimed) {
-      claimed = false;
-      getCurrentWindow()
-        .setFocusable(false)
-        .catch((error) => console.warn('[overlay] setFocusable(false) failed:', error));
-    }
-    onFocusChange?.(false, handoff);
-  })
-    .then((off) => {
-      if (disposed) off();
-      else unlisten = off;
-    })
-    .catch((error) => console.warn('[overlay] foreground listener failed:', error));
-  return () => {
-    disposed = true;
-    unlisten?.();
-  };
+      if (claimed) {
+        claimed = false;
+        getCurrentWindow()
+          .setFocusable(false)
+          .catch((error) => console.warn('[overlay] setFocusable(false) failed:', error));
+      }
+      onFocusChange?.(false, handoff);
+    }),
+    FOREGROUND_EVENT,
+  );
 }
 
 /** Test seam: reset module state between tests. */
@@ -124,4 +171,5 @@ export function resetKeyboardStateForTests(): void {
   handoffAt = 0;
   foregroundOwner = null;
   claimedFromGame = false;
+  claimedOverFullscreenGame = false;
 }

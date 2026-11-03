@@ -14,30 +14,30 @@ import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import {
   hardcoreNote,
   isCrafted,
-  LOW_CONFIDENCE_TITLE,
   ordinalPercentile,
-  plural,
   RANK_BLOCKS,
   RECIPE_LABELS,
   rankBlockIndex,
   rankedStats,
-  SLOT_PLURALS,
+  slotPlural,
   starsText,
   statNotes,
   VERDICT_BADGE_CLASS,
   VERDICT_COLORS,
-  VERDICT_LABELS,
+  verdictLabel,
 } from './rares-format';
+import { Trans, useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
 
 /*
  * Building blocks shared by the price-check rare card and the Net Worth "Rares" tab.
  * Hosts mount a TooltipProvider above these.
  */
 
-const PRIORITY_TITLES: Record<CheckPriority, string> = {
-  high: 'Has a ★★ or better key stat',
-  medium: 'Has a ★ key stat',
-  low: 'No key stats',
+const PRIORITY_TITLES: Record<CheckPriority, { titleKey: string }> = {
+  high: { titleKey: 'priority.high' },
+  medium: { titleKey: 'priority.medium' },
+  low: { titleKey: 'priority.low' },
 };
 
 /** Section caption, same as the price-check "Stats" label. */
@@ -68,7 +68,9 @@ export function VerdictBadge({
   className?: string;
   hardcore?: boolean;
 }) {
-  const priority = rare.verdict === 'check' && rare.checkPriority ? PRIORITY_TITLES[rare.checkPriority] : null;
+  const { t } = useTranslation('rares');
+  const priority =
+    rare.verdict === 'check' && rare.checkPriority ? t(PRIORITY_TITLES[rare.checkPriority].titleKey) : null;
   const title = [priority, hardcoreNote(rare, hardcore)].filter(Boolean).join(' · ') || undefined;
   return (
     <Hint text={title}>
@@ -80,7 +82,7 @@ export function VerdictBadge({
           className,
         )}
       >
-        {VERDICT_LABELS[rare.verdict]}
+        {verdictLabel(rare.verdict)}
       </span>
     </Hint>
   );
@@ -88,6 +90,7 @@ export function VerdictBadge({
 
 /** Crafted items only: recipe chip ("Caster craft") and a "Low confidence" badge when the server flags it. */
 export function CraftedBadges({ rare, className }: { rare: RareAppraisal; className?: string }) {
+  const { t } = useTranslation('rares');
   if (!isCrafted(rare)) return null;
   const recipe = rare.recipe ? RECIPE_LABELS[rare.recipe] : 'Crafted';
   return (
@@ -96,11 +99,11 @@ export function CraftedBadges({ rare, className }: { rare: RareAppraisal; classN
         {recipe}
       </span>
       {rare.confidence === 'low' && (
-        <Hint text={LOW_CONFIDENCE_TITLE}>
+        <Hint text={t('crafted.lowConfidenceTitle')}>
           <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold leading-none text-amber-500">
             <TriangleAlert aria-hidden
               className="size-3" />
-            Low confidence
+            {t('crafted.lowConfidence')}
           </span>
         </Hint>
       )}
@@ -115,10 +118,11 @@ const pct = (v: number): string => `${Math.min(100, Math.max(0, v * 100))}%`;
  * "vendor" / "keep" lines from the verdict rule. Coloured by verdict.
  */
 export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule }) {
+  const { t } = useTranslation('rares');
   const color = VERDICT_COLORS[rare.verdict];
   const lo = Math.max(0, rare.rank - rare.rankError);
   const hi = Math.min(1, rare.rank + rare.rankError);
-  const slots = (SLOT_PLURALS[rare.slot] ?? 'items').toLowerCase();
+  const slots = slotPlural(rare.slot, true);
   const label = ordinalPercentile(rare.rank);
   const rules = [
     ['vendor', rule.vendorRank],
@@ -128,7 +132,7 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
     <div
       className="relative h-[40px] select-none"
       role="img"
-      aria-label={`Predicted at the ${label} percentile of ${slots} prices, give or take ${Math.round(rare.rankError * 100)} points`}
+      aria-label={t('rankBar.ariaLabel', { percentile: label, slots, error: Math.round(rare.rankError * 100) })}
     >
       {rules.map(([name, at]) => (
         <React.Fragment key={name}>
@@ -136,7 +140,7 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
             className="absolute top-0 -translate-x-1/2 text-[9px] uppercase leading-none tracking-wider text-muted-foreground"
             style={{ left: pct(at) }}
           >
-            {name}
+            {name === 'vendor' ? t('rankBar.vendor') : t('rankBar.keep')}
           </span>
           <span
             className="absolute top-[10px] h-[18px] border-l border-dashed border-muted-foreground/60"
@@ -174,17 +178,26 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
  * header "RANK AMONG <SLOTS> (this season)".
  */
 export function RankBlocks({ rare }: { rare: RareAppraisal }) {
+  const { t } = useTranslation('rares');
   const color = VERDICT_COLORS[rare.verdict];
-  const slots = SLOT_PLURALS[rare.slot] ?? 'Items';
+  const slots = slotPlural(rare.slot);
   const at = rankBlockIndex(rare.rank);
   return (
     <div
       className="flex flex-col gap-1.5"
       role="img"
-      aria-label={`Rank among ${slots.toLowerCase()}: ${RANK_BLOCKS[at]?.label}`}
+      aria-label={t('rankBlocks.ariaLabel', {
+        slots: slotPlural(rare.slot, true),
+        block: t(RANK_BLOCKS[at]?.labelKey),
+      })}
     >
       <SectionLabel className="text-[10px]">
-        Rank among {slots} <span className="normal-case tracking-normal">(this season)</span>
+        <Trans
+          t={t}
+          i18nKey="rankBlocks.title"
+          values={{ slots }}
+          components={{ note: <span className="normal-case tracking-normal" /> }}
+        />
       </SectionLabel>
       <div className="grid grid-cols-6 gap-1">
         {RANK_BLOCKS.map((b, i) => (
@@ -201,7 +214,7 @@ export function RankBlocks({ rare }: { rare: RareAppraisal }) {
               )}
               style={i === at ? { color } : undefined}
             >
-              {b.label}
+              {t(b.labelKey)}
             </span>
           </div>
         ))}
@@ -263,6 +276,7 @@ export function ItemStatsSection({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation('rares');
   const keyCount = rare.stats.filter((s) => s.stars).length;
   return (
     <section>
@@ -276,12 +290,12 @@ export function ItemStatsSection({
         <PopoverSectionTitle
           aside={
             <>
-              {keyCount > 0 ? plural(keyCount, 'key stat') : 'no key stats'}
+              {keyCount > 0 ? t('stats.keyStats', { count: keyCount }) : t('stats.noKeyStats')}
               <ChevronDown className={cn('size-3 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
             </>
           }
         >
-          Stats on this item
+          {t('stats.title')}
         </PopoverSectionTitle>
       </button>
       {open && (
@@ -329,7 +343,9 @@ export function ItemStatsSection({
                           style={{ width: `${Math.round((s.roll ?? 0) * 100)}%` }}
                         />
                       </span>
-                      <span className="text-[10px] text-muted-foreground">roll {Math.round((s.roll ?? 0) * 100)}%</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {t('stats.roll', { percent: Math.round((s.roll ?? 0) * 100) })}
+                      </span>
                     </>
                   )}
                   {mult && (
@@ -364,9 +380,9 @@ export function HardcoreNote({
 }
 
 /** Asking price of one listing: HR without trailing zeros ("3.5 HR", "2 HR", "0.15 HR"), else the seller's text. */
-function listingPrice(listing: RareHistoryListing): string {
+function listingPrice(listing: RareHistoryListing, t: TFunction): string {
   if (listing.hrPrice !== null) return `${Number(listing.hrPrice.toFixed(2))} HR`;
-  return listing.priceText?.trim() || 'no price';
+  return listing.priceText?.trim() || t('history.noPrice');
 }
 
 /**
@@ -375,13 +391,18 @@ function listingPrice(listing: RareHistoryListing): string {
  * empty histories.
  */
 export function RareHistorySection({ history }: { history: RareHistory | null }) {
+  const { t } = useTranslation('rares');
   if (!history || history.weak || history.timesListed <= 0) return null;
   return (
     <section>
       <PopoverSectionTitle
-        aside={`${history.timesListed}× · ${plural(history.distinctSellers, 'seller')} · since ${moment(history.firstSeen).format('MMM D')}`}
+        aside={t('history.aside', {
+          times: history.timesListed,
+          count: history.distinctSellers,
+          date: moment(history.firstSeen).format('MMM D'),
+        })}
       >
-        Item history
+        {t('history.title')}
       </PopoverSectionTitle>
       <ul className="space-y-0.5">
         {history.listings.map((l, i) => (
@@ -393,7 +414,7 @@ export function RareHistorySection({ history }: { history: RareHistory | null })
               <span className="tabular-nums text-muted-foreground">{moment(l.listedAt).format('MMM D')}</span>
               {l.sellerChanged && (
                 <span className="rounded-full border border-info/40 bg-info/10 px-1.5 py-px text-[10px] font-medium leading-none text-info">
-                  new owner
+                  {t('history.newOwner')}
                 </span>
               )}
             </span>
@@ -403,7 +424,7 @@ export function RareHistorySection({ history }: { history: RareHistory | null })
                 l.hrPrice !== null ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
-              {listingPrice(l)}
+              {listingPrice(l, t)}
             </span>
           </li>
         ))}

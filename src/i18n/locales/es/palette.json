@@ -1,0 +1,59 @@
+{
+  "input": {
+    "label": "Paleta de comandos",
+    "placeholder": "Busca objetos, builds, ajustes…",
+    "scopedPlaceholder": "Buscar…"
+  },
+  "groups": {
+    "actions": "Acciones",
+    "items": "Objetos",
+    "builds": "Builds",
+    "chat": "Chat",
+    "listings": "Anuncios",
+    "settings": "Ajustes",
+    "pinned": "Fijados",
+    "recent": "Recientes"
+  },
+  "scope": {
+    "tabHint": "Tab para acotar",
+    "remove": "Dejar de buscar solo en {{label}}"
+  },
+  "loading": "Buscando…",
+  "signIn": {
+    "title": "Inicia sesión para buscar chats y anuncios"
+  },
+  "empty": {
+    "noResults": "Sin resultados para «{{query}}»"
+  },
+  "footer": {
+    "move": "↑↓ mover",
+    "open": "↵ abrir",
+    "actions": "Ctrl+K acciones",
+    "scope": "Tab acotar",
+    "unscope": "Retroceso quitar",
+    "close": "Esc cerrar"
+  },
+  "menu": {
+    "label": "Acciones de {{title}}",
+    "placeholder": "Buscar acciones…",
+    "pin": "Fijar en la paleta",
+    "unpin": "Quitar de la paleta"
+  },
+  "errors": {
+    "actionFailed": "No ha funcionado"
+  },
+  "actions": {
+    "market": "Mercado",
+    "chat": "Chat",
+    "offers": "Ofertas de intercambio",
+    "builds": "Builds",
+    "stashValue": "Valor del alijo",
+    "snapshot": "Guardar instantánea de patrimonio",
+    "myListings": "Mis anuncios",
+    "settings": "Ajustes",
+    "changelog": "Novedades",
+    "checkUpdates": "Buscar actualizaciones",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión"
+  }
+}

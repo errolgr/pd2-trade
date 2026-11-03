@@ -1,5 +1,4 @@
 import { Stat } from '@/pages/price-check/lib/interfaces';
-import { modifierByName, modifiers } from '@/assets/modifiers';
 
 export enum StatId {
   Corrupted = 360,
@@ -7,6 +6,122 @@ export enum StatId {
   Ethereal = 1001,
   AllResistances = 999,
   AllAttributes = 1002,
+  /** "Adds X-Y <element> damage" rows (min + max damage stats shown as one line, like the game). */
+  FireDamage = 1003,
+  LightningDamage = 1004,
+  MagicDamage = 1005,
+  ColdDamage = 1006,
+  PoisonDamage = 1007,
+  Damage = 1008,
+  /** Market pseudo stat rows (`Stat.pseudo` names which): a computed total, filtered by the market service. */
+  Pseudo = 1009,
+}
+
+/** A min/max damage pair the game draws as one line. */
+export interface DamagePair {
+  id: StatId;
+  min: number;
+  max: number;
+  /** Line text: "fire" → "Adds 4-14 fire damage"; '' for physical damage. */
+  element: string;
+  /** Row label in the price check. */
+  label: string;
+  /** Stat whose BH range the line shows (physical: the max damage, as the game draws it). */
+  rangeStat: number;
+  /** Market modifier names of the pair (values [min, max, ...]); null = separate min/max modifiers. */
+  market: string[] | null;
+}
+
+export const DAMAGE_PAIRS: DamagePair[] = [
+  {
+    id: StatId.FireDamage,
+    min: 48,
+    max: 49,
+    element: 'fire',
+    label: 'Fire Damage',
+    rangeStat: 48,
+    market: ['firedam', 'firemindam'],
+  },
+  {
+    id: StatId.LightningDamage,
+    min: 50,
+    max: 51,
+    element: 'lightning',
+    label: 'Lightning Damage',
+    rangeStat: 50,
+    market: ['lightdam', 'lightmindam'],
+  },
+  {
+    id: StatId.MagicDamage,
+    min: 52,
+    max: 53,
+    element: 'magic',
+    label: 'Magic Damage',
+    rangeStat: 52,
+    market: ['magicdam', 'magicmindam'],
+  },
+  {
+    id: StatId.ColdDamage,
+    min: 54,
+    max: 55,
+    element: 'cold',
+    label: 'Cold Damage',
+    rangeStat: 54,
+    market: ['colddam', 'coldmindam'],
+  },
+  {
+    id: StatId.PoisonDamage,
+    min: 57,
+    max: 58,
+    element: 'poison',
+    label: 'Poison Damage',
+    rangeStat: 57,
+    market: ['poisondam', 'poisonmindam'],
+  },
+  { id: StatId.Damage, min: 21, max: 22, element: '', label: 'Damage', rangeStat: 22, market: null },
+];
+
+/** Poison length stat (frames); poison damage is stored per frame in 1/256 points, 25 frames per second. */
+const POISON_LENGTH_STAT = 59;
+
+/**
+ * The pair's line values as the game shows them, or null when the item has no such line: elemental pairs need
+ * both stats (poison: min + length; the max defaults to the min). Physical damage merges only when min < max
+ * (otherwise the game draws "+X to Minimum/Maximum Damage" separately).
+ */
+export function damagePairValues(
+  stats: Stat[],
+  pair: DamagePair,
+): { lo: number; hi: number; seconds?: number; sources: Stat[] } | null {
+  const minStat = stats.find((s) => s.stat_id === pair.min);
+  const maxStat = stats.find((s) => s.stat_id === pair.max);
+  const value = (s: Stat | undefined) =>
+    typeof s?.value === 'number' && Number.isFinite(s.value) ? s.value : undefined;
+  if (pair.id === StatId.PoisonDamage) {
+    const lengthStat = stats.find((s) => s.stat_id === POISON_LENGTH_STAT);
+    const min = value(minStat);
+    const frames = value(lengthStat);
+    if (min === undefined || !frames) return null;
+    const max = value(maxStat) ?? min;
+    return {
+      lo: Math.round((min * frames) / 256),
+      hi: Math.round((max * frames) / 256),
+      seconds: Math.round(frames / 25),
+      sources: [minStat!, lengthStat!, ...(maxStat ? [maxStat] : [])],
+    };
+  }
+  const lo = value(minStat);
+  const hi = value(maxStat);
+  if (lo === undefined || hi === undefined) return null;
+  if (pair.id === StatId.Damage && lo >= hi) return null;
+  return { lo, hi, sources: [minStat!, maxStat!] };
+}
+
+/** The pair's tooltip text, worded like the game ("Adds 4-14 fire damage", "+100 poison damage over 6 seconds"). */
+export function damagePairText(pair: DamagePair, v: { lo: number; hi: number; seconds?: number }): string {
+  const what = pair.element ? `${pair.element} damage` : 'damage';
+  const over = v.seconds !== undefined ? ` over ${v.seconds} seconds` : '';
+  return v.lo === v.hi ? `+${v.lo} ${what}${over}` : `Adds ${v.lo}-${v.hi} ${what}${over}`;
 }
 
 export const PRIORITY_STATS = [StatId.Corrupted, StatId.Socket, StatId.Ethereal];
@@ -296,7 +411,7 @@ export const statIdToProperty: Record<number, string> = {
   256: 'item_crit_multiplier',
   257: 'item_ds_multiplier',
   258: 'item_crit_chance',
-  259: 'item_crush_damage_percent',
+  259: 'previous_hitpoints',
   260: 'item_thrust_damage',
   261: 'item_thrust_damage_percent',
   262: 'item_absorb_slash',
@@ -315,14 +430,14 @@ export const statIdToProperty: Record<number, string> = {
   275: 'map_glob_bossdropstreasure',
   276: 'treacherous',
   277: 'map_mon_att',
-  278: 'item_tohit_bytime',
-  279: 'item_tohitpercent_bytime',
-  280: 'item_cold_damagemax_bytime',
-  281: 'item_fire_damagemax_bytime',
-  282: 'item_ltng_damagemax_bytime',
-  283: 'item_pois_damagemax_bytime',
-  284: 'item_resist_cold_bytime',
-  285: 'item_resist_fire_bytime',
+  278: 'phasing',
+  279: 'zon_ear_drops',
+  280: 'sin_ear_drops',
+  281: 'barb_ear_drops',
+  282: 'necro_ear_drops',
+  283: 'paladin_ear_drops',
+  284: 'sorc_ear_drops',
+  285: 'map_mon_dropclassitems',
   286: 'item_resist_ltng_bytime',
   287: 'item_resist_pois_bytime',
   288: 'item_absorb_cold_bytime',
@@ -555,132 +670,3 @@ export const statIdToProperty: Record<number, string> = {
   1001: 'ethereal',
   1002: 'all_attributes',
 };
-
-/**
- * Gets stat_id for a given modifier name.
- * The stat_id equals the modifier's numeric key in modifiers.ts.
- *
- * Looks up the modifier by name, then returns the modifier's numeric key (which is the stat_id).
- *
- * Returns null if not found.
- */
-export function getStatIdsForModifierName(modifierName: string): number | null {
-  // Try with item_ prefix first
-  let modifier = modifierByName[`item_${modifierName}`];
-  if (modifier) {
-    return modifier.key;
-  }
-
-  // Try without prefix
-  modifier = modifierByName[modifierName];
-  if (modifier) {
-    return modifier.key;
-  }
-
-  // Fallback: check statIdToProperty for a matching property name
-  // This handles cases like 'all_resist' which maps to stat_id 999
-  for (const [statId, propertyName] of Object.entries(statIdToProperty)) {
-    if (propertyName === modifierName || propertyName === `item_${modifierName}`) {
-      return Number(statId);
-    }
-  }
-
-  return null;
-}
-
-/**
- * Maps corruption stat keys (from cube-corruptions.ts) to modifier names.
- * These keys are the same format as website JSON modifier keys.
- */
-const corruptionStatKeyToModifierName: Record<string, string> = {
-  'dmg%': 'maxdamage_percent',
-  att: 'item_tohit_percent',
-  hp: 'maxhp',
-  ac: 'armorclass',
-  swing1: 'item_fasterattackrate',
-  swing2: 'item_fasterattackrate',
-  cast1: 'item_fastercastrate',
-  cast2: 'item_fastercastrate',
-  move1: 'item_fastermovevelocity',
-  'heal-hit': 'item_healafterhit',
-  'heal-kill': 'item_healafterkill',
-  'mana-kill': 'item_manaafterkill',
-  mana: 'maxmana',
-  str: 'strength',
-  dex: 'dexterity',
-  vit: 'vitality',
-  enr: 'energy',
-  'res-fire': 'fireresist',
-  'res-cold': 'coldresist',
-  'res-ltng': 'lightresist',
-  'res-pois': 'poisonresist',
-  'res-all': 'all_resist',
-  'res-fire-max': 'maxfireresist',
-  'res-cold-max': 'maxcoldresist',
-  'res-ltng-max': 'maxlightresist',
-  'res-pois-max': 'maxpoisonresist',
-  'res-all-max': 'all_resist', // This might need special handling
-  openwounds: 'item_openwounds',
-  crush: 'item_crushingblow',
-  deadly: 'item_deadlystrike',
-  pierce: 'item_pierce',
-  'pierce-fire': 'passive_fire_pierce',
-  'pierce-ltng': 'passive_ltng_pierce',
-  'pierce-cold': 'passive_cold_pierce',
-  'pierce-pois': 'passive_pois_pierce',
-  'dmg-min': 'min_damage',
-  'dmg-max': 'max_damage',
-  'dmg-demon': 'item_demondamage_percent',
-  'dmg-undead': 'item_undeaddamage_percent',
-  'att-demon': 'item_demon_tohit',
-  'att-undead': 'item_undead_tohit',
-  allskills: 'item_allskills',
-  'all-stats': 'all_attributes',
-  'ac%': 'item_armor_percent',
-  'hp%': 'item_maxhp_percent',
-  'mag%': 'item_magicbonus',
-  'gold%': 'item_goldbonus',
-  nofreeze: 'item_cannotbefrozen',
-  indestruct: 'item_indesctructible',
-  block: 'toblock',
-  block1: 'item_fasterblockrate',
-  block2: 'item_fasterblockrate',
-  sock: 'item_numsockets',
-  dye: 'transform_dye',
-  addxp: 'item_addexperience',
-  regen: 'hpregen',
-  'regen-mana': 'manarecovery',
-  light: 'item_lightradius',
-  lifesteal: 'lifedrainmindam', // This might need special handling
-  manasteal: 'manadrainmindam', // This might need special handling
-  'curse-res': 'curse_resistance',
-  'curse-effectiveness': 'curse_effectiveness',
-  'red-dmg': 'normal_damage_reduction',
-  'red-dmg%': 'normal_damage_reduction', // Percentage version
-  'red-mag': 'magic_damage_reduction',
-  'ignore-ac': 'item_ignoretargetac',
-  'reduce-ac': 'item_damagetargetac',
-  'dmg-ac': 'item_damagetargetac',
-  balance1: 'item_fastergethitrate',
-  ease: 'item_req_percent', // Negative value
-  'extra-fire': 'passive_fire_mastery',
-  'extra-cold': 'passive_cold_mastery',
-  'extra-ltng': 'passive_ltng_mastery',
-  'extra-pois': 'passive_pois_mastery',
-  'thorns/lvl': 'thorns_percent', // Per level version
-};
-
-/**
- * Gets stat_id for a corruption stat key (from cube-corruptions.ts).
- * First maps the key to a modifier name, then looks up the stat_id.
- */
-export function getStatIdForCorruptionStatKey(corruptionStatKey: string): number | null {
-  // Map corruption stat key to modifier name
-  const modifierName = corruptionStatKeyToModifierName[corruptionStatKey];
-  if (modifierName) {
-    return getStatIdsForModifierName(modifierName);
-  }
-
-  // If no mapping found, try using the key directly as a modifier name
-  return getStatIdsForModifierName(corruptionStatKey);
-}

@@ -4,6 +4,7 @@
  */
 import type { MarketListingEntry, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { MarketFacetName, MarketFacets } from './facets';
 
 export type Tri = 'any' | 'yes' | 'no';
 export type OnlineFilter = 'all' | 'online' | 'offline';
@@ -17,6 +18,9 @@ export type CharClass = 'amazon' | 'assassin' | 'barbarian' | 'druid' | 'necroma
 export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
 export type StatKind = 'mod' | 'pseudo' | 'corruption';
+
+/** A listing's state on the market service: still up, or how it ended. */
+export type MarketListingStatus = 'active' | 'sold' | 'removed' | 'expired';
 
 export interface StatFilter {
   /** Stable row id (uuid) for React keys / editing. */
@@ -33,8 +37,13 @@ export interface StatFilter {
   /** Weight for stat-weighted sort; undefined/0 = not scored. */
   weight?: number;
   enabled: boolean;
-  /** Member of the any-of group: the enabled `or` rows match when one of them does; other rows are all required. */
-  or?: boolean;
+  /**
+   * Any-of block (1…MAX_OR_BLOCKS): each block matches when one of its enabled rows does. Rows with neither
+   * `or` nor `not` are all required.
+   */
+  or?: number;
+  /** Exclusion group: listings matching any enabled `not` row are left out. Never set together with `or`. */
+  not?: boolean;
 }
 
 export interface Requirements {
@@ -48,7 +57,7 @@ export interface Requirements {
 }
 
 export interface MarketFilters {
-  /** `live` = market/listing, `archive` = market/listingArchive (sold). */
+  /** `live` = active listings, `archive` = sold listings (see `status` for removed/expired). */
   source: 'live' | 'archive';
   hardcore: boolean;
   ladder: boolean;
@@ -59,6 +68,8 @@ export interface MarketFilters {
   /** hr_price range (extension over the site). */
   hrMin?: number;
   hrMax?: number;
+  /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
+  hrMaxExclusive?: boolean;
   /** item.base.type_code */
   typeCode?: string;
   /** item.base_code */
@@ -79,6 +90,11 @@ export interface MarketFilters {
   sellerName?: string;
   requirements: Requirements;
   stats: StatFilter[];
+  /**
+   * History: the statuses to search instead of the one `source` selects (`live` = active, `archive` = sold), each
+   * aged by its own time within `maxAgeDays`. Absent = `source`.
+   */
+  status?: MarketListingStatus[];
   /** updated_at window; site default 3. */
   maxAgeDays: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
@@ -130,6 +146,20 @@ export interface ScoredListing {
   score: number | null;
   /** score / hr_price; null when score null or hr_price ≤ 0. */
   value: number | null;
+  /** Market service rows (absent on rows scored in the overlay, e.g. favorites): the listing's state. */
+  status?: MarketListingStatus;
+  /** When it was listed (ISO); null when the service doesn't know. */
+  listedAt?: string | null;
+  /** When it sold / was removed / expired (ISO); null while active or unknown. */
+  endedAt?: string | null;
+  /** How long it was (or has been) up: listedAt → endedAt (→ now while active); null without both ends. */
+  durationSeconds?: number | null;
+}
+
+/** The seller's last-seen times on a listing, as PD2 reports them now. */
+export interface ListingPresence {
+  user_last_online: string | null;
+  user_last_ingame: string | null;
 }
 
 export interface SearchOptions {
@@ -138,24 +168,28 @@ export interface SearchOptions {
   /** 0-based page. */
   page?: number;
   signal?: AbortSignal;
+  /** Facet counts to ask for with this page (the market browser's first page). */
+  facets?: readonly MarketFacetName[];
 }
 
 export interface SearchResult {
   /** One page, filtered and ordered by the market service. */
   items: ScoredListing[];
-  /** Matches across all pages. */
+  /** Matches across all pages; see `totalExact`. */
   total: number;
-  /** Listings on this page. */
+  /** False when `total` is a lower bound (the service's count cap) or an estimate (Seller online filters). */
+  totalExact: boolean;
+  /** Rows the service sent for this page, including any `items` leaves out; page on this. */
   fetched: number;
   mode: 'server';
+  /** Facet counts, when `facets` were asked for. */
+  facets?: MarketFacets;
 }
 
-/** Whether a listing still stands as shown, checked against PD2 before acting on it. */
+/** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
 export type ListingFreshness =
   | { status: 'ok'; listing: MarketListingEntry }
   | { status: 'gone' }
-  /** Price note, HR price or item differ from what was shown; `listing` is the current one. */
-  | { status: 'changed'; listing: MarketListingEntry }
   /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
   | { status: 'unknown' };
 
@@ -181,10 +215,21 @@ export interface MarketApi {
    */
   searchListings: (
     filters: MarketFilters,
-    opts: { page: number; limit: number; signal?: AbortSignal },
-  ) => Promise<{ items: ScoredListing[]; total: number }>;
+    opts: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
+  ) => Promise<{
+    items: ScoredListing[];
+    total: number;
+    totalExact: boolean;
+    fetched: number;
+    facets?: MarketFacets;
+  }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
+  /**
+   * The sellers' current last-seen times on live listings (`GET market/listing?_id[$in]=…`, at most 50 ids), by
+   * listing id; ids PD2 no longer lists are absent. Throws on any failure (401 included: it never starts a sign-in).
+   */
+  getListingPresence: (listingIds: string[]) => Promise<Map<string, ListingPresence>>;
   getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult>;
   getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;
@@ -215,4 +260,12 @@ export interface MarketPanelPayload {
   savedSearchId?: string;
   focusListingId?: string;
   tab?: MarketTab;
+}
+
+/** Payload for `openPanel('listingDetail', payload)`: the listing drawer. */
+export interface ListingPanelPayload {
+  /** PD2 listing id, looked up on pd2trader.com. */
+  listingId: string;
+  /** The watch that found it: its pseudo stat totals show, as in the market browser. */
+  savedSearchId?: string;
 }

@@ -72,11 +72,21 @@ describe('buildWhisper', () => {
       "/w *selleracc Hi, I'm interested in your Rare Amulet listed for 2 ist obo",
     );
     expect(buildWhisper(listing())).toBe("/w *selleracc Hi, I'm interested in your Rare Amulet");
+    // A blank template (Settings → Market left empty) is the default one, clause drop included
+    expect(buildWhisper(listing(), '  ')).toBe("/w *selleracc Hi, I'm interested in your Rare Amulet");
   });
 
   it('fills custom templates', () => {
     expect(buildWhisper(listing({ hr: 1 }), 'yo {seller}, {item} for {price}? ({account})')).toBe(
       '/w *selleracc yo Seller, Rare Amulet for 1 HR? (selleracc)',
+    );
+  });
+
+  it('whispers the account with a single "*", even when the listing names it "*account" (#148)', () => {
+    const starred = listing({ hr: 2, name: 'Harlequin Crest' });
+    starred.user = { ...starred.user!, in_game_account: '*selleracc' } as typeof starred.user;
+    expect(buildWhisper(starred, '{item} for {price}? ({account})')).toBe(
+      '/w *selleracc Harlequin Crest for 2 HR? (selleracc)',
     );
   });
 });
@@ -127,6 +137,16 @@ describe('upgradeFilters', () => {
       { kind: 'corruption', key: 'dmg%', enabled: true },
     ]);
     expect(upgradeFilters({ ...old, corruptions: [] })).toEqual(old);
+  });
+
+  it('puts the single any-of group of older versions (`or: true`) into block 1', () => {
+    const row = (id: string, or: unknown) => ({ id, kind: 'mod' as const, key: 'maxhp', enabled: true, or });
+    const old = { ...base, stats: [row('a', true), row('b', false), row('c', 2)] } as unknown as typeof base;
+    expect(upgradeFilters(old).stats).toEqual([
+      { id: 'a', kind: 'mod', key: 'maxhp', enabled: true, or: 1 },
+      { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+      { id: 'c', kind: 'mod', key: 'maxhp', enabled: true, or: 2 },
+    ]);
   });
 });
 

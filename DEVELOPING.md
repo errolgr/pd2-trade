@@ -125,6 +125,19 @@ npm run docs:build
 npm run docs:preview
 ```
 
+### Stat range data (each season)
+
+Price check stat ranges copy BH's tooltip logic over PD2's data tables (`src/assets/stat-ranges.data.ts`), and the Copy image tooltip reads what the game needs to draw the rest of an item tooltip (`src/assets/tooltip.data.ts`: stat priorities, base damage and requirements, socket filler mods, set item lists). When the launcher manifest's `pd2data.mpq` checksum changes, regenerate both:
+
+```bash
+EXTRACT_MPQ=/path/to/extract_mpq node scripts/generate-stat-ranges.mjs --download
+# or, from already extracted tables (the string tables are read from the sibling data/local/lng/eng):
+node scripts/generate-stat-ranges.mjs --excel <dir>/data/global/excel --md5 <pd2data.mpq md5>
+npx prettier --write src/assets/stat-ranges.data.ts src/assets/tooltip.data.ts
+```
+
+Then re-capture `src/pages/price-check/lib/__fixtures__/stat-ranges-oracle.<season>.jsonl` from the live client (bh-harness, see `pd2-trade-oracle/README.md`) so `stat-ranges.test.ts` and `tooltip-lines.test.ts` check the new data against the real tooltips.
+
 ## 🎯 Key Features
 
 ### 1. Item Price Check
@@ -172,17 +185,33 @@ npm run docs:preview
 - Tests sit next to the code (`foo.ts` → `foo.test.ts`); DOM tests start with `// @vitest-environment happy-dom` and mock Tauri/plugin modules with `vi.mock`
 - `it.fails` / `it.skip` tests marked `// BUG:` pin known bugs; fixing the bug flips them, so convert them to plain `it` in the fix
 - Test and Tauri functionality
-- Browser smoke test (no Tauri): `npm run dev` and open http://localhost:1420/. The app renders in the page (region and keyboard calls are no-ops). In dev builds the console exposes `window.__pd2Overlay`: `openPanel(id, payload?)`, `closePanel(id)`, `togglePanel(id, payload?)`, `isOpen(id)`, `showToast(payload)` and `state` (panel state snapshot), e.g. `__pd2Overlay.openPanel('settings')` or `__pd2Overlay.openPanel('currency', { tab: 'history' })`
+- Browser smoke test (no Tauri): `npm run dev` and open http://localhost:1420/. The app renders in the page (region and keyboard calls are no-ops). In dev builds the console exposes `window.__pd2Overlay`: `openPanel(id, payload?)`, `closePanel(id)`, `togglePanel(id, payload?)`, `isOpen(id)`, `showToast(payload)`, `priceCheck(item?)` and `state` (panel state snapshot), e.g. `__pd2Overlay.openPanel('settings')` or `__pd2Overlay.openPanel('currency', { tab: 'history' })`. `__pd2Overlay.priceCheck()` price-checks a sample rare ring; pass an item object or the raw JSON an in-game copy puts on the clipboard to check that instead
 - Verify hotkeys work correctly
 - Test on Windows (primary platform)
 
-### 4. Auto-Update Safety
+### 4. Translations
+
+The overlay UI is localized with [i18next](https://www.i18next.com/) (`src/i18n/`). English is the source; every other language mirrors its keys:
+
+```
+src/i18n/locales/<language>/<namespace>.json   # en, de, fr, ru, es, pt-BR, pl, zh-CN
+```
+
+- **Fix a translation:** edit the string in `src/i18n/locales/<language>/<namespace>.json` and open a PR. Keep every `{{placeholder}}` and `<tag>…</tag>` exactly as in the English string (you may move them within the sentence).
+- **Plurals:** keys ending in `_one` / `_few` / `_many` / `_other` are plural forms; each language has the forms its grammar needs (`new Intl.PluralRules('<language>').resolvedOptions().pluralCategories`), e.g. Russian and Polish `_one`, `_few`, `_many`, `_other`, Chinese only `_other`.
+- **Stays English by design:** item names, bases, runes, stats and tooltip lines from game data, market data, user content, chat/whisper messages sent in-game, and game terms players use in English (HR, Ladder, Hardcore, …). PD2 itself is English-only, so parsing is untouched.
+- **Add a language:** add its code to `SUPPORTED_LANGUAGES` and its own name to `LANGUAGE_NAMES` in `src/i18n/languages.ts` (and the OS-locale mapping in `matchSupportedLanguage` if needed), copy `src/i18n/locales/en/` to `src/i18n/locales/<language>/`, translate, and import its `moment/locale/*` in `src/i18n/index.ts`.
+- **New UI text:** `const { t } = useTranslation('<namespace>')` (or the module-level `t('<namespace>:key')` outside React), always imported from `@/i18n`; add the English string to `src/i18n/locales/en/<namespace>.json` and the translations to every other language. Use literal keys, never call `t()` at module scope, and format dates/numbers with `currentLocale()`.
+- `src/i18n/locales.test.ts` fails when a language is missing a key or plural form, has an extra key, changes a placeholder/tag, or when the source uses a key that English doesn't define.
+
+### 5. Auto-Update Safety
 
 A broken updater can only be fixed by users re-downloading the installer, so it is guarded at every stage:
 
 - `src/hooks/useAppUpdates.test.tsx`, `src/lib/updater.test.ts`: check → download → relaunch flow, opt-out, notifications.
-- `npm run verify:updater -- config`: version files agree; updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
-- Release workflow: before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
+- `npm run verify:updater -- config`: the six version files agree (`scripts/version-files.mjs`: package.json, package-lock.json, Cargo.toml, Cargo.lock, tauri.conf.json, docs appVersion); updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
+- Bumping: `npm run release -- <x.y.z|patch|minor|major>` rewrites the version in all six files, after checking the new version is newer than the live release, has no release yet (stray drafts included) and has a `changeLog.ts` entry. Commit it as `chore(release): x.y.z` and merge before running the publish workflow. Needs `GITHUB_TOKEN` or `gh auth login` to see drafts.
+- Release workflow: its first step, `release.mjs check`, runs the same checks for the committed version and stops the run before a draft or any build. Before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
 - `ci.yml` runs the live check daily.
 
 ## 🐛 Debugging

@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Serialize, Clone, Copy, Debug)]
+#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowRect {
     pub x: i32,

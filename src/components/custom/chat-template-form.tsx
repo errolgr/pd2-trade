@@ -11,6 +11,7 @@ import {
   templatePlaceholders,
 } from '@/lib/message-templates';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 type FieldErrors = Partial<Record<'name' | 'text', string>>;
 
@@ -48,6 +49,7 @@ export function ChatTemplateForm({
   tokens = CHAT_TEMPLATE_TOKENS,
   className,
 }: ChatTemplateFormProps) {
+  const { t } = useTranslation('app');
   const id = useId();
   const [name, setName] = useState(initial.name);
   const [text, setText] = useState(initial.text);
@@ -109,7 +111,7 @@ export function ChatTemplateForm({
         <div className="flex flex-col gap-1">
           <label htmlFor={`${id}-name`}
             className="text-xs font-medium text-foreground">
-            Name
+            {t('chatTemplateForm.name')}
           </label>
           <Input
             id={`${id}-name`}
@@ -118,7 +120,7 @@ export function ChatTemplateForm({
               setName(e.target.value);
               setErrors((current) => ({ ...current, name: undefined }));
             }}
-            placeholder="e.g. Still available?"
+            placeholder={t('chatTemplateForm.namePlaceholder')}
             aria-invalid={errors.name ? true : undefined}
             aria-describedby={errors.name ? `${id}-name-error` : undefined}
             autoFocus
@@ -138,7 +140,7 @@ export function ChatTemplateForm({
         <div className="flex items-baseline justify-between gap-2">
           <label htmlFor={`${id}-text`}
             className="text-xs font-medium text-foreground">
-            Message
+            {t('chatTemplateForm.message')}
           </label>
           <span
             className={cn(
@@ -162,7 +164,7 @@ export function ChatTemplateForm({
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit(e);
           }}
           rows={3}
-          placeholder="e.g. Hi, is your {itemName} still available?"
+          placeholder={t('chatTemplateForm.messagePlaceholder')}
           aria-invalid={errors.text ? true : undefined}
           aria-describedby={errors.text ? `${id}-text-error` : `${id}-tokens ${id}-asks`}
           autoFocus={fixedName}
@@ -196,7 +198,7 @@ export function ChatTemplateForm({
           className="text-[11px] leading-relaxed text-muted-foreground">
           {asks.length > 0 ? (
             <>
-              Asks when used:
+              {t('chatTemplateForm.asksWhenUsed')}
               {asks.map((name) => (
                 <React.Fragment key={name}>
                   {' '}
@@ -205,7 +207,7 @@ export function ChatTemplateForm({
               ))}
             </>
           ) : (
-            'Any other {name} is asked for when the template is used.'
+            t('chatTemplateForm.asksNone')
           )}
         </p>
       </div>
@@ -220,7 +222,7 @@ export function ChatTemplateForm({
           variant="ghost"
           size="sm"
           onClick={onCancel}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
       </div>
     </form>

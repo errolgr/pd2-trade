@@ -9,7 +9,14 @@ import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
-import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
+import {
+  clipboardContainsValidItem,
+  isStashItem,
+  encodeItem,
+  encodeItemForQuickList,
+  repairClipboardText,
+  sleep,
+} from '@/lib/item-utils';
 import {
   getBadgeCount,
   isKeyboardClaimed,
@@ -18,8 +25,13 @@ import {
   useOverlay,
   type PanelPayloads,
 } from '@/overlay';
+import { openOffers } from '@/pages/chat/chat-feed';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
+import { t } from '@/i18n';
+
+/** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
+const CHAT_LOG_MISSING = 'Could not find or create chat log file';
 
 /**
  * App-wide behaviour that is not a panel: global hotkeys, clipboard item capture, chat watcher, socket
@@ -41,7 +53,7 @@ const AppController: React.FC = () => {
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
-    const timer = setTimeout(() => showToast('is now running in the background...'), 2000);
+    const timer = setTimeout(() => showToast(t('app:controller.runningInBackground')), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -56,9 +68,12 @@ const AppController: React.FC = () => {
     }
   }, []);
 
-  /** Ctrl+C the item under the cursor, restoring the user's clipboard afterwards. */
+  /**
+   * Ctrl+C the item under the cursor, restoring the user's clipboard afterwards. `copied`: the clipboard changed, so
+   * the game copied something.
+   */
   const copyItemUnderCursor = useCallback(
-    async (sendCopy: boolean): Promise<string | null> => {
+    async (sendCopy: boolean): Promise<{ raw: string | null; copied: boolean }> => {
       // A panel holding the keyboard (e.g. an open price check) would get the Ctrl+C, and a Ctrl+C hotkey never
       // reached the game: hand focus back and let the game take the foreground before copying.
       const handedBack = isKeyboardClaimed();
@@ -69,13 +84,11 @@ const AppController: React.FC = () => {
       const savedClipboard = await read();
       if (sendCopy || handedBack) await keyPress('ctrl+c');
       await sleep(250);
-      const raw = await read();
-      try {
-        if (savedClipboard != null) await copy(savedClipboard);
-      } catch {
-        /* clipboard restore is best-effort */
-      }
-      return raw;
+      const copiedText = await read();
+      // Best-effort and not awaited: a restore that waits for a busy Windows clipboard must not delay the panel
+      if (savedClipboard != null) void copy(savedClipboard);
+      const copied = !!copiedText && copiedText !== savedClipboard;
+      return { raw: copiedText == null ? copiedText : repairClipboardText(copiedText), copied };
     },
     [read, copy, keyPress],
   );
@@ -83,9 +96,17 @@ const AppController: React.FC = () => {
   const fireSearch = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
     // When the price-check hotkey itself is Ctrl+C the game already copied the item
-    const raw = await copyItemUnderCursor(!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c'));
+    const { raw, copied } = await copyItemUnderCursor(
+      !(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c'),
+    );
     if (!clipboardContainsValidItem(raw)) {
-      showToast({ title: 'PD2 Trader', description: 'Item is not supported or invalid.', variant: 'error' });
+      // Not copied: the clipboard didn't change (no item under the cursor, or the game never got the Ctrl+C, e.g. a
+      // Linux desktop that blocks simulated keys). An item the user copied themselves still works.
+      showToast({
+        title: 'PD2 Trader',
+        description: t(copied ? 'app:controller.itemNotSupported' : 'app:controller.nothingCopied'),
+        variant: 'error',
+      });
       return;
     }
     openPanel('itemSearch', { text: encodeItem(raw) });
@@ -93,20 +114,24 @@ const AppController: React.FC = () => {
 
   const openQuickList = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
-    const copied = await copyItemUnderCursor(true);
-    const raw = clipboardContainsValidItem(copied) ? copied : null;
+    const { raw: copiedRaw, copied } = await copyItemUnderCursor(true);
+    const raw = clipboardContainsValidItem(copiedRaw) ? copiedRaw : null;
 
-    let payload: PanelPayloads['quickList'] = { error: 'not_shared_stash' };
+    let payload: PanelPayloads['quickList'] = { error: 'not_in_stash' };
     if (raw && isStashItem(raw)) payload = { item: encodeItemForQuickList(raw) };
     openPanel('quickList', payload, { placement: 'cursor' });
 
     // After opening so the toast shows above the panel
     if (!raw) {
-      showToast({ title: 'Cannot List Item', description: 'Item is not supported or invalid.', variant: 'error' });
+      showToast({
+        title: t('app:controller.cannotListItem'),
+        description: t(copied ? 'app:controller.itemNotSupported' : 'app:controller.nothingCopied'),
+        variant: 'error',
+      });
     } else if (!isStashItem(raw)) {
       showToast({
-        title: 'Cannot List Item',
-        description: 'This item is not in your shared stash and cannot be listed.',
+        title: t('app:controller.cannotListItem'),
+        description: t('app:controller.notInStash'),
         variant: 'error',
       });
     }
@@ -114,12 +139,16 @@ const AppController: React.FC = () => {
 
   const handleDelistItem = useCallback(async () => {
     if (!(await checkDiabloFocus())) return;
-    const copied = await copyItemUnderCursor(true);
-    if (!clipboardContainsValidItem(copied)) {
-      showToast({ title: 'Delist', description: 'No valid item found under cursor.', variant: 'error' });
+    const { raw } = await copyItemUnderCursor(true);
+    if (!clipboardContainsValidItem(raw)) {
+      showToast({
+        title: t('app:controller.delist'),
+        description: t('app:controller.noItemUnderCursor'),
+        variant: 'error',
+      });
       return;
     }
-    void delistItem(copied);
+    void delistItem(raw);
   }, [checkDiabloFocus, copyItemUnderCursor, delistItem]);
 
   // Registered global hotkeys call through this ref: re-renders (overlay, settings, net worth) never hand
@@ -133,13 +162,17 @@ const AppController: React.FC = () => {
     },
     // Opening with unread messages lands on the newest unread thread (the badge leaves out muted ones)
     chat: () => (getBadgeCount('chatUnread') > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat')),
-    offers: () => openPanel('chat', { filter: 'selling' }),
+    // Like the Offers button: the view of what the offers badge counts
+    offers: () => openOffers((payload) => openPanel('chat', payload)),
     delist: handleDelistItem,
     snapshot: async () => {
       await takeSnapshot('manual');
     },
     // Closed: reopens on the search it was showing (keepMounted)
     market: () => togglePanel('market'),
+    builds: () => togglePanel('builds'),
+    // Typing starts right away: the palette takes the keyboard when it opens
+    palette: () => togglePanel('palette', undefined, { focus: true }),
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -153,7 +186,20 @@ const AppController: React.FC = () => {
   const onDelist = useCallback(() => hotkeysRef.current.delist(), []);
   const onSnapshot = useCallback(() => hotkeysRef.current.snapshot(), []);
   const onMarket = useCallback(() => hotkeysRef.current.market(), []);
-  useAppShortcuts(onItemSearch, onQuickList, onCurrency, onChat, onOffers, onDelist, onSnapshot, onMarket);
+  const onBuilds = useCallback(() => hotkeysRef.current.builds(), []);
+  const onPalette = useCallback(() => hotkeysRef.current.palette(), []);
+  useAppShortcuts(
+    onItemSearch,
+    onQuickList,
+    onCurrency,
+    onChat,
+    onOffers,
+    onDelist,
+    onSnapshot,
+    onMarket,
+    onBuilds,
+    onPalette,
+  );
 
   useAppUpdates();
   usePD2Auth();
@@ -172,7 +218,11 @@ const AppController: React.FC = () => {
     const command = shouldWatch
       ? invoke('start_chat_watcher', { customD2Dir: settings.diablo2Directory })
       : invoke('stop_chat_watcher');
-    command.catch((error) => console.error('Failed to manage chat watcher:', error));
+    command.catch((error) => {
+      // No chat log in the configured Diablo II directory: a settings problem the Rust side already toasts to the user
+      if (String(error).startsWith(CHAT_LOG_MISSING)) console.warn('Chat watcher not started:', error);
+      else console.error('Failed to manage chat watcher:', error);
+    });
     return () => {
       invoke('stop_chat_watcher').catch(console.error);
     };

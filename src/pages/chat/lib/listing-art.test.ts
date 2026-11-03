@@ -30,7 +30,18 @@ describe('listingArtUrl', () => {
   it('uses the base art of rares, runewords and jewelry, any tier', () => {
     expect(art('Enigma', 'Normal', 'Archon Plate')).toBe('https://pd2trader.com/assets/items/invltp.png');
     expect(art('Doom Band', 'Rare', 'Ring')).toBe('https://pd2trader.com/assets/items/invrin.png');
-    expect(art('Grand Charm', 'Magic', 'Grand Charm')).toBe('https://pd2trader.com/assets/items/invch4.png');
+  });
+
+  it('draws each charm at its own size, in the look its graphic_id picks', () => {
+    const charm = (base: string, graphic_id?: number) =>
+      listingArtUrl(
+        { name: base, quality: { id: 4, name: 'Magic' }, base: { name: base }, graphic_id } as ItemDetail,
+        itemsByKey,
+      );
+    expect(charm('Small Charm')).toBe('https://pd2trader.com/assets/items/invch1.png');
+    expect(charm('Large Charm', 1)).toBe('https://pd2trader.com/assets/items/invch5.png');
+    expect(charm('Grand Charm')).toBe('https://pd2trader.com/assets/items/invch3.png');
+    expect(charm('Grand Charm', 2)).toBe('https://pd2trader.com/assets/items/invch9.png');
   });
 
   it('returns null when nothing matches', () => {
@@ -40,6 +51,24 @@ describe('listingArtUrl', () => {
   it('finds uniques whose database key differs from the listed name', () => {
     // key "Eschuta's temper", name "Eschuta's Temper"; its base (Eldritch Orb) has no base art
     expect(art("Eschuta's Temper", 'Unique', 'Eldritch Orb')).toBe('https://pd2trader.com/assets/items/invob2.png');
+  });
+
+  it('does not throw on an item PD2 lists without a name', () => {
+    // A live PD2 listing: 8 T1 maps whose item has no name and whose base has none either
+    const map = {
+      quality: { id: 2, name: 'Normal' },
+      base: { id: 't18', category: 'misc', type: 'Map T1', type_code: 't1m' },
+      base_code: 't18',
+      graphic_id: false,
+      quantity: 8,
+    } as unknown as ItemDetail;
+    expect(listingArtUrl(map, itemsByKey)).toBeNull();
+    expect(listingArtCandidates(map, itemsByKey)).toEqual([]);
+    // Nameless with a named base: the base's art; nameless unique: no database lookup by name
+    expect(listingArtUrl({ ...map, base: { name: 'Ring' } } as ItemDetail, itemsByKey)).toBe(
+      'https://pd2trader.com/assets/items/invrin.png',
+    );
+    expect(listingArtUrl({ ...map, quality: { id: 7, name: 'Unique' } } as ItemDetail, itemsByKey)).toBeNull();
   });
 });
 

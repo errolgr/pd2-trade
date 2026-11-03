@@ -12,10 +12,14 @@ import { isTauri } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
-import { useOverlay } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
+import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
+import { isNetworkError } from '@/lib/network-errors';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { useTranslation } from '@/i18n';
 
 export function AboutForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading } = useOptions();
   const [version, setVersion] = React.useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
@@ -42,15 +46,33 @@ export function AboutForm() {
       setUpdateInfo(update);
       setLastChecked(new Date());
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      // Offline / GitHub unreachable: the user's network, not an app bug
+      if (isNetworkError(error)) console.warn('Failed to check for updates:', error);
+      else console.error('Failed to check for updates:', error);
     } finally {
       setIsChecking(false);
     }
   };
 
   const handleUpdateNow = async () => {
-    if (updateInfo?.available) {
+    if (!updateInfo?.available) return;
+    try {
       await downloadUpdate(updateInfo);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        console.warn('Could not download update:', error);
+        showToast({
+          title: 'PD2 Trader',
+          description: t('about.downloadFailed'),
+          variant: 'error',
+        });
+        return;
+      }
+      if (!requiresManualUpdate(error)) throw error;
+      // Linux deb/rpm installs can't update in place: point at the release page instead of reporting it
+      console.warn('Update must be installed manually:', error);
+      markManualUpdateRequired();
+      showToast(manualUpdateToast(updateInfo.version));
     }
   };
 
@@ -59,13 +81,11 @@ export function AboutForm() {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return `${diffInSeconds} seconds ago`;
+      return t('common:time.secondsAgo', { count: diffInSeconds });
     } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return t('common:time.minutesAgo', { count: Math.floor(diffInSeconds / 60) });
     } else {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      return t('common:time.hoursAgo', { count: Math.floor(diffInSeconds / 3600) });
     }
   };
 
@@ -80,7 +100,7 @@ export function AboutForm() {
         />
         <motion.img
           src={imgPath}
-          alt="PD2 Trader logo"
+          alt={t('about.logoAlt')}
           width={56}
           height={56}
           className="relative drop-shadow-lg"
@@ -95,7 +115,7 @@ export function AboutForm() {
           </span>
           {version ? (
             <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 font-mono text-xs text-muted-foreground">
-              Version: {version}
+              {t('about.version', { version })}
             </span>
           ) : (
             <Skeleton className="h-5 w-28 rounded-full" />
@@ -117,13 +137,13 @@ export function AboutForm() {
                   >
                     <div className="flex items-center justify-center gap-2 font-medium text-success">
                       <ArrowUpCircle className="size-4" />
-                      Update Available (v{updateInfo.version})
+                      {t('about.updateAvailable', { version: updateInfo.version })}
                     </div>
                     <Button onClick={handleUpdateNow}
                       className="w-full"
                       variant="default">
                       <Download />
-                      Update Now (v{updateInfo.version})
+                      {t('about.updateNow', { version: updateInfo.version })}
                     </Button>
                   </motion.div>
                 ) : (
@@ -136,14 +156,14 @@ export function AboutForm() {
                     className="flex items-center justify-center gap-2 font-medium text-foreground"
                   >
                     <CheckCircle2 className="size-4 text-success" />
-                    You have the latest version
+                    {t('about.latest')}
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {lastChecked && (
                 <div className="text-center text-xs text-muted-foreground">
-                  Last checked: {formatTimeAgo(lastChecked)}
+                  {t('about.lastChecked', { ago: formatTimeAgo(lastChecked) })}
                 </div>
               )}
 
@@ -157,12 +177,12 @@ export function AboutForm() {
                 {isChecking ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Checking...
+                    {t('about.checking')}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4" />
-                    Check for Updates
+                    {t('about.checkForUpdates')}
                   </>
                 )}
               </Button>
@@ -174,7 +194,7 @@ export function AboutForm() {
             onClick={openChangelog}
             className="w-full">
             <FileText className="h-4 w-4" />
-            View Changelog
+            {t('about.viewChangelog')}
           </Button>
         </div>
       </div>
@@ -182,9 +202,9 @@ export function AboutForm() {
       {isTauri() && <UpdateSettingsForm />}
 
       <div className="grid grid-cols-2 gap-3">
-        <CreditTile role="Developer"
+        <CreditTile role={t('about.credits.developer')}
           names={['@Doreet']} />
-        <CreditTile role="Contributors"
+        <CreditTile role={t('about.credits.contributors')}
           names={['@pandamancer']} />
       </div>
     </div>
@@ -192,6 +212,7 @@ export function AboutForm() {
 }
 
 function UpdateSettingsForm() {
+  const { t } = useTranslation('settings');
   const { settings, updateSettings } = useOptions();
   const form = useForm<{ autoUpdateEnabled: boolean }>({
     defaultValues: { autoUpdateEnabled: settings.autoUpdateEnabled ?? true },
@@ -204,14 +225,15 @@ function UpdateSettingsForm() {
 
   return (
     <Form {...form}>
-      <SettingsGroup title="Updates">
+      <SettingsGroup title={t('about.updates.group')}>
         <FormField
           control={form.control}
           name="autoUpdateEnabled"
           render={({ field }) => (
             <SettingsRow
-              label="Automatic Updates"
-              description="Download and install new versions on startup, then restart. When off, you still get a notification when an update is available."
+              settingKey="autoUpdateEnabled"
+              label={t('about.updates.auto.label')}
+              description={t('about.updates.auto.description')}
               control={
                 <FormControl>
                   <Switch

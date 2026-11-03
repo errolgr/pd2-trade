@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
-import { AccountMismatchError, AuthenticationError } from './usePD2Website';
+import { AccountMismatchError, AuthenticationError, NoAccountSelectedError, PD2ApiError } from './usePD2Website';
 import { useStashCache } from './useStashCache';
+import type { SocketRequest } from './useSocket';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
@@ -28,9 +29,14 @@ function fakeResponse(status: number, body: unknown, url: string) {
 const settings = { pd2Token: 'tok', account: 'MyAcc', mode: 'softcore', ladder: 'ladder' };
 const authData = { user: { _id: 'u1' } };
 
-function stash(authOverride: unknown = authData, settingsOverride: unknown = settings, onAuthError = vi.fn()) {
+function stash(
+  authOverride: unknown = authData,
+  settingsOverride: unknown = settings,
+  onAuthError = vi.fn(),
+  request?: SocketRequest,
+) {
   const ref = { current: onAuthError };
-  const { result } = renderHook(() => useStashCache(authOverride, settingsOverride, ref));
+  const { result } = renderHook(() => useStashCache(authOverride, settingsOverride, ref, request));
   return { hook: result.current, onAuthError };
 }
 
@@ -55,8 +61,23 @@ afterEach(() => {
 
 describe('fetchAndCacheStash', () => {
   it('requires authentication and settings before hitting the network', async () => {
-    await expect(stash(null).hook.fetchAndCacheStash()).rejects.toThrow('Not authenticated');
+    // AuthenticationError: callers treat a signed-out user as expected state, not an error to report
+    const signedOut = await stash(null)
+      .hook.fetchAndCacheStash()
+      .catch((e) => e);
+    expect(signedOut).toBeInstanceOf(AuthenticationError);
+    expect(signedOut.message).toBe('Not authenticated');
     await expect(stash(authData, null).hook.fetchAndCacheStash()).rejects.toThrow('Settings not found!');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('throws NoAccountSelectedError without requesting /game/stash/ (a 405) when no account is chosen', async () => {
+    for (const account of [undefined, '', '  ']) {
+      const err = await stash(authData, { ...settings, account })
+        .hook.fetchAndCacheStash()
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(NoAccountSelectedError);
+    }
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -98,10 +119,148 @@ describe('fetchAndCacheStash', () => {
     fetchMock.mockResolvedValueOnce(
       fakeResponse(404, { message: 'nope' }, 'https://api.projectdiablo2.com/game/stash/MyAcc?account=MyAcc'),
     );
-    const err = await stash().hook.fetchAndCacheStash().catch((e) => e);
+    const err = await stash()
+      .hook.fetchAndCacheStash()
+      .catch((e) => e);
     expect(err).toBeInstanceOf(AccountMismatchError);
     expect(err.account).toBe('MyAcc');
     expect(err.message).toContain('"MyAcc"');
+  });
+
+  describe('404 for an account in game.accounts', () => {
+    const linked = { user: { _id: 'u1', game: { accounts: ['Other', 'myacc'] } } };
+    const stash404 = () =>
+      fetchMock.mockResolvedValueOnce(
+        fakeResponse(404, { message: 'Page not found' }, 'https://api.projectdiablo2.com/game/stash/MyAcc'),
+      );
+
+    it('is transient when /game/account fails with a 5xx or no answer', async () => {
+      for (const accountCheck of [
+        () => fetchMock.mockResolvedValueOnce(fakeResponse(500, 'failed to retrieve realm account', '')),
+        () => fetchMock.mockRejectedValueOnce(new Error('error sending request')),
+      ]) {
+        stash404();
+        accountCheck();
+        const err = await stash(linked)
+          .hook.fetchAndCacheStash()
+          .catch((e) => e);
+        expect(err).not.toBeInstanceOf(AccountMismatchError);
+        expect(err).toBeInstanceOf(PD2ApiError);
+        expect(err.message).toBe('PD2 couldn\'t load the stash for "MyAcc" right now. Try again in a minute.');
+      }
+      expect(String(fetchMock.mock.calls[1][0])).toBe('https://api.projectdiablo2.com/game/account/MyAcc');
+    });
+
+    it('is a real miss, naming the mode, when /game/account loads', async () => {
+      stash404();
+      fetchMock.mockResolvedValueOnce(fakeResponse(200, { account: 'myacc', characters: [] }, ''));
+      const err = await stash(linked)
+        .hook.fetchAndCacheStash()
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(AccountMismatchError);
+      expect(err.message).toBe('PD2 has no softcore ladder stash for "MyAcc". Check the account and mode in Settings → Account.');
+    });
+
+    it('beta accounts and unlinked accounts stay a mismatch without the extra check', async () => {
+      for (const auth of [{ user: { _id: 'u1', game: { accounts: ['Other'], beta_accounts: ['MyAcc'] } } }, authData]) {
+        stash404();
+        await expect(stash(auth).hook.fetchAndCacheStash()).rejects.toBeInstanceOf(AccountMismatchError);
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('personal stashes', () => {
+    const at = (storage: string, storage_id: number, stash_page?: number) => ({
+      location: { storage, storage_id, zone: 'Stored', ...(stash_page === undefined ? {} : { stash_page }) },
+    });
+    const shared = { ...stashItem('s1', 'Unique', { name: 'Shako' }), ...at('Shared Stash', 6, 2) };
+    // PD2 calls a character's personal stash "Shared Stash" page 0
+    const personal = (hash: string) => ({ ...stashItem(hash, 'Rare'), ...at('Shared Stash', 6, 0) });
+    const characters = [
+      { name: 'LadderSorc', class_name: 'Sorceress', level: 90, hardcore: false, ladder: true },
+      { name: 'NonLadderPal', class_name: 'Paladin', level: 90, hardcore: false, ladder: false },
+      { name: 'LadderHc', class_name: 'Druid', level: 90, hardcore: true, ladder: true },
+      { name: 'LadderBarb', class_name: 'Barbarian', level: 90, hardcore: false, ladder: true },
+    ];
+    let accountAnswer: () => Promise<Response>;
+    let characterAnswers: Record<string, () => Promise<unknown>>;
+    const request = vi.fn(async (_method: string, _path: string, name: unknown) => characterAnswers[String(name)]());
+
+    beforeEach(() => {
+      accountAnswer = async () => fakeResponse(200, { details: characters }, '');
+      characterAnswers = {
+        LadderSorc: async () => ({
+          character: { name: 'LadderSorc' },
+          items: [personal('p1'), { ...stashItem('inv', 'Rare'), ...at('Inventory', 1) }],
+        }),
+        LadderBarb: async () => ({
+          character: { name: 'LadderBarb' },
+          items: [personal('p2'), { ...stashItem('cube', 'Rare'), ...at('Cube', 4) }],
+        }),
+      };
+      request.mockClear();
+      fetchMock.mockImplementation(async (input) =>
+        String(input).includes('/game/account/') ? accountAnswer() : fakeResponse(200, { items: [shared] }, ''),
+      );
+    });
+
+    const hashes = (data: { items: GameStashItem[] }) => data.items.map((i) => [i.hash, i.character_id]);
+
+    it("adds the personal stash of the account's characters in the selected mode, without inventory or cube", async () => {
+      const { hook } = stash(authData, settings, vi.fn(), request as unknown as SocketRequest);
+      const data = await hook.fetchAndCacheStash();
+
+      expect(hashes(data)).toEqual([
+        ['s1', undefined],
+        ['p1', 'laddersorc'],
+        ['p2', 'ladderbarb'],
+      ]);
+      expect(request.mock.calls.map((c) => c.slice(0, 3))).toEqual([
+        ['get', 'game/character', 'LadderSorc'],
+        ['get', 'game/character', 'LadderBarb'],
+      ]);
+      expect(hook.stashCache.current.data).toBe(data);
+    });
+
+    it('keeps the last read of a character, or of all of them, when they fail to load', async () => {
+      const { hook } = stash(authData, settings, vi.fn(), request as unknown as SocketRequest);
+      await hook.fetchAndCacheStash();
+
+      characterAnswers.LadderSorc = async () => {
+        throw new Error('timeout');
+      };
+      characterAnswers.LadderBarb = async () => ({ character: { name: 'LadderBarb' }, items: [] });
+      expect(hashes(await hook.fetchAndCacheStash())).toEqual([
+        ['s1', undefined],
+        ['p1', 'laddersorc'],
+      ]);
+
+      accountAnswer = async () => fakeResponse(500, 'down', '');
+      expect(hashes(await hook.fetchAndCacheStash())).toEqual([
+        ['s1', undefined],
+        ['p1', 'laddersorc'],
+      ]);
+    });
+
+    it('does not carry a read over to another mode, or past clearing the cache', async () => {
+      const failing = async () => {
+        throw new Error('timeout');
+      };
+      const first = stash(authData, settings, vi.fn(), request as unknown as SocketRequest).hook;
+      await first.fetchAndCacheStash();
+      first.clearStashCache();
+      characterAnswers = { LadderSorc: failing, LadderBarb: failing };
+      expect(hashes(await first.fetchAndCacheStash())).toEqual([['s1', undefined]]);
+
+      characterAnswers.NonLadderPal = async () => ({ character: { name: 'NonLadderPal' }, items: [personal('p3')] });
+      const nonLadder = { ...settings, ladder: 'non-ladder' };
+      const other = stash(authData, nonLadder, vi.fn(), request as unknown as SocketRequest).hook;
+      expect(hashes(await other.fetchAndCacheStash())).toEqual([
+        ['s1', undefined],
+        ['p3', 'nonladderpal'],
+      ]);
+    });
   });
 });
 
@@ -191,7 +350,7 @@ describe('findItemsByName', () => {
   it('unique charms match the exact known item name, not other uniques of the same base', () => {
     const { hook } = stash();
     const anni = stashItem('anni', 'Unique', { name: 'Annihilus' });
-    const torch = stashItem('torch', 'Unique', { name: "Hellfire Torch" });
+    const torch = stashItem('torch', 'Unique', { name: 'Hellfire Torch' });
     const query = { name: 'Annihilus', type: 'Small Charm', quality: 'Unique', stats: [] } as PriceCheckItem;
     expect(hook.findItemsByName([torch, anni], query).map((i) => i.hash)).toEqual(['anni']);
   });

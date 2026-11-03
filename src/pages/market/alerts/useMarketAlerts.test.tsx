@@ -5,18 +5,34 @@ import { exists, readTextFile } from '@/lib/browser-fs';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { showToast } from '@/overlay';
 import type { SavedSearch } from '@/pages/market/lib/types';
-import { resetMarketPrefs } from '@/pages/market/store/useMarketStore';
-import { listMarketAlerts, listSavedSearches, openAlertStream, type MarketAlert } from './saved-search-api';
+import {
+  getMarketPrefs,
+  resetMarketPrefs,
+  retrySavedSearchSync,
+  SYNC_RETRY_BASE_MS,
+} from '@/pages/market/store/useMarketStore';
+import {
+  listMarketAlerts,
+  listSavedSearches,
+  openAlertStream,
+  SavedSearchApiError,
+  type MarketAlert,
+} from './saved-search-api';
 import type * as SavedSearchApi from './saved-search-api';
+import { MAX_RECONNECT_MS, STREAM_IDLE_TIMEOUT_MS } from './alert-stream';
 import { useMarketAlerts } from './useMarketAlerts';
 
 const h = vi.hoisted(() => ({
   settings: {} as Record<string, unknown>,
+  openSignIn: vi.fn(),
+  refreshTokens: vi.fn<(refreshToken: string) => Promise<boolean>>(),
 }));
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
+vi.mock('@/hooks/useOAuth', () => ({ useOAuth: () => ({ refreshTokens: h.refreshTokens }) }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn: h.openSignIn, isOpen: false }) }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
   exists: vi.fn(async () => false),
@@ -88,7 +104,10 @@ beforeEach(() => {
   vi.mocked(listMarketAlerts).mockClear();
   vi.mocked(listSavedSearches).mockReset();
   h.settings = { pd2Token: 'tok' };
+  h.openSignIn.mockReset();
+  h.refreshTokens.mockReset().mockResolvedValue(false);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -173,6 +192,10 @@ describe('useMarketAlerts', () => {
     await settle();
     await act(() => vi.advanceTimersByTimeAsync(120_000));
     expect(openAlertStream).toHaveBeenCalledTimes(1);
+    // No refresh token: straight to sign-in
+    expect(h.refreshTokens).not.toHaveBeenCalled();
+    expect(h.openSignIn).toHaveBeenCalledOnce();
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
 
     vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
     h.settings = { pd2Token: 'tok2' };
@@ -180,5 +203,141 @@ describe('useMarketAlerts', () => {
     await settle();
     await settle();
     expect(openAlertStream).toHaveBeenLastCalledWith('tok2', expect.any(AbortSignal));
+  });
+
+  const refused = () => new SavedSearchApiError('Unauthorized', 401);
+
+  it('a 401 on the list refreshes the token once, then resumes with the new one', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    h.refreshTokens.mockResolvedValue(true);
+    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
+      if (token === 'tok') throw refused();
+      return { items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } };
+    });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
+    // The refused token is not retried while the refresh lands
+    await act(() => vi.advanceTimersByTimeAsync(5 * 60_000));
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+    expect(openAlertStream).not.toHaveBeenCalled();
+
+    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
+    rerender();
+    await settle();
+    await settle();
+    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
+    expect(openAlertStream).toHaveBeenCalledWith('tok2', expect.any(AbortSignal));
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+    expect(h.openSignIn).not.toHaveBeenCalled();
+  });
+
+  it('a 401 with the refreshed token stops for good: sign-in prompt, no further requests', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    h.refreshTokens.mockResolvedValue(true);
+    vi.mocked(listSavedSearches).mockRejectedValue(refused());
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+
+    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
+    rerender();
+    await settle();
+    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+    expect(h.openSignIn).toHaveBeenCalledOnce();
+
+    // Re-renders, the panel showing (WatchButton / Saved tab retry) and time send nothing more
+    rerender();
+    retrySavedSearchSync();
+    await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    expect(openAlertStream).not.toHaveBeenCalled();
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+    expect(h.openSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks to sign in when the refresh itself fails', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    vi.mocked(listSavedSearches).mockRejectedValue(refused());
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
+    expect(h.openSignIn).toHaveBeenCalledOnce();
+    await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
+    expect(listSavedSearches).toHaveBeenCalledTimes(1);
+  });
+
+  it('a refreshed token that worked gets its own refresh when it is refused later', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    h.refreshTokens.mockResolvedValue(true);
+    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
+      if (token === 'tok') throw refused();
+      return { items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } };
+    });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
+
+    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
+    rerender();
+    await settle();
+    await settle();
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+
+    // Much later, tok2 is refused (here by the stream on a reconnect)
+    vi.mocked(openAlertStream).mockRejectedValue(refused());
+    await act(() => vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS + MAX_RECONNECT_MS * 2));
+    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    expect(h.refreshTokens).toHaveBeenCalledTimes(2);
+    expect(h.refreshTokens).toHaveBeenLastCalledWith('r2');
+    expect(h.openSignIn).not.toHaveBeenCalled();
+  });
+
+  it('does not prompt when the user signs in some other way while a failing refresh runs', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    const refresh = Promise.withResolvers<boolean>();
+    h.refreshTokens.mockReturnValue(refresh.promise);
+    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
+      if (token === 'tok') throw refused();
+      return { items: [], limits: { maxSearches: 25, maxAlerting: 10 } };
+    });
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
+
+    h.settings = { pd2Token: 'manual', pd2RefreshToken: 'rm' };
+    rerender();
+    await settle();
+    await act(async () => refresh.resolve(false));
+    await settle();
+    expect(h.openSignIn).not.toHaveBeenCalled();
+    expect(listSavedSearches).toHaveBeenLastCalledWith('manual');
+    expect(getMarketPrefs().syncStatus).toBe('ready');
+  });
+
+  it('a network error still backs off and retries, without refreshing or prompting', async () => {
+    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    vi.mocked(listSavedSearches)
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue({ items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } });
+    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    renderHook(() => useMarketAlerts());
+    await settle();
+    expect(getMarketPrefs().syncStatus).toBe('error');
+    await act(() => vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS));
+    expect(listSavedSearches).toHaveBeenCalledTimes(2);
+    await act(() => vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 2));
+    expect(listSavedSearches).toHaveBeenCalledTimes(3);
+    await settle();
+    expect(openAlertStream).toHaveBeenCalledWith('tok', expect.any(AbortSignal));
+    expect(h.refreshTokens).not.toHaveBeenCalled();
+    expect(h.openSignIn).not.toHaveBeenCalled();
   });
 });

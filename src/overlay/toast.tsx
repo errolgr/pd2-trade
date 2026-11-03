@@ -1,13 +1,19 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Skull } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
-import { chatDockSize } from '@/pages/chat/chat-dock';
+import { chatDockWidth } from '@/pages/chat/chat-dock';
+import { offerNotificationLanding } from '@/pages/chat/chat-feed';
+import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
+import { findMarketLinks } from '@/pages/chat/lib/market-links';
+import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
+import { t } from '@/i18n';
 
 const DEFAULT_TITLE = 'PD2 Trader';
 const TOAST_MARGIN = 16;
@@ -18,6 +24,7 @@ export type ToastPayload = string | GenericToastPayload | CustomToastPayload;
 interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
   openMarket(payload: PanelPayloads['market']): void;
+  openListing(payload: PanelPayloads['listingDetail']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -40,11 +47,19 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
         break;
       }
+      case ToastActionType.OPEN_CHAT_OFFER: {
+        const { notificationId, accepted } = action.data ?? {};
+        if (typeof notificationId === 'string') bridge?.openChat(offerNotificationLanding(notificationId, !!accepted));
+        break;
+      }
       case ToastActionType.OPEN_MARKET_PANEL:
         bridge?.openMarket(action.data);
         break;
       case ToastActionType.UPDATE_AVAILABLE:
         await installUpdateAndRelaunch();
+        break;
+      case ToastActionType.OPEN_RELEASE_PAGE:
+        await openUrl(RELEASE_PAGE_URL);
         break;
       default:
         console.warn('Unknown toast action type:', action.type);
@@ -82,6 +97,10 @@ export function showToast(payload: ToastPayload): void {
       case 'info':
         toast.info(title, options);
         break;
+      case 'corrupted-zone':
+        // Not a sonner type: the class sets the accent (bar + icon) to the corrupted zone purple
+        toast(title, { ...options, className: '[--toast-accent:var(--q-corrupted-zone)]', icon: <Skull /> });
+        break;
       default:
         toast(title, options);
     }
@@ -95,8 +114,16 @@ export function showToast(payload: ToastPayload): void {
     toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
     return;
   }
+  const { listing, description } = custom;
+  // Listing links (an offer's or a message's text) read as the chat's item pills, hover for the item
+  const text =
+    description && findMarketLinks(description).length > 0 ? (
+      <LinkedMessageContent content={description} />
+    ) : (
+      description
+    );
   toast(custom.title || DEFAULT_TITLE, {
-    description: custom.description,
+    description: listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text,
     duration: custom.duration,
     closeButton: true,
     action: {
@@ -104,6 +131,39 @@ export function showToast(payload: ToastPayload): void {
       // sonner dismisses the toast after onClick
       onClick: () => void runToastAction(action),
     },
+    // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
+    ...(listing && { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }),
+  });
+}
+
+/**
+ * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):
+ * revoked when the toast closes.
+ */
+export function imageToast({
+  title,
+  description,
+  imageUrl,
+}: {
+  title: string;
+  description?: string;
+  imageUrl: string;
+}): void {
+  const revoke = () => URL.revokeObjectURL(imageUrl);
+  toast.success(title, {
+    description: (
+      <span className="flex flex-col gap-2">
+        {description && <span>{description}</span>}
+        <img
+          src={imageUrl}
+          alt=""
+          className="max-h-40 w-auto max-w-full self-start rounded border border-border object-contain"
+        />
+      </span>
+    ),
+    closeButton: true,
+    onDismiss: revoke,
+    onAutoClose: revoke,
   });
 }
 
@@ -123,8 +183,8 @@ export interface ConfirmToastOptions {
 export function confirmToast({
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = t('common:actions.confirm'),
+  cancelLabel = t('common:actions.cancel'),
   variant = 'default',
   duration = 5000,
   onConfirm,
@@ -155,7 +215,7 @@ export interface UndoToastOptions {
 
 /** A toast with an Undo button; returns a function that dismisses it (e.g. once the undo window closed). */
 export function undoToast({ title, description, duration, onUndo }: UndoToastOptions): () => void {
-  const id = toast(title, { description, duration, action: { label: 'Undo', onClick: onUndo } });
+  const id = toast(title, { description, duration, action: { label: t('app:toast.undo'), onClick: onUndo } });
   return () => toast.dismiss(id);
 }
 
@@ -168,12 +228,12 @@ export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
   const dockShown = usePanelOpen('chatButton') && gameFocused;
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-  const dock = chatDockSize(gameRect.height);
+  const dockWidth = chatDockWidth(gameRect.height);
 
   const offset = {
     right:
       Math.max(0, window.innerWidth - (anchor.x + anchor.width)) +
-      (dockShown ? dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
+      (dockShown ? dockWidth + TOAST_MARGIN / 2 : TOAST_MARGIN),
     bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 

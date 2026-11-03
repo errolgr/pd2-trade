@@ -1,0 +1,60 @@
+{
+  "actions": {
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "remove": "Retirer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "confirm": "Confirmer",
+    "retry": "Réessayer",
+    "refresh": "Actualiser",
+    "copy": "Copier",
+    "copied": "Copié",
+    "search": "Rechercher",
+    "clear": "Effacer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "done": "Terminé",
+    "ok": "OK",
+    "yes": "Oui",
+    "no": "Non",
+    "open": "Ouvrir",
+    "reset": "Réinitialiser",
+    "apply": "Appliquer",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "tryAgain": "Réessayer"
+  },
+  "status": {
+    "loading": "Chargement…",
+    "error": "Une erreur s'est produite",
+    "noResults": "Aucun résultat"
+  },
+  "time": {
+    "justNow": "à l'instant",
+    "secondsAgoShort": "il y a {{count}} s",
+    "minutesAgoShort": "il y a {{count}} min",
+    "hoursAgoShort": "il y a {{count}} h",
+    "daysAgoShort": "il y a {{count}} j",
+    "monthsAgoShort": "il y a {{count}} mois",
+    "yearsAgoShort": "il y a {{count}} a",
+    "secondsAgo_one": "il y a {{count}} seconde",
+    "secondsAgo_many": "il y a {{count}} de secondes",
+    "secondsAgo_other": "il y a {{count}} secondes",
+    "minutesAgo_one": "il y a {{count}} minute",
+    "minutesAgo_many": "il y a {{count}} de minutes",
+    "minutesAgo_other": "il y a {{count}} minutes",
+    "hoursAgo_one": "il y a {{count}} heure",
+    "hoursAgo_many": "il y a {{count}} d'heures",
+    "hoursAgo_other": "il y a {{count}} heures",
+    "daysAgo_one": "il y a {{count}} jour",
+    "daysAgo_many": "il y a {{count}} de jours",
+    "daysAgo_other": "il y a {{count}} jours"
+  },
+  "language": {
+    "system": "Langue du système"
+  }
+}

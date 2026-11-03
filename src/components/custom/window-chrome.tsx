@@ -4,12 +4,15 @@ import { GripVertical, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { scaleIn, useReducedMotionSafe } from '@/lib/motion';
+import { useTranslation } from '@/i18n';
 
 interface WindowChromeProps {
   title: React.ReactNode;
   icon?: React.ReactNode;
   /** Right-side controls rendered before the close button. */
   actions?: React.ReactNode;
+  /** Centred in the bar regardless of the title / actions widths (e.g. a search field). */
+  center?: React.ReactNode;
   onClose?: () => void;
   className?: string;
   titleClassName?: string;
@@ -28,6 +31,7 @@ function WindowChrome({
   title,
   icon,
   actions,
+  center,
   onClose,
   className,
   titleClassName,
@@ -35,8 +39,9 @@ function WindowChrome({
   dragRegion = true,
   showGrip,
   gripId,
-  closeLabel = 'Close',
+  closeLabel,
 }: WindowChromeProps) {
+  const { t } = useTranslation();
   const drag = dragRegion ? { 'data-panel-drag': true } : {};
   const grip = showGrip ?? dragRegion;
 
@@ -45,7 +50,7 @@ function WindowChrome({
       {...drag}
       data-slot="window-chrome"
       className={cn(
-        'flex h-10 shrink-0 select-none items-center gap-2 border-b border-border px-2.5 text-surface-foreground',
+        'relative flex h-10 shrink-0 select-none items-center gap-2 border-b border-border px-2.5 text-surface-foreground',
         dragRegion && 'cursor-grab active:cursor-grabbing',
         className,
       )}
@@ -60,11 +65,16 @@ function WindowChrome({
       >
         {title}
       </div>
+      {center && (
+        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 cursor-default items-center">
+          {center}
+        </div>
+      )}
       {actions && <div className="flex shrink-0 cursor-default items-center gap-1">{actions}</div>}
       {onClose && (
         <button
           type="button"
-          aria-label={closeLabel}
+          aria-label={closeLabel ?? t('common:actions.close')}
           onClick={onClose}
           className="inline-flex size-7 shrink-0 cursor-default items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90"
         >

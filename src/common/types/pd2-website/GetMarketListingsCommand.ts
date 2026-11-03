@@ -24,9 +24,10 @@ export interface MarketListingQuery {
   updated_at: {
     $gte: string; // ISO timestamp
   };
-  $sort: {
-    bumped_at: -1 | 1; // sort order
-  };
+  /** One sort key: newest / oldest bump, or HR price. */
+  $sort: { bumped_at: -1 | 1 } | { hr_price: -1 | 1 };
+  /** Only priced listings (an ascending price sort would rank the unpriced, HR 0, first). */
+  hr_price?: { $gt: number };
   'item.modifiers'?: {
     $all: Array<{
       $elemMatch: {
@@ -40,7 +41,7 @@ export interface MarketListingQuery {
   };
   is_hardcore: boolean;
   is_ladder: boolean;
-  'item.quality.name': string;
+  'item.quality.name': string | { $in: string[] };
   'item.name': {
     $regex: string;
     $options: string;

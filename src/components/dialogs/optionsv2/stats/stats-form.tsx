@@ -8,7 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
-import { DEFAULT_PRICE_WINDOW_HOURS, PRICE_WINDOW_OPTIONS } from '@/lib/price-window';
+import {
+  CORRUPTED_FILTER_OPTIONS,
+  MARGIN_UNIT_OPTIONS,
+  optionLabel,
+  PRICE_WINDOW_SELECT_OPTIONS,
+  RANK_DISPLAY_OPTIONS,
+  type SettingOption,
+} from '../setting-options';
+import { DEFAULT_PRICE_WINDOW_HOURS } from '@/lib/price-window';
+import { useTranslation } from '@/i18n';
 
 const statsFormSchema = z.object({
   fillStatValue: z.number().int().min(0).max(100).optional(),
@@ -23,6 +32,7 @@ const statsFormSchema = z.object({
 type StatsFormValues = z.infer<typeof statsFormSchema>;
 
 export function StatsForm() {
+  const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
   const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -80,33 +90,38 @@ export function StatsForm() {
   }
 
   const marginUnit = form.watch('statFillMarginUnit') ?? 'percent';
+  const selectItems = (options: SettingOption[]) =>
+    options.map((option) => (
+      <SelectItem key={option.value}
+        value={option.value}>
+        {optionLabel(t, option)}
+      </SelectItem>
+    ));
 
   return (
     <Form {...form}>
       <div className="flex flex-col gap-y-6">
-        <SettingsGroup title="Prices">
+        <SettingsGroup title={t('stats.prices.group')}>
           <FormField
             control={form.control}
             name="priceWindowHours"
             render={({ field }) => (
               <SettingsRow
-                label="Price window"
-                description="Recent sales the price-check average is based on. Thinly traded items fall back to a longer window, marked with a tag."
+                settingKey="priceWindowHours"
+                label={t('stats.priceWindow.label')}
+                description={t('stats.priceWindow.description')}
                 control={
-                  <Select value={String(field.value ?? DEFAULT_PRICE_WINDOW_HOURS)}
-                    onValueChange={(value) => field.onChange(Number(value))}>
+                  <Select
+                    value={String(field.value ?? DEFAULT_PRICE_WINDOW_HOURS)}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                  >
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Price window" />
+                        <SelectValue placeholder={t('stats.priceWindow.label')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {PRICE_WINDOW_OPTIONS.map((option) => (
-                        <SelectItem key={option.hours}
-                          value={String(option.hours)}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      {selectItems(PRICE_WINDOW_SELECT_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -117,17 +132,20 @@ export function StatsForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Stat ranges">
+        <SettingsGroup title={t('stats.statRanges.group')}>
           <FormField
             control={form.control}
             name="fillStatValue"
             render={({ field }) => (
               <SettingsRow
-                label={`Fill Stat Value (${marginUnit === 'percent' ? '%' : 'flat'})`}
+                settingKey="fillStatValue"
+                label={
+                  marginUnit === 'percent' ? t('stats.fillStatValue.labelPercent') : t('stats.fillStatValue.labelFlat')
+                }
                 description={
                   marginUnit === 'percent'
-                    ? 'Percentage of the rolled value used as ± margin when filling stat ranges.'
-                    : 'Flat amount applied as ± margin when filling stat ranges (e.g. 2 → ±2).'
+                    ? t('stats.fillStatValue.descriptionPercent')
+                    : t('stats.fillStatValue.descriptionFlat')
                 }
                 control={
                   <div className="flex w-[220px] items-center gap-2">
@@ -164,19 +182,19 @@ export function StatsForm() {
             name="statFillMarginUnit"
             render={({ field }) => (
               <SettingsRow
-                label="Margin Unit"
-                description="How the fill value above is interpreted. Flat is useful for low-roll stats like resists or +skills."
+                settingKey="statFillMarginUnit"
+                label={t('stats.marginUnit.label')}
+                description={t('stats.marginUnit.description')}
                 control={
                   <Select value={field.value ?? 'percent'}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Margin unit" />
+                        <SelectValue placeholder={t('stats.marginUnit.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="percent">Percent (%)</SelectItem>
-                      <SelectItem value="flat">Flat</SelectItem>
+                      {selectItems(MARGIN_UNIT_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -190,8 +208,9 @@ export function StatsForm() {
             name="statFillLeaveMinEmpty"
             render={({ field }) => (
               <SettingsRow
-                label="Leave Min Empty"
-                description="When filling a stat range, leave the minimum blank so searches match anything up to the maximum."
+                settingKey="statFillLeaveMinEmpty"
+                label={t('stats.leaveMinEmpty.label')}
+                description={t('stats.leaveMinEmpty.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
@@ -208,8 +227,9 @@ export function StatsForm() {
             name="statFillLeaveMaxEmpty"
             render={({ field }) => (
               <SettingsRow
-                label="Leave Max Empty"
-                description="When filling a stat range, leave the maximum blank so searches match the rolled value or better."
+                settingKey="statFillLeaveMaxEmpty"
+                label={t('stats.leaveMaxEmpty.label')}
+                description={t('stats.leaveMaxEmpty.description')}
                 control={
                   <FormControl>
                     <Switch checked={field.value ?? false}
@@ -223,26 +243,25 @@ export function StatsForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Filters">
+        <SettingsGroup title={t('stats.filters.group')}>
           <FormField
             control={form.control}
             name="statDefaultCorruptedFilter"
             render={({ field }) => (
               <SettingsRow
-                label="Default Corrupted Filter"
-                description="Initial corruption filter applied when opening price-check on a corruptable item."
+                settingKey="statDefaultCorruptedFilter"
+                label={t('stats.corruptedFilter.label')}
+                description={t('stats.corruptedFilter.description')}
                 control={
                   <Select value={field.value ?? 'both'}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Corrupted filter" />
+                        <SelectValue placeholder={t('stats.corruptedFilter.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="both">Both</SelectItem>
-                      <SelectItem value="corrupted">Corrupted only</SelectItem>
-                      <SelectItem value="non-corrupted">Non-corrupted only</SelectItem>
+                      {selectItems(CORRUPTED_FILTER_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -253,25 +272,25 @@ export function StatsForm() {
           />
         </SettingsGroup>
 
-        <SettingsGroup title="Rare appraisal">
+        <SettingsGroup title={t('stats.rareAppraisal.group')}>
           <FormField
             control={form.control}
             name="rareRankDisplay"
             render={({ field }) => (
               <SettingsRow
-                label="Rare rank display"
-                description="How a rare's price rank among its slot is drawn in the price-check appraisal popover."
+                settingKey="rareRankDisplay"
+                label={t('stats.rankDisplay.label')}
+                description={t('stats.rankDisplay.description')}
                 control={
                   <Select value={field.value ?? 'bar'}
                     onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Rank display" />
+                        <SelectValue placeholder={t('stats.rankDisplay.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="bar">Bar (percentile + vendor/keep lines)</SelectItem>
-                      <SelectItem value="blocks">Blocks (6 rank segments)</SelectItem>
+                      {selectItems(RANK_DISPLAY_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }

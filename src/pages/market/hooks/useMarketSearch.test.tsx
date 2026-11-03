@@ -4,8 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { MarketBackendError } from '@/lib/market-search-api';
 import { runSearch } from '../lib/search';
+import { BROWSER_FACETS } from '../lib/facets';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult, StatFilter } from '../lib/types';
-import { clearMarketSearchCache, MARKET_PAGE_SIZE, searchErrorMessage, useMarketSearch } from './useMarketSearch';
+import {
+  clearMarketSearchCache,
+  MARKET_PAGE_SIZE,
+  searchCountText,
+  searchErrorMessage,
+  useMarketSearch,
+} from './useMarketSearch';
 import type * as SearchModule from '../lib/search';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -45,6 +52,7 @@ const row = (id: string): ScoredListing => ({
 const result = (items: ScoredListing[], over: Partial<SearchResult> = {}): SearchResult => ({
   items,
   total: items.length,
+  totalExact: true,
   fetched: items.length,
   mode: 'server',
   ...over,
@@ -118,16 +126,70 @@ describe('useMarketSearch', () => {
     expect(vi.mocked(runSearch).mock.calls[2][1].sort).toEqual({ by: 'stat', key: 'pseudo_life', dir: 'desc' });
   });
 
-  it('appends pages on loadMore', async () => {
-    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => result([row(`p${opts!.page}`)], { total: 2 }));
-    const f = filters();
+  it('appends pages on loadMore; only the first page asks for facets, which stay for the next pages', async () => {
+    const facets = { sockets: [{ value: 0, count: 2 }] };
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) =>
+      result([row(`p${opts!.page}`)], { total: 2, ...(opts!.facets ? { facets } : {}) }),
+    );
+    const f = filters({ itemName: 'Harlequin Crest' });
     const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
     await waitFor(() => expect(hook.current.hasMore).toBe(true));
-    expect(vi.mocked(runSearch).mock.calls[0][2]).toMatchObject({ page: 0, pageSize: MARKET_PAGE_SIZE });
+    expect(vi.mocked(runSearch).mock.calls[0][2]).toMatchObject({
+      page: 0,
+      pageSize: MARKET_PAGE_SIZE,
+      facets: BROWSER_FACETS,
+    });
+    expect(hook.current.facets).toEqual(facets);
     await act(() => hook.current.loadMore());
     expect(hook.current.items.map((r) => r.listing._id)).toEqual(['p0', 'p1']);
     expect(hook.current.hasMore).toBe(false);
     expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: MARKET_PAGE_SIZE });
+    expect(vi.mocked(runSearch).mock.calls[1][2]).not.toHaveProperty('facets');
+    expect(hook.current.facets).toEqual(facets);
+  });
+
+  it('does not ask for facets on the default search (every live listing)', async () => {
+    vi.mocked(runSearch).mockImplementation(async () => result([row('a')], { total: 1 }));
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
+    await waitFor(() => expect(hook.current.status).toBe('ready'));
+    expect(vi.mocked(runSearch).mock.calls[0][2]?.facets).toBeUndefined();
+    expect(hook.current.facets).toBeNull();
+  });
+
+  it('keeps paging past a page whose rows were all item-less: rows, not shown items, decide', async () => {
+    const pages: SearchResult[] = [
+      result([row('a'), row('b')], { total: 60, fetched: MARKET_PAGE_SIZE }),
+      result([], { total: 60, fetched: MARKET_PAGE_SIZE }),
+      result([row('c')], { total: 60, fetched: 10 }),
+    ];
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) => pages[opts!.page!]);
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    await act(() => hook.current.loadMore());
+    expect(hook.current.hasMore).toBe(true);
+    await act(() => hook.current.loadMore());
+    expect(hook.current.items.map((r) => r.listing._id)).toEqual(['a', 'b', 'c']);
+    expect(hook.current.hasMore).toBe(false);
+  });
+
+  it('pages by the chosen page size, and by MARKET_PAGE_SIZE for a size the settings do not offer', async () => {
+    vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) =>
+      result([row(`p${opts!.page}`)], { total: 100, fetched: 50 }),
+    );
+    const f = filters();
+    const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0, pageSize: 50 }));
+    await waitFor(() => expect(hook.current.hasMore).toBe(true));
+    await act(() => hook.current.loadMore());
+    expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: 50 });
+    // 1 × 50 + 50 rows: all 100 loaded
+    expect(hook.current.hasMore).toBe(false);
+
+    const g = filters({ itemName: 'x' });
+    renderHook(() => useMarketSearch(api, g, { signedIn: true, debounceMs: 0, pageSize: 30 }));
+    await waitFor(() => expect(runSearch).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(runSearch).mock.calls[2][2]).toMatchObject({ page: 0, pageSize: MARKET_PAGE_SIZE });
   });
 
   it('asks to sign in when signed out, and says the service is unavailable when it is', async () => {
@@ -207,5 +269,21 @@ describe('searchErrorMessage', () => {
       'The market service rejected these filters: filters.stats[0].key is bad',
     );
     expect(searchErrorMessage(new Error('boom\nstack'))).toBe('boom');
+  });
+});
+
+describe('searchCountText', () => {
+  const count = (total: number, totalExact: boolean, over: Partial<MarketFilters> = {}) =>
+    searchCountText({ total, totalExact, filters: filters(over) });
+
+  it('says an exact count as is', () => {
+    expect(count(1, true)).toBe('1 listing');
+    expect(count(312, true, { userOnlineGame: 'online' })).toBe('312 listings');
+  });
+
+  it('a capped count is a lower bound, a Seller online count an estimate', () => {
+    expect(count(1000, false)).toBe(`${(1000).toLocaleString()}+ listings`);
+    expect(count(312, false, { userOnlineSite: 'online' })).toBe('~312 listings');
+    expect(count(1, false, { userOnlineGame: 'online' })).toBe('~1 listing');
   });
 });

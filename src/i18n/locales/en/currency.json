@@ -1,0 +1,213 @@
+{
+  "window": {
+    "title": "Net Worth",
+    "retry": "Retry",
+    "tabs": {
+      "overview": "Overview",
+      "runes": "Runes",
+      "currency": "Currency",
+      "ubers": "Uber Mats",
+      "gemsMats": "Gems & Mats",
+      "uniquesSets": "Uniques & Sets",
+      "other": "Other",
+      "rares": "Rares",
+      "raresCrafted": "Rares & Crafted",
+      "history": "History"
+    }
+  },
+  "header": {
+    "netWorth": "Net worth",
+    "deltaLast": "last",
+    "delta24h": "24h",
+    "deltaSeason": "season",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing",
+    "refreshTooltip": "Re-value your stash now",
+    "asOf": "as of {{time}}",
+    "prices": "prices {{day}}",
+    "gold": "{{amount}} gold",
+    "ladderFallback": "valued with ladder prices (no non-ladder market data)"
+  },
+  "trackingDisabled": {
+    "title": "History is off.",
+    "description": "Turn on \"Save net worth history\" in Settings → Net Worth to see a chart, sessions with HR/hour, and what changed between snapshots."
+  },
+  "signedOut": {
+    "chooseAccount": "Choose your PD2 account in Settings to value your stash.",
+    "signInPrompt": "Sign in with your PD2 account to value your stash.",
+    "signIn": "Sign in"
+  },
+  "tabSkeleton": {
+    "title": "No valuation yet.",
+    "description": "Your stash couldn't be valued. Use Retry above once PD2 is reachable."
+  },
+  "categories": {
+    "runes": "Runes",
+    "currency": "Currency",
+    "ubers": "Uber Mats",
+    "gems": "Gems",
+    "mats": "Mats",
+    "uniques": "Uniques",
+    "sets": "Sets",
+    "other": "Other"
+  },
+  "columns": {
+    "item": "Item",
+    "qty": "Qty",
+    "unit": "Unit",
+    "value": "Value",
+    "share": "%",
+    "change7d": "7d",
+    "price": "Price"
+  },
+  "table": {
+    "noResults": "No results.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "sort ascending",
+    "sortDescending": "sort descending",
+    "clearSorting": "clear sorting"
+  },
+  "confidence": {
+    "ok": {
+      "label": "market",
+      "hint": "7-day market average"
+    },
+    "fixed": {
+      "label": "fixed",
+      "hint": "Fixed rune value (few listings)"
+    },
+    "low": {
+      "label": "low",
+      "hint": "Fewer than 10 listings — counted as uncertain, not in the total"
+    },
+    "none": {
+      "label": "unpriced",
+      "hint": "No price data — valued at 0"
+    },
+    "listings_one": "{{count}} listings",
+    "listings_other": "{{count}} listings"
+  },
+  "overview": {
+    "noPricedHoldings": "No priced holdings yet.",
+    "topAside_one": "by value · top {{count}}",
+    "topAside_other": "by value · top {{count}}",
+    "topHoldings": "Top holdings",
+    "nothingPriced": "Nothing priced yet.",
+    "unpriced_one": "{{count}} item unpriced",
+    "unpriced_other": "{{count}} items unpriced",
+    "uncertain": "{{value}} uncertain (low confidence, not in total)",
+    "gold": "{{amount}} gold (not converted)",
+    "byStashTab": "By stash tab"
+  },
+  "holdings": {
+    "searchPlaceholder": "Search…",
+    "searchLabel": "Search holdings",
+    "clearSearch": "Clear search",
+    "hideZero": "Hide zero value",
+    "nothingMatches": "Nothing matches.",
+    "noneInStash": "None in your stash.",
+    "zeroHidden_one": "{{count}} zero-value row hidden (unpriced items are listed but valued at 0).",
+    "zeroHidden_other": "{{count}} zero-value rows hidden (unpriced items are listed but valued at 0).",
+    "count_one": "{{count}} holding",
+    "count_other": "{{count}} holdings"
+  },
+  "history": {
+    "showMore": "Show more ({{remaining}} older)",
+    "chartRange": "Chart range",
+    "ranges": {
+      "24h": "24h",
+      "7d": "7d",
+      "season": "Season",
+      "all": "All"
+    },
+    "rangeChange": "Change over the selected range",
+    "stackByCategory": "Stack by category",
+    "chart": {
+      "netWorth": "Net worth",
+      "emptyTitle": "No snapshots in this range yet.",
+      "emptyDescription": "Snapshots are taken on start-up, every few minutes while Diablo is focused, and when you refresh."
+    },
+    "sessions": {
+      "title": "Sessions",
+      "start": "Start new session",
+      "stop": "Stop session",
+      "emptyTitle": "No sessions yet.",
+      "emptyDescription": "Sessions build automatically from snapshots taken less than 30 minutes apart.",
+      "columns": {
+        "when": "When",
+        "duration": "Duration",
+        "farmed": "Farmed",
+        "drift": "Drift",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "open": "Open session",
+      "manual": "manual",
+      "best": "Best HR/h this season",
+      "noGains": "No item gains.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} snapshots",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} snapshots"
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "selected": "{{selected}}/2 selected",
+      "pickTwo": "Pick two to compare",
+      "emptyTitle": "No snapshots in this range.",
+      "select": "Select snapshot {{time}}",
+      "compareWithPrevious": "Compare with previous"
+    },
+    "diff": {
+      "priceBasis": "Price basis",
+      "pricesThen": "Prices then",
+      "pricesNow": "Prices now",
+      "close": "Close comparison",
+      "farmed": "Farmed",
+      "marketDrift": "Market drift",
+      "total": "Total",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "No holdings changed.",
+      "change": "Change"
+    },
+    "delete": {
+      "thisSeason": "this season",
+      "privacy": "History is private to your PD2 login and stored on pd2trader.com.",
+      "button": "Delete history",
+      "title": "Delete net worth history?",
+      "description": "Removes stored snapshots for {{account}} ({{ladder}}, {{core}}). This cannot be undone.",
+      "season": "Delete {{season}}",
+      "allSeasons": "Delete all seasons",
+      "deleted_one": "Deleted {{count}} snapshots.",
+      "deleted_other": "Deleted {{count}} snapshots."
+    }
+  },
+  "rares": {
+    "stashFallback": "Stash",
+    "emptyTitle": "No rares in your stash",
+    "emptyDescription": "Rare rings, amulets, jewels, armor and weapons in your stash are appraised here (Keep · Check · Vendor).",
+    "groups": {
+      "keep": "Keep",
+      "worthALook": "Worth a look"
+    },
+    "estTitle": "Estimated from {{season}} asking prices of similar rares — not part of the total",
+    "summary": {
+      "raresLine_one": "<label>Rares: </label><keep>{{keep}} Keep</keep><sep> · </sep><check>{{checkHigh}} worth a look</check><sep> · </sep><vendor>{{count}} likely vendor</vendor> <note>(frees {{count}} slot)</note>",
+      "raresLine_other": "<label>Rares: </label><keep>{{keep}} Keep</keep><sep> · </sep><check>{{checkHigh}} worth a look</check><sep> · </sep><vendor>{{count}} likely vendor</vendor> <note>(frees {{count}} slots)</note>",
+      "craftedLine_one": "<label>Crafted: </label><keep>{{keep}} Keep</keep><sep> · </sep><check>{{checkHigh}} worth a look</check><sep> · </sep><vendor>{{count}} likely vendor</vendor> <note>(frees {{count}} slot)</note>",
+      "craftedLine_other": "<label>Crafted: </label><keep>{{keep}} Keep</keep><sep> · </sep><check>{{checkHigh}} worth a look</check><sep> · </sep><vendor>{{count}} likely vendor</vendor> <note>(frees {{count}} slots)</note>",
+      "unpricedRares_one": "{{count}} Keep rare without a market band not included",
+      "unpricedRares_other": "{{count}} Keep rares without a market band not included",
+      "unpricedCrafted_one": "{{count}} Keep crafted item without a market band not included",
+      "unpricedCrafted_other": "{{count}} Keep crafted items without a market band not included",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> in Keep rares (estimated, not in total)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> in Keep crafted items (estimated, not in total)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} likely vendor · {{tab}}",
+      "vendorNote_one": "Frees {{count}} stash slot",
+      "vendorNote_other": "Frees {{count}} stash slots",
+      "lowTitle": "{{n}} likely low value · {{tab}}",
+      "lowNote": "Check items without a key stat"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import React from 'react';
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BrowserOptions } from '@sentry/react';
+import type * as Pd2WebsiteModule from '@/hooks/pd2website/usePD2Website';
 
 vi.mock('@sentry/react', () => ({
   init: vi.fn(),
@@ -13,18 +14,28 @@ vi.mock('@sentry/react', () => ({
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
 vi.mock('@/lib/faro', () => ({ initFaro: vi.fn() }));
+let tauri = false;
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri }));
 const wrap = (name: string) =>
   function Wrapper({ children }: { children: React.ReactNode }) {
     return <div data-wrapper={name}>{children}</div>;
   };
-vi.mock('@/hooks/pd2website/usePD2Website', () => ({
-  AccountMismatchError: class AccountMismatchError extends Error {},
-  Pd2WebsiteProvider: wrap('pd2website'),
-}));
+// Real PD2ApiError/isExpectedApiError so beforeSend is tested against the status rule it actually ships with.
+vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => {
+  const actual: typeof Pd2WebsiteModule = await importOriginal();
+  return {
+    AccountMismatchError: class AccountMismatchError extends Error {},
+    PD2ApiError: actual.PD2ApiError,
+    isExpectedApiError: actual.isExpectedApiError,
+    Pd2WebsiteProvider: wrap('pd2website'),
+  };
+});
 
 // Providers and root components are stubs that name themselves, so the tree is observable without booting the app.
 vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options') }));
 vi.mock('./hooks/useDialog', () => ({ DialogProvider: wrap('dialog') }));
+vi.mock('./hooks/useSignIn', () => ({ SignInProvider: wrap('signin') }));
+vi.mock('./pages/sign-in/SignInPage', () => ({ SignInWindowPage: () => <p>sign-in-window</p> }));
 vi.mock('./hooks/useTray', () => ({ TrayProvider: wrap('tray') }));
 vi.mock('./hooks/useItems', () => ({ ItemsProvider: wrap('items') }));
 vi.mock('./hooks/useNetWorth', () => ({ NetWorthProvider: wrap('networth') }));
@@ -34,7 +45,11 @@ vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
 vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
 vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
+vi.mock('./pages/delist/StashAutoDelistController', () => ({ default: () => <p>stash-auto-delist</p> }));
 vi.mock('./pages/net-worth/NetWorthOverlayController', () => ({ default: () => <p>net-worth-controller</p> }));
+vi.mock('./pages/corrupted-zones/CorruptedZoneTimerController', () => ({
+  default: () => <p>zone-timer-controller</p>,
+}));
 vi.mock('./pages/dev/PrimitivesGallery', () => ({ default: () => <p>gallery</p> }));
 
 /** Loads main.tsx fresh at `path` (it renders on import), returning the Sentry options it registers. */
@@ -71,13 +86,15 @@ describe('main routing', () => {
   it('mounts every provider once around the app controller, handlers and overlay root', async () => {
     const { root } = await boot('/');
     // Overlay sits above the domain providers: Tray, Pd2Website and NetWorth open panels through it.
-    const chain = ['dialog', 'options', 'overlay', 'tray', 'items', 'pd2website', 'whispers', 'networth'];
+    const chain = ['dialog', 'options', 'overlay', 'signin', 'tray', 'items', 'pd2website', 'whispers', 'networth'];
     let node: Element | null = root;
     for (const name of chain) {
       node = node!.querySelector(`:scope > [data-wrapper="${name}"]`);
       expect(node, name).not.toBeNull();
     }
-    expect(node!.textContent).toBe('error-handlerapp-controllerdelist-handlernet-worth-controlleroverlay-root');
+    expect(node!.textContent).toBe(
+      'error-handlerapp-controllerdelist-handlerstash-auto-delistnet-worth-controllerzone-timer-controlleroverlay-root',
+    );
   });
 
   it.each(['/item', '/settings', '/toast', '/chat', '/nope'])(
@@ -93,11 +110,21 @@ describe('main routing', () => {
     expect(root.querySelector('[data-wrapper="options"]')?.textContent).toBe('gallery');
   });
 
-  it('suppresses the native context menu', async () => {
+  it('keeps the browser context menu (Inspect) in browser mode', async () => {
+    await boot('/');
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  // Last: the document listener it adds outlives the boot
+  it('suppresses the native context menu in the Tauri overlay', async () => {
+    tauri = true;
     await boot('/');
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
     document.body.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
+    tauri = false;
   });
 });
 
@@ -108,6 +135,21 @@ describe('main Sentry setup', () => {
     expect(Sentry.init).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(Sentry.init).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['production', true],
+    ['development', false],
+    ['test', false],
+  ])('with NODE_ENV=%s sets enabled=%s, so only release builds report', async (env, enabled) => {
+    vi.stubEnv('NODE_ENV', env);
+    try {
+      const opts = (await boot('/')).sentryOptions();
+      expect(opts.environment).toBe(env);
+      expect(opts.enabled).toBe(enabled);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('drops Tauri IPC breadcrumbs but keeps other HTTP breadcrumbs', async () => {
@@ -138,5 +180,27 @@ describe('main Sentry setup', () => {
     const real = { exception: { values: [{ type: 'TypeError', value: 'x is undefined' }] } };
     expect(send(real, new TypeError('x is undefined'))).toBe(real);
     expect(send({ message: 'Something else' })).toEqual({ message: 'Something else' });
+  });
+
+  it('drops PD2 4xx API errors (404 gone, 403 blocked, 429) but keeps 5xx', async () => {
+    const { sentryOptions } = await boot('/');
+    const opts = sentryOptions();
+    const { PD2ApiError } = await import('@/hooks/pd2website/usePD2Website');
+    const send = (event: object, originalException?: unknown) =>
+      (opts.beforeSend as (e: object, h: object) => unknown)(event, { originalException });
+
+    // console.error('Failed to …:', err) → captureException(err)
+    for (const status of [400, 403, 404, 405, 429]) {
+      expect(send({}, new PD2ApiError(`API Error: ${status}`, status, '/x'))).toBeNull();
+    }
+    // console.error('Failed to …:', err.message) → message event only
+    expect(send({ message: 'Failed to delete listing: API Error: 404 Not Found\n{"name":"NotFound"}' })).toBeNull();
+
+    const server = { exception: { values: [{ type: 'PD2ApiError', value: 'API Error: 502 Bad Gateway' }] } };
+    expect(send(server, new PD2ApiError('API Error: 502 Bad Gateway', 502, '/x'))).toBe(server);
+    expect(send({ message: 'Failed: API Error: 500 Internal Server Error' })).toEqual({
+      message: 'Failed: API Error: 500 Internal Server Error',
+      fingerprint: ['pd2-api-error', 'status-500'],
+    });
   });
 });

@@ -29,12 +29,20 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Get version
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Fail in seconds, before a draft or any build: the version must be newer than the live release,
+      # have no release yet (a draft left by a failed run included), agree across version files and
+      # have a changelog entry. Bump with `npm run release -- <x.y.z|patch|minor>`.
+      - name: Release preflight
+        env:
+          GITHUB_TOKEN: ${{ secrets.PD2_GITHUB_TOKEN }}
+        run: node scripts/release.mjs check
 
       - name: Create release in pd2-trade
         id: create-release
@@ -78,7 +86,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          # Node 26 (lts/* since Nov 2026) ships a global localStorage that shadows jsdom's and breaks the tests (see ci.yml).
+          node-version: 24
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -163,7 +172,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       # Draft assets only: latest.json version, platforms, signatures vs. the pubkey installed builds trust.
       - name: Verify draft release updater artifacts
@@ -199,7 +208,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Verify live latest.json and signed downloads
         run: |
@@ -228,7 +237,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 24
 
       - name: Send Discord notification
         env:
@@ -280,8 +289,20 @@ jobs:
               entries.push(entry);
             }
             
-            // Format with bullet points
-            changelogText = entries.map(entry => `• ${entry}`).join('\n');
+            // Format with bullet points; Discord rejects a description over 4096 characters (400 {"embeds": ["0"]})
+            const DESCRIPTION_LIMIT = 4096;
+            const bullets = entries.map(entry => `• ${entry}`);
+            const more = n => `…and ${n} more in What's New in the app`;
+            changelogText = bullets.join('\n');
+            if (changelogText.length > DESCRIPTION_LIMIT) {
+              const budget = DESCRIPTION_LIMIT - more(bullets.length).length - 1;
+              const kept = [];
+              for (const bullet of bullets) {
+                if ([...kept, bullet].join('\n').length > budget) break;
+                kept.push(bullet);
+              }
+              changelogText = [...kept, more(bullets.length - kept.length)].join('\n');
+            }
           }
 
           // Create Discord embed payload

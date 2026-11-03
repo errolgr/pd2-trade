@@ -21,7 +21,13 @@ import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashRespo
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { isStashItem } from '@/lib/item-utils';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { usePd2Website, AccountMismatchError, AuthenticationError } from '@/hooks/pd2website/usePD2Website';
+import {
+  usePd2Website,
+  AccountMismatchError,
+  AuthenticationError,
+  NoAccountSelectedError,
+} from '@/hooks/pd2website/usePD2Website';
+import { isNetworkError } from '@/lib/network-errors';
 import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
@@ -29,7 +35,7 @@ import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import ListedItemsTab from './ListedItemsTab';
+import MyListingsTab, { type ListingFocus } from '../listings/MyListingsTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -41,6 +47,9 @@ import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
+import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
+import { exactStashMatches } from '../lib/exact-stash-match';
+import { useTranslation } from '@/i18n';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -56,6 +65,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     updateItemByHash,
     deleteMarketListing,
   } = usePd2Website();
+  const { t } = useTranslation(['quickList', 'common']);
   const { settings } = useOptions();
   const {
     addPendingListing,
@@ -75,7 +85,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [totalListingsCount, setTotalListingsCount] = useState<number>(0);
-  const [allListings, setAllListings] = useState<MarketListingEntry[]>([]);
   const [isQueued, setIsQueued] = useState(false);
   const [queuedListingIds, setQueuedListingIds] = useState<Set<string>>(new Set());
   const [isPolling, setIsPolling] = useState(false);
@@ -87,18 +96,28 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const isPollRunningRef = useRef(false); // Prevent overlapping poll cycles
   const isProcessingRef = useRef<Set<string>>(new Set()); // Track which items are being processed
   const pendingListingDataRef = useRef<PendingListing | null>(null);
+  // Every stash item findMatchingItems returned, even when the list shows only the exact match: queueing
+  // must wait for an item that is new to all of them.
+  const stashCandidatesRef = useRef<GameStashItem[]>([]);
 
   const form = useForm<ShortcutFormData>({
     resolver: zodResolver(shortcutFormSchema),
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  const { close: handleClose } = usePanel<'quickList'>();
+  const { close: handleClose, payload, payloadVersion } = usePanel<'quickList'>();
+  // openPanel('quickList', { listingId, edit }) (the palette): the Manage tab, on that listing
+  const focusListing = useMemo<ListingFocus | null>(
+    () =>
+      payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null,
+    [payload, payloadVersion],
+  );
 
   // Complete reset function for new items
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
   const resetAllState = useCallback(() => {
     setMatchingItems([]);
+    stashCandidatesRef.current = [];
     setSelectedItem(null);
     setError(null);
     setIsAccountMismatch(false);
@@ -123,15 +142,19 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     setError(null);
     const startTime = performance.now();
     try {
-      const items = await findMatchingItems(item);
+      const candidates = await findMatchingItems(item);
       const duration = performance.now() - startTime;
+      // Narrow to the very item that was copied/inspected when it is identifiable among the candidates.
+      const exact = exactStashMatches(item, candidates);
+      const items = exact.length > 0 ? exact : candidates;
 
       trackMeasurement(
         'list_item_matching_search',
-        { duration_ms: duration, matched_items: items.length },
+        { duration_ms: duration, matched_items: candidates.length, exact_matches: exact.length },
         { outcome: 'success' },
       );
 
+      stashCandidatesRef.current = candidates;
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
@@ -144,28 +167,33 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
-      // AccountMismatchError / AuthenticationError are expected user-state conditions, not app bugs
-      if (!(err instanceof AccountMismatchError) && !(err instanceof AuthenticationError)) {
-        console.error(err instanceof Error ? err.message : 'Failed to find items');
+      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs;
+      // PD2 unreachable (the HTTP plugin rejects with its error string) is nothing the app can fix
+      if (isNetworkError(err)) {
+        console.warn('[QuickList] Failed to find items:', err);
+      } else if (
+        !(err instanceof AccountMismatchError) &&
+        !(err instanceof AuthenticationError) &&
+        !(err instanceof NoAccountSelectedError)
+      ) {
+        console.error('[QuickList] Failed to find items:', err);
       }
 
       // Handle account mismatch error with user-friendly message
       if (err instanceof AccountMismatchError) {
-        const errorMessage =
-          err.message ||
-          'The selected account is not associated with your logged-in account. Please check your account settings.';
+        const errorMessage = err.message || t('shortcut.accountMismatchFallback');
         setError(errorMessage);
         setIsAccountMismatch(true);
 
         const toastPayload: GenericToastPayload = {
-          title: 'Account Mismatch',
+          title: t('shortcut.accountMismatchTitle'),
           description: errorMessage,
           variant: 'error',
           duration: 8000,
         };
         showToast(toastPayload);
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to find items');
+        setError(err instanceof Error ? err.message : t('shortcut.findFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -234,27 +262,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [pd2MarketQuery, getMarketListingsForStashItems]);
 
-  // Fetch all user listings for the badge and to pass to ListedItemsTab
-  const allListingsQuery = useMemo(() => {
-    if (!authData || !settings) return null;
-    return buildGetAllUserMarketListingsQuery(
-      authData.user._id,
-      settings.mode === 'hardcore',
-      settings.ladder === 'ladder',
-      5, // Fetch first page (5 items to match ITEMS_PER_PAGE) to get both data and total count
-      0,
-    );
-  }, [authData, settings]);
+  // The listing count (tab chip, 50-listing check): one row is enough, PD2 sends the total. Keyed by the user,
+  // mode and ladder only, so other settings changes don't refetch it.
+  const userId = authData?.user?._id;
+  const hardcore = settings?.mode === 'hardcore';
+  const ladder = settings?.ladder === 'ladder';
+  const allListingsQuery = useMemo(
+    () => (userId ? buildGetAllUserMarketListingsQuery(userId, hardcore, ladder, 1, 0) : null),
+    [userId, hardcore, ladder],
+  );
 
   const fetchAllListings = useCallback(async () => {
     if (!allListingsQuery) return;
     try {
       const result = await getMarketListings(allListingsQuery);
-      setAllListings(result.data);
       setTotalListingsCount(result.total);
     } catch (err) {
       console.error('Failed to fetch all listings:', err);
-      setAllListings([]);
       setTotalListingsCount(0);
     }
   }, [allListingsQuery, getMarketListings]);
@@ -262,6 +286,17 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   useEffect(() => {
     fetchAllListings();
   }, [fetchAllListings]);
+
+  // A listing removed anywhere (Manage tab, Ctrl+U delist, chat): drop it from the item's listings and
+  // refetch the listing count
+  useEffect(
+    () =>
+      subscribeListingDeleted((listingId) => {
+        setCurrentListings((prev) => prev.filter((l) => l._id !== listingId));
+        void fetchAllListings();
+      }),
+    [fetchAllListings],
+  );
 
   // Process a queued listing once item is found
   const processQueuedListing = useCallback(
@@ -289,14 +324,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
           const listingsResult = await getMarketListings(allListingsQuery);
+          // null: a 401, re-authentication started
+          if (!listingsResult) throw new AuthenticationError('Sign in to PD2 to list this item');
           const currentTotalCount = listingsResult.total;
 
           // Check if user has reached the maximum number of listings (50)
           if (currentTotalCount >= 50) {
             const warningToast: GenericToastPayload = {
-              title: 'Maximum listings reached',
-              description:
-                'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
+              title: t('shortcut.maxListingsTitle'),
+              description: t('shortcut.maxListingsDescription'),
               variant: 'error',
             };
             showToast(warningToast);
@@ -321,10 +357,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
-          title: 'Item listed!',
-          description: `Your queued item has been listed on the PD2 marketplace.`,
+          title: t('shortcut.itemListedTitle'),
+          description: t('shortcut.queuedListedDescription'),
           action: {
-            label: stashItem?.name || 'Go to listing',
+            label: stashItem?.name || t('shortcut.goToListing'),
             type: ToastActionType.OPEN_MARKET_LISTING,
             data: {
               listingId: listing._id,
@@ -334,15 +370,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         showToast(toastPayload);
       } catch (err) {
-        console.error('[Queue] Failed to process queued listing:', err);
+        if (isNetworkError(err)) console.warn('[Queue] Failed to process queued listing:', err);
+        else if (!(err instanceof AuthenticationError)) console.error('[Queue] Failed to process queued listing:', err);
         trackMeasurement(
           'list_item_create',
           { duration_ms: performance.now() - startTime },
           { outcome: 'error', source: 'queued' },
         );
         const errorToast: GenericToastPayload = {
-          title: 'Failed to list item',
-          description: err instanceof Error ? err.message : 'Failed to list queued item',
+          title: t('shortcut.listFailedTitle'),
+          description: err instanceof Error ? err.message : t('shortcut.listQueuedFailed'),
           variant: 'error',
         };
         showToast(errorToast);
@@ -404,8 +441,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         // Show error toast
         const timeoutToast: GenericToastPayload = {
-          title: 'Listing timeout',
-          description: `The item "${pendingListing.item.name || pendingListing.item.type}" could not be listed. The server did not sync the item within the timeout period. Please try again.`,
+          title: t('shortcut.timeoutTitle'),
+          description: t('shortcut.timeoutDescription', { name: pendingListing.item.name || pendingListing.item.type }),
           variant: 'error',
         };
         showToast(timeoutToast);
@@ -481,10 +518,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           });
 
           const toastPayload: GenericToastPayload = {
-            title: 'Account Mismatch',
-            description:
-              err.message ||
-              'The selected account is not associated with your logged-in account. Please check your account settings.',
+            title: t('shortcut.accountMismatchTitle'),
+            description: err.message || t('shortcut.accountMismatchFallback'),
             variant: 'error',
             duration: 8000,
           };
@@ -552,9 +587,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       await fetchAllListings();
       if (totalListingsCount >= 50) {
         const warningToast: GenericToastPayload = {
-          title: 'Maximum listings reached',
-          description:
-            'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
+          title: t('shortcut.maxListingsTitle'),
+          description: t('shortcut.maxListingsDescription'),
           variant: 'error',
         };
         showToast(warningToast);
@@ -562,9 +596,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         return;
       }
 
-      // Store initial matching hashes if there are multiple matches
-      const initialMatchingHashes =
-        matchingItems.length > 0 ? new Set(matchingItems.map((item) => item.hash)) : undefined;
+      // Store the hashes of every stash candidate so the queue waits for an item new to all of them
+      const candidates = stashCandidatesRef.current;
+      const initialMatchingHashes = candidates.length > 0 ? new Set(candidates.map((item) => item.hash)) : undefined;
 
       const pendingId = addPendingListing(item, values, initialMatchingHashes);
 
@@ -574,11 +608,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
       trackEvent('list_item_queued', { has_multiple_matches: matchingItems.length > 0 });
       const queuedToast: GenericToastPayload = {
-        title: 'Item queued',
+        title: t('shortcut.queuedTitle'),
         description:
-          matchingItems.length > 0
-            ? "We're waiting for the new item to appear in your stash (usually takes a few minutes). Once it appears, it will be listed automatically."
-            : "We're waiting for the server to sync your item (usually takes a few minutes). Once synced, it will be listed automatically.",
+          matchingItems.length > 0 ? t('shortcut.queuedNewItemDescription') : t('shortcut.queuedSyncDescription'),
         variant: 'default',
       };
       showToast(queuedToast);
@@ -593,7 +625,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
 
     if (!selectedItem) {
-      setError('Please select an item to list');
+      setError(t('shortcut.selectItemError'));
       trackEvent('list_item_submit_rejected', { reason: 'no_item_selected' });
       return;
     }
@@ -626,7 +658,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
         await fetchAllListings(); // Refresh all listings
-        showToast({ title: 'PD2 Trader', description: 'Listing updated!' });
+        showToast({ title: 'PD2 Trader', description: t('toasts.listingUpdated') });
 
         trackMeasurement(
           'list_item_update',
@@ -639,9 +671,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         // Check if user has reached the maximum number of listings (50)
         if (totalListingsCount >= 50) {
           const warningToast: GenericToastPayload = {
-            title: 'Maximum listings reached',
-            description:
-              'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
+            title: t('shortcut.maxListingsTitle'),
+            description: t('shortcut.maxListingsDescription'),
             variant: 'error',
           };
           showToast(warningToast);
@@ -664,10 +695,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
-          title: 'Item listed!',
-          description: `Added to the PD2 marketplace.`,
+          title: t('shortcut.itemListedTitle'),
+          description: t('shortcut.addedDescription'),
           action: {
-            label: selectedItem?.name || 'Go to listing',
+            label: selectedItem?.name || t('shortcut.goToListing'),
             type: ToastActionType.OPEN_MARKET_LISTING,
             data: {
               listingId: listing._id,
@@ -686,8 +717,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         { duration_ms: performance.now() - startTime },
         { outcome: 'error', source: isAlreadyListed ? undefined : 'direct' },
       );
-      console.error(err instanceof Error ? err.message : 'Failed to list/update item');
-      setError(err instanceof Error ? err.message : 'Failed to list/update item');
+      if (isNetworkError(err)) console.warn('[QuickList] Failed to list/update item:', err);
+      else if (!(err instanceof AuthenticationError)) console.error('[QuickList] Failed to list/update item:', err);
+      setError(err instanceof Error ? err.message : t('shortcut.listUpdateFailed'));
     } finally {
       setSubmitLoading(false);
     }
@@ -795,6 +827,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setActiveTab('listed-items');
     }
   }, [item, resetAllState]);
+  useEffect(() => {
+    if (focusListing) setActiveTab('listed-items');
+  }, [focusListing]);
 
   // Render queued items view
   const renderQueuedItemsContent = () => {
@@ -805,9 +840,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (queuedItems.length === 0) {
       return (
         <EmptyState icon={<ListChecks />}
-          title="No Queued Items"
+          title={t('queued.emptyTitle')}
           className="h-full">
-          Items you queue for listing will appear here.
+          {t('queued.emptyDescription')}
         </EmptyState>
       );
     }
@@ -827,11 +862,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               strokeWidth={1}
             />
           </span>
-          <div className="text-base font-semibold tracking-tight">Items queued for listing</div>
-          <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
-            We&apos;re waiting for the server to sync your items (usually takes a few minutes). Once synced, they will
-            be listed automatically.
-          </div>
+          <div className="text-base font-semibold tracking-tight">{t('queued.heading')}</div>
+          <div className="text-sm text-muted-foreground max-w-md leading-relaxed">{t('queued.description')}</div>
           <AnimatePresence>
             {isPolling && (
               <motion.div
@@ -842,12 +874,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 role="status"
               >
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Checking stash...</span>
+                <span>{t('queued.checkingStash')}</span>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 min-h-0 [&_[data-radix-scroll-area-viewport]>div]:!block">
           <motion.div
             className="flex flex-col gap-2 p-px pb-2 pr-2"
             variants={listStagger}
@@ -878,19 +910,19 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                           {price && (
                             <span className="rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
-                              {`Price: ${price} HR`}
+                              {t('queued.price', { price })}
                             </span>
                           )}
-                          {note && <span className="truncate">{`Note: ${note}`}</span>}
+                          {note && <span className="truncate">{t('queued.note', { note })}</span>}
                         </div>
                       )}
                       <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="size-3 shrink-0" />
-                        <span className="shrink-0">Time remaining: ~{minutesRemaining} minutes</span>
+                        <span className="shrink-0">{t('queued.timeRemaining', { count: minutesRemaining })}</span>
                         <div
                           className="h-1 flex-1 overflow-hidden rounded-full bg-muted"
                           role="progressbar"
-                          aria-label="Queue timeout"
+                          aria-label={t('queued.timeoutProgress')}
                           aria-valuenow={Math.round(elapsedPct)}
                           aria-valuemin={0}
                           aria-valuemax={100}
@@ -926,7 +958,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                       }}
                     >
                       <X className="size-3.5" />
-                      Cancel
+                      {t('common:actions.cancel')}
                     </Button>
                   </motion.div>
                 );
@@ -943,10 +975,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (!item) {
       return (
         <EmptyState icon={<PackageSearch />}
-          title="No Item Selected"
+          title={t('shortcut.noItemTitle')}
           className="h-[300px]">
-          Copy an item in-game (Ctrl+C) and reopen this window to list it, or select &quot;Manage Listings&quot; to view
-          your active trades.
+          {t('shortcut.noItemDescription')}
         </EmptyState>
       );
     }
@@ -996,27 +1027,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </span>
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-              <span>No items found matching &quot;{item.name || item.type}&quot;</span>
+              <span>{t('shortcut.noItemsFound', { name: item.name || item.type })}</span>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label="Why wasn't my item found?"
+                    aria-label={t('shortcut.whyNotFound')}
                     className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
                     <AlertCircle className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs text-center">
-                  An item won&apos;t be found unless it is placed in your shared stash (not personal stash) and you have
-                  made a new game.
+                  {t('shortcut.notFoundTooltip')}
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">
-              You can queue this item to be listed automatically. We&apos;ll wait for the server to sync it from your
-              stash (usually takes a few minutes).
-            </div>
+            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">{t('shortcut.queueHint')}</div>
           </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)}
@@ -1074,7 +1101,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                   >
                     <div className="flex items-center gap-2">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">None of these match?</span>
+                      <span className="text-xs text-muted-foreground">{t('shortcut.noneMatch')}</span>
                     </div>
                     <Button
                       type="button"
@@ -1086,7 +1113,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                       }}
                       className="text-xs h-7 px-3"
                     >
-                      Queue Item
+                      {t('form.queueItem')}
                     </Button>
                   </motion.div>
                 )}
@@ -1101,7 +1128,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                       className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground"
                     >
                       <Hourglass className="size-3.5 shrink-0 text-primary" />
-                      Queue this item to wait for the new one to appear in your stash (usually takes a few minutes).
+                      {t('shortcut.queueModeHint')}
                     </motion.div>
                   )}
                   <ListingFormFields
@@ -1123,9 +1150,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     // 6. Fallback (No item provided manually)
     return (
       <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-        <p className="text-center">
-          No item selected. Use the shortcut or navigate with an item parameter to list items.
-        </p>
+        <p className="text-center">{t('shortcut.fallback')}</p>
       </div>
     );
   };
@@ -1184,24 +1209,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                           style={{ fontFamily: 'DiabloFont' }}
                           disabled={item ? !isStashItem(item) : false}
                         >
-                          List Item
+                          {t('tabs.listItem')}
                         </TabsTrigger>
                       </span>
                     </TooltipTrigger>
                     {item && !isStashItem(item) && (
                       <TooltipContent>
-                        <p>Item must be in your shared stash to list.</p>
+                        <p>{t('tabs.mustBeInStash')}</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
                 </TooltipProvider>
                 <TabsTrigger value="listed-items"
                   className="font-bold px-2.5">
-                  {tabLabel('Manage', totalListingsCount)}
+                  {tabLabel(t('tabs.manage'), totalListingsCount)}
                 </TabsTrigger>
                 <TabsTrigger value="queued"
                   className="font-bold px-2.5">
-                  {tabLabel('Queued', queuedListingIds.size)}
+                  {tabLabel(t('tabs.queued'), queuedListingIds.size)}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1209,7 +1234,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             <Button
               type="button"
               id="titlebar-close"
-              aria-label="Close"
+              aria-label={t('common:actions.close')}
               size="icon"
               className="size-7 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
               variant="ghost"
@@ -1225,14 +1250,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </TabsContent>
 
           <TabsContent value="listed-items"
-            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
-            <ListedItemsTab
-              onClose={handleClose}
-              initialListings={allListings}
-              initialTotalCount={totalListingsCount}
-              onTotalCountChange={setTotalListingsCount}
-              onListingsChange={setAllListings}
-            />
+            className="flex-1 flex flex-col min-h-0 px-3 pt-2.5 pb-3">
+            <MyListingsTab onTotalCountChange={setTotalListingsCount}
+              focus={focusListing} />
           </TabsContent>
 
           <TabsContent value="queued"

@@ -7,7 +7,7 @@ import { fetch as tauriFetch } from '@/lib/browser-http';
 import { useOptions } from '@/hooks/useOptions';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { GenericToastPayload } from '@/common/types/Events';
-import { useOAuth } from './useOAuth';
+import { cancelOAuthFlow, useOAuth, useOAuthFlowActive, useOAuthFlowLink } from './useOAuth';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
@@ -89,13 +89,118 @@ describe('useOAuth startOAuthFlow', () => {
 
     expect(outcome).toBe('acc');
     expect(pollCount()).toBe(4);
-    expect(invoke).toHaveBeenCalledWith('open_oauth_url', { url: 'https://auth' });
+    expect(invoke).toHaveBeenCalledWith('open_url', { url: 'https://auth' });
     expect(updateSettings).toHaveBeenCalledWith({
       pd2Token: 'acc',
       pd2RefreshToken: 'ref',
       pd2TokenExpiry: NOW + 2000 * 4 + 3600 * 1000,
     });
     expect(toasts().map((t) => t.description)).toEqual(['Authentication successful!']);
+  });
+
+  it.each([
+    [
+      'the user cancels opening the browser',
+      () =>
+        vi
+          .mocked(invoke)
+          .mockRejectedValueOnce('Failed to open URL: The operation was canceled by the user. (os error 1223)'),
+      'Authentication failed. Please try again.',
+    ],
+    [
+      'pd2trader.com is unreachable',
+      () =>
+        vi
+          .mocked(tauriFetch)
+          .mockRejectedValueOnce('error sending request for url (https://pd2trader.com/api/auth/oauth/start)'),
+      "Couldn't reach pd2trader.com. Check your internet connection, firewall or antivirus, then try again.",
+    ],
+  ])('warns instead of reporting an error when %s', async (_label, fail, toast) => {
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    fail();
+    const { result } = renderHook(() => useOAuth());
+
+    let outcome: string | false | undefined;
+    await act(async () => {
+      outcome = await result.current.startOAuthFlow();
+    });
+
+    expect(outcome).toBe(false);
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith('[OAuth] Flow failed:', expect.any(String));
+    expect(toasts().map((t) => t.description)).toEqual([toast]);
+  });
+
+  it('still reports unexpected failures', async () => {
+    routeFetch([], jsonResponse(null, 500));
+    const { result } = renderHook(() => useOAuth());
+
+    await act(async () => {
+      await result.current.startOAuthFlow();
+    });
+
+    expect(console.error).toHaveBeenCalledWith('[OAuth] Flow failed:', expect.any(Error));
+  });
+
+  it('offers the sign-in link while the flow runs, and clears it when the flow ends', async () => {
+    routeFetch([jsonResponse(null, 404), jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+    expect(result.current.link).toBeNull();
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link).toEqual({ url: 'https://auth', openFailed: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(pending).resolves.toBe('acc');
+    });
+    expect(result.current.link).toBeNull();
+  });
+
+  it('keeps waiting when no browser could be opened, so the user can open the link by hand', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce('/usr/bin/xdg-open failed (exit status: 3)');
+    routeFetch([jsonResponse(null, 404), jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link).toEqual({ url: 'https://auth', openFailed: true });
+    expect(console.warn).toHaveBeenCalledWith('[OAuth] Could not open the browser:', expect.any(String));
+
+    // The user opened the copied link: the flow finishes like any other
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(pending).resolves.toBe('acc');
+    });
+    expect(console.error).not.toHaveBeenCalled();
+    expect(toasts().map((t) => t.description)).toEqual(['Authentication successful!']);
+    expect(result.current.link).toBeNull();
+  });
+
+  it('drops the link of a cancelled flow', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce('/usr/bin/xdg-open failed (exit status: 3)');
+    routeFetch([jsonResponse(null, 404)]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), link: useOAuthFlowLink() }));
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(result.current.link?.openFailed).toBe(true);
+
+    await act(async () => {
+      cancelOAuthFlow();
+      await expect(pending).resolves.toBe(false);
+    });
+    expect(result.current.link).toBeNull();
   });
 
   it('outside Tauri opens the sign-in tab during the click, then points it at PD2', async () => {
@@ -247,6 +352,47 @@ describe('useOAuth startOAuthFlow', () => {
     expect(toasts()).toEqual([]);
   });
 
+  it('cancelOAuthFlow ends the running flow like an abort, whoever started it, so a retry can start', async () => {
+    routeFetch([jsonResponse(null, 404)]);
+    const { result } = renderHook(() => ({ oauth: useOAuth(), active: useOAuthFlowActive() }));
+    const caller = new AbortController();
+    expect(result.current.active).toBe(false);
+
+    let pending!: Promise<string | false>;
+    await act(async () => {
+      pending = result.current.oauth.startOAuthFlow(caller.signal);
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(pollCount()).toBe(1);
+    expect(result.current.active).toBe(true);
+
+    await act(async () => {
+      cancelOAuthFlow();
+      await expect(pending).resolves.toBe(false);
+    });
+    expect(result.current.active).toBe(false);
+    expect(toasts()).toEqual([]);
+
+    // Polling stopped; the retry runs its own flow
+    routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
+    vi.mocked(tauriFetch).mockClear();
+    await act(async () => {
+      const retry = result.current.oauth.startOAuthFlow();
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(retry).resolves.toBe('acc');
+    });
+    expect(pollCount()).toBe(1);
+    // Aborting the cancelled flow's caller later touches nothing
+    caller.abort();
+    expect(result.current.active).toBe(false);
+  });
+
+  it('cancelOAuthFlow does nothing when no flow runs', () => {
+    const { result } = renderHook(() => useOAuthFlowActive());
+    act(() => cancelOAuthFlow());
+    expect(result.current).toBe(false);
+  });
+
   it('does nothing when the signal is already aborted', async () => {
     routeFetch([jsonResponse({ accessToken: 'acc', expiresIn: 60 })]);
     const { result } = renderHook(() => useOAuth());
@@ -257,6 +403,23 @@ describe('useOAuth startOAuthFlow', () => {
       await expect(result.current.startOAuthFlow(closed.signal)).resolves.toBe(false);
     });
     expect(tauriFetch).not.toHaveBeenCalled();
+  });
+
+  it('stops at a banned sign-in: no tokens stored, a banned toast instead of a timeout', async () => {
+    routeFetch([jsonResponse(null, 404), jsonResponse({ message: 'This PD2 Trader account is banned' }, 403)]);
+    const { result } = renderHook(() => useOAuth());
+
+    let outcome: string | false | undefined;
+    await act(async () => {
+      const pending = result.current.startOAuthFlow().then((v) => (outcome = v));
+      await vi.advanceTimersByTimeAsync(2000 * 2);
+      await pending;
+    });
+
+    expect(outcome).toBe(false);
+    expect(pollCount()).toBe(2);
+    expect(updateSettings).not.toHaveBeenCalled();
+    expect(toasts().map((t) => t.description)).toEqual(['This PD2 account is banned from PD2 Trader.']);
   });
 });
 
@@ -295,5 +458,18 @@ describe('useOAuth refreshTokens', () => {
 
     await expect(result.current.refreshTokens('old')).resolves.toBe(false);
     expect(updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('signs a banned user out for good when the refresh is refused with 403', async () => {
+    vi.mocked(tauriFetch).mockResolvedValue(jsonResponse({ message: 'banned' }, 403));
+    const { result } = renderHook(() => useOAuth());
+
+    await expect(result.current.refreshTokens('old')).resolves.toBe(false);
+    expect(updateSettings).toHaveBeenCalledWith({
+      pd2Token: undefined,
+      pd2RefreshToken: undefined,
+      pd2TokenExpiry: undefined,
+    });
+    expect(toasts().map((t) => t.description)).toEqual(['This PD2 account is banned from PD2 Trader.']);
   });
 });

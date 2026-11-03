@@ -199,6 +199,28 @@ describe('useSocialActions', () => {
     expect(onAuthError).toHaveBeenCalledTimes(2);
   });
 
+  it('treats a 404 as done: delete reports true (already gone), mark-read false (nothing to mark)', async () => {
+    const notFound = () => fakeResponse(404, { name: 'NotFound', message: "No record found for id 'c5'" }, 'Not Found');
+    const { actions, onAuthError } = social('tok');
+    fetchMock.mockResolvedValueOnce(notFound());
+    await expect(actions.deleteConversation('c5')).resolves.toBe(true);
+    fetchMock.mockResolvedValueOnce(notFound());
+    await expect(actions.markMessagesAsRead(['m1'], 'u1')).resolves.toBe(false);
+    expect(onAuthError).not.toHaveBeenCalled();
+  });
+
+  it('sendMessage resolves null with a warning when PD2 refuses the message (403 Blocked)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce(
+      fakeResponse(403, { name: 'Forbidden', message: 'Blocked', code: 403 }, 'Forbidden'),
+    );
+    const { actions, onAuthError } = social('tok');
+    await expect(actions.sendMessage('c1', 'x', 'u1')).resolves.toBeNull();
+    expect(console.warn).toHaveBeenCalledWith('[Chat] Message refused (403):', expect.stringContaining('Blocked'));
+    expect(console.error).not.toHaveBeenCalled();
+    expect(onAuthError).not.toHaveBeenCalled();
+  });
+
   it('keeps the same callbacks across settings changes that keep the token, so chat does not refetch', () => {
     const onAuthError = vi.fn();
     const { result, rerender } = renderHook(({ settings }) => useSocialActions({ settings, onAuthError }), {

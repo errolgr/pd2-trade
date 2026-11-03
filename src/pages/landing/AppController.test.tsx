@@ -139,6 +139,38 @@ describe('AppController price check hotkey', () => {
     expect(h.overlay.openPanel).not.toHaveBeenCalledWith('itemSearch', expect.anything());
   });
 
+  it('opens the price check without waiting for the clipboard restore (it may retry a busy clipboard)', async () => {
+    const restore = () => Promise.withResolvers<void>().promise; // never settles
+    vi.mocked(useClipboard).mockReturnValue({ read: async () => clipboard, copy: restore } as never);
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM sword') });
+  });
+
+  it("says nothing was copied when the game didn't copy anything (no item, or the Ctrl+C never reached it)", async () => {
+    keyPress.mockImplementation(async () => {}); // e.g. a Linux desktop that blocks simulated keys
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(keyPress).toHaveBeenCalledWith('ctrl+c');
+    expect(toasts()).toContainEqual(
+      expect.objectContaining({ description: expect.stringMatching(/^No item was copied\./) }),
+    );
+    expect(toasts()).not.toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
+    expect(clipboard).toBe('user text');
+  });
+
+  it('still checks an item the user copied themselves when the Ctrl+C never reached the game', async () => {
+    keyPress.mockImplementation(async () => {});
+    clipboard = 'ITEM copied by hand';
+    await mount();
+    await press(0);
+    await advance(300);
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('itemSearch', { text: encodeItem('ITEM copied by hand') });
+    expect(toasts()).toEqual([]);
+  });
+
   it('hands the keyboard back to the game before copying when an open panel holds it', async () => {
     h.keyboardClaimed = true;
     await mount();
@@ -200,20 +232,20 @@ describe('AppController list and delist hotkeys', () => {
     expect(toasts()).toEqual([]);
   });
 
-  it('opens Quick List in an error state and explains when the item is not in the shared stash', async () => {
+  it('opens Quick List in an error state and explains when the item is not in a stash', async () => {
     itemUnderCursor = 'ITEM inventory ring';
     await mount();
     await press(1);
     await advance(300);
     expect(h.overlay.openPanel).toHaveBeenCalledWith(
       'quickList',
-      { error: 'not_shared_stash' },
+      { error: 'not_in_stash' },
       { placement: 'cursor' },
     );
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
-        description: expect.stringContaining('not in your shared stash'),
+        description: 'This item is not in your stash (shared or personal) and cannot be listed.',
       }),
     );
   });
@@ -225,10 +257,23 @@ describe('AppController list and delist hotkeys', () => {
     await advance(300);
     expect(h.overlay.openPanel).toHaveBeenCalledWith(
       'quickList',
-      { error: 'not_shared_stash' },
+      { error: 'not_in_stash' },
       { placement: 'cursor' },
     );
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
+  });
+
+  it('says nothing was copied when listing with no item under the cursor', async () => {
+    itemUnderCursor = null;
+    await mount();
+    await press(1);
+    await advance(300);
+    expect(toasts()).toContainEqual(
+      expect.objectContaining({
+        title: 'Cannot List Item',
+        description: expect.stringMatching(/^No item was copied\./),
+      }),
+    );
   });
 
   it('delist hotkey hands a valid item to the delist handler', async () => {
@@ -274,6 +319,12 @@ describe('AppController hotkey registration', () => {
     await mount();
     await press(7);
     expect(h.overlay.togglePanel).toHaveBeenCalledWith('market');
+  });
+
+  it('builds hotkey toggles the builds panel', async () => {
+    await mount();
+    await press(8);
+    expect(h.overlay.togglePanel).toHaveBeenCalledWith('builds');
   });
 });
 
@@ -353,5 +404,27 @@ describe('AppController chat watcher', () => {
   it('starts the watcher exactly once per settings change', async () => {
     await mount();
     expect(invoked.filter((c) => c === 'start_chat_watcher')).toHaveLength(1);
+  });
+
+  it.each([
+    [
+      'warns (no error report) when the chat log is missing from the Diablo II directory',
+      'Could not find or create chat log file. Please check your Diablo II Directory settings.',
+      'warn',
+    ],
+    ['still reports other watcher failures', 'Failed to watch chat log file: access denied', 'error'],
+  ] as const)('%s', async (_label, message, level) => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      invoked.push(cmd);
+      if (cmd === 'start_chat_watcher') throw message;
+      return undefined;
+    });
+    await mount();
+    await advance(0);
+
+    const reported = error.mock.calls.some((args) => args.includes(message));
+    const warned = vi.mocked(console.warn).mock.calls.some((args) => args.includes(message));
+    expect([reported, warned]).toEqual(level === 'error' ? [true, false] : [false, true]);
   });
 });

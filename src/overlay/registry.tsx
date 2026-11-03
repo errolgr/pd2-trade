@@ -12,6 +12,10 @@ import NetWorthPanelPage from '@/pages/net-worth/NetWorthPanelPage';
 import { NET_WORTH_PANEL_SIZE } from '@/pages/net-worth/overlay';
 import { CHAT_DOCK_FRAME } from '@/pages/chat/chat-dock';
 import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
+import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
+import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
+import BuildsPage from '@/pages/builds/BuildsPage';
+import PalettePage from '@/pages/palette/PalettePage';
 import type { PanelDefs } from './types';
 
 /**
@@ -37,7 +41,9 @@ export const PANEL_DEFS: PanelDefs = {
   quickList: {
     id: 'quickList',
     component: QuickListPage,
-    size: { width: 600, height: 512 },
+    // Fits ~6 listing cards / ~16 compact rows; clamped to the screen
+    size: { width: 720, height: 680 },
+    minSize: { width: 520, height: 420 },
     resizable: true,
     placement: 'cursor', // manage mode opens with { placement: 'gameCenter' }
     persist: false,
@@ -133,6 +139,7 @@ export const PANEL_DEFS: PanelDefs = {
     persist: false,
     keyboard: 'onPointerDown',
     keepMounted: false,
+    // Browser mode only (Tauri uses the native sign-in window, see useSignIn). Only the user closes it.
     hideOnGameBlur: false,
   },
 
@@ -190,5 +197,66 @@ export const PANEL_DEFS: PanelDefs = {
     keepMounted: true, // search results and filters survive closing (like chat)
     hideOnGameBlur: true,
     closeOnBlur: true,
+  },
+
+  // ---- listingDetail (Group Market): a drawer on the game's right edge ----
+  listingDetail: {
+    id: 'listingDetail',
+    component: ListingDrawerPage,
+    size: { width: 400, height: 800 }, // height = game height via placement 'gameRight'
+    resizable: false,
+    placement: 'gameRight',
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false,
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- corruptedZoneTimer (Group CorruptedZones) ----
+  corruptedZoneTimer: {
+    id: 'corruptedZoneTimer',
+    component: CorruptedZoneTimerPage,
+    size: { width: 360, height: 32 },
+    resizable: false,
+    placement: 'gameCenter', // the timer sizes and places itself (anchor setting / dragged position) via setRect
+    persist: true,
+    keyboard: 'never',
+    keepMounted: false,
+    hideOnGameBlur: true,
+    // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
+    interactive: 'children',
+  },
+
+  // ---- builds (Group Builds) ----
+  builds: {
+    id: 'builds',
+    component: BuildsPage,
+    // Meta: usage | characters | core kit; character view: dolls + skills | gear up / timeline. Clamped to the screen.
+    size: { width: 1280, height: 820 },
+    minSize: { width: 920, height: 560 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: true, // filters, page and the open character survive closing
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- palette (Group Palette): one search over every panel, item, build and setting ----
+  palette: {
+    id: 'palette',
+    component: PalettePage,
+    // The bar sits at the top of a click-through frame centered on the game and grows down as results come in
+    size: { width: 640, height: 520 },
+    resizable: false,
+    placement: 'gameCenter',
+    persist: false,
+    keyboard: 'onPointerDown', // opened with { focus: true }: typing starts right away
+    keepMounted: false, // always opens fresh
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+    interactive: 'children',
   },
 };

@@ -32,12 +32,14 @@ afterEach(() => {
 });
 
 describe('searchMarketListings', () => {
-  it('POSTs the filters with page and limit, and maps the rows', async () => {
+  it('POSTs the filters with page and limit, maps the rows and drops those without an item', async () => {
     const listing = { _id: 'L1', price: '2 hr', hr_price: 2, item: { name: 'Dread Visage' } };
+    const unscored = { _id: 'L3', item: { name: 'Shako' } };
     respond(200, {
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
-        { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
+        { listing: { _id: 'L2' }, pseudo: {}, score: 1, value: 1 },
+        { listing: unscored, pseudo: {}, score: null, value: null },
       ],
       total: 312,
       page: 1,
@@ -54,11 +56,55 @@ describe('searchMarketListings', () => {
     expect(JSON.parse(init?.body as string)).toEqual(JSON.parse(JSON.stringify(marketSearchBody(f, 1, 25))));
     expect(result).toEqual({
       total: 312,
+      totalExact: true,
+      // Rows the service sent, the dropped one included: paging reads this
+      fetched: 3,
       items: [
         { listing, pseudo: { pseudo_total_res: 75 }, score: 95, value: 47.5 },
-        { listing: { _id: 'L2' }, pseudo: {}, score: null, value: null },
+        { listing: unscored, pseudo: {}, score: null, value: null },
       ],
     });
+  });
+
+  it("reads each row's status and lifetime, and sends the statuses a search asks for", async () => {
+    const listing = { _id: 'L1', item: { name: 'Shako' } };
+    respond(200, {
+      items: [
+        {
+          listing,
+          pseudo: {},
+          score: null,
+          value: null,
+          status: 'removed',
+          listedAt: '2026-10-20T09:00:00.000Z',
+          endedAt: '2026-10-22T09:00:00.000Z',
+          durationSeconds: 172800,
+        },
+      ],
+      total: 1,
+    });
+    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed', 'expired'] });
+
+    const result = await search(f);
+
+    expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string).filters.status).toEqual([
+      'sold',
+      'removed',
+      'expired',
+    ]);
+    expect(result.items[0]).toMatchObject({
+      status: 'removed',
+      listedAt: '2026-10-20T09:00:00.000Z',
+      endedAt: '2026-10-22T09:00:00.000Z',
+      durationSeconds: 172800,
+    });
+  });
+
+  it('reads totalExact, an exact count when the service omits it', async () => {
+    respond(200, { items: [], total: 1000, totalExact: false });
+    await expect(search()).resolves.toMatchObject({ total: 1000, totalExact: false });
+    respond(200, { items: [], total: 1000, totalExact: 'no' });
+    await expect(search()).resolves.toMatchObject({ totalExact: true });
   });
 
   it.each([
@@ -146,24 +192,72 @@ describe('marketSearchBody', () => {
     expect(marketSearchBody(f, 0, 25).filters.stats.map((s) => s.id)).toEqual(['b']);
   });
 
-  it('sends OR and corruption rows, and never text over the service limits', () => {
+  it('sends an exclusive HR max (a price chart bucket) only with a max', () => {
+    const body = (f: Partial<MarketFilters>) => marketSearchBody(mergeFilters(base, f), 0, 25).filters;
+    expect(body({ hrMin: 0.5, hrMax: 1, hrMaxExclusive: true })).toMatchObject({ hrMax: 1, hrMaxExclusive: true });
+    expect(body({ hrMin: 2, hrMaxExclusive: true }).hrMaxExclusive).toBeUndefined();
+    expect(body({ hrMax: 1 }).hrMaxExclusive).toBeUndefined();
+  });
+
+  it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
       sellerName: 'CIutch',
       stats: [
-        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+        { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
         { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
+        { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
       ],
     });
     const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
     expect(body.filters.stats).toEqual([
-      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: true },
+      { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
       { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
+      { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
     ]);
     expect(body.filters.priceText).toHaveLength(100);
     expect(body.filters.sellerName).toBe('CIutch');
     // A seller picked from a listing is queried by id
     const byId = marketSearchBody({ ...f, sellerUserId: 'u1' }, 0, 25).filters;
     expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
+  });
+});
+
+describe('facets', () => {
+  it('sends facets only when asked, and reads them from the reply', async () => {
+    expect(marketSearchBody(base, 0, 25)).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, [])).not.toHaveProperty('facets');
+    expect(marketSearchBody(base, 0, 25, ['quality', 'price'])).toMatchObject({ facets: ['quality', 'price'] });
+
+    respond(200, {
+      items: [],
+      total: 3,
+      facets: {
+        quality: [
+          { value: 'Unique', count: 3 },
+          { value: 'Set', count: 'many' },
+        ],
+        ethereal: [{ value: true, count: 1 }],
+        price: [
+          { from: 0, to: 0.05, count: 2 },
+          { from: 20, to: null, count: 1 },
+        ],
+      },
+    });
+    const page = await searchMarketListings(base, { page: 0, limit: 25, facets: ['quality', 'ethereal'] });
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(JSON.parse(init?.body as string).facets).toEqual(['quality', 'ethereal']);
+    expect(page.facets).toMatchObject({
+      // A malformed bucket is dropped, not the facet
+      quality: [{ value: 'Unique', count: 3 }],
+      ethereal: [{ value: true, count: 1 }],
+      price: [
+        { from: 0, to: 0.05, count: 2 },
+        { from: 20, to: null, count: 1 },
+      ],
+    });
+
+    respond(200, { items: [], total: 0 });
+    expect((await search()).facets).toBeUndefined();
   });
 });

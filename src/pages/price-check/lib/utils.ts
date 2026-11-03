@@ -19,6 +19,17 @@ export function cleanItemType(type: string): string {
   );
 }
 
+/** A type/base value as a query value: the item-types `{"$in": [...]}` group strings become their `$in` object. */
+export function parseCodeValue(value: string): string | object {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{') || !trimmed.includes('$in')) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
 // parseTypeValue: If true, will parse typeValue as JSON if it contains $in. This is needed for query objects (e.g., buildGetMarketListingQuery),
 // but should be left false for URL string building (e.g., buildTradeUrl), which expects a string.
 export function getTypeFromBaseType(
@@ -34,37 +45,28 @@ export function getTypeFromBaseType(
   if (!matchedType) return;
 
   const base = matchedType.bases.find((b) => b.label.toLowerCase() === baseName);
-  let typeValue: string | object = matchedType.typeValue;
-  if (
-    parseTypeValue &&
-    typeof typeValue === 'string' &&
-    typeValue.trim().startsWith('{') &&
-    typeValue.includes('$in')
-  ) {
-    try {
-      typeValue = JSON.parse(typeValue);
-    } catch (e) {
-      // fallback to string if parsing fails
-    }
-  }
-  let baseValue: string | object = base.value;
-  if (
-    parseTypeValue &&
-    typeof baseValue === 'string' &&
-    baseValue.trim().startsWith('{') &&
-    baseValue.includes('$in')
-  ) {
-    try {
-      baseValue = JSON.parse(baseValue);
-    } catch (e) {
-      // fallback to string if parsing fails
-    }
-  }
-
-  return { type: typeValue, base: baseValue, label: base.label };
+  return {
+    type: parseTypeValue ? parseCodeValue(matchedType.typeValue) : matchedType.typeValue,
+    base: parseTypeValue ? parseCodeValue(base.value) : base.value,
+    label: base.label,
+  };
 }
 
+/** Stat key prefix of pseudo rows (`pseudo:pseudo_total_res`). */
+export const PSEUDO_KEY_PREFIX = 'pseudo:';
+
+/** The min / max inputs of a stat row (damage pairs use all four). */
+export const RANGE_FIELDS = ['min', 'max', 'maxMin', 'maxMax'] as const;
+
+/**
+ * A stat row's key, unique among an item's rows: it names the row for React and the selection/filter state.
+ * Skill-parameterised rows (auras, chance to cast, charges) are keyed by stat and skill; BH lines left without a
+ * stat id are keyed by their line, which tells them apart ("15% Chance to cast level 20 Fire Ball on attack").
+ */
 export function getStatKey(stat: Stat): string {
+  if (stat.pseudo) return `${PSEUDO_KEY_PREFIX}${stat.pseudo}`;
+  if (stat.skillParam) return `id:${stat.stat_id}:${stat.skillParam.name.toLowerCase()}`;
   if ('skill' in stat && stat.skill) return `skill:${stat.skill.toLowerCase()}`;
+  if (stat.stat_id === undefined) return `line:${stat.name}`;
   return `id:${stat.stat_id}`;
 }

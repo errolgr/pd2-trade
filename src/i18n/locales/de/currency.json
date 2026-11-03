@@ -1,0 +1,213 @@
+{
+  "window": {
+    "title": "Vermögen",
+    "retry": "Wiederholen",
+    "tabs": {
+      "overview": "Übersicht",
+      "runes": "Runen",
+      "currency": "Währung",
+      "ubers": "Uber-Mats",
+      "gemsMats": "Edelsteine & Mats",
+      "uniquesSets": "Uniques & Sets",
+      "other": "Sonstiges",
+      "rares": "Rares",
+      "raresCrafted": "Rares & Crafted",
+      "history": "Verlauf"
+    }
+  },
+  "header": {
+    "netWorth": "Vermögen",
+    "deltaLast": "zuletzt",
+    "delta24h": "24 Std.",
+    "deltaSeason": "Saison",
+    "refresh": "Aktualisieren",
+    "refreshing": "Wird aktualisiert",
+    "refreshTooltip": "Truhe jetzt neu bewerten",
+    "asOf": "Stand {{time}}",
+    "prices": "Preise {{day}}",
+    "gold": "{{amount}} Gold",
+    "ladderFallback": "mit Ladder-Preisen bewertet (keine Non-Ladder-Marktdaten)"
+  },
+  "trackingDisabled": {
+    "title": "Der Verlauf ist aus.",
+    "description": "Aktiviere „Vermögensverlauf speichern“ unter Einstellungen → Vermögen, um ein Diagramm, Sitzungen mit HR/Stunde und Änderungen zwischen Snapshots zu sehen."
+  },
+  "signedOut": {
+    "chooseAccount": "Wähle in den Einstellungen dein PD2-Konto, um deine Truhe zu bewerten.",
+    "signInPrompt": "Melde dich mit deinem PD2-Konto an, um deine Truhe zu bewerten.",
+    "signIn": "Anmelden"
+  },
+  "tabSkeleton": {
+    "title": "Noch keine Bewertung.",
+    "description": "Deine Truhe konnte nicht bewertet werden. Nutze oben „Wiederholen“, sobald PD2 erreichbar ist."
+  },
+  "categories": {
+    "runes": "Runen",
+    "currency": "Währung",
+    "ubers": "Uber-Mats",
+    "gems": "Edelsteine",
+    "mats": "Mats",
+    "uniques": "Uniques",
+    "sets": "Sets",
+    "other": "Sonstiges"
+  },
+  "columns": {
+    "item": "Item",
+    "qty": "Anz.",
+    "unit": "Stück",
+    "value": "Wert",
+    "share": "%",
+    "change7d": "7 T.",
+    "price": "Preis"
+  },
+  "table": {
+    "noResults": "Keine Ergebnisse.",
+    "sortLabel": "{{title}}: {{action}}",
+    "sortAscending": "aufsteigend sortieren",
+    "sortDescending": "absteigend sortieren",
+    "clearSorting": "Sortierung aufheben"
+  },
+  "confidence": {
+    "ok": {
+      "label": "Markt",
+      "hint": "7-Tage-Marktdurchschnitt"
+    },
+    "fixed": {
+      "label": "fest",
+      "hint": "Fester Runenwert (wenige Inserate)"
+    },
+    "low": {
+      "label": "gering",
+      "hint": "Weniger als 10 Inserate – als unsicher gewertet, nicht in der Summe"
+    },
+    "none": {
+      "label": "ohne Preis",
+      "hint": "Keine Preisdaten – mit 0 bewertet"
+    },
+    "listings_one": "{{count}} Inserat",
+    "listings_other": "{{count}} Inserate"
+  },
+  "overview": {
+    "noPricedHoldings": "Noch keine bepreisten Bestände.",
+    "topAside_one": "nach Wert · Top {{count}}",
+    "topAside_other": "nach Wert · Top {{count}}",
+    "topHoldings": "Top-Bestände",
+    "nothingPriced": "Noch nichts bepreist.",
+    "unpriced_one": "{{count}} Item ohne Preis",
+    "unpriced_other": "{{count}} Items ohne Preis",
+    "uncertain": "{{value}} unsicher (geringe Sicherheit, nicht in der Summe)",
+    "gold": "{{amount}} Gold (nicht umgerechnet)",
+    "byStashTab": "Nach Truhen-Tab"
+  },
+  "holdings": {
+    "searchPlaceholder": "Suchen…",
+    "searchLabel": "Bestände durchsuchen",
+    "clearSearch": "Suche leeren",
+    "hideZero": "Nullwerte ausblenden",
+    "nothingMatches": "Keine Treffer.",
+    "noneInStash": "Keine in deiner Truhe.",
+    "zeroHidden_one": "{{count}} Zeile ohne Wert ausgeblendet (Items ohne Preis werden aufgeführt, aber mit 0 bewertet).",
+    "zeroHidden_other": "{{count}} Zeilen ohne Wert ausgeblendet (Items ohne Preis werden aufgeführt, aber mit 0 bewertet).",
+    "count_one": "{{count}} Bestand",
+    "count_other": "{{count}} Bestände"
+  },
+  "history": {
+    "showMore": "Mehr anzeigen ({{remaining}} ältere)",
+    "chartRange": "Diagrammzeitraum",
+    "ranges": {
+      "24h": "24 Std.",
+      "7d": "7 T.",
+      "season": "Saison",
+      "all": "Alle"
+    },
+    "rangeChange": "Änderung im gewählten Zeitraum",
+    "stackByCategory": "Nach Kategorie stapeln",
+    "chart": {
+      "netWorth": "Vermögen",
+      "emptyTitle": "Noch keine Snapshots in diesem Zeitraum.",
+      "emptyDescription": "Snapshots werden beim Start, alle paar Minuten bei aktivem Diablo-Fenster und beim Aktualisieren erstellt."
+    },
+    "sessions": {
+      "title": "Sitzungen",
+      "start": "Neue Sitzung starten",
+      "stop": "Sitzung beenden",
+      "emptyTitle": "Noch keine Sitzungen.",
+      "emptyDescription": "Sitzungen entstehen automatisch aus Snapshots, die weniger als 30 Minuten auseinanderliegen.",
+      "columns": {
+        "when": "Wann",
+        "duration": "Dauer",
+        "farmed": "Gefarmt",
+        "drift": "Drift",
+        "hrPerHour": "HR/h"
+      },
+      "today": "Heute {{time}}",
+      "yesterday": "Gestern {{time}}",
+      "open": "Laufende Sitzung",
+      "manual": "manuell",
+      "best": "Beste HR/h dieser Saison",
+      "noGains": "Keine Item-Zugewinne.",
+      "tooltipSummary_one": "{{from}} → {{to}} HR · {{count}} Snapshot",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} Snapshots"
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "selected": "{{selected}}/2 ausgewählt",
+      "pickTwo": "Wähle zwei zum Vergleichen",
+      "emptyTitle": "Keine Snapshots in diesem Zeitraum.",
+      "select": "Snapshot {{time}} auswählen",
+      "compareWithPrevious": "Mit vorherigem vergleichen"
+    },
+    "diff": {
+      "priceBasis": "Preisbasis",
+      "pricesThen": "Damalige Preise",
+      "pricesNow": "Aktuelle Preise",
+      "close": "Vergleich schließen",
+      "farmed": "Gefarmt",
+      "marketDrift": "Marktdrift",
+      "total": "Gesamt",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "Keine Bestände geändert.",
+      "change": "Änderung"
+    },
+    "delete": {
+      "thisSeason": "diese Saison",
+      "privacy": "Der Verlauf ist nur für deinen PD2-Login sichtbar und wird auf pd2trader.com gespeichert.",
+      "button": "Verlauf löschen",
+      "title": "Vermögensverlauf löschen?",
+      "description": "Entfernt gespeicherte Snapshots für {{account}} ({{ladder}}, {{core}}). Dies kann nicht rückgängig gemacht werden.",
+      "season": "{{season}} löschen",
+      "allSeasons": "Alle Saisons löschen",
+      "deleted_one": "{{count}} Snapshot gelöscht.",
+      "deleted_other": "{{count}} Snapshots gelöscht."
+    }
+  },
+  "rares": {
+    "stashFallback": "Truhe",
+    "emptyTitle": "Keine Rares in deiner Truhe",
+    "emptyDescription": "Rare Ringe, Amulette, Juwelen, Rüstungen und Waffen in deiner Truhe werden hier bewertet (Behalten · Prüfen · Verkaufen).",
+    "groups": {
+      "keep": "Behalten",
+      "worthALook": "Sehenswert"
+    },
+    "estTitle": "Geschätzt aus den Angebotspreisen ähnlicher Rares in {{season}} – nicht in der Summe",
+    "summary": {
+      "raresLine_one": "<label>Rares: </label><keep>{{keep}} Behalten</keep><sep> · </sep><check>{{checkHigh}} sehenswert</check><sep> · </sep><vendor>{{count}} eher verkaufen</vendor> <note>(gibt {{count}} Platz frei)</note>",
+      "raresLine_other": "<label>Rares: </label><keep>{{keep}} Behalten</keep><sep> · </sep><check>{{checkHigh}} sehenswert</check><sep> · </sep><vendor>{{count}} eher verkaufen</vendor> <note>(gibt {{count}} Plätze frei)</note>",
+      "craftedLine_one": "<label>Crafted: </label><keep>{{keep}} Behalten</keep><sep> · </sep><check>{{checkHigh}} sehenswert</check><sep> · </sep><vendor>{{count}} eher verkaufen</vendor> <note>(gibt {{count}} Platz frei)</note>",
+      "craftedLine_other": "<label>Crafted: </label><keep>{{keep}} Behalten</keep><sep> · </sep><check>{{checkHigh}} sehenswert</check><sep> · </sep><vendor>{{count}} eher verkaufen</vendor> <note>(gibt {{count}} Plätze frei)</note>",
+      "unpricedRares_one": "{{count}} Behalten-Rare ohne Marktbereich nicht enthalten",
+      "unpricedRares_other": "{{count}} Behalten-Rares ohne Marktbereich nicht enthalten",
+      "unpricedCrafted_one": "{{count}} Behalten-Crafted-Item ohne Marktbereich nicht enthalten",
+      "unpricedCrafted_other": "{{count}} Behalten-Crafted-Items ohne Marktbereich nicht enthalten",
+      "bandRares": "<band>+ ~{{low}}–{{high}} HR</band> in Behalten-Rares (geschätzt, nicht in der Summe)",
+      "bandCrafted": "<band>+ ~{{low}}–{{high}} HR</band> in Behalten-Crafted-Items (geschätzt, nicht in der Summe)"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} eher verkaufen · {{tab}}",
+      "vendorNote_one": "Gibt {{count}} Truhenplatz frei",
+      "vendorNote_other": "Gibt {{count}} Truhenplätze frei",
+      "lowTitle": "{{n}} wohl geringer Wert · {{tab}}",
+      "lowNote": "Prüfen-Items ohne Schlüsselwert"
+    }
+  }
+}

@@ -7,6 +7,7 @@ export { Panel, usePanel, type PanelContextValue } from './Panel';
 export {
   showToast,
   confirmToast,
+  imageToast,
   undoToast,
   ToastLayer,
   type ToastPayload,

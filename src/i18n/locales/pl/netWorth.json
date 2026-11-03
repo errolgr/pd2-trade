@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Majątek",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Majątek — kliknij po szczegóły, przeciągnij, aby przesunąć",
+    "snapshotFailed": "Migawka nieudana",
+    "lastSnapshot": "Ostatnia migawka {{time}}",
+    "noSnapshot": "Brak migawki",
+    "session": "sesja"
+  },
+  "panel": {
+    "title": "Majątek",
+    "hide": "Ukryj",
+    "openFullView": "Otwórz pełny widok",
+    "signInPrompt": "Zaloguj się kontem PD2, aby śledzić swój majątek.",
+    "signIn": "Zaloguj się",
+    "uncertain": "+{{value}} HR niepewne",
+    "sessionDelta": "{{change}} HR w sesji",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} min",
+    "thisSession": "Ta sesja",
+    "last24Hours": "Ostatnie 24 godziny",
+    "notEnoughSnapshots": "Za mało migawek",
+    "recentSnapshots": "Ostatnie migawki",
+    "noChanges": "Nie zarejestrowano jeszcze zmian.",
+    "historyOff": "Historia jest wyłączona. Włącz „Zapisuj historię majątku” w Ustawienia → Majątek, aby widzieć sesje i zmiany.",
+    "snapshotNow": "Zrób migawkę",
+    "startSession": "Rozpocznij sesję",
+    "stopSession": "Zakończ sesję"
+  },
+  "profile": {
+    "publicProfile": "Profil publiczny",
+    "private": "Prywatny",
+    "publicTooltip": "Nazwa konta, rankingi, wartość, wykres, odznaki i ciekawe znaleziska są publiczne na pd2trader.com.",
+    "privateTooltip": "Tylko ty widzisz swój majątek. Włącz, aby pojawić się w rankingach pd2trader.com z publicznym profilem.",
+    "saveFailed": "Nie udało się zapisać",
+    "couldNotSave": "Nie można zapisać",
+    "viewProfile": "Zobacz profil"
+  }
+}

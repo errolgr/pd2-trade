@@ -1,0 +1,201 @@
+{
+  "window": {
+    "title": "净资产",
+    "retry": "重试",
+    "tabs": {
+      "overview": "概览",
+      "runes": "符文",
+      "currency": "通货",
+      "ubers": "Uber 材料",
+      "gemsMats": "宝石和材料",
+      "uniquesSets": "暗金和套装",
+      "other": "其他",
+      "rares": "Rare",
+      "raresCrafted": "Rare 和 Crafted",
+      "history": "历史"
+    }
+  },
+  "header": {
+    "netWorth": "净资产",
+    "deltaLast": "上次",
+    "delta24h": "24 小时",
+    "deltaSeason": "赛季",
+    "refresh": "刷新",
+    "refreshing": "刷新中",
+    "refreshTooltip": "立即重新估算储物箱",
+    "asOf": "截至 {{time}}",
+    "prices": "价格 {{day}}",
+    "gold": "{{amount}} 金币",
+    "ladderFallback": "按 Ladder 价格估算（无 Non-Ladder 市场数据）"
+  },
+  "trackingDisabled": {
+    "title": "历史记录已关闭。",
+    "description": "在 设置 → 净资产 中开启“保存净资产历史”，即可查看图表、HR/小时会话以及快照间的变化。"
+  },
+  "signedOut": {
+    "chooseAccount": "请在设置中选择你的 PD2 账号以估算储物箱。",
+    "signInPrompt": "使用 PD2 账号登录以估算储物箱。",
+    "signIn": "登录"
+  },
+  "tabSkeleton": {
+    "title": "暂无估值。",
+    "description": "无法估算你的储物箱。待 PD2 可访问后，请点击上方的重试。"
+  },
+  "categories": {
+    "runes": "符文",
+    "currency": "通货",
+    "ubers": "Uber 材料",
+    "gems": "宝石",
+    "mats": "材料",
+    "uniques": "暗金",
+    "sets": "套装",
+    "other": "其他"
+  },
+  "columns": {
+    "item": "物品",
+    "qty": "数量",
+    "unit": "单价",
+    "value": "价值",
+    "share": "%",
+    "change7d": "7 天",
+    "price": "价格"
+  },
+  "table": {
+    "noResults": "无结果。",
+    "sortLabel": "{{title}}：{{action}}",
+    "sortAscending": "升序排序",
+    "sortDescending": "降序排序",
+    "clearSorting": "清除排序"
+  },
+  "confidence": {
+    "ok": {
+      "label": "市场",
+      "hint": "7 天市场均价"
+    },
+    "fixed": {
+      "label": "固定",
+      "hint": "固定符文价值（挂单较少）"
+    },
+    "low": {
+      "label": "低",
+      "hint": "挂单少于 10 个 — 计为待定，不计入总额"
+    },
+    "none": {
+      "label": "未定价",
+      "hint": "无价格数据 — 按 0 计"
+    },
+    "listings_other": "{{count}} 个挂单"
+  },
+  "overview": {
+    "noPricedHoldings": "暂无已定价的持有物品。",
+    "topAside_other": "按价值 · 前 {{count}}",
+    "topHoldings": "主要持有",
+    "nothingPriced": "暂无已定价物品。",
+    "unpriced_other": "{{count}} 个物品未定价",
+    "uncertain": "{{value}} 待定（置信度低，不计入总额）",
+    "gold": "{{amount}} 金币（未换算）",
+    "byStashTab": "按储物箱页"
+  },
+  "holdings": {
+    "searchPlaceholder": "搜索…",
+    "searchLabel": "搜索持有物品",
+    "clearSearch": "清除搜索",
+    "hideZero": "隐藏零价值",
+    "nothingMatches": "无匹配项。",
+    "noneInStash": "储物箱中没有。",
+    "zeroHidden_other": "已隐藏 {{count}} 行零价值（未定价物品会列出但按 0 计）。",
+    "count_other": "{{count}} 项持有"
+  },
+  "history": {
+    "showMore": "显示更多（还有 {{remaining}} 条更早）",
+    "chartRange": "图表范围",
+    "ranges": {
+      "24h": "24 小时",
+      "7d": "7 天",
+      "season": "赛季",
+      "all": "全部"
+    },
+    "rangeChange": "所选范围内的变化",
+    "stackByCategory": "按类别堆叠",
+    "chart": {
+      "netWorth": "净资产",
+      "emptyTitle": "此范围内暂无快照。",
+      "emptyDescription": "快照会在启动时、Diablo 处于前台时每隔几分钟以及你刷新时生成。"
+    },
+    "sessions": {
+      "title": "会话",
+      "start": "开始新会话",
+      "stop": "结束会话",
+      "emptyTitle": "暂无会话。",
+      "emptyDescription": "间隔不到 30 分钟的快照会自动组成会话。",
+      "columns": {
+        "when": "时间",
+        "duration": "时长",
+        "farmed": "刷得",
+        "drift": "波动",
+        "hrPerHour": "HR/h"
+      },
+      "today": "今天 {{time}}",
+      "yesterday": "昨天 {{time}}",
+      "open": "打开会话",
+      "manual": "手动",
+      "best": "本赛季最佳 HR/h",
+      "noGains": "无物品收益。",
+      "tooltipSummary_other": "{{from}} → {{to}} HR · {{count}} 个快照"
+    },
+    "snapshots": {
+      "title": "快照",
+      "selected": "已选 {{selected}}/2",
+      "pickTwo": "选择两个进行对比",
+      "emptyTitle": "此范围内无快照。",
+      "select": "选择快照 {{time}}",
+      "compareWithPrevious": "与上一个对比"
+    },
+    "diff": {
+      "priceBasis": "价格基准",
+      "pricesThen": "当时价格",
+      "pricesNow": "当前价格",
+      "close": "关闭对比",
+      "farmed": "刷得",
+      "marketDrift": "市场波动",
+      "total": "总计",
+      "totalValue": "{{from}} → {{to}} HR",
+      "noChanges": "持有物品无变化。",
+      "change": "变化"
+    },
+    "delete": {
+      "thisSeason": "本赛季",
+      "privacy": "历史记录仅对你的 PD2 登录可见，存储于 pd2trader.com。",
+      "button": "删除历史",
+      "title": "删除净资产历史？",
+      "description": "将删除 {{account}}（{{ladder}}，{{core}}）已存储的快照。此操作无法撤销。",
+      "season": "删除 {{season}}",
+      "allSeasons": "删除所有赛季",
+      "deleted_other": "已删除 {{count}} 个快照。"
+    }
+  },
+  "rares": {
+    "stashFallback": "储物箱",
+    "emptyTitle": "储物箱中没有 Rare",
+    "emptyDescription": "储物箱中的 Rare 戒指、项链、珠宝、护甲和武器会在这里估价（保留 · 查看 · 卖店）。",
+    "groups": {
+      "keep": "保留",
+      "worthALook": "值得一看"
+    },
+    "estTitle": "根据 {{season}} 类似 Rare 的要价估算 — 不计入总额",
+    "summary": {
+      "raresLine_other": "<label>Rare：</label><keep>{{keep}} 保留</keep><sep> · </sep><check>{{checkHigh}} 值得一看</check><sep> · </sep><vendor>{{count}} 可能卖店</vendor> <note>（腾出 {{count}} 格）</note>",
+      "craftedLine_other": "<label>Crafted：</label><keep>{{keep}} 保留</keep><sep> · </sep><check>{{checkHigh}} 值得一看</check><sep> · </sep><vendor>{{count}} 可能卖店</vendor> <note>（腾出 {{count}} 格）</note>",
+      "unpricedRares_other": "{{count}} 个无市场区间的保留 Rare 未计入",
+      "unpricedCrafted_other": "{{count}} 个无市场区间的保留 Crafted 物品未计入",
+      "bandRares": "保留 Rare 中 <band>+ 约 {{low}}–{{high}} HR</band>（估算，不计入总额）",
+      "bandCrafted": "保留 Crafted 物品中 <band>+ 约 {{low}}–{{high}} HR</band>（估算，不计入总额）"
+    },
+    "fold": {
+      "vendorTitle": "{{n}} 个可能卖店 · {{tab}}",
+      "vendorNote_other": "腾出 {{count}} 个储物箱格子",
+      "lowTitle": "{{n}} 个可能低价值 · {{tab}}",
+      "lowNote": "查看没有关键属性的物品"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { getVersion } from '@/lib/browser-app';
-import { useOverlay, usePanelOpen } from '@/overlay';
+import { useOverlay } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import { changeLog } from '@/assets/changeLog';
 import { useOptions, type ISettings } from './useOptions';
 
@@ -21,7 +22,7 @@ function hasSession(settings: ISettings): boolean {
 export const useChangelog = () => {
   const { settings, isLoading } = useOptions();
   const { openPanel } = useOverlay();
-  const signInOpen = usePanelOpen('signIn');
+  const { isOpen: signInOpen } = useSignIn();
   const ready = !isLoading && hasSession(settings) && !signInOpen;
 
   useEffect(() => {

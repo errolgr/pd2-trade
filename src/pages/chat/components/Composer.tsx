@@ -32,6 +32,7 @@ import { ChatTemplateForm } from '@/components/custom/chat-template-form';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useChatTemplates, type ChatTemplateDraft } from '@/hooks/useChatTemplates';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
+import { Trans, useTranslation } from '@/i18n';
 import { CHAT_TEMPLATE_TOKENS, fillTemplate, templatePlaceholders } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -46,22 +47,19 @@ import {
   serializeEditor,
   setCaret,
 } from '../lib/draft-editor';
-import { findMarketLinks, spaceOutLinks } from '../lib/market-links';
+import { findMarketLinks, listingMessageUrl, spaceOutLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
-import { ListingPicker, listingMessageUrl } from './ListingPicker';
+import { ListingPicker } from './ListingPicker';
 import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
 import { TemplateFill } from './TemplateFill';
 
 /** The offer message templates from Settings → Chat, offered by the "/" menu after the user's own templates. */
 const OFFER_TEMPLATES = [
-  { key: 'acceptOfferMessageTemplate', label: 'Offer accepted' },
-  { key: 'rejectOfferMessageTemplate', label: 'Offer declined' },
-  { key: 'soldOfferMessageTemplate', label: 'Item sold' },
-] as const satisfies readonly { key: keyof ISettings; label: string }[];
+  { key: 'acceptOfferMessageTemplate', labelKey: 'composer.offerTemplates.accepted' },
+  { key: 'rejectOfferMessageTemplate', labelKey: 'composer.offerTemplates.declined' },
+  { key: 'soldOfferMessageTemplate', labelKey: 'composer.offerTemplates.sold' },
+] as const satisfies readonly { key: keyof ISettings; labelKey: string }[];
 type OfferTemplateKey = (typeof OFFER_TEMPLATES)[number]['key'];
-
-/** Tokens of the "Offer accepted" template: the chat template tokens plus the game to join. */
-const ACCEPT_OFFER_TOKENS = [{ token: '{gameInfo}', description: 'The game you are in' }, ...CHAT_TEMPLATE_TOKENS];
 
 /**
  * A template the "/" menu offers: `text` with the conversation's tokens filled in, `raw` as written and the
@@ -83,10 +81,10 @@ type MenuForm = { kind: 'new'; label: string; initial: ChatTemplateDraft } | Men
 
 /** The menu's options after the templates. */
 type MenuAction = 'save' | 'new' | 'manage';
-const MENU_ACTIONS: Record<MenuAction, { label: string; icon: LucideIcon }> = {
-  save: { label: 'Save message as template', icon: BookmarkPlus },
-  new: { label: 'New template', icon: Plus },
-  manage: { label: 'Manage templates…', icon: Settings2 },
+const MENU_ACTIONS: Record<MenuAction, { labelKey: string; icon: LucideIcon }> = {
+  save: { labelKey: 'composer.actions.save', icon: BookmarkPlus },
+  new: { labelKey: 'composer.actions.new', icon: Plus },
+  manage: { labelKey: 'composer.actions.manage', icon: Settings2 },
 };
 
 /** How long a deleted template can be restored. */
@@ -162,8 +160,9 @@ function DraftPill({
   state: ChatListingState | undefined;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation('chat');
   const listing = state && 'listing' in state ? state.listing : undefined;
-  const name = listing?.item.name ?? findMarketLinks(url)[0]?.displayName ?? 'Market listing';
+  const name = listing?.item.name ?? findMarketLinks(url)[0]?.displayName ?? t('composer.marketListing');
   return (
     <span className="group/pill relative inline-flex max-w-full">
       {listing ? (
@@ -181,7 +180,7 @@ function DraftPill({
       )}
       <button
         type="button"
-        aria-label={`Remove ${name}`}
+        aria-label={t('composer.remove', { name })}
         // Keep the caret in the editor
         onMouseDown={(e) => e.preventDefault()}
         onClick={onRemove}
@@ -201,6 +200,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   { value, onChange, onSend, placeholder, templateVars, channel, onChannelChange, whisperTarget },
   ref,
 ) {
+  const { t } = useTranslation('chat');
   const { settings, updateSettings } = useOptions();
   const chatTemplates = useChatTemplates();
   const { openPanel } = useOverlay();
@@ -260,7 +260,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     edit(head + after, head.length);
   };
 
-  const insertListing = (listing: MarketListingEntry) => insertAtCaret(listingMessageUrl(listing));
+  const insertListing = (listing: MarketListingEntry) =>
+    insertAtCaret(listingMessageUrl(listing._id, listing.item.name));
   useImperativeHandle(ref, () => ({
     focus: () => {
       const editor = editorRef.current;
@@ -308,36 +309,41 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         source: { kind: 'custom' as const, id },
         favorite: !!favorite,
       })),
-      ...OFFER_TEMPLATES.map(({ key, label }) => ({
+      ...OFFER_TEMPLATES.map(({ key, labelKey }) => ({
         key: `offer:${key}`,
-        label,
+        label: t(labelKey),
         raw: settings?.[key] ?? '',
-        source: { kind: 'offer' as const, key, label },
+        source: { kind: 'offer' as const, key, label: t(labelKey) },
         favorite: (settings?.favoriteOfferTemplates ?? []).includes(key),
       })),
     ];
     return written
-      .filter((t) => typeof t.raw === 'string' && t.raw.trim())
-      .map((t) => ({ ...t, text: fillTemplate(t.raw, vars), placeholders: templatePlaceholders(t.raw) }));
-  }, [chatTemplates.templates, settings, vars]);
+      .filter((tpl) => typeof tpl.raw === 'string' && tpl.raw.trim())
+      .map((tpl) => ({ ...tpl, text: fillTemplate(tpl.raw, vars), placeholders: templatePlaceholders(tpl.raw) }));
+  }, [chatTemplates.templates, settings, vars, t]);
   const query = slash?.[1].toLowerCase().trim() ?? '';
   const matches = slash
-    ? templates.filter((t) => t.label.toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
+    ? templates.filter((tpl) => tpl.label.toLowerCase().includes(query) || tpl.text.toLowerCase().includes(query))
     : templates;
   // A bare "/" always opens it (with no templates yet it offers "New template"); "/text" only on a match
   const listOpen = slash ? dismissedAt !== value && (matches.length > 0 || query === '') : browsing;
-  const editedTemplate = form?.kind === 'custom' ? chatTemplates.templates.find((t) => t.id === form.id) : undefined;
+  const editedTemplate =
+    form?.kind === 'custom' ? chatTemplates.templates.find((tpl) => tpl.id === form.id) : undefined;
   // The open form's title and starting values (a template deleted elsewhere meanwhile closes its form)
   const formSetup =
     form?.kind === 'new'
-      ? { label: form.label, initial: form.initial, submitLabel: 'Add template' }
+      ? { label: form.label, initial: form.initial, submitLabel: t('composer.addTemplate') }
       : form?.kind === 'custom' && editedTemplate
-        ? { label: `Edit ${editedTemplate.name}`, initial: editedTemplate, submitLabel: 'Save' }
+        ? {
+            label: t('composer.editNamed', { name: editedTemplate.name }),
+            initial: editedTemplate,
+            submitLabel: t('common:actions.save'),
+          }
         : form?.kind === 'offer'
           ? {
-              label: `Edit ${form.label}`,
+              label: t('composer.editNamed', { name: form.label }),
               initial: { name: form.label, text: settings?.[form.key] ?? '' },
-              submitLabel: 'Save',
+              submitLabel: t('common:actions.save'),
             }
           : null;
   const menuOpen = listOpen || formSetup !== null || filling !== null;
@@ -346,7 +352,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const activeIndex = Math.min(active, optionCount - 1);
   const activeTemplate: MenuTemplate | undefined = matches[activeIndex];
   const listShown = listOpen && !formSetup && !filling;
-  const favorites = templates.filter((t) => t.favorite);
+  const favorites = templates.filter((tpl) => tpl.favorite);
 
   // Keep the option chosen with the arrow keys in view (a long template list scrolls)
   useLayoutEffect(() => {
@@ -399,12 +405,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
   const runAction = (action: MenuAction) => {
     if (action === 'manage') manageTemplates();
-    else if (action === 'new') setForm({ kind: 'new', label: 'New template', initial: { name: '', text: '' } });
+    else if (action === 'new')
+      setForm({ kind: 'new', label: t('composer.actions.new'), initial: { name: '', text: '' } });
     else {
       // Listing links stay in as their URLs
       setForm({
         kind: 'new',
-        label: 'Save message as template',
+        label: t('composer.actions.save'),
         initial: { name: '', text: spaceOutLinks(value).trim() },
       });
     }
@@ -415,8 +422,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     const removed = chatTemplates.remove(id);
     if (!removed) return;
     undoToast({
-      title: 'Template deleted',
-      description: `Your template "${removed.template.name}".`,
+      title: t('composer.templateDeleted'),
+      description: t('composer.templateDeletedDescription', { name: removed.template.name }),
       duration: TEMPLATE_UNDO_MS,
       onUndo: () => chatTemplates.restore(removed.template, removed.index),
     });
@@ -515,7 +522,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   };
 
   const canSend = value.trim().length > 0;
-  const whisperTip = `Copies /w *${whisperTarget ?? 'account'} … — paste it in the game chat`;
+  const whisperTip = t('composer.whisperTip', { account: whisperTarget ?? t('composer.accountPlaceholder') });
+  const acceptOfferTokens = [
+    { token: '{gameInfo}', description: t('composer.tokens.gameInfo') },
+    ...CHAT_TEMPLATE_TOKENS,
+  ];
 
   return (
     <div className="@container shrink-0 px-3 pb-3 pt-1.5">
@@ -531,15 +542,21 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           >
             <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <FileText className="size-3 shrink-0" />
-              <span className="shrink-0">Templates</span>
+              <span className="shrink-0">{t('composer.templates')}</span>
               <span className="ml-auto truncate font-normal normal-case tracking-normal">
                 {formSetup
-                  ? 'Ctrl+Enter to save · Esc to go back'
+                  ? t('composer.hints.form')
                   : filling
-                    ? 'Enter to insert · Esc to go back'
+                    ? t('composer.hints.fill')
                     : activeTemplate
-                      ? `↑↓ choose · Enter insert · Ctrl+S ${activeTemplate.favorite ? 'unstar' : 'star'} · Ctrl+E edit${activeTemplate.source.kind === 'custom' ? ' · Ctrl+D delete' : ''}`
-                      : '↑↓ to choose · Enter to select'}
+                      ? activeTemplate.source.kind === 'custom'
+                        ? activeTemplate.favorite
+                          ? t('composer.hints.customUnstar')
+                          : t('composer.hints.customStar')
+                        : activeTemplate.favorite
+                          ? t('composer.hints.offerUnstar')
+                          : t('composer.hints.offerStar')
+                      : t('composer.hints.list')}
               </span>
             </div>
             {formSetup ? (
@@ -550,7 +567,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 submitLabel={formSetup.submitLabel}
                 fixedName={form?.kind === 'offer'}
                 tokens={
-                  form?.kind === 'offer' && form.key === 'acceptOfferMessageTemplate' ? ACCEPT_OFFER_TOKENS : undefined
+                  form?.kind === 'offer' && form.key === 'acceptOfferMessageTemplate' ? acceptOfferTokens : undefined
                 }
                 onSubmit={saveForm}
                 onCancel={closeForm}
@@ -573,27 +590,29 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 }}
               />
             ) : (
-              <ul id={menuId}
+              <ul
+                id={menuId}
                 role="listbox"
-                aria-label="Message templates"
-                className="max-h-72 overflow-y-auto p-1">
-                {matches.map((t, i) => (
+                aria-label={t('composer.messageTemplates')}
+                className="max-h-72 overflow-y-auto p-1"
+              >
+                {matches.map((tpl, i) => (
                   <li
-                    key={t.key}
+                    key={tpl.key}
                     id={`${menuId}-${i}`}
                     role="option"
                     aria-selected={i === activeIndex}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={() => setActive(i)}
-                    onClick={() => pickTemplate(t)}
+                    onClick={() => pickTemplate(tpl)}
                     className={cn(
                       'group/template flex cursor-pointer items-start gap-2 rounded-md py-1.5 pr-1.5 pl-2.5 transition-colors duration-(--dur-fast)',
                       i === activeIndex ? 'bg-accent text-accent-foreground' : 'text-foreground',
                     )}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">{t.label}</div>
-                      <div className="truncate text-xs text-muted-foreground">{t.text}</div>
+                      <div className="text-sm font-medium">{tpl.label}</div>
+                      <div className="truncate text-xs text-muted-foreground">{tpl.text}</div>
                     </div>
                     <div
                       className={cn(
@@ -604,27 +623,27 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       <button
                         type="button"
                         tabIndex={-1}
-                        aria-label={`Edit ${t.label}`}
-                        title="Edit (Ctrl+E)"
+                        aria-label={t('composer.editNamed', { name: tpl.label })}
+                        title={t('composer.editShortcut')}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setForm(t.source);
+                          setForm(tpl.source);
                         }}
                         className={rowAction}
                       >
                         <Pencil />
                       </button>
-                      {t.source.kind === 'custom' && (
+                      {tpl.source.kind === 'custom' && (
                         <button
                           type="button"
                           tabIndex={-1}
-                          aria-label={`Delete ${t.label}`}
-                          title="Delete (Ctrl+D)"
+                          aria-label={t('composer.deleteNamed', { name: tpl.label })}
+                          title={t('composer.deleteShortcut')}
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (t.source.kind === 'custom') deleteTemplate(t.source.id);
+                            if (tpl.source.kind === 'custom') deleteTemplate(tpl.source.id);
                           }}
                           className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
                         >
@@ -637,23 +656,27 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       <button
                         type="button"
                         tabIndex={-1}
-                        aria-label={`${t.favorite ? 'Unstar' : 'Star'} ${t.label}`}
-                        aria-pressed={t.favorite}
-                        title={`${t.favorite ? 'Unstar' : 'Star: show it above the message box'} (Ctrl+S)`}
+                        aria-label={
+                          tpl.favorite
+                            ? t('composer.unstarNamed', { name: tpl.label })
+                            : t('composer.starNamed', { name: tpl.label })
+                        }
+                        aria-pressed={tpl.favorite}
+                        title={tpl.favorite ? t('composer.unstarShortcut') : t('composer.starShortcut')}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleFavorite(t);
+                          toggleFavorite(tpl);
                         }}
                         className={cn(
                           rowAction,
                           'transition-[color,background-color,opacity]',
-                          t.favorite
+                          tpl.favorite
                             ? 'text-warning'
                             : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
                         )}
                       >
-                        <Star className={cn(t.favorite && 'fill-current')} />
+                        <Star className={cn(tpl.favorite && 'fill-current')} />
                       </button>
                     </div>
                   </li>
@@ -661,7 +684,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 {matches.length === 0 ? (
                   <li role="presentation"
                     className="px-2.5 py-1.5 text-xs text-muted-foreground">
-                    No templates yet
+                    {t('composer.noTemplates')}
                   </li>
                 ) : (
                   <li role="presentation"
@@ -670,7 +693,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 )}
                 {actions.map((action, j) => {
                   const i = matches.length + j;
-                  const { label, icon: Icon } = MENU_ACTIONS[action];
+                  const { labelKey, icon: Icon } = MENU_ACTIONS[action];
                   return (
                     <li
                       key={action}
@@ -687,7 +710,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                     >
                       <Icon aria-hidden
                         className="size-3.5 shrink-0" />
-                      {label}
+                      {t(labelKey)}
                     </li>
                   );
                 })}
@@ -699,44 +722,44 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {/* One sideways-scrolling line (no scrollbar). The Website/Whisper labels drop to icons only when the composer itself is under 380px wide */}
         <div
           role="toolbar"
-          aria-label="Quick replies"
+          aria-label={t('composer.quickReplies')}
           className="flex flex-nowrap items-center gap-1.5 overflow-x-auto border-b border-border/50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {onChannelChange && (
             <ToggleGroup
               type="single"
               size="sm"
-              aria-label="Reply via"
+              aria-label={t('composer.replyVia')}
               value={channel}
               onValueChange={(next) => next && onChannelChange(next as ReplyChannel)}
               className={cn('mr-1 shrink-0', segmentedClass)}
             >
-              <Tip label="Send a website message (they get it on projectdiablo2.com)">
+              <Tip label={t('composer.websiteTip')}>
                 <ToggleGroupItem
                   value="website"
-                  aria-label="Website"
+                  aria-label={t('composer.website')}
                   className={cn('h-6 flex-none gap-1.5 px-3 text-xs', segmentItemClass)}
                 >
                   <Globe className="size-3" />
-                  <span className="@max-[380px]:sr-only">Website</span>
+                  <span className="@max-[380px]:sr-only">{t('composer.website')}</span>
                 </ToggleGroupItem>
               </Tip>
               <Tip label={whisperTip}>
                 <ToggleGroupItem
                   value="whisper"
-                  aria-label="Whisper (copy)"
+                  aria-label={t('composer.whisperCopy')}
                   className={cn('h-6 flex-none gap-1.5 px-3 text-xs', segmentItemClass)}
                 >
                   <Gamepad2 className="size-3" />
-                  <span className="@max-[380px]:sr-only">Whisper (copy)</span>
+                  <span className="@max-[380px]:sr-only">{t('composer.whisperCopy')}</span>
                 </ToggleGroupItem>
               </Tip>
             </ToggleGroup>
           )}
-          <Tip label="Message templates (or type /)">
+          <Tip label={t('composer.templatesTip')}>
             <button
               type="button"
-              aria-label="Message templates"
+              aria-label={t('composer.messageTemplates')}
               aria-expanded={menuOpen}
               // Keep the draft's caret: a template picked from here goes in where the user was typing
               onMouseDown={(e) => e.preventDefault()}
@@ -765,26 +788,28 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           {/* The starred templates, in template order; each picks its template like the "/" menu does.
               Unpinning is only done by unstarring the template (in the "/" menu or Settings). */}
           {favorites.length > 0 ? (
-            favorites.map((t) => (
+            favorites.map((tpl) => (
               <button
-                key={t.key}
+                key={tpl.key}
                 type="button"
-                title={t.text}
+                title={tpl.text}
                 // Keep the draft's caret/selection: the chip inserts where the user was typing
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pickTemplate(t)}
+                onClick={() => pickTemplate(tpl)}
                 className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
               >
-                {t.label}
+                {tpl.label}
               </button>
             ))
           ) : (
             <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground/80">
-              ★ Star templates to pin them here
+              {t('composer.starHint')}
             </span>
           )}
           <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
-            <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+            <Trans t={t}
+              i18nKey="composer.newLine"
+              components={{ kbd: <kbd className="font-sans font-semibold" /> }} />
           </span>
         </div>
 
@@ -804,7 +829,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               ref={editorRef}
               role="textbox"
               aria-multiline="true"
-              aria-label="Message"
+              aria-label={t('composer.message')}
               aria-placeholder={placeholder}
               aria-controls={listShown ? menuId : undefined}
               aria-activedescendant={listShown ? `${menuId}-${activeIndex}` : undefined}
@@ -852,10 +877,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               );
             })}
           </div>
-          <Tip label={channel === 'whisper' ? `${whisperTip} (Enter)` : 'Send (Enter)'}>
+          <Tip
+            label={channel === 'whisper' ? t('composer.whisperTipEnter', { tip: whisperTip }) : t('composer.sendTip')}
+          >
             <button
               type="button"
-              aria-label={channel === 'whisper' ? 'Copy whisper' : 'Send'}
+              aria-label={channel === 'whisper' ? t('composer.copyWhisper') : t('composer.send')}
               disabled={!canSend}
               onClick={send}
               className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-b from-primary to-primary/80 text-primary-foreground shadow-sm outline-none transition-[opacity,transform,box-shadow] duration-(--dur-fast) hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
@@ -869,8 +896,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             <ClipboardCopy aria-hidden
               className="size-3 shrink-0 text-warning" />
             <span className="truncate">
-              Enter copies <span className="font-medium text-foreground/85">/w *{whisperTarget ?? 'account'} …</span> —
-              paste it in the game chat to send
+              <Trans
+                t={t}
+                i18nKey="composer.whisperFooter"
+                values={{ account: whisperTarget ?? t('composer.accountPlaceholder') }}
+                components={{ cmd: <span className="font-medium text-foreground/85" /> }}
+              />
             </span>
           </p>
         )}

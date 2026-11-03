@@ -1,3 +1,4 @@
+import { RUNE_NAME_TO_BASE_CODE } from '@/pages/currency/lib/api-mapping';
 import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
 
 /** Uber ingredients, currency and keys the crawler ingests under the listing's own base_code. */
@@ -52,4 +53,17 @@ export function listingPriceCode(item: ItemDetail): string | null {
   if (item.base?.type_code === 'jew' || item.base?.type_code === 'jewl') return null;
   // The server's normalizeItemName: every non-alphanumeric becomes '_'.
   return name.replace(/[^a-z0-9]/g, '_');
+}
+
+/**
+ * The crawler's `baseCode` for an item picked by name (the market's item-name suggestions): runes by their rune
+ * code, uniques and sets by their normalized name; null for what the crawler doesn't price by name (runewords,
+ * plain bases, per-variant uniques).
+ */
+export function namePriceCode(name: string, quality: 'Unique' | 'Set' | 'Runeword' | 'Base'): string | null {
+  if (quality === 'Base') return RUNE_NAME_TO_BASE_CODE[name] ?? null;
+  if (quality === 'Runeword') return null;
+  const lower = name.toLowerCase();
+  if (VARIANT_PRICED[lower]) return null;
+  return lower.replace(/[^a-z0-9]/g, '_');
 }

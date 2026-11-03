@@ -14,6 +14,8 @@ import type * as Overlay from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import ChatButtonPage from './ChatButtonPage';
 import { setChatDockOffset } from './chat-dock';
+import { publishChatFeed, provideChatFeedActions, resetChatFeed, type FeedItem } from './chat-feed';
+import { PEEK_DELAY_MS } from '@/components/custom/ChatButton';
 
 vi.mock('@/overlay', async (importOriginal) => ({
   ...(await importOriginal<typeof Overlay>()),
@@ -31,13 +33,15 @@ afterAll(() => {
 });
 
 const updateSettings = vi.fn();
+let settings: Record<string, unknown> = {};
 // A 1920x1080 game: the dock is 43x118, flush on the right edge, 9px above the bottom (x 1877, y 953)
 const overlay = { openPanel: vi.fn(), togglePanel: vi.fn(), gameRect: { x: 0, y: 0, width: 1920, height: 1080 } };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  settings = {};
   updateSettings.mockResolvedValue(undefined);
-  vi.mocked(useOptions).mockImplementation(() => ({ updateSettings }) as never);
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
   vi.mocked(useOverlay).mockImplementation(() => overlay as unknown as OverlayApi);
 });
 
@@ -110,6 +114,7 @@ describe('ChatButtonPage', () => {
 
   it.each([
     ['Market browser', ['market']],
+    ['Builds', ['builds']],
     // Beside the dock: right edges aligned, above it (no room below)
     ['Net worth', ['netWorthPanel', undefined, { placement: { x: 1560, y: 525 } }]],
     ['Stash value', ['currency']],
@@ -148,5 +153,165 @@ describe('ChatButtonPage', () => {
     // Near the top the menu opens below the tab
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByRole('menu').className).toContain('top-full');
+  });
+
+  it('holds the favorites from settings, growing upward from its spot, and saves favorite changes', () => {
+    settings = { chatDockFavorites: ['chat', 'offers', 'settings'] };
+    render(<ChatButtonPage />);
+    const dock = () => screen.getByTitle('Drag to move').closest<HTMLElement>('.absolute.right-0')!;
+    // A third button adds a tab width (43px) above the default 118px tab: 43x161, same 9px above the bottom
+    expect(dock().style.height).toBe('161px');
+    expect(dock().style.top).toBe(`${953 - 43}px`);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(overlay.openPanel).toHaveBeenCalledWith('settings');
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Favorite Offers' }));
+    expect(updateSettings).toHaveBeenCalledWith({ chatDockFavorites: ['chat', 'settings'] });
+  });
+
+  it('lays the menu and tab out in the saved order, new windows appended, unknown ones ignored', () => {
+    settings = {
+      chatDockOrder: ['settings', 'bogus', 'offers', 'settings'],
+      chatDockFavorites: ['bogus', 'offers', 'settings'],
+    };
+    render(<ChatButtonPage />);
+    const tab = screen.getByTitle('Drag to move');
+    expect(Array.from(tab.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Settings',
+      'Offers',
+      'More',
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent?.replace(/\d+/, ''))).toEqual([
+      'Settings',
+      'Offers',
+      'Chat',
+      'Market browser',
+      'Builds',
+      'Net worth',
+      'Stash value',
+      'Manage listings',
+      'Disable overlay',
+    ]);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Chat' }), { key: 'ArrowUp' });
+    expect(updateSettings).toHaveBeenCalledWith({
+      chatDockOrder: ['settings', 'chat', 'offers', 'market', 'builds', 'netWorth', 'stashValue', 'manageListings'],
+    });
+  });
+});
+
+const item = (n: number, over: Partial<FeedItem> = {}): FeedItem => ({
+  key: `k${n}`,
+  kind: 'message',
+  name: `Trader${n}`,
+  at: n * 1000,
+  open: { threadId: `whisper:t${n}` },
+  ...over,
+});
+
+function provideActions() {
+  const actions = { markAllRead: vi.fn(), seeOffers: vi.fn() };
+  provideChatFeedActions(actions);
+  return actions;
+}
+
+describe('ChatButtonPage feed', () => {
+  afterEach(() => resetChatFeed());
+
+  it('Offers lands on Buying for an accepted offer and marks offers seen', () => {
+    const actions = provideActions();
+    publishChatFeed({ items: [item(1, { kind: 'offerAccepted', open: { filter: 'buying' } })], canMarkAllRead: false });
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { filter: 'buying' }]]);
+    expect(actions.seeOffers).toHaveBeenCalledTimes(1);
+  });
+
+  it("Offers lands on a single trade whisper's thread", () => {
+    provideActions();
+    publishChatFeed({ items: [item(1, { kind: 'trade', open: { threadId: 'whisper:bob' } })], canMarkAllRead: false });
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { threadId: 'whisper:bob' }]]);
+  });
+
+  it('Offers with nothing new lands on Selling', () => {
+    render(<ChatButtonPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    expect(overlay.openPanel.mock.calls).toEqual([['chat', { filter: 'selling' }]]);
+  });
+
+  describe('peek', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const peek = () => screen.queryByRole('group', { name: "What's new" });
+    const hover = () =>
+      act(() => {
+        fireEvent.pointerEnter(screen.getByRole('button', { name: 'Offers' }).closest('[data-interactive]')!);
+        vi.advanceTimersByTime(PEEK_DELAY_MS);
+      });
+    const six = () => [6, 5, 4, 3, 2, 1].map((n) => item(n));
+
+    it('lists the 5 newest items, newest first', () => {
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      const buttons = peek()!.querySelectorAll('li button');
+      expect(buttons).toHaveLength(5);
+      expect([...buttons].map((b) => b.textContent)).toEqual(
+        [6, 5, 4, 3, 2].map((n) => expect.stringContaining(`Trader${n}`)),
+      );
+      expect(screen.queryByText('Trader1')).toBeNull();
+    });
+
+    it('clicking an item opens it and closes the peek', async () => {
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByText('Trader5'));
+      expect(overlay.openPanel.mock.calls).toEqual([['chat', { threadId: 'whisper:t5' }]]);
+      // the exit animation runs on real frames
+      vi.useRealTimers();
+      await waitFor(() => expect(peek()).toBeNull());
+    });
+
+    it('Mark all read calls the provided action, disabled when there is nothing to mark', () => {
+      const actions = provideActions();
+      publishChatFeed({ items: six(), canMarkAllRead: true });
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+      expect(actions.markAllRead).toHaveBeenCalledTimes(1);
+
+      act(() => publishChatFeed({ items: six(), canMarkAllRead: false }));
+      expect((screen.getByRole('button', { name: 'Mark all read' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('Open chat opens chat, on the newest unread with unread messages', () => {
+      render(<ChatButtonPage />);
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+      act(() => setBadgeCount('chatUnread', 3));
+      hover();
+      fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+      expect(overlay.openPanel.mock.calls).toEqual([
+        ['chat', undefined],
+        ['chat', { newestUnread: true }],
+      ]);
+    });
+
+    it("an empty feed shows You're all caught up", () => {
+      render(<ChatButtonPage />);
+      hover();
+      expect(screen.getByText("You're all caught up")).not.toBeNull();
+    });
   });
 });

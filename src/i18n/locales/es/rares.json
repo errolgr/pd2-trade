@@ -1,0 +1,105 @@
+{
+  "notes": {
+    "craftedUnreliable": "los objetos creados en esta ranura aún no se pueden tasar con fiabilidad (pocos datos de objetos creados)"
+  },
+  "slots": {
+    "ring": { "label": "Anillo", "plural": "Anillos", "inSentence": "anillos" },
+    "amul": { "label": "Amuleto", "plural": "Amuletos", "inSentence": "amuletos" },
+    "circ": { "label": "Diadema", "plural": "Diademas", "inSentence": "diademas" },
+    "jewl": { "label": "Joya", "plural": "Joyas", "inSentence": "joyas" },
+    "glov": { "label": "Guantes", "plural": "Guantes", "inSentence": "guantes" },
+    "boot": { "label": "Botas", "plural": "Botas", "inSentence": "botas" },
+    "belt": { "label": "Cinturón", "plural": "Cinturones", "inSentence": "cinturones" },
+    "tors": { "label": "Armadura", "plural": "Armaduras", "inSentence": "armaduras" },
+    "helm": { "label": "Casco", "plural": "Cascos", "inSentence": "cascos" },
+    "shield": { "label": "Escudo", "plural": "Escudos", "inSentence": "escudos" },
+    "quiver": { "label": "Carcaj", "plural": "Carcajes", "inSentence": "carcajes" },
+    "weapon": { "label": "Arma", "plural": "Armas", "inSentence": "armas" },
+    "unknown": { "plural": "Objetos", "inSentence": "objetos" }
+  },
+  "verdicts": {
+    "keep": "Guardar",
+    "check": "Revisar",
+    "vendor": "Vender"
+  },
+  "priority": {
+    "high": "Tiene una estadística clave ★★ o mejor",
+    "medium": "Tiene una estadística clave ★",
+    "low": "Sin estadísticas clave"
+  },
+  "crafted": {
+    "lowConfidence": "Baja confianza",
+    "lowConfidenceTitle": "Baja confianza: el modelo de objetos creados de esta ranura se basa en pocos datos de anuncios, así que toma el veredicto y el rango como una guía aproximada."
+  },
+  "rank": {
+    "top": "{{percent}}% superior",
+    "bottom": "{{percent}}% inferior"
+  },
+  "ordinal": {
+    "st": "{{n}}.º",
+    "nd": "{{n}}.º",
+    "rd": "{{n}}.º",
+    "th": "{{n}}.º"
+  },
+  "keyStatTitle": "Estadística clave: {{multiplier}} el precio de final de temporada para este nivel",
+  "marketSource": {
+    "atThisRank": "{{slots}} en este rango · {{where}}",
+    "lastSeason": "temporada anterior",
+    "hardcoreListings": "anuncios hardcore"
+  },
+  "rankBar": {
+    "ariaLabel": "Predicción en el percentil {{percentile}} de precios de {{slots}}, con un margen de {{error}} puntos",
+    "vendor": "vender",
+    "keep": "guardar"
+  },
+  "rankBlocks": {
+    "title": "Rango entre {{slots}} <note>(esta temporada)</note>",
+    "ariaLabel": "Rango entre {{slots}}: {{block}}",
+    "bottom25": "25% inferior",
+    "bottom50": "50% inferior",
+    "top50": "50% superior",
+    "top25": "25% superior",
+    "top15": "15% superior",
+    "top5": "5% superior"
+  },
+  "statNotes": {
+    "corruptionOnly": "{{stat}} en {{slots}} solo mediante corrupción",
+    "nearMiss": "por poco: {{from}}+ es {{multiplier}} en {{slots}}",
+    "nearMissCorruption": "por poco: {{from}}+ es {{multiplier}} en {{slots}} (solo mediante corrupción)",
+    "valuableFrom": "valioso desde {{from}} en {{slots}}",
+    "valuableFromCorruption": "valioso desde {{from}} en {{slots}} (solo mediante corrupción)"
+  },
+  "stats": {
+    "title": "Estadísticas de este objeto",
+    "keyStats_one": "{{count}} estadística clave",
+    "keyStats_many": "{{count}} de estadísticas clave",
+    "keyStats_other": "{{count}} estadísticas clave",
+    "noKeyStats": "sin estadísticas clave",
+    "roll": "tirada {{percent}}%"
+  },
+  "hardcore": {
+    "model": "Hardcore: modelo de precios y estrellas a partir de datos de softcore",
+    "rankedHardcore": "clasificado frente a anuncios hardcore",
+    "rankedBlended": "clasificado frente a anuncios hardcore combinados con softcore ({{percent}}% hardcore)",
+    "rankedSoftcore": "clasificado frente a anuncios softcore",
+    "pricesHardcore": "precios de anuncios hardcore",
+    "pricesSoftcore": "precios de anuncios softcore"
+  },
+  "stashPosition": "col. {{column}}, fila {{row}}",
+  "detail": {
+    "verdict": "Veredicto",
+    "howVerdictsWork": "Cómo funcionan los veredictos",
+    "usuallyListed": "Suele anunciarse",
+    "samples": "Muestras",
+    "comparedWith": "Comparado con",
+    "stash": "Alijo"
+  },
+  "history": {
+    "title": "Historial del objeto",
+    "aside_one": "{{times}}× · {{count}} vendedor · desde {{date}}",
+    "aside_many": "{{times}}× · {{count}} de vendedores · desde {{date}}",
+    "aside_other": "{{times}}× · {{count}} vendedores · desde {{date}}",
+    "newOwner": "nuevo dueño",
+    "noPrice": "sin precio"
+  }
+}

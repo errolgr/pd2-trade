@@ -1,12 +1,15 @@
 import React from 'react';
+import { isTauri } from '@tauri-apps/api/core';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
+// UI language: initialized before the first render (bundled resources, synchronous)
+import '@/i18n';
 import * as Sentry from '@sentry/react';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
 import { initFaro } from '@/lib/faro';
-import { AccountMismatchError, Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
+import { AccountMismatchError, isExpectedApiError, Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { OptionsProvider } from './hooks/useOptions';
 import { DialogProvider } from './hooks/useDialog';
 import { TrayProvider } from './hooks/useTray';
@@ -16,10 +19,15 @@ import { WhisperHistoryProvider } from './hooks/useWhisperHistory';
 import { GlobalErrorHandler } from './components/GlobalErrorHandler';
 import AppController from './pages/landing/AppController';
 import DelistHandler from './pages/delist/DelistHandler';
+import StashAutoDelistController from './pages/delist/StashAutoDelistController';
 import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayController';
+import CorruptedZoneTimerController from './pages/corrupted-zones/CorruptedZoneTimerController';
 import { OverlayProvider, OverlayRoot } from './overlay';
 import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
+import { SignInWindowPage } from './pages/sign-in/SignInPage';
+import { SignInProvider } from './hooks/useSignIn';
+import { normalizeErrorText, pd2Fingerprint } from './lib/sentry-grouping';
 
 // Apply the cached theme before the first render (no flash of the default theme)
 initTheme();
@@ -35,6 +43,8 @@ setTimeout(() => {
   Sentry.init({
     dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
     environment: process.env.NODE_ENV, // Set environment for filtering
+    // Only release builds report: `vite dev` (localhost, headless test browsers) would otherwise file real issues
+    enabled: process.env.NODE_ENV === 'production',
     integrations: [
       Sentry.captureConsoleIntegration({ levels: ['error'] }),
       Sentry.browserTracingIntegration(),
@@ -58,7 +68,7 @@ setTimeout(() => {
     // Filter out expected errors that shouldn't be reported to Sentry
     beforeSend(event, hint) {
       // Don't report AccountMismatchError - these are expected user errors
-      if (hint.originalException instanceof AccountMismatchError) {
+      if (hint.originalException instanceof AccountMismatchError || isExpectedApiError(hint.originalException)) {
         return null;
       }
       const firstException = event.exception?.values?.[0];
@@ -72,14 +82,24 @@ setTimeout(() => {
       if (text.includes('is not associated with your logged-in account')) {
         return null;
       }
+      // Same for PD2 4xx logged as `console.error('Failed to …:', err.message)`: no exception to check by status.
+      if (/\bAPI Error: 4\d\d\b/.test(text)) {
+        return null;
+      }
+      // Group PD2 failures by route + status instead of per user id / account / call site
+      const fingerprint = pd2Fingerprint(text, firstException?.type);
+      if (fingerprint) event.fingerprint = fingerprint;
+      if (event.message) event.message = normalizeErrorText(event.message);
+      if (firstException?.value) firstException.value = normalizeErrorText(firstException.value);
       return event;
     },
   });
   console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);
 }, 1000);
 
-// Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows
-document.addEventListener('contextmenu', (e) => e.preventDefault());
+// Suppress the native WebView context menu (Reload/Inspect/etc.) on all overlay windows; browser mode keeps it
+// (Inspect / DevTools)
+if (isTauri()) document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 /**
  * The single overlay window: every provider mounted once, every UI surface a panel.
@@ -89,45 +109,58 @@ const AppRoot: React.FC = () => (
   <DialogProvider>
     <OptionsProvider>
       <OverlayProvider defs={PANEL_DEFS}>
-        <TrayProvider>
-          <ItemsProvider>
-            <Pd2WebsiteProvider>
-              <WhisperHistoryProvider>
-                <NetWorthProvider>
-                  <GlobalErrorHandler />
-                  <AppController />
-                  <DelistHandler />
-                  <NetWorthOverlayController />
-                  <OverlayRoot />
-                </NetWorthProvider>
-              </WhisperHistoryProvider>
-            </Pd2WebsiteProvider>
-          </ItemsProvider>
-        </TrayProvider>
+        <SignInProvider>
+          <TrayProvider>
+            <ItemsProvider>
+              <Pd2WebsiteProvider>
+                <WhisperHistoryProvider>
+                  <NetWorthProvider>
+                    <GlobalErrorHandler />
+                    <AppController />
+                    <DelistHandler />
+                    <StashAutoDelistController />
+                    <NetWorthOverlayController />
+                    <CorruptedZoneTimerController />
+                    <OverlayRoot />
+                  </NetWorthProvider>
+                </WhisperHistoryProvider>
+              </Pd2WebsiteProvider>
+            </ItemsProvider>
+          </TrayProvider>
+        </SignInProvider>
       </OverlayProvider>
     </OptionsProvider>
   </DialogProvider>
 );
 
+// The native sign-in window (src-tauri commands::open_sign_in_window): only its view, Main runs the sign-in
+const signInWindow = new URLSearchParams(window.location.search).get('window') === 'sign-in';
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/"
-        element={<AppRoot />} />
-      {/* Browser mode: open straight into the market browser (see overlay/browser-launch.ts) */}
-      <Route path="/market"
-        element={<AppRoot />} />
-      {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
-      {process.env.NODE_ENV !== 'production' && (
-        <Route
-          path="/dev/gallery"
-          element={
-            <OptionsProvider>
-              <PrimitivesGallery />
-            </OptionsProvider>
-          }
-        />
-      )}
-    </Routes>
-  </BrowserRouter>,
+  signInWindow ? (
+    <SignInWindowPage />
+  ) : (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/"
+          element={<AppRoot />} />
+        {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
+        <Route path="/market"
+          element={<AppRoot />} />
+        <Route path="/builds"
+          element={<AppRoot />} />
+        {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
+        {process.env.NODE_ENV !== 'production' && (
+          <Route
+            path="/dev/gallery"
+            element={
+              <OptionsProvider>
+                <PrimitivesGallery />
+              </OptionsProvider>
+            }
+          />
+        )}
+      </Routes>
+    </BrowserRouter>
+  ),
 );

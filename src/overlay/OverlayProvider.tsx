@@ -10,7 +10,14 @@ import React, {
 } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
-import { claimKeyboard, isKeyboardClaimed, releaseKeyboard, trackKeyboardFocus } from './keyboard';
+import { holdListener } from '@/lib/listener';
+import {
+  claimKeyboard,
+  isKeyboardClaimed,
+  releaseKeyboard,
+  showOverFullscreenGame,
+  trackKeyboardFocus,
+} from './keyboard';
 import { getCursorPoint, sameRect, useGameState, viewportRect } from './game';
 import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
 import { setToastBridge } from './toast';
@@ -274,8 +281,10 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
       }
 
       // Opening never takes focus from the game (it would mute it): panels claim the keyboard only when the user
-      // clicks into a text field (Panel).
+      // clicks into a text field (Panel). Except over a fullscreen game, which hides every other window while it
+      // holds the foreground: there a panel the user can interact with takes it, or it never shows.
       if (opts.focus) void claimKeyboard();
+      else if (def.keyboard === 'onPointerDown') void showOverFullscreenGame();
     },
     [apply, defs],
   );
@@ -378,27 +387,19 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     },
     [],
   );
-  useEffect(() => {
-    let disposed = false;
-    let off: (() => void) | null = null;
-    listen(OUTSIDE_CLICK_EVENT, closeDismissablePanels)
-      .then((unlisten) => {
-        if (disposed) unlisten();
-        else off = unlisten;
-      })
-      .catch((error) => console.warn('[overlay] outside-click listener failed:', error));
-    return () => {
-      disposed = true;
-      off?.();
-    };
-  }, [closeDismissablePanels]);
+  useEffect(
+    () => holdListener(listen(OUTSIDE_CLICK_EVENT, closeDismissablePanels), OUTSIDE_CLICK_EVENT),
+    [closeDismissablePanels],
+  );
 
   useEffect(() => {
     // A toast's Reply: chat takes the keyboard so the focused composer can be typed in right away.
     // A market alert's View: the market browser opens on the saved search, focused on the new listing.
+    // A market alert's Details: the listing drawer.
     setToastBridge({
       openChat: (payload) => openPanel('chat', payload, { focus: true }),
       openMarket: (payload) => openPanel('market', payload),
+      openListing: (payload) => openPanel('listingDetail', payload),
     });
     return () => setToastBridge(null);
   }, [openPanel]);

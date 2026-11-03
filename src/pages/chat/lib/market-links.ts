@@ -2,6 +2,8 @@
  * Market listing links in chat messages. The site's "I'm interested" message links
  * https://projectdiablo2.com/market/listing/<id>?display="<name>" (with or without www).
  */
+import { t } from '@/i18n';
+
 const MARKET_LISTING_URL =
   /https?:\/\/(?:www\.)?projectdiablo2\.com\/market\/listing\/([a-f0-9]+)(?:\?display=((?:"[^"]+")|(?:[^\s"<>]+)))?/gi;
 
@@ -16,6 +18,18 @@ export interface MarketLink {
 export type MessageSegment =
   | { type: 'text'; content: string }
   | { type: 'link'; content: string; url: string; listingId: string };
+
+/** Chat link to a listing; `?display=` makes it read as `name`, the item name (see parseMessage). */
+export const listingMessageUrl = (listingId: string, name: string) =>
+  `https://www.projectdiablo2.com/market/listing/${listingId}?display="${name}"`;
+
+/**
+ * `text` with its mention of `name` linked to the listing, for display: the link goes at the end, and
+ * parseMessage turns the mention before it into the listing's pill (or shows the pill at the end when `text`
+ * doesn't mention `name`).
+ */
+export const linkMention = (text: string, listingId: string, name: string) =>
+  `${text} ${listingMessageUrl(listingId, name)}`;
 
 /** Every listing link in `text`, in order. A malformed percent escape in the display name is kept as typed. */
 export function findMarketLinks(text: string): MarketLink[] {
@@ -56,6 +70,13 @@ export function spaceOutLinks(text: string): string {
   return out + text.slice(last);
 }
 
+/** `text` cut after `max` characters with "...", never inside a listing link (it would show as a raw URL). */
+export function shortenMessage(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = findMarketLinks(text).find((link) => link.start < max && link.end > max)?.end ?? max;
+  return cut >= text.length ? text : `${text.slice(0, cut)}...`;
+}
+
 /**
  * Splits a message into text and listing links. When the display name already appears before its URL
  * ("interested in your Shako https://…?display=Shako") that mention becomes the link and the raw URL is dropped.
@@ -77,7 +98,7 @@ export function parseMessage(text: string): MessageSegment[] {
       if (before) segments.push({ type: 'text', content: before });
       segments.push({
         type: 'link',
-        content: displayName || `Market Listing ${listingId.substring(0, 8)}...`,
+        content: displayName || t('chat:links.marketListing', { id: listingId.substring(0, 8) }),
         url,
         listingId,
       });

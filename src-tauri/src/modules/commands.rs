@@ -1,6 +1,6 @@
+use crate::modules::opener;
 use crate::{chat_watcher, debug_logger, keyboard, window};
 use tauri::Manager;
-use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
@@ -17,6 +17,13 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_game_context()
+}
+
+/// Diablo II fills its monitor (D2GL fullscreen): while it holds the foreground the graphics driver draws nothing
+/// else on that monitor, so a panel only shows once the overlay takes the foreground (see `window::diablo_fullscreen`).
+#[tauri::command]
+pub fn is_diablo_fullscreen() -> bool {
+    window::diablo_fullscreen()
 }
 
 #[tauri::command]
@@ -120,14 +127,73 @@ pub fn write_debug_logs(entries: String) -> Result<(), String> {
     debug_logger::write_logs(&entries)
 }
 
+/// Opens an http(s) URL in the default browser (sign-in, listings, profiles); fails when nothing could open it.
+/// Off the async runtime's threads: on Linux it waits for the launcher's verdict.
 #[tauri::command]
-pub async fn open_oauth_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
-    if !url.starts_with("https://") && !url.starts_with("http://") {
-        return Err("Invalid URL scheme: only HTTP(S) is allowed".to_string());
-    }
+pub async fn open_url(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || opener::open_url(&app_handle, &url))
+        .await
+        .map_err(|e| e.to_string())?
+}
 
-    app_handle
-        .opener()
-        .open_url(&url, None::<&str>)
-        .map_err(|e| format!("Failed to open URL: {}", e))
+/// Opens the app's config folder in the file manager (tray menu).
+#[tauri::command]
+pub async fn open_config_dir(app_handle: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || opener::open_config_dir(&app_handle))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// The sign-in window: an ordinary app window (taskbar entry, minimizable, not always on top) so it can sit
+/// behind other apps while the user signs in in the browser. Its page is a view; Main runs the sign-in.
+pub const SIGN_IN_LABEL: &str = "SignIn";
+/// Emitted to Main when the user closes the sign-in window.
+pub const SIGN_IN_CLOSED_EVENT: &str = "sign-in-window-closed";
+
+/// Opens the sign-in window, or restores it if minimized; either way brings it to the front with focus.
+/// Async: building a window from a sync command deadlocks on Windows.
+#[tauri::command]
+pub async fn open_sign_in_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let window = match app_handle.get_webview_window(SIGN_IN_LABEL) {
+        Some(window) => {
+            let _ = window.unminimize();
+            let _ = window.show();
+            window
+        }
+        None => tauri::WebviewWindowBuilder::new(
+            &app_handle,
+            SIGN_IN_LABEL,
+            tauri::WebviewUrl::App("index.html?window=sign-in".into()),
+        )
+        .title("PD2 Trader - Sign in")
+        .inner_size(440.0, 340.0)
+        .resizable(false)
+        .maximizable(false)
+        .center()
+        .always_on_top(false)
+        .skip_taskbar(false)
+        .focused(true)
+        .build()
+        .map_err(|e| e.to_string())?,
+    };
+    focus_window(&window);
+    Ok(())
+}
+
+/// Brings a window to the front even while another app holds the foreground (the browser, mid sign-in).
+fn focus_window(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "windows")]
+    if let Ok(hwnd) = window.hwnd() {
+        if window::bring_to_foreground(hwnd.0 as isize) {
+            return;
+        }
+    }
+    let _ = window.set_focus();
+}
+
+#[tauri::command]
+pub fn close_sign_in_window(app_handle: tauri::AppHandle) {
+    if let Some(window) = app_handle.get_webview_window(SIGN_IN_LABEL) {
+        let _ = window.destroy();
+    }
 }

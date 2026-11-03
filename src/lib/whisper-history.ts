@@ -3,7 +3,7 @@
  *
  * One entry per person, keyed by their normalized account name (or the player/character name the chat log
  * gave when it showed no account). Every whisper to or from them is a message; "Hi, I'm interested in your…"
- * trade whispers are also kept as trades, which chat pins in the person's thread until dismissed. All
+ * trade whispers are also kept as trades, which chat pins in the person's thread until dismissed or settled. All
  * updates are pure functions on `WhisperHistory`; `useWhisperHistory` owns the state and the chat watcher
  * listeners.
  */
@@ -55,6 +55,9 @@ export interface WhisperMessage {
   copied?: boolean;
 }
 
+/** How a trade whisper ended from the overlay: sold, rejected, or its listing deleted. */
+export type TradeOutcome = 'sold' | 'rejected' | 'delisted';
+
 export interface WhisperTrade {
   id: string;
   /** Incoming: they want to buy from you (selling). Outgoing: you asked them (buying). */
@@ -64,6 +67,9 @@ export interface WhisperTrade {
   price?: string;
   timestamp: number;
   dismissed?: boolean;
+  /** Settled: it leaves the pinned deals and shows in the conversation at `settledAt` (epoch ms). */
+  outcome?: TradeOutcome;
+  settledAt?: number;
 }
 
 export interface WhisperPerson {
@@ -91,27 +97,59 @@ export const EMPTY_HISTORY: WhisperHistory = { people: {} };
 export const normalizeName = (name: string | null | undefined) =>
   (name ?? '').trim().replace(/^\*/, '').trim().toLowerCase();
 
+/**
+ * Every normalized form a name matches on. A plain name yields itself; a legacy "character*account" key
+ * (saved before the Rust parser knew that format) yields the whole string plus each half, so matching
+ * against either the character or the account still finds the person.
+ */
+export function nameAliases(name: string | null | undefined): string[] {
+  const normalized = normalizeName(name);
+  if (!normalized) return [];
+  if (!normalized.includes('*')) return [normalized];
+  const parts = normalized
+    .split('*')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length > 1 ? [normalized, ...parts] : [normalized];
+}
+
 let idSeq = 0;
 const nextId = (now: number) => `${now.toString(36)}-${(idSeq++).toString(36)}`;
 
 /** The person any of `names` refers to (empty names never match). */
 export function findPerson(history: WhisperHistory, names: readonly (string | null | undefined)[]) {
-  const wanted = new Set(names.map(normalizeName).filter(Boolean));
+  const wanted = new Set(names.flatMap(nameAliases));
   if (wanted.size === 0) return undefined;
   return Object.values(history.people).find((person) =>
-    [person.key, person.accountName, person.characterName, person.playerName].some((name) => {
-      const normalized = normalizeName(name);
-      return normalized !== '' && wanted.has(normalized);
-    }),
+    [person.key, person.accountName, person.characterName, person.playerName]
+      .flatMap(nameAliases)
+      .some((alias) => wanted.has(alias)),
   );
+}
+
+/**
+ * The account a stored name points at: the part after the "*" of a legacy "character*account" name, else
+ * the name itself (without a leading "*").
+ */
+export function accountOf(name: string): string {
+  const trimmed = name.trim();
+  const star = trimmed.lastIndexOf('*');
+  if (star <= 0) return trimmed.replace(/^\*/, '').trim();
+  return trimmed.slice(star + 1).trim() || trimmed.slice(0, star).trim();
 }
 
 /** Whom `/w *<target>` reaches. */
 export const whisperTarget = (person: Pick<WhisperPerson, 'accountName' | 'playerName'>) =>
-  person.accountName || person.playerName;
+  accountOf(person.accountName || person.playerName);
+
+/**
+ * The game chat command whispering `account`: `/w *<account> <text>`. The one place that adds the `*`, so a
+ * stored "character*account" or "*account" name never comes out as `/w *character*account` or `/w **account`.
+ */
+export const whisperCommand = (account: string, text: string) => `/w *${accountOf(account)} ${text}`.trim();
 
 export const isOpenTrade = (trade: WhisperTrade, now: number) =>
-  !trade.dismissed && now - trade.timestamp < OPEN_TRADE_MS;
+  !trade.dismissed && !trade.outcome && now - trade.timestamp < OPEN_TRADE_MS;
 
 export const unreadWhispers = (person: WhisperPerson) =>
   person.messages.filter((m) => m.isIncoming && m.timestamp > person.readAt).length;
@@ -227,6 +265,23 @@ export function dismissTrade(history: WhisperHistory, key: string, tradeId: stri
   });
 }
 
+/** Settles an open trade (a settled one keeps its first outcome). */
+export function settleTrade(
+  history: WhisperHistory,
+  key: string,
+  tradeId: string,
+  outcome: TradeOutcome,
+  now: number,
+): WhisperHistory {
+  const person = history.people[key];
+  const trade = person?.trades.find((t) => t.id === tradeId);
+  if (!person || !trade || trade.outcome) return history;
+  return withPerson(history, {
+    ...person,
+    trades: person.trades.map((t) => (t.id === tradeId ? { ...t, outcome, settledAt: now } : t)),
+  });
+}
+
 /** Marks everyone in `keys` read up to their newest message. */
 export function markRead(history: WhisperHistory, keys: readonly string[]): WhisperHistory {
   let next = history;
@@ -280,6 +335,8 @@ const TradeSchema = z.object({
     .transform((v) => v ?? undefined),
   timestamp: z.number(),
   dismissed: z.literal(true).optional(),
+  outcome: z.enum(['sold', 'rejected', 'delisted']).optional(),
+  settledAt: z.number().optional(),
 });
 const PersonSchema = z.object({
   key: z.string(),

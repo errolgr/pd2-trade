@@ -131,6 +131,22 @@ describe('buildInbox', () => {
     expect(threads.map((t) => [t.id, t.people.length])).toEqual([['user:dave', 1]]);
   });
 
+  it('gives an offers-only user the profile the offer resolved, and links whispers from any of their accounts', () => {
+    const bryan = {
+      _id: 'bryan',
+      username: 'bryan',
+      created_at: '2023-09-28T05:06:13.767Z',
+      game: { accounts: ['Bryan', 'SGSF-Bryan'], beta_accounts: ['BryanBeta'] },
+    };
+    const threads = inbox({
+      people: { 'sgsf-bryan': person('sgsf-bryan', { accountName: 'SGSF-Bryan' }) },
+      offers: [offer({ userId: 'bryan', playerName: 'bryan', accountName: 'Bryan', user: bryan, isIncoming: false })],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['user:bryan', ['sgsf-bryan']]]);
+    expect(threads[0].participant).toBe(bryan);
+    expect(threads[0].accounts).toEqual(['Bryan', 'SGSF-Bryan', 'BryanBeta']);
+  });
+
   it('gives a contact opened from the market a thread only when no other thread has that user', () => {
     const threads = inbox({
       conversations: [conversation('c-bob', { id: 'bob', username: 'bob' })],
@@ -147,6 +163,34 @@ describe('buildInbox', () => {
       userId: 'erin',
       latest: undefined,
     });
+  });
+
+  it('links a whisper to a contact resolved from the seller lookup by its game accounts', () => {
+    const resolved = {
+      _id: 'tharok_web',
+      username: 'tharok_web',
+      created_at: '',
+      game: { accounts: ['Tharok'] },
+    };
+    const threads = inbox({
+      people: { tharok: person('tharok', { accountName: 'tharok', characterName: 'frostwind' }) },
+      contacts: [{ userId: 'tharok_web', name: 'tharok_web', user: resolved }],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['user:tharok_web', ['tharok']]]);
+    expect(threads[0]).toMatchObject({ userId: 'tharok_web', participant: resolved });
+    expect(threads[0].accounts).toEqual(['Tharok']);
+  });
+
+  it("adds a resolved contact's accounts to the conversation they already have, so their whispers link there", () => {
+    const resolved = { _id: 'tharok', username: 'tharok_web', created_at: '', game: { accounts: ['Tharok'] } };
+    const threads = inbox({
+      // The conversation partner lists no game accounts
+      conversations: [conversation('c-tharok', { id: 'tharok', username: 'tharok_web' })],
+      people: { tharok: person('tharok') },
+      contacts: [{ userId: 'tharok', name: 'tharok_web', user: resolved }],
+    });
+    expect(threads.map((t) => [t.id, t.people.map((p) => p.key)])).toEqual([['c-tharok', ['tharok']]]);
+    expect(threads[0].accounts).toEqual(['Tharok']);
   });
 
   it("links whispers to a conversation by an account only its partner's offers carry, and whispers go there", () => {
@@ -232,6 +276,11 @@ describe('buildInbox', () => {
     });
     expect(threadAliases(thread).sort()).toEqual(['c1', 'user:u1', 'whisper:acc1', 'whisper:sorc'].sort());
   });
+
+  it('knows a legacy "character*account" sender by the whole name and each half', () => {
+    const [thread] = inbox({ people: { 'frost*tharok': person('frost*tharok', { accountName: undefined }) } });
+    expect(threadAliases(thread).sort()).toEqual(['whisper:frost', 'whisper:frost*tharok', 'whisper:tharok']);
+  });
 });
 
 describe('buildTimeline', () => {
@@ -268,12 +317,52 @@ describe('buildTimeline', () => {
     expect(entries).toHaveLength(5);
   });
 
+  it('places your settled offers by the time you made them, as unread-free events, honouring the paging cutoff', () => {
+    const offer = (id: string, minutes: number): TradeOffer => ({
+      id,
+      isIncoming: false,
+      playerName: 'bob',
+      itemName: 'Ber',
+      price: '1 ber',
+      timestamp: new Date(ago(minutes)),
+      listingClosed: true,
+    });
+    const offers = [offer('o-mid', 20), offer('o-old', 200)];
+    const keys = (hasOlder: boolean) => buildTimeline(website, [whispers], ME, hasOlder, offers).map((e) => e.key);
+    expect(keys(false)).toEqual([
+      'offer:o-old',
+      'w:bob:w-old',
+      'a',
+      'offer:o-mid',
+      'w:bob:w-mid',
+      'b',
+      'w:bob:w-new',
+      'tmp-1',
+    ]);
+    expect(keys(true)).not.toContain('offer:o-old');
+    const entry = buildTimeline(website, [], ME, false, offers).find((e) => e.key === 'offer:o-mid');
+    expect(entry).toMatchObject({ own: true, unread: false, offer: { id: 'o-mid' } });
+  });
+
   it('shows only whispers for a whisper-only thread', () => {
     expect(buildTimeline([], [whispers], ME, false).map((e) => e.key)).toEqual([
       'w:bob:w-old',
       'w:bob:w-mid',
       'w:bob:w-new',
     ]);
+  });
+
+  it('places settled trade whispers as events at the time they were settled; open ones stay out', () => {
+    const traded = person('bob', {
+      messages: whispers.messages,
+      trades: [
+        { id: 't-sold', isIncoming: true, message: 'wts?', timestamp: ago(120), outcome: 'sold', settledAt: ago(12) },
+        { id: 't-open', isIncoming: true, message: 'wtb?', timestamp: ago(14) },
+      ],
+    });
+    const entries = buildTimeline([], [traded], ME, false);
+    expect(entries.map((e) => e.key)).toEqual(['w:bob:w-old', 'w:bob:w-mid', 'trade:bob:t-sold', 'w:bob:w-new']);
+    expect(entries[2]).toMatchObject({ own: true, unread: false, trade: { outcome: 'sold' } });
   });
 
   it('flags unread entries: incoming whispers after readAt and website messages from them not read by me', () => {

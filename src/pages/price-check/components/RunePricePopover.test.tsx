@@ -4,7 +4,10 @@ import { MotionGlobalConfig } from 'framer-motion';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ItemValue, RuneCombination } from '../lib/types';
+import { openUrl } from '@/lib/browser-opener';
 import { RunePricePopover } from './RunePricePopover';
+
+vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn(async () => {}) }));
 
 // happy-dom's WAAPI rejects cancelled animations as unhandled errors; finish motion instantly instead.
 beforeAll(() => {
@@ -147,9 +150,42 @@ describe('RunePricePopover', () => {
     expect(within(dialog).getByText('= 0.09 HR').className).toContain('text-muted-foreground');
   });
 
+  it('rounds prices, the target, totals and differences instead of showing float noise', () => {
+    const values = [rune('Ber Rune', 1.4999999999999998), rune('Um Rune', 0.7333333333), rune('Mal Rune', 0.0333333)];
+    const combos: RuneCombination[] = [
+      {
+        runes: [{ name: 'Mal Rune', price: 0.1, count: 3 }],
+        totalValue: 0.1 + 0.2,
+        difference: 1.4999999999999998 - (0.1 + 0.2),
+      },
+    ];
+    const { dialog } = open({
+      calculatedRuneValues: values,
+      selectedRuneBreakdown: 'Ber Rune',
+      selectedRuneCombinations: combos,
+    });
+
+    expect(within(dialog).getByText('target 1.5 HR')).not.toBeNull();
+    expect(within(dialog).getByText('= 0.3 HR')).not.toBeNull();
+    expect(within(dialog).getByText('Diff: 1.2 HR')).not.toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: /show more|more/i }));
+    expect(dialog.textContent).toContain('0.73 HR');
+    expect(dialog.textContent).toContain('0.033 HR');
+    expect(dialog.textContent).not.toMatch(/\d\.\d{4,}/);
+  });
+
   it('shows no breakdown when the selected rune has no combinations', () => {
     const { dialog } = open({ selectedRuneBreakdown: 'Ber Rune', selectedRuneCombinations: [] });
     expect(within(dialog).queryByText(/Breakdown:/)).toBeNull();
+  });
+
+  it("opens pd2trader.com's rune prices through the app's opener", () => {
+    const { dialog } = open();
+    const link = within(dialog).getByRole('link', { name: /View on pd2trader.com/ });
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    fireEvent(link, click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(openUrl).toHaveBeenCalledWith('https://pd2trader.com/?category=runes');
   });
 
   it('clicking a rune in a stateful parent swaps the breakdown target', async () => {

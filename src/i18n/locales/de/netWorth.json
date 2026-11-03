@@ -1,0 +1,42 @@
+{
+  "toast": {
+    "title": "Vermögen",
+    "change": "{{change}} HR",
+    "changeWithMovers": "{{change}} HR · {{movers}}"
+  },
+  "ticker": {
+    "title": "Vermögen – klicken für Details, ziehen zum Verschieben",
+    "snapshotFailed": "Snapshot fehlgeschlagen",
+    "lastSnapshot": "Letzter Snapshot {{time}}",
+    "noSnapshot": "Noch kein Snapshot",
+    "session": "Sitzung"
+  },
+  "panel": {
+    "title": "Vermögen",
+    "hide": "Ausblenden",
+    "openFullView": "Vollansicht öffnen",
+    "signInPrompt": "Melde dich mit deinem PD2-Konto an, um dein Vermögen zu verfolgen.",
+    "signIn": "Anmelden",
+    "uncertain": "+{{value}} HR unsicher",
+    "sessionDelta": "{{change}} HR Sitzung",
+    "sessionRate": "{{rate}} HR/h · {{minutes}} Min.",
+    "thisSession": "Diese Sitzung",
+    "last24Hours": "Letzte 24 Stunden",
+    "notEnoughSnapshots": "Noch nicht genug Snapshots",
+    "recentSnapshots": "Letzte Snapshots",
+    "noChanges": "Noch keine Änderungen erfasst.",
+    "historyOff": "Der Verlauf ist aus. Aktiviere „Vermögensverlauf speichern“ unter Einstellungen → Vermögen, um Sitzungen und Änderungen zu sehen.",
+    "snapshotNow": "Jetzt Snapshot",
+    "startSession": "Sitzung starten",
+    "stopSession": "Sitzung beenden"
+  },
+  "profile": {
+    "publicProfile": "Öffentliches Profil",
+    "private": "Privat",
+    "publicTooltip": "Dein Kontoname, Ränge, Vermögen, Diagramm, Abzeichen und besondere Funde sind auf pd2trader.com öffentlich.",
+    "privateTooltip": "Nur du siehst dein Vermögen. Aktiviere es, um mit einem öffentlichen Profil in den Bestenlisten auf pd2trader.com zu erscheinen.",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "couldNotSave": "Konnte nicht speichern",
+    "viewProfile": "Profil ansehen"
+  }
+}

@@ -69,7 +69,10 @@ const { theme } = useData()
 
 #### Item Price Check
 
-Instantly check the value of your items in-game with a single hotkey.
+Instantly check the value of your items in-game with a single hotkey. The **Copy image** button in the price check title bar copies the item as a PD2-style tooltip with its price (average, listings) to your clipboard, ready to paste into Discord or a trade post. The tooltip is drawn like the game's: name, runes, defense or damage, requirements, every property in the game's order (socketed runes, gems and jewels included) and the set's items. Lines the clipboard can't tell are left out rather than guessed: durability, chance to block, and the required level of rare and crafted items.
+
+Every stat shows its roll range exactly like the PD2 tooltip with stat ranges on (e.g. `[25 - 50]`), and the min/max fill stays inside it. Damage pairs ("Adds 4-14 fire damage") are one row with separate min and max damage filters.
+
 <a href="https://i.imgur.com/8vSvw6F.png" target="_blank" rel="noopener noreferrer">
 <img src="https://i.imgur.com/8vSvw6F.png" alt="Item Price Check" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
@@ -99,6 +102,18 @@ Instantly calculate the value of your stash (Ctrl+X): runes, currency, uniques a
 
 Track your net worth while you play: a small in-game ticker shows your total in HR, the change this session and HR per hour. Click it for a mini panel with a session chart, recent snapshots and session start/stop. Optional toasts tell you what changed (e.g. `+1.2 HR · Ber, 2× Ist`), and a hotkey takes a snapshot on demand. Turn it on under Settings → Net Worth, then pin it to a corner of the game or drag it anywhere on screen.
 
+#### Corrupted Zone Timer
+
+Know where to farm without leaving the game: a small in-game timer shows the zones corrupted in Hell games made right now (monster level 85, more density, more Worldstone Shards and Tier 1 maps) and a countdown to the next 15-minute rotation. Click it for the upcoming zones and their start times; they open upwards when the timer sits in the lower half of the screen, downwards otherwise. A game keeps the zones it was made with, so make a new game after the switch. Follow the zones you farm to have the timer show only those (counting down to the next one), get a toast when they come up, or both. Turn it on under Settings → Interface, then pin it to a corner of the game or drag it anywhere on screen.
+
+#### Builds
+
+See what the ladder plays without leaving the game: the Builds panel shows the most played classes, skills and gear of level 80+ characters, and each character's gear, skills and build timeline. Open your own characters for gear-up suggestions priced in HR, a trader's build from the chat, or the builds that wear an item from its price check. Set a Builds hotkey in Settings → Hotkeys (unbound by default).
+
+#### Command Palette
+
+One search box for the whole app: press Ctrl+Space in game and start typing. It finds panels and actions, items (with their current HR price and 7-day change), characters, accounts and build meta (classes, skills, nicknames like hammerdin), your chats, listings and trade offers, and every setting. Enter opens the result; switches and choices in Settings change right in the palette. Press Tab to search only one kind of result, Ctrl+K (or →) for more actions on a row (watch an item's price, relist or delist a listing, follow a character, pin it to the palette), and Esc to close. With nothing typed it shows your pinned and recent results. Change or turn off the hotkey in Settings → Hotkeys.
+
 #### Rune Exchange
 
 Easily compare and trade runes with up-to-date exchange rates.
@@ -108,6 +123,6 @@ Easily compare and trade runes with up-to-date exchange rates.
 
 #### Themes
 
-Make the overlay your own: choose from 20 color themes (10 dark, 10 light) in Settings → Interface, applied instantly to every panel.
+Make the overlay your own: choose from 21 color themes (11 dark, 10 light) in Settings → Interface, applied instantly to every panel.
 
 Panels are opaque by default; the Window transparency slider in Settings → Interface lets the game show through their backgrounds (up to 90%).

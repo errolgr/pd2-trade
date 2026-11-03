@@ -1,0 +1,60 @@
+{
+  "actions": {
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "remove": "Remover",
+    "edit": "Editar",
+    "add": "Adicionar",
+    "confirm": "Confirmar",
+    "retry": "Tentar de novo",
+    "refresh": "Atualizar",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "search": "Buscar",
+    "clear": "Limpar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "done": "Concluído",
+    "ok": "OK",
+    "yes": "Sim",
+    "no": "Não",
+    "open": "Abrir",
+    "reset": "Redefinir",
+    "apply": "Aplicar",
+    "signIn": "Entrar",
+    "signOut": "Sair",
+    "tryAgain": "Tentar novamente"
+  },
+  "status": {
+    "loading": "Carregando…",
+    "error": "Algo deu errado",
+    "noResults": "Nenhum resultado"
+  },
+  "time": {
+    "justNow": "agora mesmo",
+    "secondsAgoShort": "há {{count}} s",
+    "minutesAgoShort": "há {{count}} min",
+    "hoursAgoShort": "há {{count}} h",
+    "daysAgoShort": "há {{count}} d",
+    "monthsAgoShort": "há {{count}} m",
+    "yearsAgoShort": "há {{count}} a",
+    "secondsAgo_one": "há {{count}} segundo",
+    "secondsAgo_many": "há {{count}} de segundos",
+    "secondsAgo_other": "há {{count}} segundos",
+    "minutesAgo_one": "há {{count}} minuto",
+    "minutesAgo_many": "há {{count}} de minutos",
+    "minutesAgo_other": "há {{count}} minutos",
+    "hoursAgo_one": "há {{count}} hora",
+    "hoursAgo_many": "há {{count}} de horas",
+    "hoursAgo_other": "há {{count}} horas",
+    "daysAgo_one": "há {{count}} dia",
+    "daysAgo_many": "há {{count}} de dias",
+    "daysAgo_other": "há {{count}} dias"
+  },
+  "language": {
+    "system": "Padrão do sistema"
+  }
+}

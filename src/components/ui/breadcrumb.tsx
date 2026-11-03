@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 import { cn } from '@/lib/utils';
 
@@ -39,9 +40,14 @@ function BreadcrumbLink({
   const Comp = asChild ? Slot : 'a';
 
   return (
-    <Comp data-slot="breadcrumb-link"
-      className={cn('hover:text-foreground rounded-sm outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60', className)}
-      {...props} />
+    <Comp
+      data-slot="breadcrumb-link"
+      className={cn(
+        'hover:text-foreground rounded-sm outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
@@ -73,6 +79,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
 }
 
 function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
+  const { t } = useTranslation('app');
   return (
     <span
       data-slot="breadcrumb-ellipsis"
@@ -82,7 +89,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{t('ui.more')}</span>
     </span>
   );
 }

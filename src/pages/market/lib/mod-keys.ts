@@ -1,6 +1,6 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { PSEUDO_STATS } from './pseudo';
-import { parseStatKey, STAT_OPTIONS } from './stats';
+import { parseStatKey, pinsMatch, STAT_OPTIONS } from './stats';
 import type { PseudoDef, StatFilter } from './types';
 
 /*
@@ -32,12 +32,12 @@ function optionKeysFor(name: string): string[] {
  * With several matches the most specific (most pinned params) wins.
  */
 export function modToStatKey(mod: Pick<Modifier, 'name' | 'values'>): string | null {
-  let best: { key: string; params: number } | null = null;
+  let best: { key: string; pins: number } | null = null;
   for (const key of optionKeysFor(mod.name)) {
-    const { params, valueIndex } = parseStatKey(key);
-    if (params.some((p, i) => mod.values?.[i] !== p)) continue;
+    const { pins, valueIndex } = parseStatKey(key);
+    if (!pinsMatch(mod.values, pins)) continue;
     if (typeof mod.values?.[valueIndex] !== 'number') continue;
-    if (!best || params.length > best.params) best = { key, params: params.length };
+    if (!best || pins.length > best.pins) best = { key, pins: pins.length };
   }
   return best?.key ?? null;
 }
@@ -54,15 +54,15 @@ export function coveringPseudos(mod: Modifier): PseudoDef[] {
 }
 
 /**
- * Add `row` to `stats`, or update the row already filtering the same stat (same kind + key) in place; returns
- * the new list and the id of the touched row.
+ * Add `row` to `stats`, or update the row already filtering for the same stat (same kind + key, not excluded) in
+ * place; returns the new list and the id of the touched row.
  */
 export function mergeStatFilter(
   stats: StatFilter[],
   row: Omit<StatFilter, 'id' | 'enabled'> & { enabled?: boolean },
   newId: () => string = () => crypto.randomUUID(),
 ): { stats: StatFilter[]; id: string } {
-  const existing = stats.find((s) => s.kind === row.kind && s.key === row.key);
+  const existing = stats.find((s) => s.kind === row.kind && s.key === row.key && !s.not);
   if (existing) {
     const updated: StatFilter = { ...existing, ...row, id: existing.id, enabled: row.enabled ?? true };
     return { stats: stats.map((s) => (s.id === existing.id ? updated : s)), id: existing.id };

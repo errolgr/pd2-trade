@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { t } from '@/i18n';
 
 export const shortcutFormSchema = z
   .object({
@@ -15,7 +16,10 @@ export const shortcutFormSchema = z
       return hasNote || hasPrice;
     },
     {
-      message: 'Please fill in either the note or HR price field.',
+      // Getter: zod reads the message when the check fails, so it follows the current language
+      get message() {
+        return t('quickList:form.noteOrPriceRequired');
+      },
       path: ['note'],
     },
   );

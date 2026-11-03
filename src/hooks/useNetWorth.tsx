@@ -1,9 +1,11 @@
+import { t } from '@/i18n';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { invoke, isTauri } from '@tauri-apps/api/core';
+import { isDiabloFocused } from '@/lib/diablo-focus';
 import { useOptions } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
 import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOverlay } from '@/overlay';
+import { useSignIn } from '@/hooks/useSignIn';
 import {
   getSeasons,
   getSessions,
@@ -57,12 +59,12 @@ const NetWorthContext = createContext<NetWorthContextValue | undefined>(undefine
 
 function describeError(error: unknown): string {
   if (error instanceof AccountMismatchError) {
-    return error.message || 'The selected account is not linked to your PD2 login. Check your account settings.';
+    return error.message || t('system:netWorth.accountMismatch');
   }
-  if (error instanceof AuthenticationError) return 'Your PD2 session expired. Sign in again.';
+  if (error instanceof AuthenticationError) return t('system:netWorth.sessionExpired');
   if (error instanceof NetWorthApiError) {
-    if (error.status === 401) return 'Your PD2 session expired. Sign in again.';
-    if (error.status === 429) return 'Too many requests. Try again in a minute.';
+    if (error.status === 401) return t('system:netWorth.sessionExpired');
+    if (error.status === 429) return t('system:netWorth.rateLimited');
     return error.message;
   }
   return error instanceof Error ? error.message : String(error);
@@ -76,15 +78,6 @@ function holdingsSignature(response: SnapshotResponse): string {
     .join('|');
 }
 
-async function isDiabloFocused(): Promise<boolean> {
-  if (!isTauri()) return true;
-  try {
-    return await invoke<boolean>('is_diablo_focused');
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Mounted once at the app root (inside Pd2WebsiteProvider and OverlayProvider). Owns the stash fetch, the
  * auto-snapshot scheduler, sessions and seasons.
@@ -93,6 +86,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { settings, isLoading } = useOptions();
   const { authData } = usePd2Website();
   const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
 
   const token = settings.pd2Token;
   const account = settings.account;
@@ -232,7 +226,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const refreshToken = settingsRef.current.pd2RefreshToken;
             const refreshed = refreshToken ? await refreshTokens(refreshToken) : false;
             if (refreshed) retryAfterAuthRef.current = trigger;
-            else openPanel('signIn');
+            else openSignIn();
           }
           return null;
         } finally {
@@ -242,7 +236,7 @@ export const NetWorthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       inFlightRef.current = run;
       return run;
     },
-    [refreshSessions, refreshTokens, openPanel],
+    [refreshSessions, refreshTokens, openSignIn],
   );
 
   const takeSnapshot = useCallback((trigger: SnapshotTrigger = 'manual') => runSnapshot(trigger), [runSnapshot]);

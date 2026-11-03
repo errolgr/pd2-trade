@@ -1,20 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useOptions } from './useOptions';
 import { useOAuth } from './useOAuth';
-import { useOverlay } from '@/overlay';
+import { useSignIn } from './useSignIn';
 
 export const usePD2Auth = () => {
   const { settings, isLoading } = useOptions();
   const { refreshTokens } = useOAuth();
   const refreshAttemptedRef = useRef(false);
-  const { openPanel } = useOverlay();
+  const { openSignIn } = useSignIn();
 
   // Auto-refresh token when expiring within 5 minutes, or prompt sign-in if no token
   useEffect(() => {
     if (isLoading) return;
 
     if (!settings?.pd2Token) {
-      openPanel('signIn');
+      openSignIn();
       return;
     }
 
@@ -29,7 +29,7 @@ export const usePD2Auth = () => {
       refreshAttemptedRef.current = true;
       refreshTokens(settings.pd2RefreshToken).then((success) => {
         if (!success) {
-          openPanel('signIn');
+          openSignIn();
         }
         refreshAttemptedRef.current = false;
       });
@@ -42,7 +42,7 @@ export const usePD2Auth = () => {
         if (settings.pd2RefreshToken) {
           refreshTokens(settings.pd2RefreshToken).then((success) => {
             if (!success) {
-              openPanel('signIn');
+              openSignIn();
             }
           });
         }
@@ -50,5 +50,5 @@ export const usePD2Auth = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [settings?.pd2Token, settings?.pd2TokenExpiry, settings?.pd2RefreshToken, isLoading, refreshTokens, openPanel]);
+  }, [settings?.pd2Token, settings?.pd2TokenExpiry, settings?.pd2RefreshToken, isLoading, refreshTokens, openSignIn]);
 };

@@ -11,8 +11,8 @@ import {
   locationText,
   marketBandText,
   marketSource,
+  modelSeason,
   ordinalPercentile,
-  plural,
   RANK_BLOCKS,
   rankBlockIndex,
   rankedStats,
@@ -93,8 +93,13 @@ describe('rankBlockIndex', () => {
       expect(blockDir, `rank ${rank}`).toBe(dir);
       // The block is the tightest one containing the printed percentage.
       expect(pct, `rank ${rank}`).toBeLessThanOrEqual(blockPct);
-      const tighter = RANK_BLOCKS.filter((b) => b.label.startsWith(dir)).map((b) => parseInt(b.label.split(' ')[1], 10));
-      expect(tighter.filter((p) => p >= pct && p < blockPct), `rank ${rank}`).toEqual([]);
+      const tighter = RANK_BLOCKS.filter((b) => b.label.startsWith(dir)).map((b) =>
+        parseInt(b.label.split(' ')[1], 10),
+      );
+      expect(
+        tighter.filter((p) => p >= pct && p < blockPct),
+        `rank ${rank}`,
+      ).toEqual([]);
     }
   });
 
@@ -156,11 +161,22 @@ describe('price bands', () => {
     expect(marketBandText(rare())).toBeNull();
     expect(marketSource(rare())).toBeNull();
     expect(marketBandText(rare({ market: market() }))).toBe('~1.5–3.2 HR');
-    expect(marketSource(rare({ slot: 'circ', market: market() }))).toBe('circlets at this rank · S13');
+    expect(marketSource(rare({ slot: 'circ', market: market(), modelVersion: 's14-q50-2026-10-28' }))).toBe(
+      'circlets at this rank · S14',
+    );
     expect(marketSource(rare({ market: market({ source: 'last-season', mode: 'hardcore' }) }))).toBe(
       'rings at this rank · last season',
     );
     expect(marketSource(rare({ market: market({ mode: 'hardcore' }) }))).toBe('rings at this rank · hardcore listings');
+  });
+
+  it.each([
+    ['s14-q50-2026-10-28', 'S14'],
+    ['s14-crafted-q50-2026-10-28', 'S14'],
+    ['S9-q50-2026-01-01', 'S9'],
+    ['v1', 'v1'],
+  ])('names the season of model version %s as %s', (modelVersion, season) => {
+    expect(modelSeason({ modelVersion })).toBe(season);
   });
 });
 
@@ -295,13 +311,5 @@ describe('compareStash', () => {
 
   it('treats two unpositioned items in a tab as equal', () => {
     expect(compareStash(rare({ position: null }), rare({ position: null }))).toBe(0);
-  });
-});
-
-describe('plural', () => {
-  it('pluralises everything but one', () => {
-    expect(plural(1, 'rare')).toBe('1 rare');
-    expect(plural(0, 'rare')).toBe('0 rares');
-    expect(plural(2, 'rare')).toBe('2 rares');
   });
 });
