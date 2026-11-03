@@ -28,9 +28,13 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.C
     {...props} />;
 }
 
-function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => {
   return (
     <DialogPrimitive.Overlay
+      ref={ref}
       data-slot="dialog-overlay"
       className={cn(
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-scrim backdrop-blur-sm duration-(--dur-med) ease-out',
@@ -39,7 +43,8 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
       {...props}
     />
   );
-}
+});
+DialogOverlay.displayName = 'DialogOverlay';
 
 function DialogContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
   const { t } = useTranslation();
