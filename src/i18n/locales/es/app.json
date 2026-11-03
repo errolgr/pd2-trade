@@ -17,7 +17,7 @@
     "itemNotSupported": "El objeto no es compatible o no es válido.",
     "nothingCopied": "No se copió ningún objeto. Pasa el cursor sobre un objeto en el juego y vuelve a intentarlo, o pulsa antes Ctrl+C sobre él.",
     "cannotListItem": "No se puede anunciar el objeto",
-    "notInSharedStash": "Este objeto no está en tu alijo compartido y no se puede anunciar.",
+    "notInStash": "Este objeto no está en tu alijo (compartido o personal) y no se puede anunciar.",
     "delist": "Retirar",
     "noItemUnderCursor": "No hay ningún objeto válido bajo el cursor."
   },

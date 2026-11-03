@@ -542,7 +542,7 @@
       "group": "Tus anuncios",
       "autoDelist": {
         "label": "Cuando un objeto anunciado sale de tu alijo",
-        "description": "Moverlo entre pestañas no cuenta. Se comprueba cada minuto mientras Diablo II está en primer plano. Si hay objetos idénticos y no está claro cuál salió, siempre eliges tú.",
+        "description": "Moverlo entre pestañas, o entre un alijo personal y el alijo compartido, no cuenta. Se comprueba cada minuto mientras Diablo II está en primer plano. Si hay objetos idénticos y no está claro cuál salió, siempre eliges tú.",
         "options": {
           "off": "No hacer nada",
           "ask": "Preguntarme",

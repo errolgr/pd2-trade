@@ -17,7 +17,7 @@
     "itemNotSupported": "Przedmiot nie jest obsługiwany lub jest nieprawidłowy.",
     "nothingCopied": "Nie skopiowano żadnego przedmiotu. Najedź kursorem na przedmiot w grze i spróbuj ponownie albo najpierw naciśnij na nim Ctrl+C.",
     "cannotListItem": "Nie można wystawić przedmiotu",
-    "notInSharedStash": "Tego przedmiotu nie ma w twojej wspólnej skrzyni, więc nie można go wystawić.",
+    "notInStash": "Tego przedmiotu nie ma w twojej skrzyni (wspólnej ani osobistej), więc nie można go wystawić.",
     "delist": "Wycofaj",
     "noItemUnderCursor": "Nie znaleziono prawidłowego przedmiotu pod kursorem."
   },

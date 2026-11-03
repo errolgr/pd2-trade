@@ -71,7 +71,7 @@
       "openTradeTooltip": "在 projectdiablo2.com 打开此搜索",
       "openInMarket": "在市场中打开",
       "list": "挂单",
-      "listDisabled": "物品必须在共享储物箱中才能挂单。",
+      "listDisabled": "物品必须在储物箱（共享或个人）中才能挂单。",
       "showExpired": "显示已过期"
     },
     "results": {

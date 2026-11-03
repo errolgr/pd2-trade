@@ -10,7 +10,7 @@ export const QuickListPage: React.FC = () => {
   // Each openPanel('quickList', ...) delivers a new payload (payloadVersion bumps even for the same item):
   // { item } lists it; { error }, undefined (manage mode) or an undecodable item show no item.
   const item = useMemo<PriceCheckItem | null>(() => {
-    if (!payload?.item || payload.error === 'not_shared_stash') return null;
+    if (!payload?.item || payload.error === 'not_in_stash') return null;
     try {
       // encodeItemForQuickList(): base64 of the URI-encoded UTF-8 JSON
       return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payload.item)))));

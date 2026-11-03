@@ -77,7 +77,7 @@
       "openTradeTooltip": "Abrir esta busca no projectdiablo2.com",
       "openInMarket": "Abrir no mercado",
       "list": "Anunciar",
-      "listDisabled": "O item precisa estar no seu baú compartilhado para ser anunciado.",
+      "listDisabled": "O item precisa estar no seu baú (compartilhado ou pessoal) para ser anunciado.",
       "showExpired": "Mostrar expirados"
     },
     "results": {

@@ -74,7 +74,7 @@
       "openTradeTooltip": "Diese Suche auf projectdiablo2.com öffnen",
       "openInMarket": "Im Markt öffnen",
       "list": "Inserieren",
-      "listDisabled": "Das Item muss zum Inserieren in deiner geteilten Truhe liegen.",
+      "listDisabled": "Das Item muss zum Inserieren in deiner Truhe (geteilt oder persönlich) liegen.",
       "showExpired": "Abgelaufene zeigen"
     },
     "results": {

@@ -3,7 +3,7 @@
     "listItem": "Item inserieren",
     "manage": "Verwalten",
     "queued": "Warteschlange",
-    "mustBeInStash": "Das Item muss zum Inserieren in deiner geteilten Truhe liegen."
+    "mustBeInStash": "Das Item muss zum Inserieren in deiner Truhe (geteilt oder persönlich) liegen."
   },
   "shortcut": {
     "findFailed": "Items konnten nicht gefunden werden",
@@ -28,7 +28,7 @@
     "noItemDescription": "Kopiere ein Item im Spiel (Ctrl+C) und öffne dieses Fenster erneut, um es zu inserieren, oder wähle „Inserate verwalten“, um deine aktiven Handel zu sehen.",
     "noItemsFound": "Keine Items gefunden, die „{{name}}“ entsprechen",
     "whyNotFound": "Warum wurde mein Item nicht gefunden?",
-    "notFoundTooltip": "Ein Item wird nur gefunden, wenn es in deiner geteilten Truhe (nicht der persönlichen) liegt und du ein neues Spiel erstellt hast.",
+    "notFoundTooltip": "Ein Item wird gefunden, sobald es in deiner geteilten Truhe oder in der persönlichen Truhe eines Charakters im in den Einstellungen gewählten Modus liegt und du ein neues Spiel erstellt hast.",
     "queueHint": "Du kannst dieses Item in die Warteschlange stellen, damit es automatisch inseriert wird. Wir warten, bis der Server es aus deiner Truhe synchronisiert (dauert meist ein paar Minuten).",
     "noneMatch": "Nichts davon passt?",
     "queueModeHint": "Stelle dieses Item in die Warteschlange, um zu warten, bis das neue in deiner Truhe erscheint (dauert meist ein paar Minuten).",
@@ -132,7 +132,7 @@
     "noMatches": "Keine Treffer",
     "noMatchesFor": "Keine Items gefunden, die „{{query}}“ entsprechen",
     "noActiveTitle": "Keine aktiven Inserate",
-    "noActiveDescription": "Items, die du aus deiner geteilten Truhe inserierst, erscheinen hier.",
+    "noActiveDescription": "Items, die du aus deiner Truhe inserierst, erscheinen hier.",
     "notSignedInTitle": "Nicht angemeldet",
     "notSignedInDescription": "Melde dich mit deinem PD2-Konto an, um deine Inserate zu verwalten."
   },

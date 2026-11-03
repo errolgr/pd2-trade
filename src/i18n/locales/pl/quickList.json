@@ -3,7 +3,7 @@
     "listItem": "Wystaw przedmiot",
     "manage": "Zarządzaj",
     "queued": "W kolejce",
-    "mustBeInStash": "Aby wystawić, przedmiot musi być we wspólnej skrzyni."
+    "mustBeInStash": "Aby wystawić, przedmiot musi być w skrzyni (wspólnej lub osobistej)."
   },
   "shortcut": {
     "findFailed": "Nie udało się znaleźć przedmiotów",
@@ -28,7 +28,7 @@
     "noItemDescription": "Skopiuj przedmiot w grze (Ctrl+C) i otwórz ponownie to okno, aby go wystawić, albo wybierz „Zarządzaj ogłoszeniami”, aby zobaczyć aktywne oferty handlu.",
     "noItemsFound": "Nie znaleziono przedmiotów pasujących do „{{name}}”",
     "whyNotFound": "Dlaczego nie znaleziono mojego przedmiotu?",
-    "notFoundTooltip": "Przedmiot zostanie znaleziony tylko wtedy, gdy leży we wspólnej skrzyni (nie osobistej) i utworzysz nową grę.",
+    "notFoundTooltip": "Przedmiot zostanie znaleziony, gdy leży we wspólnej skrzyni lub w osobistej skrzyni postaci w trybie wybranym w Ustawieniach i utworzysz nową grę.",
     "queueHint": "Możesz dodać ten przedmiot do kolejki, aby wystawić go automatycznie. Poczekamy, aż serwer zsynchronizuje go z twojej skrzyni (zwykle kilka minut).",
     "noneMatch": "Żaden nie pasuje?",
     "queueModeHint": "Dodaj ten przedmiot do kolejki, aby poczekać, aż nowy pojawi się w skrzyni (zwykle kilka minut).",
@@ -138,7 +138,7 @@
     "noMatches": "Brak wyników",
     "noMatchesFor": "Nie znaleziono przedmiotów pasujących do „{{query}}”",
     "noActiveTitle": "Brak aktywnych ogłoszeń",
-    "noActiveDescription": "Tu pojawią się przedmioty wystawione ze wspólnej skrzyni.",
+    "noActiveDescription": "Tu pojawią się przedmioty wystawione z twojej skrzyni.",
     "notSignedInTitle": "Nie zalogowano",
     "notSignedInDescription": "Zaloguj się na konto PD2, aby zarządzać ogłoszeniami."
   },

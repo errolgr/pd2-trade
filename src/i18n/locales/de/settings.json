@@ -537,7 +537,7 @@
       "group": "Deine Inserate",
       "autoDelist": {
         "label": "Wenn ein inserierter Gegenstand die Truhe verlässt",
-        "description": "Verschieben zwischen Tabs zählt nicht. Geprüft jede Minute, solange Diablo II im Vordergrund ist. Ist bei gleich aussehenden Gegenständen unklar, welcher fehlt, wählst du immer selbst.",
+        "description": "Verschieben zwischen Tabs oder zwischen einer persönlichen und der geteilten Truhe zählt nicht. Geprüft jede Minute, solange Diablo II im Vordergrund ist. Ist bei gleich aussehenden Gegenständen unklar, welcher fehlt, wählst du immer selbst.",
         "options": {
           "off": "Nichts tun",
           "ask": "Mich fragen",

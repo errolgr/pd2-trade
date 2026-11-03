@@ -542,7 +542,7 @@
       "group": "Seus anúncios",
       "autoDelist": {
         "label": "Quando um item anunciado sai do seu baú",
-        "description": "Mover entre abas não conta. Verificado a cada minuto enquanto o Diablo II está em primeiro plano. Se itens iguais deixam incerto qual saiu, você sempre escolhe.",
+        "description": "Mover entre abas, ou entre um baú pessoal e o baú compartilhado, não conta. Verificado a cada minuto enquanto o Diablo II está em primeiro plano. Se itens iguais deixam incerto qual saiu, você sempre escolhe.",
         "options": {
           "off": "Não fazer nada",
           "ask": "Perguntar",

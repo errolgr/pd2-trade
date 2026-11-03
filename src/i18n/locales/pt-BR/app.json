@@ -17,7 +17,7 @@
     "itemNotSupported": "Item não suportado ou inválido.",
     "nothingCopied": "Nenhum item foi copiado. Passe o mouse sobre um item no jogo e tente novamente, ou pressione Ctrl+C nele primeiro.",
     "cannotListItem": "Não é possível anunciar o item",
-    "notInSharedStash": "Este item não está no seu baú compartilhado e não pode ser anunciado.",
+    "notInStash": "Este item não está no seu baú (compartilhado ou pessoal) e não pode ser anunciado.",
     "delist": "Remover anúncio",
     "noItemUnderCursor": "Nenhum item válido encontrado sob o cursor."
   },

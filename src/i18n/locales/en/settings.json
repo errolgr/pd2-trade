@@ -537,7 +537,7 @@
       "group": "Your listings",
       "autoDelist": {
         "label": "When a listed item leaves your stash",
-        "description": "Moving it between stash tabs doesn't count. Checked every minute while Diablo II is in front. If look-alike items make it unclear which one left, you always pick.",
+        "description": "Moving it between stash tabs, or between a personal stash and the shared stash, doesn't count. Checked every minute while Diablo II is in front. If look-alike items make it unclear which one left, you always pick.",
         "options": {
           "off": "Do nothing",
           "ask": "Ask me",

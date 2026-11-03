@@ -542,7 +542,7 @@
       "group": "Vos annonces",
       "autoDelist": {
         "label": "Quand un objet en vente quitte votre coffre",
-        "description": "Le déplacer d'un onglet à l'autre ne compte pas. Vérifié chaque minute tant que Diablo II est au premier plan. Si des objets identiques rendent l'objet parti incertain, c'est toujours vous qui choisissez.",
+        "description": "Le déplacer d'un onglet à l'autre, ou entre un coffre personnel et le coffre partagé, ne compte pas. Vérifié chaque minute tant que Diablo II est au premier plan. Si des objets identiques rendent l'objet parti incertain, c'est toujours vous qui choisissez.",
         "options": {
           "off": "Ne rien faire",
           "ask": "Me demander",

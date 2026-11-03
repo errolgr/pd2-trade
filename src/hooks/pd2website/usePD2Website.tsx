@@ -138,9 +138,12 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     refreshTokenValueRef.current = settings?.pd2RefreshToken;
   }, [settings?.pd2RefreshToken]);
 
-  // Stash cache and fetch (RESTful)
+  // Socket connection: pushes, and the personal stashes PD2 only sends to the signed-in socket
+  const { isConnected, subscribe: subscribeSocket, request: requestSocket } = useSocket({ settings });
+
+  // Stash cache and fetch: shared stash over REST, personal stashes over the socket
   const { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache } =
-    useStashCache(authData, settings, handleAuthErrorRef);
+    useStashCache(authData, settings, handleAuthErrorRef, requestSocket);
 
   // Store clearStashCache in ref so handleAuthenticationError can use it
   useEffect(() => {
@@ -271,9 +274,6 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
       settings,
       onAuthError: handleAuthenticationError,
     });
-
-  // Socket connection
-  const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
 
   // PD2's offer notifications (the website's bell): the offers badge
   const { offerNotifications, newAcceptedOffers, acknowledgeOfferNotifications } = useOfferNotifications({

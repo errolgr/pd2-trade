@@ -27,7 +27,7 @@ export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
   itemSearch: { text: string } | undefined;
   /** item = encodeItemForQuickList(raw); undefined = manage mode */
-  quickList: { item?: string; error?: 'not_shared_stash' } | undefined;
+  quickList: { item?: string; error?: 'not_in_stash' } | undefined;
   currency: { tab?: NetWorthTab } | undefined;
   /**
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a

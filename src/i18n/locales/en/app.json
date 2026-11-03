@@ -17,7 +17,7 @@
     "itemNotSupported": "Item is not supported or invalid.",
     "nothingCopied": "No item was copied. Hover over an item in game and try again, or press Ctrl+C on it first.",
     "cannotListItem": "Cannot List Item",
-    "notInSharedStash": "This item is not in your shared stash and cannot be listed.",
+    "notInStash": "This item is not in your stash (shared or personal) and cannot be listed.",
     "delist": "Delist",
     "noItemUnderCursor": "No valid item found under cursor."
   },

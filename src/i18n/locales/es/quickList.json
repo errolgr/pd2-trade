@@ -3,7 +3,7 @@
     "listItem": "Anunciar objeto",
     "manage": "Gestionar",
     "queued": "En cola",
-    "mustBeInStash": "El objeto debe estar en tu alijo compartido para anunciarlo."
+    "mustBeInStash": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo."
   },
   "shortcut": {
     "findFailed": "No se pudieron encontrar objetos",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copia un objeto en el juego (Ctrl+C) y vuelve a abrir esta ventana para anunciarlo, o selecciona \"Gestionar anuncios\" para ver tus intercambios activos.",
     "noItemsFound": "No se encontraron objetos que coincidan con \"{{name}}\"",
     "whyNotFound": "¿Por qué no se encontró mi objeto?",
-    "notFoundTooltip": "Un objeto no se encontrará a menos que esté en tu alijo compartido (no en el personal) y hayas creado una partida nueva.",
+    "notFoundTooltip": "Un objeto se encuentra cuando está en tu alijo compartido o en el alijo personal de un personaje del modo elegido en Ajustes, y has creado una partida nueva.",
     "queueHint": "Puedes poner este objeto en cola para anunciarlo automáticamente. Esperaremos a que el servidor lo sincronice desde tu alijo (suele tardar unos minutos).",
     "noneMatch": "¿Ninguno coincide?",
     "queueModeHint": "Pon este objeto en cola para esperar a que el nuevo aparezca en tu alijo (suele tardar unos minutos).",
@@ -135,7 +135,7 @@
     "noMatches": "Sin coincidencias",
     "noMatchesFor": "No se encontraron objetos que coincidan con \"{{query}}\"",
     "noActiveTitle": "No hay anuncios activos",
-    "noActiveDescription": "Los objetos que anuncies desde tu alijo compartido aparecerán aquí.",
+    "noActiveDescription": "Los objetos que anuncies desde tu alijo aparecerán aquí.",
     "notSignedInTitle": "No has iniciado sesión",
     "notSignedInDescription": "Inicia sesión con tu cuenta de PD2 para gestionar tus anuncios."
   },

@@ -17,7 +17,7 @@
     "itemNotSupported": "Item wird nicht unterstützt oder ist ungültig.",
     "nothingCopied": "Es wurde kein Item kopiert. Fahre im Spiel über ein Item und versuche es erneut, oder drücke zuerst Ctrl+C darauf.",
     "cannotListItem": "Item kann nicht inseriert werden",
-    "notInSharedStash": "Dieses Item liegt nicht in deiner geteilten Truhe und kann nicht inseriert werden.",
+    "notInStash": "Dieses Item liegt nicht in deiner Truhe (geteilt oder persönlich) und kann nicht inseriert werden.",
     "delist": "Inserat entfernen",
     "noItemUnderCursor": "Kein gültiges Item unter dem Mauszeiger gefunden."
   },
