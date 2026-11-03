@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import prettierConfig from "eslint-config-prettier";
-import designSystem, { CONSISTENCY_RULES, TOKEN_RULES, pd2dsRules } from "./eslint-rules/design-system.js";
+import designSystem, { CONSISTENCY_RULES, TOKEN_RULES, pd2dsRules } from "./packages/ui/eslint/design-system.js";
 
 // Design-system guard rails (PRD A3.2/A4, packages/ui/DESIGN_RULES.md). Token sources and tests are exempt.
 const designSystemIgnores = [

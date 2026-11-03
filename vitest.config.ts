@@ -15,7 +15,7 @@ export default defineConfig({
       'src/**/*.test.{ts,tsx}',
       'scripts/**/*.test.{ts,mjs}',
       'packages/*/{src,scripts}/**/*.test.{ts,tsx}',
-      'eslint-rules/**/*.test.{js,mjs}',
+      'packages/ui/eslint/**/*.test.{js,mjs}',
     ],
     environment: 'node',
     setupFiles: ['src/i18n/test-setup.ts'],

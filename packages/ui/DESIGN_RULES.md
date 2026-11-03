@@ -214,7 +214,7 @@ Built-in strings (close, more, retry, loading, gold) come from `UiLabelsProvider
 
 ## 12. Enforcement
 
-Local ESLint plugin `pd2-ds` (`eslint-rules/design-system.js` + `eslint-rules/consistency.js`, loaded in
+Local ESLint plugin `pd2-ds` (`packages/ui/eslint/design-system.js` + `consistency.js`, export `@pd2-trader/ui/eslint`, loaded in
 `eslint.config.js`):
 
 | Rule                                | Flags                                                                                                                                                       |

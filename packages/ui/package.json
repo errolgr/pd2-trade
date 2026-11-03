@@ -18,11 +18,13 @@
       "default": "./src/tokens/index.ts"
     },
     "./tailwind.css": "./generated/tailwind.css",
+    "./eslint": "./eslint/design-system.js",
     "./package.json": "./package.json"
   },
   "files": [
     "src",
     "generated",
+    "eslint",
     "DESIGN_RULES.md",
     "llms.txt"
   ],

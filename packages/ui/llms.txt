@@ -1,5 +1,5 @@
 # @pd2-trader/ui — rules for AI tools building PD2 Trader features and plugins
-# Human version: DESIGN_RULES.md (same folder). Lint: eslint-rules/design-system.js + consistency.js (pd2-ds/*).
+# Human version: DESIGN_RULES.md (same folder). Lint: import designSystem from '@pd2-trader/ui/eslint' (pd2-ds/*; eslint/design-system.js + consistency.js).
 # Catalog: `npm run catalog` (Ladle; every component x 21 themes x window opacity).
 
 ## Context
