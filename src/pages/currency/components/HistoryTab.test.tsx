@@ -91,7 +91,11 @@ const P3 = point('p3', '2026-10-18T10:00:00.000Z', 12.5);
 
 const fmt = (iso: string) => moment(iso).format('MMM D HH:mm');
 
-let netWorth: { currentSession: SessionSummary | null; startSession: () => Promise<void>; stopSession: () => Promise<void> };
+let netWorth: {
+  currentSession: SessionSummary | null;
+  startSession: () => Promise<void>;
+  stopSession: () => Promise<void>;
+};
 
 function renderHistory(props: Partial<React.ComponentProps<typeof HistoryTab>> = {}) {
   const onHistoryChanged = vi.fn();
@@ -219,6 +223,8 @@ describe('HistoryTab chart range', () => {
     expect(screen.getByText('−1.00 HR')).not.toBeNull();
     expect(getPoints).toHaveBeenCalledTimes(1);
     expect(snapshotTimes()).toEqual([fmt('2026-10-18T11:00:00.000Z'), fmt(P1.takenAt)]);
+    // the 7d pill animates out
+    await waitFor(() => expect(screen.queryByText('+2.50 HR')).toBeNull());
   });
 
   it('shows a placeholder for the Season range until the parent has points', async () => {
@@ -228,6 +234,8 @@ describe('HistoryTab chart range', () => {
     expect(document.querySelector('.animate-spin')).toBeNull();
     expect(screen.queryByText('No snapshots in this range yet.')).toBeNull();
     expect(screen.getByText('No snapshots in this range.')).not.toBeNull();
+    // the 7d pill animates out
+    await waitFor(() => expect(screen.queryByText('+2.50 HR')).toBeNull());
   });
 
   it('merges daily points of every season, oldest first, for the All range', async () => {
@@ -290,13 +298,15 @@ describe('HistoryTab chart range', () => {
     vi.mocked(getPoints).mockReturnValue(pending.promise);
     rerender(
       <TooltipProvider>
-        <HistoryTab token={TOKEN}
+        <HistoryTab
+          token={TOKEN}
           owner={OWNER}
           seasons={SEASONS}
           currentSeasonId="s12"
           seasonPoints={null}
           refreshKey="k2"
-          onHistoryChanged={() => {}} />
+          onHistoryChanged={() => {}}
+        />
       </TooltipProvider>,
     );
     await waitFor(() => expect(document.querySelector('.animate-spin')).not.toBeNull());
@@ -517,9 +527,9 @@ describe('HistoryTab snapshots and comparison', () => {
     select(P3.takenAt);
     await screen.findByText('Farmed');
     expect(vi.mocked(getDiff).mock.calls.at(-1)!.slice(2, 4)).toEqual(['p2', 'p3']);
-    expect((screen.getByRole('checkbox', { name: `Select snapshot ${fmt(P1.takenAt)}` }) as HTMLElement).dataset.state).toBe(
-      'unchecked',
-    );
+    expect(
+      (screen.getByRole('checkbox', { name: `Select snapshot ${fmt(P1.takenAt)}` }) as HTMLElement).dataset.state,
+    ).toBe('unchecked');
   });
 
   it('unpicks a snapshot when clicked again and clears all picks', async () => {
@@ -549,7 +559,9 @@ describe('HistoryTab snapshots and comparison', () => {
   });
 
   it('does not allow picking or comparing snapshots without stored holdings', async () => {
-    vi.mocked(getPoints).mockResolvedValue({ points: [P1, point('empty', P2.takenAt, 11, { hasHoldings: false }), P3] });
+    vi.mocked(getPoints).mockResolvedValue({
+      points: [P1, point('empty', P2.takenAt, 11, { hasHoldings: false }), P3],
+    });
     renderHistory();
     await screen.findByText('+2.50 HR');
     expect(

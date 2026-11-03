@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, renderHook } from '@testing-library/react';
+import { act, cleanup, render, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ISettings, useOptions } from '@/hooks/useOptions';
@@ -84,7 +84,7 @@ describe('useSettingsSource', () => {
     expect(store.updateSettings).not.toHaveBeenCalled();
   });
 
-  it('lists a select’s options while scoped to it, marks the current one and sets the picked one', () => {
+  it('lists a select’s options while scoped to it, marks the current one and sets the picked one', async () => {
     const current = getTheme(THEMES[0].id);
     const { result } = renderSource(
       { themeId: current.id },
@@ -96,29 +96,31 @@ describe('useSettingsSource', () => {
 
     const target = items[2];
     expect(target.primary.keepOpen).toBe(true);
-    target.primary.run(context());
+    await act(async () => target.primary.run(context()));
     expect(store.updateSettings).toHaveBeenCalledWith({ themeId: THEMES[2].id });
   });
 
-  it('filters a select’s options by the query and saves numeric selects as numbers', () => {
+  it('filters a select’s options by the query and saves numeric selects as numbers', async () => {
     const { result } = renderSource(
       { priceWindowHours: 168 },
       { scope: { group: 'settings', param: 'setting:priceWindowHours' }, query: '30' },
     );
     expect(result.current.items.map((item) => item.ref.data?.value)).toEqual(['720']);
-    result.current.items[0].primary.run(context());
+    await act(async () => result.current.items[0].primary.run(context()));
     expect(store.updateSettings).toHaveBeenCalledWith({ priceWindowHours: 720 });
   });
 
-  it('flips a switch in place and keeps the palette open', () => {
+  it('flips a switch in place and keeps the palette open', async () => {
     const { result } = renderSource({ chatButtonOverlayEnabled: true }, { query: 'chat button' });
     const item = result.current.items[0];
     expect(item.ref.id).toBe('settings:chatButtonOverlayEnabled');
-    expect(render(<>{item.trailing}</>).container.querySelector('[data-state]')?.getAttribute('data-state')).toBe(
-      'checked',
-    );
+    expect(
+      render(<>{item.trailing}</>)
+        .container.querySelector('[data-state]')
+        ?.getAttribute('data-state'),
+    ).toBe('checked');
     expect(item.primary.keepOpen).toBe(true);
-    item.primary.run(context());
+    await act(async () => item.primary.run(context()));
     expect(store.updateSettings).toHaveBeenCalledWith({ chatButtonOverlayEnabled: false });
     expect(item.actions?.map((action) => action.id)).toEqual(['open-settings']);
   });
@@ -144,9 +146,12 @@ describe('useSettingsSource', () => {
   });
 
   it('shows a hotkey’s combo, and Off when unbound', () => {
-    const { result } = renderSource({ hotkeyModifierPalette: 'alt', hotkeyKeyPalette: 'space', hotkeyKeyBuilds: '' }, {
-      query: 'command palette',
-    });
+    const { result } = renderSource(
+      { hotkeyModifierPalette: 'alt', hotkeyKeyPalette: 'space', hotkeyKeyBuilds: '' },
+      {
+        query: 'command palette',
+      },
+    );
     expect(text(result.current.items[0].trailing)).toBe('Alt+Space');
     const builds = renderSource({ hotkeyKeyBuilds: '' }, { query: 'builds' }).result.current.items;
     expect(text(builds.find((item) => item.ref.id === 'settings:hotkeyKeyBuilds')?.trailing)).toBe('Off');
@@ -157,11 +162,31 @@ describe('useSettingsSource', () => {
       { corruptedZoneAlerts: 'off' },
       {
         refs: [
-          { id: 'settings:themeId=x', group: 'settings', title: 'gone', data: { key: 'themeId', value: 'no-such-theme' } },
-          { id: 'settings:mode=hardcore', group: 'settings', title: 'Hardcore', data: { key: 'mode', value: 'hardcore' } },
+          {
+            id: 'settings:themeId=x',
+            group: 'settings',
+            title: 'gone',
+            data: { key: 'themeId', value: 'no-such-theme' },
+          },
+          {
+            id: 'settings:mode=hardcore',
+            group: 'settings',
+            title: 'Hardcore',
+            data: { key: 'mode', value: 'hardcore' },
+          },
           // Hidden while zone notifications are off, like the form's row
-          { id: 'settings:corruptedZoneAlertLeadMinutes', group: 'settings', title: 'x', data: { key: 'corruptedZoneAlertLeadMinutes' } },
-          { id: 'settings:debugLoggingEnabled', group: 'settings', title: 'Debug', data: { key: 'debugLoggingEnabled' } },
+          {
+            id: 'settings:corruptedZoneAlertLeadMinutes',
+            group: 'settings',
+            title: 'x',
+            data: { key: 'corruptedZoneAlertLeadMinutes' },
+          },
+          {
+            id: 'settings:debugLoggingEnabled',
+            group: 'settings',
+            title: 'Debug',
+            data: { key: 'debugLoggingEnabled' },
+          },
         ],
       },
     );

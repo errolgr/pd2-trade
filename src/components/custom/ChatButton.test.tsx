@@ -45,7 +45,7 @@ const tabButtons = () =>
   Array.from(caret().parentElement!.querySelectorAll('button')).map((el) => el.getAttribute('aria-label'));
 
 describe('ChatButton', () => {
-  it('nothing opens on hover: the menu only opens from the caret', () => {
+  it('nothing opens on hover: the menu only opens from the caret', async () => {
     renderDock({ onSettingsClick: vi.fn() });
     act(() => {
       fireEvent.pointerEnter(dock());
@@ -58,6 +58,8 @@ describe('ChatButton', () => {
     expect(caret().getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(caret());
     expect(caret().getAttribute('aria-expanded')).toBe('false');
+    vi.useRealTimers();
+    await waitFor(() => expect(menu()).toBeNull());
   });
 
   it('lists only the windows whose handlers are provided, with Disable apart at the end', () => {
@@ -96,13 +98,15 @@ describe('ChatButton', () => {
     expect(tabButtons()).toEqual(['Open PD2 Chat', 'Settings', 'More']);
   });
 
-  it('with no favorites the tab is only the caret, and the menu still opens every window', () => {
+  it('with no favorites the tab is only the caret, and the menu still opens every window', async () => {
     const onChatClick = vi.fn();
     renderDock({ favorites: [], onChatClick });
     expect(tabButtons()).toEqual(['More']);
     fireEvent.click(caret());
     fireEvent.click(screen.getByRole('menuitem', { name: 'Chat' }));
     expect(onChatClick).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+    await waitFor(() => expect(menu()).toBeNull());
   });
 
   it('stars and unstars windows from the menu, keeping it open', () => {
@@ -161,7 +165,7 @@ describe('ChatButton', () => {
     expect(menu()!.matches(INTERACTIVE_SELECTOR)).toBe(true);
   });
 
-  it('closes the open menu after the pointer stays out for the grace period, not when it comes back in time', () => {
+  it('closes the open menu after the pointer stays out for the grace period, not when it comes back in time', async () => {
     renderDock({ onSettingsClick: vi.fn() });
     fireEvent.click(caret());
 
@@ -178,6 +182,8 @@ describe('ChatButton', () => {
       vi.advanceTimersByTime(400);
     });
     expect(caret().getAttribute('aria-expanded')).toBe('false');
+    vi.useRealTimers();
+    await waitFor(() => expect(menu()).toBeNull());
   });
 });
 
