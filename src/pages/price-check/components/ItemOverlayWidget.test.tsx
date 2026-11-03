@@ -310,16 +310,13 @@ describe('ItemOverlayWidget header', () => {
     expect(screen.queryByTitle('Click to toggle search mode')).toBeNull();
   });
 
-  it('Close, Settings and the trade-site button do what they say', async () => {
+  it('Close and Settings do what they say', () => {
     const { onClose } = renderWidget(rareRing());
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(overlay.openPanel).toHaveBeenCalledWith('settings');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
-    expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });
 
@@ -714,13 +711,30 @@ describe('ItemOverlayWidget market search', () => {
     expect(fcrRow().querySelector('[role="checkbox"]')!.getAttribute('aria-checked')).toBe('false');
   });
 
-  it('Show Expired searches every ended listing (sold, removed, expired) on the market service', async () => {
+  it('Expired searches every ended listing (sold, removed, expired) on the market service', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    expect(searchListings).not.toHaveBeenCalled();
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
     expect(lastFilters()).toMatchObject({ source: 'archive', maxAgeDays: 14, status: ['sold', 'removed', 'expired'] });
     expect(getMarketListingsArchive).not.toHaveBeenCalled();
+  });
+
+  it('switching between Live and Expired after a search searches again', async () => {
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(realSearches()).toHaveLength(1));
+    expect(lastFilters().source).not.toBe('archive');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    expect(screen.getByRole('radio', { name: 'Expired' }).getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Live' }));
+    await waitFor(() => expect(realSearches()).toHaveLength(3));
+    expect(lastFilters().source).not.toBe('archive');
   });
 
   it('says how long each ended listing was up and how it ended', async () => {
@@ -733,7 +747,7 @@ describe('ItemOverlayWidget market search', () => {
       }),
     );
     renderWidget(rareRing());
-    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
     fireEvent.click(searchButton());
     const row = (await screen.findByText('4 HR')).closest('tr')!;
     const ended = within(row).getByText('sold after 2 days');
@@ -854,11 +868,9 @@ describe('ItemOverlayWidget market search', () => {
     inView = false;
     rerenderItem(item);
 
-    // Editing the range or Show Expired fetches nothing until Search
+    // Editing the range fetches nothing until Search
     const min = screen.getByLabelText('% Better Chance of Getting Magic Items minimum');
     fireEvent.change(min, { target: { value: '1' } });
-    fireEvent.click(screen.getByRole('switch'));
-    fireEvent.click(screen.getByRole('switch'));
     await act(async () => {});
     expect(searchListings).toHaveBeenCalledTimes(2);
 
@@ -946,21 +958,44 @@ describe('ItemOverlayWidget market search', () => {
   });
 });
 
-describe('ItemOverlayWidget listing to quick-list', () => {
-  it('List is disabled for items outside the shared stash', () => {
+describe('ItemOverlayWidget ⋯ menu', () => {
+  const openMore = async () => {
+    await act(async () => {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
+        button: 0,
+        ctrlKey: false,
+        pointerType: 'mouse',
+      });
+    });
+    return screen.getByRole('menu');
+  };
+
+  it('greys out List with the reason for items outside a stash, and lists nothing', async () => {
     renderWidget(rareRing());
-    expect((screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement).disabled).toBe(true);
+    const menu = await openMore();
+    const list = within(menu).getByRole('menuitem', { name: 'List' });
+    expect(list.getAttribute('aria-disabled')).toBe('true');
+    expect(within(menu).getByText('Item must be in your stash (shared or personal) to list.')).not.toBeNull();
+    fireEvent.click(list);
+    expect(overlay.openPanel).not.toHaveBeenCalledWith('quickList', expect.anything(), expect.anything());
   });
 
-  it('opens the quick-list panel at the cursor with the encoded item for stash items', () => {
+  it('List opens the quick-list panel at the cursor with the encoded item for stash items', async () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
-    const list = screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement;
-    if (list.disabled) throw new Error('expected stash item to be listable');
-    fireEvent.click(list);
+    const menu = await openMore();
+    expect(within(menu).queryByText('Item must be in your stash (shared or personal) to list.')).toBeNull();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'List' }));
     expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
     const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
+  });
+
+  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', async () => {
+    renderWidget(rareRing());
+    const menu = await openMore();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Open search on projectdiablo2.com' }));
+    expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });
 

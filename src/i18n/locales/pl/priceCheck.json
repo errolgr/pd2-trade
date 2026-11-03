@@ -76,14 +76,14 @@
       "clearTitle": "Odznacz wszystkie statystyki"
     },
     "actions": {
-      "openTradeAria": "Otwórz wyszukiwanie na projectdiablo2.com",
-      "openTradeTooltip": "Otwórz to wyszukiwanie na projectdiablo2.com",
+      "openTrade": "Otwórz wyszukiwanie na projectdiablo2.com",
+      "more": "Więcej",
       "openInMarket": "Otwórz na rynku",
       "list": "Wystaw",
-      "listDisabled": "Aby wystawić, przedmiot musi być w skrzyni (wspólnej lub osobistej).",
-      "showExpired": "Pokaż wygasłe"
+      "listDisabled": "Aby wystawić, przedmiot musi być w skrzyni (wspólnej lub osobistej)."
     },
     "results": {
+      "source": { "label": "Przeszukiwane ogłoszenia", "live": "Aktywne", "expired": "Wygasłe" },
       "matches": "Wyniki: <value>{{total}}</value>",
       "showing": "· pokazano {{shown}}",
       "loading": "Wczytywanie ogłoszeń z rynku...",
