@@ -14,7 +14,7 @@ const designSystemIgnores = [
   "packages/ui/src/tokens/**",
   "packages/ui/scripts/**",
 ];
-// Plugin code (first-party plugins, create-pd2-plugin template) must be clean from day one: every rule errors.
+// Plugin code (first-party plugins, create-pd2-plugin template) must be clean from day one: `configs.plugin`.
 const pluginCode = [
   "packages/plugins/*/src/**/*.{ts,tsx,js,jsx}",
   "packages/create-pd2-plugin/template/**/*.{ts,tsx,js,jsx}",
@@ -24,8 +24,8 @@ const pluginCode = [
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    // Build output (Ladle catalog static build).
-    ignores: ["packages/ui/build/**"],
+    // Build output (Ladle catalog static build, first-party plugin bundles).
+    ignores: ["packages/ui/build/**", "packages/plugins/*/dist/**"],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]
@@ -87,10 +87,6 @@ export default [
     plugins: { "pd2-ds": designSystem },
     rules: pd2dsRules(TOKEN_RULES, "error"),
   },
-  {
-    files: pluginCode,
-    ignores: designSystemIgnores,
-    plugins: { "pd2-ds": designSystem },
-    rules: pd2dsRules([...TOKEN_RULES, ...CONSISTENCY_RULES], "error"),
-  },
+  // The same preset scaffolded plugins lint with (packages/create-pd2-plugin/template/eslint.config.js).
+  ...designSystem.configs.plugin.map((config) => ({ ...config, files: pluginCode })),
 ];

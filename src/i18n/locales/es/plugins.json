@@ -7,16 +7,6 @@
       "sortDefault": "Orden de búsqueda"
     }
   },
-  "price": {
-    "hr": "{{value}} HR",
-    "rune": "{{value}} runas",
-    "gold": "{{value}} de oro"
-  },
-  "slot": {
-    "error": "Error del plugin",
-    "retry": "Reintentar",
-    "from": "De {{name}}"
-  },
   "command": {
     "failed": "Falló el comando del plugin"
   },

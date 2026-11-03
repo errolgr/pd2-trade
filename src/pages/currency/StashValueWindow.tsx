@@ -190,9 +190,11 @@ export function StashValueWindow() {
                   )}
                 </AnimatePresence>
 
-                <Tabs value={activeTab}
+                <Tabs
+                  value={activeTab}
                   onValueChange={(v) => setTab(v as WindowTab | PluginTabValue)}
-                  className="gap-3">
+                  className="gap-3"
+                >
                   <TabsList
                     className="h-10 w-full justify-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     onWheel={(e) => {
@@ -416,7 +418,8 @@ function Header({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card/50 p-4 shadow-sm">
+    // overflow-clip, not hidden: the glow overflows to the right, and a hidden box still scrolls to a focused Refresh
+    <div className="relative overflow-clip rounded-xl border border-border bg-card/50 p-4 shadow-sm">
       <div
         aria-hidden
         className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-glow/10 blur-3xl"

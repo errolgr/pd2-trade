@@ -1,6 +1,6 @@
 import React from 'react';
+import { PriceTag, SlotAction, SlotBadge, SlotDivider, SlotList, SlotRow, SlotSection, SlotText } from '@pd2-trader/ui';
 import type { JsonValue, UiNode } from '@pd2-trader/plugin-sdk';
-import { PriceTag, SlotAction, SlotBadge, SlotDivider, SlotList, SlotRow, SlotSection, SlotText } from './slot-components';
 
 /**
  * Renders a validated declarative tree (PRD §6.2) with slot components only. Input is already schema-checked

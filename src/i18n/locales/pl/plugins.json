@@ -7,16 +7,6 @@
       "sortDefault": "Kolejność wyszukiwania"
     }
   },
-  "price": {
-    "hr": "{{value}} HR",
-    "rune": "{{value}} run",
-    "gold": "{{value}} złota"
-  },
-  "slot": {
-    "error": "Błąd wtyczki",
-    "retry": "Spróbuj ponownie",
-    "from": "Od: {{name}}"
-  },
   "command": {
     "failed": "Polecenie wtyczki nie powiodło się"
   },

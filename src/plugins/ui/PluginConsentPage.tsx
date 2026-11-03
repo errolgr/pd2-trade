@@ -1,10 +1,7 @@
 import React from 'react';
 import { Globe, Lock, Puzzle, ShieldCheck, Wrench } from 'lucide-react';
 import { PERMISSION_INFO, type Permission } from '@pd2-trader/plugin-sdk';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { PanelChrome, PanelSurface, Badge, Button, ScrollArea } from '@pd2-trader/ui';
 import { usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
 import { pluginHost } from '../host/manager';
@@ -32,10 +29,12 @@ export default function PluginConsentPage() {
   };
 
   return (
-    <WindowPanel className="flex h-full w-full flex-col">
-      <WindowChrome title={kind === 'install' ? t('consent.installTitle') : t('consent.updateTitle')}
+    <PanelSurface className="flex h-full w-full flex-col">
+      <PanelChrome
+        title={kind === 'install' ? t('consent.installTitle') : t('consent.updateTitle')}
         icon={<ShieldCheck />}
-        onClose={() => answer(false)} />
+        onClose={() => answer(false)}
+      />
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-3 p-3 text-xs">
           <div className="flex items-start gap-2.5">
@@ -78,8 +77,10 @@ export default function PluginConsentPage() {
                     permission={p} />
                 ))}
                 {network.map((host) => (
-                  <li key={host}
-                    className="flex items-start gap-2 rounded-md border border-warning/35 bg-warning/10 p-2">
+                  <li
+                    key={host}
+                    className="flex items-start gap-2 rounded-md border border-warning/35 bg-warning/10 p-2"
+                  >
                     <Globe className="mt-0.5 size-3.5 shrink-0 text-warning"
                       aria-hidden />
                     <span>
@@ -103,7 +104,9 @@ export default function PluginConsentPage() {
             </section>
           )}
 
-          {permissions.length === 0 && network.length === 0 && <p className="text-muted-foreground">{t('consent.nothing')}</p>}
+          {permissions.length === 0 && network.length === 0 && (
+            <p className="text-muted-foreground">{t('consent.nothing')}</p>
+          )}
 
           <p className="flex items-start gap-2 rounded-md bg-muted p-2 text-muted-foreground">
             <Lock className="mt-0.5 size-3.5 shrink-0"
@@ -123,7 +126,7 @@ export default function PluginConsentPage() {
           {kind === 'install' ? t('consent.allowInstall') : t('consent.allowUpdate')}
         </Button>
       </div>
-    </WindowPanel>
+    </PanelSurface>
   );
 }
 

@@ -2,14 +2,20 @@
 /**
  * create-pd2-plugin <dir> [--id com.you.name] [--name "Display Name"]
  *
- * Copies template/ into <dir> and fills in the plugin id, display name and package name.
+ * Copies template/ into <dir> and fills in the plugin id, display name and package name. The design-system docs
+ * come from the installed @pd2-trader/ui (their single source): DESIGN_RULES.md verbatim, and llms.txt as the
+ * template's plugin section followed by the package's llms.txt.
  */
 import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEMPLATE = resolve(dirname(fileURLToPath(import.meta.url)), '../template');
+const UI_ROOT = dirname(createRequire(import.meta.url).resolve('@pd2-trader/ui/package.json'));
+/** Template file whose content is prepended to @pd2-trader/ui's llms.txt. */
+const LLMS_PLUGIN = 'llms.plugin.txt';
 /** Same rule as the SDK manifest schema (PLUGIN_ID_RE). */
 const PLUGIN_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/;
 /** npm ignores `.gitignore` in published packages, so the template ships it without the dot. */
@@ -77,13 +83,20 @@ export async function scaffold(target, { id, name } = {}) {
     __PLUGIN_NAME__: (name ?? titleCase(pluginId.split('.').pop())).slice(0, 48),
     __PACKAGE_NAME__: slug,
   };
-  for (const rel of await templateFiles(TEMPLATE)) {
-    let content = await readFile(join(TEMPLATE, rel), 'utf8');
-    for (const [key, value] of Object.entries(values)) content = content.split(key).join(value);
-    const out = join(target, dirname(rel), RENAMES[basename(rel)] ?? basename(rel));
+  const write = async (rel, content) => {
+    const out = join(target, rel);
     await mkdir(dirname(out), { recursive: true });
     await writeFile(out, content);
+  };
+  for (const rel of await templateFiles(TEMPLATE)) {
+    if (rel === LLMS_PLUGIN) continue;
+    let content = await readFile(join(TEMPLATE, rel), 'utf8');
+    for (const [key, value] of Object.entries(values)) content = content.split(key).join(value);
+    await write(join(dirname(rel), RENAMES[basename(rel)] ?? basename(rel)), content);
   }
+  const uiDoc = (name) => readFile(join(UI_ROOT, name), 'utf8');
+  await write('DESIGN_RULES.md', await uiDoc('DESIGN_RULES.md'));
+  await write('llms.txt', `${await readFile(join(TEMPLATE, LLMS_PLUGIN), 'utf8')}\n${await uiDoc('llms.txt')}`);
   return { dir: target, id: values.__PLUGIN_ID__, name: values.__PLUGIN_NAME__ };
 }
 
@@ -96,7 +109,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     console.log(`Created ${name} (${id}) in ${rel}\n`);
     console.log(`  cd ${rel}\n  npm install\n  npm run dev`);
     console.log('\nThen in the overlay: Settings → Plugins → Load unpacked → http://localhost:5199/');
-    console.log('Read DESIGN_RULES.md (or point your AI tool at llms.txt) before you build UI.');
+    console.log('Read PLUGIN_GUIDE.md and DESIGN_RULES.md (or point your AI tool at llms.txt) before you build UI.');
   } catch (error) {
     fail(error.message);
   }

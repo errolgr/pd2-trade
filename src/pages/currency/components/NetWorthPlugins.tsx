@@ -1,8 +1,8 @@
 import React from 'react';
+import { ErrorChip, PriceTag, SlotText } from '@pd2-trader/ui';
 import type { Valuation } from '@/lib/networth-api';
 import { toNetWorthSummary } from '@/plugins/adapters/net-worth';
 import { runPluginCommand, usePluginSlot } from '@/plugins/ui/hooks';
-import { ErrorChip, PriceTag, SlotText } from '@/plugins/ui/slot-components';
 import { UiTree } from '@/plugins/ui/UiTree';
 import { useStableSlotResults } from '@/plugins/ui/useStableSlotResults';
 
@@ -22,7 +22,9 @@ export interface PluginTab {
  */
 export function useNetWorthPlugins(valuation: Valuation | null): { tabs: PluginTab[]; metrics: React.ReactNode } {
   const input = valuation ? () => toNetWorthSummary(valuation) : null;
-  const key = valuation ? `${valuation.account}|${valuation.isLadder}|${valuation.isHardcore}|${valuation.takenAt}` : '';
+  const key = valuation
+    ? `${valuation.account}|${valuation.isLadder}|${valuation.isHardcore}|${valuation.takenAt}`
+    : '';
   const tabSlot = usePluginSlot('networth.tab', input, key);
   const metricSlot = usePluginSlot('networth.metric', input, key);
   const tabResults = useStableSlotResults(tabSlot.results);
@@ -47,8 +49,10 @@ export function useNetWorthPlugins(valuation: Valuation | null): { tabs: PluginT
         label: r.value.title,
         content: (
           <div className="flex flex-col gap-2">
-            <UiTree nodes={r.value.content}
-              onCommand={(commandId, args) => runPluginCommand(r.pluginId, commandId, args)} />
+            <UiTree
+              nodes={r.value.content}
+              onCommand={(commandId, args) => runPluginCommand(r.pluginId, commandId, args)}
+            />
           </div>
         ),
       },

@@ -1,8 +1,8 @@
 import React from 'react';
+import { SlotAction, SlotBadge } from '@pd2-trader/ui';
 import type { Tone } from '@pd2-trader/plugin-sdk';
 import { fromTimelineEntry } from '@/plugins/adapters/chat';
 import { runPluginCommand } from '@/plugins/ui/hooks';
-import { SlotAction, SlotBadge } from '@/plugins/ui/slot-components';
 import type { TimelineEntry } from '../lib/inbox';
 import { useMessagePluginSlot } from '../hooks/useMessagePluginSlot';
 
@@ -31,7 +31,9 @@ export function useMessagePlugins(entry: TimelineEntry, otherName: string) {
   const decorations = useMessagePluginSlot('chat.decorate', input, entry.key);
   const actions = useMessagePluginSlot('chat.action', input, entry.key);
 
-  const decorated = decorations.flatMap((r) => (r.state === 'ok' && r.value ? [{ pluginId: r.pluginId, ...r.value }] : []));
+  const decorated = decorations.flatMap((r) =>
+    r.state === 'ok' && r.value ? [{ pluginId: r.pluginId, ...r.value }] : [],
+  );
   const highlight = decorated.find((d) => d.highlight)?.highlight;
   const tags = decorated.flatMap((d) =>
     d.tags.map((tag, i) => <SlotBadge key={`${d.pluginId}:${i}`}
@@ -41,12 +43,12 @@ export function useMessagePlugins(entry: TimelineEntry, otherName: string) {
   const buttons = actions.flatMap((r) =>
     r.state === 'ok'
       ? r.value.map((button, i) => (
-        <SlotAction
-          key={`${r.pluginId}:${i}`}
-          label={button.label}
-          onClick={() => runPluginCommand(r.pluginId, button.commandId, button.args ?? entry.key)}
-        />
-      ))
+          <SlotAction
+            key={`${r.pluginId}:${i}`}
+            label={button.label}
+            onClick={() => runPluginCommand(r.pluginId, button.commandId, button.args ?? entry.key)}
+          />
+        ))
       : [],
   );
 

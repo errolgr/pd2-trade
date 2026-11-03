@@ -43,6 +43,9 @@ export function validateSlotOutput<S extends CallableSlotId>(slot: S, value: unk
   return parsed.data as SlotOutput<S>;
 }
 
+/** A budget timer firing later than this past its deadline means the host thread was busy, not the plugin. */
+const HOST_BUSY_SLACK_MS = 50;
+
 type InvokeMessage =
   | { t: 'invoke'; kind: 'slot'; slot: CallableSlotId; input: unknown }
   | { t: 'invoke'; kind: 'command'; command: string; args?: unknown };
@@ -144,9 +147,16 @@ export class PluginInstance {
 
   private withTimeout<T>(promise: Promise<T>, ms: number, onTimeout?: () => void): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const start = performance.now();
+      const expire = () => {
         onTimeout?.();
         reject(new TimeoutError(ms));
+      };
+      let timer = setTimeout(() => {
+        // A timer this late means the host's own thread was busy (a large render): the plugin's answer may already
+        // be queued behind this task. One more turn lets it land instead of blaming the plugin for the host's jank.
+        if (performance.now() - start > ms + HOST_BUSY_SLACK_MS) timer = setTimeout(expire, 0);
+        else expire();
       }, ms);
       promise.then(
         (v) => {
@@ -173,7 +183,11 @@ export class PluginInstance {
    * Calls a slot; resolves with validated output. Timeouts, errors and invalid trees count as failures
    * (the manager auto-disables repeat offenders). Slots whose permission was not granted never get input.
    */
-  async invokeSlot<S extends CallableSlotId>(slot: S, input: unknown, timeoutMs = SLOT_TIMEOUT_MS): Promise<SlotOutput<S>> {
+  async invokeSlot<S extends CallableSlotId>(
+    slot: S,
+    input: unknown,
+    timeoutMs = SLOT_TIMEOUT_MS,
+  ): Promise<SlotOutput<S>> {
     const needed = SLOT_PERMISSIONS[slot];
     if (!this.opts.manifest.slots.includes(slot)) throw new PermissionDeniedError(`${slot} is not declared`);
     if (needed && !this.opts.broker.has(needed)) throw new PermissionDeniedError(`${slot} needs ${needed}`);

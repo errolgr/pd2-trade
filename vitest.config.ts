@@ -15,6 +15,7 @@ export default defineConfig({
       'src/**/*.test.{ts,tsx}',
       'scripts/**/*.test.{ts,mjs}',
       'packages/*/{src,scripts}/**/*.test.{ts,tsx}',
+      'packages/plugins/*/src/**/*.test.ts',
       'packages/ui/eslint/**/*.test.{js,mjs}',
     ],
     environment: 'node',

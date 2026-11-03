@@ -1,12 +1,21 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import {
+  Form,
+  FormControl,
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  SettingsGroup,
+  SettingsRow,
+} from '@pd2-trader/ui';
 import { pluginHost, type PluginView } from '@/plugins/host/manager';
 import { useTranslation } from '@/i18n';
-import { SettingsGroup, SettingsRow } from '../settings-ui';
 import { coerceFieldValue, fieldDisplayValue, schemaFields, type SchemaField, type SettingValue } from './schema-form';
 
 /** True when the plugin asks for a settings section (B5) and declares a settings schema. */
@@ -46,9 +55,14 @@ export function PluginSettingsForm({ view }: { view: PluginView }) {
     if (field.kind !== 'number') return '';
     const integer = field.step === 1;
     if (field.min !== undefined && field.max !== undefined)
-      return t(integer ? 'settings.form.integerRange' : 'settings.form.numberRange', { min: field.min, max: field.max });
-    if (field.min !== undefined) return t(integer ? 'settings.form.integerMin' : 'settings.form.numberMin', { min: field.min });
-    if (field.max !== undefined) return t(integer ? 'settings.form.integerMax' : 'settings.form.numberMax', { max: field.max });
+      return t(integer ? 'settings.form.integerRange' : 'settings.form.numberRange', {
+        min: field.min,
+        max: field.max,
+      });
+    if (field.min !== undefined)
+      return t(integer ? 'settings.form.integerMin' : 'settings.form.numberMin', { min: field.min });
+    if (field.max !== undefined)
+      return t(integer ? 'settings.form.integerMax' : 'settings.form.numberMax', { max: field.max });
     return t(integer ? 'settings.form.integer' : 'settings.form.number');
   };
 
@@ -117,9 +131,11 @@ export function PluginSettingsForm({ view }: { view: PluginView }) {
               control={form.control}
               name={`field${index}`}
               render={() => (
-                <SettingsRow label={field.title}
+                <SettingsRow
+                  label={field.title}
                   description={field.description}
-                  control={control(field, values[field.key], invalid)}>
+                  control={control(field, values[field.key], invalid)}
+                >
                   {invalid && (
                     <p role="status"
                       className="text-xs text-warning">

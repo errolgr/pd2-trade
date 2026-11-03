@@ -13,6 +13,7 @@
     "@pd2-trader/plugin-sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@pd2-trader/ui": "0.1.0",
     "eslint": "^9.39.1",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.24.1"

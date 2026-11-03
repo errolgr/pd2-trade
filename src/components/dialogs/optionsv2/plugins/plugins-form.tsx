@@ -2,10 +2,18 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { isTauri } from '@tauri-apps/api/core';
 import { AlertTriangle, FolderOpen, Puzzle, Store } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Banner, EmptyState } from '@/pages/currency/components/StatePanel';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  Input,
+  Banner,
+  EmptyState,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
+} from '@pd2-trader/ui';
 import { showToast, useOverlay } from '@/overlay';
 import { devLoader } from '@/plugins/dev/unpacked';
 import { pluginHost, type PluginView } from '@/plugins/host/manager';
@@ -20,7 +28,6 @@ import {
   UninstallPluginButton,
 } from '@/plugins/ui/PluginManageControls';
 import { useTranslation } from '@/i18n';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { hasSettingsSection, PluginSettingsForm } from './plugin-settings-form';
 
 /** Settings → Plugins: installed plugins, Load unpacked, and each plugin's schema-rendered settings (B5). */

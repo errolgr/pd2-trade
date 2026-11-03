@@ -1,8 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Puzzle } from 'lucide-react';
 import { PANEL_KIT_CSS, type PanelToHost, type HostToPanel } from '@pd2-trader/plugin-sdk';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { PanelChrome, PanelSurface, EmptyState } from '@pd2-trader/ui';
 import { claimKeyboard, usePanel, type PluginPanelId } from '@/overlay';
 import { useTranslation } from '@/i18n';
 import { pluginHost } from '../host/manager';
@@ -58,7 +57,12 @@ export function PluginPanelPage({ pluginId, panel }: { pluginId: string; panel: 
           connection.call(message.method, message.params).then(
             (value) => send({ t: 'result', id: message.id, ok: true, value }),
             (error: unknown) =>
-              send({ t: 'result', id: message.id, ok: false, error: error instanceof Error ? error.message : String(error) }),
+              send({
+                t: 'result',
+                id: message.id,
+                ok: false,
+                error: error instanceof Error ? error.message : String(error),
+              }),
           );
           break;
         case 'toWorker':
@@ -92,8 +96,8 @@ export function PluginPanelPage({ pluginId, panel }: { pluginId: string; panel: 
 
   const title = view?.manifest?.name ?? view?.installed.name ?? pluginId;
   return (
-    <WindowPanel className="flex h-full w-full flex-col">
-      <WindowChrome title={title}
+    <PanelSurface className="flex h-full w-full flex-col">
+      <PanelChrome title={title}
         icon={<Puzzle />}
         onClose={close} />
       {doc ? (
@@ -106,12 +110,14 @@ export function PluginPanelPage({ pluginId, panel }: { pluginId: string; panel: 
         />
       ) : (
         <div className="flex flex-1 items-center justify-center p-4">
-          <EmptyState icon={<Puzzle />}
+          <EmptyState
+            icon={<Puzzle />}
             title={t('panel.unavailable')}
             description={t('panel.unavailableHint')}
-            compact />
+            compact
+          />
         </div>
       )}
-    </WindowPanel>
+    </PanelSurface>
   );
 }

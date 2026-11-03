@@ -6,7 +6,6 @@ import { usePluginHost } from '@/plugins/ui/hooks';
 import { pluginHost, type PluginHostSnapshot, type PluginView } from '@/plugins/host/manager';
 import { devLoader } from '@/plugins/dev/unpacked';
 import type { InstalledPlugin, PluginBundle } from '@/plugins/host/types';
-import { selectShim } from '../test-utils';
 import { PluginsForm } from './plugins-form';
 
 vi.mock('@/plugins/ui/hooks', () => ({ usePluginHost: vi.fn() }));
@@ -16,7 +15,11 @@ vi.mock('@/overlay', () => ({
   confirmToast: vi.fn(),
 }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => false }));
-vi.mock('@/components/ui/select', () => selectShim);
+// vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
+vi.mock('@pd2-trader/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import('../test-utils')).selectShim,
+}));
 // happy-dom rejects cancelled WAAPI animations (Banner / EmptyState): render motion.* as plain elements
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 
@@ -49,7 +52,13 @@ const installed: InstalledPlugin = {
   installedAt: '2026-11-01T00:00:00.000Z',
 };
 
-const host = (plugins: PluginView[]): PluginHostSnapshot => ({ ready: true, plugins, consent: null, panels: [], themes: [] });
+const host = (plugins: PluginView[]): PluginHostSnapshot => ({
+  ready: true,
+  plugins,
+  consent: null,
+  panels: [],
+  themes: [],
+});
 const view: PluginView = { installed, manifest: manifest!, status: 'running', failures: 0 };
 
 let stored: Record<string, string | number | boolean>;
@@ -82,7 +91,10 @@ describe('PluginsForm', () => {
     const rows = screen.getByLabelText('Rows') as HTMLInputElement;
     expect(rows.value).toBe('3');
     fireEvent.change(rows, { target: { value: '7' } });
-    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith('com.example.tool', expect.objectContaining({ count: 7 }));
+    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith(
+      'com.example.tool',
+      expect.objectContaining({ count: 7 }),
+    );
 
     vi.mocked(pluginHost.setPluginSettings).mockClear();
     fireEvent.change(rows, { target: { value: '11' } });
@@ -90,10 +102,16 @@ describe('PluginsForm', () => {
     expect(screen.getByText('Enter a whole number from 1 to 10.')).toBeTruthy();
 
     fireEvent.click(screen.getByLabelText('Compact rows'));
-    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith('com.example.tool', expect.objectContaining({ compact: true }));
+    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith(
+      'com.example.tool',
+      expect.objectContaining({ compact: true }),
+    );
 
     fireEvent.change(screen.getByLabelText('Currency'), { target: { value: 'ist' } });
-    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith('com.example.tool', expect.objectContaining({ currency: 'ist' }));
+    expect(pluginHost.setPluginSettings).toHaveBeenLastCalledWith(
+      'com.example.tool',
+      expect.objectContaining({ currency: 'ist' }),
+    );
   });
 
   it('loads an unpacked plugin from a dev server URL and installs it', async () => {

@@ -1,18 +1,35 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
-import { AlertTriangle, ArrowLeft, BadgeCheck, Ban, Check, Download, Globe, PackageSearch, Puzzle, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BadgeCheck,
+  Ban,
+  Check,
+  Download,
+  Globe,
+  PackageSearch,
+  Puzzle,
+  ShieldCheck,
+} from 'lucide-react';
 import { CATEGORIES, type Category, type Permission } from '@pd2-trader/plugin-sdk';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Banner, EmptyState } from '@/pages/currency/components/StatePanel';
+import {
+  PanelChrome,
+  PanelSurface,
+  Badge,
+  Button,
+  Input,
+  ScrollArea,
+  Skeleton,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Banner,
+  EmptyState,
+  cn,
+} from '@pd2-trader/ui';
 import { showToast, usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { PluginView } from '../host/manager';
 import { marketplaceApi, type Listing, type ListingDetail } from '../marketplace/api';
 import { isBlocked } from '../marketplace/install';
@@ -37,8 +54,7 @@ import {
 type Tab = 'browse' | 'installed';
 
 const SEARCH_DEBOUNCE_MS = 300;
-const TRIGGER_CLASS =
-  'h-6 px-2.5 text-xs after:hidden data-[state=active]:bg-background data-[state=active]:shadow-sm';
+const TRIGGER_CLASS = 'h-6 px-2.5 text-xs after:hidden data-[state=active]:bg-background data-[state=active]:shadow-sm';
 const TONE_BADGE = {
   success: 'border-success/30 bg-success/10 text-success',
   destructive: 'border-destructive/35 bg-destructive/10 text-destructive',
@@ -78,23 +94,25 @@ export default function PluginsPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel animate
+      <PanelSurface animate
         className="flex h-full w-full flex-col">
-        <WindowChrome
+        <PanelChrome
           title={t('marketplace.title')}
           icon={<Puzzle className="text-primary" />}
           onClose={close}
           closeLabel={t('marketplace.closeLabel')}
           center={
             tab === 'browse' && (
-              <Input value={query}
+              <Input
+                value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setDetailId(null);
                 }}
                 placeholder={t('marketplace.search')}
                 aria-label={t('marketplace.search')}
-                className="h-7 w-64 text-xs" />
+                className="h-7 w-64 text-xs"
+              />
             )
           }
           actions={
@@ -123,11 +141,13 @@ export default function PluginsPage() {
                 ready={host.ready}
                 onBrowse={() => setTab('browse')} />
             ) : detailId ? (
-              <ListingDetailView id={detailId}
+              <ListingDetailView
+                id={detailId}
                 stateOf={stateOf}
                 installedVersion={installedById.get(detailId)?.installed.version}
                 installer={installer}
-                onBack={() => setDetailId(null)} />
+                onBack={() => setDetailId(null)}
+              />
             ) : (
               <BrowseList query={query}
                 stateOf={stateOf}
@@ -136,7 +156,7 @@ export default function PluginsPage() {
             )}
           </div>
         </ScrollArea>
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 }
@@ -191,9 +211,11 @@ function ListingAction({
   const busy = installer.pending === listing.id;
   if (state.kind === 'blocked')
     return (
-      <Badge variant="outline"
+      <Badge
+        variant="outline"
         className={TONE_BADGE.destructive}
-        title={state.reason ? t('marketplace.blockedHint', { reason: state.reason }) : undefined}>
+        title={state.reason ? t('marketplace.blockedHint', { reason: state.reason }) : undefined}
+      >
         <Ban aria-hidden />
         {t('marketplace.blocked')}
       </Badge>
@@ -207,10 +229,12 @@ function ListingAction({
       </Badge>
     );
   return (
-    <Button size="sm"
+    <Button
+      size="sm"
       variant={state.kind === 'update' ? 'secondary' : 'default'}
       disabled={installer.pending !== null}
-      onClick={() => void installer.install(listing)}>
+      onClick={() => void installer.install(listing)}
+    >
       <Download className="size-4" />
       {busy
         ? t('marketplace.installing')
@@ -244,13 +268,22 @@ function useDebounced<T>(value: T, ms: number): T {
 function useListings(q: string, category: Category | null) {
   const [attempt, setAttempt] = useState(0);
   const key = `${attempt}|${category ?? ''}|${q}`;
-  const [state, setState] = useState<ListingsState>({ key: '', items: [], nextCursor: null, status: 'loading', more: 'idle' });
+  const [state, setState] = useState<ListingsState>({
+    key: '',
+    items: [],
+    nextCursor: null,
+    status: 'loading',
+    more: 'idle',
+  });
 
   useEffect(() => {
     let live = true;
     marketplaceApi
       .list({ q: q || undefined, category: category ?? undefined })
-      .then((page) => live && setState({ key, items: page.items, nextCursor: page.nextCursor ?? null, status: 'ok', more: 'idle' }))
+      .then(
+        (page) =>
+          live && setState({ key, items: page.items, nextCursor: page.nextCursor ?? null, status: 'ok', more: 'idle' }),
+      )
       .catch(() => live && setState({ key, items: [], nextCursor: null, status: 'error', more: 'idle' }));
     return () => {
       live = false;
@@ -268,7 +301,12 @@ function useListings(q: string, category: Category | null) {
     marketplaceApi
       .list({ q: q || undefined, category: category ?? undefined, cursor })
       .then((page) =>
-        update((s) => ({ ...s, items: [...s.items, ...page.items], nextCursor: page.nextCursor ?? null, more: 'idle' })),
+        update((s) => ({
+          ...s,
+          items: [...s.items, ...page.items],
+          nextCursor: page.nextCursor ?? null,
+          more: 'idle',
+        })),
       )
       .catch(() => update((s) => ({ ...s, more: 'error' })));
   };
@@ -298,12 +336,14 @@ function BrowseList({
         aria-label={t('marketplace.categoryFilter')}
         className="flex flex-wrap gap-1">
         {[null, ...CATEGORIES].map((c) => (
-          <Button key={c ?? 'all'}
+          <Button
+            key={c ?? 'all'}
             size="sm"
             variant={category === c ? 'secondary' : 'ghost'}
             aria-pressed={category === c}
             className="h-7 rounded-full px-2.5 text-xs"
-            onClick={() => setCategory(c)}>
+            onClick={() => setCategory(c)}
+          >
             {t(`marketplace.categories.${c ?? 'all'}`)}
           </Button>
         ))}
@@ -325,20 +365,24 @@ function BrowseList({
         <>
           <div className="grid grid-cols-2 gap-2">
             {listings.items.map((listing) => (
-              <ListingCard key={listing.id}
+              <ListingCard
+                key={listing.id}
                 listing={listing}
                 state={stateOf(listing)}
                 installer={installer}
-                onOpen={() => onOpen(listing.id)} />
+                onOpen={() => onOpen(listing.id)}
+              />
             ))}
           </div>
           {listings.more === 'error' && <LoadError onRetry={listings.loadMore} />}
           {listings.nextCursor && listings.more !== 'error' && (
-            <Button variant="outline"
+            <Button
+              variant="outline"
               size="sm"
               className="self-center"
               disabled={listings.more === 'loading'}
-              onClick={listings.loadMore}>
+              onClick={listings.loadMore}
+            >
               {t('marketplace.loadMore')}
             </Button>
           )}
@@ -351,7 +395,8 @@ function BrowseList({
 function LoadError({ onRetry, title }: { onRetry: () => void; title?: string }) {
   const { t } = useTranslation('plugins');
   return (
-    <Banner tone="destructive"
+    <Banner
+      tone="destructive"
       role="alert"
       icon={<AlertTriangle />}
       actions={
@@ -360,7 +405,8 @@ function LoadError({ onRetry, title }: { onRetry: () => void; title?: string }) 
           onClick={onRetry}>
           {t('marketplace.retry')}
         </Button>
-      }>
+      }
+    >
       <span className="block font-medium">{title ?? t('marketplace.loadFailed')}</span>
       <span className="block text-xs text-muted-foreground">{t('marketplace.loadFailedHint')}</span>
     </Banner>
@@ -406,19 +452,23 @@ function AccessChips({ permissions, network }: { permissions: Permission[]; netw
   return (
     <div className="flex flex-wrap gap-1">
       {permissions.map((p) => (
-        <Badge key={p}
+        <Badge
+          key={p}
           variant="outline"
           className={cn(TONE_BADGE.muted, 'rounded-sm px-1.5 py-0')}
-          title={t(permissionKey(p, 'description'))}>
+          title={t(permissionKey(p, 'description'))}
+        >
           <ShieldCheck aria-hidden />
           {t(permissionKey(p, 'label'))}
         </Badge>
       ))}
       {network.map((host) => (
-        <Badge key={host}
+        <Badge
+          key={host}
           variant="outline"
           className="rounded-sm border-warning/35 bg-warning/10 px-1.5 py-0 text-warning"
-          title={t('consent.network', { host })}>
+          title={t('consent.network', { host })}
+        >
           <Globe aria-hidden />
           {host}
         </Badge>
@@ -442,9 +492,11 @@ function ListingCard({
     <article className="flex flex-col gap-2 rounded-md border border-border bg-card/60 p-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <Button variant="link"
+          <Button
+            variant="link"
             className="h-auto max-w-full justify-start truncate p-0 text-sm font-semibold text-foreground"
-            onClick={onOpen}>
+            onClick={onOpen}
+          >
             {listing.name}
           </Button>
           <ListingMeta listing={listing} />
@@ -561,8 +613,10 @@ function ListingDetailView({
                   </li>
                 ))}
                 {detail.network.map((host) => (
-                  <li key={host}
-                    className="flex items-start gap-2 rounded-md border border-warning/35 bg-warning/10 p-2">
+                  <li
+                    key={host}
+                    className="flex items-start gap-2 rounded-md border border-warning/35 bg-warning/10 p-2"
+                  >
                     <Globe className="mt-0.5 size-3.5 shrink-0 text-warning"
                       aria-hidden />
                     <span>
@@ -637,7 +691,8 @@ function InstalledList({ plugins, ready, onBrowse }: { plugins: PluginView[]; re
     );
   if (plugins.length === 0)
     return (
-      <EmptyState icon={<Puzzle />}
+      <EmptyState
+        icon={<Puzzle />}
         title={t('marketplace.emptyInstalled')}
         description={t('marketplace.emptyInstalledHint')}
         action={
@@ -645,7 +700,8 @@ function InstalledList({ plugins, ready, onBrowse }: { plugins: PluginView[]; re
             onClick={onBrowse}>
             {t('marketplace.browse')}
           </Button>
-        } />
+        }
+      />
     );
   return (
     <ul className="flex flex-col gap-2">

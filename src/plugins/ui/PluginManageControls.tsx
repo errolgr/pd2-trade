@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowUpCircle, ShieldCheck, Trash2, Wrench } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Badge, Button, Switch, cn } from '@pd2-trader/ui';
 import { confirmToast, showToast } from '@/overlay';
 import { useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import { pluginHost, type PluginView } from '../host/manager';
 
 /**
@@ -77,10 +74,12 @@ export function PluginEnableSwitch({ view }: { view: PluginView }) {
   const { installed } = view;
   const locked = installed.disabledReason === 'blocklisted' || installed.disabledReason === 'incompatible';
   return (
-    <Switch checked={installed.enabled}
+    <Switch
+      checked={installed.enabled}
       disabled={locked}
       aria-label={t('marketplace.manage.enable', { name: installed.name })}
-      onCheckedChange={(enabled) => void pluginHost.setEnabled(installed.id, enabled)} />
+      onCheckedChange={(enabled) => void pluginHost.setEnabled(installed.id, enabled)}
+    />
   );
 }
 
@@ -88,7 +87,8 @@ export function UninstallPluginButton({ view }: { view: PluginView }) {
   const { t } = useTranslation('plugins');
   const { installed } = view;
   return (
-    <Button variant="ghost"
+    <Button
+      variant="ghost"
       size="sm"
       className="size-8 p-0 text-muted-foreground hover:text-destructive"
       aria-label={t('marketplace.manage.uninstall', { name: installed.name })}

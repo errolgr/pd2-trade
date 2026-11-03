@@ -1,12 +1,10 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { AlertTriangle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Form, FormField } from '@/components/ui/form';
+import { Button, Form, FormField, SettingsGroup, SettingsRow } from '@pd2-trader/ui';
 import { pluginHost } from '@/plugins/host/manager';
 import type { PluginHotkey } from '@/plugins/host/types';
 import { useTranslation } from '@/i18n';
-import { SettingsGroup, SettingsRow } from '../settings-ui';
 import type { HotkeyBinding } from './conflicts';
 import { HotkeyCapture, type HotkeyModifier } from './hotkey-capture';
 
@@ -53,7 +51,8 @@ export function PluginHotkeys({ commands, warningFor }: PluginHotkeysProps) {
           const warning = warningFor(binding);
           const modifier = command.hotkey?.modifier ?? pendingModifier[binding.id] ?? 'ctrl';
           const setModifier = (next: HotkeyModifier) => {
-            if (command.hotkey) pluginHost.setHotkey(command.pluginId, command.id, { modifier: next, key: command.hotkey.key });
+            if (command.hotkey)
+              pluginHost.setHotkey(command.pluginId, command.id, { modifier: next, key: command.hotkey.key });
             else setPendingModifier((prev) => ({ ...prev, [binding.id]: next }));
           };
           return (

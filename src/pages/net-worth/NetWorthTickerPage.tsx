@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { MotionConfig } from 'framer-motion';
-import { Button, cn } from '@pd2-trader/ui';
+import { Button, cn, PriceTag, SlotBadge, SlotText } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
@@ -23,7 +23,6 @@ import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { currentLocale, useTranslation } from '@/i18n';
 import { toNetWorthSummary } from '@/plugins/adapters/net-worth';
 import { usePluginSlot } from '@/plugins/ui/hooks';
-import { PriceTag, SlotBadge, SlotText } from '@/plugins/ui/slot-components';
 import { useStableSlotResults } from '@/plugins/ui/useStableSlotResults';
 
 /** Px between the ticker and the mini panel opened from it. */

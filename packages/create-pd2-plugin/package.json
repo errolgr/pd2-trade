@@ -10,5 +10,8 @@
   "files": [
     "bin",
     "template"
-  ]
+  ],
+  "dependencies": {
+    "@pd2-trader/ui": "0.1.0"
+  }
 }

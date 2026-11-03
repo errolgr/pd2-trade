@@ -1,8 +1,8 @@
 import React from 'react';
 import { ArrowDownWideNarrow } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
 import {
+  Button,
+  Toggle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -10,11 +10,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ErrorChip, SlotAction, SlotBadge, toneTextClass } from '@/plugins/ui/slot-components';
+  cn,
+  ErrorChip,
+  SlotAction,
+  SlotBadge,
+  slotToneClass,
+} from '@pd2-trader/ui';
 import { runPluginCommand, usePluginSlot } from '@/plugins/ui/hooks';
 import { type PluginCell, toMarketQuery, toMarketRow } from '@/plugins/adapters/market';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 import type { MarketPlugins } from '../hooks/useMarketPlugins';
 import type { MarketFilters, ScoredListing } from '../lib/types';
@@ -51,9 +54,11 @@ export function PluginControls({ plugins }: { plugins: MarketPlugins }) {
       {sorts.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline"
+            <Button
+              variant="outline"
               size="sm"
-              className={cn('h-6 gap-1 px-2 text-xs', sortLabel && 'text-accent-foreground')}>
+              className={cn('h-6 gap-1 px-2 text-xs', sortLabel && 'text-accent-foreground')}
+            >
               <ArrowDownWideNarrow className="size-3.5" />
               {sortLabel ?? t('surfaces.market.sort')}
             </Button>
@@ -87,9 +92,11 @@ export function PluginCellsText({ cells }: { cells: PluginCell[] | undefined }) 
     <div className="flex max-w-24 shrink-0 flex-col items-end gap-0.5"
       data-plugin-slot="market.column">
       {cells.slice(0, 3).map((c) => (
-        <span key={c.pluginId}
+        <span
+          key={c.pluginId}
           title={`${c.title}: ${c.text}`}
-          className={cn('max-w-full truncate text-xs font-medium leading-4 tabular-nums', toneTextClass(c.tone))}>
+          className={cn('max-w-full truncate text-xs font-medium leading-4 tabular-nums', slotToneClass(c.tone))}
+        >
           {c.text}
         </span>
       ))}
@@ -126,7 +133,11 @@ export function PluginRowActions({ row, query }: { row: ScoredListing; query: Ma
       row: toMarketRow(row),
       query: query
         ? toMarketQuery(query)
-        : { ladder: listing.is_ladder, hardcore: listing.is_hardcore, source: row.status && row.status !== 'active' ? 'archive' : 'live' },
+        : {
+            ladder: listing.is_ladder,
+            hardcore: listing.is_hardcore,
+            source: row.status && row.status !== 'active' ? 'archive' : 'live',
+          },
     }),
     listing._id,
   );

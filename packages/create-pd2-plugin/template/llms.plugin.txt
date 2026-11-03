@@ -1,5 +1,5 @@
 # PD2 Trader plugin — rules for AI tools
-# Human version: DESIGN_RULES.md. Types: node_modules/@pd2-trader/plugin-sdk/src (ui.ts, slots.ts, worker.ts, panel.ts, manifest.ts).
+# Human version: PLUGIN_GUIDE.md (platform) + DESIGN_RULES.md (design system, below). Types: node_modules/@pd2-trader/plugin-sdk/src (ui.ts, slots.ts, worker.ts, panel.ts, manifest.ts).
 
 ## Context
 - Plugins extend the PD2 Trader overlay (Project Diablo 2 trading). One transparent, always-on-top, non-focusable window, 21 themes.

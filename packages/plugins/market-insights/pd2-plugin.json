@@ -1,0 +1,13 @@
+{
+  "id": "com.pd2trader.market-insights",
+  "name": "Market Insights",
+  "version": "1.0.0",
+  "sdk": "^1.0.0",
+  "description": "Deal column, filter and sort in the market browser, plus a net worth breakdown in Ber.",
+  "author": "PD2 Trader",
+  "category": "trading",
+  "entry": { "worker": "src/worker.ts" },
+  "slots": ["market.column", "market.filter", "market.sort", "market.rowAction", "networth.tab", "networth.metric"],
+  "commands": [{ "id": "compare", "title": "Compare a listing to the market median", "defaultHotkey": null }],
+  "permissions": ["prices:read", "stash:read", "notifications"]
+}

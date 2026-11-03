@@ -1,6 +1,6 @@
 import React from 'react';
+import { ErrorChip, SlotBadge, SkeletonRows } from '@pd2-trader/ui';
 import type { SlotInput } from '@pd2-trader/plugin-sdk';
-import { ErrorChip, SlotBadge, SlotSkeleton } from './slot-components';
 import { UiTree } from './UiTree';
 import { runPluginCommand, usePluginSlot } from './hooks';
 
@@ -10,7 +10,13 @@ import { runPluginCommand, usePluginSlot } from './hooks';
  */
 
 /** `priceCheck.section`: one section per plugin, skeleton while pending, error chip on failure. */
-export function PriceCheckSections({ input, inputKey }: { input: (() => SlotInput<'priceCheck.section'>) | null; inputKey: string }) {
+export function PriceCheckSections({
+  input,
+  inputKey,
+}: {
+  input: (() => SlotInput<'priceCheck.section'>) | null;
+  inputKey: string;
+}) {
   const { results, retry } = usePluginSlot('priceCheck.section', input, inputKey);
   if (!results.length) return null;
   return (
@@ -18,15 +24,18 @@ export function PriceCheckSections({ input, inputKey }: { input: (() => SlotInpu
       data-plugin-slot="priceCheck.section">
       {results.map((r) =>
         r.state === 'loading' ? (
-          <SlotSkeleton key={r.pluginId} />
+          <SkeletonRows key={r.pluginId}
+            rows={2} />
         ) : r.state === 'error' ? (
           <ErrorChip key={r.pluginId}
             message={`${r.pluginName}: ${r.error}`}
             onRetry={retry} />
         ) : r.value ? (
-          <UiTree key={r.pluginId}
+          <UiTree
+            key={r.pluginId}
             nodes={[r.value]}
-            onCommand={(commandId, args) => runPluginCommand(r.pluginId, commandId, args)} />
+            onCommand={(commandId, args) => runPluginCommand(r.pluginId, commandId, args)}
+          />
         ) : null,
       )}
     </div>
@@ -34,7 +43,13 @@ export function PriceCheckSections({ input, inputKey }: { input: (() => SlotInpu
 }
 
 /** `priceCheck.badge`: inline badges after the item name; pending and failed plugins render nothing inline. */
-export function PriceCheckBadges({ input, inputKey }: { input: (() => SlotInput<'priceCheck.badge'>) | null; inputKey: string }) {
+export function PriceCheckBadges({
+  input,
+  inputKey,
+}: {
+  input: (() => SlotInput<'priceCheck.badge'>) | null;
+  inputKey: string;
+}) {
   const { results } = usePluginSlot('priceCheck.badge', input, inputKey);
   return (
     <>

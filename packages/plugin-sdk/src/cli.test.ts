@@ -37,7 +37,7 @@ async function fixture(manifest: Record<string, unknown> = {}): Promise<string> 
     }),
   );
   await writeFile(join(dir, 'worker.ts'), 'const answer: number = 42;\nconsole.log(answer);\n');
-  await writeFile(join(dir, 'helper.ts'), "export const label = (s: string): string => `</script> ${s}`;\n");
+  await writeFile(join(dir, 'helper.ts'), 'export const label = (s: string): string => `</script> ${s}`;\n');
   await writeFile(join(dir, 'panel.ts'), "import { label } from './helper';\ndocument.body.dataset.v = label('v1');\n");
   await writeFile(join(dir, 'panel.css'), '.box { color: var(--foreground); }\n');
   await writeFile(
@@ -105,7 +105,13 @@ describe('create-pd2-plugin', () => {
     const run = spawnSync(process.execPath, [CREATE, dir, '--id', 'com.tester.my-plugin'], { encoding: 'utf8' });
     expect(run.status, run.stderr).toBe(0);
     expect(existsSync(join(dir, '.gitignore'))).toBe(true);
-    expect(existsSync(join(dir, 'eslint-rules/design-system.js'))).toBe(true);
+    // Design-system docs come from @pd2-trader/ui, not a template copy.
+    const ui = (name: string) => readFile(resolve(SDK_ROOT, '../ui', name), 'utf8');
+    expect(await readFile(join(dir, 'DESIGN_RULES.md'), 'utf8')).toBe(await ui('DESIGN_RULES.md'));
+    const llms = await readFile(join(dir, 'llms.txt'), 'utf8');
+    expect(llms).toMatch(/^# PD2 Trader plugin/);
+    expect(llms.endsWith(await ui('llms.txt'))).toBe(true);
+    expect(existsSync(join(dir, 'llms.plugin.txt'))).toBe(false);
 
     const source = JSON.parse(await readFile(join(dir, 'pd2-plugin.json'), 'utf8'));
     expect(source).toMatchObject({ id: 'com.tester.my-plugin', name: 'My Plugin' });
@@ -118,6 +124,23 @@ describe('create-pd2-plugin', () => {
 
     expect(spawnSync(process.execPath, [CREATE, dir], { encoding: 'utf8' }).stderr).toMatch(/not empty/);
   });
+
+  it("lints the scaffold with @pd2-trader/ui's configs.plugin", async () => {
+    const parent = await mkdtemp(join(SDK_ROOT, '.scaffold-'));
+    temps.push(parent);
+    const dir = join(parent, 'lint-me');
+    expect(spawnSync(process.execPath, [CREATE, dir], { encoding: 'utf8' }).status).toBe(0);
+    const eslint = resolve(SDK_ROOT, '../../node_modules/eslint/bin/eslint.js');
+    const lint = (cwd: string) => spawnSync(process.execPath, [eslint, 'src'], { cwd, encoding: 'utf8' });
+    const clean = lint(dir);
+    expect(clean.status, clean.stdout + clean.stderr).toBe(0);
+
+    await writeFile(join(dir, 'src/bad.ts'), "export const bad = { className: 'bg-red-500 w-[312px]' };\n");
+    const dirty = lint(dir);
+    expect(dirty.status).toBe(1);
+    expect(dirty.stdout).toMatch(/pd2-ds\/no-palette-class/);
+    expect(dirty.stdout).toMatch(/pd2-ds\/no-arbitrary-value/);
+  }, 30_000);
 });
 
 describe('pd2-plugin dev', () => {
@@ -130,7 +153,10 @@ describe('pd2-plugin dev', () => {
   it('serves dist with CORS and no-store, and rebuilds on change', async () => {
     const dir = await fixture();
     const port = 20000 + Math.floor(Math.random() * 20000);
-    child = spawn(process.execPath, [CLI, 'dev', '--port', String(port)], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    child = spawn(process.execPath, [CLI, 'dev', '--port', String(port)], {
+      cwd: dir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let log = '';
     const waiters: { test: () => boolean; resolve: () => void }[] = [];
     // Executor form: the SDK tsconfig targets ES2020 (no Promise.withResolvers).
@@ -144,7 +170,9 @@ describe('pd2-plugin dev', () => {
       log += chunk.toString();
       waiters.forEach((w) => w.test() && w.resolve());
     });
-    const exited = new Promise<never>((_, fail) => child!.once('exit', (code) => fail(new Error(`dev exited ${code}: ${log}`))));
+    const exited = new Promise<never>((_, fail) =>
+      child!.once('exit', (code) => fail(new Error(`dev exited ${code}: ${log}`))),
+    );
     exited.catch(() => {}); // the kill in afterEach
     const builds = () => log.match(/^✓/gm)?.length ?? 0;
     await Promise.race([logged((l) => l.includes('Serving')), exited]);

@@ -2,12 +2,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PERMISSIONS, ui } from '@pd2-trader/plugin-sdk';
 import { PluginBroker, PluginKv } from './broker';
 import { PluginManager, missingGrants } from './manager';
-import { FAILURE_LIMIT, WATCHDOG_INTERVAL_MS, WATCHDOG_TIMEOUT_MS } from './budget';
+import { PluginInstance, type PortLike } from './instance';
+import { FAILURE_LIMIT, SLOT_TIMEOUT_MS, WATCHDOG_INTERVAL_MS, WATCHDOG_TIMEOUT_MS } from './budget';
 import { fakeLauncher, fakeServices, makeBundle, memoryPersistence, programs } from './test-harness';
 import type { HostServices, PluginBundle } from './types';
 
 const input = {
-  item: { name: 'Shako', base: 'Shako', quality: 'unique', isRuneword: false, ethereal: false, corrupted: false, sockets: 0, itemLevel: 80, stats: [] },
+  item: {
+    name: 'Shako',
+    base: 'Shako',
+    quality: 'unique',
+    isRuneword: false,
+    ethereal: false,
+    corrupted: false,
+    sockets: 0,
+    itemLevel: 80,
+    stats: [],
+  },
   mode: { ladder: true, hardcore: false },
   price: null,
 };
@@ -87,7 +98,9 @@ describe('broker permissions', () => {
       await sdk.storage.set('k', { a: 1 });
       return sdk.storage.get('k');
     });
-    await startWith(makeBundle({ id: 'com.test.p3', permissions: ['storage:local'], commands: [{ id: 'run', title: 'Run' }] }, 'p3'));
+    await startWith(
+      makeBundle({ id: 'com.test.p3', permissions: ['storage:local'], commands: [{ id: 'run', title: 'Run' }] }, 'p3'),
+    );
     await manager.runCommand('com.test.p3', 'run');
     expect(result).toMatchObject({ value: { a: 1 }, done: true });
   });
@@ -110,7 +123,9 @@ describe('broker permissions', () => {
 
   it('enforces the storage quota', async () => {
     const result = probe('p5', (sdk) => sdk.storage.set('big', 'x'.repeat(6 * 1024 * 1024)));
-    await startWith(makeBundle({ id: 'com.test.p5', permissions: ['storage:local'], commands: [{ id: 'run', title: 'Run' }] }, 'p5'));
+    await startWith(
+      makeBundle({ id: 'com.test.p5', permissions: ['storage:local'], commands: [{ id: 'run', title: 'Run' }] }, 'p5'),
+    );
     await manager.runCommand('com.test.p5', 'run');
     expect(result.error).toMatch(/quota/i);
   });
@@ -152,7 +167,10 @@ describe('proxied fetch', () => {
     const httpFetch = vi.fn(async () => new Response('ok'));
     const plain = fetchProgram('http://api.example.com/x');
     await startWith(
-      makeBundle({ id: 'com.test.f2', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] }, 'fetch:http://api.example.com/x'),
+      makeBundle(
+        { id: 'com.test.f2', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] },
+        'fetch:http://api.example.com/x',
+      ),
       { services: fakeServices({ httpFetch }) },
     );
     await manager.runCommand('com.test.f2', 'run');
@@ -161,7 +179,10 @@ describe('proxied fetch', () => {
     manager.shutdown();
     const unconsented = fetchProgram('https://api.example.com/x');
     await startWith(
-      makeBundle({ id: 'com.test.f3', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] }, 'fetch:https://api.example.com/x'),
+      makeBundle(
+        { id: 'com.test.f3', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] },
+        'fetch:https://api.example.com/x',
+      ),
       { services: fakeServices({ httpFetch }), grant: { network: [] } },
     );
     await manager.runCommand('com.test.f3', 'run');
@@ -171,11 +192,16 @@ describe('proxied fetch', () => {
 
   it('fetches a consented host without credentials and refuses redirects', async () => {
     const httpFetch = vi.fn(async (url: string, init: RequestInit) =>
-      url.endsWith('/moved') ? new Response(null, { status: 302, headers: { location: 'https://evil.example.org' } }) : new Response(`${init.credentials}`),
+      url.endsWith('/moved')
+        ? new Response(null, { status: 302, headers: { location: 'https://evil.example.org' } })
+        : new Response(`${init.credentials}`),
     );
     const ok = fetchProgram('https://api.example.com/data');
     await startWith(
-      makeBundle({ id: 'com.test.f4', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] }, 'fetch:https://api.example.com/data'),
+      makeBundle(
+        { id: 'com.test.f4', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] },
+        'fetch:https://api.example.com/data',
+      ),
       { services: fakeServices({ httpFetch }) },
     );
     await manager.runCommand('com.test.f4', 'run');
@@ -185,7 +211,10 @@ describe('proxied fetch', () => {
     manager.shutdown();
     const moved = fetchProgram('https://api.example.com/moved');
     await startWith(
-      makeBundle({ id: 'com.test.f5', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] }, 'fetch:https://api.example.com/moved'),
+      makeBundle(
+        { id: 'com.test.f5', network: ['api.example.com'], commands: [{ id: 'run', title: 'Run' }] },
+        'fetch:https://api.example.com/moved',
+      ),
       { services: fakeServices({ httpFetch }) },
     );
     await manager.runCommand('com.test.f5', 'run');
@@ -197,8 +226,12 @@ describe('slots and budgets', () => {
   it('renders a valid tree and rejects an invalid one', async () => {
     let tree: unknown = ui.section('Craft value', [ui.row('Runes', '2 HR', 'success')]);
     programs.set('slot', (sdk) => sdk.slots.register('priceCheck.section', () => tree as never));
-    await startWith(makeBundle({ id: 'com.test.s1', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'slot'));
-    await expect(manager.callSlot('priceCheck.section', input)[0].result).resolves.toMatchObject({ title: 'Craft value' });
+    await startWith(
+      makeBundle({ id: 'com.test.s1', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'slot'),
+    );
+    await expect(manager.callSlot('priceCheck.section', input)[0].result).resolves.toMatchObject({
+      title: 'Craft value',
+    });
 
     tree = { type: 'section', title: 'x', children: [{ type: 'html', html: '<img src=x onerror=alert(1)>' }] };
     await expect(manager.callSlot('priceCheck.section', input)[0].result).rejects.toThrow(/Invalid/);
@@ -213,9 +246,12 @@ describe('slots and budgets', () => {
   it('does not call a slot whose permission is not granted', async () => {
     const handler = vi.fn(() => null);
     programs.set('nogrant', (sdk) => sdk.slots.register('priceCheck.section', handler));
-    await startWith(makeBundle({ id: 'com.test.s2', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'nogrant'), {
-      grant: { permissions: [] },
-    });
+    await startWith(
+      makeBundle({ id: 'com.test.s2', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'nogrant'),
+      {
+        grant: { permissions: [] },
+      },
+    );
     expect(manager.callSlot('priceCheck.section', input)).toHaveLength(0);
     expect(handler).not.toHaveBeenCalled();
   });
@@ -242,9 +278,12 @@ describe('slots and budgets', () => {
         throw new Error('boom');
       }),
     );
-    await startWith(makeBundle({ id: 'com.test.flaky', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'flaky'), {
-      now: () => now,
-    });
+    await startWith(
+      makeBundle({ id: 'com.test.flaky', permissions: ['items:read'], slots: ['priceCheck.section'] }, 'flaky'),
+      {
+        now: () => now,
+      },
+    );
     for (let i = 0; i < FAILURE_LIMIT + 2; i++) {
       now += 3 * 60 * 1000;
       await expect(manager.callSlot('priceCheck.section', input)[0].result).rejects.toThrow('boom');
@@ -266,6 +305,45 @@ describe('slots and budgets', () => {
     expect(manager.getSnapshot().plugins[0].status).toBe('error');
     expect(manager.getSnapshot().plugins[0].error).toMatch(/Unresponsive/);
   });
+
+  it('does not blame the plugin when the host thread was busy past the deadline', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const sent: Array<{ id: number }> = [];
+    const port: PortLike = {
+      postMessage: (m) => void sent.push(m as { id: number }),
+      onmessage: null,
+      close: () => {},
+    };
+    const onFailure = vi.fn();
+    const instance = new PluginInstance({
+      manifest: makeBundle({ id: 'com.test.busy', slots: ['ticker.widget'] }).manifest,
+      port,
+      broker: { has: () => true } as unknown as PluginBroker,
+      settings: () => ({}),
+      destroy: () => {},
+      onFailure,
+      onDead: () => {},
+      onPanelMessage: () => {},
+    });
+    const reply = (value: unknown) =>
+      port.onmessage!({ data: { t: 'return', id: sent.at(-1)!.id, ok: true, value } } as MessageEvent);
+
+    // A long host task: the 300 ms timer runs at 450 ms, with the answer queued right behind it.
+    const late = instance.invokeSlot('ticker.widget', { netWorth: null });
+    now = 450;
+    vi.advanceTimersByTime(SLOT_TIMEOUT_MS);
+    reply(null);
+    await expect(late).resolves.toBeNull();
+
+    // On time and still no answer: a real timeout.
+    const slow = instance.invokeSlot('ticker.widget', { netWorth: null });
+    now = 750;
+    vi.advanceTimersByTime(SLOT_TIMEOUT_MS);
+    await expect(slow).rejects.toThrow(/Timed out after 300 ms/);
+    expect(onFailure).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('events', () => {
@@ -275,8 +353,17 @@ describe('events', () => {
       sdk.events.on('chat.message', (m) => void seen.push(`chat:${m.text}`));
       sdk.events.on('game.focus', (e) => void seen.push(`focus:${e.focused}`));
     });
-    await startWith(makeBundle({ id: 'com.test.ev', permissions: ['chat:read'] }, 'listen'), { grant: { permissions: [] } });
-    manager.emit('chat.message', { id: '1', channel: 'trade', direction: 'in', sender: 'a', text: 'wts shako', at: '' });
+    await startWith(makeBundle({ id: 'com.test.ev', permissions: ['chat:read'] }, 'listen'), {
+      grant: { permissions: [] },
+    });
+    manager.emit('chat.message', {
+      id: '1',
+      channel: 'trade',
+      direction: 'in',
+      sender: 'a',
+      text: 'wts shako',
+      at: '',
+    });
     manager.emit('game.focus', { focused: true });
     await vi.waitFor(() => expect(seen).toEqual(['focus:true']));
   });
@@ -286,7 +373,11 @@ describe('consent and kill switch', () => {
   it('installs nothing when the user cancels consent', async () => {
     manager = new PluginManager();
     await manager.start({ services: fakeServices(), persistence: memoryPersistence(), launchSandbox: fakeLauncher() });
-    const installing = manager.install(makeBundle({ id: 'com.test.c1', permissions: ['chat:read'] }), { kind: 'dev', location: 'x', transport: 'url' });
+    const installing = manager.install(makeBundle({ id: 'com.test.c1', permissions: ['chat:read'] }), {
+      kind: 'dev',
+      location: 'x',
+      transport: 'url',
+    });
     await vi.waitFor(() => expect(manager.getSnapshot().consent?.manifest.id).toBe('com.test.c1'));
     manager.answerConsent(manager.getSnapshot().consent!.id, false);
     await expect(installing).resolves.toBe(false);
@@ -299,19 +390,28 @@ describe('consent and kill switch', () => {
     const source = { kind: 'marketplace' as const, sha256: 's', signature: 'g' };
     const same = makeBundle({ id: 'com.test.up', version: '1.1.0', permissions: ['prices:read'] }, 'v');
     await expect(manager.applyUpdate(same, source)).resolves.toBe('updated');
-    const grown = makeBundle({ id: 'com.test.up', version: '1.2.0', permissions: ['prices:read', 'chat:read'], network: ['api.x.com'] }, 'v');
+    const grown = makeBundle(
+      { id: 'com.test.up', version: '1.2.0', permissions: ['prices:read', 'chat:read'], network: ['api.x.com'] },
+      'v',
+    );
     await expect(manager.applyUpdate(grown, source)).resolves.toBe('held');
     const installed = manager.getSnapshot().plugins[0].installed;
     expect(installed.version).toBe('1.1.0');
     expect(installed.pendingUpdate?.version).toBe('1.2.0');
-    expect(missingGrants(grown.manifest, installed.granted)).toEqual({ permissions: ['chat:read'], network: ['api.x.com'] });
+    expect(missingGrants(grown.manifest, installed.granted)).toEqual({
+      permissions: ['chat:read'],
+      network: ['api.x.com'],
+    });
   });
 
   it('disables a blocklisted version immediately and restores it when unlisted', async () => {
     programs.set('b', () => {});
     const { launcher, onAutoDisabled } = await startWith(makeBundle({ id: 'com.test.bl' }, 'b'));
     manager.applyBlocklist([{ id: 'com.test.bl', versions: ['1.0.0'], reason: 'malware' }]);
-    expect(manager.getSnapshot().plugins[0]).toMatchObject({ status: 'disabled', installed: { disabledReason: 'blocklisted' } });
+    expect(manager.getSnapshot().plugins[0]).toMatchObject({
+      status: 'disabled',
+      installed: { disabledReason: 'blocklisted' },
+    });
     expect(launcher.destroyed).toBe(1);
     expect(onAutoDisabled).toHaveBeenCalledWith(expect.anything(), 'blocklisted');
     await manager.setEnabled('com.test.bl', true);
@@ -324,7 +424,11 @@ describe('consent and kill switch', () => {
     manager = new PluginManager();
     await manager.start({ services: fakeServices(), persistence: memoryPersistence(), launchSandbox: fakeLauncher() });
     await expect(
-      manager.install(makeBundle({ id: 'com.test.sdk2', sdk: '^2.0.0' }), { kind: 'dev', location: 'x', transport: 'url' }),
+      manager.install(makeBundle({ id: 'com.test.sdk2', sdk: '^2.0.0' }), {
+        kind: 'dev',
+        location: 'x',
+        transport: 'url',
+      }),
     ).rejects.toThrow(/needs SDK/);
   });
 });

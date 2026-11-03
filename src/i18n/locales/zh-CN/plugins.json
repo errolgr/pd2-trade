@@ -7,16 +7,6 @@
       "sortDefault": "搜索顺序"
     }
   },
-  "price": {
-    "hr": "{{value}} HR",
-    "rune": "{{value}} 个符文",
-    "gold": "{{value}} 金币"
-  },
-  "slot": {
-    "error": "插件错误",
-    "retry": "重试",
-    "from": "来自 {{name}}"
-  },
   "command": {
     "failed": "插件命令执行失败"
   },
