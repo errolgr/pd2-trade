@@ -157,7 +157,8 @@ interface OptionsContextProps {
   isLoading: boolean;
   setIsOpen: (open: boolean) => void;
   settings: ISettings;
-  updateSettings: (newSettings: Partial<ISettings>) => void;
+  /** Resolves true once the settings are saved (or already were), false when the write failed. */
+  updateSettings: (newSettings: Partial<ISettings>) => Promise<boolean>;
 }
 
 const DEFAULT_SETTINGS: ISettings = {
@@ -305,9 +306,9 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const settingsJsonRef = React.useRef('');
 
-  const updateSettings = useCallback(async (newSettings: Partial<ISettings>) => {
+  const updateSettings = useCallback(async (newSettings: Partial<ISettings>): Promise<boolean> => {
     try {
-      await navigator.locks.request('settings-file', async () => {
+      return await navigator.locks.request('settings-file', async () => {
         let currentSettings: ISettings;
         try {
           const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
@@ -321,7 +322,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const updatedJson = JSON.stringify(updated, null, 2);
 
         // Skip if nothing actually changed
-        if (updatedJson === settingsJsonRef.current) return;
+        if (updatedJson === settingsJsonRef.current) return true;
 
         // The config dir can disappear after load (Windows reports os error 3 on write), so recreate it.
         if (!(await exists('', { baseDir: SETTINGS_DIR }))) await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
@@ -331,10 +332,12 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         settingsJsonRef.current = updatedJson;
         setSettings(updated);
+        return true;
       });
     } catch (error) {
       // Fixed message: the fs error embeds the user's home path, which would split the Sentry issue per user.
       Sentry.captureException(new Error('Error updating settings'), { extra: { cause: String(error) } });
+      return false;
     }
   }, []);
 

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { showToast, usePanel, useOverlay, type OverlayApi, type PanelContextValue } from '@/overlay';
@@ -90,7 +90,7 @@ beforeEach(() => {
     () => ({ ...panel, close: vi.fn(), visible: true }) as unknown as PanelContextValue<'builds'>,
   );
   vi.mocked(useOverlay).mockImplementation(() => ({ openPanel: vi.fn() }) as unknown as OverlayApi);
-  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings: vi.fn() }) as never);
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings: vi.fn(async () => true) }) as never);
   vi.mocked(useSignIn).mockImplementation(() => ({ openSignIn }) as never);
   vi.mocked(usePd2Website).mockImplementation(
     () => ({ authData: accounts ? { user: { game: { accounts } } } : null }) as never,
@@ -338,12 +338,13 @@ describe('BuildsPage Following', () => {
   });
 
   it('says where a followed character went; unfollowing says nothing', async () => {
-    const updateSettings = vi.fn();
+    const updateSettings = vi.fn(async () => true);
     vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
     panel.payload = { character: { name: 'Hammerdin' } };
     const { rerender } = render(<BuildsPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'Follow' }));
     expect(updateSettings).toHaveBeenCalledWith({ followedBuildCharacters: [HAMMERDIN] });
+    await waitFor(() => expect(showToast).toHaveBeenCalledTimes(1));
     expect(showToast).toHaveBeenCalledWith({
       title: 'Following Hammerdin',
       description: 'Saved to Characters → Following',
@@ -354,6 +355,20 @@ describe('BuildsPage Following', () => {
     settings = { ...settings, followedBuildCharacters: [HAMMERDIN] };
     rerender(<BuildsPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Following', pressed: true }));
+    expect(updateSettings).toHaveBeenCalledWith({ followedBuildCharacters: [] });
+    await act(async () => {});
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it("doesn't claim a follow was saved when the settings write fails", async () => {
+    vi.mocked(showToast).mockClear();
+    const updateSettings = vi.fn(async () => false);
+    vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
+    panel.payload = { character: { name: 'Hammerdin' } };
+    render(<BuildsPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Follow' }));
+    expect(updateSettings).toHaveBeenCalledWith({ followedBuildCharacters: [HAMMERDIN] });
+    await act(async () => {});
     expect(showToast).not.toHaveBeenCalled();
   });
 });

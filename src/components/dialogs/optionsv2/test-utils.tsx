@@ -14,7 +14,7 @@ export interface OptionsStore {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
   };
-  updateSettings: Mock<(patch: Partial<ISettings>) => Promise<void>>;
+  updateSettings: Mock<(patch: Partial<ISettings>) => Promise<boolean>>;
   /** Simulates an external change (other window, file reload). */
   replace(next: Partial<ISettings>, loading?: boolean): void;
 }
@@ -32,6 +32,7 @@ export function createOptionsStore(initial: Partial<ISettings>, isLoading = fals
   const updateSettings = vi.fn(async (patch: Partial<ISettings>) => {
     state = { ...state, settings: { ...state.settings, ...patch } };
     notify();
+    return true;
   });
 
   const useOptions = () => {
