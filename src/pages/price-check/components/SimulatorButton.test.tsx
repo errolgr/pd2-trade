@@ -161,7 +161,7 @@ describe('SimulatorButton', () => {
     localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, 'AltZon');
     await openPopover();
     await waitFor(() => expect(planner().disabled).toBe(false));
-    expect((screen.getByRole('combobox', { name: 'Character' }) as HTMLInputElement).value).toBe('AltZon');
+    expect(screen.getByRole('combobox', { name: 'Character' }).textContent).toContain('AltZon');
     fireEvent.click(planner());
     await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
   });
@@ -169,15 +169,16 @@ describe('SimulatorButton', () => {
   it('lists only ladder characters and finds them by name or class', async () => {
     await openPopover();
     await waitFor(() => expect(planner().disabled).toBe(false));
-    const input = screen.getByRole('combobox', { name: 'Character' });
-    fireEvent.click(input);
+    const picker = screen.getByRole('combobox', { name: 'Character' });
+    expect(picker.textContent).toBe('HammerPalPaladin · Lvl 92');
+    fireEvent.click(picker);
     const names = () => screen.getAllByRole('option').map((o) => o.textContent);
     expect(names()).toEqual(['HammerPalPaladin · Lvl 92 · Hammerdin', 'SorcSorceress · Lvl 70 · Hammerdin', 'AltZonAmazon · Lvl 85 · Alt']);
 
-    fireEvent.change(input, { target: { value: 'amaz' } });
+    fireEvent.change(screen.getByPlaceholderText('Search characters…'), { target: { value: 'amaz' } });
     expect(names()).toEqual(['AltZonAmazon · Lvl 85 · Alt']);
     fireEvent.click(screen.getByRole('option'));
-    expect((input as HTMLInputElement).value).toBe('AltZon');
+    expect(picker.textContent).toBe('AltZonAmazon · Lvl 85');
     fireEvent.click(planner());
     await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
   });
