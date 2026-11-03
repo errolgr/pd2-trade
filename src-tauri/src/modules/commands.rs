@@ -197,3 +197,41 @@ pub fn close_sign_in_window(app_handle: tauri::AppHandle) {
         let _ = window.destroy();
     }
 }
+
+/// Whether the updater can replace this install in place. Linux deb/rpm installs get the AppImage from latest.json
+/// (rejected or EACCES in /usr/bin), and an AppImage in a folder the user can't write to can't be swapped either;
+/// the frontend checks this before downloading ~100 MiB that could never install.
+#[tauri::command]
+pub fn self_update_supported() -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        use tauri::utils::{config::BundleType, platform::bundle_type};
+        if matches!(bundle_type(), Some(BundleType::Deb | BundleType::Rpm)) {
+            return false;
+        }
+        let target = std::env::var_os("APPIMAGE")
+            .map(std::path::PathBuf::from)
+            .or_else(|| std::env::current_exe().ok());
+        match target.as_deref().and_then(std::path::Path::parent) {
+            Some(dir) => dir_writable(dir),
+            None => true,
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        true
+    }
+}
+
+/// Probes by creating (and removing) a file: permission bits alone miss ACLs, read-only mounts and root.
+#[cfg(target_os = "linux")]
+fn dir_writable(dir: &std::path::Path) -> bool {
+    let probe = dir.join(format!(".pd2-trader-update-probe-{}", std::process::id()));
+    match std::fs::OpenOptions::new().write(true).create_new(true).open(&probe) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}

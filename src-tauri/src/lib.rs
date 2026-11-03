@@ -150,6 +150,7 @@ pub fn run() {
             commands::write_debug_logs,
             commands::open_sign_in_window,
             commands::close_sign_in_window,
+            commands::self_update_supported,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

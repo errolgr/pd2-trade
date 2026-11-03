@@ -6,6 +6,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import type { DownloadEvent, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';
+import { invoke } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { CustomToastPayload } from '@/common/types/Events';
@@ -16,7 +17,7 @@ import { isManualUpdateRequired, resetManualUpdateRequired } from './manual-upda
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true, invoke: vi.fn() }));
 vi.mock('sonner', () => ({
   toast: { loading: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
@@ -47,6 +48,7 @@ beforeEach(() => {
   calls = [];
   resetUpdateNotification();
   resetManualUpdateRequired();
+  vi.mocked(invoke).mockResolvedValue(true);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(toast.loading).mockReturnValue('download-toast');
@@ -157,6 +159,23 @@ describe('installUpdateAndRelaunch on installs that cannot update in place', () 
 
     expect(console.error).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith('Update must be installed manually:', expect.any(Error));
+    expect(toast.error).toHaveBeenCalledWith(
+      'Update must be installed manually',
+      expect.objectContaining({ action: expect.objectContaining({ label: 'Open Release Page' }) }),
+    );
+    expect(isManualUpdateRequired()).toBe(true);
+    expect(relaunch).not.toHaveBeenCalled();
+  });
+
+  it('links the release page without downloading when this install cannot update itself', async () => {
+    const update = fakeUpdate(fullDownload);
+    vi.mocked(check).mockResolvedValue(update);
+    vi.mocked(invoke).mockResolvedValue(false);
+
+    expect(await installUpdateAndRelaunch()).toBe(false);
+
+    expect(update.downloadAndInstall).not.toHaveBeenCalled();
+    expect(toast.loading).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith(
       'Update must be installed manually',
       expect.objectContaining({ action: expect.objectContaining({ label: 'Open Release Page' }) }),

@@ -10,8 +10,19 @@ import {
   RELEASE_PAGE_URL,
   markManualUpdateRequired,
   requiresManualUpdate,
+  selfUpdateSupported,
 } from '@/lib/manual-update';
 import { isNetworkError } from '@/lib/network-errors';
+
+function showManualUpdateRequired(): void {
+  markManualUpdateRequired();
+  toast.error(t('system:updates.manualRequired'), {
+    description: manualUpdateDescription(),
+    duration: Infinity,
+    position: 'bottom-right',
+    action: { label: t('system:updates.openReleasePage'), onClick: () => void openUrl(RELEASE_PAGE_URL) },
+  });
+}
 
 // "Download & Restart" action: install the pending update (if any) and restart the app.
 // Resolves false when the install failed (the app keeps running); windows without a Toaster use it for feedback.
@@ -25,6 +36,11 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
   try {
     const update = await check();
     if (update?.available) {
+      if (!(await selfUpdateSupported())) {
+        // Linux deb/rpm or a read-only AppImage folder: don't download what can't install
+        showManualUpdateRequired();
+        return false;
+      }
       const loadingToast = toast.loading(t('system:updates.downloading'), {
         position: 'bottom-right',
       });
@@ -63,13 +79,7 @@ export async function installUpdateAndRelaunch(): Promise<boolean> {
     if (requiresManualUpdate(error)) {
       // Expected for Linux deb/rpm installs: retrying can't help, so link the release page instead of reporting it
       console.warn('Update must be installed manually:', error);
-      markManualUpdateRequired();
-      toast.error(t('system:updates.manualRequired'), {
-        description: manualUpdateDescription(),
-        duration: Infinity,
-        position: 'bottom-right',
-        action: { label: t('system:updates.openReleasePage'), onClick: () => void openUrl(RELEASE_PAGE_URL) },
-      });
+      showManualUpdateRequired();
       return false;
     }
     // Offline / GitHub unreachable is the user's network, not an app bug: same toast, no error report

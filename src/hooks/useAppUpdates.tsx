@@ -10,6 +10,7 @@ import {
   manualUpdateToast,
   markManualUpdateRequired,
   requiresManualUpdate,
+  selfUpdateSupported,
 } from '@/lib/manual-update';
 import { isNetworkError } from '@/lib/network-errors';
 
@@ -63,6 +64,14 @@ export const useAppUpdates = () => {
         }
 
         if (update?.available) {
+          if (!(await selfUpdateSupported())) {
+            // Linux deb/rpm or a read-only AppImage folder: don't download what can't install
+            markManualUpdateRequired();
+            hasNotified = true;
+            notifiedVersion = update.version;
+            showToast(manualUpdateToast(update.version));
+            return;
+          }
           // Auto-download on startup; download/install/relaunch failures are real bugs, keep reporting them
           try {
             await downloadUpdate(update);
