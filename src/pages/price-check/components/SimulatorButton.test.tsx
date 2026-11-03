@@ -14,7 +14,7 @@ import type * as SimExportApi from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay, type OverlayApi } from '@/overlay';
 import type { Item } from '../lib/interfaces';
-import { SIM_CHARACTER_STORAGE_KEY, SimulatorButton } from './SimulatorButton';
+import { SIM_CALLOUT_STORAGE_KEY, SIM_CHARACTER_STORAGE_KEY, SimulatorButton } from './SimulatorButton';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AuthenticationError extends Error {}
@@ -64,7 +64,7 @@ const checked = (over: Partial<Item> = {}): Item => ({
 
 async function openPopover(item: Item = checked()) {
   render(<SimulatorButton item={item} />);
-  fireEvent.click(screen.getByRole('button', { name: /Simulator/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
   await screen.findByText('Send to Simulator');
 }
 
@@ -111,10 +111,10 @@ beforeEach(() => {
     account === 'Alt'
       ? [pd2('Alt', 'AltZon', 'Amazon', 85)]
       : [
-        pd2('Hammerdin', 'Sorc', 'Sorceress', 70),
-        pd2('Hammerdin', 'HammerPal', 'Paladin', 92),
-        pd2('Hammerdin', 'OldPal', 'Paladin', 99, false),
-      ],
+          pd2('Hammerdin', 'Sorc', 'Sorceress', 70),
+          pd2('Hammerdin', 'HammerPal', 'Paladin', 92),
+          pd2('Hammerdin', 'OldPal', 'Paladin', 99, false),
+        ],
   );
 });
 
@@ -126,10 +126,28 @@ describe('SimulatorButton', () => {
   it('is hidden unless Horadric Sim is open to the user', () => {
     vi.mocked(useSimAccess).mockReturnValue(undefined);
     const { rerender } = render(<SimulatorButton item={checked()} />);
-    expect(screen.queryByRole('button', { name: /Simulator/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
     vi.mocked(useSimAccess).mockReturnValue(false);
     rerender(<SimulatorButton item={checked()} />);
-    expect(screen.queryByRole('button', { name: /Simulator/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
+  });
+
+  it('points new beta users at the button once: dismissing it keeps it away for good', () => {
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.getByRole('note').textContent).toContain('Try this item on your character');
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
+
+    cleanup();
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('counts opening the Simulator as having seen the callout', async () => {
+    await openPopover();
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
   });
 
   it('tries the stash item on with the selected account’s highest ladder character and opens the planner', async () => {
@@ -173,7 +191,11 @@ describe('SimulatorButton', () => {
     expect(picker.textContent).toBe('HammerPalPaladin · Lvl 92');
     fireEvent.click(picker);
     const names = () => screen.getAllByRole('option').map((o) => o.textContent);
-    expect(names()).toEqual(['HammerPalPaladin · Lvl 92 · Hammerdin', 'SorcSorceress · Lvl 70 · Hammerdin', 'AltZonAmazon · Lvl 85 · Alt']);
+    expect(names()).toEqual([
+      'HammerPalPaladin · Lvl 92 · Hammerdin',
+      'SorcSorceress · Lvl 70 · Hammerdin',
+      'AltZonAmazon · Lvl 85 · Alt',
+    ]);
 
     fireEvent.change(screen.getByPlaceholderText('Search characters…'), { target: { value: 'amaz' } });
     expect(names()).toEqual(['AltZonAmazon · Lvl 85 · Alt']);

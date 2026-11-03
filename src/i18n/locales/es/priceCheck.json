@@ -73,14 +73,14 @@
       "clearTitle": "Desmarcar todas las estadísticas"
     },
     "actions": {
-      "openTradeAria": "Abrir búsqueda en projectdiablo2.com",
-      "openTradeTooltip": "Abrir esta búsqueda en projectdiablo2.com",
+      "openTrade": "Abrir búsqueda en projectdiablo2.com",
+      "more": "Más",
       "openInMarket": "Abrir en el mercado",
       "list": "Anunciar",
-      "listDisabled": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo.",
-      "showExpired": "Mostrar caducados"
+      "listDisabled": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo."
     },
     "results": {
+      "source": { "label": "Anuncios a buscar", "live": "Activos", "expired": "Caducados" },
       "matches": "Coincidencias: <value>{{total}}</value>",
       "showing": "· mostrando {{shown}}",
       "loading": "Cargando anuncios del mercado...",

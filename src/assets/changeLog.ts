@@ -6,7 +6,7 @@ export const changeLog = {
     '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
     '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
     '✨ Market browser and price check: a search that finds nothing shows its filters as chips, each with how many listings you would get without it (the best one marked); hover a chip to see that filter, click it to drop it and search again',
-    "✨ Send to Simulator: the character list shows only your ladder characters (with class portrait, class and level) and you can search it like the market browser's filters. It starts on the character you picked last, else your highest level one, and opens instantly after the first load",
+    '✨ Price check: List and "Open search on projectdiablo2.com" moved into the ⋯ menu next to Search, and Show Expired is now a Live / Expired switch above the results that searches again when you flip it',
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

@@ -65,6 +65,30 @@ describe('useSimAccess', () => {
     expect(result.current).toBe(false);
   });
 
+  it('re-checks while mounted, so a login allowlisted after the first answer gets in without a restart', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    token = 'allowlisted-later';
+    vi.mocked(getSimEnabled).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const { result } = await renderAccess();
+    expect(result.current).toBe(false);
+
+    await act(async () => vi.advanceTimersByTime(SIM_ACCESS_TTL_MS));
+    expect(result.current).toBe(true);
+    expect(vi.mocked(getSimEnabled).mock.calls).toEqual([['allowlisted-later'], ['allowlisted-later']]);
+  });
+
+  it('keeps the last answer when a re-check fails', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    token = 'flaky';
+    vi.mocked(getSimEnabled).mockResolvedValueOnce(true).mockRejectedValueOnce(new Error('503'));
+    const { result } = await renderAccess();
+    expect(result.current).toBe(true);
+
+    await act(async () => vi.advanceTimersByTime(SIM_ACCESS_TTL_MS));
+    expect(getSimEnabled).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(true);
+  });
+
   it('waits for the settings before asking', async () => {
     token = 'later';
     isLoading = true;
