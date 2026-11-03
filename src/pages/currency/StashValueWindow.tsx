@@ -23,6 +23,7 @@ import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
+import { useSimAccess } from '@/hooks/useSimAccess';
 import {
   getPoints,
   type NetWorthCategory,
@@ -77,6 +78,7 @@ export function StashValueWindow() {
   const { settings } = useOptions();
   const token = settings.pd2Token ?? null;
   const wealthRank = useWealthRank();
+  const simAccess = useSimAccess();
   const { payload, payloadVersion, close } = usePanel<'currency'>();
   const { gameFocused } = useOverlay();
   const [tab, setTab] = useState<WindowTab>(() => payload?.tab ?? 'overview');
@@ -196,7 +198,7 @@ export function StashValueWindow() {
                         {rares.some(isCrafted) ? 'Rares & Crafted' : 'Rares'}
                       </TabsTrigger>
                     )}
-                    {token && owner && (
+                    {token && owner && simAccess && (
                       <TabsTrigger value="simulator"
                         className={cn(TRIGGER_CLASS, 'gap-1')}>
                         <FlaskConical className="size-3.5" />
@@ -245,7 +247,7 @@ export function StashValueWindow() {
                     </TabsContent>
                   )}
 
-                  {token && owner && (
+                  {token && owner && simAccess && (
                     <TabsContent value="simulator"
                       className="pt-1">
                       <SimExportTab token={token}

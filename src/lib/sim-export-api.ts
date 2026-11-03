@@ -1,7 +1,7 @@
 /**
  * Client for the Horadric Sim overlay export on pd2trader.com: `GET /api/sim/import/mine` (the signed-in
  * user's characters) and `POST /api/sim/exports` (character + selected stash items → planner URL).
- * Both take the user's PD2 token as bearer.
+ * Both take the user's PD2 token as bearer. `GET /api/feature-flags` says whether the sim is open to the user.
  */
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -10,6 +10,9 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 
 /** Stash items per export; mirrors the server's MAX_STASH_ITEMS (its JSON body limit is 100 KB). */
 export const MAX_SIM_EXPORT_ITEMS = 40;
+
+/** The website's Horadric Sim gate (client/src/sim/simEnabled.js SIM_FLAG): off, the sim doesn't exist for the user. */
+export const SIM_FLAG = 'sim.enabled';
 
 export interface SimCharacters {
   accounts: { account: string; characters: string[] }[];
@@ -25,8 +28,8 @@ export class SimExportApiError extends Error {
   }
 }
 
-async function request<T>(path: string, token: string, init: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+async function request<T>(path: string, token: string | null, init: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
   if (init.body) headers['Content-Type'] = 'application/json';
 
   const response = await fetch(`${BACKEND_URL}${path}`, { ...init, headers });
@@ -47,15 +50,34 @@ export function getMyCharacters(token: string): Promise<SimCharacters> {
   return request('/api/sim/import/mine', token);
 }
 
-/** The server imports `character` from PD2 itself and maps the items; the URL opens the planner with both (24 h). */
+/** The selected account first, then the others as PD2 lists them. */
+export function orderedAccounts(data: SimCharacters, account: string): SimCharacters['accounts'] {
+  const key = account.toLowerCase();
+  return [...data.accounts].sort(
+    (a, b) => Number(b.account.toLowerCase() === key) - Number(a.account.toLowerCase() === key),
+  );
+}
+
+/** `sim.enabled` for the PD2 login (`token`; anonymous without one): the server evaluates beta allowlists per user. */
+export async function getSimEnabled(token: string | null): Promise<boolean> {
+  const { flags } = await request<{ flags?: Record<string, boolean> }>('/api/feature-flags', token);
+  return flags?.[SIM_FLAG] === true;
+}
+
+/**
+ * The server imports `character` from PD2 itself and maps the items; the URL opens the planner with both (24 h).
+ * `try`: index into `stashItems` of the one item the planner equips in its slot against the current gear (it stays
+ * a Top Gear candidate too); without it every item is only a candidate.
+ */
 export function createSimExport(
   token: string,
   character: string,
   stashItems: GameStashItem[],
+  options: { try?: number } = {},
 ): Promise<{ url: string }> {
   return request('/api/sim/exports', token, {
     method: 'POST',
-    body: JSON.stringify({ character, stashItems }),
+    body: JSON.stringify({ character, stashItems, ...(options.try !== undefined && { try: options.try }) }),
   });
 }
 

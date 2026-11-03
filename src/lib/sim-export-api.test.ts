@@ -6,6 +6,7 @@ import {
   createSimExport,
   describeSimExportError,
   getMyCharacters,
+  getSimEnabled,
   isSessionError,
   isSimCandidate,
   SimExportApiError,
@@ -60,6 +61,35 @@ describe('requests', () => {
     expect(init?.method).toBe('POST');
     expect(init?.headers).toEqual({ Authorization: 'Bearer tok', 'Content-Type': 'application/json' });
     expect(JSON.parse(init?.body as string)).toEqual({ character: 'Sorc', stashItems: [shako] });
+  });
+
+  it('names the tried item by its index only when asked to', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=y' }));
+    const shako = item({});
+    await createSimExport('tok', 'Sorc', [shako], { try: 0 });
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
+      character: 'Sorc',
+      stashItems: [shako],
+      try: 0,
+    });
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=z' }));
+    await createSimExport('tok', 'Sorc', [shako], {});
+    expect(JSON.parse(fetchMock.mock.calls[1][1]?.body as string)).not.toHaveProperty('try');
+  });
+
+  it('reads sim.enabled for the login, anonymously without a token', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'beta_tester', flags: { 'sim.enabled': true } }));
+    await expect(getSimEnabled('tok')).resolves.toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://backend.test/api/feature-flags');
+    expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ Authorization: 'Bearer tok' });
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'anonymous', flags: { 'sim.enabled': false } }));
+    await expect(getSimEnabled(null)).resolves.toBe(false);
+    expect(fetchMock.mock.calls[1][1]?.headers).toEqual({});
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'anonymous', flags: {} }));
+    await expect(getSimEnabled(null)).resolves.toBe(false);
   });
 
   it('throws the server message with the status', async () => {

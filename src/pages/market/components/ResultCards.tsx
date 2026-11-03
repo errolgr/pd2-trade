@@ -2,7 +2,22 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
+import {
+  Bell,
+  Clock,
+  ExternalLink,
+  FlaskConical,
+  Gamepad2,
+  Heart,
+  MessageSquare,
+  Shield,
+  Sigma,
+  Swords,
+  X,
+} from 'lucide-react';
+import { openUrl } from '@/lib/browser-opener';
+import { BACKEND_URL } from '@/lib/pkce';
+import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -265,6 +280,7 @@ const ResultCard = React.memo(function ResultCard({
   const { item } = listing;
   const model = useMemo(() => buildCardModel(item), [item]);
   const actions = useListingActions(listing);
+  const simAccess = useSimAccess();
   const [hovered, setHovered] = useState<number | null>(null);
 
   // Socket prices (runes, priced uniques…) through the economy service, one pseudo-listing per group
@@ -531,6 +547,19 @@ const ResultCard = React.memo(function ResultCard({
           >
             <ExternalLink className="size-3.5" />
           </Button>
+          {simAccess && !archived && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              aria-label="Try in the sim planner"
+              title="Try in the sim planner"
+              onClick={() => void openUrl(`${BACKEND_URL}/sim/plan?listing=${encodeURIComponent(listing._id)}`)}
+            >
+              <FlaskConical className="size-3.5" />
+              Plan
+            </Button>
+          )}
           {!archived && <WhisperButton actions={actions}
             dense />}
           {!archived && (

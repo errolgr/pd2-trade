@@ -84,6 +84,7 @@ import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
+import { SimulatorButton } from './SimulatorButton';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings, isLoading: settingsLoading } = useOptions();
@@ -1503,6 +1504,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </TooltipContent>
                 )}
               </Tooltip>
+
+              <SimulatorButton item={item} />
 
               <div className="ml-auto flex items-center gap-2">
                 <Switch

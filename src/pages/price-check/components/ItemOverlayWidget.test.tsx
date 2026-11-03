@@ -60,6 +60,8 @@ vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
     <div data-testid="listing-stats">{stashItem?.name}</div>
   ),
 }));
+// The Simulator popover has its own tests (SimulatorButton.test.tsx).
+vi.mock('./SimulatorButton', () => ({ SimulatorButton: () => null }));
 
 // happy-dom's WAAPI rejects cancelled animations as unhandled errors; finish motion instantly instead.
 beforeAll(() => {

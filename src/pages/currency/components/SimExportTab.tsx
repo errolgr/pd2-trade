@@ -33,6 +33,7 @@ import {
   isSessionError,
   isSimCandidate,
   MAX_SIM_EXPORT_ITEMS,
+  orderedAccounts,
   SimExportApiError,
   type SimCharacters,
 } from '@/lib/sim-export-api';
@@ -337,13 +338,5 @@ export function SimExportTab({ token, account }: { token: string; account: strin
             : 'Send to Simulator'}
       </Button>
     </div>
-  );
-}
-
-/** The selected account first, then the others as PD2 lists them. */
-function orderedAccounts(data: SimCharacters, account: string): SimCharacters['accounts'] {
-  const key = account.toLowerCase();
-  return [...data.accounts].sort(
-    (a, b) => Number(b.account.toLowerCase() === key) - Number(a.account.toLowerCase() === key),
   );
 }
