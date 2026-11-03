@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ChevronDown, FlaskConical, Loader2, LogIn, PackageCheck, PackageX } from 'lucide-react';
+import { AlertTriangle, FlaskConical, Loader2, LogIn, PackageCheck, PackageX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -43,6 +43,8 @@ type Mode = 'try' | 'pool';
 
 /** The character last sent from the price check (character names are unique on PD2 across accounts). */
 export const SIM_CHARACTER_STORAGE_KEY = 'pd2-sim-character';
+/** Set once the user dismissed the "try this item on" callout or opened the Simulator: it shows only before that. */
+export const SIM_CALLOUT_STORAGE_KEY = 'pd2-sim-callout-seen';
 
 const MODES: { value: Mode; title: string; description: string }[] = [
   { value: 'try', title: 'Try it on', description: 'Swaps it into its slot and compares against your current gear' },
@@ -57,43 +59,98 @@ function savedCharacter(): string {
   }
 }
 
+function calloutSeen(): boolean {
+  try {
+    return localStorage.getItem(SIM_CALLOUT_STORAGE_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
 /**
- * "Simulator" in the price check's action row (Horadric Sim beta users only): sends the checked stash item with
+ * "Sim" in the price check's action row (Horadric Sim beta users only): sends the checked stash item with
  * one of the user's characters to the planner, tried on in its slot or as a Top Gear candidate.
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
   const { settings } = useOptions();
   const [open, setOpen] = useState(false);
+  const [callout, setCallout] = useState(() => !calloutSeen());
   if (access !== true) return null;
   const token = settings?.pd2Token || null;
 
+  const dismissCallout = () => {
+    setCallout(false);
+    try {
+      localStorage.setItem(SIM_CALLOUT_STORAGE_KEY, '1');
+    } catch {
+      // storage unavailable: it shows again next launch
+    }
+  };
+
   return (
-    <Popover open={open}
-      onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="secondary"
-          className="cursor-pointer">
-          <FlaskConical />
-          Simulator
-          <ChevronDown className="opacity-60" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent side="top"
-        align="start"
-        className="w-[420px] space-y-3 p-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Send to Simulator
+    <div className="relative">
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) dismissCallout();
+        }}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+          >
+            <FlaskConical />
+            Sim
+            <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent side="top"
+          align="start"
+          className="w-[420px] space-y-3 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Send to Simulator
+          </div>
+          {token ? (
+            <SimulatorForm token={token}
+              account={settings?.account ?? ''}
+              item={item} />
+          ) : (
+            <SignInBanner>Sign in to send items to the planner.</SignInBanner>
+          )}
+        </PopoverContent>
+      </Popover>
+      {callout && !open && (
+        <div
+          role="note"
+          className="absolute right-0 top-full z-20 mt-2.5 w-80 rounded-lg border border-primary bg-popover p-3 shadow-panel"
+        >
+          <span
+            aria-hidden
+            className="absolute -top-[7px] right-6 size-3 rotate-45 border-l border-t border-primary bg-popover"
+          />
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 rounded-full bg-primary px-1.5 py-px text-[10px] font-bold tracking-wider text-primary-foreground">
+              NEW
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Try this item on your character</p>
+              <p className="text-xs text-muted-foreground">See what it does to your build in the planner</p>
+            </div>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={dismissCallout}
+              className="cursor-pointer rounded p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
         </div>
-        {token ? (
-          <SimulatorForm token={token}
-            account={settings?.account ?? ''}
-            item={item} />
-        ) : (
-          <SignInBanner>Sign in to send items to the planner.</SignInBanner>
-        )}
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }
 

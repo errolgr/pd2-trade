@@ -573,15 +573,15 @@ const ResultCard = React.memo(function ResultCard({
           </Button>
           {simAccess && !archived && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-7 px-2.5 text-xs"
+              className="h-7 border border-primary/70 bg-primary/10 px-2.5 text-xs text-primary hover:bg-primary/20 hover:text-primary"
               aria-label="Try in the sim planner"
               title="Try in the sim planner"
               onClick={() => void openUrl(`${BACKEND_URL}/sim/plan?listing=${encodeURIComponent(listing._id)}`)}
             >
               <FlaskConical className="size-3.5" />
-              Plan
+              Sim
             </Button>
           )}
           {!archived && <WhisperButton actions={actions}
