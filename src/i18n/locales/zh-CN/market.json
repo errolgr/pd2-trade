@@ -483,5 +483,14 @@
     "notRemoved": "收藏未移除",
     "notSaved": "收藏未保存",
     "refused": "projectdiablo2.com 拒绝了此更改，请稍后重试。"
+  },
+  "palette": {
+    "openInMarket": "在市场中搜索",
+    "watchPrice": "关注价格",
+    "stopWatching": "停止关注",
+    "buildsUsing": "使用它的配装",
+    "copyName": "复制名称",
+    "nameCopied": "名称已复制",
+    "nameNotCopied": "名称未复制"
   }
 }

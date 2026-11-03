@@ -362,5 +362,10 @@
     "selectTitle": "Select a conversation to view messages",
     "selectDescription": "Pick a chat on the left.",
     "collapseTrader": "Collapse trader details"
+  },
+  "palette": {
+    "open": "Open conversation",
+    "reply": "Reply",
+    "unread": "Unread"
   }
 }

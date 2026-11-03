@@ -224,5 +224,9 @@
       "ethereal": "Eth",
       "sockets": "{{count}} os"
     }
+  },
+  "palette": {
+    "openOffer": "Open in chat",
+    "showListing": "Show in Manage"
   }
 }

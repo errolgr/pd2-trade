@@ -506,5 +506,14 @@
     "notRemoved": "Favorite not removed",
     "notSaved": "Favorite not saved",
     "refused": "projectdiablo2.com refused the change. Try again in a moment."
+  },
+  "palette": {
+    "openInMarket": "Search the market",
+    "watchPrice": "Watch price",
+    "stopWatching": "Stop watching",
+    "buildsUsing": "Builds using it",
+    "copyName": "Copy name",
+    "nameCopied": "Name copied",
+    "nameNotCopied": "Name not copied"
   }
 }

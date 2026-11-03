@@ -5,9 +5,56 @@ import { cn } from '@/lib/utils';
 import { EASE_OUT, springSnappy } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
-import { isPendingSearch, retrySavedSearchSync, useMarketStore } from '@/pages/market/store/useMarketStore';
+import {
+  isPendingSearch,
+  type MarketStore,
+  retrySavedSearchSync,
+  useMarketStore,
+} from '@/pages/market/store/useMarketStore';
 import { findWatch } from './alert-logic';
-import { useTranslation } from '@/i18n';
+import { t as translate, useTranslation } from '@/i18n';
+
+/** What Watch would do for `filters`, and whether it can now (signed in, saved searches loaded, not sold listings). */
+export function watchState(store: MarketStore, filters: MarketFilters | null) {
+  const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
+  const signedOut = store.syncStatus === 'signedOut';
+  /** pd2trader.com refused the PD2 token: Watch waits for a new sign-in. */
+  const refused = store.syncStatus === 'unauthorized';
+  /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
+  const unsynced = store.syncStatus === 'error';
+  const archive = filters?.source === 'archive';
+  const busy = (!!watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
+  const disabled = !filters || signedOut || refused || unsynced || (archive && !watching) || busy;
+  return { watching, saved, signedOut, refused, unsynced, archive, busy, disabled };
+}
+
+/** Starts watching `filters` (reusing a saved search with them), or stops the watch on them; toasts the outcome. */
+export function toggleWatch(store: MarketStore, filters: MarketFilters): void {
+  const { watching, saved } = findWatch(store.savedSearches, filters);
+  if (watching) {
+    store.setSearchAlert(watching.id, false);
+    showToast({ title: translate('market:watch.stoppedToast'), description: watching.name, variant: 'info' });
+    return;
+  }
+  if (!store.alertsEnabled) store.setAlertsEnabled(true);
+  if (saved && !isPendingSearch(saved)) {
+    if (!store.setSearchAlert(saved.id, true)) {
+      showToast({
+        title: translate('market:watch.tooManyTitle'),
+        description: translate('market:watch.tooManyDescription', { count: store.limits.maxAlerting }),
+        variant: 'warning',
+      });
+    }
+    return;
+  }
+  if (store.saveSearch(undefined, filters, true)) {
+    showToast({
+      title: translate('market:watch.watching'),
+      description: translate('market:watch.startedDescription'),
+      variant: 'success',
+    });
+  }
+}
 
 /**
  * "Watch" the current market filters: a popup and a sound for every new listing that matches them (an alerting
@@ -22,15 +69,7 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
   useEffect(() => {
     if (visible) retrySavedSearchSync();
   }, [visible]);
-  const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
-  const signedOut = store.syncStatus === 'signedOut';
-  /** pd2trader.com refused the PD2 token: Watch waits for a new sign-in. */
-  const refused = store.syncStatus === 'unauthorized';
-  /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
-  const unsynced = store.syncStatus === 'error';
-  const archive = filters?.source === 'archive';
-  const busy = (watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
-  const disabled = !filters || signedOut || refused || unsynced || (archive && !watching) || !!busy;
+  const { watching, signedOut, refused, unsynced, archive, busy, disabled } = watchState(store, filters);
   // One soft pulse when watching starts (not when the panel opens on a watched search)
   const [pulses, setPulses] = useState(0);
   const [wasWatching, setWasWatching] = useState(!!watching);
@@ -40,30 +79,7 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
   }
 
   const toggle = () => {
-    if (!filters) return;
-    if (watching) {
-      store.setSearchAlert(watching.id, false);
-      showToast({ title: t('watch.stoppedToast'), description: watching.name, variant: 'info' });
-      return;
-    }
-    if (!store.alertsEnabled) store.setAlertsEnabled(true);
-    if (saved && !isPendingSearch(saved)) {
-      if (!store.setSearchAlert(saved.id, true)) {
-        showToast({
-          title: t('watch.tooManyTitle'),
-          description: t('watch.tooManyDescription', { count: store.limits.maxAlerting }),
-          variant: 'warning',
-        });
-      }
-      return;
-    }
-    if (store.saveSearch(undefined, filters, true)) {
-      showToast({
-        title: t('watch.watching'),
-        description: t('watch.startedDescription'),
-        variant: 'success',
-      });
-    }
+    if (filters) toggleWatch(store, filters);
   };
 
   const label = signedOut

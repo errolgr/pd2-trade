@@ -1,0 +1,59 @@
+{
+  "input": {
+    "label": "Palette de commandes",
+    "placeholder": "Rechercher objets, builds, réglages…",
+    "scopedPlaceholder": "Rechercher…"
+  },
+  "groups": {
+    "actions": "Actions",
+    "items": "Objets",
+    "builds": "Builds",
+    "chat": "Chat",
+    "listings": "Annonces",
+    "settings": "Réglages",
+    "pinned": "Épinglés",
+    "recent": "Récents"
+  },
+  "scope": {
+    "tabHint": "Tab pour cibler",
+    "remove": "Ne plus chercher uniquement dans {{label}}"
+  },
+  "loading": "Recherche…",
+  "signIn": {
+    "title": "Connectez-vous pour chercher dans les chats et annonces"
+  },
+  "empty": {
+    "noResults": "Aucun résultat pour « {{query}} »"
+  },
+  "footer": {
+    "move": "↑↓ naviguer",
+    "open": "↵ ouvrir",
+    "actions": "Ctrl+K actions",
+    "scope": "Tab cibler",
+    "unscope": "Retour arrière annuler",
+    "close": "Échap fermer"
+  },
+  "menu": {
+    "label": "Actions pour {{title}}",
+    "placeholder": "Rechercher une action…",
+    "pin": "Épingler à la palette",
+    "unpin": "Retirer de la palette"
+  },
+  "errors": {
+    "actionFailed": "Ça n'a pas fonctionné"
+  },
+  "actions": {
+    "market": "Marché",
+    "chat": "Chat",
+    "offers": "Offres d'échange",
+    "builds": "Builds",
+    "stashValue": "Valeur du coffre",
+    "snapshot": "Prendre un instantané de fortune",
+    "myListings": "Mes annonces",
+    "settings": "Réglages",
+    "changelog": "Nouveautés",
+    "checkUpdates": "Rechercher des mises à jour",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter"
+  }
+}

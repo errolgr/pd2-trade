@@ -210,5 +210,15 @@
     "skillLevel": "· Level {{level}}",
     "usageCount_one": "{{formatted}} Charakter",
     "usageCount_other": "{{formatted}} Charaktere"
+  },
+  "palette": {
+    "character": "Charakter",
+    "account": "Account",
+    "class": "Klasse",
+    "skillOf": "{{className}}-Fertigkeit",
+    "hardcore": "HC",
+    "openBuild": "Build öffnen",
+    "showCharacters": "Charaktere anzeigen",
+    "showMeta": "In Meta anzeigen"
   }
 }

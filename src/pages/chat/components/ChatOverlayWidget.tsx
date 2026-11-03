@@ -36,6 +36,7 @@ import {
   type InboxThread,
 } from '../lib/inbox';
 import { buildFeed, provideChatFeedActions, publishChatFeed } from '../chat-feed';
+import { publishChatThreads } from '../chat-threads';
 import { markOffersSeen, newTrades, offersSeenUpTo, offerThreadId, type NewTrade } from '../lib/offers-seen';
 import { useChatListings } from '../hooks/useChatListings';
 import { useTradeListings } from '../hooks/useTradeListings';
@@ -429,6 +430,10 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   useEffect(() => {
     publishChatFeed({ items: feedItems, canMarkAllRead });
   }, [feedItems, canMarkAllRead]);
+  // The command palette's conversations (chat-threads)
+  useEffect(() => {
+    publishChatThreads(threads);
+  }, [threads]);
   useEffect(() => {
     provideChatFeedActions({
       markAllRead: () => void markAllRead(),

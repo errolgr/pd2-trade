@@ -231,6 +231,7 @@ function UpdateSettingsForm() {
           name="autoUpdateEnabled"
           render={({ field }) => (
             <SettingsRow
+              settingKey="autoUpdateEnabled"
               label={t('about.updates.auto.label')}
               description={t('about.updates.auto.description')}
               control={

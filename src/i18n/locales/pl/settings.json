@@ -211,7 +211,7 @@
     "group": "Skróty",
     "modifierLabel": "Modyfikator: {{action}}",
     "off": "Wył.",
-    "hint": "Kliknij pole klawisza i naciśnij klawisz, którego chcesz użyć. Naciśnij Backspace w polu migawki, rynku lub buildów, aby wyłączyć ten skrót.",
+    "hint": "Kliknij pole klawisza i naciśnij klawisz, którego chcesz użyć. Naciśnij Backspace w polu migawki, rynku, buildów lub palety poleceń, aby wyłączyć ten skrót.",
     "rows": {
       "priceCheck": {
         "label": "Wycena",
@@ -252,6 +252,10 @@
       "builds": {
         "label": "Buildy",
         "description": "Pokaż lub ukryj buildy ladder."
+      },
+      "palette": {
+        "label": "Paleta poleceń",
+        "description": "Szukaj akcji, przedmiotów, buildów i ustawień w jednym polu."
       }
     }
   },
@@ -633,5 +637,13 @@
         "ariaLabel": "Głośność alertów rynku"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "Otwórz w ustawieniach",
+    "turnOn": "Włącz",
+    "turnOff": "Wyłącz",
+    "change": "Zmień",
+    "select": "Wybierz",
+    "current": "Bieżące"
   }
 }

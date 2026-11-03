@@ -12,6 +12,7 @@ import quickList from './locales/en/quickList.json';
 import rares from './locales/en/rares.json';
 import settings from './locales/en/settings.json';
 import system from './locales/en/system.json';
+import palette from './locales/en/palette.json';
 
 /**
  * The English source strings, one namespace per UI area (src/i18n/locales/en/<namespace>.json). A new namespace
@@ -31,6 +32,7 @@ export const enResources = {
   netWorth,
   rares,
   builds,
+  palette,
 } as const;
 
 export type Namespace = keyof typeof enResources;

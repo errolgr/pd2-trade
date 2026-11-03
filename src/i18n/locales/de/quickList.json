@@ -224,5 +224,9 @@
       "ethereal": "Äth",
       "sockets": "{{count}} Fass."
     }
+  },
+  "palette": {
+    "openOffer": "Im Chat öffnen",
+    "showListing": "In „Verwalten“ zeigen"
   }
 }

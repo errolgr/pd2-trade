@@ -367,5 +367,10 @@
     "selectTitle": "Sélectionnez une conversation pour voir les messages",
     "selectDescription": "Choisissez un chat à gauche.",
     "collapseTrader": "Réduire les détails du marchand"
+  },
+  "palette": {
+    "open": "Ouvrir la conversation",
+    "reply": "Répondre",
+    "unread": "Non lu"
   }
 }

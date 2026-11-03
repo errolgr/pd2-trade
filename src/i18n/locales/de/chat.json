@@ -362,5 +362,10 @@
     "selectTitle": "Wähle eine Unterhaltung, um Nachrichten zu sehen",
     "selectDescription": "Wähle links einen Chat.",
     "collapseTrader": "Händlerdetails einklappen"
+  },
+  "palette": {
+    "open": "Unterhaltung öffnen",
+    "reply": "Antworten",
+    "unread": "Ungelesen"
   }
 }

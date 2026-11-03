@@ -10,7 +10,8 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { TRADE_LISTINGS_LIMIT } from '@/pages/delist/trade-match';
 import { DEFAULT_SORT_DIR } from './my-listings';
-import MyListingsTab from './MyListingsTab';
+import MyListingsTab, { type ListingFocus } from './MyListingsTab';
+import { resetMyListings } from './my-listings-store';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
@@ -64,10 +65,10 @@ async function click(el: Element) {
   });
 }
 
-async function renderTab() {
+async function renderTab(focus?: ListingFocus) {
   const view = render(
     <TooltipProvider>
-      <MyListingsTab />
+      <MyListingsTab focus={focus} />
     </TooltipProvider>,
   );
   await act(async () => {});
@@ -76,6 +77,7 @@ async function renderTab() {
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
+  resetMyListings();
   vi.setSystemTime(NOW);
   vi.spyOn(console, 'error').mockImplementation(() => {});
   const server = [
@@ -189,5 +191,40 @@ describe('MyListingsTab', () => {
     await renderTab();
     expect(screen.queryByText('Not signed in')).not.toBeNull();
     expect(api.getMarketListings).not.toHaveBeenCalled();
+  });
+
+  it('scrolls to and highlights the listing the palette asked for, clearing a search hiding it', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    const view = await renderTab();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search listings' }), { target: { value: 'shako' } });
+    expect(screen.queryByText('Stone of Jordan')).toBeNull();
+
+    await act(async () => {
+      view.rerender(
+        <TooltipProvider>
+          <MyListingsTab focus={{ listingId: 'L3', version: 1 }} />
+        </TooltipProvider>,
+      );
+    });
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Search listings' }).value).toBe('');
+    expect(card('Stone of Jordan').hasAttribute('data-highlighted')).toBe(true);
+    expect(card('Shako').hasAttribute('data-highlighted')).toBe(false);
+    expect(scroll.mock.contexts[0]).toBe(card('Stone of Jordan'));
+    // Not in edit mode unless asked
+    expect(within(card('Stone of Jordan')).queryByRole('spinbutton')).toBeNull();
+  });
+
+  it('opens the price editor of the listing when asked to edit it', async () => {
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    await renderTab({ listingId: 'L1', edit: true, version: 1 });
+    expect(within(card('Shako')).queryByRole('spinbutton')).not.toBeNull();
+    expect(card('Shako').hasAttribute('data-highlighted')).toBe(true);
+  });
+
+  it('ignores a listing that is not among yours', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    await renderTab({ listingId: 'gone', version: 1 });
+    expect(document.querySelector('[data-highlighted]')).toBeNull();
+    expect(scroll).not.toHaveBeenCalled();
   });
 });

@@ -142,6 +142,7 @@ const DEFS = {
   corruptedZoneTimer: def('corruptedZoneTimer', { keyboard: 'never' }),
   listingDetail: def('listingDetail', { placement: 'gameRight', closeOnBlur: true }),
   builds: def('builds', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
+  palette: def('palette', { closeOnBlur: true, interactive: 'children' }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;

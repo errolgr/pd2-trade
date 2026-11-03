@@ -208,7 +208,7 @@
     "group": "Atalhos",
     "modifierLabel": "Modificador de {{action}}",
     "off": "Desligado",
-    "hint": "Clique em uma caixa de tecla e pressione a tecla desejada. Pressione Backspace na caixa de registro, mercado ou builds para desativar esse atalho.",
+    "hint": "Clique em uma caixa de tecla e pressione a tecla desejada. Pressione Backspace na caixa de registro, mercado, builds ou paleta de comandos para desativar esse atalho.",
     "rows": {
       "priceCheck": {
         "label": "Consulta de preço",
@@ -249,6 +249,10 @@
       "builds": {
         "label": "Builds",
         "description": "Mostra ou oculta as builds da ladder."
+      },
+      "palette": {
+        "label": "Paleta de comandos",
+        "description": "Busque ações, itens, builds e configurações em uma só caixa."
       }
     }
   },
@@ -627,5 +631,13 @@
         "ariaLabel": "Volume do alerta do mercado"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "Abrir nas Configurações",
+    "turnOn": "Ativar",
+    "turnOff": "Desativar",
+    "change": "Alterar",
+    "select": "Selecionar",
+    "current": "Atual"
   }
 }

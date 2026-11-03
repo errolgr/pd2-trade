@@ -119,6 +119,7 @@ export function PublicProfileGroup() {
           name="optedIn"
           render={({ field }) => (
             <SettingsRow
+              settingKey="publicProfile"
               label={t('publicProfile.optedIn')}
               description={description}
               disabled={!ready}

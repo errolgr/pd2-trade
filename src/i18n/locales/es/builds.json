@@ -220,5 +220,15 @@
     "usageCount_one": "{{formatted}} personaje",
     "usageCount_many": "{{formatted}} de personajes",
     "usageCount_other": "{{formatted}} personajes"
+  },
+  "palette": {
+    "character": "personaje",
+    "account": "cuenta",
+    "class": "clase",
+    "skillOf": "habilidad de {{className}}",
+    "hardcore": "HC",
+    "openBuild": "Abrir build",
+    "showCharacters": "Ver personajes",
+    "showMeta": "Ver en Meta"
   }
 }

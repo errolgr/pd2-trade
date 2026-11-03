@@ -12,6 +12,7 @@ import { FolderSearch, Wand2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { LADDER_OPTIONS, MODE_OPTIONS, optionLabel } from '../setting-options';
 import { showToast } from '@/overlay';
 import type { TFunction } from 'i18next';
 import { useTranslation } from '@/i18n';
@@ -106,6 +107,7 @@ export function GeneralForm() {
             name="ladder"
             render={({ field }) => (
               <SettingsRow
+                settingKey="ladder"
                 label="Ladder"
                 control={
                   <Select value={field.value}
@@ -117,8 +119,12 @@ export function GeneralForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ladder">Ladder</SelectItem>
-                      <SelectItem value="non-ladder">Non-Ladder</SelectItem>
+                      {LADDER_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {optionLabel(t, option)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 }
@@ -132,6 +138,7 @@ export function GeneralForm() {
             name="mode"
             render={({ field }) => (
               <SettingsRow
+                settingKey="mode"
                 label={t('general.game.mode')}
                 control={
                   <Select value={field.value}
@@ -143,8 +150,12 @@ export function GeneralForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="softcore">Softcore</SelectItem>
-                      <SelectItem value="hardcore">Hardcore</SelectItem>
+                      {MODE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {optionLabel(t, option)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 }
@@ -154,6 +165,7 @@ export function GeneralForm() {
             )}
           />
           <SettingsRow
+            settingKey="selectedSeasonId"
             label={t('general.game.season.label')}
             description={t('general.game.season.description')}
             control={
@@ -185,6 +197,7 @@ export function GeneralForm() {
             name="diablo2Directory"
             render={({ field }) => (
               <SettingsRow
+                settingKey="diablo2Directory"
                 layout="stacked"
                 label={t('general.directory.label')}
                 description={
@@ -248,6 +261,7 @@ export function GeneralForm() {
 
         <SettingsGroup title={t('general.troubleshooting.group')}>
           <SettingsRow
+            settingKey="debugLoggingEnabled"
             label={t('general.troubleshooting.debugLogging.label')}
             description={t('general.troubleshooting.debugLogging.description')}
             control={

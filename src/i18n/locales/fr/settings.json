@@ -208,7 +208,7 @@
     "group": "Raccourcis",
     "modifierLabel": "Modificateur de {{action}}",
     "off": "Désactivé",
-    "hint": "Cliquez dans une case de touche et appuyez sur la touche à utiliser. Appuyez sur Retour arrière dans la case d'instantané, de marché ou de builds pour désactiver ce raccourci.",
+    "hint": "Cliquez dans une case de touche et appuyez sur la touche à utiliser. Appuyez sur Retour arrière dans la case d'instantané, de marché, de builds ou de palette de commandes pour désactiver ce raccourci.",
     "rows": {
       "priceCheck": {
         "label": "Estimation",
@@ -249,6 +249,10 @@
       "builds": {
         "label": "Builds",
         "description": "Afficher ou masquer les builds ladder."
+      },
+      "palette": {
+        "label": "Palette de commandes",
+        "description": "Rechercher actions, objets, builds et réglages depuis une seule barre."
       }
     }
   },
@@ -627,5 +631,13 @@
         "ariaLabel": "Volume des alertes du marché"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "Ouvrir dans les réglages",
+    "turnOn": "Activer",
+    "turnOff": "Désactiver",
+    "change": "Modifier",
+    "select": "Choisir",
+    "current": "Actuel"
   }
 }

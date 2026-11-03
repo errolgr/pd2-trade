@@ -16,10 +16,7 @@ import {
 } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { useOptions } from '@/hooks/useOptions';
-import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
-import { TRADE_LISTINGS_LIMIT } from '@/pages/delist/trade-match';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { useNow } from '@/pages/market/enrich/useNow';
 import { indexListingOffers } from '@/pages/market/lib/listing-offers';
@@ -48,6 +45,15 @@ import {
   SORT_KEYS,
   sortListings,
 } from './my-listings';
+import {
+  bumpListing,
+  deleteListing,
+  listingsRealm,
+  loadMyListings,
+  patchMyListing,
+  updateMyListings,
+  useMyListings,
+} from './my-listings-store';
 import { ListingCard, ListingRow, ListingRowsHeader, type ListingViewProps } from './ListingViews';
 import type { ListingActionHandlers } from './ListingPieces';
 
@@ -59,16 +65,25 @@ const BUMP_FLASH_DURATION_MS = 1050;
 const chip =
   'inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs tabular-nums outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-50';
 
+/** A listing to bring into view (the palette): `edit` also opens its price editor; a new `version` asks again. */
+export interface ListingFocus {
+  listingId: string;
+  edit?: boolean;
+  version: number;
+}
+
 interface MyListingsTabProps {
   /** The listing count changed (the List tab's 50-listing check and the tab chip). */
   onTotalCountChange?: (count: number) => void;
+  /** Scroll to this listing and highlight it (clearing a search or filter that hides it). */
+  focus?: ListingFocus | null;
 }
 
 /**
  * Manage tab: every listing of the signed-in user in the current realm (PD2 caps it at 50), as big cards or
  * compact rows, sorted and filtered client-side. The item tooltip shows on hovering the art or the name.
  */
-const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => {
+const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus }) => {
   const {
     getMarketListings,
     updateMarketListing,
@@ -82,7 +97,6 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
   const { t } = useTranslation(['quickList', 'common']);
   const now = useNow(30_000);
 
-  const [listings, setListings] = useState<MarketListingEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -98,6 +112,9 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
   const userId = authData?.user?._id;
   const hardcore = settings?.mode === 'hardcore';
   const ladder = settings?.ladder === 'ladder';
+  // Shared with the palette (my-listings-store); another user's or realm's listings don't show
+  const stored = useMyListings();
+  const listings = userId && stored.realm === listingsRealm(userId, hardcore, ladder) ? stored.listings : null;
 
   const onCountRef = useRef(onTotalCountChange);
   onCountRef.current = onTotalCountChange;
@@ -111,13 +128,10 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
     setError(null);
     const started = performance.now();
     try {
-      const result = await getMarketListings(
-        buildGetAllUserMarketListingsQuery(userId, hardcore, ladder, TRADE_LISTINGS_LIMIT, 0),
-      );
-      setListings(result.data);
+      const data = await loadMyListings(getMarketListings, userId, hardcore, ladder);
       trackMeasurement(
         'listed_items_fetch',
-        { duration_ms: performance.now() - started, returned_items: result.data.length },
+        { duration_ms: performance.now() - started, returned_items: data.length },
         { outcome: 'success' },
       );
     } catch (err) {
@@ -132,9 +146,6 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
   useEffect(() => {
     void load();
   }, [load]);
-
-  // A listing removed anywhere (this tab, Ctrl+U, auto-delist, chat) leaves the list
-  useEffect(() => subscribeListingDeleted((id) => setListings((prev) => prev && prev.filter((l) => l._id !== id))), []);
 
   const offers = useMemo(() => indexListingOffers([], incomingOffers ?? []), [incomingOffers]);
   const deals = useDealIndicators(listings ?? []);
@@ -162,35 +173,42 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
   const readyIds = useMemo(() => (listings ?? []).filter((l) => canBump(l, now)).map((l) => l._id), [listings, now]);
   const offerCount = useMemo(() => (listings ?? []).filter((l) => receivedOffers(l, ctx) > 0).length, [listings, ctx]);
 
-  const patchListing = (id: string, patch: Partial<MarketListingEntry>) =>
-    setListings((prev) => prev && prev.map((l) => (l._id === id ? { ...l, ...patch } : l)));
+  // A listing the palette asked for: applied once the list holds it (dropped when the loaded list lacks it), after
+  // clearing a search or filter hiding it. Adjusted during render; the scroll waits for the commit.
+  const [focusVersion, setFocusVersion] = useState(0);
+  const [pendingFocus, setPendingFocus] = useState<ListingFocus | null>(null);
+  const [highlight, setHighlight] = useState<{ id: string; nonce: number } | null>(null);
+  if (focus && focus.version !== focusVersion) {
+    setFocusVersion(focus.version);
+    setPendingFocus(focus);
+  }
+  if (pendingFocus && listings) {
+    const target = listings.find((l) => l._id === pendingFocus.listingId);
+    if (target || !loading) {
+      setPendingFocus(null);
+      if (target) {
+        if (!shown.some((l) => l._id === target._id)) {
+          setQuery('');
+          setFilter(null);
+        }
+        if (pendingFocus.edit) setEditingId(target._id);
+        setHighlight({ id: target._id, nonce: pendingFocus.version });
+      }
+    }
+  }
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!highlight) return;
+    listRef.current
+      ?.querySelector(`[data-listing-id="${CSS.escape(highlight.id)}"]`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [highlight]);
 
   const handlers: ListingActionHandlers = {
     onBump: async (listing) => {
       setBumpingId(listing._id);
-      const started = performance.now();
-      try {
-        const bumped_at = new Date().toISOString();
-        await updateMarketListing(listing._id, { bumped_at });
-        updateItemByHash(listing.item.hash, { bumped_at });
-        patchListing(listing._id, { bumped_at });
-        trackMeasurement(
-          'listed_items_bump',
-          { duration_ms: performance.now() - started },
-          { outcome: 'success', source: 'listed_items_tab' },
-        );
-        showToast(t('toasts.bumpSuccess'));
-      } catch (err) {
-        trackMeasurement(
-          'listed_items_bump',
-          { duration_ms: performance.now() - started },
-          { outcome: 'error', source: 'listed_items_tab' },
-        );
-        console.error('Failed to bump item:', err);
-        showToast(t('toasts.bumpFailed'));
-      } finally {
-        setBumpingId(null);
-      }
+      await bumpListing({ updateMarketListing, updateItemByHash, deleteMarketListing }, listing, 'listed_items_tab');
+      setBumpingId(null);
     },
     onEdit: (listing) => {
       setEditingId(listing._id);
@@ -198,19 +216,9 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
     },
     onDelete: async (listing) => {
       setDeletingId(listing._id);
-      const started = performance.now();
-      try {
-        // The row leaves through the listing-deleted subscription, like listings removed elsewhere
-        await deleteMarketListing(listing._id);
-        trackMeasurement('listed_items_delete', { duration_ms: performance.now() - started }, { outcome: 'success' });
-        showToast(t('toasts.removedMarketListing', { name: listing.item.name }));
-      } catch (err) {
-        trackMeasurement('listed_items_delete', { duration_ms: performance.now() - started }, { outcome: 'error' });
-        console.error('Failed to delete listing:', err);
-        showToast(t('toasts.deleteFailed'));
-      } finally {
-        setDeletingId(null);
-      }
+      // The row leaves through the listing-deleted event, like listings removed elsewhere
+      await deleteListing({ updateMarketListing, updateItemByHash, deleteMarketListing }, listing);
+      setDeletingId(null);
     },
     onOpen: (listing) => {
       trackEvent('listed_items_trade_url_opened');
@@ -224,7 +232,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
     try {
       await updateMarketListing(listing._id, fields);
       updateItemByHash(listing.item.hash, fields);
-      patchListing(listing._id, fields);
+      patchMyListing(listing._id, fields);
       setEditingId(null);
       trackMeasurement(
         'listed_items_edit_save',
@@ -251,7 +259,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
       await bumpAllMarketListings(userId);
       // PD2 bumps only the listings off cooldown
       const bumped_at = new Date().toISOString();
-      setListings((prev) => prev && prev.map((l) => (ids.has(l._id) ? { ...l, bumped_at } : l)));
+      updateMyListings((prev) => prev.map((l) => (ids.has(l._id) ? { ...l, bumped_at } : l)));
       const key = Date.now();
       setBumpWave({ key, ids });
       setTimeout(
@@ -306,6 +314,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
     deleting: deletingId === listing._id,
     flashKey: waveIndex.has(listing._id) ? bumpWave.key : 0,
     flashDelay: (waveIndex.get(listing._id) ?? 0) * stagger,
+    pulseKey: highlight?.id === listing._id ? highlight.nonce : 0,
     handlers,
     onSaveEdit: saveEdit,
     onCancelEdit: () => setEditingId(null),
@@ -447,7 +456,8 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange }) => 
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+      <div ref={listRef}
+        className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
         {!listings ? (
           <div className="flex flex-col gap-2"
             aria-busy>

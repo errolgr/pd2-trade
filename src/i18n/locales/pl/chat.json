@@ -372,5 +372,10 @@
     "selectTitle": "Wybierz rozmowę, aby zobaczyć wiadomości",
     "selectDescription": "Wybierz czat po lewej.",
     "collapseTrader": "Zwiń szczegóły handlarza"
+  },
+  "palette": {
+    "open": "Otwórz rozmowę",
+    "reply": "Odpowiedz",
+    "unread": "Nieprzeczytane"
   }
 }

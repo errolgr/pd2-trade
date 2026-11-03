@@ -15,6 +15,7 @@ import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
 import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import BuildsPage from '@/pages/builds/BuildsPage';
+import PalettePage from '@/pages/palette/PalettePage';
 import type { PanelDefs } from './types';
 
 /**
@@ -241,5 +242,21 @@ export const PANEL_DEFS: PanelDefs = {
     keepMounted: true, // filters, page and the open character survive closing
     hideOnGameBlur: true,
     closeOnBlur: true,
+  },
+
+  // ---- palette (Group Palette): one search over every panel, item, build and setting ----
+  palette: {
+    id: 'palette',
+    component: PalettePage,
+    // The bar sits at the top of a click-through frame centered on the game and grows down as results come in
+    size: { width: 640, height: 520 },
+    resizable: false,
+    placement: 'gameCenter',
+    persist: false,
+    keyboard: 'onPointerDown', // opened with { focus: true }: typing starts right away
+    keepMounted: false, // always opens fresh
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+    interactive: 'children',
   },
 };

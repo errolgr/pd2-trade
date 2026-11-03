@@ -357,5 +357,10 @@
     "selectTitle": "选择会话以查看消息",
     "selectDescription": "在左侧选择一个聊天。",
     "collapseTrader": "收起交易者详情"
+  },
+  "palette": {
+    "open": "打开对话",
+    "reply": "回复",
+    "unread": "未读"
   }
 }

@@ -205,7 +205,7 @@
     "group": "Shortcuts",
     "modifierLabel": "{{action}} modifier",
     "off": "Off",
-    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market or builds box to turn that hotkey off.",
+    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market, builds or command palette box to turn that hotkey off.",
     "rows": {
       "priceCheck": {
         "label": "Price check",
@@ -246,6 +246,10 @@
       "builds": {
         "label": "Builds",
         "description": "Show or hide the ladder builds."
+      },
+      "palette": {
+        "label": "Command palette",
+        "description": "Search actions, items, builds and settings from one box."
       }
     }
   },
@@ -621,5 +625,13 @@
         "ariaLabel": "Market alert volume"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "Open in Settings",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "change": "Change",
+    "select": "Select",
+    "current": "Current"
   }
 }

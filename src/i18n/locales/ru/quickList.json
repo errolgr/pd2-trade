@@ -234,5 +234,9 @@
       "ethereal": "Эфир",
       "sockets": "{{count}} гн."
     }
+  },
+  "palette": {
+    "openOffer": "Открыть в чате",
+    "showListing": "Показать в «Управлении»"
   }
 }

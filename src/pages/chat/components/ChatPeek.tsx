@@ -15,7 +15,7 @@ const KINDS: Record<FeedKind, { icon: LucideIcon; labelKey: string; className: s
 };
 
 /** "now", "12m", "3h", "2d". */
-function timeAgo(at: number, now: number) {
+export function timeAgo(at: number, now: number) {
   const minutes = Math.floor(Math.max(0, now - at) / 60_000);
   if (minutes < 1) return t('chat:peek.time.now');
   if (minutes < 60) return t('chat:peek.time.minutes', { count: minutes });

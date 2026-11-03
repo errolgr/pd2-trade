@@ -506,5 +506,14 @@
     "notRemoved": "Favorit nicht entfernt",
     "notSaved": "Favorit nicht gespeichert",
     "refused": "projectdiablo2.com hat die Änderung abgelehnt. Versuche es gleich erneut."
+  },
+  "palette": {
+    "openInMarket": "Im Marktplatz suchen",
+    "watchPrice": "Preis beobachten",
+    "stopWatching": "Nicht mehr beobachten",
+    "buildsUsing": "Builds damit",
+    "copyName": "Namen kopieren",
+    "nameCopied": "Name kopiert",
+    "nameNotCopied": "Name nicht kopiert"
   }
 }

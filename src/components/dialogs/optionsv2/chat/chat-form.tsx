@@ -16,6 +16,7 @@ import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -146,6 +147,7 @@ export function ChatForm() {
             name="whisperNotificationTiming"
             render={({ field }) => (
               <SettingsRow
+                settingKey="whisperNotificationTiming"
                 label={t('chat.timing.label')}
                 description={t('chat.timing.description')}
                 control={
@@ -157,10 +159,12 @@ export function ChatForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="in-game">{t('chat.timing.options.inGame')}</SelectItem>
-                      <SelectItem value="out-of-game">{t('chat.timing.options.outOfGame')}</SelectItem>
-                      <SelectItem value="both">{t('chat.timing.options.always')}</SelectItem>
-                      <SelectItem value="never">{t('chat.timing.options.never')}</SelectItem>
+                      {CHAT_TIMING_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {optionLabel(t, option)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 }
@@ -190,6 +194,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperNotificationsEnabled"
                 label={t('chat.general.label')}
                 description={t('chat.general.description')}
                 control={
@@ -208,6 +213,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="toastPopupsEnabled"
                 label={t('chat.toasts.label')}
                 description={t('chat.toasts.description')}
                 control={
@@ -280,6 +286,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="tradeNotificationsEnabled"
                 label={t('chat.trade.label')}
                 description={t('chat.trade.description')}
                 control={
@@ -298,6 +305,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperAnnouncementsEnabled"
                 label={t('chat.announcements.label')}
                 description={t('chat.announcements.description')}
                 control={
@@ -316,6 +324,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperJoinNotificationsEnabled"
                 label={t('chat.joins.label')}
                 description={t('chat.joins.description')}
                 control={
@@ -347,6 +356,7 @@ export function ChatForm() {
               <SettingsRow
                 layout="stacked"
                 disabled={isDisabled}
+                settingKey="whisperIgnoreList"
                 label={t('chat.ignore.label')}
                 description={t('chat.ignore.description')}
                 control={
@@ -428,6 +438,7 @@ export function ChatForm() {
               return (
                 <SettingsRow
                   disabled={isDisabled}
+                  settingKey="whisperNotificationVolume"
                   label={
                     <Trans
                       t={t}
@@ -470,6 +481,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="acceptOfferMessageTemplate"
                 label={t('chat.templates.accept.label')}
                 description={
                   <PlaceholderHint
@@ -499,6 +511,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="rejectOfferMessageTemplate"
                 label={t('chat.templates.reject.label')}
                 description={
                   <PlaceholderHint
@@ -526,6 +539,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="soldOfferMessageTemplate"
                 label={t('chat.templates.sold.label')}
                 description={
                   <PlaceholderHint

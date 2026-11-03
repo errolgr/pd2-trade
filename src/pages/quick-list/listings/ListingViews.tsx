@@ -40,6 +40,8 @@ export interface ListingViewProps {
   /** Bump All just ran: flash this row after `flashDelay` ms. */
   flashKey: number;
   flashDelay: number;
+  /** Asked for (the palette): pulse once per new key; 0 = not. */
+  pulseKey: number;
   handlers: ListingActionHandlers;
   onSaveEdit: (listing: MarketListingEntry, price: string, note: string) => Promise<void>;
   onCancelEdit: () => void;
@@ -60,6 +62,21 @@ function BumpFlash({ flashKey, delay }: { flashKey: number; delay: number }) {
       aria-hidden
       className="pointer-events-none absolute -inset-px rounded-[inherit] border border-success/45 bg-success/10 opacity-0 animate-bump-flash"
       style={{ animationDelay: `${delay}ms` }}
+    />
+  );
+}
+
+/** A listing brought into view (the palette) pulses once, like a stat row added from a mod menu. */
+function FocusPulse({ pulseKey }: { pulseKey: number }) {
+  if (!pulseKey) return null;
+  return (
+    <motion.span
+      key={pulseKey}
+      aria-hidden
+      className="pointer-events-none absolute -inset-px rounded-[inherit] bg-primary/15 ring-1 ring-inset ring-primary/50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 1, 0] }}
+      transition={{ duration: 1.4, times: [0, 0.15, 0.6, 1], ease: 'easeOut' }}
     />
   );
 }
@@ -138,6 +155,8 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
     <motion.div
       layout="position"
       transition={{ duration: DUR.med, ease: EASE_OUT }}
+      data-listing-id={listing._id}
+      data-highlighted={props.pulseKey ? '' : undefined}
       className={cn(
         'relative overflow-hidden rounded-lg border border-border bg-card/60 py-2.5 pr-2.5 pl-3.5 shadow-xs transition-colors duration-(--dur-fast) hover:border-ring/40',
         deleting && 'border-destructive/40 bg-destructive/5 opacity-70',
@@ -145,6 +164,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
     >
       <BumpFlash flashKey={props.flashKey}
         delay={props.flashDelay} />
+      <FocusPulse pulseKey={props.pulseKey} />
       {edge && <span aria-hidden
         className={cn('absolute inset-y-0 left-0 w-1', edge)} />}
       <div className="flex gap-3">
@@ -207,6 +227,8 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
   const note = sideNote(listing);
   return (
     <div
+      data-listing-id={listing._id}
+      data-highlighted={props.pulseKey ? '' : undefined}
       className={cn(
         'group/row relative h-9 border-b border-border/50 pr-1.5 pl-2.5 transition-colors duration-(--dur-fast) last:border-b-0 hover:bg-accent/40',
         ROW_GRID,
@@ -215,6 +237,7 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
     >
       <BumpFlash flashKey={props.flashKey}
         delay={props.flashDelay} />
+      <FocusPulse pulseKey={props.pulseKey} />
       {edge && <span aria-hidden
         className={cn('absolute inset-y-1.5 left-0 w-0.5 rounded-full', edge)} />}
       <ListingArt listing={listing}

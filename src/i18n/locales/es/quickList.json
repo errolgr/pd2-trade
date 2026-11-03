@@ -229,5 +229,9 @@
       "ethereal": "Eté",
       "sockets": "{{count}} ranuras"
     }
+  },
+  "palette": {
+    "openOffer": "Abrir en el chat",
+    "showListing": "Ver en Gestionar"
   }
 }

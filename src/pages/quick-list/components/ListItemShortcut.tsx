@@ -35,7 +35,7 @@ import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import MyListingsTab from '../listings/MyListingsTab';
+import MyListingsTab, { type ListingFocus } from '../listings/MyListingsTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -105,7 +105,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  const { close: handleClose } = usePanel<'quickList'>();
+  const { close: handleClose, payload, payloadVersion } = usePanel<'quickList'>();
+  // openPanel('quickList', { listingId, edit }) (the palette): the Manage tab, on that listing
+  const focusListing = useMemo<ListingFocus | null>(
+    () =>
+      payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null,
+    [payload, payloadVersion],
+  );
 
   // Complete reset function for new items
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
@@ -821,6 +827,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setActiveTab('listed-items');
     }
   }, [item, resetAllState]);
+  useEffect(() => {
+    if (focusListing) setActiveTab('listed-items');
+  }, [focusListing]);
 
   // Render queued items view
   const renderQueuedItemsContent = () => {
@@ -1242,7 +1251,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
           <TabsContent value="listed-items"
             className="flex-1 flex flex-col min-h-0 px-3 pt-2.5 pb-3">
-            <MyListingsTab onTotalCountChange={setTotalListingsCount} />
+            <MyListingsTab onTotalCountChange={setTotalListingsCount}
+              focus={focusListing} />
           </TabsContent>
 
           <TabsContent value="queued"

@@ -210,5 +210,15 @@
     "skillLevel": "· level {{level}}",
     "usageCount_one": "{{formatted}} characters",
     "usageCount_other": "{{formatted}} characters"
+  },
+  "palette": {
+    "character": "character",
+    "account": "account",
+    "class": "class",
+    "skillOf": "{{className}} skill",
+    "hardcore": "HC",
+    "openBuild": "Open build",
+    "showCharacters": "Show characters",
+    "showMeta": "Show in Meta"
   }
 }

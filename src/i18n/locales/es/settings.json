@@ -208,7 +208,7 @@
     "group": "Atajos",
     "modifierLabel": "Modificador de {{action}}",
     "off": "Desactivado",
-    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado o builds para desactivar ese atajo.",
+    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado, builds o paleta de comandos para desactivar ese atajo.",
     "rows": {
       "priceCheck": {
         "label": "Consulta de precio",
@@ -249,6 +249,10 @@
       "builds": {
         "label": "Builds",
         "description": "Muestra u oculta las builds ladder."
+      },
+      "palette": {
+        "label": "Paleta de comandos",
+        "description": "Busca acciones, objetos, builds y ajustes desde un solo cuadro."
       }
     }
   },
@@ -627,5 +631,13 @@
         "ariaLabel": "Volumen de alertas del mercado"
       }
     }
+  },
+  "palette": {
+    "openInSettings": "Abrir en Ajustes",
+    "turnOn": "Activar",
+    "turnOff": "Desactivar",
+    "change": "Cambiar",
+    "select": "Elegir",
+    "current": "Actual"
   }
 }

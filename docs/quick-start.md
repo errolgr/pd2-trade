@@ -16,6 +16,7 @@ All that remains is to parse text in PD2 Trader and show to you in a fancy way.
   - Press `Ctrl + O` to open settings
   - Press `Ctrl + X` to open Net Worth
   - Press `Ctrl + M` to open the market browser
+  - Press `Ctrl + Space` to open the command palette: search panels, items, builds, chats, your listings and settings from one box
 
 - Settings
   - Ladder/Hardcore toggle can be found in the settings by visting the system tray icon and clicking "Settings"

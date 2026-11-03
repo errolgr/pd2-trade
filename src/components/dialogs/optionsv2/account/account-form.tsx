@@ -160,6 +160,7 @@ export function AccountForm() {
               name="pd2Token"
               render={({ field }) => (
                 <SettingsRow
+                  settingKey="pd2Token"
                   layout="stacked"
                   label={t('account.token.label')}
                   description={
@@ -201,6 +202,7 @@ export function AccountForm() {
             name="account"
             render={({ field }) => (
               <SettingsRow
+                settingKey="account"
                 label={t('account.account.label')}
                 description={
                   accounts.length > 0

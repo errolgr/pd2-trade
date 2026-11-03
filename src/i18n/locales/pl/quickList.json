@@ -234,5 +234,9 @@
       "ethereal": "Eter",
       "sockets": "{{count}} gn."
     }
+  },
+  "palette": {
+    "openOffer": "Otwórz w czacie",
+    "showListing": "Pokaż w Zarządzaj"
   }
 }

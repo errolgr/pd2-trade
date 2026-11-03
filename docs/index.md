@@ -110,6 +110,10 @@ Know where to farm without leaving the game: a small in-game timer shows the zon
 
 See what the ladder plays without leaving the game: the Builds panel shows the most played classes, skills and gear of level 80+ characters, and each character's gear, skills and build timeline. Open your own characters for gear-up suggestions priced in HR, a trader's build from the chat, or the builds that wear an item from its price check. Set a Builds hotkey in Settings → Hotkeys (unbound by default).
 
+#### Command Palette
+
+One search box for the whole app: press Ctrl+Space in game and start typing. It finds panels and actions, items (with their current HR price and 7-day change), characters, accounts and build meta (classes, skills, nicknames like hammerdin), your chats, listings and trade offers, and every setting. Enter opens the result; switches and choices in Settings change right in the palette. Press Tab to search only one kind of result, Ctrl+K (or →) for more actions on a row (watch an item's price, relist or delist a listing, follow a character, pin it to the palette), and Esc to close. With nothing typed it shows your pinned and recent results. Change or turn off the hotkey in Settings → Hotkeys.
+
 #### Rune Exchange
 
 Easily compare and trade runes with up-to-date exchange rates.
