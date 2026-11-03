@@ -73,7 +73,7 @@ describe('StatRow', () => {
     expect(container.textContent).not.toContain('% Faster Cast Rate: 20');
   });
 
-  it('clears min and max with one click and focuses min for the new value', () => {
+  it('clears min and max with one click and focuses min for the new value', async () => {
     render(<Harness stat={FCR} />);
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
@@ -82,6 +82,9 @@ describe('StatRow', () => {
     fireEvent.click(clear);
     expect(JSON.parse(screen.getByTestId('filters').textContent ?? '{}')['id:105']).toEqual({ min: '', max: '' });
     expect(document.activeElement).toBe(screen.getByLabelText('% Faster Cast Rate minimum'));
+    // happy-dom runs the row label's activation while the click is still bubbling, before React's preventDefault,
+    // so here (unlike a browser) the clear also unticks the stat: let its range finish animating out
+    await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
   });
 
   it('draws damage pairs as the one line the game shows', () => {
@@ -146,6 +149,7 @@ describe('StatRow', () => {
     fireEvent.mouseDown(rowText);
     fireEvent.click(rowText);
     expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+    await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
   });
 
   it('pre-fills the inputs from existing filters', () => {

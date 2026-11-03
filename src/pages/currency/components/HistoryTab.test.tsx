@@ -223,6 +223,8 @@ describe('HistoryTab chart range', () => {
     expect(screen.getByText('−1.00 HR')).not.toBeNull();
     expect(getPoints).toHaveBeenCalledTimes(1);
     expect(snapshotTimes()).toEqual([fmt('2026-10-18T11:00:00.000Z'), fmt(P1.takenAt)]);
+    // the 7d pill animates out
+    await waitFor(() => expect(screen.queryByText('+2.50 HR')).toBeNull());
   });
 
   it('shows a placeholder for the Season range until the parent has points', async () => {
@@ -232,6 +234,8 @@ describe('HistoryTab chart range', () => {
     expect(document.querySelector('.animate-spin')).toBeNull();
     expect(screen.queryByText('No snapshots in this range yet.')).toBeNull();
     expect(screen.getByText('No snapshots in this range.')).not.toBeNull();
+    // the 7d pill animates out
+    await waitFor(() => expect(screen.queryByText('+2.50 HR')).toBeNull());
   });
 
   it('merges daily points of every season, oldest first, for the All range', async () => {
