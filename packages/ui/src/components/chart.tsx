@@ -3,6 +3,9 @@ import * as RechartsPrimitive from 'recharts';
 
 import { cn } from '../lib/utils';
 
+/** Props recharts passes to a custom tooltip `content` (recharts 3 no longer exposes them on `Tooltip`). */
+type TooltipContentProps = RechartsPrimitive.TooltipContentProps<number | string, number | string>;
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
 
@@ -93,8 +96,8 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
+  Partial<TooltipContentProps> &
+    Omit<React.ComponentProps<'div'>, keyof TooltipContentProps> & {
       hideLabel?: boolean;
       hideIndicator?: boolean;
       indicator?: 'line' | 'dot' | 'dashed';
@@ -231,8 +234,9 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
+  React.ComponentProps<'div'> & {
+      payload?: ReadonlyArray<RechartsPrimitive.LegendPayload>;
+      verticalAlign?: 'top' | 'middle' | 'bottom';
       hideIcon?: boolean;
       nameKey?: string;
     }

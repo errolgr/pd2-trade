@@ -66,9 +66,20 @@ export function renderTailwindCss(): string {
       '',
       '/* Type scale: only the named steps exist (Tailwind defaults reset). */',
       '--text-*: initial;',
-      ...Object.entries(TYPE_SCALE).flatMap(([k, [size, lineHeight]]) => [
+      ...Object.entries(TYPE_SCALE).flatMap(([k, [size, lineHeight, letterSpacing]]) => [
         `--text-${k}: ${size};`,
         `--text-${k}--line-height: ${lineHeight};`,
+        ...(letterSpacing ? [`--text-${k}--letter-spacing: ${letterSpacing};`] : []),
+      ]),
+      '',
+      '/* Disclosure motion (Accordion, Collapsible): height follows the Radix content-height var. */',
+      `--animate-accordion-down: accordion-down ${DURATION_MS.med}ms ${cubicBezier(EASING.out)};`,
+      `--animate-accordion-up: accordion-up ${DURATION_MS.fast}ms ${cubicBezier(EASING.out)};`,
+      `--animate-collapsible-down: collapsible-down ${DURATION_MS.med}ms ${cubicBezier(EASING.out)};`,
+      `--animate-collapsible-up: collapsible-up ${DURATION_MS.fast}ms ${cubicBezier(EASING.out)};`,
+      ...(['accordion', 'collapsible'] as const).flatMap((kind) => [
+        `@keyframes ${kind}-down { from { height: 0; } to { height: var(--radix-${kind}-content-height); } }`,
+        `@keyframes ${kind}-up { from { height: var(--radix-${kind}-content-height); } to { height: 0; } }`,
       ]),
       '',
       ...Object.entries(TRACKING).map(([k, v]) => `--tracking-${k}: ${v};`),

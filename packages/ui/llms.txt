@@ -32,6 +32,7 @@ named widths (w-/min-w-/max-w-): w-control (220px settings control column) w-sid
 type (ONLY these exist; text-lg/xl/3xl are reset and render unstyled):
   text-3xs 10px (dense UPPERCASE meta labels, counters, chip text only) · text-2xs 11px (captions, meta, table cells) · text-xs 12px (body)
   text-sm 13px (titles, primary values, buttons) · text-base 16px (panel hero values) · text-2xl 24px (headline numbers) · text-display 30px (one hero total)
+  text-hero 48px (website landing heroes ONLY, never in the overlay)
   Uppercase eyebrow: uppercase tracking-caps. font-medium / font-semibold. Numbers: tabular-nums (PriceTag does it).
 radius: rounded-xs (2px marks) rounded-sm 4 (chips) rounded-md 6 (controls, tiles) rounded-lg 8 (panels) rounded-full (pills). Derived from per-theme --radius.
 elevation: shadow-panel (panels, popovers), shadow-glow (highlighted item). Not shadow-lg.
@@ -55,7 +56,7 @@ icons: lucide-react only. size-3 (dense chip), size-3.5 (inline with text-xs), s
 Escape hatch (rare, reason required): `// ds-allow: <reason>` on the line above (JSX: {/* ds-allow: <reason> */}).
 
 ## Components (everything from ONE import: import { … } from '@pd2-trader/ui'; never deep-import files)
-primitives: Button ButtonGroup Badge Card ItemCard Input Textarea Label Checkbox Switch Slider Select* Tabs* Toggle ToggleGroup* Tooltip* TooltipProvider
+primitives: Button ButtonGroup Kbd KbdGroup Badge Card ItemCard Input Textarea Label Checkbox Switch Slider Select* Tabs* RadioGroup RadioGroupItem Accordion* Collapsible* Pagination* Toggle ToggleGroup* Tooltip* TooltipProvider
   Popover* DropdownMenu* Dialog* AlertDialog* Sheet* Command* (cmdk) Form* (react-hook-form) Table* ScrollArea Separator Progress Skeleton Alert Breadcrumb* Chart* Toaster toast
 overlay patterns: PanelSurface (panel body, window-opacity aware) PanelChrome {title icon? actions? center? onClose? diabloFont?} (h-10 title bar, drag handle)
   HoverPopover PopoverTile PopoverKeyValue PopoverSectionTitle SettingsSection SettingsGroup SettingsRow SettingsHint SettingsSkeleton
@@ -72,7 +73,8 @@ Button variants: default secondary outline ghost destructive link quiet field ·
   picker trigger = variant="field"; pressed filter chip = <Toggle variant="chip">; segmented choice = ToggleGroup.
 Toasts/confirm in the app: import { showToast, confirmToast, undoToast } from '@/overlay'.
 Tokens (TS): import { THEMES, THEME_TOKENS, SEMANTIC_TOKENS, DOMAIN_TOKENS, TYPE_SCALE, WIDTHS, EASING, DURATION_MS, Z_LAYERS } from '@pd2-trader/ui/tokens'.
-Tailwind theme CSS: @import '@pd2-trader/ui/tailwind.css'.
+Tailwind theme CSS: @import '@pd2-trader/ui/tailwind.css'. Consumers outside this repo also need @plugin 'tailwindcss-animate' and
+  @source '<path>/node_modules/@pd2-trader/ui/src' (the package ships TS source; the bundler compiles it). Lint: '@pd2-trader/ui/eslint'.
 
 ## States
 loading: <Skeleton className="h-4 w-24" /> shaped like the content, or <SkeletonRows rows={3} /> (no spinners for content).

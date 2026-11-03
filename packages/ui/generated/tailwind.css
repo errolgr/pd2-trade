@@ -107,6 +107,19 @@
     --text-2xl--line-height: 2rem;
     --text-display: 1.875rem;
     --text-display--line-height: 2.25rem;
+    --text-hero: 3rem;
+    --text-hero--line-height: 1.05;
+    --text-hero--letter-spacing: -0.025em;
+
+    /* Disclosure motion (Accordion, Collapsible): height follows the Radix content-height var. */
+    --animate-accordion-down: accordion-down 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    --animate-accordion-up: accordion-up 120ms cubic-bezier(0.22, 1, 0.36, 1);
+    --animate-collapsible-down: collapsible-down 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    --animate-collapsible-up: collapsible-up 120ms cubic-bezier(0.22, 1, 0.36, 1);
+    @keyframes accordion-down { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
+    @keyframes accordion-up { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
+    @keyframes collapsible-down { from { height: 0; } to { height: var(--radix-collapsible-content-height); } }
+    @keyframes collapsible-up { from { height: var(--radix-collapsible-content-height); } to { height: 0; } }
 
     --tracking-caps: 0.12em;
 

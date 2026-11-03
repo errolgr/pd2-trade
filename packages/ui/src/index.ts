@@ -12,6 +12,7 @@ export * from './lib/labels';
 export * from './lib/motion';
 
 // Primitives (shadcn/Radix, owned)
+export * from './components/accordion';
 export * from './components/alert';
 export * from './components/alert-dialog';
 export * from './components/badge';
@@ -21,14 +22,18 @@ export * from './components/button-group';
 export * from './components/card';
 export * from './components/chart';
 export * from './components/checkbox';
+export * from './components/collapsible';
 export * from './components/command';
 export * from './components/dialog';
 export * from './components/dropdown-menu';
 export * from './components/form';
 export * from './components/input';
+export * from './components/kbd';
 export * from './components/label';
+export * from './components/pagination';
 export * from './components/popover';
 export * from './components/progress';
+export * from './components/radio-group';
 export * from './components/scroll-area';
 export * from './components/select';
 export * from './components/separator';

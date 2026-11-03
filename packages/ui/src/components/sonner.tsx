@@ -1,5 +1,4 @@
 import { Toaster as Sonner, toast, type ToasterProps } from 'sonner';
-import React from 'react';
 
 /** Toast host. `theme` is the app's light/dark mode so `richColors` toasts use the matching palette. */
 const Toaster = ({ theme, ...props }: ToasterProps & { theme: 'light' | 'dark' }) => {

@@ -40,15 +40,16 @@ export const Z_LAYERS = {
 } as const;
 
 /**
- * Type scale ("Refined current": 11/12/13/16/24). `[font-size, line-height]` in rem. The generated CSS resets
- * Tailwind's default font sizes, so only these `text-*` steps exist:
+ * Type scale ("Refined current": 11/12/13/16/24). `[font-size, line-height, letter-spacing?]` in rem. The generated
+ * CSS resets Tailwind's default font sizes, so only these `text-*` steps exist:
  * `2xs` 11px captions, meta, table cells · `xs` 12px body · `sm` 13px titles and primary values ·
  * `base` 16px panel hero values · `2xl` 24px headline numbers.
- * Two documented exceptions: `3xs` 10px for dense uppercase meta labels, counters and chip text only (never body
- * text), and `display` 30px for the one hero total of a surface (net worth, stash value, sign-in wordmark).
+ * Documented exceptions: `3xs` 10px for dense uppercase meta labels, counters and chip text only (never body
+ * text), `display` 30px for the one hero total of a surface (net worth, stash value, sign-in wordmark), and
+ * `hero` 48px for website landing heroes only (never in the overlay).
  * Numbers use Tailwind's `tabular-nums`.
  */
-export const TYPE_SCALE = {
+export const TYPE_SCALE: Record<string, readonly [string, string, string?]> = {
   '3xs': ['0.625rem', '0.875rem'],
   '2xs': ['0.6875rem', '1rem'],
   xs: ['0.75rem', '1rem'],
@@ -56,7 +57,8 @@ export const TYPE_SCALE = {
   base: ['1rem', '1.5rem'],
   '2xl': ['1.5rem', '2rem'],
   display: ['1.875rem', '2.25rem'],
-} as const;
+  hero: ['3rem', '1.05', '-0.025em'],
+};
 
 /** Letter spacing added to Tailwind's defaults: `tracking-caps` for uppercase eyebrow and meta labels. */
 export const TRACKING = { caps: '0.12em' } as const;

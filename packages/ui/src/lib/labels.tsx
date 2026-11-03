@@ -13,6 +13,13 @@ export interface UiLabels {
   gold: (amount: string) => string;
   /** BCP 47 locale for number formatting (PriceTag, CurrencyAmount); undefined = the runtime default. */
   locale: string | undefined;
+  /** Pagination: nav landmark, button text, screen-reader labels. */
+  pagination: string;
+  previous: string;
+  next: string;
+  previousPage: string;
+  nextPage: string;
+  morePages: string;
 }
 
 export const DEFAULT_UI_LABELS: UiLabels = {
@@ -22,6 +29,12 @@ export const DEFAULT_UI_LABELS: UiLabels = {
   loading: 'Loading…',
   gold: (amount) => `${amount} gold`,
   locale: undefined,
+  pagination: 'Pagination',
+  previous: 'Previous',
+  next: 'Next',
+  previousPage: 'Go to previous page',
+  nextPage: 'Go to next page',
+  morePages: 'More pages',
 };
 
 const UiLabelsContext = createContext<UiLabels>(DEFAULT_UI_LABELS);
