@@ -97,6 +97,7 @@ Built on the existing shadcn/Radix primitives, owned and extended (_Proposed_).
 
 - Published package `@pd2-trader/ui` (_Proposed_), containing tokens, React components, a Tailwind preset and the generated CSS. The overlay consumes it like any plugin does, and it is versioned in step with the SDK.
 - Visual direction: **Refined current** (decided M0). Zinc neutrals as today; accent only via `--glow` and `--q-*`; type scale 11/12/13/16/24 with tabular numerals; radius 8/6/4; 4px spacing. Maps 1:1 onto existing tokens, so all 21 themes keep working. Rejected: Sanctuary dark-fantasy (theme-specific frames, low density, high cost) and Tactical/HUD (cold outside the game, light-theme issues).
+- **Consistency rule** (decided): every interface (core panels, new panels, plugin panels and slots, later the website) composes from `@pd2-trader/ui` components only. One component per job (one `Button`, one `PanelChrome`, one `DataRow`, one `PriceTag`); no local re-implementations. Enforced by lint: no direct `@radix-ui/*`/`cmdk`/`sonner` imports outside `packages/ui`; no styled raw interactive elements (`<button className=…>`, `<input>`, `<select>`) in feature code; feature folders may compose DS components but not define new primitives. New patterns are added to the package first, then used.
 
 ### A5. Core migration
 
